@@ -29,7 +29,7 @@ class fSet implements Iterator
 		
 		$primary_keys = fORMDatabase::addTableToValues($table_name, $primary_keys);
 		
-		$sql  = "SELECT * FROM :from_clause";
+		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
 
 		if (!empty($where_conditions)) {
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);					
@@ -41,7 +41,7 @@ class fSet implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fSet($class_name, fORMDatabase::getInstance()->query($sql, FALSE));			
+		return new fSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql, FALSE));			
 	}
 	
 	
@@ -56,7 +56,7 @@ class fSet implements Iterator
 	 */
 	static public function createFromSql($class_name, $sql)
 	{
-		$result = fORMDatabase::getInstance()->query($sql, FALSE);
+		$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
 		return new fSet($class_name, $result);	
 	}
 	

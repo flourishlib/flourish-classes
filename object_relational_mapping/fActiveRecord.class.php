@@ -6,6 +6,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @todo  Add code to handle association via multiple columns
+ * @todo  Add fFile support
+ * @todo  Add fImage support
+ * @todo  Add various hooks
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -122,7 +127,7 @@ abstract class fActiveRecord
 		$sql = "SELECT * FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
 		
 		try {
-			$result = fORMDatabase::getInstance()->query($sql, TRUE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);
 		} catch (fNoResultsException $e) {
 			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName(get_class($this)) . ' requested could not be found');
 		}
@@ -273,7 +278,7 @@ abstract class fActiveRecord
 			$sql  = "SELECT " . join(', ', $rel_primary_keys) . " FROM " . $rel['related_table'];
 			$sql .= " WHERE " . $rel['related_column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
 			
-			$rows = fORMDatabase::getInstance()->query($sql, FALSE);
+			$rows = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
 			return fORMDatabase::condensePrimaryKeyArray($rows);	
 		}
 		
@@ -296,7 +301,7 @@ abstract class fActiveRecord
 			$sql .= fORMDatabase::createFromClause(fORM::tablize($this), $sql);
 			$sql .= " WHERE " . fORM::tablize($this) . '.' . $rel['column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
 			
-			$rows = fORMDatabase::getInstance()->query($sql, FALSE);
+			$rows = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
 			$this->values[$plural_related_column] = fORMDatabase::condensePrimaryKeyArray($rows);
 			return $this->values[$plural_related_column];
 		}
@@ -485,7 +490,7 @@ abstract class fActiveRecord
 	{
 		try {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("BEGIN", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("BEGIN", FALSE);
 			}
 			
 			$this->validate();
@@ -513,7 +518,7 @@ abstract class fActiveRecord
 				$sql = $this->prepareUpdateSql($sql_values);
 			}
 			
-			$result = fORMDatabase::getInstance()->query($sql, FALSE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
 			
 			
 			/************************************
@@ -521,7 +526,7 @@ abstract class fActiveRecord
 			 */
 			
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("COMMIT", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("COMMIT", FALSE);
 			}
 			
 			if (!$this->checkIfExists()) {
@@ -535,7 +540,7 @@ abstract class fActiveRecord
 		} catch (fPrintableException $e) {
 
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("ROLLBACK", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("ROLLBACK", FALSE);
 			}
 			
 			throw $e;	
@@ -559,20 +564,20 @@ abstract class fActiveRecord
 		
 		try {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("BEGIN");
+				fORMDatabase::getInstance()->translatedQuery("BEGIN");
 			}
 			
 			$sql = "DELETE FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
 			
-			$result = fORMDatabase::getInstance()->query($sql, FALSE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
 			
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("COMMIT");
+				fORMDatabase::getInstance()->translatedQuery("COMMIT");
 			}
 			
 		} catch (fPrintableException $e) {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->query("ROLLBACK");
+				fORMDatabase::getInstance()->translatedQuery("ROLLBACK");
 			}
 			
 			throw $e;	

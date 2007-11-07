@@ -320,7 +320,7 @@ class fORMValidation
 				$columns .= fInflection::humanize($primary_key);
 				$key_num++;
 			}
-			$result = fORMDatabase::getInstance()->query($sql, TRUE);	
+			$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);	
 			
 			fCore::toss('fValidationException', 'A ' . fORM::getRecordName(ORM::classize($table)) . ' with the same ' . $columns . ' already exists');
 			
@@ -430,7 +430,7 @@ class fORMValidation
 				}
 				
 				try {
-					$result = fORMDatabase::getInstance()->query($sql, TRUE);	
+					$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);	
 				
 					// If an exception was not throw, we have existing values
 					$column_names = '';
@@ -474,7 +474,7 @@ class fORMValidation
 					$sql .= $column . fORMDatabase::prepareBySchema($table, $column, $values[$column], '=');
 					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
-					$result = fORMDatabase::getInstance()->query($sql, TRUE);					
+					$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);					
 				} catch (fNoResultsException $e) {
 					fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': The value specified is invalid');
 				}	

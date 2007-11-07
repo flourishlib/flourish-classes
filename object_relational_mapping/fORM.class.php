@@ -66,7 +66,7 @@ class fORM
 		$tables = fORMSchema::getInstance()->getTables();
 		$table_name = self::tablize($class_name);
 		if (in_array($table_name, $tables)) {
-			eval('class ' . $class_name . ' extends ActiveRecord { };');
+			eval('class ' . $class_name . ' extends fActiveRecord { };');
 			return;	
 		}
 		fCore::toss('fProgrammerException', 'The class specified does not correspond to a database table');

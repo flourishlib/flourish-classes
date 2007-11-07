@@ -1,6 +1,6 @@
 <?php
 /**
- * fPleskApi - A simple php interface to send xml packets to the Plesk API
+ * A simple php interface to send xml packets to the Plesk API
  * 
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -9,7 +9,7 @@
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-09-23]
  */
-class fPleskApi
+class fPleskAPI
 {
 	/**
 	 * The server URL

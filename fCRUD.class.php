@@ -12,7 +12,7 @@
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fCrud
+class fCRUD
 {
 	/**
 	 * The current row number for alternating rows

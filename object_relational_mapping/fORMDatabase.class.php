@@ -6,6 +6,8 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @todo  Check code for creating order bys to make sure it handles expressions properly without adding "table_name." to the beginning of function calls
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -391,7 +393,7 @@ class fORMDatabase
 				foreach ($values as $value) {
 					$sub_condition = array();
 					foreach ($columns as $column) {
-						$sub_condition[] = $column . ' ' . self::getInstance()->getLikeOperator() . ' ' . self::getInstance()->escapeString('%' . $value . '%');	
+						$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
 					}
 					$condition[] = '(' . join(' OR ', $sub_condition) . ')';
 				}		
@@ -424,7 +426,7 @@ class fORMDatabase
 						case '~':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = $column . ' ' . self::getInstance()->getLikeOperator() . ' ' . self::getInstance()->escapeString('%' . $value . '%');	
+								$condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
 							}
 							$sql[] = '(' . join(' OR ', $condition) . ')';
 							break;
@@ -447,7 +449,7 @@ class fORMDatabase
 							}
 							break;
 						case '~':
-							$sql[] = $column . ' ' . self::getInstance()->getLikeOperator() . ' ' . self::getInstance()->escapeString('%' . $values[0] . '%');	
+							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');	
 							break;
 						default:
 							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
