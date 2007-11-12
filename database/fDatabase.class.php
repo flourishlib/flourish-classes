@@ -255,7 +255,7 @@ class fDatabase
 		
 		// If we get a resource or TRUE back then the query was successful
 		if ($result->getResult() === FALSE) {
-			fCore::toss('fSqlException', 'There was an error in the SQL statement ' . $result->getSql());	
+			fCore::toss('fSQLException', 'There was an error in the SQL statement ' . $result->getSql());	
 		}
 		
 		if ($throw_no_results_exception && !$result->getAffectedRows() && !$result->getNumRows()) {
@@ -756,7 +756,7 @@ class fDatabase
 						break;	
 				}
 			}
-			fCore::toss('fSqlException', $message);
+			fCore::toss('fSQLException', $message);
 		}	
 	}
 	
@@ -932,7 +932,7 @@ if (!class_exists('fCore')) { }
  * @version  1.0.0 (2007-06-14) 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fSqlException extends fUnexpectedException
+class fSQLException extends fUnexpectedException
 {
 }
 
