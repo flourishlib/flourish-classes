@@ -395,7 +395,7 @@ class fResult implements Iterator
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @return void
+	 * @return integer  The current row number
 	 */
 	public function key()
 	{

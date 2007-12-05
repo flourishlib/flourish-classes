@@ -6,7 +6,7 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @version  1.0.0 (2007-06-14) 
+ * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fAuthorization
@@ -38,7 +38,7 @@ class fAuthorization
 	 * @since  1.0.0
 	 * 
 	 * @return fAuthorization
-     */
+	 */
 	private function __construct() { }
 	
 	
@@ -164,7 +164,7 @@ class fAuthorization
 	 * @param  array $acls  The logged in user's ACLs (see method description for format)
 	 * @return void
 	 */
-	static public function setUserAcls($acls)
+	static public function setUserACLs($acls)
 	{
 		fSession::set('user_acls', $acls, self::SESSION_PREFIX);
 	}
@@ -177,7 +177,7 @@ class fAuthorization
 	 * 
 	 * @return array  The logged in user's ACLs
 	 */
-	static public function getUserAcls()
+	static public function getUserACLs()
 	{
 		return fSession::get('user_acls', NULL, self::SESSION_PREFIX);
 	}
@@ -192,13 +192,13 @@ class fAuthorization
 	 * @param  string $permission  The permission to require from the user
 	 * @return boolean  If the user has the required permissions
 	 */
-	static public function checkAcl($resource, $permission)
+	static public function checkACL($resource, $permission)
 	{
-		if (self::getUserAcls() === NULL) {
+		if (self::getUserACLs() === NULL) {
 			return FALSE;
 		}
 			
-		$acls = self::getUserAcls();
+		$acls = self::getUserACLs();
 		
 		if (!isset($acls[$resource]) && !isset($acls['*'])) {
 			return FALSE;	
@@ -229,11 +229,11 @@ class fAuthorization
 	 * @param  string $permission  The permission to require from the user
 	 * @return void
 	 */
-	static public function requireAcl($resource, $permission)
+	static public function requireACL($resource, $permission)
 	{
 		self::validateLoginPage();
 		
-		if (self::checkAcl($resource, $permission)) {
+		if (self::checkACL($resource, $permission)) {
 			return;	
 		}
 		
@@ -242,7 +242,7 @@ class fAuthorization
 	
 	
 	/**
-	 * Checks to see if the user has an auth level or acls defined
+	 * Checks to see if the user has an auth level or ACLs defined
 	 * 
 	 * @since  1.0.0
 	 * 

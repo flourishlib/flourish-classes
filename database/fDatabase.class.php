@@ -60,10 +60,10 @@ class fDatabase
 	private $type;
 
 	/**
-	 * The extension to use for the database specified.
+	 * The extension to use for the database specified
 	 * 
 	 * Options include:
-	 *   - mysql, mysqli, pgsql, sqlite, pdo
+	 *   - mssql, mysql, mysqli, pgsql, sqlite, pdo
 	 * 
 	 * @var string 
 	 */
@@ -122,7 +122,7 @@ class fDatabase
 	 * @param  string  $username  Database username
 	 * @param  string  $password  User's password
 	 * @param  string  $host      Database server host or ip
-	 * @param  integer $port     The port to connect to (if non-standard)
+	 * @param  integer $port      The port to connect to (if non-standard)
 	 * @return fDatabase
 	 */
 	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
@@ -163,7 +163,7 @@ class fDatabase
 	
 	
 	/**
-	 * Gets the current database type
+	 * Gets the database type
 	 * 
 	 * @since  1.0.0
 	 * 
@@ -176,7 +176,7 @@ class fDatabase
 	
 	
 	/**
-	 * Gets the php extension being used (mysql, mysqli, pgsql, sqlite, or pdo)
+	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
 	 * 
 	 * @since  1.0.0
 	 * 
@@ -189,11 +189,11 @@ class fDatabase
 	
 	
 	/**
-	 * Gets the database we are currently connected to
+	 * Gets the name of the database currently connected to
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @return string  The database we are currently connected to
+	 * @return string  The name of the database currently connected to
 	 */
 	public function getDatabase()
 	{
@@ -220,14 +220,13 @@ class fDatabase
 	
 	
 	/**
-	 * Executes one or more sql queries. Will return fResult object for a single
-	 * query, or an array of fResult objects for multiple queries.
+	 * Executes one or more sql queries
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string  $sql                         An SQL statement
+	 * @param  string  $sql                         One or more SQL statements
 	 * @param  boolean $throw_no_results_exception  If an exception should be thrown if there are no results and the programmer tries to iterate the fResult object
-	 * @return fResult  The fResult object for the query
+	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function query($sql, $throw_no_results_exception)
 	{
@@ -264,7 +263,7 @@ class fDatabase
 		
 		$this->handleAutoIncrementedValue($result);
 		
-		// Handle multiple sql queries
+		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
 			$result = array($result);
 			foreach ($sql_queries as $sql_query) {
@@ -277,7 +276,7 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes strings to prevent sql injection attacks, includes surrounding quotes
+	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
 	 * 
 	 * @since  1.0.0
 	 * 
@@ -365,8 +364,8 @@ class fDatabase
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string $value  The value to interpret 
-	 * @return boolean  The boolean equivalent of the value passed
+	 * @param  string $value  The boolean to escape
+	 * @return string  The database equivalent of the boolean passed
 	 */
 	public function escapeBoolean($value)
 	{
@@ -454,7 +453,7 @@ class fDatabase
 	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The value to escape 
-	 * @return string  The escaped date
+	 * @return string  The escaped time
 	 */
 	public function escapeTime($value)
 	{
@@ -641,7 +640,7 @@ class fDatabase
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string $sql  The string of SQL to explode
+	 * @param  string $sql  The string of SQL to parse for queries
 	 * @return array  The individual SQL queries
 	 */
 	private function explodeQueries($sql)
@@ -716,8 +715,6 @@ class fDatabase
 			$this->setAffectedRows($result, $pdo_statement); 
 		}
 		$this->setNumRows($result);
-		
-		return $result;	
 	}
 	
 	
@@ -929,7 +926,7 @@ if (!class_exists('fCore')) { }
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @version  1.0.0 (2007-06-14) 
+ * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fSQLException extends fUnexpectedException
@@ -945,7 +942,7 @@ class fSQLException extends fUnexpectedException
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @version  1.0.0 (2007-06-14) 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fNoResultsException extends fExpectedException

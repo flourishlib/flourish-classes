@@ -26,7 +26,7 @@ class fSQLTranslation
 	private $connection;
 	
 	/**
-	 * The database type (postgresql, mysql, sqlite)
+	 * The database type (mssql, mysql, postgresql, sqlite)
 	 * 
 	 * @var string 
 	 */
@@ -36,7 +36,7 @@ class fSQLTranslation
 	 * The extension to use for the database specified.
 	 * 
 	 * Options include:
-	 *   - mysql, mysqli, pgsql, sqlite, pdo
+	 *   - mssql, mysql, mysqli, pgsql, sqlite, pdo
 	 * 
 	 * @var string 
 	 */
@@ -72,7 +72,7 @@ class fSQLTranslation
 		$this->extension  = $extension;
 		
 		if ($this->type == 'sqlite') {
-		 	$this->addSqliteFunctions();
+			$this->addSqliteFunctions();
 		}	
 	}
 	
@@ -108,9 +108,9 @@ class fSQLTranslation
 		
 		$new_sql = '';
 		foreach ($matches[0] as $match) {
-		 	// This is a quoted string value, don't do anything to it
+			// This is a quoted string value, don't do anything to it
 			if ($match[0] == "'") {
-		 		$new_sql .= $match;	
+				$new_sql .= $match;	
 			
 			// Raw SQL should be run through the fixes
 			} else {
@@ -133,7 +133,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates basic syntax differences of the current Database
+	 * Translates basic syntax differences of the current database
 	 * 
 	 * @since  1.0.0
 	 * 
@@ -605,7 +605,7 @@ class fSQLTranslation
 		
 		foreach ($functions as $function) {
 			if ($this->extension == 'pdo') {
-		 		$this->connection->sqliteCreateFunction($function[0], $function[1], $function[2]);	
+				$this->connection->sqliteCreateFunction($function[0], $function[1], $function[2]);	
 			} else {
 				sqlite_create_function($this->connection, $function[0], $function[1], $function[2]);
 			}

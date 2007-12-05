@@ -92,7 +92,7 @@ class fCRUD
 	 * @param  string              $field,...  The fields to remove from the exception error message
 	 * @return void
 	 */
-	static public function removeFields(fPrintableException $e, $field)
+	static public function removeFields(fPrintableException $e)
 	{
 		$fields = func_get_args();
 		$fields = array_map(array('fInflection', 'humanize'), array_slice($fields, 1));
@@ -357,7 +357,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortDirection()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_direction', NULL, 'fCrud::');
+		return fSession::get(fURL::get() . '::previous_sort_direction', NULL, 'fCRUD::');
 	}
 	
 	
@@ -371,7 +371,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortDirection($sort_direction)
 	{
-		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, 'fCrud::');
+		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, 'fCRUD::');
 	}
 	
 	
@@ -384,7 +384,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortColumn()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_column', NULL, 'fCrud::');
+		return fSession::get(fURL::get() . '::previous_sort_column', NULL, 'fCRUD::');
 	}
 	
 	
@@ -398,7 +398,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortColumn($sort_column)
 	{
-		fSession::set(fURL::get() . '::previous_sort_column', $sort_column, 'fCrud::');
+		fSession::set(fURL::get() . '::previous_sort_column', $sort_column, 'fCRUD::');
 	}
 	
 	
@@ -412,7 +412,7 @@ class fCRUD
 	 */
 	static private function getPreviousSearchValue($column)
 	{
-		return fSession::get(fURL::get() . '::previous_search::' . $column, NULL, 'fCrud::');
+		return fSession::get(fURL::get() . '::previous_search::' . $column, NULL, 'fCRUD::');
 	}
 	
 	
@@ -427,7 +427,7 @@ class fCRUD
 	 */
 	static private function setPreviousSearchValue($column, $value)
 	{
-		fSession::set(fURL::get() . '::previous_search::' . $column, $value, 'fCrud::');
+		fSession::set(fURL::get() . '::previous_search::' . $column, $value, 'fCRUD::');
 	}
 } 
 

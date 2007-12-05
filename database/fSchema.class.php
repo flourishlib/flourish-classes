@@ -12,7 +12,7 @@
 class fSchema
 {
 	/**
-	 * A reference to an instance of the Database object
+	 * A reference to an instance of the fDatabase object
 	 * 
 	 * @var fDatabase 
 	 */
