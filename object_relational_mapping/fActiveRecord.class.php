@@ -54,14 +54,23 @@ abstract class fActiveRecord
 			fORM::flagFeaturesSet(get_class($this));
 		}
 		
-		if (is_object($primary_key) && $primary_key instanceof fResult) {
-			$this->loadByResult($primary_key);
+		// Handle loading by a result object passed via the fSet class
+        if (is_object($primary_key) && $primary_key instanceof fResult) {
+			if ($this->loadFromIdentityMap($primary_key)) {
+                return;  
+            }
+            
+            $this->loadByResult($primary_key);
 			return;	
 		}
 		
 		// Handle loading an object from the database
 		if ($primary_key !== NULL) {
 			
+            if ($this->loadFromIdentityMap($primary_key)) {
+                return;  
+            }
+            
 			// Check the primary keys
 			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($primary_keys) > 1 && array_keys($primary_key) != $primary_keys) || (sizeof($primary_keys) == 1 && !is_scalar($primary_key))) {
@@ -114,6 +123,48 @@ abstract class fActiveRecord
 	{
 	}
 	
+    
+    /**
+     * Tries to load the object from the fORM identity map
+     * 
+     * @since  1.0.0
+     * 
+     * @param  fResult|array $source  The data source for the primary key values
+     * @return boolean  If the load was successful
+     */
+    protected function loadFromIdentityMap($source)
+    {
+        if ($source instanceof fResult) {
+            $row = $source->current();
+        } else {
+            $row = $source;   
+        }
+        
+        $primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+        
+        // If we don't have a value for each primary key, we can't load
+        if (array_diff($primary_keys, array_keys($row)) !== array()) {
+            return FALSE;
+        } 
+        
+        // Build an array of just the primary key data
+        $pk_data = array();
+        foreach ($primary_keys as $primary_key) {
+            $pk_data[$primary_key] = $row[$primary_key];
+        } 
+        
+        $object = fORM::checkIdentityMap($this, $pk_data); 
+        
+        // A negative result implies this object has not been added to the indentity map yet
+        if(!$object) {
+            return FALSE;
+        } 
+        
+        // If we got a result back, it is the object we are creating
+        $this = $object;
+        return TRUE;
+    }
+    
 	
 	/**
 	 * Loads a record from the database
@@ -160,6 +211,17 @@ abstract class fActiveRecord
 				$this->values[$column] = $value;
 			}
 		}	
+        
+        
+        // Save this object to the identity map
+        $primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+        
+        $pk_data = array();
+        foreach ($primary_keys as $primary_key) {
+            $pk_data[$primary_key] = $row[$primary_key];
+        }
+        
+        fORM::saveToIdentityMap($this);
 	}
 	
 	

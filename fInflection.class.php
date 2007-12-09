@@ -207,7 +207,7 @@ class fInflection
 	 */
 	static public function humanize($string)
     {
-		return preg_replace('/(\bid\b|\burl\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
+		return preg_replace('/(\b(id|url|pdf|swf|css)\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
 	}  	  
 }
 

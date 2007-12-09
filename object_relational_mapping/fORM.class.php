@@ -12,6 +12,13 @@
 class fORM
 {
 	/**
+     * Maps objects via their primary key
+     * 
+     * @var array 
+     */
+    static private $identity_map = array();
+    
+    /**
 	 * Custom mappings for table <-> class
 	 * 
 	 * @var array 
@@ -73,7 +80,68 @@ class fORM
 	}
 	
 	
-	/**
+    /**
+     * Checks to see if an object has been saved to the identity map
+     * 
+     * @since  1.0.0
+     * 
+     * @param  mixed  $class             The name of the class, or an instance of it
+     * @param  array  $primary_key_data  The primary key(s) for the instance
+     * @return mixed  Will return FALSE if no match, or the instance of the object if a match occurs
+     */
+    static public function checkIdentityMap($class, $primary_key_data)
+    {
+        $class = self::getClassName($class);
+        if (!isset(self::$indentity_map[$class])) {
+            return FALSE;   
+        }
+        $hash_key = self::createPrimaryKeyHash($primary_key_data);
+        if (!isset(self::$identity_map[$class][$hash_key])) {
+            return FALSE;   
+        }
+        return self::$identity_map[$class][$hash_key];
+    }
+    
+    
+    /**
+     * Saves an object to the identity map
+     * 
+     * @since  1.0.0
+     * 
+     * @param  mixed  $object            An instance of an fActiveRecord class
+     * @param  array  $primary_key_data  The primary key(s) for the instance
+     * @return void
+     */
+    static public function saveToIdentityMap($object, $primary_key_data)
+    {              
+        $class = self::getClassName($object);
+        if (!isset(self::$indentity_map[$class])) {
+            self::$identity_map[$class] = array();   
+        }
+        $hash_key = self::createPrimaryKeyHash($primary_key_data);
+        self::$identity_map[$class][$hash_key] = $object;
+    }
+    
+    
+    /**
+     * Turns a primary key array into a hash key using md5
+     * 
+     * @since  1.0.0
+     * 
+     * @param  array  $primary_key_data  The primary key data to hash
+     * @return string  An md5 of the sorted, serialized primary key data
+     */
+    static private function createPrimaryKeyHash($primary_key_data)
+    {
+        sort($primary_key_data);
+        foreach ($primary_key_data as $primary_key => $data) {
+            $primary_key_data[$primary_key] = (string) $data;   
+        }
+        return md5(serialize($primary_key_data));
+    }
+	
+    
+    /**
 	 * Allows overriding of default (humanize-d class name) record names
 	 * 
 	 * @since  1.0.0

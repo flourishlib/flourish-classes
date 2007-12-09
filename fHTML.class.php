@@ -6,8 +6,8 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @version  1.0.0b
- * @changes  1.0.0b    The initial implementation [wb, 2007-09-25]
+ * @version  1.0.0
+ * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
 class fHTML
 {
@@ -36,7 +36,7 @@ class fHTML
 	
 	
 	/**
-	 * Converts all html entities to normal characters
+	 * Converts all html entities to normal characters, using utf-8
      * 
 	 * @since  1.0.0
      * 
@@ -50,7 +50,7 @@ class fHTML
 	
 	
 	/**
-	 * Converts all special characters to entites
+	 * Converts all special characters to entites, using utf-8
      * 
      * @since  1.0.0
 	 * 

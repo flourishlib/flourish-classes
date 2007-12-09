@@ -14,7 +14,7 @@
 class fFile
 {
 	/**
-	 * If an exception was caused while uploading the file, this is it
+	 * If an exception was caused while uploading the file or creating the object, this is it
 	 * 
 	 * @var object 
 	 */
@@ -36,18 +36,18 @@ class fFile
 	
 	
 	/**
-	 * Takes a $_FILES array entry and parses it into private variables
+	 * Creates an object to represent a file on the filesystem
 	 * 
 	 * @since  1.0.0
 	 * 
 	 * @param  string $file       The full path to the file
-	 * @param  object $exception  An exception that was creating during the object creation process
+	 * @param  object $exception  An exception that was tossed during the object creation process
 	 * @return fFile
 	 */
 	public function __construct($file, Exception $exception=NULL)
 	{
 		if ($exception) {
-			$this->exception;
+			$this->exception = $exception;
 			return;
 		}    
 		try {
@@ -59,15 +59,56 @@ class fFile
 			$this->exception = $e;   
 		}
 	}
+    
+    
+    /**
+     * When used in a string context, represents the file as the filename
+     * 
+     * @since  1.0.0
+     * 
+     * @return string  The filename of the file
+     */
+    public function __toString()
+    {
+        return $this->getFilename();
+    }
 	
 	
 	/**
-	 * Gets the file's current path
+     * Gets the filename (i.e. does not include the directory)
+     * 
+     * @since  1.0.0
+     * 
+     * @return string  The filename of the file
+     */
+    public function getFilename()
+    {
+        if ($this->exception) { throw $this->exception; }
+        return self::getInfo($this->file, 'filename');    
+    }
+    
+    
+    /**
+     * Gets the directory the file is located in
+     * 
+     * @since  1.0.0
+     * 
+     * @return string  The directory containing the file
+     */
+    public function getDirectory()
+    {
+        if ($this->exception) { throw $this->exception; }
+        return self::getInfo($this->file, 'dirname');    
+    }
+    
+    
+    /**
+	 * Gets the file's current path (directory and filename)
 	 * 
 	 * @since  1.0.0
 	 * 
 	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
-	 * @return void
+	 * @return string  The path (directory and filename) for the file
 	 */
 	public function getPath($from_doc_root=FALSE)
 	{
@@ -122,7 +163,7 @@ class fFile
 	
 	
 	/**
-	 * Creates a new file object with a copy of the file in the new directory, will overwrite existing file
+	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name
 	 * 
 	 * @since  1.0.0
 	 * 
@@ -131,7 +172,9 @@ class fFile
 	 */
 	public function duplicate($new_directory)
 	{
-		if (substr($new_directory, -1) != '/' && substr($new_directory, -1) != '\\') {
+		if ($this->exception) { throw $this->exception; }
+        
+        if (substr($new_directory, -1) != '/' && substr($new_directory, -1) != '\\') {
 			$new_directory .= '/';
 		}
 		
@@ -242,7 +285,7 @@ class fFile
 	
 	
 	/**
-	 * Takes the size of a file in bytes and returns the  
+	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
 	 * 
 	 * @since 1.0.0
 	 *

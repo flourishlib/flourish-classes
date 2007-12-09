@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles validation for ActiveRecord classes
+ * Handles validation for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>

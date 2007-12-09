@@ -114,7 +114,7 @@ class fRequest
 	
     
     /**
-     * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removed the prefix from the field name
+     * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
      * 
      * @since  1.0.0
      * 
