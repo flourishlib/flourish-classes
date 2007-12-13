@@ -6,17 +6,23 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fURL
+ * 
+ * @uses  fCore
+ * @uses  fHTML
+ * @uses  fProgrammerException
+ * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fURL
 {
-    /**
-     * If getScript() should strip the file extension
-     * 
-     * @var boolean 
-     */
-    static private $no_extensions = FALSE;    
+	/**
+	 * If getScript() should strip the file extension
+	 * 
+	 * @var boolean 
+	 */
+	static private $no_extensions = FALSE;    
 	
 	
 	/**
@@ -29,19 +35,19 @@ class fURL
 	private function __construct() { }
 	
 	
-    /**
+	/**
 	 * Sets the no_extensions for fURL::getScript()
-     * 
-     * @since  1.0.0
+	 * 
+	 * @since  1.0.0
 	 * 
 	 * @param  boolean $no_extensions  If no extensions should be returned via fURL::getScript()
-     * @return void
-     */
-    static public function setNoExtensions($no_extensions)
-    {
-        self::$no_extensions = (boolean) $no_extensions;
-    }
-    
+	 * @return void
+	 */
+	static public function setNoExtensions($no_extensions)
+	{
+		self::$no_extensions = (boolean) $no_extensions;
+	}
+	
 	
 	/**
 	 * Returns the requested url
@@ -81,33 +87,33 @@ class fURL
 	{
 		return (self::$no_extensions) ? preg_replace('#\.php$#i', '', $_SERVER['SCRIPT_NAME']) : $_SERVER['SCRIPT_NAME'];
 	}
-    
-    
-    /**
-     * Returns the current domain name, with protcol prefix
-     * 
-     * @since  1.0.0
-     * 
-     * @return string  The current domain name (with protocol prefix)
-     */
-    static public function getDomain()
-    {
-        return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];    
-    }
-    
-    
-    /**
-     * Replaces a value in the querystring
-     * 
-     * @since  1.0.0
-     * 
-	 * @param  string  $parameter       The get parameter
-	 * @param  string  $value           The value to set the parameter to
-	 * @param  boolean $html_entities   If &amp; should be used to seperate elements
+	
+	
+	/**
+	 * Returns the current domain name, with protcol prefix
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @return string  The current domain name (with protocol prefix)
+	 */
+	static public function getDomain()
+	{
+		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];    
+	}
+	
+	
+	/**
+	 * Replaces a value in the querystring
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @param  string|array  $parameter       The get parameter
+	 * @param  string|array  $value           The value to set the parameter to
+	 * @param  boolean       $html_entities   If &amp; should be used to seperate elements
 	 * @return string  The full querystring with the parameter replaced, first char is '?'
 	 */
 	static public function replaceInQueryString($parameter, $value, $html_entities=TRUE)
-    {
+	{
 		$qs_array = $_GET;
 		if (get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);	
@@ -125,61 +131,61 @@ class fURL
 		}
 		
 		return '?' . http_build_query($qs_array, '', ($html_entities) ? '&amp;' : '&');           
-    }
-    
-    
-    /**
-     * Removes one or more parameters from the query string, pass as many parameter names as you want
-     * 
-     * @since  1.0.0
-     * 
+	}
+	
+	
+	/**
+	 * Removes one or more parameters from the query string, pass as many parameter names as you want
+	 * 
+	 * @since  1.0.0
+	 * 
 	 * @param  string $parameter  A parameter to remove from the query string
 	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
-     */
-    static public function removeFromQueryString()
-    {
-        $parameters = func_get_args();
-        for ($i=0; $i < sizeof($parameters); $i++) {
-            $parameters[$i] = '#\b' . $parameters[$i] . '=[^&]*&?#';    
-        }
+	 */
+	static public function removeFromQueryString()
+	{
+		$parameters = func_get_args();
+		for ($i=0; $i < sizeof($parameters); $i++) {
+			$parameters[$i] = '#\b' . $parameters[$i] . '=[^&]*&?#';    
+		}
 		return '?' . substr(preg_replace($parameters, '', $qs), 1);           
-    }
-        
-    
-    /**
-     * Changes a string into a nice-url style string
-     * 
-     * @since  1.0.0
-     * 
-     * @param  string $string  The string to convert
-     * @return void
+	}
+		
+	
+	/**
+	 * Changes a string into a nice-url style string
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @param  string $string  The string to convert
+	 * @return void
 	 */
 	static public function makeNice($string)
-    {
+	{
 		$string = html_entity_decode(fHTML::makeUnaccented($string));
 		$string = preg_replace('#[^a-zA-Z -]#', ' ', $string);
-        return preg_replace('#\s+#', '_', trim($string));
-    }
-    
-    
-    /**
-     * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
-     * 
-     * @since  1.0.0
-     * 
-     * @param  string $url  The url to redirect to
-     * @return void
-     */
-    static public function redirect($url)
-    {
-        if (strpos($url, '/') === 0) {
-            $url = self::getDomain() . $url;   
+		return preg_replace('#\s+#', '_', trim($string));
+	}
+	
+	
+	/**
+	 * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @param  string $url  The url to redirect to
+	 * @return void
+	 */
+	static public function redirect($url)
+	{
+		if (strpos($url, '/') === 0) {
+			$url = self::getDomain() . $url;   
 		} elseif (strpos($url, '?') === 0) {
 			$url = self::getDomain() . self::get() . $url;	
 		}
-        header('Location: ' . $url);
-        exit;
-    }
+		header('Location: ' . $url);
+		exit;
+	}
 } 
 
 

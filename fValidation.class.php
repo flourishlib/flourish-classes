@@ -6,6 +6,13 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fValidation
+ * 
+ * @uses  fCore
+ * @uses  fInflection
+ * @uses  fRequest
+ * @uses  fValidationException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -31,7 +38,7 @@ class fValidation
 	 * @param  string $field,...  Any number of fields to check
 	 * @return void
 	 */
-	static public function requireRequestValue($field)
+	static public function requireRequestValue()
 	{
 		$fields = func_get_args();
 		$missing_fields = array();
@@ -58,7 +65,7 @@ class fValidation
 	 * @param  string $field,...  Any number of fields to check
 	 * @return void
 	 */
-	static public function stopRequestEmailInjection($field_1, $field_2=NULL, $field_3=NULL)
+	static public function stopRequestEmailInjection()
 	{
 		$fields = func_get_args();
 		

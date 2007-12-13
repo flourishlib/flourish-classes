@@ -6,6 +6,13 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fFinancialTransaction
+ * 
+ * @uses  fCore
+ * @uses  fInflection
+ * @uses  fProgrammerException
+ * @uses  fValidationException
+ * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-08-20]
  */
@@ -1083,6 +1090,8 @@ class fFinancialTransaction
 	 * 
 	 * @since 1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @return string  The transaction id returned by the gateway
 	 */
 	public function process()
@@ -1150,6 +1159,8 @@ class fFinancialTransaction
 	 * Makes sure all of the required fields are entered, and that data types are correct
 	 * 
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @return void
 	 */

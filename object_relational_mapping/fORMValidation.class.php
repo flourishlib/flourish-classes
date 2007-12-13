@@ -6,6 +6,18 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fORMValidation
+ * 
+ * @uses  fCore
+ * @uses  fInflection
+ * @uses  fNoResultsException
+ * @uses  fORM
+ * @uses  fORMDatabase
+ * @uses  fORMSchema
+ * @uses  fProgrammerException
+ * @uses  fURL
+ * @uses  fValidationException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -58,9 +70,11 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates values for an ActiveRecord object
+	 * Validates values for an fActiveRecord object
 	 *
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table       The table to validate against
 	 * @param  array  $values      The values to validate
@@ -77,7 +91,7 @@ class fORMValidation
 			$validation_messages[] = $e->getMessage();			
 		}
 		
-		$column_info = ORMSchema::getInstance()->getColumnInfo($table);
+		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			try {
 				self::checkAgainstSchema($table, $column, $values);
@@ -145,7 +159,7 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
-	 * @param  mixed  $table                The database table (or ActiveRecord class) this validation rule applies to
+	 * @param  mixed  $table                The database table (or fActiveRecord class) this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
@@ -175,7 +189,7 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
-	 * @param  mixed $table    The database table (or ActiveRecord class) the columns exists in
+	 * @param  mixed $table    The database table (or fActiveRecord class) the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
@@ -203,7 +217,7 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
-	 * @param  mixed $table     The database table (or ActiveRecord class) the column exists in
+	 * @param  mixed $table     The database table (or fActiveRecord class) the column exists in
 	 * @param  array $columns   The columns to check
 	 * @return void
 	 */
@@ -231,7 +245,7 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
-	 * @param  mixed  $table                    The database table (or ActiveRecord class) to add the rule for
+	 * @param  mixed  $table                    The database table (or fActiveRecord class) to add the rule for
 	 * @param  string $plural_related_column    The plural form of the related column
 	 * @return void
 	 */
@@ -257,7 +271,7 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
-	 * @param  mixed  $table         The database table (or ActiveRecord class) this validation rule applies to
+	 * @param  mixed  $table         The database table (or fActiveRecord class) this validation rule applies to
 	 * @param  string $column        The column to check the format of
 	 * @param  string $format_type   The format for the column: email, link
 	 * @return void
@@ -284,6 +298,8 @@ class fORMValidation
 	 * Makes sure a record with the same primary keys is not already in the database
 	 *
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The database table the column exists in
 	 * @param  array  $values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
@@ -320,9 +336,10 @@ class fORMValidation
 				$columns .= fInflection::humanize($primary_key);
 				$key_num++;
 			}
-			$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);	
+			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result->tossIfNoResults();	
 			
-			fCore::toss('fValidationException', 'A ' . fORM::getRecordName(ORM::classize($table)) . ' with the same ' . $columns . ' already exists');
+			fCore::toss('fValidationException', 'A ' . fORM::getRecordName(fORM::classize($table)) . ' with the same ' . $columns . ' already exists');
 			
 		} catch (fNoResultsException $e) {
 			return;	
@@ -334,6 +351,8 @@ class fORMValidation
 	 * Validates a value against the database schema
 	 *
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The database table the column exists in
 	 * @param  string $column       The column to check
@@ -430,7 +449,8 @@ class fORMValidation
 				}
 				
 				try {
-					$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);	
+					$result = fORMDatabase::getInstance()->translatedQuery($sql);
+					$result->tossIfNoResults();	
 				
 					// If an exception was not throw, we have existing values
 					$column_names = '';
@@ -474,7 +494,8 @@ class fORMValidation
 					$sql .= $column . fORMDatabase::prepareBySchema($table, $column, $values[$column], '=');
 					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
-					$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);					
+					$result = fORMDatabase::getInstance()->translatedQuery($sql);
+					$result->tossIfNoResults();					
 				} catch (fNoResultsException $e) {
 					fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': The value specified is invalid');
 				}	
@@ -487,6 +508,8 @@ class fORMValidation
 	 * Validates against a conditional validation rule
 	 *
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table                The database table this validation rule applies to
 	 * @param  array  $record_values        An associative array of all values for the record
@@ -525,6 +548,8 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  string $table          The database table the columns exists in
 	 * @param  array  $record_values  An associative array of all values for the record
 	 * @param  array  $columns        The columns to check
@@ -559,6 +584,8 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  string $table          The database table the column exists in
 	 * @param  array  $record_values  An associative array of all values for the record
 	 * @param  array  $columns        The columns to check
@@ -592,6 +619,8 @@ class fORMValidation
 	 *
 	 * @since 1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  array  $values                 An associative array of all values for the record
 	 * @param  string $plural_related_column  The plural name of the related column
 	 * @return void
@@ -608,6 +637,8 @@ class fORMValidation
 	 * Checks a value to make sure it is the right format
 	 *
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table the column is located in
 	 * @param  array  $values       An associative array of all values for the record

@@ -6,6 +6,13 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fORMDatabase
+ * 
+ * @uses  fCore
+ * @uses  fDatabase
+ * @uses  fORMSchema
+ * @uses  fProgrammerException
+ * 
  * @todo  Check code for creating order bys to make sure it handles expressions properly without adding "table_name." to the beginning of function calls
  * 
  * @version  1.0.0

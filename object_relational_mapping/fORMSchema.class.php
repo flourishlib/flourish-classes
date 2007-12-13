@@ -6,6 +6,12 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fORMSchema
+ * 
+ * @uses  fCore
+ * @uses  fORMDatabase
+ * @uses  fSchema
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

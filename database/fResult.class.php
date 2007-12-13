@@ -6,6 +6,12 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fResult
+ * 
+ * @uses  fCore
+ * @uses  fNoResultsException
+ * @uses  fProgrammerException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
@@ -230,6 +236,23 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Throws an fNoResultException if the fResult did not return or affect any rows
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @throws  fNoResultsException
+	 * 
+	 * @return void
+	 */
+	public function tossIfNoResults()
+	{
+		if (empty($this->num_rows) && empty($this->affected_rows)) {
+			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
+		}
+	}
+	
+	
+	/**
 	 * Returns all of the rows from the result set
 	 * 
 	 * @since  1.0.0
@@ -250,6 +273,8 @@ class fResult implements Iterator
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
 	 * @since  1.0.0
+	 * 
+	 * @throws  fNoResultsException
 	 * 
 	 * @return array  The associative array of the row
 	 */
@@ -330,6 +355,8 @@ class fResult implements Iterator
 	 * 
 	 * @since  1.0.0
 	 * 
+	 * @throws  fNoResultsException
+	 * 
 	 * @param  integer $row  The row number to seek to (zero-based)
 	 * @return boolean  True if seek succeeded, false if failed
 	 */
@@ -379,6 +406,8 @@ class fResult implements Iterator
 	 * Returns the current row in the result set (used for iteration)
 	 * 
 	 * @since  1.0.0
+	 * 
+	 * @throws  fNoResultsException
 	 * 
 	 * @return array  The current Row
 	 */
@@ -436,6 +465,28 @@ class fResult implements Iterator
 		return ($this->pointer < $this->num_rows);
 	}
 }
+
+
+// Handle dependency load order for extending exceptions
+if (!class_exists('fCore')) { }
+
+
+/**
+ * An exception when no results are returned
+ * 
+ * @copyright  Copyright (c) 2007 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fNoResultsException
+ * 
+ * @version  1.0.0
+ * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ */
+class fNoResultsException extends fExpectedException
+{
+}
+
 
 
 /**

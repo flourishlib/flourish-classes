@@ -26,6 +26,16 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fDatabase
+ * 
+ * @uses  fConnectivityException
+ * @uses  fCore
+ * @uses  fEnvironmentException
+ * @uses  fProgrammerException
+ * @uses  fResult
+ * @uses  fSQLException
+ * @uses  fSQLTranslation
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
@@ -206,16 +216,15 @@ class fDatabase
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string  $sql                         An SQL statement
-	 * @param  boolean $throw_no_results_exception  If an exception should be thrown if there are no results and the programmer tries to iterate the fResult object
+	 * @param  string  $sql  An SQL statement
 	 * @return string  The translated SQL
 	 */
-	public function translatedQuery($sql, $throw_no_results_exception)
+	public function translatedQuery($sql)
 	{
 		if (!$this->translation) {
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
 		}	
-		return $this->query($this->translation->translate($sql), $throw_no_results_exception);
+		return $this->query($this->translation->translate($sql));
 	}
 	
 	
@@ -224,11 +233,10 @@ class fDatabase
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string  $sql                         One or more SQL statements
-	 * @param  boolean $throw_no_results_exception  If an exception should be thrown if there are no results and the programmer tries to iterate the fResult object
+	 * @param  string  $sql  One or more SQL statements
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
-	public function query($sql, $throw_no_results_exception)
+	public function query($sql)
 	{
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
@@ -257,17 +265,13 @@ class fDatabase
 			fCore::toss('fSQLException', 'There was an error in the SQL statement ' . $result->getSql());	
 		}
 		
-		if ($throw_no_results_exception && !$result->getAffectedRows() && !$result->getNumRows()) {
-			fCore::toss('fNoResultsException', 'The query did not return or change any rows in the database');	
-		}
-		
 		$this->handleAutoIncrementedValue($result);
 		
 		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
 			$result = array($result);
 			foreach ($sql_queries as $sql_query) {
-				$result[] = $this->query($sql_query, $throw_no_results_exception);
+				$result[] = $this->query($sql_query);
 			}	
 		}
 		
@@ -620,17 +624,17 @@ class fDatabase
 		
 		// Make MySQL act more strict
 		if ($this->type == 'mysql') {
-			$this->query("set sql_mode = 'ANSI'", FALSE);
+			$this->query("set sql_mode = 'ANSI'");
 		}	
 		
 		// Make SQLite behave like other DBs for assoc arrays
 		if ($this->type == 'sqlite') {
-			$this->query('PRAGMA short_column_names = 1', FALSE);	
+			$this->query('PRAGMA short_column_names = 1');	
 		}	
 		
 		// Fix some issues with mssql 
 		if ($this->extension == 'mssql') {
-			$this->query('SET TEXTSIZE 65536', FALSE);		
+			$this->query('SET TEXTSIZE 65536');		
 		}
 	}
 	
@@ -926,26 +930,12 @@ if (!class_exists('fCore')) { }
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fSQLException
+ * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fSQLException extends fUnexpectedException
-{
-}
-
-
-
-/**
- * An exception when no results are returned
- * 
- * @copyright  Copyright (c) 2007 William Bond
- * @author     William Bond [wb] <will@flourishlib.com>
- * @license    http://flourishlib.com/license
- * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
- */
-class fNoResultsException extends fExpectedException
 {
 }
 

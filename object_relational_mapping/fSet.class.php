@@ -6,6 +6,16 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fSet
+ * 
+ * @uses  fCore
+ * @uses  fEmptySetException
+ * @uses  fInflection
+ * @uses  fORM
+ * @uses  fORMDatabase
+ * @uses  fORMSchema
+ * @uses  fProgrammerException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -16,10 +26,10 @@ class fSet implements Iterator
 	 * 
 	 * @since  1.0.0
 	 * 
-	 * @param  string $class_name        The class to create the Set of
+	 * @param  string $class_name        The class to create the fSet of
 	 * @param  array  $where_conditions  The column => value comparisons for the where clause
 	 * @param  array  $order_bys         The column => direction values to use for sorting
-	 * @return fSet  A Set of ActiveRecords
+	 * @return fSet  A set of fActiveRecords
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array())
 	{
@@ -41,7 +51,7 @@ class fSet implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql, FALSE));			
+		return new fSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));			
 	}
 	
 	
@@ -56,7 +66,7 @@ class fSet implements Iterator
 	 */
 	static public function createFromSql($class_name, $sql)
 	{
-		$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
+		$result = fORMDatabase::getInstance()->translatedQuery($sql);
 		return new fSet($class_name, $result);	
 	}
 	
@@ -94,17 +104,10 @@ class fSet implements Iterator
 	 */
 	protected function __construct($class_name, fResult $result_object)
 	{
-		try {
-			if (!class_exists($class_name)) {
-				fCore::toss('fProgrammerException', 'The class ' . $class_name . ' could not be loaded');	
-			}
-			$this->class_name = $class_name;
-		} catch (Exception $e) {
-			if ($e->getCode() == 000) {
-				fCore::toss('fProgrammerException', $e->getMessage());
-			} 
-			throw $e;	
+		if (!class_exists($class_name)) {
+			fCore::toss('fProgrammerException', 'The class ' . $class_name . ' could not be loaded');	
 		}
+		$this->class_name = $class_name;
 		
 		$this->result_object = $result_object;
 	}
@@ -176,6 +179,8 @@ class fSet implements Iterator
 	 * Throws a fEmptySetException if the fSet is empty
 	 * 
 	 * @since  1.0.0
+	 * 
+	 * @throws  fEmptySetException
 	 * 
 	 * @return void
 	 */
@@ -322,11 +327,13 @@ if (!class_exists('fCore')) { }
 
 
 /**
- * An exception when an ActiveRecord set is empty
+ * An exception when an fSet does not contain any elements
  * 
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fEmptySetException
  * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]

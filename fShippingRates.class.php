@@ -6,6 +6,14 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fShippingRates
+ * 
+ * @uses  fCore
+ * @uses  fInflection
+ * @uses  fProgrammerException
+ * @uses  fUnexpectedException
+ * @uses  fValidationException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-20]
  */
@@ -45,20 +53,20 @@ class fShippingRates
 	 * @var boolean
 	 */
 	private $debug = NULL;
-    
-    /**
-     * If test mode is enabled
-     * 
-     * @var boolean
-     */
-    private $test_mode = NULL;
-    
-    /**
-     * If info for the current request
-     * 
-     * @var array
-     */
-    private $request_info = array();
+	
+	/**
+	 * If test mode is enabled
+	 * 
+	 * @var boolean
+	 */
+	private $test_mode = NULL;
+	
+	/**
+	 * If info for the current request
+	 * 
+	 * @var array
+	 */
+	private $request_info = array();
 	
 	/**
 	 * The field info for UPS
@@ -90,15 +98,15 @@ class fShippingRates
 											 'required'     => array('ship_to_country' => array('US')),
 											 'default'      => NULL,
 											 'type'         => 'string',
-                                             'valid_values' => array(
-                                                                   'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT',
-                                                                   'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID',
-                                                                   'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH',
-                                                                   'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
-                                                                   'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP',
-                                                                   'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC',
-                                                                   'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA',
-                                                                   'WV', 'WI', 'WY', 'AE', 'AA', 'AE', 'AE', 'AE',
+											 'valid_values' => array(
+																   'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT',
+																   'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID',
+																   'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH',
+																   'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
+																   'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP',
+																   'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC',
+																   'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA',
+																   'WV', 'WI', 'WY', 'AE', 'AA', 'AE', 'AE', 'AE',
 																   'AP')),
 		'ship_to_province'            => array(
 											 'required'     => FALSE,
@@ -184,15 +192,15 @@ class fShippingRates
 											 'required'     => array('ship_to_country' => array('US')),
 											 'default'      => NULL,
 											 'type'         => 'string',
-                                             'valid_values' => array(
-                                                                   'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT',
-                                                                   'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID',
-                                                                   'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH',
-                                                                   'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
-                                                                   'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP',
-                                                                   'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC',
-                                                                   'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA',
-                                                                   'WV', 'WI', 'WY', 'AE', 'AA', 'AE', 'AE', 'AE',
+											 'valid_values' => array(
+																   'AL', 'AK', 'AS', 'AZ', 'AR', 'CA', 'CO', 'CT',
+																   'DE', 'DC', 'FM', 'FL', 'GA', 'GU', 'HI', 'ID',
+																   'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MH',
+																   'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE',
+																   'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'MP',
+																   'OH', 'OK', 'OR', 'PW', 'PA', 'PR', 'RI', 'SC',
+																   'SD', 'TN', 'TX', 'UT', 'VT', 'VI', 'VA', 'WA',
+																   'WV', 'WI', 'WY', 'AE', 'AA', 'AE', 'AE', 'AE',
 																   'AP')),
 		'ship_from_province'          => array(
 											 'required'     => FALSE,
@@ -281,35 +289,35 @@ class fShippingRates
 																   '30', //Pallet
 																   )),
 		'dimensions_units'            => array(
-                                             'required'     => TRUE,
-                                             'default'      => 'IN',
-                                             'type'         => 'string',
-                                             'valid_values' => array('IN', 'CM')),
-        'package_width'               => array(
-                                             'required'     => array('package_type' => array('00', '02', '30')),
-                                             'default'      => NULL,
-                                             'type'         => 'float'),
-        'package_height'              => array(
-                                             'required'     => array('package_type' => array('00', '02', '30')),
-                                             'default'      => NULL,
-                                             'type'         => 'float'),
-        'package_length'              => array(
-                                             'required'     => array('package_type' => array('00', '02', '30')),
-                                             'default'      => NULL,
-                                             'type'         => 'float'),
-        'pickup_type'                 => array(
-                                             'required'     => TRUE,
-                                             'default'      => NULL,
-                                             'type'         => 'string',
-                                             'valid_values' => array(
-                                                                   '01', // Daily pickup
-                                                                   '03', // Customer counter (Include UPS Store locations?)
-                                                                   '06', // One-time pickup
-                                                                   '07', // On call air (Pickups that only deal with air?)
-                                                                   '11', // Suggested retail rates (suggested what Staples, etc may charge?)
-                                                                   '19', // Letter center (aka drop box?)
-                                                                   '20'  // Air service center (Staffed locations that only deal with air?)
-                                                                   ))
+											 'required'     => TRUE,
+											 'default'      => 'IN',
+											 'type'         => 'string',
+											 'valid_values' => array('IN', 'CM')),
+		'package_width'               => array(
+											 'required'     => array('package_type' => array('00', '02', '30')),
+											 'default'      => NULL,
+											 'type'         => 'float'),
+		'package_height'              => array(
+											 'required'     => array('package_type' => array('00', '02', '30')),
+											 'default'      => NULL,
+											 'type'         => 'float'),
+		'package_length'              => array(
+											 'required'     => array('package_type' => array('00', '02', '30')),
+											 'default'      => NULL,
+											 'type'         => 'float'),
+		'pickup_type'                 => array(
+											 'required'     => TRUE,
+											 'default'      => NULL,
+											 'type'         => 'string',
+											 'valid_values' => array(
+																   '01', // Daily pickup
+																   '03', // Customer counter (Include UPS Store locations?)
+																   '06', // One-time pickup
+																   '07', // On call air (Pickups that only deal with air?)
+																   '11', // Suggested retail rates (suggested what Staples, etc may charge?)
+																   '19', // Letter center (aka drop box?)
+																   '20'  // Air service center (Staffed locations that only deal with air?)
+																   ))
 		);
 	
 	/**
@@ -320,19 +328,19 @@ class fShippingRates
 	 * @param  string $shipping_company  The company to get shipping rates for
 	 * @param  string $api_login         The login to the rate api
 	 * @param  string $api_password      The password for the api account
-     * @param  string $api_key           The key to log into the api
+	 * @param  string $api_key           The key to log into the api
 	 * @return fShippingRates
 	 */
 	public function __construct($shipping_company, $api_login, $api_password, $api_key)
 	{
 		if (!in_array($shipping_company, array('ups'))) {
-			Core::toss('ProgrammerException', 'Invalid shipping company specified');       
+			fCore::toss('fProgrammerException', 'Invalid shipping company specified');       
 		}
 		
 		$this->shipping_company = $shipping_company;	
 		$this->api_login        = $api_login;    
-        $this->api_password     = $api_password;    
-        $this->api_key          = $api_key;    
+		$this->api_password     = $api_password;    
+		$this->api_key          = $api_key;    
 	}
 
 	
@@ -362,348 +370,350 @@ class fShippingRates
 	{
 		$this->test_mode = (boolean) $enable;
 	}
-    
-    
-    /**
-     * Set the ship from address line 1
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_address_line_1  The address being shipped from
-     * @return void
-     */
-    public function setShipFromAddressLine1($ship_from_address_line_1)
-    {
-        $this->request_info['ship_from_address_line_1'] = $ship_from_address_line_1;
-    }
-    
-    
-    /**
-     * Set the ship from address line 2
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_address_line_2  The address being shipped from
-     * @return void
-     */
-    public function setShipFromAddressLine2($ship_from_address_line_2)
-    {
-        $this->request_info['ship_from_address_line_2'] = $ship_from_address_line_2;
-    }
-    
-    
-    /**
-     * Set the ship from address line 3
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_address_line_3  The address being shipped from
-     * @return void
-     */
-    public function setShipFromAddressLine3($ship_from_address_line_3)
-    {
-        $this->request_info['ship_from_address_line_3'] = $ship_from_address_line_3;
-    }
-    
-    
-    /**
-     * Set the ship from city
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_city  The city being shipped from
-     * @return void
-     */
-    public function setShipFromCity($ship_from_city)
-    {
-        $this->request_info['ship_from_city'] = $ship_from_city;
-    }
-    
-    
-    /**
-     * Set the ship from province
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_province  The province being shipped from
-     * @return void
-     */
-    public function setShipFromProvince($ship_from_province)
-    {
-        $this->request_info['ship_from_province'] = $ship_from_province;
-    }
-    
-    
-    /**
-     * Set the ship from state
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_state  The state being shipped from
-     * @return void
-     */
-    public function setShipFromState($ship_from_state)
-    {
-        $this->request_info['ship_from_state'] = $ship_from_state;
-    }
-    
-    
-    /**
-     * Set the ship from zip code
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_zip_code  The zip code being shipped from
-     * @return void
-     */
-    public function setShipFromZipCode($ship_from_zip_code)
-    {
-        $this->request_info['ship_from_zip_code'] = $ship_from_zip_code;
-    }
-    
-    
-    /**
-     * Set the ship from country
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_from_country  The country being shipped from
-     * @return void
-     */
-    public function setShipFromCountry($ship_from_country)
-    {
-        $this->request_info['ship_from_country'] = $ship_from_country;
-    }
-    
-    
-    /**
-     * Set the ship to address line 1
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_address_line_1  The address being shipped from
-     * @return void
-     */
-    public function setShipToAddressLine1($ship_to_address_line_1)
-    {
-        $this->request_info['ship_to_address_line_1'] = $ship_to_address_line_1;
-    }
-    
-    
-    /**
-     * Set the ship to address line 2
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_address_line_2  The address being shipped from
-     * @return void
-     */
-    public function setShipToAddressLine2($ship_to_address_line_2)
-    {
-        $this->request_info['ship_to_address_line_2'] = $ship_to_address_line_2;
-    }
-    
-    
-    /**
-     * Set the ship to address line 3
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_address_line_3  The address being shipped from
-     * @return void
-     */
-    public function setShipToAddressLine3($ship_to_address_line_3)
-    {
-        $this->request_info['ship_to_address_line_3'] = $ship_to_address_line_3;
-    }
-    
-    
-    /**
-     * Set the ship to city
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_city  The city being shipped from
-     * @return void
-     */
-    public function setShipToCity($ship_to_city)
-    {
-        $this->request_info['ship_to_city'] = $ship_to_city;
-    }
-    
-    
-    /**
-     * Set the ship to province
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_province  The province being shipped from
-     * @return void
-     */
-    public function setShipToProvince($ship_to_province)
-    {
-        $this->request_info['ship_to_province'] = $ship_to_province;
-    }
-    
-    
-    /**
-     * Set the ship to state
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_state  The state being shipped from
-     * @return void
-     */
-    public function setShipToState($ship_to_state)
-    {
-        $this->request_info['ship_to_state'] = $ship_to_state;
-    }
-    
-    
-    /**
-     * Set the ship to zip code
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_zip_code  The zip code being shipped from
-     * @return void
-     */
-    public function setShipToZipCode($ship_to_zip_code)
-    {
-        $this->request_info['ship_to_zip_code'] = $ship_to_zip_code;
-    }
-    
-    
-    /**
-     * Set the ship to country
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $ship_to_country  The country being shipped from
-     * @return void
-     */
-    public function setShipToCountry($ship_to_country)
-    {
-        $this->request_info['ship_to_country'] = $ship_to_country;
-    }
-    
-    
-    /**
-     * Set the package type
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $package_type  The package type
-     * @return void
-     */
-    public function setPackageType($package_type)
-    {
-        $this->request_info['package_type'] = $package_type;
-    }
-    
-    
-    /**
-     * Set the pickup type
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $pickup_type  The pickup type
-     * @return void
-     */
-    public function setPickupType($pickup_type)
-    {
-        $this->request_info['pickup_type'] = $pickup_type;
-    }
-    
-    
-    /**
-     * Set the package weight
-     * 
-     * @since 1.0.0
-     * 
-     * @param  float $package_weight  The weight of the package being shipped
-     * @return void
-     */
-    public function setPackageWeight($package_weight)
-    {
-        $this->request_info['package_weight'] = $package_weight;
-    }
-    
-    
-    /**
-     * Set the weight units (LBS or KGS)
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $weight_units  The units that the weight is measured in
-     * @return void
-     */
-    public function setWeightUnits($weight_units)
-    {
-        $this->request_info['weight_units'] = $weight_units;
-    }	
-    
-    
-    /**
-     * Set the package length
-     * 
-     * @since 1.0.0
-     * 
-     * @param  float $package_length  The length of the package being shipped
-     * @return void
-     */
-    public function setPackageLength($package_length)
-    {
-        $this->request_info['package_length'] = $package_length;
-    }
-    
-    
-    /**
-     * Set the package height
-     * 
-     * @since 1.0.0
-     * 
-     * @param  float $package_height  The height of the package being shipped
-     * @return void
-     */
-    public function setPackageHeight($package_height)
-    {
-        $this->request_info['package_height'] = $package_height;
-    }
-    
-    
-    /**
-     * Set the package width
-     * 
-     * @since 1.0.0
-     * 
-     * @param  float $package_width  The width of the package being shipped
-     * @return void
-     */
-    public function setPackageWidth($package_width)
-    {
-        $this->request_info['package_width'] = $package_width;
-    }
-    
-    
-    /**
-     * Set the dimensions units (IN or CM)
-     * 
-     * @since 1.0.0
-     * 
-     * @param  string $dimensions_units  The units that the dimensions are measured in
-     * @return void
-     */
-    public function setDimensionsUnits($dimensions_units)
-    {
-        $this->request_info['dimensions_units'] = $dimensions_units;
-    }
+	
+	
+	/**
+	 * Set the ship from address line 1
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_address_line_1  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine1($ship_from_address_line_1)
+	{
+		$this->request_info['ship_from_address_line_1'] = $ship_from_address_line_1;
+	}
+	
+	
+	/**
+	 * Set the ship from address line 2
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_address_line_2  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine2($ship_from_address_line_2)
+	{
+		$this->request_info['ship_from_address_line_2'] = $ship_from_address_line_2;
+	}
+	
+	
+	/**
+	 * Set the ship from address line 3
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_address_line_3  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine3($ship_from_address_line_3)
+	{
+		$this->request_info['ship_from_address_line_3'] = $ship_from_address_line_3;
+	}
+	
+	
+	/**
+	 * Set the ship from city
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_city  The city being shipped from
+	 * @return void
+	 */
+	public function setShipFromCity($ship_from_city)
+	{
+		$this->request_info['ship_from_city'] = $ship_from_city;
+	}
+	
+	
+	/**
+	 * Set the ship from province
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_province  The province being shipped from
+	 * @return void
+	 */
+	public function setShipFromProvince($ship_from_province)
+	{
+		$this->request_info['ship_from_province'] = $ship_from_province;
+	}
+	
+	
+	/**
+	 * Set the ship from state
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_state  The state being shipped from
+	 * @return void
+	 */
+	public function setShipFromState($ship_from_state)
+	{
+		$this->request_info['ship_from_state'] = $ship_from_state;
+	}
+	
+	
+	/**
+	 * Set the ship from zip code
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_zip_code  The zip code being shipped from
+	 * @return void
+	 */
+	public function setShipFromZipCode($ship_from_zip_code)
+	{
+		$this->request_info['ship_from_zip_code'] = $ship_from_zip_code;
+	}
+	
+	
+	/**
+	 * Set the ship from country
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_from_country  The country being shipped from
+	 * @return void
+	 */
+	public function setShipFromCountry($ship_from_country)
+	{
+		$this->request_info['ship_from_country'] = $ship_from_country;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 1
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_address_line_1  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine1($ship_to_address_line_1)
+	{
+		$this->request_info['ship_to_address_line_1'] = $ship_to_address_line_1;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 2
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_address_line_2  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine2($ship_to_address_line_2)
+	{
+		$this->request_info['ship_to_address_line_2'] = $ship_to_address_line_2;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 3
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_address_line_3  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine3($ship_to_address_line_3)
+	{
+		$this->request_info['ship_to_address_line_3'] = $ship_to_address_line_3;
+	}
+	
+	
+	/**
+	 * Set the ship to city
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_city  The city being shipped from
+	 * @return void
+	 */
+	public function setShipToCity($ship_to_city)
+	{
+		$this->request_info['ship_to_city'] = $ship_to_city;
+	}
+	
+	
+	/**
+	 * Set the ship to province
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_province  The province being shipped from
+	 * @return void
+	 */
+	public function setShipToProvince($ship_to_province)
+	{
+		$this->request_info['ship_to_province'] = $ship_to_province;
+	}
+	
+	
+	/**
+	 * Set the ship to state
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_state  The state being shipped from
+	 * @return void
+	 */
+	public function setShipToState($ship_to_state)
+	{
+		$this->request_info['ship_to_state'] = $ship_to_state;
+	}
+	
+	
+	/**
+	 * Set the ship to zip code
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_zip_code  The zip code being shipped from
+	 * @return void
+	 */
+	public function setShipToZipCode($ship_to_zip_code)
+	{
+		$this->request_info['ship_to_zip_code'] = $ship_to_zip_code;
+	}
+	
+	
+	/**
+	 * Set the ship to country
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $ship_to_country  The country being shipped from
+	 * @return void
+	 */
+	public function setShipToCountry($ship_to_country)
+	{
+		$this->request_info['ship_to_country'] = $ship_to_country;
+	}
+	
+	
+	/**
+	 * Set the package type
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $package_type  The package type
+	 * @return void
+	 */
+	public function setPackageType($package_type)
+	{
+		$this->request_info['package_type'] = $package_type;
+	}
+	
+	
+	/**
+	 * Set the pickup type
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $pickup_type  The pickup type
+	 * @return void
+	 */
+	public function setPickupType($pickup_type)
+	{
+		$this->request_info['pickup_type'] = $pickup_type;
+	}
+	
+	
+	/**
+	 * Set the package weight
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  float $package_weight  The weight of the package being shipped
+	 * @return void
+	 */
+	public function setPackageWeight($package_weight)
+	{
+		$this->request_info['package_weight'] = $package_weight;
+	}
+	
+	
+	/**
+	 * Set the weight units (LBS or KGS)
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $weight_units  The units that the weight is measured in
+	 * @return void
+	 */
+	public function setWeightUnits($weight_units)
+	{
+		$this->request_info['weight_units'] = $weight_units;
+	}	
+	
+	
+	/**
+	 * Set the package length
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  float $package_length  The length of the package being shipped
+	 * @return void
+	 */
+	public function setPackageLength($package_length)
+	{
+		$this->request_info['package_length'] = $package_length;
+	}
+	
+	
+	/**
+	 * Set the package height
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  float $package_height  The height of the package being shipped
+	 * @return void
+	 */
+	public function setPackageHeight($package_height)
+	{
+		$this->request_info['package_height'] = $package_height;
+	}
+	
+	
+	/**
+	 * Set the package width
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  float $package_width  The width of the package being shipped
+	 * @return void
+	 */
+	public function setPackageWidth($package_width)
+	{
+		$this->request_info['package_width'] = $package_width;
+	}
+	
+	
+	/**
+	 * Set the dimensions units (IN or CM)
+	 * 
+	 * @since 1.0.0
+	 * 
+	 * @param  string $dimensions_units  The units that the dimensions are measured in
+	 * @return void
+	 */
+	public function setDimensionsUnits($dimensions_units)
+	{
+		$this->request_info['dimensions_units'] = $dimensions_units;
+	}
 	
 	
 	/**
 	 * Fetches the rates from the shipping company, will thrown an exception if something goes wrong
 	 * 
 	 * @since 1.0.0
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @return string  The transaction id returned by the gateway
 	 */
@@ -712,10 +722,10 @@ class fShippingRates
 		$this->validate();
 		
 		if ($this->shipping_company == 'ups') {
-            $result = $this->postUpsRequest();    
-        }
-        
-        return $result;
+			$result = $this->postUpsRequest();    
+		}
+		
+		return $result;
 	}
 
 	
@@ -745,6 +755,8 @@ class fShippingRates
 	 * 
 	 * @since 1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @return void
 	 */
 	public function validate()
@@ -759,18 +771,18 @@ class fShippingRates
 		
 		foreach ($field_info as $field => $info) {
 			// Handle simple required fields
-            if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
+			if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
 				$message .= fInflection::humanize($field) . ": Please enter a value\n";
 			
-            // Handle conditional required fields
-            } elseif (is_array($info['required'])) {
-                $keys = array_keys($info['required']);
-                $conditional_field  = $keys[0];
-                $conditional_values = $info['required'][$conditional_field];
-                if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
-                    $message .= fInflection::humanize($field) . ": Please enter a value\n";    
-                }
-            }	
+			// Handle conditional required fields
+			} elseif (is_array($info['required'])) {
+				$keys = array_keys($info['required']);
+				$conditional_field  = $keys[0];
+				$conditional_values = $info['required'][$conditional_field];
+				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
+					$message .= fInflection::humanize($field) . ": Please enter a value\n";    
+				}
+			}	
 		}
 		
 		foreach ($this->request_info as $field => $value) {
@@ -797,14 +809,14 @@ class fShippingRates
 		if ($message) {
 			fCore::toss('fValidationException', $message);	
 		}
-        
-        
-        // Make sure empty elements are set to NULL so we don't get php warnings
-        foreach ($field_info as $field => $info) {
-            if (!isset($this->request_info[$field])) {
-                $this->request_info[$field] = NULL;
-            }
-        }
+		
+		
+		// Make sure empty elements are set to NULL so we don't get php warnings
+		foreach ($field_info as $field => $info) {
+			if (!isset($this->request_info[$field])) {
+				$this->request_info[$field] = NULL;
+			}
+		}
 	}
 	
 	
@@ -818,137 +830,137 @@ class fShippingRates
 	private function postUpsRequest()
 	{
 		fCore::debug("Data being sent to API:\n" . fCore::dump($this->request_info), $this->debug);
-        
-        $post_data = <<<XMLDATA
+		
+		$post_data = <<<XMLDATA
 <?xml version="1.0" ?>
 <AccessRequest xml:lang="en-US">
-    <AccessLicenseNumber>{$this->api_key}</AccessLicenseNumber>
-    <UserId>{$this->api_login}</UserId>
-    <Password>{$this->api_password}</Password>
+	<AccessLicenseNumber>{$this->api_key}</AccessLicenseNumber>
+	<UserId>{$this->api_login}</UserId>
+	<Password>{$this->api_password}</Password>
 </AccessRequest>
 <?xml version="1.0" ?>
 <RatingServiceSelectionRequest>
-    <Request>
-         <RequestAction>Rate</RequestAction>
-         <RequestOption>Shop</RequestOption>
-    </Request>
-    <PickupType>
-         <Code>{$this->request_info['pickup_type']}</Code>
-    </PickupType>
-    <Shipment>
-         <Shipper>
-              <Address>
-                  <AddressLine1>{$this->request_info['ship_from_address_line_1']}</AddressLine1>
-                  <AddressLine2>{$this->request_info['ship_from_address_line_2']}</AddressLine2>
-                  <AddressLine3>{$this->request_info['ship_from_address_line_3']}</AddressLine3>
-                  <City>{$this->request_info['ship_from_city']}</City>
-                  <StateProvinceCode>{$this->request_info['ship_from_state']}{$this->request_info['ship_from_province']}</StateProvinceCode>
-                  <PostalCode>{$this->request_info['ship_from_zip_code']}</PostalCode>
-                  <CountryCode>{$this->request_info['ship_from_country']}</CountryCode>
-              </Address>
-         </Shipper>
-         <ShipTo>
-              <Address>
-                  <AddressLine1>{$this->request_info['ship_to_address_line_1']}</AddressLine1>
-                  <AddressLine2>{$this->request_info['ship_to_address_line_2']}</AddressLine2>
-                  <AddressLine3>{$this->request_info['ship_to_address_line_3']}</AddressLine3>
-                  <City>{$this->request_info['ship_to_city']}</City>
-                  <StateProvinceCode>{$this->request_info['ship_to_state']}{$this->request_info['ship_to_province']}</StateProvinceCode>
-                  <PostalCode>{$this->request_info['ship_to_zip_code']}</PostalCode>
-                  <CountryCode>{$this->request_info['ship_to_country']}</CountryCode>
-              </Address>
-         </ShipTo>
-         <ShipFrom>
-              <Address>
-                  <AddressLine1>{$this->request_info['ship_from_address_line_1']}</AddressLine1>
-                  <AddressLine2>{$this->request_info['ship_from_address_line_2']}</AddressLine2>
-                  <AddressLine3>{$this->request_info['ship_from_address_line_3']}</AddressLine3>
-                  <City>{$this->request_info['ship_from_city']}</City>
-                  <StateProvinceCode>{$this->request_info['ship_from_state']}{$this->request_info['ship_from_province']}</StateProvinceCode>
-                  <PostalCode>{$this->request_info['ship_from_zip_code']}</PostalCode>
-                  <CountryCode>{$this->request_info['ship_from_country']}</CountryCode>
-              </Address>
-         </ShipFrom>
-         <Package>
-              <PackagingType>
-                  <Code>{$this->request_info['package_type']}</Code>
-              </PackagingType>
-              <PackageWeight>
-                  <UnitOfMeasurement>
-                       <Code>{$this->request_info['weight_units']}</Code>
-                  </UnitOfMeasurement>
-                  <Weight>{$this->request_info['package_weight']}</Weight>
-              </PackageWeight>
-              <Dimensions>
-                  <UnitOfMeasurement>
-                       <Code>{$this->request_info['dimensions_units']}</Code>
-                  </UnitOfMeasurement>
-                  <Length>{$this->request_info['package_length']}</Length>
-                  <Width>{$this->request_info['package_width']}</Width>
-                  <Height>{$this->request_info['package_height']}</Height>
-              </Dimensions>
-         </Package>
-    </Shipment>
+	<Request>
+		 <RequestAction>Rate</RequestAction>
+		 <RequestOption>Shop</RequestOption>
+	</Request>
+	<PickupType>
+		 <Code>{$this->request_info['pickup_type']}</Code>
+	</PickupType>
+	<Shipment>
+		 <Shipper>
+			  <Address>
+				  <AddressLine1>{$this->request_info['ship_from_address_line_1']}</AddressLine1>
+				  <AddressLine2>{$this->request_info['ship_from_address_line_2']}</AddressLine2>
+				  <AddressLine3>{$this->request_info['ship_from_address_line_3']}</AddressLine3>
+				  <City>{$this->request_info['ship_from_city']}</City>
+				  <StateProvinceCode>{$this->request_info['ship_from_state']}{$this->request_info['ship_from_province']}</StateProvinceCode>
+				  <PostalCode>{$this->request_info['ship_from_zip_code']}</PostalCode>
+				  <CountryCode>{$this->request_info['ship_from_country']}</CountryCode>
+			  </Address>
+		 </Shipper>
+		 <ShipTo>
+			  <Address>
+				  <AddressLine1>{$this->request_info['ship_to_address_line_1']}</AddressLine1>
+				  <AddressLine2>{$this->request_info['ship_to_address_line_2']}</AddressLine2>
+				  <AddressLine3>{$this->request_info['ship_to_address_line_3']}</AddressLine3>
+				  <City>{$this->request_info['ship_to_city']}</City>
+				  <StateProvinceCode>{$this->request_info['ship_to_state']}{$this->request_info['ship_to_province']}</StateProvinceCode>
+				  <PostalCode>{$this->request_info['ship_to_zip_code']}</PostalCode>
+				  <CountryCode>{$this->request_info['ship_to_country']}</CountryCode>
+			  </Address>
+		 </ShipTo>
+		 <ShipFrom>
+			  <Address>
+				  <AddressLine1>{$this->request_info['ship_from_address_line_1']}</AddressLine1>
+				  <AddressLine2>{$this->request_info['ship_from_address_line_2']}</AddressLine2>
+				  <AddressLine3>{$this->request_info['ship_from_address_line_3']}</AddressLine3>
+				  <City>{$this->request_info['ship_from_city']}</City>
+				  <StateProvinceCode>{$this->request_info['ship_from_state']}{$this->request_info['ship_from_province']}</StateProvinceCode>
+				  <PostalCode>{$this->request_info['ship_from_zip_code']}</PostalCode>
+				  <CountryCode>{$this->request_info['ship_from_country']}</CountryCode>
+			  </Address>
+		 </ShipFrom>
+		 <Package>
+			  <PackagingType>
+				  <Code>{$this->request_info['package_type']}</Code>
+			  </PackagingType>
+			  <PackageWeight>
+				  <UnitOfMeasurement>
+					   <Code>{$this->request_info['weight_units']}</Code>
+				  </UnitOfMeasurement>
+				  <Weight>{$this->request_info['package_weight']}</Weight>
+			  </PackageWeight>
+			  <Dimensions>
+				  <UnitOfMeasurement>
+					   <Code>{$this->request_info['dimensions_units']}</Code>
+				  </UnitOfMeasurement>
+				  <Length>{$this->request_info['package_length']}</Length>
+				  <Width>{$this->request_info['package_width']}</Width>
+				  <Height>{$this->request_info['package_height']}</Height>
+			  </Dimensions>
+		 </Package>
+	</Shipment>
 </RatingServiceSelectionRequest>
 XMLDATA;
-            
-        if (!$this->test_mode) {
-            $server = 'https://www.ups.com/ups.app/xml/Rate';    
-        } else {
-            $server = 'https://wwwcie.ups.com/ups.app/xml/Rate';    
-        }
-        
-        $context_options = array (
-            'http' => array (
-                'method' => 'POST',
-                'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
-                         . "Content-Length: " . strlen($post_data) . "\r\n",
-                'content' => $post_data
-            )
-        );
-        $context = stream_context_create($context_options);
-        
-        // Suppress errors to handle the nasty message from php about IIS not properly terminating an SSL connection
-        $result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));  
-        
-        fCore::debug("Data received from gateway:\n" . $result, $this->debug);
-        
-        $xml = new SimpleXMLElement($result);
-        
-        if ($xml->Response->ResponseStatusCode != '1') {
+			
+		if (!$this->test_mode) {
+			$server = 'https://www.ups.com/ups.app/xml/Rate';    
+		} else {
+			$server = 'https://wwwcie.ups.com/ups.app/xml/Rate';    
+		}
+		
+		$context_options = array (
+			'http' => array (
+				'method' => 'POST',
+				'header'=> "Content-type: application/x-www-form-urlencoded\r\n"
+						 . "Content-Length: " . strlen($post_data) . "\r\n",
+				'content' => $post_data
+			)
+		);
+		$context = stream_context_create($context_options);
+		
+		// Suppress errors to handle the nasty message from php about IIS not properly terminating an SSL connection
+		$result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));  
+		
+		fCore::debug("Data received from gateway:\n" . $result, $this->debug);
+		
+		$xml = new SimpleXMLElement($result);
+		
+		if ($xml->Response->ResponseStatusCode != '1') {
 			fCore::toss('fUnexpectedException', 'There was an error retrieving the rates from the UPS API');   
-        }
-        
-        $service_names = array(
-            '01' => 'UPS Next Day Air',
-            '02' => 'UPS Second Day Air',
-            '03' => 'UPS Ground',
-            '07' => 'UPS Worldwide Express',
-            '08' => 'UPS Worldwide Expedited',
-            '11' => 'UPS Standard',
-            '12' => 'UPS Three-Day Select',
-            '13' => 'UPS Next Day Air Saver',
-            '14' => 'UPS Next Day Air Early A.M.',
-            '54' => 'UPS Worldwide Express Plus',
-            '59' => 'UPS Second Day Air A.M.',
-            '65' => 'UPS Saver'
-        );
-        
-        $output = array();
-        
-        $currency_symbol = array(
-            'USD' => '$',
-            'EUR' => '&euro;',
-            'GBP' => '&pound;'
-        );
-        
-        foreach ($xml->RatedShipment as $option) {
-            $output[$service_names[(string) $option->Service->Code]] = $currency_symbol[(string) $option->TotalCharges->CurrencyCode] . number_format((string) $option->TotalCharges->MonetaryValue, 2, '.', ',');    
-        }
-        
-        natcasesort($output);
-        
-        return $output;
+		}
+		
+		$service_names = array(
+			'01' => 'UPS Next Day Air',
+			'02' => 'UPS Second Day Air',
+			'03' => 'UPS Ground',
+			'07' => 'UPS Worldwide Express',
+			'08' => 'UPS Worldwide Expedited',
+			'11' => 'UPS Standard',
+			'12' => 'UPS Three-Day Select',
+			'13' => 'UPS Next Day Air Saver',
+			'14' => 'UPS Next Day Air Early A.M.',
+			'54' => 'UPS Worldwide Express Plus',
+			'59' => 'UPS Second Day Air A.M.',
+			'65' => 'UPS Saver'
+		);
+		
+		$output = array();
+		
+		$currency_symbol = array(
+			'USD' => '$',
+			'EUR' => '&euro;',
+			'GBP' => '&pound;'
+		);
+		
+		foreach ($xml->RatedShipment as $option) {
+			$output[$service_names[(string) $option->Service->Code]] = $currency_symbol[(string) $option->TotalCharges->CurrencyCode] . number_format((string) $option->TotalCharges->MonetaryValue, 2, '.', ',');    
+		}
+		
+		natcasesort($output);
+		
+		return $output;
 	}
 }
 

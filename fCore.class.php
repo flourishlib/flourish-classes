@@ -6,6 +6,8 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fCore
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
@@ -455,6 +457,11 @@ class fCore
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fPrintableException
+ * 
+ * @uses  fHTML
+ * @uses  fInflection
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -525,6 +532,8 @@ class fPrintableException extends Exception
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fExpectedException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -541,6 +550,8 @@ class fExpectedException extends fPrintableException
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fValidationException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -556,6 +567,10 @@ class fValidationException extends fExpectedException
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fUnexpectedException
+ * 
+ * @uses  fInflection
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
@@ -588,6 +603,8 @@ class fUnexpectedException extends fPrintableException
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fEnvironmentException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -604,6 +621,8 @@ class fEnvironmentException extends fUnexpectedException
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fConnectivityException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -619,6 +638,8 @@ class fConnectivityException extends fUnexpectedException
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fProgrammerException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]

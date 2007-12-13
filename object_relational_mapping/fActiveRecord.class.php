@@ -6,6 +6,22 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fActiveRecord
+ * 
+ * @uses  fCore
+ * @uses  fHTML
+ * @uses  fInflection
+ * @uses  fNoResultsException
+ * @uses  fNotFoundException
+ * @uses  fORM
+ * @uses  fORMDatabase
+ * @uses  fORMSchema
+ * @uses  fORMValidation
+ * @uses  fProgrammerException
+ * @uses  fRequest
+ * @uses  fResult
+ * @uses  fSet
+ * 
  * @todo  Add code to handle association via multiple columns
  * @todo  Add fFile support
  * @todo  Add fImage support
@@ -43,6 +59,8 @@ abstract class fActiveRecord
 	 * 
 	 * @since  1.0.0
 	 * 
+	 * @throws  fNotFoundException
+	 * 
 	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of (string) {field name} => (mixed) {value}.
 	 * @return fActiveRecord
 	 */
@@ -55,22 +73,22 @@ abstract class fActiveRecord
 		}
 		
 		// Handle loading by a result object passed via the fSet class
-        if (is_object($primary_key) && $primary_key instanceof fResult) {
+		if (is_object($primary_key) && $primary_key instanceof fResult) {
 			if ($this->loadFromIdentityMap($primary_key)) {
-                return;  
-            }
-            
-            $this->loadByResult($primary_key);
+				return;  
+			}
+			
+			$this->loadByResult($primary_key);
 			return;	
 		}
 		
 		// Handle loading an object from the database
 		if ($primary_key !== NULL) {
 			
-            if ($this->loadFromIdentityMap($primary_key)) {
-                return;  
-            }
-            
+			if ($this->loadFromIdentityMap($primary_key)) {
+				return;  
+			}
+			
 			// Check the primary keys
 			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($primary_keys) > 1 && array_keys($primary_key) != $primary_keys) || (sizeof($primary_keys) == 1 && !is_scalar($primary_key))) {
@@ -123,53 +141,55 @@ abstract class fActiveRecord
 	{
 	}
 	
-    
-    /**
-     * Tries to load the object from the fORM identity map
-     * 
-     * @since  1.0.0
-     * 
-     * @param  fResult|array $source  The data source for the primary key values
-     * @return boolean  If the load was successful
-     */
-    protected function loadFromIdentityMap($source)
-    {
-        if ($source instanceof fResult) {
-            $row = $source->current();
-        } else {
-            $row = $source;   
-        }
-        
-        $primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-        
-        // If we don't have a value for each primary key, we can't load
-        if (array_diff($primary_keys, array_keys($row)) !== array()) {
-            return FALSE;
-        } 
-        
-        // Build an array of just the primary key data
-        $pk_data = array();
-        foreach ($primary_keys as $primary_key) {
-            $pk_data[$primary_key] = $row[$primary_key];
-        } 
-        
-        $object = fORM::checkIdentityMap($this, $pk_data); 
-        
-        // A negative result implies this object has not been added to the indentity map yet
-        if(!$object) {
-            return FALSE;
-        } 
-        
-        // If we got a result back, it is the object we are creating
-        $this = $object;
-        return TRUE;
-    }
-    
+	
+	/**
+	 * Tries to load the object from the fORM identity map
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @param  fResult|array $source  The data source for the primary key values
+	 * @return boolean  If the load was successful
+	 */
+	protected function loadFromIdentityMap($source)
+	{
+		if ($source instanceof fResult) {
+			$row = $source->current();
+		} else {
+			$row = $source;   
+		}
+		
+		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		
+		// If we don't have a value for each primary key, we can't load
+		if (array_diff($primary_keys, array_keys($row)) !== array()) {
+			return FALSE;
+		} 
+		
+		// Build an array of just the primary key data
+		$pk_data = array();
+		foreach ($primary_keys as $primary_key) {
+			$pk_data[$primary_key] = $row[$primary_key];
+		} 
+		
+		$object = fORM::checkIdentityMap($this, $pk_data); 
+		
+		// A negative result implies this object has not been added to the indentity map yet
+		if(!$object) {
+			return FALSE;
+		} 
+		
+		// If we got a result back, it is the object we are creating
+		$this = $object;
+		return TRUE;
+	}
+	
 	
 	/**
 	 * Loads a record from the database
 	 * 
 	 * @since  1.0.0
+	 * 
+	 * @throws  fNotFoundException
 	 * 
 	 * @return void
 	 */
@@ -178,7 +198,8 @@ abstract class fActiveRecord
 		$sql = "SELECT * FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
 		
 		try {
-			$result = fORMDatabase::getInstance()->translatedQuery($sql, TRUE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result->tossIfNoResults();
 		} catch (fNoResultsException $e) {
 			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName(get_class($this)) . ' requested could not be found');
 		}
@@ -211,17 +232,17 @@ abstract class fActiveRecord
 				$this->values[$column] = $value;
 			}
 		}	
-        
-        
-        // Save this object to the identity map
-        $primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-        
-        $pk_data = array();
-        foreach ($primary_keys as $primary_key) {
-            $pk_data[$primary_key] = $row[$primary_key];
-        }
-        
-        fORM::saveToIdentityMap($this);
+		
+		
+		// Save this object to the identity map
+		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		
+		$pk_data = array();
+		foreach ($primary_keys as $primary_key) {
+			$pk_data[$primary_key] = $row[$primary_key];
+		}
+		
+		fORM::saveToIdentityMap($this);
 	}
 	
 	
@@ -340,7 +361,7 @@ abstract class fActiveRecord
 			$sql  = "SELECT " . join(', ', $rel_primary_keys) . " FROM " . $rel['related_table'];
 			$sql .= " WHERE " . $rel['related_column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
 			
-			$rows = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
+			$rows = fORMDatabase::getInstance()->translatedQuery($sql);
 			return fORMDatabase::condensePrimaryKeyArray($rows);	
 		}
 		
@@ -363,7 +384,7 @@ abstract class fActiveRecord
 			$sql .= fORMDatabase::createFromClause(fORM::tablize($this), $sql);
 			$sql .= " WHERE " . fORM::tablize($this) . '.' . $rel['column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
 			
-			$rows = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
+			$rows = fORMDatabase::getInstance()->translatedQuery($sql);
 			$this->values[$plural_related_column] = fORMDatabase::condensePrimaryKeyArray($rows);
 			return $this->values[$plural_related_column];
 		}
@@ -532,6 +553,8 @@ abstract class fActiveRecord
 	 * 
 	 * @since  1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @return void
 	 */
 	public function validate()
@@ -545,6 +568,8 @@ abstract class fActiveRecord
 	 * 
 	 * @since  1.0.0
 	 * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  boolean $use_transaction  If a transaction should be wrapped around the delete
 	 * @return void
 	 */
@@ -552,7 +577,7 @@ abstract class fActiveRecord
 	{
 		try {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("BEGIN", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("BEGIN");
 			}
 			
 			$this->validate();
@@ -580,7 +605,7 @@ abstract class fActiveRecord
 				$sql = $this->prepareUpdateSql($sql_values);
 			}
 			
-			$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			
 			/************************************
@@ -588,7 +613,7 @@ abstract class fActiveRecord
 			 */
 			
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("COMMIT", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("COMMIT");
 			}
 			
 			if (!$this->checkIfExists()) {
@@ -602,7 +627,7 @@ abstract class fActiveRecord
 		} catch (fPrintableException $e) {
 
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("ROLLBACK", FALSE);
+				fORMDatabase::getInstance()->translatedQuery("ROLLBACK");
 			}
 			
 			throw $e;	
@@ -631,7 +656,7 @@ abstract class fActiveRecord
 			
 			$sql = "DELETE FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
 			
-			$result = fORMDatabase::getInstance()->translatedQuery($sql, FALSE);
+			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			if ($use_transaction) {
 				fORMDatabase::getInstance()->translatedQuery("COMMIT");
@@ -747,6 +772,8 @@ if (!class_exists('fCore')) { }
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fNotFoundException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]

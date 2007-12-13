@@ -6,6 +6,12 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fFile
+ * 
+ * @uses  fCore
+ * @uses  fEnvironmentException
+ * @uses  fProgrammerException
+ * 
  * @todo  Test this class
  * 
  * @version  1.0.0 
@@ -59,50 +65,50 @@ class fFile
 			$this->exception = $e;   
 		}
 	}
-    
-    
-    /**
-     * When used in a string context, represents the file as the filename
-     * 
-     * @since  1.0.0
-     * 
-     * @return string  The filename of the file
-     */
-    public function __toString()
-    {
-        return $this->getFilename();
-    }
 	
 	
 	/**
-     * Gets the filename (i.e. does not include the directory)
-     * 
-     * @since  1.0.0
-     * 
-     * @return string  The filename of the file
-     */
-    public function getFilename()
-    {
-        if ($this->exception) { throw $this->exception; }
-        return self::getInfo($this->file, 'filename');    
-    }
-    
-    
-    /**
-     * Gets the directory the file is located in
-     * 
-     * @since  1.0.0
-     * 
-     * @return string  The directory containing the file
-     */
-    public function getDirectory()
-    {
-        if ($this->exception) { throw $this->exception; }
-        return self::getInfo($this->file, 'dirname');    
-    }
-    
-    
-    /**
+	 * When used in a string context, represents the file as the filename
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @return string  The filename of the file
+	 */
+	public function __toString()
+	{
+		return $this->getFilename();
+	}
+	
+	
+	/**
+	 * Gets the filename (i.e. does not include the directory)
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @return string  The filename of the file
+	 */
+	public function getFilename()
+	{
+		if ($this->exception) { throw $this->exception; }
+		return self::getInfo($this->file, 'filename');    
+	}
+	
+	
+	/**
+	 * Gets the directory the file is located in
+	 * 
+	 * @since  1.0.0
+	 * 
+	 * @return string  The directory containing the file
+	 */
+	public function getDirectory()
+	{
+		if ($this->exception) { throw $this->exception; }
+		return self::getInfo($this->file, 'dirname');    
+	}
+	
+	
+	/**
 	 * Gets the file's current path (directory and filename)
 	 * 
 	 * @since  1.0.0
@@ -173,8 +179,8 @@ class fFile
 	public function duplicate($new_directory)
 	{
 		if ($this->exception) { throw $this->exception; }
-        
-        if (substr($new_directory, -1) != '/' && substr($new_directory, -1) != '\\') {
+		
+		if (substr($new_directory, -1) != '/' && substr($new_directory, -1) != '\\') {
 			$new_directory .= '/';
 		}
 		

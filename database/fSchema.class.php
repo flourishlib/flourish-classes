@@ -6,6 +6,13 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
+ * @link  http://flourishlib.com/fSchema
+ * 
+ * @uses  fCore
+ * @uses  fDatabase
+ * @uses  fEnvironmentException
+ * @uses  fProgrammerException
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
@@ -497,18 +504,13 @@ class fSchema
 				break;
 		}
 		
-		$result = $this->database->query($sql, FALSE);
+		$result = $this->database->query($sql);
 
-		try {
-			foreach ($result as $row) {
-				$keys = array_keys($row);
-				array_push($this->tables, $row[$keys[0]]);
-			}                  
-			return $this->tables;
-
-		} catch (fPrintableException $e) {
-			$e->printMessage();	
-		}
+		foreach ($result as $row) {
+			$keys = array_keys($row);
+			array_push($this->tables, $row[$keys[0]]);
+		}                  
+		return $this->tables;
 	}
 	
 	
@@ -617,7 +619,7 @@ class fSchema
 					WHERE
 						c.table_name = '" . $table . "' AND
 						c.table_catalog = '" . $this->database->getDatabase() . "'";
-		$result = $this->database->query($sql, FALSE);
+		$result = $this->database->query($sql);
 		
 		foreach ($result as $row) {
 			$info = array();
@@ -726,7 +728,7 @@ class fSchema
 		
 		$column_info = array();
 		
-		$result     = $this->database->query('SHOW CREATE TABLE ' . $table, FALSE);
+		$result     = $this->database->query('SHOW CREATE TABLE ' . $table);
 		$row        = $result->fetchRow();
 		$create_sql = $row['Create Table'];
 
@@ -857,7 +859,7 @@ class fSchema
 					ORDER BY
 						pg_attribute.attnum,
 						pg_constraint.contype";
-		$result = $this->database->query($sql, FALSE);
+		$result = $this->database->query($sql);
 		
 		foreach ($result as $row) {
 			$info = array();
@@ -947,7 +949,7 @@ class fSchema
 			'text'				=> 'text'
 		);
 		
-		$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table), FALSE);
+		$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table));
 		$row        = $result->fetchRow();
 		$create_sql = $row['sql'];
 		
@@ -1126,7 +1128,7 @@ class fSchema
 						LOWER(kcu.constraint_name),
 						LOWER(kcu.column_name)";
 		
-		$result = $this->database->query($sql, FALSE);            
+		$result = $this->database->query($sql);            
 		
 		$last_name  = '';
 		$last_table = '';
@@ -1217,7 +1219,7 @@ class fSchema
 			$keys[$table]['foreign'] = array();
 			$keys[$table]['unique']  = array();
 			
-			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escapeString($table), 1, -1) . '`', FALSE);
+			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escapeString($table), 1, -1) . '`');
 			$row    = $result->fetchRow();
 			// Primary keys
 			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER); 
@@ -1338,7 +1340,7 @@ class fSchema
 						 con.conname,
 						 col.attname";
 		
-		$result = $this->database->query($sql, FALSE);            
+		$result = $this->database->query($sql);            
 		
 		$last_name  = '';
 		$last_table = '';
@@ -1429,7 +1431,7 @@ class fSchema
 			$keys[$table]['foreign'] = array();
 			$keys[$table]['unique']  = array();
 			
-			$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table), FALSE);
+			$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table));
 			$row        = $result->fetchRow();
 			$create_sql = $row['sql'];
 			
