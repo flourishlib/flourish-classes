@@ -481,8 +481,8 @@ class fDatabase
 				
 			case 'sqlite':
 				$sqlite_version = 0;
-				if (file_exists($database)) {
-					$database_handle  = fopen($database, 'r');
+				if (file_exists($this->database)) {
+					$database_handle  = fopen($this->database, 'r');
 					$database_version = fread($database_handle, 64);	
 					fclose($database_handle);
 					if (strpos($database_version, 'SQLite format 3') !== FALSE) {
