@@ -44,8 +44,6 @@ class fFile
 	/**
 	 * Creates an object to represent a file on the filesystem
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $file       The full path to the file
 	 * @param  object $exception  An exception that was tossed during the object creation process
 	 * @return fFile
@@ -70,8 +68,6 @@ class fFile
 	/**
 	 * When used in a string context, represents the file as the filename
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The filename of the file
 	 */
 	public function __toString()
@@ -82,8 +78,6 @@ class fFile
 	
 	/**
 	 * Gets the filename (i.e. does not include the directory)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return string  The filename of the file
 	 */
@@ -97,8 +91,6 @@ class fFile
 	/**
 	 * Gets the directory the file is located in
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The directory containing the file
 	 */
 	public function getDirectory()
@@ -110,8 +102,6 @@ class fFile
 	
 	/**
 	 * Gets the file's current path (directory and filename)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
 	 * @return string  The path (directory and filename) for the file
@@ -129,8 +119,6 @@ class fFile
 	
 	/**
 	 * Moves the file to the temp directory if it is not there already
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -151,8 +139,6 @@ class fFile
 	/**
 	 * Moves the file from the temp directory if it is not in the main directory already
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function moveFromTemp()
@@ -170,8 +156,6 @@ class fFile
 	
 	/**
 	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $new_directory  The directory to duplicate the file into
 	 * @return fFile  The new fFile object
@@ -210,8 +194,6 @@ class fFile
 	/**
 	 * Check to see if the current file is in the temp dir
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $dir  The directory to check for temp status 
 	 * @return boolean  If the file is in the temp dir
 	 */
@@ -223,8 +205,6 @@ class fFile
 	
 	/**
 	 * Creates a temp dir for the directory specified
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $directory  The directory
 	 * @return boolean  If the file is in the temp dir
@@ -241,8 +221,6 @@ class fFile
 	
 	/**
 	 * Returns a unique name for a file 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $file   The filename to check
 	 * @return string  The unique file name
@@ -263,8 +241,6 @@ class fFile
 	
 	/**
 	 * Returns info about a file including dirname, basename, extension and filename 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $file_path   The file to rename
 	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
@@ -293,8 +269,6 @@ class fFile
 	/**
 	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
 	 * 
-	 * @since 1.0.0
-	 *
 	 * @param  integer $bytes           The size of the file in bytes
 	 * @param  integer $decimal_places  The number of decimal places to display
 	 * @return string  
@@ -314,8 +288,6 @@ class fFile
 	/**
 	 * Takes a file size and converts it to bytes 
 	 * 
-	 * @since 1.0.0
-	 *
 	 * @param  string $size  The size to convert to bytes
 	 * @return integer  The number of bytes represented by the size  
 	 */

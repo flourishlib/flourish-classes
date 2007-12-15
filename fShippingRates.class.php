@@ -323,8 +323,6 @@ class fShippingRates
 	/**
 	 * Sets up to process rate requests
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $shipping_company  The company to get shipping rates for
 	 * @param  string $api_login         The login to the rate api
 	 * @param  string $api_password      The password for the api account
@@ -347,8 +345,6 @@ class fShippingRates
 	/**
 	 * Enabled debugging
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -360,8 +356,6 @@ class fShippingRates
 	
 	/**
 	 * Enters test mode, where transactions are sent to the test api url
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  boolean $enable  If test mode should be enabled
 	 * @return void
@@ -375,8 +369,6 @@ class fShippingRates
 	/**
 	 * Set the ship from address line 1
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_from_address_line_1  The address being shipped from
 	 * @return void
 	 */
@@ -388,8 +380,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship from address line 2
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_from_address_line_2  The address being shipped from
 	 * @return void
@@ -403,8 +393,6 @@ class fShippingRates
 	/**
 	 * Set the ship from address line 3
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_from_address_line_3  The address being shipped from
 	 * @return void
 	 */
@@ -416,8 +404,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship from city
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_from_city  The city being shipped from
 	 * @return void
@@ -431,8 +417,6 @@ class fShippingRates
 	/**
 	 * Set the ship from province
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_from_province  The province being shipped from
 	 * @return void
 	 */
@@ -444,8 +428,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship from state
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_from_state  The state being shipped from
 	 * @return void
@@ -459,8 +441,6 @@ class fShippingRates
 	/**
 	 * Set the ship from zip code
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_from_zip_code  The zip code being shipped from
 	 * @return void
 	 */
@@ -472,8 +452,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship from country
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_from_country  The country being shipped from
 	 * @return void
@@ -487,8 +465,6 @@ class fShippingRates
 	/**
 	 * Set the ship to address line 1
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_to_address_line_1  The address being shipped from
 	 * @return void
 	 */
@@ -500,8 +476,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship to address line 2
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_to_address_line_2  The address being shipped from
 	 * @return void
@@ -515,8 +489,6 @@ class fShippingRates
 	/**
 	 * Set the ship to address line 3
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_to_address_line_3  The address being shipped from
 	 * @return void
 	 */
@@ -528,8 +500,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship to city
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_to_city  The city being shipped from
 	 * @return void
@@ -543,8 +513,6 @@ class fShippingRates
 	/**
 	 * Set the ship to province
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_to_province  The province being shipped from
 	 * @return void
 	 */
@@ -556,8 +524,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship to state
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_to_state  The state being shipped from
 	 * @return void
@@ -571,8 +537,6 @@ class fShippingRates
 	/**
 	 * Set the ship to zip code
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $ship_to_zip_code  The zip code being shipped from
 	 * @return void
 	 */
@@ -584,8 +548,6 @@ class fShippingRates
 	
 	/**
 	 * Set the ship to country
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $ship_to_country  The country being shipped from
 	 * @return void
@@ -599,8 +561,6 @@ class fShippingRates
 	/**
 	 * Set the package type
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $package_type  The package type
 	 * @return void
 	 */
@@ -612,8 +572,6 @@ class fShippingRates
 	
 	/**
 	 * Set the pickup type
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $pickup_type  The pickup type
 	 * @return void
@@ -627,8 +585,6 @@ class fShippingRates
 	/**
 	 * Set the package weight
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  float $package_weight  The weight of the package being shipped
 	 * @return void
 	 */
@@ -640,8 +596,6 @@ class fShippingRates
 	
 	/**
 	 * Set the weight units (LBS or KGS)
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $weight_units  The units that the weight is measured in
 	 * @return void
@@ -655,8 +609,6 @@ class fShippingRates
 	/**
 	 * Set the package length
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  float $package_length  The length of the package being shipped
 	 * @return void
 	 */
@@ -668,8 +620,6 @@ class fShippingRates
 	
 	/**
 	 * Set the package height
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  float $package_height  The height of the package being shipped
 	 * @return void
@@ -683,8 +633,6 @@ class fShippingRates
 	/**
 	 * Set the package width
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  float $package_width  The width of the package being shipped
 	 * @return void
 	 */
@@ -697,8 +645,6 @@ class fShippingRates
 	/**
 	 * Set the dimensions units (IN or CM)
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $dimensions_units  The units that the dimensions are measured in
 	 * @return void
 	 */
@@ -710,8 +656,6 @@ class fShippingRates
 	
 	/**
 	 * Fetches the rates from the shipping company, will thrown an exception if something goes wrong
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -732,8 +676,6 @@ class fShippingRates
 	/**
 	 * Sets the default values for any fields that have not been manually assigned
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	private function setDefaultValues()
@@ -752,8 +694,6 @@ class fShippingRates
 	
 	/**
 	 * Makes sure all of the required fields are entered, and that data types are correct
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -822,8 +762,6 @@ class fShippingRates
 	
 	/**
 	 * Builds and sends the XML request to the UPS servers, returning an array of service names and prices
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return array  An associative array of service names and prices
 	 */

@@ -59,8 +59,6 @@ class fCore
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fCore
 	 */
 	private function __construct() { }
@@ -68,8 +66,6 @@ class fCore
 	
 	/**
 	 * Turns on or off global debugging
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
@@ -82,8 +78,6 @@ class fCore
 	
 	/**
 	 * Throws the exception type specified (if the class exists), otherwise throws a normal exception
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $exception_type  The type of exception to throw
 	 * @param  string $message         The exception message
@@ -104,8 +98,6 @@ class fCore
 	/**
 	 * Adds a callback for when certain types of exceptions are tossed
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string   $exception_type  The type of exception to call the callback on
 	 * @param  callback $callback        This callback
 	 * @return void
@@ -118,8 +110,6 @@ class fCore
 	
 	/**
 	 * Prints a debugging message if global or code-specific debugging is enabled 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $message   The debug message
 	 * @param  boolean $force     If debugging should be forced even when global debug is off
@@ -135,8 +125,6 @@ class fCore
 	
 	/**
 	 * Returns a string representation of any variable
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  mixed $data   The variable to dump
 	 * @return string  The string representation of the value
@@ -204,8 +192,6 @@ class fCore
 	/**
 	 * Prints the contents of a variable
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed $data   The data to show
 	 * @param  mixed $dump   If a dump of the variable should be shown
 	 * @return void
@@ -219,8 +205,6 @@ class fCore
 	
 	/**
 	 * Turns on special error handling. All errors that match the current error_reporting() level will be redirected to the destination.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $destination   The destination for the errors. An email or file.
 	 * @return void
@@ -237,8 +221,6 @@ class fCore
 	
 	/**
 	 * Turns on special exception handling. Any uncaught exception will be redirected to the destination specified, and the page will execute the $closing_code callback before exiting.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string   $destination    The destination for the exception. An email or file.
 	 * @param  callback $closing_code   This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
@@ -260,8 +242,6 @@ class fCore
 	
 	/**
 	 * Handles an error
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  integer $error_number   The error type
 	 * @param  string  $error_string   The message for the error
@@ -342,8 +322,6 @@ class fCore
 	/**
 	 * Handles an uncaught exception
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  object $exception  The uncaught exception to handle
 	 * @return void
 	 */
@@ -372,8 +350,6 @@ class fCore
 	
 	/**
 	 * Checks an error/exception destination
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $destination     The destination for the exception. An email or file.
 	 * @return string|boolean  'email', 'file' or FALSE
@@ -404,8 +380,6 @@ class fCore
 	
 	/**
 	 * Handles sending a message to a destination
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $destination     The destination for the error/exception. An email or file.
 	 * @param  string $message         The message to send to the destination
@@ -470,8 +444,6 @@ class fPrintableException extends Exception
 	/**
 	 * Prints the message inside of a div with the class being 'exception THIS_EXCEPTION_CLASS_NAME'
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function printMessage() 
@@ -489,8 +461,6 @@ class fPrintableException extends Exception
 	
 	/**
 	 * Gets the backtrace to currently called exception
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return string  A nicely formatted backtrace to this exception
 	 */
@@ -511,8 +481,6 @@ class fPrintableException extends Exception
 	
 	/**
 	 * Allows the message to be overwriten
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $new_message  The new message for the exception
 	 * @return void
@@ -579,8 +547,6 @@ class fUnexpectedException extends fPrintableException
 {
 	/**
 	 * Prints out a generic error message inside of a div with the class being 'exception f_printable_exception'
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */

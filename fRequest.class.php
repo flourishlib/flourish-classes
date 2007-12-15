@@ -34,8 +34,6 @@ class fRequest
 	/**
 	 * Prevent instantiation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fRequest
 	 */
 	private function __construct() { }
@@ -43,8 +41,6 @@ class fRequest
 	
 	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $parameter     The parameter to get the value of
 	 * @param  string $cast_to       Cast the value to this data type
@@ -86,8 +82,6 @@ class fRequest
 	/**
 	 * Indicated if the parameter specified is set in the $_POST or $_GET superglobals
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $parameter     The parameter to check
 	 * @return boolean  If the parameter is set
 	 */
@@ -99,8 +93,6 @@ class fRequest
 	
 	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order), restricting to a specific set of values
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $parameter      The parameter to get the value of
 	 * @param  array  $valid_values   The array of values that are permissible, if one is not selected, picks first
@@ -120,8 +112,6 @@ class fRequest
 	
 	/**
 	 * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $prefix   The prefix to filter by
 	 * @param  mixed  $key      If the field is an array, get the value corresponding to this key
@@ -164,8 +154,6 @@ class fRequest
 	
 	/**
 	 * Returns $_REQUEST and $_FILES to the state they were at before filter() was called
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */

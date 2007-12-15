@@ -106,8 +106,6 @@ class fSchema
 	/**
 	 * Sets the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  fDatabase $database  The fDatabase class
 	 * @return fSchema
 	 */
@@ -119,8 +117,6 @@ class fSchema
 	
 	/**
 	 * Sets a file to cache the info to
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $file  The cache file
 	 * @return void
@@ -152,8 +148,6 @@ class fSchema
 	/**
 	 * Makes sure the info is current, if not it deletes it so that all info is current
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	public function flushInfo()
@@ -173,8 +167,6 @@ class fSchema
 	
 	/**
 	 * Allows overriding of column info. Performs an array merge, so to erase a column set values to null.
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  array  $column_info  The modified column info
 	 * @param  string $table        The table to override
@@ -197,8 +189,6 @@ class fSchema
 	
 	/**
 	 * Allows overriding of key info. Replaces existing info, so provide full key info for type selected (or all).
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  array  $keys      The modified keys
 	 * @param  string $table     The table to override
@@ -268,8 +258,6 @@ class fSchema
 	 *   - boolean
 	 *   - blob
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
 	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', or 'auto_increment')
@@ -338,8 +326,6 @@ class fSchema
 	 *      )
 	 * )
 	 * </pre>
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $table     The table to return the keys for
 	 * @param  string $key_type  The type of key to return
@@ -417,8 +403,6 @@ class fSchema
 	 * )
 	 * </pre>
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table              The table to return the relationships for
 	 * @param  string $relationship_type  The type of relationship to return
 	 * @return array  An array of all relationships, or just the type specified (see method description for format)
@@ -454,8 +438,6 @@ class fSchema
 	
 	/**
 	 * Returns the tables in the current database
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return array  The tables in the current database
 	 */
@@ -517,8 +499,6 @@ class fSchema
 	/**
 	 * Gets the column info from the database for later access
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table  The table to fetch the column info for
 	 * @return void
 	 */
@@ -564,8 +544,6 @@ class fSchema
 	 *     ),...
 	 * )
 	 * </pre>
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
@@ -694,8 +672,6 @@ class fSchema
 	 * )
 	 * </pre>
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
@@ -803,8 +779,6 @@ class fSchema
 	 *     ),...
 	 * )
 	 * </pre>
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
@@ -922,8 +896,6 @@ class fSchema
 	 * )
 	 * </pre>
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
@@ -1001,8 +973,6 @@ class fSchema
 	/**
 	 * Merges the column info with the column info override
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	private function mergeColumnInfo()
@@ -1029,8 +999,6 @@ class fSchema
 	
 	/**
 	 * Gets the primary key, foreign key and unique key constraints from the database
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return void
 	 */
@@ -1085,8 +1053,6 @@ class fSchema
 	 *      )
 	 * )
 	 * </pre>
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
@@ -1204,8 +1170,6 @@ class fSchema
 	 * )
 	 * </pre>
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return array  The keys arrays for every table in the database (see method description for details)
 	 */
 	private function fetchMysqlKeys()
@@ -1279,8 +1243,6 @@ class fSchema
 	 *      )
 	 * )
 	 * </pre>
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
@@ -1416,8 +1378,6 @@ class fSchema
 	 * )
 	 * </pre>
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
 	private function fetchSqliteKeys()
@@ -1504,8 +1464,6 @@ class fSchema
 	/**
 	 * Merges the keys with the keys override
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	private function mergeKeys()
@@ -1525,8 +1483,6 @@ class fSchema
 	
 	/**
 	 * Finds the one-to-one, many-to-one, one-to-many and many-to-many relationships in the database
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return void
 	 */
@@ -1556,8 +1512,6 @@ class fSchema
 	
 	/**
 	 * Finds many-to-many relationship for the table specified
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
@@ -1593,8 +1547,6 @@ class fSchema
 	/**
 	 * Finds one-to-one and many-to-one relationship for the table specified
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
 	 */
@@ -1613,8 +1565,6 @@ class fSchema
 	
 	/**
 	 * Finds one-to-many relationship for the table specified
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
@@ -1636,8 +1586,6 @@ class fSchema
 	/**
 	 * Checks to see if a column is part of a single-column unique key
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table   The table the column is located in
 	 * @param  string $column  The column to check
 	 * @return boolean  If the column is part of a single-column unique key
@@ -1656,8 +1604,6 @@ class fSchema
 	/**
 	 * Checks to see if the table specified is a joining table
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table  The table to check
 	 * @return boolean  If the table is a joining table
 	 */
@@ -1675,8 +1621,6 @@ class fSchema
 	
 	/**
 	 * Stores the info in the cache file if set
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return void
 	 */

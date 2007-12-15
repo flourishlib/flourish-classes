@@ -16,8 +16,6 @@ class fHTML
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fHTML
 	 */
 	private function __construct() { }
@@ -25,8 +23,6 @@ class fHTML
 	
 	/**
 	 * Prints text, turning newlines into breaks as long as there aren't any block-level html tags
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $content  The content to display
 	 * @return void
@@ -40,8 +36,6 @@ class fHTML
 	/**
 	 * Converts all html entities to normal characters, using utf-8
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $content   The content to decode
 	 * @return string  The decoded content
 	 */
@@ -53,8 +47,6 @@ class fHTML
 	
 	/**
 	 * Converts all special characters to entites, using utf-8
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $content   The content to encode
 	 * @return string  The encoded content
@@ -80,8 +72,6 @@ class fHTML
 	
 	/**
 	 * Converts all characters that are not part of html tags or existing entites to entities 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $content   The content to make safe
 	 * @return string  The encoded html
@@ -112,8 +102,6 @@ class fHTML
 	/**
 	 * Converts accented characters to their non-accented counterparts 
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $content   The content to convert
 	 * @return string  The converted content
 	 */
@@ -140,8 +128,6 @@ class fHTML
 	
 	/**
 	 * Converts alphabetical entities to their numeric counterparts 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $content   The content to convert
 	 * @return string  The converted content

@@ -70,8 +70,6 @@ class fResult implements Iterator
 	/**
 	 * Sets the database type
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $extension  The type of the database
 	 * @return fResult
 	 */
@@ -87,8 +85,6 @@ class fResult implements Iterator
 	/**
 	 * Sets the sql used in the query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $sql  The sql used in the query
 	 * @return void
 	 */
@@ -101,8 +97,6 @@ class fResult implements Iterator
 	/**
 	 * Sets the result from the query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed $result  The result from the query
 	 * @return void
 	 */
@@ -114,8 +108,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Sets the number of rows returned
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  integer $num_rows  The number of rows returned
 	 * @return void
@@ -132,8 +124,6 @@ class fResult implements Iterator
 	/**
 	 * Sets the number of affected rows
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  integer $affected_rows  The number of affected rows
 	 * @return void
 	 */
@@ -145,8 +135,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Sets the auto incremented value
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  integer $auto_incremented_value  The auto incremented value
 	 * @return void
@@ -160,8 +148,6 @@ class fResult implements Iterator
 	/**
 	 * Returns the sql used in the query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The sql used in the query
 	 */
 	public function getSql()
@@ -172,8 +158,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns the result
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return mixed  The result of the query
 	 */
@@ -186,8 +170,6 @@ class fResult implements Iterator
 	/**
 	 * Returns the number of rows returned by the query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return integer  The number of rows returned by the query
 	 */
 	public function getNumRows()
@@ -198,8 +180,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns the number of rows affected by the query
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return integer  The number of rows affected by the query
 	 */
@@ -212,8 +192,6 @@ class fResult implements Iterator
 	/**
 	 * Returns the current position of the pointer in the result set
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return integer  The current position of the pointer in the result set
 	 */
 	public function getPointer()
@@ -225,8 +203,6 @@ class fResult implements Iterator
 	/**
 	 * Returns the last auto incremented value for this database connection. This may or may not be from the current query.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return integer  The auto incremented value
 	 */
 	public function getAutoIncrementedValue()
@@ -237,8 +213,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Throws an fNoResultException if the fResult did not return or affect any rows
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fNoResultsException
 	 * 
@@ -255,8 +229,6 @@ class fResult implements Iterator
 	/**
 	 * Returns all of the rows from the result set
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return array  The array of rows
 	 */
 	public function fetchAllRows()
@@ -271,8 +243,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fNoResultsException
 	 * 
@@ -310,8 +280,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Warns the user about bugs in the dblib driver for mssql, fixes some bugs
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
@@ -353,8 +321,6 @@ class fResult implements Iterator
 	/**
 	 * Seeks to the specified zero-based row for the specified SQL query.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @throws  fNoResultsException
 	 * 
 	 * @param  integer $row  The row number to seek to (zero-based)
@@ -390,8 +356,6 @@ class fResult implements Iterator
 	/**
 	 * Rewinds the query (used for iteration)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function rewind()
@@ -404,8 +368,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns the current row in the result set (used for iteration)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fNoResultsException
 	 * 
@@ -422,8 +384,6 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row number (used for iteration)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return integer  The current row number
 	 */
 	public function key()
@@ -434,8 +394,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Rewinds the next row in the result (used for iteration)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return array|null  The next row or null
 	 */
@@ -455,8 +413,6 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns if the query has any rows left (used for iteration)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */

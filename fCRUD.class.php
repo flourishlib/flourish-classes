@@ -54,8 +54,6 @@ class fCRUD
 	/**
 	 * Prevent instantiation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fCRUD
 	 */
 	private function __construct() { }
@@ -63,8 +61,6 @@ class fCRUD
 	
 	/**
 	 * Overrides the value of 'method' in $_REQUEST, $_POST, $_GET based on the 'method::METHOD_NAME' value in $_REQUEST, $_POST, $_GET. Useful with multiple submit buttons.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -93,8 +89,6 @@ class fCRUD
 	
 	/**
 	 * Removes lines from a fPrintableException based on the field name
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  fPrintableException $e          The exception to remove field names from
 	 * @param  string              $field,...  The fields to remove from the exception error message
@@ -128,8 +122,6 @@ class fCRUD
 	/**
 	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content 
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $content   The content to display
 	 * @param  string $class     The css class to apply
 	 * @return void
@@ -150,8 +142,6 @@ class fCRUD
 	
 	/**
 	 * Returns a css class name for a row. Will return even, odd, or highlighted if the two parameters are equal and added or updated is true
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  mixed $first_value    The first value to compare
 	 * @param  mixed $second_value   The second value to compare
@@ -175,8 +165,6 @@ class fCRUD
 	/**
 	 * Prints successful 'added', 'updated', 'deleted' messaging 
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $object_name  The name of the type of objects we are manipulating
 	 * @return void
 	 */
@@ -198,8 +186,6 @@ class fCRUD
 	
 	/**
 	 * Prints standard sub nav based on list/add/edit/delete 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $method         The currently selected method
 	 * @param  string  $parameter      The parameter for the primary key of the object we are managing
@@ -232,8 +218,6 @@ class fCRUD
 	/**
 	 * Gets the current column to sort by, defaults to first
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  array $possible_columns  The columns that can be sorted by, defaults to first
 	 * @return string  The column to sort by
 	 */
@@ -252,8 +236,6 @@ class fCRUD
 	/**
 	 * Gets the current sort direction
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $default_direction  The default direction, 'asc' or 'desc'
 	 * @return string  The direction, 'asc', or 'desc'
 	 */
@@ -271,8 +253,6 @@ class fCRUD
 	
 	/**
 	 * Gets the current value of a search field 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to
@@ -293,8 +273,6 @@ class fCRUD
 	
 	/**
 	 * Prints a sortable column header 
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $column       The column to create the sortable header for
 	 * @param  string $column_name  This will override the humanized version of the column
@@ -325,8 +303,6 @@ class fCRUD
 	/**
 	 * Prints a class attribute for a td if that td is part of the sorted column 
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $column   The column this td is part of
 	 * @return void
 	 */
@@ -340,8 +316,6 @@ class fCRUD
 	
 	/**
 	 * Indicates if something was just added, updated, or deleted
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -359,8 +333,6 @@ class fCRUD
 	/**
 	 * Return the previous sort direction, if one exists
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The previous sort direction
 	 */
 	static private function getPreviousSortDirection()
@@ -371,8 +343,6 @@ class fCRUD
 	
 	/**
 	 * Set the sort direction to be used on returning pages
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sort_direction  The sort direction to save
 	 * @return void
@@ -386,8 +356,6 @@ class fCRUD
 	/**
 	 * Return the previous sort column, if one exists
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The previous sort column
 	 */
 	static private function getPreviousSortColumn()
@@ -398,8 +366,6 @@ class fCRUD
 	
 	/**
 	 * Set the sort column to be used on returning pages
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sort_column  The sort column to save
 	 * @return void
@@ -413,8 +379,6 @@ class fCRUD
 	/**
 	 * Returns the previous values for the specified search field
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $column  The column to get the value for
 	 * @return mixed  The previous value
 	 */
@@ -426,8 +390,6 @@ class fCRUD
 	
 	/**
 	 * Sets a value for a search field
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $column  The column to save the value for
 	 * @param  mixed  $value   The value to save

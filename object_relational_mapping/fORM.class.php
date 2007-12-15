@@ -56,8 +56,6 @@ class fORM
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fORM
 	 */
 	private function __construct() { }
@@ -65,8 +63,6 @@ class fORM
 	
 	/**
 	 * Will dynamically create an fActiveRecord-based class for a database table. Should be called from __autoload
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $class_name   The name of the class to create
 	 * @return void
@@ -89,8 +85,6 @@ class fORM
 	/**
 	 * Checks to see if an object has been saved to the identity map
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed  $class             The name of the class, or an instance of it
 	 * @param  array  $primary_key_data  The primary key(s) for the instance
 	 * @return mixed  Will return FALSE if no match, or the instance of the object if a match occurs
@@ -98,7 +92,7 @@ class fORM
 	static public function checkIdentityMap($class, $primary_key_data)
 	{
 		$class = self::getClassName($class);
-		if (!isset(self::$indentity_map[$class])) {
+		if (!isset(self::$identity_map[$class])) {
 			return FALSE;   
 		}
 		$hash_key = self::createPrimaryKeyHash($primary_key_data);
@@ -112,8 +106,6 @@ class fORM
 	/**
 	 * Saves an object to the identity map
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed  $object            An instance of an fActiveRecord class
 	 * @param  array  $primary_key_data  The primary key(s) for the instance
 	 * @return void
@@ -121,7 +113,7 @@ class fORM
 	static public function saveToIdentityMap($object, $primary_key_data)
 	{              
 		$class = self::getClassName($object);
-		if (!isset(self::$indentity_map[$class])) {
+		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array();   
 		}
 		$hash_key = self::createPrimaryKeyHash($primary_key_data);
@@ -131,8 +123,6 @@ class fORM
 	
 	/**
 	 * Turns a primary key array into a hash key using md5
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  array  $primary_key_data  The primary key data to hash
 	 * @return string  An md5 of the sorted, serialized primary key data
@@ -150,8 +140,6 @@ class fORM
 	/**
 	 * Allows overriding of default (humanize-d class name) record names
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed  $class        The name of the class, or an instance of it
 	 * @param  string $record_name  The human version of the record
 	 * @return void
@@ -164,8 +152,6 @@ class fORM
 	
 	/**
 	 * Returns the record name for a class. The default record name is a humanize-d version of the class name.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  mixed $class   The class/class name to get the record name of
 	 * @return string  The record name for the class specified
@@ -182,8 +168,6 @@ class fORM
 	
 	/**
 	 * Allows overriding of default (humanize-d column) column names
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  mixed  $table        The table the column is located in, or an instance of the fActiveRecord class
 	 * @param  string $column       The database column
@@ -205,8 +189,6 @@ class fORM
 	/**
 	 * Returns the column name. The default column name is a humanize-d version of the column.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table   The table the column is located in
 	 * @param  string $column  The database column
 	 * @return string  The column name for the column specified
@@ -226,8 +208,6 @@ class fORM
 	/**
 	 * Allows non-standard (plural, underscore notation table name <-> singular, upper-camel case class name) table to class mapping
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table_name  The name of the database table
 	 * @param  string $class_name  The name of the class
 	 * @return void
@@ -240,8 +220,6 @@ class fORM
 	
 	/**
 	 * Takes a class name (or class) and turns it into a table name. Uses custom mapping if set.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  mixed $class   The name of the class or the class to extract the name from
 	 * @return string  The table name
@@ -260,8 +238,6 @@ class fORM
 	/**
 	 * Takes a table name and turns it into a class name. Uses custom mapping if set.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table_name   The table name
 	 * @return string  The class name
 	 */
@@ -277,8 +253,6 @@ class fORM
 	/**
 	 * Sets a flag indicating features have been set for a class
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed $class    The class/class name the features have been set for
 	 * @return void 
 	 */
@@ -291,8 +265,6 @@ class fORM
 	/**
 	 * Checks for the feature set flag on the specified class
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed $class    The class/class name to check
 	 * @return void 
 	 */
@@ -305,8 +277,6 @@ class fORM
 	/**
 	 * Takes a class name or class and returns the class name
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed $class    The class to get the name of
 	 * @return string  The class name 
 	 */

@@ -24,8 +24,6 @@ class fSet implements Iterator
 	/**
 	 * Creates a set by specifying the class to create plus the where conditions and order bys
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $class_name        The class to create the fSet of
 	 * @param  array  $where_conditions  The column => value comparisons for the where clause
 	 * @param  array  $order_bys         The column => direction values to use for sorting
@@ -57,8 +55,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Creates a Set from an SQL statement
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $class_name  The type of object to create
 	 * @param  string $sql         The sql to get the primary keys to create a Set from
@@ -96,8 +92,6 @@ class fSet implements Iterator
 	/**
 	 * Sets the contents of the set
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $class_name     The type of records to create
 	 * @param  object $result_object  The primary keys or fResult object of the records to create
 	 * @return fSet
@@ -115,8 +109,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Calls sortCallback with the appropriate method
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
@@ -136,8 +128,6 @@ class fSet implements Iterator
 	/**
 	 * Returns the class name of the record being stored
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The class name of the records in the set
 	 */
 	public function getClassName()
@@ -148,8 +138,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Returns all of the records in the set
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return array  The records in the set
 	 */
@@ -165,8 +153,6 @@ class fSet implements Iterator
 	/**
 	 * Returns the number of records in the set
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return integer  The number of records in the set
 	 */
 	public function getSizeOf()
@@ -177,8 +163,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Throws a fEmptySetException if the fSet is empty
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fEmptySetException
 	 * 
@@ -194,8 +178,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Sorts the set by the return value of a method from the class created
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $method_name  The method to call on each object to get the value to sort
 	 * @param  string $direction    Either 'asc' or 'desc'
@@ -224,8 +206,6 @@ class fSet implements Iterator
 	/**
 	 * Creates all records for the primary keys provided
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	private function createAllRecords()
@@ -239,8 +219,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Does the action of sorting records
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  object $a       Record a
 	 * @param  object $b       Record b
@@ -256,8 +234,6 @@ class fSet implements Iterator
 	/**
 	 * Rewinds the set to the first record (used for iteration)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function rewind()
@@ -268,8 +244,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Returns the current record in the set (used for iteration)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return object  The current record
 	 */
@@ -285,8 +259,6 @@ class fSet implements Iterator
 	/**
 	 * Returns the primary key for the current record (used for iteration)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return mixed  The primay key of the current record
 	 */
 	public function key()
@@ -298,8 +270,6 @@ class fSet implements Iterator
 	/**
 	 * Moves to the next record in the set (used for iteration)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function next()
@@ -310,8 +280,6 @@ class fSet implements Iterator
 	
 	/**
 	 * Returns if the set has any records left (used for iteration)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */

@@ -505,8 +505,6 @@ class fFinancialTransaction
 	/**
 	 * Sets up to process a transaction
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $gateway          The payment gateway to use
 	 * @param  string $account_number   The account number/id
 	 * @param  string $transaction_key  The account (transaction) key
@@ -527,8 +525,6 @@ class fFinancialTransaction
 	/**
 	 * Enabled debugging
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -541,8 +537,6 @@ class fFinancialTransaction
 	/**
 	 * Enters test mode, where transactions don't transfer money
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  boolean $enable  If test mode should be enabled
 	 * @return void
 	 */
@@ -554,8 +548,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Adds a field => value pair to the transaction. Used for gateway-specific fields.
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $field  The field name
 	 * @param  mixed  $value  The gateway-formatted value
@@ -570,8 +562,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the account number for the gateway
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $account_number  The account number for the gateway
 	 * @return void
 	 */
@@ -583,8 +573,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the transaction key for the gateway
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $transaction_key  The transaction key for the gateway
 	 * @return void
@@ -598,8 +586,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the invoice number
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $invoice_number  The invoice number
 	 * @return void
 	 */
@@ -611,8 +597,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the invoice description
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $invoice_description  The invoice description
 	 * @return void
@@ -626,8 +610,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the amount (including tax and shipping)
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  float $amount  The total price
 	 * @return void
 	 */
@@ -639,8 +621,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the tax amount
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  float $tax_amount  The total for taxes
 	 * @return void
@@ -654,8 +634,6 @@ class fFinancialTransaction
 	/**
 	 * Sets if the transaction is tax exempt
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  boolean $tax_exempt  If the transaction is tax exempt
 	 * @return void
 	 */
@@ -667,8 +645,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the shipping amount
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  float $shipping_amount  The total for shipping
 	 * @return void
@@ -682,8 +658,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the duty amount
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  float $duty_amount  The total for duty
 	 * @return void
 	 */
@@ -695,8 +669,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the currency code
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $currency_code  The currency code for the transaction
 	 * @return void
@@ -710,8 +682,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the transaction type
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $transaction_type  The type of transaction being performed
 	 * @return void
 	 */
@@ -723,8 +693,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the transaction id
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $transaction_id  The transaction indentifier
 	 * @return void
@@ -738,8 +706,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the send customer email flag
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  boolean $send_customer_email  If the customer should be emailed a confirmation of the transaction
 	 * @return void
 	 */
@@ -751,8 +717,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the customer id
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $customer_id  If customer's identifier
 	 * @return void
@@ -766,8 +730,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the customer ip address
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $customer_ip_address  The customer's IP address
 	 * @return void
 	 */
@@ -779,8 +741,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the customer's email address
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $customer_email  The customer's email address
 	 * @return void
@@ -794,8 +754,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the credit card number
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $credit_card_number  The customer's credit card number
 	 * @return void
 	 */
@@ -807,8 +765,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the credit card expiration date
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $credit_card_expiration_date  The customer's credit card number
 	 * @return void
@@ -822,8 +778,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the credit card cvv code
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $credit_card_cvv_coode  The cvv code on the customer's credit card
 	 * @return void
 	 */
@@ -835,8 +789,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the billing first name
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $billing_first_name  The first name for billing
 	 * @return void
@@ -850,8 +802,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the billing last name
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $billing_last_name  The last name for billing
 	 * @return void
 	 */
@@ -863,8 +813,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the billing company
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $billing_company  The company for billing
 	 * @return void
@@ -878,8 +826,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the billing address
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $billing_address  The address for billing
 	 * @return void
 	 */
@@ -891,8 +837,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the billing city
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $billing_city  The city for billing
 	 * @return void
@@ -906,8 +850,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the billing state
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $billing_state  The state for billing
 	 * @return void
 	 */
@@ -919,8 +861,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the billing country
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $billing_country  The country for billing
 	 * @return void
@@ -934,8 +874,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the billing zip code
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $billing_zip_code  The zip code for billing
 	 * @return void
 	 */
@@ -947,8 +885,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the billing phone number
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $billing_phone_number  The phone number for billing
 	 * @return void
@@ -962,8 +898,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the billing fax number
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $billing_fax_number  The fax number for billing
 	 * @return void
 	 */
@@ -975,8 +909,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the shipping first name
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $shipping_first_name  The first name for shipping
 	 * @return void
@@ -990,8 +922,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the shipping last name
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $shipping_last_name  The last name for shipping
 	 * @return void
 	 */
@@ -1003,8 +933,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the shipping company
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $shipping_company  The company for shipping
 	 * @return void
@@ -1018,8 +946,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the shipping address
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $shipping_address  The address for shipping
 	 * @return void
 	 */
@@ -1031,8 +957,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the shipping city
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $shipping_city  The city for shipping
 	 * @return void
@@ -1046,8 +970,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the shipping state
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $shipping_state  The state for shipping
 	 * @return void
 	 */
@@ -1059,8 +981,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Sets the shipping country
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $shipping_country  The country for shipping
 	 * @return void
@@ -1074,8 +994,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the shipping zip code
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $shipping_zip_code  The zip code for shipping
 	 * @return void
 	 */
@@ -1087,8 +1005,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Runs the transaction, will thrown an exception if something goes wrong
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -1135,8 +1051,6 @@ class fFinancialTransaction
 	/**
 	 * Sets the default values for any fields that have not been manually assigned
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	private function setDefaultValues()
@@ -1157,8 +1071,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Makes sure all of the required fields are entered, and that data types are correct
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -1219,8 +1131,6 @@ class fFinancialTransaction
 	/**
 	 * Returns the date specified as mm/yyyy
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $date  The date to be standardized
 	 * @return string  The standardized date or FALSE if there was an error
 	 */
@@ -1248,8 +1158,6 @@ class fFinancialTransaction
 	/**
 	 * Returns the number as
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $value  The value to convert into a money format
 	 * @return string  The standardized monetary value or FALSE if there was an error
 	 */
@@ -1272,8 +1180,6 @@ class fFinancialTransaction
 	/**
 	 * Sets up some default post fields for the gateway specified
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  array $post_data  The array of field => value combinations that is actually going to be posted
 	 * @return array  The $post_data with the gateway specific fields added
 	 */
@@ -1289,8 +1195,6 @@ class fFinancialTransaction
 	/**
 	 * If test mode is enabled, modifies the transaction info accordingly
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return void
 	 */
 	private function handleTestMode()
@@ -1305,8 +1209,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Takes the transaction info, posts to the gateway and returns the result
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return string  The unparsed result from the gateway
 	 */
@@ -1351,8 +1253,6 @@ class fFinancialTransaction
 	
 	/**
 	 * Translates the friendly field names into the gateway specific field names
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @return array  The translated transaction info
 	 */

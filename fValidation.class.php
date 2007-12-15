@@ -21,8 +21,6 @@ class fValidation
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fValidation
 	 */
 	private function __construct() { }
@@ -33,8 +31,6 @@ class fValidation
 	 * 
 	 * Will throw an exception with a field name on each line
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  string $field,...  Any number of fields to check
 	 * @return void
 	 */
@@ -60,8 +56,6 @@ class fValidation
 	/**
 	 * Validates form fields specified to make sure no new lines are contained, thus preventing email injection attacks
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  string $field,...  Any number of fields to check
 	 * @return void
 	 */

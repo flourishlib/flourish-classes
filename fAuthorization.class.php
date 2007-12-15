@@ -42,8 +42,6 @@ class fAuthorization
 	/**
 	 * Prevent instantiation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fAuthorization
 	 */
 	private function __construct() { }
@@ -51,8 +49,6 @@ class fAuthorization
 	
 	/**
 	 * Sets the authorization levels to use for level checking
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  array $levels  An associative array of (string) {level} => (integer), for each level
 	 * @return void
@@ -66,8 +62,6 @@ class fAuthorization
 	/**
 	 * Sets the login page to redirect users to
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $url  The URL of the login page
 	 * @return void
 	 */
@@ -79,8 +73,6 @@ class fAuthorization
 	
 	/**
 	 * Sets the authorization level for the logged in user
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $level  The logged in user's auth level
 	 * @return void
@@ -95,8 +87,6 @@ class fAuthorization
 	/**
 	 * Gets the authorization level for the logged in user
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The logged in user's auth level
 	 */
 	static public function getUserAuthLevel()
@@ -107,8 +97,6 @@ class fAuthorization
 	
 	/**
 	 * Checks to see if the logged in user has the specified auth level
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $level  The level to check against the logged in user's level
 	 * @return boolean  If the user has the required auth level
@@ -134,8 +122,6 @@ class fAuthorization
 	
 	/**
 	 * Redirect the user to the login page if they do not have the auth level required
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $level  The level to check against the logged in user's level
 	 * @return void
@@ -166,8 +152,6 @@ class fAuthorization
 	 * The resource name or the permission may be the single character '*'
 	 * which acts as a wildcard.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  array $acls  The logged in user's ACLs (see method description for format)
 	 * @return void
 	 */
@@ -180,8 +164,6 @@ class fAuthorization
 	/**
 	 * Gets the ACLs for the logged in user
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return array  The logged in user's ACLs
 	 */
 	static public function getUserACLs()
@@ -192,8 +174,6 @@ class fAuthorization
 	
 	/**
 	 * Checks to see if the logged in user meets the requirements of the ACL specified
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $resource    The resource we are checking permissions for
 	 * @param  string $permission  The permission to require from the user
@@ -230,8 +210,6 @@ class fAuthorization
 	/**
 	 * Redirect the user to the login page if they do not have the permissions required
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $resource    The resource we are checking permissions for
 	 * @param  string $permission  The permission to require from the user
 	 * @return void
@@ -251,8 +229,6 @@ class fAuthorization
 	/**
 	 * Checks to see if the user has an auth level or ACLs defined
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return boolean  If the user is logged in
 	 */
 	static public function checkLoggedIn()
@@ -267,8 +243,6 @@ class fAuthorization
 	
 	/**
 	 * Redirect the user to the login page if they do not have an auth level or ACLs
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -287,8 +261,6 @@ class fAuthorization
 	/**
 	 * Destroys the user's auth level and/or ACLs
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	static public function destroyUserInfo()
@@ -300,8 +272,6 @@ class fAuthorization
 	
 	/**
 	 * Redirects the user to the login page
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -317,8 +287,6 @@ class fAuthorization
 	/**
 	 * Makes sure a login page has been defined
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	static private function validateLoginPage()
@@ -331,8 +299,6 @@ class fAuthorization
 	
 	/**
 	 * Makes sure auth levels have been set, and that the specified auth level is valid
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $level  The level to validate
 	 * @return void

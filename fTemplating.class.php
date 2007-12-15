@@ -34,8 +34,6 @@ class fTemplating
 	/**
 	 * Initializes this templating engine
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $root   The filesystem path to use when accessing relative files
 	 * @return fTemplating
 	 */
@@ -60,8 +58,6 @@ class fTemplating
 	/**
 	 * Set a value for an element
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $element   The element to set
 	 * @param  mixed  $value     The value for the element
 	 * @return void
@@ -75,8 +71,6 @@ class fTemplating
 	/**
 	 * Gets the value of an element
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @param  string $element   The element to get
 	 * @return mixed  The value of the element specified, or NULL if it has not been set
 	 */
@@ -88,8 +82,6 @@ class fTemplating
 	
 	/**
 	 * Includes the element specified (element must be set through setElement() first)
-	 * 
-	 * @since 1.0.0
 	 * 
 	 * @param  string $element   The element to include
 	 * @return void

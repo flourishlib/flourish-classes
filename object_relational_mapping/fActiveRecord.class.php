@@ -57,8 +57,6 @@ abstract class fActiveRecord
 	/**
 	 * Creates a record
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @throws  fNotFoundException
 	 * 
 	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of (string) {field name} => (mixed) {value}.
@@ -119,8 +117,6 @@ abstract class fActiveRecord
 	/**
 	 * Enabled debugging
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -133,8 +129,6 @@ abstract class fActiveRecord
 	/**
 	 * Allows the programmer to set features for the class
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	protected function configure()
@@ -143,33 +137,32 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Tries to load the object from the fORM identity map
-	 * 
-	 * @since  1.0.0
+	 * Tries to load the object (via references to class vars) from the fORM identity map
 	 * 
 	 * @param  fResult|array $source  The data source for the primary key values
 	 * @return boolean  If the load was successful
 	 */
 	protected function loadFromIdentityMap($source)
 	{
-		if ($source instanceof fResult) {
+        if ($source instanceof fResult) {
 			$row = $source->current();
 		} else {
 			$row = $source;   
-		}
-		
+        }
+        
 		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-		
+        settype($primary_keys, 'array');
+        
 		// If we don't have a value for each primary key, we can't load
-		if (array_diff($primary_keys, array_keys($row)) !== array()) {
+		if (is_array($row) && array_diff($primary_keys, array_keys($row)) !== array()) {
 			return FALSE;
-		} 
-		
-		// Build an array of just the primary key data
-		$pk_data = array();
-		foreach ($primary_keys as $primary_key) {
-			$pk_data[$primary_key] = $row[$primary_key];
-		} 
+        }
+        
+        // Build an array of just the primary key data
+        $pk_data = array();
+        foreach ($primary_keys as $primary_key) {
+            $pk_data[$primary_key] = (is_array($row)) ? $row[$primary_key] : $row;
+        }
 		
 		$object = fORM::checkIdentityMap($this, $pk_data); 
 		
@@ -179,15 +172,15 @@ abstract class fActiveRecord
 		} 
 		
 		// If we got a result back, it is the object we are creating
-		$this = $object;
-		return TRUE;
+        $this->values     = &$object->values;
+        $this->old_values = &$object->old_values;
+        $this->debug      = &$object->debug;
+        return TRUE;
 	}
 	
 	
 	/**
 	 * Loads a record from the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fNotFoundException
 	 * 
@@ -210,8 +203,6 @@ abstract class fActiveRecord
 	
 	/**
 	 * Loads a record from the database directly from a result object
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  fResult $result  The result object to use for loading the current object
 	 * @return void
@@ -236,20 +227,19 @@ abstract class fActiveRecord
 		
 		// Save this object to the identity map
 		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-		
+		settype($primary_keys, 'array');
+        
 		$pk_data = array();
 		foreach ($primary_keys as $primary_key) {
 			$pk_data[$primary_key] = $row[$primary_key];
 		}
 		
-		fORM::saveToIdentityMap($this);
+		fORM::saveToIdentityMap($this, $pk_data);
 	}
 	
 	
 	/**
 	 * Dynamically creates setColumn() and getColumn() for columns in the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
@@ -297,8 +287,6 @@ abstract class fActiveRecord
 	/**
 	 * Sets the values from this record via values from $_GET, $_POST and $_FILES
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	public function populate()
@@ -325,8 +313,6 @@ abstract class fActiveRecord
 	/**
 	 * Retrieves a value from the record.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @return mixed  The value for the column specified
 	 */
@@ -339,8 +325,6 @@ abstract class fActiveRecord
 	
 	/**
 	 * Retrieves an array of values from one-to-many and many-to-many relationships
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $plural_related_column   The plural form of the related column name
 	 * @return array  An array of the related column values
@@ -396,8 +380,6 @@ abstract class fActiveRecord
 	/**
 	 * Builds the object for the related class specified
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $related_class   The related class name
 	 * @return fActiveRecord  An instace of the class specified
 	 */
@@ -423,8 +405,6 @@ abstract class fActiveRecord
 	
 	/**
 	 * Retrieves a set of values from one-to-many and many-to-many relationships
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $plural_related_column   The plural form of the related column name
 	 * @return fSet  The set of objects from the specified column
@@ -461,8 +441,6 @@ abstract class fActiveRecord
 	 *   - varchar, char, text columns: will run through fHTML::encodeHtml()
 	 *   - date, time, timestamp: takes 1 parameter, php date() formatting string
 	 *   - boolean: will return 'Yes' or 'No'
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  If php date() formatting string for date values
@@ -501,8 +479,6 @@ abstract class fActiveRecord
 	/**
 	 * Sets a value to the record.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $column  The column to set the value to
 	 * @param  mixed $value    The value to set
 	 * @return void
@@ -521,8 +497,6 @@ abstract class fActiveRecord
 	
 	/**
 	 * Sets values for many-to-many relationships
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $plural_related_column   The plural form of the related column name
 	 * @param  array $values                   The values for the column specified
@@ -551,8 +525,6 @@ abstract class fActiveRecord
 	/**
 	 * Validates the record against the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @return void
@@ -565,8 +537,6 @@ abstract class fActiveRecord
 	
 	/**
 	 * Stores a record in the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -638,8 +608,6 @@ abstract class fActiveRecord
 	/**
 	 * Delete a record from the database, does not destroy the object
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $use_transaction  If a transaction should be wrapped around the delete
 	 * @return void
 	 */
@@ -675,8 +643,6 @@ abstract class fActiveRecord
 	/**
 	 * Checks to see if the record exists in the database
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @return boolean  If the record exists in the database
 	 */
 	protected function checkIfExists()
@@ -694,8 +660,6 @@ abstract class fActiveRecord
 	/**
 	 * Creates the WHERE clause for the current primary key data
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @return string  The WHERE clause for the current primary key data
 	 */
 	protected function getPrimaryKeyWhereClause()
@@ -715,8 +679,6 @@ abstract class fActiveRecord
 	/**
 	 * Creates the SQL to insert this record
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  array $sql_values    The sql-formatted values for this record
 	 * @return string  The sql insert statement
 	 */
@@ -742,8 +704,6 @@ abstract class fActiveRecord
 	/**
 	 * Creates the SQL to update this record
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  array $sql_values    The sql-formatted values for this record
 	 * @return string  The sql update statement
 	 */

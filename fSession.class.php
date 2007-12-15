@@ -27,8 +27,6 @@ class fSession
 	/**
 	 * Prevent instantiation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fSession
 	 */
 	private function __construct() { }
@@ -36,8 +34,6 @@ class fSession
 	
 	/**
 	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -54,8 +50,6 @@ class fSession
 	/**
 	 * Opens the session for writing
 	 * 
-	 * @since  1.0.0
-	 *  
 	 * @return void
 	 */
 	static public function open()
@@ -70,8 +64,6 @@ class fSession
 	/**
 	 * Closes the session for writing
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return void
 	 */
 	static public function close()
@@ -85,8 +77,6 @@ class fSession
 	
 	/**
 	 * Destroys the session, removing all traces
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -105,8 +95,6 @@ class fSession
 	/**
 	 * Sets data to the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $key      The name to save the value under
 	 * @param  mixed  $value    The value to store
 	 * @param  string $prefix   The prefix to stick before the key
@@ -124,8 +112,6 @@ class fSession
 	/**
 	 * Gets data from the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $key       The name to get the value for
 	 * @param  mixed  $default   The default value to use if the requested key is not set
 	 * @param  string $prefix    The prefix to stick before the key
@@ -142,8 +128,6 @@ class fSession
 	
 	/**
 	 * Gets all of the data from the session superglobal, filtering by fSession:: (can be overridden)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $prefix   The prefix to filter key => values by
 	 * @return array  All of the session values for the prefix specified

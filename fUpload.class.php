@@ -54,8 +54,6 @@ class fUpload
 	/**
 	 * Set the overwrite mode, either 'rename' or 'overwrite'
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $mode   Either 'rename' or 'overwrite'
 	 * @return void
 	 */
@@ -70,8 +68,6 @@ class fUpload
 	
 	/**
 	 * Sets the file types accepted
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $type   'image', 'zip', 'non_php', 'any'
 	 * @return void
@@ -102,8 +98,6 @@ class fUpload
 	/**
 	 * Sets the file mime types accepted, one per parameter
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $mime_type   The mime type accepted 
 	 * @return void
 	 */
@@ -117,8 +111,6 @@ class fUpload
 	/**
 	 * Sets the file mime types accepted, one per parameter
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $size   The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit 
 	 * @return void
 	 */
@@ -130,8 +122,6 @@ class fUpload
 	
 	/**
 	 * Handles a file upload
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -190,8 +180,6 @@ class fUpload
 	/**
 	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  array $file_array   The array of information from the $_FILES array 
 	 * @param  string $field       The field the file was uploaded through
 	 * @param  string $directory   The directory the file is being uploaded into
@@ -249,8 +237,6 @@ class fUpload
 	
 	/**
 	 * Handles cleaning out the temp directory for the directory specified. Removed all files over 6 hours old.
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $directory   The directory to clean the temp dir for
 	 * @return void

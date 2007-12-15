@@ -28,8 +28,6 @@ class fORMSchema
 	/**
 	 * Private class constructor to prevent instantiating the class
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fORMSchema
 	 */
 	private function __construct() { }
@@ -37,8 +35,6 @@ class fORMSchema
 	
 	/**
 	 * Return the instance of the fSchema class
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return fSchema  The schema instance
 	 */
@@ -53,8 +49,6 @@ class fORMSchema
 	
 	/**
 	 * Turns on schema caching, using fUnexpectedException flushing
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $cache_file  The file to use for caching
 	 * @return void

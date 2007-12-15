@@ -51,8 +51,6 @@ class fSQLTranslation
 	/**
 	 * Sets up the class and creates functions for sqlite databases
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed  $connection  The connection resource or PDO object
 	 * @param  string $type        The type of the database ('mssql', 'mysql', 'postgresql', or 'sqlite')
 	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', or 'pdo')
@@ -85,8 +83,6 @@ class fSQLTranslation
 	/**
 	 * Enabled debugging
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -98,8 +94,6 @@ class fSQLTranslation
 	
 	/**
 	 * Translates SimpleSQL into the dialect for the current Database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
@@ -139,8 +133,6 @@ class fSQLTranslation
 	
 	/**
 	 * Translates basic syntax differences of the current database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
@@ -221,8 +213,6 @@ class fSQLTranslation
 	/**
 	 * Translates more complicated inconsistencies
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
 	 */
@@ -247,8 +237,6 @@ class fSQLTranslation
 	
 	/**
 	 * Translates custom date/time functions to the current Database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
@@ -319,8 +307,6 @@ class fSQLTranslation
 	
 	/**
 	 * Translates the structure of create table statements to the database specific syntax
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
@@ -410,8 +396,6 @@ class fSQLTranslation
 	/**
 	 * Creates a trigger for sqlite that prevents inserting or updating to values the violate a foreign key constraint
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $referencing_table      The table that contains the foreign key
 	 * @param  string $referencing_column     The column the foriegn key constraint is on
 	 * @param  string $referenced_table       The table the foreign key references
@@ -451,8 +435,6 @@ class fSQLTranslation
 	
 	/**
 	 * Creates a trigger for sqlite that handles an on delete clause
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $referencing_table      The table that contains the foreign key
 	 * @param  string $referencing_column     The column the foriegn key constraint is on
@@ -497,8 +479,6 @@ class fSQLTranslation
 	/**
 	 * Creates a trigger for sqlite that handles an on update clause
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $referencing_table      The table that contains the foreign key
 	 * @param  string $referencing_column     The column the foriegn key constraint is on
 	 * @param  string $referenced_table       The table the foreign key references
@@ -542,8 +522,6 @@ class fSQLTranslation
 	/**
 	 * Outdents SQL for nice printing
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
 	 */
@@ -579,8 +557,6 @@ class fSQLTranslation
 	
 	/**
 	 * Adds a number of math functions to SQLite that MySQL and PostgreSQL have by default
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -621,8 +597,6 @@ class fSQLTranslation
 	/**
 	 * Callback for custom SQLite function; calculates the cotangent of a number
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  numeric $x   The number to calculate the cotangent of
 	 * @return numeric  The contangent of $x
 	 */
@@ -634,8 +608,6 @@ class fSQLTranslation
 	
 	/**
 	 * Callback for custom SQLite function; calculates the log to a specific base of a number
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  integer $base   The base for the log calculation
 	 * @param  numeric $num    The number to calculate the logarithm of
@@ -649,8 +621,6 @@ class fSQLTranslation
 	
 	/**
 	 * Callback for custom SQLite function; changes the sign of a number
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  numeric $x   The number to change the sign of
 	 * @return numeric  $x with a changed sign

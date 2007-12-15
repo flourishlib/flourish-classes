@@ -125,8 +125,6 @@ class fDatabase
 	/**
 	 * Establishes a connection to the database.
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
 	 * @param  string  $database  Name (or file for sqlite) of database
 	 * @param  string  $username  Database username
@@ -158,8 +156,6 @@ class fDatabase
 	/**
 	 * Enabled debugging
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -175,8 +171,6 @@ class fDatabase
 	/**
 	 * Gets the database type
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The database type
 	 */
 	public function getType()
@@ -187,8 +181,6 @@ class fDatabase
 	
 	/**
 	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return string  The php extension used for database interaction
 	 */
@@ -201,8 +193,6 @@ class fDatabase
 	/**
 	 * Gets the name of the database currently connected to
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The name of the database currently connected to
 	 */
 	public function getDatabase()
@@ -213,8 +203,6 @@ class fDatabase
 	
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $sql  An SQL statement
 	 * @return string  The translated SQL
@@ -230,8 +218,6 @@ class fDatabase
 	
 	/**
 	 * Executes one or more sql queries
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $sql  One or more SQL statements
 	 * @return fResult|array  The fResult object(s) for the query
@@ -282,8 +268,6 @@ class fDatabase
 	/**
 	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped string
 	 */
@@ -308,8 +292,6 @@ class fDatabase
 	/**
 	 * Unescapes strings coming out of the database, included for completeness
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to unescape 
 	 * @return string  The unescaped string
 	 */
@@ -321,8 +303,6 @@ class fDatabase
 	
 	/**
 	 * Escapes blobs to prevent breaking queries, includes surrounding quotes when appropriate
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped blob
@@ -348,8 +328,6 @@ class fDatabase
 	/**
 	 * Unescapes blobs coming out of the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to unescape 
 	 * @return binary  The binary data from the blob
 	 */
@@ -365,8 +343,6 @@ class fDatabase
 
 	/**
 	 * Translates a boolean to a value the database will understand
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The boolean to escape
 	 * @return string  The database equivalent of the boolean passed
@@ -384,8 +360,6 @@ class fDatabase
 	/**
 	 * Interprets a boolean coming out of the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to interpret 
 	 * @return boolean  The boolean equivalent of the value passed
 	 */
@@ -397,8 +371,6 @@ class fDatabase
 	
 	/**
 	 * Escapes a timestamp for insertion into the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped timestamp
@@ -412,8 +384,6 @@ class fDatabase
 	/**
 	 * Unescapes timestamps coming out of the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to unescape 
 	 * @return string  The timestamp
 	 */
@@ -425,8 +395,6 @@ class fDatabase
 	
 	/**
 	 * Escapes a date for insertion into the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped date
@@ -440,8 +408,6 @@ class fDatabase
 	/**
 	 * Unescapes dates coming out of the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to unescape 
 	 * @return string  The date
 	 */
@@ -453,8 +419,6 @@ class fDatabase
 	
 	/**
 	 * Escapes a time for insertion into the database
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped time
@@ -468,8 +432,6 @@ class fDatabase
 	/**
 	 * Unescapes times coming out of the database
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $value  The value to unescape 
 	 * @return string  The time
 	 */
@@ -481,8 +443,6 @@ class fDatabase
 	
 	/**
 	 * Figures out which extension to use for the database type selected
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -551,8 +511,6 @@ class fDatabase
 	
 	/**
 	 * Actually connects to the database specified
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */
@@ -642,8 +600,6 @@ class fDatabase
 	/**
 	 * Takes in a string of SQL that contains multiple queries and returns any array of them
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $sql  The string of SQL to parse for queries
 	 * @return array  The individual SQL queries
 	 */
@@ -690,8 +646,6 @@ class fDatabase
 	/**
 	 * Executes an sql query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
@@ -724,8 +678,6 @@ class fDatabase
 	
 	/**
 	 * Checks to see if an SQL error occured
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  fResult $result  The result object for the query
 	 * @return void
@@ -765,8 +717,6 @@ class fDatabase
 	/**
 	 * Sets the number of rows returned by the query
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
@@ -792,8 +742,6 @@ class fDatabase
 	
 	/**
 	 * Sets the number of rows affected by the query
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  fResult      $result         The result object for the query
 	 * @param  PDOStatement $pdo_statement  The PDOStatement object for the PDO extension
@@ -828,8 +776,6 @@ class fDatabase
 	
 	/**
 	 * Will grab the auto incremented value from the last query (if one exists)
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  fResult $result  The result object for the query
 	 * @return void
@@ -893,8 +839,6 @@ class fDatabase
 	
 	/**
 	 * Closes open db connection
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return void
 	 */

@@ -62,8 +62,6 @@ class fORMValidation
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fORMValidation
 	 */
 	private function __construct() { }
@@ -72,8 +70,6 @@ class fORMValidation
 	/**
 	 * Validates values for an fActiveRecord object
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table       The table to validate against
@@ -157,8 +153,6 @@ class fORMValidation
 	/**
 	 * Adds a conditional validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed  $table                The database table (or fActiveRecord class) this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
@@ -187,8 +181,6 @@ class fORMValidation
 	/**
 	 * Adds a one-or-more validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed $table    The database table (or fActiveRecord class) the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
@@ -215,8 +207,6 @@ class fORMValidation
 	/**
 	 * Add an only-one validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed $table     The database table (or fActiveRecord class) the column exists in
 	 * @param  array $columns   The columns to check
 	 * @return void
@@ -243,8 +233,6 @@ class fORMValidation
 	/**
 	 * Add a many-to-many validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed  $table                    The database table (or fActiveRecord class) to add the rule for
 	 * @param  string $plural_related_column    The plural form of the related column
 	 * @return void
@@ -269,8 +257,6 @@ class fORMValidation
 	/**
 	 * Adds a column format rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  mixed  $table         The database table (or fActiveRecord class) this validation rule applies to
 	 * @param  string $column        The column to check the format of
 	 * @param  string $format_type   The format for the column: email, link
@@ -297,8 +283,6 @@ class fORMValidation
 	/**
 	 * Makes sure a record with the same primary keys is not already in the database
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The database table the column exists in
@@ -350,8 +334,6 @@ class fORMValidation
 	/**
 	 * Validates a value against the database schema
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The database table the column exists in
@@ -386,8 +368,6 @@ class fORMValidation
 	/**
 	 * Validates a value against the database data type
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table        The database table the column exists in
 	 * @param  string $column       The column to check
 	 * @param  mixed  $value        The value to check
@@ -428,8 +408,6 @@ class fORMValidation
 	/**
 	 * Validates values against unique constraints
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table        The database table
 	 * @param  string $column       The column to check
 	 * @param  array  $values       The values to check
@@ -471,8 +449,6 @@ class fORMValidation
 	/**
 	 * Validates values against foreign key constraints
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @param  string $table        The database table
 	 * @param  string $column       The column to check
 	 * @param  array  $values       The values to check
@@ -507,8 +483,6 @@ class fORMValidation
 	/**
 	 * Validates against a conditional validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table                The database table this validation rule applies to
@@ -546,8 +520,6 @@ class fORMValidation
 	/**
 	 * Validates against a one-or-more validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table          The database table the columns exists in
@@ -582,8 +554,6 @@ class fORMValidation
 	/**
 	 * Validates against an only-one validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table          The database table the column exists in
@@ -617,8 +587,6 @@ class fORMValidation
 	/**
 	 * Validates against a many-to-many validation rule
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  array  $values                 An associative array of all values for the record
@@ -636,8 +604,6 @@ class fORMValidation
 	/**
 	 * Checks a value to make sure it is the right format
 	 *
-	 * @since 1.0.0
-	 * 
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table the column is located in

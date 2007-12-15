@@ -28,8 +28,6 @@ class fURL
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @since 1.0.0
-	 * 
 	 * @return fURL
 	 */
 	private function __construct() { }
@@ -37,8 +35,6 @@ class fURL
 	
 	/**
 	 * Sets the no_extensions for fURL::getScript()
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  boolean $no_extensions  If no extensions should be returned via fURL::getScript()
 	 * @return void
@@ -52,8 +48,6 @@ class fURL
 	/**
 	 * Returns the requested url
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The requested URL
 	 */
 	static public function get()
@@ -66,8 +60,6 @@ class fURL
 	/**
 	 * Returns the current url including query string
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The url with query string
 	 */
 	static public function getWithQueryString()
@@ -78,8 +70,6 @@ class fURL
 	
 	/**
 	 * Returns the current php script filename
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @return string  The current php script
 	 */
@@ -92,8 +82,6 @@ class fURL
 	/**
 	 * Returns the current domain name, with protcol prefix
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return string  The current domain name (with protocol prefix)
 	 */
 	static public function getDomain()
@@ -104,8 +92,6 @@ class fURL
 	
 	/**
 	 * Replaces a value in the querystring
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string|array  $parameter       The get parameter
 	 * @param  string|array  $value           The value to set the parameter to
@@ -137,8 +123,6 @@ class fURL
 	/**
 	 * Removes one or more parameters from the query string, pass as many parameter names as you want
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $parameter  A parameter to remove from the query string
 	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
 	 */
@@ -155,8 +139,6 @@ class fURL
 	/**
 	 * Changes a string into a nice-url style string
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $string  The string to convert
 	 * @return void
 	 */
@@ -170,8 +152,6 @@ class fURL
 	
 	/**
 	 * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $url  The url to redirect to
 	 * @return void

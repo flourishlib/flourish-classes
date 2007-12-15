@@ -31,8 +31,6 @@ class fORMDatabase
 	/**
 	 * Private class constructor to prevent instantiating the class
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fORMDatabase
 	 */
 	private function __construct() { }
@@ -40,8 +38,6 @@ class fORMDatabase
 	
 	/**
 	 * Initializes a singleton instance of the fDatabase class
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string  $type      The type of the database
 	 * @param  string  $database  Name of database
@@ -60,8 +56,6 @@ class fORMDatabase
 	/**
 	 * Return the instance of the fDatabase class
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fDatabase  The database instance
 	 */
 	static public function getInstance()
@@ -75,8 +69,6 @@ class fORMDatabase
 	
 	/**
 	 * Prepares a value for a DB call based on database schema
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $table                The table to store the value
 	 * @param  string $column               The column to store the value in
@@ -129,8 +121,6 @@ class fORMDatabase
 	/**
 	 * Prepares a value for a DB call based on variable type
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  mixed  $value                The value to prepare
 	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
 	 * @return string  The SQL-ready representation of the value
@@ -167,8 +157,6 @@ class fORMDatabase
 	/**
 	 * Prepends the table_name. to the values of the array
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table  The table to prepend
 	 * @param  array  $array  The array to modify
 	 * @return array  The modified array
@@ -190,8 +178,6 @@ class fORMDatabase
 	/**
 	 * Prepends the table_name. to the keys of the array
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table  The table to prepend
 	 * @param  array  $array  The array to modify
 	 * @return array  The modified array
@@ -212,8 +198,6 @@ class fORMDatabase
 	
 	/**
 	 * Finds all of the table names in the sql and creates a from clause
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $table  The main table to be queried
 	 * @param  string $sql    The SQL to insert the from clause into
@@ -373,8 +357,6 @@ class fORMDatabase
 	 *   - 'column|column2|column3~' => VALUE,                    // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
 	 *   - 'column|column2|column3~' => array(VALUE, VALUE2,...), // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
 	 * @param  array  $conditions  The array of conditions (see method description for format)
 	 * @return string  The SQL WHERE clause
@@ -479,8 +461,6 @@ class fORMDatabase
 	 *   - (string) {expression}  => 'asc'
 	 *   - (string) {expression}  => 'desc'
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
 	 * @param  array  $order_bys  The array of order bys to use
 	 * @return string  The SQL ORDER BY clause
@@ -514,8 +494,6 @@ class fORMDatabase
 	
 	/**
 	 * Takes an array of rows containing primary keys for a table. If there is only a single primary key, condense the array of rows into single-dimensional array
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  array $rows   The rows of primary keys
 	 * @return array  A possibly condensed array of primary keys

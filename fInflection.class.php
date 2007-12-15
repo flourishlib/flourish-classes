@@ -74,8 +74,6 @@ class fInflection
 	/**
 	 * Prevent instantiation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @return fInflection
 	 */
 	private function __construct() { }
@@ -83,8 +81,6 @@ class fInflection
 	
 	/**
 	 * Returns the plural version of the singular noun
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $singular_noun  The singular noun to pluralize
 	 * @return string  The pluralized noun
@@ -104,8 +100,6 @@ class fInflection
 	/**
 	 * Returns the singular version of the plural noun
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $plural_noun  The plural noun to singularize
 	 * @return string  The singularized noun
 	 */
@@ -123,8 +117,6 @@ class fInflection
 	
 	/**
 	 * Splits the last word off of a camel case or unscore notation string
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $string  The string to split the word from
 	 * @return array  The first element is the beginning part of the string, the second element is the last word
@@ -154,8 +146,6 @@ class fInflection
 	/**
 	 * Adds a custom singular->plural and plural->singular rule
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $singular  The singular version of the noun
 	 * @param  string $plural    The plural version of the noun
 	 * @return void
@@ -172,8 +162,6 @@ class fInflection
 	/**
 	 * Converts a camelCase string to underscore notation
 	 * 
-	 * @since  1.0.0
-	 * 
 	 * @param  string $string   The string to convert
 	 * @return string  The converted string
 	 */
@@ -185,8 +173,6 @@ class fInflection
 	
 	/**
 	 * Converts an underscore notation string to camelCase
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $string   The string to convert          
 	 * @param  boolean $upper   If the camel case should be upper camel case
@@ -204,8 +190,6 @@ class fInflection
 	
 	/**
 	 * Makes an underscore notation string into a human-friendly string
-	 * 
-	 * @since  1.0.0
 	 * 
 	 * @param  string $string   The string to humanize
 	 * @return string  The converted string
