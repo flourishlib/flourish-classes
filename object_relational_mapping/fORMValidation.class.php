@@ -73,8 +73,8 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table       The table to validate against
-	 * @param  array  $values      The values to validate
-	 * @param  array  $old_values  The old values for the record
+	 * @param  array  &$values      The values to validate
+	 * @param  array  &$old_values  The old values for the record
 	 * @return void
 	 */
 	static public function validate($table, &$values, &$old_values)
@@ -286,8 +286,8 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The database table the column exists in
-	 * @param  array  $values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
-	 * @param  array  $old_values   The old values for the record
+	 * @param  array  &$values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
+	 * @param  array  &$old_values   The old values for the record
 	 * @return void
 	 */
 	static public function checkPrimaryKeys($table, &$values, &$old_values)
@@ -338,7 +338,7 @@ class fORMValidation
 	 * 
 	 * @param  string $table        The database table the column exists in
 	 * @param  string $column       The column to check
-	 * @param  array  $values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
+	 * @param  array  &$values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @return void
 	 */
 	static public function checkAgainstSchema($table, $column, &$values)
@@ -410,7 +410,7 @@ class fORMValidation
 	 *
 	 * @param  string $table        The database table
 	 * @param  string $column       The column to check
-	 * @param  array  $values       The values to check
+	 * @param  array  &$values       The values to check
 	 * @return void
 	 */
 	static private function checkUniqueConstraints($table, $column, &$values)
@@ -451,7 +451,7 @@ class fORMValidation
 	 *
 	 * @param  string $table        The database table
 	 * @param  string $column       The column to check
-	 * @param  array  $values       The values to check
+	 * @param  array  &$values       The values to check
 	 * @return void
 	 */
 	static private function checkForeignKeyConstraints($table, $column, &$values)
@@ -486,7 +486,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table                The database table this validation rule applies to
-	 * @param  array  $record_values        An associative array of all values for the record
+	 * @param  array  &$record_values        An associative array of all values for the record
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
@@ -523,7 +523,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table          The database table the columns exists in
-	 * @param  array  $record_values  An associative array of all values for the record
+	 * @param  array  &$record_values  An associative array of all values for the record
 	 * @param  array  $columns        The columns to check
 	 * @return void
 	 */
@@ -557,7 +557,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table          The database table the column exists in
-	 * @param  array  $record_values  An associative array of all values for the record
+	 * @param  array  &$record_values  An associative array of all values for the record
 	 * @param  array  $columns        The columns to check
 	 * @return void
 	 */
@@ -589,7 +589,7 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  array  $values                 An associative array of all values for the record
+	 * @param  array  &$values                 An associative array of all values for the record
 	 * @param  string $plural_related_column  The plural name of the related column
 	 * @return void
 	 */
@@ -607,7 +607,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table the column is located in
-	 * @param  array  $values       An associative array of all values for the record
+	 * @param  array  &$values       An associative array of all values for the record
 	 * @param  string $column       The column to check
 	 * @param  string $format_type  The type of formatting the column should have
 	 * @return void
