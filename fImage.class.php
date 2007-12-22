@@ -56,7 +56,7 @@ class fImage extends fFile
 		
 		try {
 
-			self::checkIfImageCompatible($image);
+			self::checkIfImageIncompatible($image);
 			parent::__construct($image, $exception);
 				
 		} catch (fExpectedException $e) {
@@ -175,7 +175,7 @@ class fImage extends fFile
 				
 				// *nix will give an error if you try to use the windows dir flags, otherwise we found the win binaries
 				} elseif (stripos($win_output, 'dir: /B:') === FALSE) {
-					$path = '"C:\Program Files\\' . $output . '\\';
+					$path = '"C:\Program Files\\' . $win_output . '\\';
 					
 				// If we got to here, we must have found the *nix binaries
 				} else {
@@ -196,7 +196,7 @@ class fImage extends fFile
 					self::$processor = 'gd';
 				
 				} else {
-					Core::toss('fEnvironmentException', 'Neither the GD extension or ImageMagick appears to be installed on the server');
+					fCore::toss('fEnvironmentException', 'Neither the GD extension or ImageMagick appears to be installed on the server');
 				}
 			}
 		}	
@@ -212,10 +212,10 @@ class fImage extends fFile
 	static private function checkImageMagickBinary($path)
 	{
 		if (!file_exists($path . 'convert.exe') && !file_exists($path . 'convert')) {
-			Core::toss('fEnvironmentException', 'The ImageMagick convert binary could not be found');	
+			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary could not be found');	
 		}
 		if (!is_executable($path . 'convert.exe') && !is_executable($path . 'convert')) {
-			Core::toss('fEnvironmentException', 'The ImageMagick convert binary is not executable');	
+			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary is not executable');	
 		}
 		
 		// Make sure we can execute the convert binary
@@ -228,7 +228,7 @@ class fImage extends fFile
 				}
 			}
 			if (!$found) {
-				Core::toss('fEnvironmentException', 'Safe mode is turned on and the ImageMagick convert binary is not in one of the paths defined by the safe_mode_exec_dir ini setting');
+				fCore::toss('fEnvironmentException', 'Safe mode is turned on and the ImageMagick convert binary is not in one of the paths defined by the safe_mode_exec_dir ini setting');
 			}	
 		}
 	}
@@ -244,15 +244,19 @@ class fImage extends fFile
 	 *  - 'png'
 	 *  - 'tif'
 	 * 
+     * @throws  fValidationException
+     * 
 	 * @param  string $image  The image to get stats for
 	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
 	 */
 	static private function getImageStats($image)
 	{
-		$image_info = getimagesize($image);
+		$image_info = @getimagesize($image);
+        if ($image_info == FALSE) {
+            fCore::toss('fValidationException', 'The file specified is not an image');    
+        }
 		
 		$types = array(IMAGETYPE_GIF     => 'gif',
-					   IMAGETYPE_JPG     => 'jpg',
 					   IMAGETYPE_JPEG    => 'jpg',
 					   IMAGETYPE_PNG     => 'png',
 					   IMAGETYPE_TIFF_II => 'tif',
@@ -271,7 +275,7 @@ class fImage extends fFile
 	}
 	
 	
-	/**
+    /**
 	 * Gets the dimensions and type of the image stored on the filesystem (does not take into account modifications that have not been saved)
 	 * 
 	 * @param  string $element  The element to retrieve ('type', 'width', 'height')

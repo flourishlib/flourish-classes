@@ -9,6 +9,7 @@
  * @link  http://flourishlib.com/fFile
  * 
  * @uses  fCore
+ * @uses  fDirectory
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
  * 
@@ -33,13 +34,6 @@ class fFile
 	 */
 	protected $file;
 	
-	/**
-	 * The temporary directory to use for storing files
-	 * 
-	 * @var string 
-	 */
-	const TEMP_DIR = '__temp/';
-	
 	
 	/**
 	 * Creates an object to represent a file on the filesystem
@@ -58,6 +52,9 @@ class fFile
 			if (!file_exists($file)) {
 				fCore::toss('fEnvironmentException', 'The file specified does not exist');   
 			}
+            if (!is_readable($file)) {
+                fCore::toss('fEnvironmentException', 'The file specified is not readable');   
+            }
 			$this->file = $file;
 		} catch (Exception $e) {
 			$this->exception = $e;   
@@ -91,12 +88,12 @@ class fFile
 	/**
 	 * Gets the directory the file is located in
 	 * 
-	 * @return string  The directory containing the file
+	 * @return fDirectory  The directory containing the file
 	 */
 	public function getDirectory()
 	{
 		if ($this->exception) { throw $this->exception; }
-		return self::getInfo($this->file, 'dirname');    
+		return new fDirectory(self::getInfo($this->file, 'dirname'));    
 	}
 	
 	
@@ -127,9 +124,10 @@ class fFile
 		if ($this->exception) { throw $this->exception; }
 		
 		$file_info = self::getInfo($this->file);
-		if (!self::isTempDir($file_info['dirname'])) {
-			$this->makeTempDir($file_info['dirname']);
-			$new_file = $file_info['dirname'] . self::TEMP_DIR . $file_info['basename'];
+        $directory = $this->getDirectory();
+		if (!$directory->checkIfTemp()) {
+			$temp_dir = $directory->getTemp();
+			$new_file = $temp_dir->getPath() . $this->getFilename();
 			rename($this->file, $new_file);
 			$this->file = $new_file;
 		}    
@@ -145,9 +143,9 @@ class fFile
 	{
 		if ($this->exception) { throw $this->exception; }
 		
-		$file_info = self::getInfo($this->file);
-		if (self::isTempDir($file_info['dirname'])) {
-			$new_file = preg_replace('#' . self::TEMP_DIR . '$#', '', $file_info['dirname']) . $file_info['basename'];
+		$directory = $this->getDirectory();
+        if ($directory->checkIfTemp()) {
+			$new_file = $directory->getParent() . $this->getFilename();
 			rename($this->file, $new_file);
 			$this->file = $new_file;
 		}    
@@ -155,70 +153,98 @@ class fFile
 	
 	
 	/**
-	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name
+	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name. Will also put the file into the temp dir if it is currently in a temp dir.
 	 * 
-	 * @param  string $new_directory  The directory to duplicate the file into
+	 * @param  string|fDirectory $new_directory  The directory to duplicate the file into
 	 * @return fFile  The new fFile object
 	 */
 	public function duplicate($new_directory)
 	{
 		if ($this->exception) { throw $this->exception; }
 		
-		if (substr($new_directory, -1) != '/' && substr($new_directory, -1) != '\\') {
-			$new_directory .= '/';
-		}
+		if (!is_object($new_directory)) {
+            $new_directory = fDirectory($new_directory);
+        }   
 		
-		if (!file_exists($new_directory)) {
-			fCore::toss('fProgrammerException', 'The directory specified does not exist');   
-		}
-		if (!is_dir($new_directory)) {
-			fCore::toss('fProgrammerException', 'The directory specified is not a directory');
-		}
-		if (!is_writable($new_directory)) {
+		if (!$new_directory->checkIfWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified is not writable');
 		}
 		
-		if (!$this->isTempDir($new_directory)) {
-			$this->makeTempDir($new_directory);
+		if ($this->getDirectory()->checkIfTemp()) {
+			$new_directory = $new_directory->getTemp();
 		}       
 		
-		$file_info = self::getInfo($this->file);
-		if (self::isTempDir($file_info['dir_name']) && !self::isTempDir($new_directory)) {
-			$new_directory .= self::TEMP_DIR;	
-		}
-		@copy($this->file, $new_directory . $file_info['basename']);
-		return new fFile($new_directory . $file_info['basename']);
+		@copy($this->getPath(), $new_directory->getPath() . $this->getFilename());
+		return new fFile($new_directory->getPath() . $this->getFilename());
 	}
 	
 	
-	/**
-	 * Check to see if the current file is in the temp dir
-	 * 
-	 * @param  string $dir  The directory to check for temp status 
-	 * @return boolean  If the file is in the temp dir
-	 */
-	static private function isTempDir($dir)
-	{
-		return preg_match('#' . self::TEMP_DIR . '$#', $dir);    
-	}
-	
-	
-	/**
-	 * Creates a temp dir for the directory specified
-	 * 
-	 * @param  string $directory  The directory
-	 * @return boolean  If the file is in the temp dir
-	 */
-	static private function makeTempDir($directory)
-	{
-		if (!file_exists($directory . self::TEMP_DIR)) {
-			$old_umask = umask(0000);
-			mkdir($directory . self::TEMP_DIR);
-			umask($old_umask);
-		}     
-	}
-	
-	
+    /**
+     * Check to see if the current file is writable
+     * 
+     * @return boolean  If the file is writable
+     */
+    public function checkIfWritable()
+    {
+        if ($this->exception) { throw $this->exception; }
+        return is_writable($this->file);   
+    }
+    
+    
+    /**
+     * Deletes the current file
+     * 
+     * @return void
+     */
+    public function delete() 
+    {
+        if ($this->exception) { throw $this->exception; }
+        
+        $dir = $this->getDirectory();
+        
+        if (!$dir->checkIfWritable()) {
+            fCore::toss('fProgrammerException', 'The file can not be deleted because the directory containing it is not writable');
+        } 
+        
+        @unlink($this->file);
+        $this->file = NULL;
+        
+        try {
+            fCore::toss('fProgrammerException', 'The action requested can not be performed because the file has been deleted');   
+        } catch (fPrintableException $e) {
+            $this->exception = $e;
+        }
+    }
+    
+    
+    /**
+     * Writes the provided data to the file
+     * 
+     * @param  mixed $data  The data to write to the file
+     * @return void
+     */
+    public function write($data) 
+    {
+        if (!$this->checkIfWritable()) {
+            fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
+        } 
+        
+        file_put_contents($this->file, $data);
+    }
+    
+    
+    /**
+     * Reads the data from the file
+     * 
+     * @param  mixed $data  The data to write to the file
+     * @return string  The contents of the file
+     */
+    public function read() 
+    {
+        return file_get_contents($this->file);
+    }
+    
+    
 	/**
 	 * Returns a unique name for a file 
 	 * 
@@ -228,13 +254,13 @@ class fFile
 	 */
 	static public function createUniqueName($file, $new_extension=NULL) 
 	{
-		$info = self::getFileInfo($file);
+		$info = self::getInfo($file);
 		
 		// Change the file extension
 		if ($new_extension !== NULL) {
 			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
 			$file = $info['dirname'] . $info['filename'] . $new_extension;
-			$info = self::getFileInfo($file);
+			$info = self::getInfo($file);
 		}
 		
 		// Remove _copy# from the filename to start
@@ -242,7 +268,7 @@ class fFile
 		
 		// Look for a unique name by adding _copy# to the end of the file
 		while (file_exists($file)) {
-			$info = self::getFileInfo($file);
+			$info = self::getInfo($file);
 			if (preg_match('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', $file, $match)) {
 				$file = preg_replace('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', '_copy' . ($match[1]+1) . '.' . $info['extension'], $file);
 			} else {

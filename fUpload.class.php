@@ -9,8 +9,10 @@
  * @link  http://flourishlib.com/fUpload
  * 
  * @uses  fCore
+ * @uses  fDirectory
  * @uses  fEnvironmentException
  * @uses  fFile
+ * @uses  fImage
  * @uses  fInflection
  * @uses  fProgrammerException
  * @uses  fValidationException
@@ -27,28 +29,28 @@ class fUpload
 	 * 
 	 * @var string 
 	 */
-	private $type = 'non_php';
+	static private $type = 'non_php';
 	
 	/**
 	 * The mime types of files accepted
 	 * 
 	 * @var array 
 	 */
-	private $mime_types = '';
+	static private $mime_types = '';
 	
 	/**
 	 * The maximum file size in bytes
 	 * 
 	 * @var integer 
 	 */
-	private $max_file_size = 0;
+	static private $max_file_size = 0;
 	
 	/**
 	 * The overwrite method
 	 * 
 	 * @var string 
 	 */
-	private $overwrite_mode = 'rename';
+	static private $overwrite_mode = 'rename';
 	
 	
 	/**
@@ -57,12 +59,12 @@ class fUpload
 	 * @param  string $mode   Either 'rename' or 'overwrite'
 	 * @return void
 	 */
-	public function setOverwriteMode($mode) 
+	static public function setOverwriteMode($mode) 
 	{
 		if (!in_array($mode, array('rename', 'overwrite'))) {
 			fCore::toss('fProgrammerException', 'Invalid mode specified');       
 		}
-		$this->overwrite_mode = $mode;
+		self::$overwrite_mode = $mode;
 	}
 	
 	
@@ -72,24 +74,24 @@ class fUpload
 	 * @param  string $type   'image', 'zip', 'non_php', 'any'
 	 * @return void
 	 */
-	public function setType($type) 
+	static public function setType($type) 
 	{
 		if (!in_array($mode, array('image', 'zip', 'non_php', 'any'))) {
 			fCore::toss('fProgrammerException', 'Invalid type specified');       
 		}
-		$this->type = $type;
+		self::$type = $type;
 		switch ($type) {
 			case 'image':
-				$this->setMimeTypes('image/pjpeg', 'image/jpeg', 'image/gif', 'image/png'); 
+				call_user_func_array(array('fUpload', 'setMimeTypes'), fImage::getCompatibleMimetypes());
 				break;
 			case 'zip':
-				$this->setMimeTypes('application/zip', 'application/x-zip-compressed'); 
+				self::setMimeTypes('application/zip', 'application/gzip', 'application/x-zip-compressed'); 
 				break;
 			case 'non_php':
-				$this->setMimeTypes(); 
+				self::setMimeTypes(); 
 				break;
 			case 'any':
-				$this->setMimeTypes(); 
+				self::setMimeTypes(); 
 				break;  
 		}
 	}
@@ -98,13 +100,12 @@ class fUpload
 	/**
 	 * Sets the file mime types accepted, one per parameter
 	 * 
-	 * @param  string $mime_type   The mime type accepted 
+	 * @param  string $mime_type,...   The mime type accepted 
 	 * @return void
 	 */
-	public function setMimeTypes($mime_type) 
+	static public function setMimeTypes() 
 	{
-		$mime_types = func_get_args();
-		$this->mime_types = $mime_types;
+		self::$mime_types = func_get_args();
 	}
 	
 	
@@ -114,9 +115,9 @@ class fUpload
 	 * @param  string $size   The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit 
 	 * @return void
 	 */
-	public function setMaxFileSize($size) 
+	static public function setMaxFileSize($size) 
 	{
-		$this->max_file_size = fFile::convertToBytes($size);
+		self::$max_file_size = fFile::convertToBytes($size);
 	}
 	
 	
@@ -125,37 +126,31 @@ class fUpload
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $mime_type   The mime type accepted 
+	 * @param  string $field      The file upload field to get the file(s) from
+     * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @return fFile|array  An fFile object or an array of fFile objects
 	 */
-	public function uploadFile($field, $directory) 
+	static public function uploadFile($field, $directory) 
 	{
-		if (substr($directory, -1) != '/') {
-			$directory .= '/';   
-		}
+		if (!is_object($directory)) {
+            $directory = new fDirectory($directory);   
+        }
 		
-		if (!file_exists($directory)) {
-			fCore::toss('fProgrammerException', 'The directory specified does not exist');   
-		}
-		if (!is_dir($directory)) {
-			fCore::toss('fProgrammerException', 'The directory specified is not a directory');
-		}
-		if (!is_writable($directory)) {
+		if (!$directory->checkIfWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified is not writable');
 		}
-		
-		if (stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
-			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
-		}
 		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-			fCore::toss('fProgrammerException', 'Missing method="POST" attribute in form tag');
+            fCore::toss('fProgrammerException', 'Missing method="POST" attribute in form tag');
+        }
+		if (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
+			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
 		}
 		if (!isset($_FILES) || !isset($_FILES[$field]) || !is_array($_FILES[$field])) {
 			fCore::toss('fProgrammerException', 'The field specified does not appear to be a file upload field');
 		}
 		
 		// Remove old temp files
-		$this->cleanTempDirectory($directory);
+		$directory->getTemp()->clean();
 		
 		if (is_array($_FILES[$field]['name'])) {
 			$output = array();
@@ -167,12 +162,12 @@ class fUpload
 				$temp['error']    = (isset($_FILES[$field]['error'][$i]))    ? $_FILES[$field]['error'][$i]    : '';
 				$temp['size']     = (isset($_FILES[$field]['size'][$i]))     ? $_FILES[$field]['size'][$i]     : '';
 				
-				$output[] = $this->processFile($temp, $field . '_#' . ($i+1), $directory);
+				$output[] = self::processFile($temp, $field . '_#' . ($i+1), $directory);
 			}
 			return $output;
 			
 		} else {
-			return $this->processFile($_FILES[$field], $field, $directory);
+			return self::processFile($_FILES[$field], $field, $directory);
 		}
 	}
 	
@@ -180,23 +175,26 @@ class fUpload
 	/**
 	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
 	 * 
-	 * @param  array $file_array   The array of information from the $_FILES array 
-	 * @param  string $field       The field the file was uploaded through
-	 * @param  string $directory   The directory the file is being uploaded into
+     * @throws  fValidationException
+     * 
+	 * @param  array $file_array      The array of information from the $_FILES array 
+	 * @param  string $field          The field the file was uploaded through
+	 * @param  fDirectory $directory  The directory the file is being uploaded into
 	 * @return void
 	 */
-	private function processFile($file_array, $field, $directory) 
+	static private function processFile($file_array, $field, $directory) 
 	{
 		try {
-			if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
+			// Do some validation of the file provided
+            if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
 				fCore::toss('fValidationException', fInflection::humanize($field) . ': Please upload a file'); 
 			}
-			if ($this->max_file_size && $file_array['size'] > $this->max_file_size) {
-				fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is over the limit of ' . fFile::formatFilesize($this->max_file_size));   
+			if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
+				fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is over the limit of ' . fFile::formatFilesize(self::$max_file_size));   
 			}
-			if (!empty($this->mime_types) && !in_array($file_array['type'], $this->mime_types)) {
-				if ($this->type != 'mime') {
-					switch ($this->type) {
+			if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
+				if (self::$type != 'mime') {
+					switch (self::$type) {
 						case 'image':
 							$message = 'The file uploaded is not an image';
 							break;
@@ -206,52 +204,55 @@ class fUpload
 					}
 					fCore::toss('fValidationException', fInflection::humanize($field) . ': ' . $message);
 				} else {
-					fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is not one of the following mime types: ' . join(', ', $this->mime_types));
+					fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
 				}    
 			}
-			if ($this->type == 'non_php') {
+			if (self::$type == 'non_php') {
 				$file_info = fFile::getInfo($file_array['name']);
 				if ($file_info['extension'] == 'php') {
 					fCore::toss('fValidationException', fInflection::humanize($field) . ': You are not allowed to upload a PHP file'); 
 				}   
 			}
 			
-			$file_name = fFile::createUniqueName($directory . $file_array['name']);
+			$file_name = fFile::createUniqueName($directory->getPath() . $file_array['name']);
 			if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
 				fCore::toss('fEnvironmentException', fInflection::humanize($field) . ': There was an error moving the uploaded file');    
 			}
 			
-			return new fFile($file_name); 
+            return self::createObject($file_name); 
 			
 		} catch (Exception $e) {
 			// If no file was uploaded, check to see if a temp file was referenced
-			if ($e->getCode() == 608 && !empty($_REQUEST['__temp_' . $field]) && file_exists($directory . fFile::TEMP_DIR . $_REQUEST['__temp_' . $field])) {
-				$file_name = fFile::createUniqueName($directory . $_REQUEST['__temp_' . $field]);
-				return new fFile($file_name);	
+			$temp_field = '__temp_' . $field;
+            if ($e->getMessage() == fInflection::humanize($field) . ': Please upload a file' && !empty($_REQUEST[$temp_field]) && file_exists($directory->getTemp()->getPath() . $_REQUEST[$temp_field])) {
+				$file_name = fFile::createUniqueName($directory->getPath() . $_REQUEST[$temp_field]);
+                rename($directory->getTemp()->getPath() . $_REQUEST[$temp_field], $file_name);
+				return self::createObject($file_name);
 			}
 			
 			return new fFile(NULL, $e);
 		}    
 	}
-	
-	
-	/**
-	 * Handles cleaning out the temp directory for the directory specified. Removed all files over 6 hours old.
-	 * 
-	 * @param  string $directory   The directory to clean the temp dir for
-	 * @return void
-	 */
-	private function cleanTempDirectory($directory) 
-	{
-		$temp_directory = $directory . fFile::TEMP_DIR;
-		$files = array_diff(scandir($temp_directory), array('.','..'));
-		
-		foreach ($files as $file) {
-			if (filemtime($temp_directory . $file) < strtotime('-6 hours')) {
-				unlink($temp_directory . $file);
-			}
-		}	
-	}
+    
+    
+    /**
+     * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
+     * 
+     * @throws  fValidationException
+     * 
+     * @param  string $file_name  The path to the file on the filesystem
+     * @return void
+     */
+    static private function createObject($file_name) 
+    {
+        try {
+            fImage::checkIfImageIncompatible($file_name);
+            return new fImage($file_name);
+            
+        } catch (fPrintableException $e) {
+            return new fFile($file_name);
+        }    
+    }
 } 
 
 
