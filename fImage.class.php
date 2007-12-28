@@ -67,20 +67,18 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Sets the path to the ImageMagick binary and tells the calls to use ImageMagick even if GD is installted
+	 * Sets the directory the ImageMagick binary is installed in and tells the class to use ImageMagick even if GD is installed
 	 * 
-	 * @param  string $path   The path to ImageMagick on the filesystem
+	 * @param  string $directory   The directory ImageMagick is installed in
 	 * @return void
 	 */
-	static public function setImageMagickPath($path) 
+	static public function setImageMagickDirectory($directory) 
 	{
-		if (substr($path, -1) != '/' && substr($path, -1) != '\\') {
-			$path .= '/';	
-		}
+		$directory = fDirectory::makeCanonical($directory);
 		
-		self::checkImageMagickBinary($path);
+		self::checkImageMagickBinary($directory);
 		
-		self::$imagemagick_dir = $path;
+		self::$imagemagick_dir = $directory;
 		self::$processor = 'imagemagick';
 	}
 	
@@ -118,13 +116,10 @@ class fImage extends fFile
 			fCore::toss('fValidationException', 'The image specified does not exist');	
 		}
 		
-		$image_stats = self::getImageStats($image);
+		$info = self::getInfo($image);
 		
-		if ($image_stats['type'] === NULL) {
+		if ($info['type'] === NULL) {
 			fCore::toss('fValidationException', 'The image specified is not a GIF, JPG, PNG or TIFF file');
-		}
-		if ($image_stats['type'] == 'tif' && self::$processor == 'gd') {
-			fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');	
 		}
 	}
 	
@@ -196,14 +191,14 @@ class fImage extends fFile
 					self::$processor = 'gd';
 				
 				} else {
-					fCore::toss('fEnvironmentException', 'Neither the GD extension or ImageMagick appears to be installed on the server');
+					self::$processor = 'none';
 				}
 			}
 		}	
 	}
-	
-	
-	/**
+    
+    
+    /**
 	 * Checks to make sure we can get to and execute the ImageMagick convert binary
 	 * 
 	 * @param  string $path   The path to ImageMagick on the filesystem
@@ -246,14 +241,19 @@ class fImage extends fFile
 	 * 
      * @throws  fValidationException
      * 
-	 * @param  string $image  The image to get stats for
+	 * @param  string $image    The image to get stats for
+     * @param  string $element  The element to retrieve ('type', 'width', 'height')
 	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
 	 */
-	static private function getImageStats($image)
+	static public function getInfo($image, $element=NULL)
 	{
 		$image_info = @getimagesize($image);
         if ($image_info == FALSE) {
             fCore::toss('fValidationException', 'The file specified is not an image');    
+        }
+        
+        if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
+            fCore::toss('fProgrammerException', 'Invalid element requested');  
         }
 		
 		$types = array(IMAGETYPE_GIF     => 'gif',
@@ -270,32 +270,15 @@ class fImage extends fFile
 		} else {
 			$output['type'] = NULL;	
 		}
+        
+        if ($element !== NULL) {
+            return $output[$element];    
+        }
 		
 		return $output;	
 	}
-	
-	
-    /**
-	 * Gets the dimensions and type of the image stored on the filesystem (does not take into account modifications that have not been saved)
-	 * 
-	 * @param  string $element  The element to retrieve ('type', 'width', 'height')
-	 * @return mixed  If an element is speficied, the specific element, otherwise an associative array: 'type' => {string}, 'width' => {integer}, 'height' => {integer}
-	 */
-	public function getImageInfo($element=NULL)
-	{
-		if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
-			fCore::toss('fProgrammerException', 'Invalid element requested');  
-		}
-		
-		$output = self::checkImageStats($this->file);
-		if ($element !== NULL) {
-			return $output[$element];	
-		}
-		
-		return $output;
-	}
-	
-	
+
+    
 	/**
 	 * Sets the image to be resized proportionally to a specific sized canvas. Resize does not occur until save() is called.
 	 * 
@@ -442,7 +425,16 @@ class fImage extends fFile
 	 */
 	public function save($new_image_type=NULL) 
 	{
-		if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
+		if (self::$processor == 'none') {
+            fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
+        }
+        
+        $info = self::getInfo($this->file);
+        if ($info['type'] == 'tif' && self::$processor == 'gd') {
+            fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
+        }
+        
+        if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
 			fCore::toss('fProgrammerException', 'Invalid new image type specified');  
 		}
 		
@@ -474,7 +466,7 @@ class fImage extends fFile
 	private function getCurrentDimensions()
 	{
 		if (empty($this->pending_modifications)) {
-			$output = $this->getImageInfo();
+			$output = self::getInfo($this->file);
 			unset($output['type']);	
 		
 		} else {
@@ -494,7 +486,7 @@ class fImage extends fFile
 	 */
 	private function checkIfAnimatedGif()
 	{
-		$info = $this->getImageInfo();
+		$info = self::getInfo($this->file);
 		if ($info['type'] == 'gif') {
 			if (preg_match('#\x00\x21\xF9\x04.{4}\x00\x2C#s', file_get_contents($this->file))) {
 				return TRUE;
@@ -516,7 +508,7 @@ class fImage extends fFile
 			return;	
 		}
 		
-		$info = $this->getImageInfo();
+		$info = self::getInfo($this->file);
 		
 		switch ($info['type']) {
 			case 'gif':
@@ -591,9 +583,9 @@ class fImage extends fFile
 		}
 		
 		// Save the file
-		$info = self::getImageStats($output_file);
+		$info = fFile::getInfo($output_file);
 		
-		switch ($info['type']) {
+		switch ($info['extension']) {
 			case 'gif':
 				imagegif($gd_res, $output_file);	
 				break;
@@ -619,7 +611,7 @@ class fImage extends fFile
 			return;	
 		}
 		
-		$info = $this->getImageInfo();
+		$info = self::getInfo($this->file);
 		
 		$command_line  = escapeshellcmd(self::$imagemagick_dir . 'convert');
 		$command_line .= ' ' . escapeshellarg($this->file) . ' ';
@@ -662,8 +654,8 @@ class fImage extends fFile
 		}
 		
 		// Set up jpeg compression
-		$info = self::getImageStats($output_file);
-		if ($info['type'] == 'jpg') {
+		$info = fFile::getInfo($output_file);
+		if ($info['extension'] == 'jpg') {
 			$command_line .= ' -compress JPEG -quality 90 ';	
 		}
 		
