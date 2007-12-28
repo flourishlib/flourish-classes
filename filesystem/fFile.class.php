@@ -52,9 +52,9 @@ class fFile
 			if (!file_exists($file)) {
 				fCore::toss('fEnvironmentException', 'The file specified does not exist');   
 			}
-            if (!is_readable($file)) {
-                fCore::toss('fEnvironmentException', 'The file specified is not readable');   
-            }
+			if (!is_readable($file)) {
+				fCore::toss('fEnvironmentException', 'The file specified is not readable');   
+			}
 			$this->file = $file;
 		} catch (Exception $e) {
 			$this->exception = $e;   
@@ -115,6 +115,26 @@ class fFile
 	
 	
 	/**
+	 * Gets the size of the file. May be incorrect for files over 2 or 4 GB on certain operating systems.
+	 * 
+	 * @param  boolean $format          If the filesize should be formatted for human readability
+	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
+	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+	 */
+	public function getSize($format=FALSE, $decimal_places=1)
+	{
+		// This technique can overcome signed integer limit
+		$size = sprintf("%u", filesize($this->file));    
+		
+		if (!$format) {
+			return $size;	
+		}
+		
+		return self::formatFilesize($size, $decimal_places);
+	}
+	
+	
+	/**
 	 * Moves the file to the temp directory if it is not there already
 	 * 
 	 * @return void
@@ -124,7 +144,7 @@ class fFile
 		if ($this->exception) { throw $this->exception; }
 		
 		$file_info = self::getInfo($this->file);
-        $directory = $this->getDirectory();
+		$directory = $this->getDirectory();
 		if (!$directory->checkIfTemp()) {
 			$temp_dir = $directory->getTemp();
 			$new_file = $temp_dir->getPath() . $this->getFilename();
@@ -144,7 +164,7 @@ class fFile
 		if ($this->exception) { throw $this->exception; }
 		
 		$directory = $this->getDirectory();
-        if ($directory->checkIfTemp()) {
+		if ($directory->checkIfTemp()) {
 			$new_file = $directory->getParent() . $this->getFilename();
 			rename($this->file, $new_file);
 			$this->file = $new_file;
@@ -163,8 +183,8 @@ class fFile
 		if ($this->exception) { throw $this->exception; }
 		
 		if (!is_object($new_directory)) {
-            $new_directory = fDirectory($new_directory);
-        }   
+			$new_directory = fDirectory($new_directory);
+		}   
 		
 		if (!$new_directory->checkIfWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified is not writable');
@@ -179,72 +199,72 @@ class fFile
 	}
 	
 	
-    /**
-     * Check to see if the current file is writable
-     * 
-     * @return boolean  If the file is writable
-     */
-    public function checkIfWritable()
-    {
-        if ($this->exception) { throw $this->exception; }
-        return is_writable($this->file);   
-    }
-    
-    
-    /**
-     * Deletes the current file
-     * 
-     * @return void
-     */
-    public function delete() 
-    {
-        if ($this->exception) { throw $this->exception; }
-        
-        $dir = $this->getDirectory();
-        
-        if (!$dir->checkIfWritable()) {
-            fCore::toss('fProgrammerException', 'The file can not be deleted because the directory containing it is not writable');
-        } 
-        
-        @unlink($this->file);
-        $this->file = NULL;
-        
-        try {
-            fCore::toss('fProgrammerException', 'The action requested can not be performed because the file has been deleted');   
-        } catch (fPrintableException $e) {
-            $this->exception = $e;
-        }
-    }
-    
-    
-    /**
-     * Writes the provided data to the file
-     * 
-     * @param  mixed $data  The data to write to the file
-     * @return void
-     */
-    public function write($data) 
-    {
-        if (!$this->checkIfWritable()) {
-            fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
-        } 
-        
-        file_put_contents($this->file, $data);
-    }
-    
-    
-    /**
-     * Reads the data from the file
-     * 
-     * @param  mixed $data  The data to write to the file
-     * @return string  The contents of the file
-     */
-    public function read() 
-    {
-        return file_get_contents($this->file);
-    }
-    
-    
+	/**
+	 * Check to see if the current file is writable
+	 * 
+	 * @return boolean  If the file is writable
+	 */
+	public function checkIfWritable()
+	{
+		if ($this->exception) { throw $this->exception; }
+		return is_writable($this->file);   
+	}
+	
+	
+	/**
+	 * Deletes the current file
+	 * 
+	 * @return void
+	 */
+	public function delete() 
+	{
+		if ($this->exception) { throw $this->exception; }
+		
+		$dir = $this->getDirectory();
+		
+		if (!$dir->checkIfWritable()) {
+			fCore::toss('fProgrammerException', 'The file can not be deleted because the directory containing it is not writable');
+		} 
+		
+		@unlink($this->file);
+		$this->file = NULL;
+		
+		try {
+			fCore::toss('fProgrammerException', 'The action requested can not be performed because the file has been deleted');   
+		} catch (fPrintableException $e) {
+			$this->exception = $e;
+		}
+	}
+	
+	
+	/**
+	 * Writes the provided data to the file
+	 * 
+	 * @param  mixed $data  The data to write to the file
+	 * @return void
+	 */
+	public function write($data) 
+	{
+		if (!$this->checkIfWritable()) {
+			fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
+		} 
+		
+		file_put_contents($this->file, $data);
+	}
+	
+	
+	/**
+	 * Reads the data from the file
+	 * 
+	 * @param  mixed $data  The data to write to the file
+	 * @return string  The contents of the file
+	 */
+	public function read() 
+	{
+		return file_get_contents($this->file);
+	}
+	
+	
 	/**
 	 * Returns a unique name for a file 
 	 * 

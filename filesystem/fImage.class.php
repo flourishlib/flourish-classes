@@ -196,9 +196,9 @@ class fImage extends fFile
 			}
 		}	
 	}
-    
-    
-    /**
+	
+	
+	/**
 	 * Checks to make sure we can get to and execute the ImageMagick convert binary
 	 * 
 	 * @param  string $path   The path to ImageMagick on the filesystem
@@ -239,22 +239,22 @@ class fImage extends fFile
 	 *  - 'png'
 	 *  - 'tif'
 	 * 
-     * @throws  fValidationException
-     * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  string $image    The image to get stats for
-     * @param  string $element  The element to retrieve ('type', 'width', 'height')
+	 * @param  string $element  The element to retrieve ('type', 'width', 'height')
 	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
 	 */
 	static public function getInfo($image, $element=NULL)
 	{
 		$image_info = @getimagesize($image);
-        if ($image_info == FALSE) {
-            fCore::toss('fValidationException', 'The file specified is not an image');    
-        }
-        
-        if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
-            fCore::toss('fProgrammerException', 'Invalid element requested');  
-        }
+		if ($image_info == FALSE) {
+			fCore::toss('fValidationException', 'The file specified is not an image');    
+		}
+		
+		if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
+			fCore::toss('fProgrammerException', 'Invalid element requested');  
+		}
 		
 		$types = array(IMAGETYPE_GIF     => 'gif',
 					   IMAGETYPE_JPEG    => 'jpg',
@@ -270,17 +270,17 @@ class fImage extends fFile
 		} else {
 			$output['type'] = NULL;	
 		}
-        
-        if ($element !== NULL) {
-            return $output[$element];    
-        }
+		
+		if ($element !== NULL) {
+			return $output[$element];    
+		}
 		
 		return $output;	
 	}
 
-    
+	
 	/**
-	 * Sets the image to be resized proportionally to a specific sized canvas. Resize does not occur until save() is called.
+	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until save() is called.
 	 * 
 	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
 	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
@@ -325,8 +325,8 @@ class fImage extends fFile
 			}
 		}
 
-		// If nothing changed, don't even record the modification
-		if ($orig_width == $new_width && $orig_height == $new_height) {
+		// If the size did not go down, don't even record the modification
+		if ($orig_width >= $new_width || $orig_height >= $new_height) {
 			return;	
 		}
 		
@@ -426,15 +426,15 @@ class fImage extends fFile
 	public function save($new_image_type=NULL) 
 	{
 		if (self::$processor == 'none') {
-            fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
-        }
-        
-        $info = self::getInfo($this->file);
-        if ($info['type'] == 'tif' && self::$processor == 'gd') {
-            fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
-        }
-        
-        if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
+			fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
+		}
+		
+		$info = self::getInfo($this->file);
+		if ($info['type'] == 'tif' && self::$processor == 'gd') {
+			fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
+		}
+		
+		if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
 			fCore::toss('fProgrammerException', 'Invalid new image type specified');  
 		}
 		
@@ -631,7 +631,7 @@ class fImage extends fFile
 			// Perform the resize operation
 			if ($mod['operation'] == 'resize') {
 				
-				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . '\\> -profile "*" ';
+				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . ' -profile "*" ';
 				
 			// Perform the crop operation
 			} elseif ($mod['operation'] == 'crop') {
