@@ -326,7 +326,7 @@ class fImage extends fFile
 		}
 
 		// If the size did not go down, don't even record the modification
-		if ($orig_width >= $new_width || $orig_height >= $new_height) {
+		if ($orig_width <= $new_width || $orig_height <= $new_height) {
 			return;	
 		}
 		
