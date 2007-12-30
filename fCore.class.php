@@ -106,6 +106,29 @@ class fCore
 	{
 		self::$toss_callbacks[$exception_type] = $callback;		 
 	}
+    
+    
+    /**
+     * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
+     * 
+     * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
+     * @param  string $message      The error message
+     * @return void
+     */
+    static public function trigger($error_type, $message)
+    {
+        if (!in_array($error_type, array('error', 'warning', 'notice'))) {
+            fCore::toss('fProgrammerException', "Invalid error type '" . $error_type . "' specified. Should be one of: 'error', 'warning' or 'notice'");       
+        }
+        
+        static $error_type_map = array(
+            'error'   => E_USER_ERROR,
+            'warning' => E_USER_WARNING,
+            'notice'  => E_USER_NOTICE
+        );
+        
+        trigger_error($message, $error_type_map[$error_type]);
+    }
 	
 	
 	/**
@@ -343,7 +366,7 @@ class fCore
 		try {
 			call_user_func_array(self::$exception_handler_callback, self::$exception_handler_parameters);
 		} catch (Exception $e) {
-			trigger_error('An exception was thrown in the setExceptionHandling() $closing_code callback', E_USER_ERROR);
+			self::trigger('error', 'An exception was thrown in the setExceptionHandling() $closing_code callback');
 		}		 
 	}
 	
@@ -419,7 +442,34 @@ class fCore
 				fclose($handle);
 				break;
 		}		 
-	}          
+	} 
+    
+    
+    /**
+     * Returns the (generalized) operating system the code is currently running on
+     * 
+     * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
+     */
+    static public function getOS()
+    {
+        $uname = php_uname('s');
+        
+        if (stripos($uname, 'linux') !== FALSE) {
+            return 'linux/unix';   
+        }
+        if (stripos($uname, 'bsd') !== FALSE) {
+            return 'linux/unix';   
+        }
+        if (stripos($uname, 'solaris') !== FALSE) {
+            return 'linux/unix';   
+        }
+        if (stripos($uname, 'windows') !== FALSE) {
+            return 'windows';   
+        }
+        
+        self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
+        return 'linux/unix';
+    }         
 }  
 
 

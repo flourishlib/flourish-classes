@@ -287,14 +287,23 @@ class fResult implements Iterator
 	private function fixDblibMssqlDriver($row)
 	{
 		static $using_dblib = NULL;
-		if ($using_dblib === NULL) {
-			ob_start();
-			phpinfo(INFO_MODULES);
-			$module_info = ob_get_contents();
-			ob_end_clean();	
-			
-			preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">(.*?)</td>#ims', $module_info, $match);
-			$using_dblib = (trim($match[1]) != 'FreeTDS');
+		
+        if ($using_dblib === NULL) {
+		
+        	// If it is not a windows box we are definitely not using dblib
+            if (fCore::getOS() != 'windows') {
+                $using_dblib = FALSE;    
+            
+            // Check this windows box for dblib
+            } else {
+                ob_start();
+			    phpinfo(INFO_MODULES);
+			    $module_info = ob_get_contents();
+			    ob_end_clean();	
+			    
+			    preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">(.*?)</td>#ims', $module_info, $match);
+			    $using_dblib = (trim($match[1]) != 'FreeTDS');
+            }
 		}
 		
 		if (!$using_dblib) {
@@ -304,13 +313,13 @@ class fResult implements Iterator
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				trigger_error('The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>', E_USER_NOTICE);	
+				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');	
 			}
 			if (strlen($key) == 30) {
-				trigger_error('The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>', E_USER_NOTICE);	
+				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');	
 			}
 			if (strlen($value) == 256) {
-				trigger_error('The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>', E_USER_NOTICE);	
+				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');	
 			}
 		}	
 		

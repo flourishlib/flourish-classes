@@ -115,7 +115,7 @@ class fFile
 	
 	
 	/**
-	 * Gets the size of the file. May be incorrect for files over 2 or 4 GB on certain operating systems.
+	 * Gets the size of the file. May be incorrect for files over 2GB on certain operating systems.
 	 * 
 	 * @param  boolean $format          If the filesize should be formatted for human readability
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)

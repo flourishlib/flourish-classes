@@ -70,7 +70,7 @@ class fDirectory
     static public function makeCanonical($directory)
     {
         if (substr($directory, -1) != '/' && substr($directory, -1) != '\\') {
-            $directory .= '/';   
+            $directory .= DIRECTORY_SEPARATOR;   
         }
         return $directory;
     }
@@ -100,6 +100,45 @@ class fDirectory
             return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);    
         }
         return $this->directory;    
+    }
+    
+    
+    /**
+     * Gets the size of the directory and all files and folders contained within. May be incorrect if files over 2GB exist.
+     * 
+     * @param  boolean $format          If the filesize should be formatted for human readability
+     * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
+     * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+     */
+    public function getSize($format=FALSE, $decimal_places=1)
+    {
+        if (fCore::getOS() == 'linux/unix') {
+            $output = shell_exec('du -sb ' . escapeshellarg($this->directory));
+            list ($size, $trash) = explode(' ', $output);    
+        }
+        
+        if (fCore::getOS() == 'windows') {
+            $process = popen('dir /S /A:-D /-C ' . escapeshellarg($this->directory), 'r');
+            
+            $line = '';
+            while (!feof($process)) {
+                $last_line = $line;
+                $line = fgets($process);
+                
+                if (strpos($last_line, 'Total Files Listed:') !== FALSE) {
+                    $line_segments = preg_split('#\s+#', $line, 0, PREG_SPLIT_NO_EMPTY);  
+                    $size = $line_segments[2];  
+                    break;
+                }
+            }
+            pclose($process);
+        }
+        
+        if (!$format) {
+            return $size;    
+        }
+        
+        return self::formatFilesize($size, $decimal_places);
     }
 	
 	

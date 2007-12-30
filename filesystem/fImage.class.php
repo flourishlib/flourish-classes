@@ -156,26 +156,27 @@ class fImage extends fFile
 			// Look for imagemagick first since it can handle more than GD
 			try {
 				
-				// Look for the binary as if we are on a Windows box
-				$windows_search = 'dir /B "C:\Program Files\ImageMagick*"';
-				$win_output = trim(shell_exec($windows_search));
+				if (fCore::getOS() == 'windows') {
+                    $win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+				    $win_output = trim(shell_exec($win_search));
+                    
+                    if (stripos($win_output, 'File not found') !== FALSE) {
+                        throw new Exception();    
+                    }
+                    
+                    $path = 'C:\Program Files\\' . $win_output . '\\';
+                }
 				
-				// Look for the binary as if we are on a *nix box
-				$nix_search = 'whereis -b convert';
-				$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
 				
-				// Windows will say 'File not found' and *nix will say '' if we can't find them
-				if (stripos($win_output, 'File not found') !== FALSE || empty($nix_output)) {
-					throw new Exception();
+                if (fCore::getOS() == 'linux/unix') {
+				    $nix_search = 'whereis -b convert';
+				    $nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+				    
+				    if (empty($nix_output)) {
+					    throw new Exception();
+                    }
 				
-				// *nix will give an error if you try to use the windows dir flags, otherwise we found the win binaries
-				} elseif (stripos($win_output, 'dir: /B:') === FALSE) {
-					$path = '"C:\Program Files\\' . $win_output . '\\';
-					
-				// If we got to here, we must have found the *nix binaries
-				} else {
-					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
-					
+				    $path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
 				}
 				
 				self::checkImageMagickBinary($path);
