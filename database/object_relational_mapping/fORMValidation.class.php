@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles validation for fActiveRecord classes
+ * Handles validation for (@link fActiveRecord} classes
  * 
  * @copyright  Copyright (c) 2007 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -72,7 +72,7 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table       The table to validate against
+	 * @param  string $table        The table to validate against
 	 * @param  array  &$values      The values to validate
 	 * @param  array  &$old_values  The old values for the record
 	 * @return void
@@ -153,7 +153,7 @@ class fORMValidation
 	/**
 	 * Adds a conditional validation rule
 	 *
-	 * @param  mixed  $table                The database table (or fActiveRecord class) this validation rule applies to
+	 * @param  mixed  $table                The database table (or (@link fActiveRecord} class) this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
@@ -181,7 +181,7 @@ class fORMValidation
 	/**
 	 * Adds a one-or-more validation rule
 	 *
-	 * @param  mixed $table    The database table (or fActiveRecord class) the columns exists in
+	 * @param  mixed $table    The database table (or (@link fActiveRecord} class) the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
@@ -207,7 +207,7 @@ class fORMValidation
 	/**
 	 * Add an only-one validation rule
 	 *
-	 * @param  mixed $table     The database table (or fActiveRecord class) the column exists in
+	 * @param  mixed $table     The database table (or (@link fActiveRecord} class) the column exists in
 	 * @param  array $columns   The columns to check
 	 * @return void
 	 */
@@ -233,7 +233,7 @@ class fORMValidation
 	/**
 	 * Add a many-to-many validation rule
 	 *
-	 * @param  mixed  $table                    The database table (or fActiveRecord class) to add the rule for
+	 * @param  mixed  $table                    The database table (or (@link fActiveRecord} class) to add the rule for
 	 * @param  string $plural_related_column    The plural form of the related column
 	 * @return void
 	 */
@@ -257,7 +257,7 @@ class fORMValidation
 	/**
 	 * Adds a column format rule
 	 *
-	 * @param  mixed  $table         The database table (or fActiveRecord class) this validation rule applies to
+	 * @param  mixed  $table         The database table (or (@link fActiveRecord} class) this validation rule applies to
 	 * @param  string $column        The column to check the format of
 	 * @param  string $format_type   The format for the column: email, link
 	 * @return void
@@ -285,7 +285,7 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table        The database table the column exists in
+	 * @param  string $table         The database table the column exists in
 	 * @param  array  &$values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array  &$old_values   The old values for the record
 	 * @return void
@@ -336,8 +336,8 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table        The database table the column exists in
-	 * @param  string $column       The column to check
+	 * @param  string $table         The database table the column exists in
+	 * @param  string $column        The column to check
 	 * @param  array  &$values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @return void
 	 */
@@ -368,9 +368,9 @@ class fORMValidation
 	/**
 	 * Validates a value against the database data type
 	 *
-	 * @param  string $table        The database table the column exists in
-	 * @param  string $column       The column to check
-	 * @param  mixed  $value        The value to check
+	 * @param  string $table    The database table the column exists in
+	 * @param  string $column   The column to check
+	 * @param  mixed  $value    The value to check
 	 * @return void
 	 */
 	static private function checkDataType($table, $column, $value)
@@ -408,9 +408,9 @@ class fORMValidation
 	/**
 	 * Validates values against unique constraints
 	 *
-	 * @param  string $table        The database table
-	 * @param  string $column       The column to check
-	 * @param  array  &$values       The values to check
+	 * @param  string $table     The database table
+	 * @param  string $column    The column to check
+	 * @param  array  &$values   The values to check
 	 * @return void
 	 */
 	static private function checkUniqueConstraints($table, $column, &$values)
@@ -449,9 +449,9 @@ class fORMValidation
 	/**
 	 * Validates values against foreign key constraints
 	 *
-	 * @param  string $table        The database table
-	 * @param  string $column       The column to check
-	 * @param  array  &$values       The values to check
+	 * @param  string $table     The database table
+	 * @param  string $column    The column to check
+	 * @param  array  &$values   The values to check
 	 * @return void
 	 */
 	static private function checkForeignKeyConstraints($table, $column, &$values)
@@ -486,7 +486,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table                The database table this validation rule applies to
-	 * @param  array  &$record_values        An associative array of all values for the record
+	 * @param  array  &$record_values       An associative array of all values for the record
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
@@ -522,9 +522,9 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table          The database table the columns exists in
+	 * @param  string $table           The database table the columns exists in
 	 * @param  array  &$record_values  An associative array of all values for the record
-	 * @param  array  $columns        The columns to check
+	 * @param  array  $columns         The columns to check
 	 * @return void
 	 */
 	static public function checkOneOrMoreRule($table, &$record_values, $columns)
@@ -556,9 +556,9 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table          The database table the column exists in
+	 * @param  string $table           The database table the column exists in
 	 * @param  array  &$record_values  An associative array of all values for the record
-	 * @param  array  $columns        The columns to check
+	 * @param  array  $columns         The columns to check
 	 * @return void
 	 */
 	static public function checkOnlyOneRule($table, &$record_values, $columns)
@@ -589,7 +589,7 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  array  &$values                 An associative array of all values for the record
+	 * @param  array  &$values                An associative array of all values for the record
 	 * @param  string $plural_related_column  The plural name of the related column
 	 * @return void
 	 */
@@ -607,7 +607,7 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table the column is located in
-	 * @param  array  &$values       An associative array of all values for the record
+	 * @param  array  &$values      An associative array of all values for the record
 	 * @param  string $column       The column to check
 	 * @param  string $format_type  The type of formatting the column should have
 	 * @return void

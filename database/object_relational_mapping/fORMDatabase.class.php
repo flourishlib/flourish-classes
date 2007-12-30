@@ -347,18 +347,8 @@ class fORMDatabase
 	/**
 	 * Creates a where clause from an array of conditions
 	 * 
-	 * The conditions array can contain entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
-	 *   - 'column='                 => VALUE,                    // column = VALUE
-	 *   - 'column!'                 => VALUE,                    // column <> VALUE
-	 *   - 'column~'                 => VALUE,                    // column LIKE '%VALUE%'
-	 *   - 'column='                 => array(VALUE, VALUE2,...), // column IN (VALUE, VALUE2, ...)
-	 *   - 'column!'                 => array(VALUE, VALUE2,...), // columnld NOT IN (VALUE, VALUE2, ...)
-	 *   - 'column~'                 => array(VALUE, VALUE2,...), // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
-	 *   - 'column|column2|column3~' => VALUE,                    // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
-	 *   - 'column|column2|column3~' => array(VALUE, VALUE2,...), // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
-	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
-	 * @param  array  $conditions  The array of conditions (see method description for format)
+	 * @param  array  $conditions  The array of conditions  (see {@link fSet::create()} for format)
 	 * @return string  The SQL WHERE clause
 	 */
 	static public function createWhereClause($table, $conditions)
@@ -455,14 +445,8 @@ class fORMDatabase
 	/**
 	 * Creates an order by clause from an array of columns/expressions and directions
 	 * 
-	 * The order bys array can contain entries formatting in any combination of:
-	 *   - (string) {column name} => 'asc'
-	 *   - (string) {column name} => 'desc'
-	 *   - (string) {expression}  => 'asc'
-	 *   - (string) {expression}  => 'desc'
-	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
-	 * @param  array  $order_bys  The array of order bys to use
+	 * @param  array  $order_bys  The array of order bys to use (see {@link fSet::create()} for format)
 	 * @return string  The SQL ORDER BY clause
 	 */
 	static public function createOrderByClause($table, $order_bys)

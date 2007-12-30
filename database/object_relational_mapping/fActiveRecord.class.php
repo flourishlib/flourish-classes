@@ -20,7 +20,6 @@
  * @uses  fProgrammerException
  * @uses  fRequest
  * @uses  fResult
- * @uses  fSet
  * 
  * @todo  Add code to handle association via multiple columns
  * @todo  Add fFile support
@@ -144,25 +143,25 @@ abstract class fActiveRecord
 	 */
 	protected function loadFromIdentityMap($source)
 	{
-        if ($source instanceof fResult) {
+		if ($source instanceof fResult) {
 			$row = $source->current();
 		} else {
 			$row = $source;   
-        }
-        
+		}
+		
 		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-        settype($primary_keys, 'array');
-        
+		settype($primary_keys, 'array');
+		
 		// If we don't have a value for each primary key, we can't load
 		if (is_array($row) && array_diff($primary_keys, array_keys($row)) !== array()) {
 			return FALSE;
-        }
-        
-        // Build an array of just the primary key data
-        $pk_data = array();
-        foreach ($primary_keys as $primary_key) {
-            $pk_data[$primary_key] = (is_array($row)) ? $row[$primary_key] : $row;
-        }
+		}
+		
+		// Build an array of just the primary key data
+		$pk_data = array();
+		foreach ($primary_keys as $primary_key) {
+			$pk_data[$primary_key] = (is_array($row)) ? $row[$primary_key] : $row;
+		}
 		
 		$object = fORM::checkIdentityMap($this, $pk_data); 
 		
@@ -172,10 +171,10 @@ abstract class fActiveRecord
 		} 
 		
 		// If we got a result back, it is the object we are creating
-        $this->values     = &$object->values;
-        $this->old_values = &$object->old_values;
-        $this->debug      = &$object->debug;
-        return TRUE;
+		$this->values     = &$object->values;
+		$this->old_values = &$object->old_values;
+		$this->debug      = &$object->debug;
+		return TRUE;
 	}
 	
 	
@@ -228,7 +227,7 @@ abstract class fActiveRecord
 		// Save this object to the identity map
 		$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		settype($primary_keys, 'array');
-        
+		
 		$pk_data = array();
 		foreach ($primary_keys as $primary_key) {
 			$pk_data[$primary_key] = $row[$primary_key];
@@ -266,16 +265,16 @@ abstract class fActiveRecord
 				return $this->assignValue($column, $parameters[0]);
 				break;
 			case 'find':
-				return $this->retrieveValues($column);
+				return fORMRelatedData::retrieveValues($this, $this->values, $column);
 				break;
 			case 'link':
-				return $this->assignValues($column, $parameters[0]);
+				return fORMRelatedData::assignValues($this, $this->values, $column, $parameters[0]);
 				break;
 			case 'create':
-				return $this->buildObject($column);
+				return fORMRelatedData::buildObject($this, $this->values, $column);
 				break;
 			case 'form':
-				return $this->buildSet($column);
+				return fORMRelatedData::buildSet($this, $column);
 				break;
 			default:
 				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
@@ -320,117 +319,6 @@ abstract class fActiveRecord
 	{
 		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
 		return $this->values[$column];	
-	}
-	
-	
-	/**
-	 * Retrieves an array of values from one-to-many and many-to-many relationships
-	 * 
-	 * @param  string $plural_related_column   The plural form of the related column name
-	 * @return array  An array of the related column values
-	 */
-	protected function retrieveValues($plural_related_column)
-	{
-		$related_column = fInflection::singularize($plural_related_column);
-		$relationships = fORMSchema::getInstance()->getRelationships(fORM::tablize($this));
-		
-		// Handle one-to-many values
-		foreach ($relationships['one-to-many'] as $rel) {
-			$rel_primary_keys = fORMSchema::getInstance()->getKeys($rel['related_table'], 'primary');
-			
-			if ($rel_primary_keys != array($related_column)) {
-				continue;	
-			}
-			
-			$sql  = "SELECT " . join(', ', $rel_primary_keys) . " FROM " . $rel['related_table'];
-			$sql .= " WHERE " . $rel['related_column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
-			
-			$rows = fORMDatabase::getInstance()->translatedQuery($sql);
-			return fORMDatabase::condensePrimaryKeyArray($rows);	
-		}
-		
-		
-		// Handle many-to-many values
-		if (isset($this->values[$plural_related_column])) {
-			return $this->values[$plural_related_column];	
-		}
-		
-		foreach ($relationships['many-to-many'] as $rel) {
-			$rel_primary_keys = fORMSchema::getInstance()->getKeys($rel['related_table'], 'primary');
-			
-			if ($rel_primary_keys != array($related_column)) {
-				continue;	
-			}
-			
-			$rel_primary_keys = fORMDatabase::addTableToValues($rel['related_table'], $rel_primary_keys);
-			
-			$sql  = "SELECT " . join(', ', $rel_primary_keys) . " FROM ";
-			$sql .= fORMDatabase::createFromClause(fORM::tablize($this), $sql);
-			$sql .= " WHERE " . fORM::tablize($this) . '.' . $rel['column'] . ' = ' . fORMDatabase::prepareBySchema(fORM::tablize($this), $rel['column'], $this->values[$rel['column']]);
-			
-			$rows = fORMDatabase::getInstance()->translatedQuery($sql);
-			$this->values[$plural_related_column] = fORMDatabase::condensePrimaryKeyArray($rows);
-			return $this->values[$plural_related_column];
-		}
-		
-		fCore::toss('fProgrammerException', 'The related column name you specified, ' . $plural_related_column . ', could not be found');	
-	}
-	
-	
-	/**
-	 * Builds the object for the related class specified
-	 * 
-	 * @param  string $related_class   The related class name
-	 * @return fActiveRecord  An instace of the class specified
-	 */
-	protected function buildObject($related_class)
-	{
-		$relationships = fORMSchema::getInstance()->getRelationships(fORM::tablize($this));
-		
-		$search_relationships = array_merge($relationships['one-to-one'], $relationships['many-to-one']);
-		foreach ($search_relationships as $rel) {
-			if ($related_class == fORM::classize($rel['related_table'])) {
-				$class = fORM::classize($rel['related_table']);	
-				break;
-			}
-		}
-		
-		if (empty($class)) {
-			fCore::toss('fProgrammerException', 'The related class name you specified, ' . $related_class . ', could not be found');
-		}
-		
-		return new $class($this->values[$rel['column']]);	
-	}
-	
-	
-	/**
-	 * Retrieves a set of values from one-to-many and many-to-many relationships
-	 * 
-	 * @param  string $plural_related_column   The plural form of the related column name
-	 * @return fSet  The set of objects from the specified column
-	 */
-	protected function buildSet($plural_related_column)
-	{
-		$related_column = fInflection::singularize($plural_related_column);
-		$relationships = fORMSchema::getInstance()->getRelationships(fORM::tablize($this));
-		
-		$search_relationships = array_merge($relationships['one-to-many'], $relationships['many-to-many']);
-		foreach ($search_relationships as $rel) {
-			$rel_primary_keys = fORMSchema::getInstance()->getKeys($rel['related_table'], 'primary');
-			
-			if ($rel_primary_keys == array($related_column)) {
-				$class = fORM::classize($rel['related_table']);	
-				break;
-			}
-		}
-		
-		if (empty($class)) {
-			fCore::toss('fProgrammerException', 'The related column name you specified, ' . $plural_related_column . ', could not be found');
-		}
-		
-		$find_method = 'find' . fInflection::camelize($plural_related_column);
-		
-		return fSet::createFromPrimaryKeys($class, $this->$find_method());	
 	}
 	
 	
@@ -492,33 +380,6 @@ abstract class fActiveRecord
 		
 		$this->old_values[$column] = $this->values[$column];
 		$this->values[$column] = $value;
-	}
-	
-	
-	/**
-	 * Sets values for many-to-many relationships
-	 * 
-	 * @param  string $plural_related_column   The plural form of the related column name
-	 * @param  array $values                   The values for the column specified
-	 * @return void
-	 */
-	protected function assignValues($plural_related_column, $values)
-	{
-		settype($values, 'array');
-		$related_column = fInflection::singularize($plural_related_column);
-		$relationships  = fORMSchema::getInstance()->getRelationships(fORM::tablize($this), 'many-to-many');
-		
-		foreach ($relationships as $rel) {
-			$rel_primary_keys = fORMSchema::getInstance()->getKeys($rel['related_table'], 'primary');
-			
-			if ($rel_primary_keys != array($related_column)) {
-				continue;	
-			}
-			
-			$this->values[$plural_related_column] = $values;
-		}
-		
-		fCore::toss('fProgrammerException', 'The related column name you specified, ' . $plural_related_column . ', is not in a many-to-many relationship with the current table, ' . fORM::tablize($this));	
 	}
 	
 	

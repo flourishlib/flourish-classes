@@ -22,20 +22,44 @@
 class fSet implements Iterator
 {
 	/**
-	 * Creates a set by specifying the class to create plus the where conditions and order bys
+	 * Creates an fSet by specifying the class to create plus the where conditions and order by rules
+	 * 
+	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
+	 * <pre>
+	 *  - '{column}='                     => VALUE,                    // column = VALUE
+	 *  - '{column}!'                     => VALUE,                    // column <> VALUE
+	 *  - '{column}~'                     => VALUE,                    // column LIKE '%VALUE%'
+	 *  - '{column}='                     => array(VALUE, VALUE2,...), // column IN (VALUE, VALUE2, ...)
+	 *  - '{column}!'                     => array(VALUE, VALUE2,...), // columnld NOT IN (VALUE, VALUE2, ...)
+	 *  - '{column}~'                     => array(VALUE, VALUE2,...), // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
+	 *  - '{column}|{column2}|{column3}~' => VALUE,                    // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
+	 *  - '{column}|{column2}|{column3}~' => array(VALUE, VALUE2,...), // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
+	 * </pre>
+	 * 
+	 * The order bys array can contain key => value entries in any of the following formats:
+	 * <pre>
+	 *  - '{column}' => 'asc'
+	 *  - '{column}' => 'desc'
+	 *  - '{expression}'  => 'asc'
+	 *  - '{expression}'  => 'desc'
+	 * </pre>
+	 * 
+	 * The {column} in both the where conditions and order bys can be in any of the formats:
+	 * <pre>
+	 *  - '{column}'                                               // e.g. 'first_name'
+	 *  - '{current_table}.{column}'                               // e.g. 'users.first_name'
+	 *  - '{related_table}.{column}'                               // e.g. 'user_groups.name'
+	 *  - '{related_table}=>{once_removed_related_table}.{column}' // e.g. 'user_groups=>permissions.level'
+	 * </pre>
 	 * 
 	 * @param  string $class_name        The class to create the fSet of
 	 * @param  array  $where_conditions  The column => value comparisons for the where clause
 	 * @param  array  $order_bys         The column => direction values to use for sorting
-	 * @return fSet  A set of fActiveRecords
+	 * @return fSet  A set of {@link fActiveRecord fActiveRecords}
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array())
 	{
 		$table_name   = fORM::tablize($class_name);
-		$primary_keys = fORMSchema::getInstance()->getKeys($table_name, 'primary');
-		$column_info  = fORMSchema::getInstance()->getColumnInfo($table_name);
-		
-		$primary_keys = fORMDatabase::addTableToValues($table_name, $primary_keys);
 		
 		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
 
@@ -54,7 +78,62 @@ class fSet implements Iterator
 	
 	
 	/**
-	 * Creates a Set from an SQL statement
+	 * Creates an fSet from an array of primary keys
+	 * 
+	 * @param  string $class_name    The type of object to create
+	 * @param  array  $primary_keys  The primary keys of the objects to create
+	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fSet::create()} for format)
+	 * @return fSet  A Set of ActiveRecords
+	 */
+	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
+	{
+		$table_name   = fORM::tablize($class_name);
+		
+		settype($primary_keys, 'array');
+		$primary_keys = array_merge($primary_keys);
+		
+		$sql  = 'SELECT ' . $table_name . '.* FROM :from_clause WHERE ';
+		
+		// Build the where clause
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+		$total_pk_fields = sizeof($primary_key_fields);
+		
+		// If it is a multi-field primary key, the sql is more complex
+		if ($total_pk_fields > 1) {
+			
+			$total_primary_keys = sizeof($primary_keys);
+			for ($i=0; $i < $total_primary_keys; $i++) {
+				if ($i > 0) {
+					$sql .= 'OR';
+				}
+				$sql .= ' (';
+				for ($j=0; $j < $total_pk_fields; $j++) {
+					if ($j > 0) {
+						$sql .= ' AND ';	
+					}
+					$pkf = $primary_key_fields[$j];
+					$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');	
+				}
+				$sql .= ') ';	
+			}
+			
+		// Single field primary keys are simple
+		} else {
+			$sql .= fORMDatabase::createWhereClause($table_name, array($primary_key_fields[0] . '=' => $primary_keys));
+		}	
+		
+		if (!empty($order_bys)) {
+			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);				
+		}
+		
+		$sql = fORMDatabase::insertFromClause($table_name, $sql);
+		
+		return new fSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));	
+	}
+	
+	
+	/**
+	 * Creates an fSet from an SQL statement
 	 * 
 	 * @param  string $class_name  The type of object to create
 	 * @param  string $sql         The sql to get the primary keys to create a Set from
