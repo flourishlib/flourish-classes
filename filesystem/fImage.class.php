@@ -13,8 +13,6 @@
  * @uses  fProgrammerException
  * @uses  fValidationException
  * 
- * @todo  Test this class
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-19]
  */
@@ -157,26 +155,26 @@ class fImage extends fFile
 			try {
 				
 				if (fCore::getOS() == 'windows') {
-                    $win_search = 'dir /B "C:\Program Files\ImageMagick*"';
-				    $win_output = trim(shell_exec($win_search));
-                    
-                    if (stripos($win_output, 'File not found') !== FALSE) {
-                        throw new Exception();    
-                    }
-                    
-                    $path = 'C:\Program Files\\' . $win_output . '\\';
-                }
+					$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+					$win_output = trim(shell_exec($win_search));
+					
+					if (stripos($win_output, 'File not found') !== FALSE) {
+						throw new Exception();    
+					}
+					
+					$path = 'C:\Program Files\\' . $win_output . '\\';
+				}
 				
 				
-                if (fCore::getOS() == 'linux/unix') {
-				    $nix_search = 'whereis -b convert';
-				    $nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
-				    
-				    if (empty($nix_output)) {
-					    throw new Exception();
-                    }
+				if (fCore::getOS() == 'linux/unix') {
+					$nix_search = 'whereis -b convert';
+					$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+					
+					if (empty($nix_output)) {
+						throw new Exception();
+					}
 				
-				    $path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
+					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
 				}
 				
 				self::checkImageMagickBinary($path);
@@ -430,7 +428,7 @@ class fImage extends fFile
 			fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
 		}
 		
-		$info = self::getInfo($this->file);
+		$info = self::getInfo($this->file);     
 		if ($info['type'] == 'tif' && self::$processor == 'gd') {
 			fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
 		}
@@ -442,7 +440,7 @@ class fImage extends fFile
 		if ($new_image_type) {
 			$output_file = fFile::createUniqueName($this->file, $new_image_type);		
 		} else {
-			$output_file = fFile::createUniqueName($this->file);	
+			$output_file = $this->file;	
 		}
 		
 		if (self::$processor == 'gd') {
@@ -456,6 +454,8 @@ class fImage extends fFile
 			unlink($this->file);	
 		}
 		$this->file = $output_file;
+		
+		$this->pending_modifications = array();
 	}
 	
 	
@@ -573,8 +573,8 @@ class fImage extends fFile
 						$blue  = $color & 0xFF;
 
 						// Get the appropriate gray (http://en.wikipedia.org/wiki/YIQ)
-						$y = ($red * 0.299) + ($green * 0.587) + ($blue * 0.114);
-						imagesetpixel($new_gd_res, $x, $y, $grays[$y]);
+						$yiq = round(($red * 0.299) + ($green * 0.587) + ($blue * 0.114));
+						imagesetpixel($new_gd_res, $x, $y, $grays[$yiq]);
 					}
 				} 
 				
@@ -632,12 +632,12 @@ class fImage extends fFile
 			// Perform the resize operation
 			if ($mod['operation'] == 'resize') {
 				
-				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . ' -profile "*" ';
+				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . ' ';
 				
 			// Perform the crop operation
 			} elseif ($mod['operation'] == 'crop') {
 			
-				$command_line .= ' -crop ' . $mod_width . 'x' . $mod['height'];
+				$command_line .= ' -crop ' . $mod['width'] . 'x' . $mod['height'];
 				$command_line .= '+' . $mod['start_x'] . '+' . $mod['start_y'];
 				$command_line .= ' -repage ' . $mod['width'] . 'x' . $mod['height'] . '+0+0 ';
 				
@@ -663,7 +663,6 @@ class fImage extends fFile
 		$command_line .= ' ' . escapeshellarg($output_file);
 		
 		shell_exec($command_line);
-		
 	}
 } 
 

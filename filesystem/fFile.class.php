@@ -13,8 +13,6 @@
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
  * 
- * @todo  Test this class
- * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -81,7 +79,8 @@ class fFile
 	public function getFilename()
 	{
 		if ($this->exception) { throw $this->exception; }
-		return self::getInfo($this->file, 'filename');    
+		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
+		return self::getInfo($this->file, 'basename');    
 	}
 	
 	
@@ -121,7 +120,7 @@ class fFile
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
 	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
 	 */
-	public function getSize($format=FALSE, $decimal_places=1)
+	public function getFilesize($format=FALSE, $decimal_places=1)
 	{
 		// This technique can overcome signed integer limit
 		$size = sprintf("%u", filesize($this->file));    
@@ -342,7 +341,7 @@ class fFile
 		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
 		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
 		$suffix    = floor(log($bytes)/6.9314718);
-		return number_format($bytes/$sizes[$suffix], $decimal_places) . $names[$suffix];
+		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
 	}
 	
 	
