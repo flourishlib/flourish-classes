@@ -236,7 +236,7 @@ class fDatabase
 		}
 		
 		$result = new fResult($this->extension);
-		$result->setSql($sql);
+		$result->setSQL($sql);
 		
 		$start_time = microtime(TRUE);
 		$this->executeQuery($result);
@@ -351,7 +351,7 @@ class fDatabase
 	{
 		if (in_array($this->type, array('postgresql', 'mysql'))) {
 			return ($value) ? 'TRUE' : 'FALSE';	
-		} elseif ($this->type == 'sqlite') {
+		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
 			return ($value) ? "'1'" : "'0'";	
 		}
 	}
@@ -672,7 +672,7 @@ class fDatabase
 		} else {
 			$this->setAffectedRows($result, $pdo_statement); 
 		}
-		$this->setNumRows($result);
+		$this->setReturnedRows($result);
 	}
 	
 	
@@ -720,22 +720,22 @@ class fDatabase
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
-	private function setNumRows(fResult $result)
+	private function setReturnedRows(fResult $result)
 	{
 		if (is_resource($result->getResult())) {
 			if ($this->extension == 'mssql') {
-				$result->setNumRows(@mssql_num_rows($result->getResult())); 
+				$result->setReturnedRows(@mssql_num_rows($result->getResult())); 
 			} elseif ($this->extension == 'mysql') {
-				$result->setNumRows(@mysql_num_rows($result->getResult())); 
+				$result->setReturnedRows(@mysql_num_rows($result->getResult())); 
 			} elseif ($this->extension == 'mysqli') {
-				$result->setNumRows(@mysqli_num_rows($result->getResult()));
+				$result->setReturnedRows(@mysqli_num_rows($result->getResult()));
 			} elseif ($this->extension == 'pgsql') {
-				$result->setNumRows(@pg_num_rows($result->getResult()));
+				$result->setReturnedRows(@pg_num_rows($result->getResult()));
 			} elseif ($this->extension == 'sqlite') {
-				$result->setNumRows(@sqlite_num_rows($result->getResult()));	
+				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));	
 			}
 		} elseif (is_array($result->getResult())) {
-			$result->setNumRows(sizeof($result->getResult()));		
+			$result->setReturnedRows(sizeof($result->getResult()));		
 		}	
 	}
 	

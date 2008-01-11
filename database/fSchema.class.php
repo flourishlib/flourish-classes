@@ -929,7 +929,7 @@ class fSchema
 		
 		foreach ($matches as $match) {
 			$info = array();    
-			
+            
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($match[2], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
@@ -946,7 +946,7 @@ class fSchema
 			$info['not_null'] = (!empty($match[4]) || !empty($match[7])) ? TRUE : FALSE;
 		
 			// Default values
-			if (!empty($match[5]) && $match[5] != 'NULL') {
+			if (isset($match[5]) && $match[5] != '' && $match[5] != 'NULL') {
 				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);    
 			}
 			if ($info['type'] == 'boolean' && isset($info['default'])) {

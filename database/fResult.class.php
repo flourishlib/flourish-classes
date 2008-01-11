@@ -29,7 +29,7 @@ class fResult implements Iterator
 	 * 
 	 * @var integer 
 	 */
-	private $num_rows = 0;
+	private $returned_rows = 0;
 	
 	/**
 	 * The number of rows affected by an insert, update, select, etc
@@ -88,7 +88,7 @@ class fResult implements Iterator
 	 * @param  string $sql  The sql used in the query
 	 * @return void
 	 */
-	public function setSql($sql)
+	public function setSQL($sql)
 	{
 		$this->sql = $sql;
 	} 
@@ -109,13 +109,13 @@ class fResult implements Iterator
 	/**
 	 * Sets the number of rows returned
 	 * 
-	 * @param  integer $num_rows  The number of rows returned
+	 * @param  integer $returned_rows  The number of rows returned
 	 * @return void
 	 */
-	public function setNumRows($num_rows)
+	public function setReturnedRows($returned_rows)
 	{
-		$this->num_rows = (int) $num_rows;
-		if ($this->num_rows) {
+		$this->returned_rows = (int) $returned_rows;
+		if ($this->returned_rows) {
 			$this->affected_rows = 0;
 		}   
 	}
@@ -150,7 +150,7 @@ class fResult implements Iterator
 	 * 
 	 * @return string  The sql used in the query
 	 */
-	public function getSql()
+	public function getSQL()
 	{
 		return $this->sql;   
 	}
@@ -172,9 +172,9 @@ class fResult implements Iterator
 	 * 
 	 * @return integer  The number of rows returned by the query
 	 */
-	public function getNumRows()
+	public function getReturnedRows()
 	{
-		return $this->num_rows;   
+		return $this->returned_rows;   
 	}
 	
 	
@@ -220,12 +220,23 @@ class fResult implements Iterator
 	 */
 	public function tossIfNoResults()
 	{
-		if (empty($this->num_rows) && empty($this->affected_rows)) {
+		if (empty($this->returned_rows) && empty($this->affected_rows)) {
 			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
 		}
 	}
 	
 	
+	/**
+	 * Returns if there are any remaining rows
+	 * 
+	 * @return boolean  If there are remaining rows in the result
+	 */
+	public function checkIfRemainingRows()
+	{
+		return $this->valid();
+	}
+	
+
 	/**
 	 * Returns all of the rows from the result set
 	 * 
@@ -250,7 +261,7 @@ class fResult implements Iterator
 	 */
 	public function fetchRow()
 	{
-		if(!$this->num_rows) {
+		if(!$this->returned_rows) {
 			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
 		}
 		
@@ -337,11 +348,11 @@ class fResult implements Iterator
 	 */
 	public function seek($row)
 	{
-		if(!$this->num_rows) {
+		if(!$this->returned_rows) {
 			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
 		}
 		
-		if ($row >= $this->num_rows || $row < 0) {
+		if ($row >= $this->returned_rows || $row < 0) {
 			fCore::toss('fProgrammerException', 'The row requested does not exist');   
 		}
 		
@@ -363,7 +374,7 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Rewinds the query (used for iteration)
+	 * Rewinds the query (required by iterator interface)
 	 * 
 	 * @return void
 	 */
@@ -376,7 +387,7 @@ class fResult implements Iterator
 
 	
 	/**
-	 * Returns the current row in the result set (used for iteration)
+	 * Returns the current row in the result set (required by iterator interface)
 	 * 
 	 * @throws  fNoResultsException
 	 * 
@@ -391,7 +402,7 @@ class fResult implements Iterator
 
 	
 	/**
-	 * Returns the current row number (used for iteration)
+	 * Returns the current row number (required by iterator interface)
 	 * 
 	 * @return integer  The current row number
 	 */
@@ -402,7 +413,7 @@ class fResult implements Iterator
 
 	
 	/**
-	 * Rewinds the next row in the result (used for iteration)
+	 * Rewinds the next row in the result (required by iterator interface)
 	 * 
 	 * @return array|null  The next row or null
 	 */
@@ -421,13 +432,13 @@ class fResult implements Iterator
 
 	
 	/**
-	 * Returns if the query has any rows left (used for iteration)
+	 * Returns if the query has any rows left (required by iterator interface)
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */
 	public function valid()
 	{
-		return ($this->pointer < $this->num_rows);
+		return ($this->pointer < $this->returned_rows);
 	}
 }
 

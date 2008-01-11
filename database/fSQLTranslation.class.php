@@ -151,7 +151,7 @@ class fSQLTranslation
 				);
 			} else {
 				static $regex_sqlite = array(
-					'#\bserial\s+primary\s+key\b#i'  => 'INTEGER PRIMARY KEY',
+					'#\binteger\s+autoincrement\s+primary\s+key\b#i'  => 'INTEGER PRIMARY KEY',
 					'#\bcurrent_timestamp\b#i'       => "datetime(CURRENT_TIMESTAMP, 'localtime')",
 					'#\btrue\b#i'                    => "'1'",
 					'#\bfalse\b#i'                   => "'0'"

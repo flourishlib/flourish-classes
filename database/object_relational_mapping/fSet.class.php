@@ -236,7 +236,7 @@ class fSet implements Iterator
 	 */
 	public function getSizeOf()
 	{
-		return $this->result_object->getNumRows();	
+		return $this->result_object->getReturnedRows();	
 	}
 	
 	
