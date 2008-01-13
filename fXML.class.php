@@ -6,7 +6,7 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fHTML
+ * @link  http://flourishlib.com/fXML
  * 
  * @uses  fHTML
  * 
