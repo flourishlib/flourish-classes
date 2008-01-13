@@ -16,6 +16,8 @@
  * @uses  fORMSchema
  * @uses  fProgrammerException
  * 
+ * @todo  Add code to allow preloading of related data
+ * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */

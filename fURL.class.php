@@ -144,7 +144,7 @@ class fURL
 	 */
 	static public function makeNice($string)
 	{
-		$string = html_entity_decode(fHTML::makeUnaccented($string));
+		$string = fHTML::decodeEntities(fHTML::unaccent($string));
 		$string = preg_replace('#[^a-zA-Z -]#', ' ', $string);
 		return preg_replace('#\s+#', '_', trim($string));
 	}

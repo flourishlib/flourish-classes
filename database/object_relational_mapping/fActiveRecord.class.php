@@ -25,6 +25,7 @@
  * @todo  Add fFile support
  * @todo  Add fImage support
  * @todo  Add various hooks
+ * @todo  Allow preloading of related data
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
@@ -326,7 +327,7 @@ abstract class fActiveRecord
 	 * Retrieves a value from the record and formats it for output into html.
 	 * 
 	 * Below are the transformations performed:
-	 *   - varchar, char, text columns: will run through fHTML::encodeHtml()
+	 *   - varchar, char, text columns: will run through fHTML::prepareHTML()
 	 *   - date, time, timestamp: takes 1 parameter, php date() formatting string
 	 *   - boolean: will return 'Yes' or 'No'
 	 * 
@@ -351,7 +352,7 @@ abstract class fActiveRecord
 			case 'varchar':
 			case 'char':
 			case 'text':
-				return fHTML::encodeHtml($this->$method_name());
+				return fHTML::prepareHTML($this->$method_name());
 
 			case 'date':
 			case 'time':

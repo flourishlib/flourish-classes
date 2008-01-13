@@ -503,7 +503,7 @@ class fPrintableException extends Exception
 		
 		echo '<div class="' . $css_class . '">';
 		echo ($no_block_html) ? '<p>' : '';
-		echo fHTML::encodeHtml(fHTML::convertNewlines($this->getMessage()));
+		echo fHTML::prepareHTML(fHTML::convertNewlines($this->getMessage()));
 		echo ($no_block_html) ? '</p>' : '';
 		echo '</div>';
 	}
