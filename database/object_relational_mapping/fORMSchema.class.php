@@ -34,6 +34,18 @@ class fORMSchema
 	
 	
 	/**
+	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
+	 * 
+	 * @param  object $schema  An instance of a schema object with an API compatible with fSchema
+	 * @return void
+	 */
+	static public function attach($schema)
+	{
+		self::$schema_object = $schema;
+	}
+	
+	
+	/**
 	 * Return the instance of the fSchema class
 	 * 
 	 * @return fSchema  The schema instance
