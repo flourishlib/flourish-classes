@@ -9,19 +9,20 @@
  * @link  http://flourishlib.com/fSchema
  * 
  * @uses  fCore
- * @uses  fDatabase
+ * @uses  fIDatabase
+ * @uses  fISchema
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
-class fSchema
+class fSchema implements fISchema
 {
 	/**
-	 * A reference to an instance of the fDatabase object
+	 * A reference to an instance of a class that implements the fIDatabase interface
 	 * 
-	 * @var fDatabase 
+	 * @var fIDatabase 
 	 */
 	private $database = NULL;
 	
@@ -106,10 +107,10 @@ class fSchema
 	/**
 	 * Sets the database
 	 * 
-	 * @param  fDatabase $database  The fDatabase class
+	 * @param  fIDatabase $database  The fDatabase class
 	 * @return fSchema
 	 */
-	public function __construct(fDatabase $database)
+	public function __construct(fIDatabase $database)
 	{
 		$this->database = $database;    
 	}
@@ -168,7 +169,7 @@ class fSchema
 	/**
 	 * Allows overriding of column info. Performs an array merge, so to erase a column set values to null.
 	 * 
-	 * @param  array  $column_info  The modified column info
+	 * @param  array  $column_info  The modified column info (see {@link fSchema::getColumnInfo()} for format)
 	 * @param  string $table        The table to override
 	 * @param  string $column       The column to override
 	 * @return void
@@ -190,9 +191,9 @@ class fSchema
 	/**
 	 * Allows overriding of key info. Replaces existing info, so provide full key info for type selected (or all).
 	 * 
-	 * @param  array  $keys      The modified keys
+	 * @param  array  $keys      The modified keys (see {@link fSchema::getKeys()} for format)
 	 * @param  string $table     The table to override
-	 * @param  string $key_type  The key type to override (primary, foreign, unique)
+	 * @param  string $key_type  The key type to override ('primary', 'foreign', 'unique')
 	 * @return void
 	 */
 	public function setKeysOverride($keys, $table, $key_type=NULL)
@@ -260,7 +261,7 @@ class fSchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', or 'auto_increment')
+	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment')
 	 * @return array  The column info for the table/column/element specified (see method description for format)
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
@@ -328,7 +329,7 @@ class fSchema
 	 * </pre>
 	 * 
 	 * @param  string $table     The table to return the keys for
-	 * @param  string $key_type  The type of key to return
+	 * @param  string $key_type  The type of key to return ('primary', 'foreign', 'unique')
 	 * @return array  An array of all keys, or just the type specified (see method description for format)
 	 */
 	public function getKeys($table, $key_type=NULL)
@@ -404,7 +405,7 @@ class fSchema
 	 * </pre>
 	 * 
 	 * @param  string $table              The table to return the relationships for
-	 * @param  string $relationship_type  The type of relationship to return
+	 * @param  string $relationship_type  The type of relationship to return ('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many')
 	 * @return array  An array of all relationships, or just the type specified (see method description for format)
 	 */
 	public function getRelationships($table, $relationship_type=NULL)
@@ -1633,6 +1634,172 @@ class fSchema
 		}   
 	}
 }
+
+
+
+/**
+ * Gets database schema information
+ * 
+ * @copyright  Copyright (c) 2007 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fISchema
+ * 
+ * @version  1.0.0
+ * @changes  1.0.0    The initial definition [wb, 2008-01-15]
+ */
+interface fISchema
+{
+    /**
+     * Sets the database
+     * 
+     * @return fISchema
+     */
+    public function __construct();
+    
+    /**
+     * Returns column information for the table specified
+     * 
+     * If only a table is specified, column info is in the following format:
+     * 
+     * <pre>
+     * array(
+     *     (string) {column name} => array(
+     *         'type'           => (string)  {data type},
+     *         'not_null'       => (boolean) {if value can't be null},
+     *         'default'        => (mixed)   {the default value},
+     *         'valid_values'   => (array)   {the valid values for a varchar field},
+     *         'max_length'     => (integer) {the maximum length in a varchar field},
+     *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+     *     ),...
+     * )
+     * </pre>
+     * 
+     * If a table and column are specified, column info is in the following format:
+     * 
+     * <pre>
+     * array(
+     *     'type'           => (string)  {data type},
+     *     'not_null'       => (boolean) {if value can't be null},
+     *     'default'        => (mixed)   {the default value},
+     *     'valid_values'   => (array)   {the valid values for a varchar field},
+     *     'max_length'     => (integer) {the maximum length in a varchar field},
+     *     'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+     * )
+     * </pre>
+     * 
+     * If a table, column and element are specified, returned value is the single element specified.
+     * 
+     * The 'type' element is homogenized to a value from the following list:
+     *   - varchar
+     *   - char
+     *   - text
+     *   - integer
+     *   - float 
+     *   - timestamp
+     *   - date 
+     *   - time
+     *   - boolean
+     *   - blob
+     * 
+     * @param  string $table    The table to get the column info for
+     * @param  string $column   The column to get the info for
+     * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment')
+     * @return array  The column info for the table/column/element specified (see method description for format)
+     */
+    public function getColumnInfo($table, $column=NULL, $element=NULL);
+    
+    /**
+     * Returns a list of primary key, foreign key and unique key constraints for the table specified
+     * 
+     * The structure of the returned array is:
+     * 
+     * <pre>
+     * array(
+     *      'primary' => array(
+     *          {column name},...
+     *      ),
+     *      'unique'  => array(
+     *          array(
+     *              {column name},...
+     *          ),... 
+     *      ),
+     *      'foreign' => array(
+     *          array(
+     *              'column'         => {column name},
+     *              'foreign_table'  => {foreign table name},
+     *              'foreign_column' => {foreign column name},
+     *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
+     *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
+     *          ),...
+     *      )
+     * )
+     * </pre>
+     * 
+     * @param  string $table     The table to return the keys for
+     * @param  string $key_type  The type of key to return ('primary', 'foreign', 'unique')
+     * @return array  An array of all keys, or just the type specified (see method description for format)
+     */
+    public function getKeys($table, $key_type=NULL);
+    
+    /**
+     * Returns a list of one-to-one, many-to-one, one-to-many and many-to-many relationships for the table specified
+     * 
+     * The structure of the returned array is:
+     * 
+     * <pre>
+     * array(
+     *     'one-to-one' => array(
+     *         array(
+     *             'column'         => (string) {the column in the specified table},
+     *             'related_table'  => (string) {the related table},
+     *             'related_column' => (string) {the related column}
+     *         ),...
+     *     ),
+     *     'many-to-one' => array(
+     *         array(
+     *             'column'         => (string) {the column in the specified table},
+     *             'related_table'  => (string) {the related table},
+     *             'related_column' => (string) {the related column}
+     *         ),...
+     *     ),
+     *     'one-to-many' => array(
+     *         array(
+     *             'column'         => (string) {the column in the specified table},
+     *             'related_table'  => (string) {the related table},
+     *             'related_column' => (string) {the related column},
+     *             'on_delete'      => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
+     *             'on_update'      => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
+     *         ),...
+     *     ),
+     *     'many-to-many' => array(
+     *         array(
+     *             'column'              => (string) {the column in the specified table},
+     *             'related_table'       => (string) {the related table},
+     *             'related_column'      => (string) {the related column},
+     *             'join_table'          => (string) {the table that joins the specified table to the related table},
+     *             'join_column'         => (string) {the column in the join table that references 'column'},
+     *             'join_related_column' => (string) {the column in the join table that references 'related_column'}
+     *         ),...
+     *     )
+     * )
+     * </pre>
+     * 
+     * @param  string $table              The table to return the relationships for
+     * @param  string $relationship_type  The type of relationship to return ('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many')
+     * @return array  An array of all relationships, or just the type specified (see method description for format)
+     */
+    public function getRelationships($table, $relationship_type=NULL);
+    
+    /**
+     * Returns the tables in the current database
+     * 
+     * @return array  The tables in the current database
+     */
+    public function getTables();
+}
+
 
 
 /**

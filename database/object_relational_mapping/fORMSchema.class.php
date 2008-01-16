@@ -9,6 +9,7 @@
  * @link  http://flourishlib.com/fORMSchema
  * 
  * @uses  fCore
+ * @uses  fISchema
  * @uses  fORMDatabase
  * @uses  fSchema
  * 
@@ -18,9 +19,9 @@
 class fORMSchema
 {
 	/**
-	 * The instance of the fSchema object
+	 * An object that implements the fISchema interface
 	 * 
-	 * @var fSchema
+	 * @var fISchema
 	 */
 	static private $schema_object;
 
@@ -36,10 +37,10 @@ class fORMSchema
 	/**
 	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
 	 * 
-	 * @param  object $schema  An instance of a schema object with an API compatible with fSchema
+	 * @param  fISchema $schema  An object that implements the fISchema interface
 	 * @return void
 	 */
-	static public function attach($schema)
+	static public function attach(fISchema $schema)
 	{
 		self::$schema_object = $schema;
 	}
@@ -67,10 +68,17 @@ class fORMSchema
 	 */
 	static public function enableSmartCaching($cache_file)
 	{
-		self::getInstance()->setCacheFile($cache_file);
+		if (!self::getInstance() instanceof fSchema) {
+            fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');        
+        }
+        self::getInstance()->setCacheFile($cache_file);
 		fCore::addTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo')); 
 	}
 }
+
+
+// Handle loading the fISchema interface
+if (!class_exists('fSchema')) { }
 
 
 /**

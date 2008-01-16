@@ -54,18 +54,6 @@ class fORMDatabase
 	
 	
 	/**
-	 * Allows attaching an fDatabase-compatible object as the database singleton for ORM code
-	 * 
-	 * @param  object $database  An instance of a database object with an API compatible with fDatabase
-	 * @return void
-	 */
-	static public function attach($database)
-	{
-		self::$database_object = $database;
-	}
-	
-	
-	/**
 	 * Return the instance of the fDatabase class
 	 * 
 	 * @return fDatabase  The database instance

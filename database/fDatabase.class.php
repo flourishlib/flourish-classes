@@ -171,7 +171,7 @@ class fDatabase
 	/**
 	 * Gets the database type
 	 * 
-	 * @return string  The database type
+	 * @return string  The database type (mssql, mysql, pgsql or sqlite)
 	 */
 	public function getType()
 	{
