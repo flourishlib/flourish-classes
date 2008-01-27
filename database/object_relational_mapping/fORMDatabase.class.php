@@ -500,6 +500,129 @@ class fORMDatabase
 		
 		return $rows;
 	}
+    
+    
+    /**
+     * Takes a Flourish SQL SELECT query and parses it into clauses.
+     * 
+     * The select statement must be of the format:
+     * 
+     * SELECT [ table_name. | alias. ]*
+     * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
+     * [ WHERE condition [ , condition ]... ]
+     * [ GROUP BY conditions ]
+     * [ HAVING conditions ]
+     * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
+     * [ LIMIT integer ]
+     * 
+     * The returned array will contain the following keys, which may have a NULL or non-empty string value:
+     *  - 'SELECT'
+     *  - 'FROM'
+     *  - 'WHERE'
+     *  - 'GROUP BY'
+     *  - 'HAVING'
+     *  - 'ORDER BY'
+     *  - 'LIMIT'
+     * 
+     * @param  string $sql   The sql to parse
+     * @return array  The various clauses of the SELECT statement (see method descript for details)
+     */
+    static public function parseSelectSQL($sql)
+    {
+        preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+        
+        $possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
+        $found_clauses    = array();
+        foreach ($possible_clauses as $possible_clause) {
+            $found_clauses[$possible_clause] = NULL;   
+        }
+        
+        $current_clause = 0;
+        
+        foreach ($matches[0] as $match) {
+            // This is a quoted string value, don't do anything to it
+            if ($match[0] == "'") {
+                $found_clauses[$possible_clauses[$current_clause]] .= $match;    
+            
+            // Non-quoted strings should be checked for clause markers
+            } else {
+                
+                // Look to see if a new clause starts in this string
+                $i = 1;
+                while ($current_clause+$i < sizeof($possible_clauses)) {
+                    // If the next clause is found in this string
+                    if (stripos($match, $possible_clauses[$current_clause+$i]) !== FALSE) {
+                        list($before, $after) = preg_split('#\s*' . $possible_clauses[$current_clause+$i] . '\s*#i', $match);
+                        $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $before);
+                        $match = $after;
+                        $current_clause = $current_clause + $i;
+                        $i = 0;
+                    }  
+                    $i++;      
+                }
+                
+                // Otherwise just add on to the current clause
+                if (!empty($match)) {
+                    $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
+                }  
+            }
+        }  
+        
+        return $found_clauses; 
+    }
+    
+    
+    /**
+     * Takes the FROM clause from parseSelectSQL() and returns all of the tables and each one's alias
+     * 
+     * @param  string $clause   The sql clause to parse
+     * @return array  The tables in the from clause, with the table name being the key and value being the alias
+     */
+    static public function parseTableAliases($sql)
+    {
+        preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+        
+        $new_sql = '';
+        
+        // Skip quoted values since they could possible mess up parsing and don't matter anyway
+        foreach ($matches[0] as $match) {
+            if ($match[0] != "'") {
+                $new_sql .= $match;    
+            }
+        }  
+        
+        $aliases = array();
+        
+        // Parse complex joins with on clauses
+        if (preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#is', $new_sql)) {
+            $tables = preg_split('#((CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*?JOIN#i', $new_sql);
+            foreach ($tables as $table) {
+                preg_match('#\s*([\w.]+)(?:\s+(?:as\s+)?((?!ON)[\w.]+))?\s*#im', $table, $match);
+                if (!empty($match[2])) {
+                    $aliases[$match[1]] = $match[2];    
+                } else {
+                    $aliases[$match[1]] = $match[1];   
+                }   
+            }  
+            
+        // Parse simple comma-separated joins  
+        } elseif (preg_match('#(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s*,\s*(?:\w+(?:\s+(?:as\s+)?(?:\w+))?))*#is', $new_sql)) {
+            $tables = explode(',', $new_sql);
+            foreach ($tables as $table) {
+                preg_match('#\s*([\w.]+)(?:\s+(?:as\s+)?([\w.]+))?\s*#im', $table, $match);
+                if (!empty($match[2])) {
+                    $aliases[$match[1]] = $match[2];    
+                } else {
+                    $aliases[$match[1]] = $match[1];   
+                }   
+            }
+            
+        } else {
+            fCore::toss('fProgrammerException', 'Unable to parse FROM clause, does not appears to be in comma style or join style');   
+        }  
+        
+        return $aliases;
+    }
 }
 
 
