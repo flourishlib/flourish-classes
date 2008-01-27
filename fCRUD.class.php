@@ -13,6 +13,7 @@
  * 
  * @uses  fHTML
  * @uses  fInflection
+ * @uses  fPrintableException
  * @uses  fRequest
  * @uses  fSession
  * @uses  fURL
@@ -49,6 +50,13 @@ class fCRUD
 	 * @var array 
 	 */
 	static private $search_values = array();
+	
+	/**
+	 * Any values that were loaded from the session, used for redirection
+	 * 
+	 * @var array 
+	 */
+	static private $loaded_values = array();
    
    
 	/**
@@ -60,29 +68,75 @@ class fCRUD
 	
 	
 	/**
-	 * Overrides the value of 'method' in $_REQUEST, $_POST, $_GET based on the 'method::METHOD_NAME' value in $_REQUEST, $_POST, $_GET. Useful with multiple submit buttons.
+	 * Prints standard sub nav based on list/add/edit/delete 
 	 * 
+	 * @param  string  $action         The currently selected action
+	 * @param  string  $parameter      The parameter for the primary key of the object we are managing
+	 * @param  boolean $show_all_link  If the add link should be shown on the list view
 	 * @return void
 	 */
-	static public function overrideMethod()
+	static public function showSubNav($action, $parameter, $show_add_link=TRUE)
 	{
-		foreach ($_REQUEST as $key => $value) {
-			if (substr($key, 0, 8) == 'method::') {
-				$_REQUEST['method'] = substr($key, 8);
-				unset($_REQUEST[$key]);
-			}	
+		if (($action == 'list' && $show_add_link) || $action != 'list') {
+			?>
+			<ul>
+				<? if ($action == 'edit' || $action == 'update') { ?>
+					<li><a href="<?= fURL::get() ?>?action=delete&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Delete</a></li>
+				<? } ?>
+				<? if ($action == 'delete' || $action == 'remove') { ?>
+					<li><a href="<?= fURL::get() ?>?action=edit&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Edit</a></li>
+				<? } ?>
+				<? if ($action == 'list' && $show_add_link) { ?>
+					<li><a href="<?= fURL::get() ?>?action=add">Add</a></li>
+				<? } ?>
+				<? if ($action != 'list') { ?>
+					<li><a href="<?= fURL::get() ?>">List</a></li>
+				<? } ?>
+			</ul>
+			<?	
 		}
-		foreach ($_POST as $key => $value) {
-			if (substr($key, 0, 8) == 'method::') {
-				$_POST['method'] = substr($key, 8);
-				unset($_POST[$key]);
-			}	
+	}
+	
+	
+	/**
+	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content 
+	 * 
+	 * @param  string $content    The content to display
+	 * @param  string $css_class  The css class to apply
+	 * @return void
+	 */
+	static public function show($content, $css_class)
+	{
+		if (empty($content)) {
+			return;
+		}		
+		$contains_block_level = strip_tags($content, '<a><abbr><acronym><b><code><em><i><span><strong>') != $content;
+		if ($contains_block_level) {
+			echo '<div class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</div>';	
+		} else {
+			echo '<p class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</p>';
 		}
-		foreach ($_GET as $key => $value) {
-			if (substr($key, 0, 8) == 'method::') {
-				$_GET['method'] = substr($key, 8);
-				unset($_GET[$key]);
-			}	
+	}
+	
+	
+	/**
+	 * Prints successful 'added', 'updated', 'deleted' messaging 
+	 * 
+	 * @param  string $object_name  The name of the type of objects we are manipulating
+	 * @return void
+	 */
+	static public function showSuccessMessages($object_name)
+	{
+		if (fRequest::get('added', 'boolean')) {
+			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully added</p><?	
+		}
+		
+		if (fRequest::get('updated', 'boolean')) {
+			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully updated</p><?	
+		}
+		
+		if (fRequest::get('deleted', 'boolean')) {
+			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully deleted</p><?	
 		}
 	}
 	
@@ -120,98 +174,36 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content 
+	 * Checks to see if any values (search or sort) were loaded from the session, and if so redirects the user to the current URL with those values added
 	 * 
-	 * @param  string $content   The content to display
-	 * @param  string $class     The css class to apply
 	 * @return void
 	 */
-	static public function display($content, $class)
+	static public function redirectWithLoadedValues()
 	{
-		if (empty($content)) {
-			return;
-		}		
-		$contains_block_level = strip_tags($content, '<a><abbr><acronym><b><code><em><i><span><strong>') != $content;
-		if ($contains_block_level) {
-			echo '<div class="' . $class . '">' . fHTML::prepareHTML($content) . '</div>';	
+		$query_string = fURL::replaceInQueryString(array_keys(self::$loaded_values), array_values(self::$loaded_values), FALSE);
+		$url = fURL::get() . $query_string;
+		fURL::redirect($url);	
+	}
+	
+	
+	/**
+	 * Gets the current value of a search field 
+	 * 
+	 * @param  string $column   The column that is being pulled back
+	 * @param  string $cast_to  The data type to cast to
+	 * @param  string $default  The default value
+	 * @return string  The current value
+	 */
+	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
+	{
+		if (self::checkForAction() && self::getPreviousSearchValue($column) && fRequest::get($column) === NULL) {
+			self::$search_values[$column] = self::getPreviousSearchValue($column);	
+			self::$loaded_values[$column] = self::$search_values[$column];
 		} else {
-			echo '<p class="' . $class . '">' . fHTML::prepareHTML($content) . '</p>';
+			self::$search_values[$column] = fRequest::get($column, $cast_to, $default);
+			self::setPreviousSearchValue($column, self::$search_values[$column]);
 		}
-	}
-	
-	
-	/**
-	 * Returns a css class name for a row. Will return even, odd, or highlighted if the two parameters are equal and added or updated is true
-	 * 
-	 * @param  mixed $first_value    The first value to compare
-	 * @param  mixed $second_value   The second value to compare
-	 * @return string  The css class
-	 */
-	static public function getRowClass($first_value, $second_value)
-	{
-		if ($first_value == $second_value &&
-			(fRequest::get('added', 'boolean') ||
-			 fRequest::get('updated', 'boolean'))) {
-			 self::$row_number++;
-			 return 'highlighted';
-		}
-			
-		$class = (self::$row_number++ % 2) ? 'odd' : 'even';
-		$class .= (self::$row_number == 2) ? ' first' : '';
-		return $class;
-	}
-	
-	
-	/**
-	 * Prints successful 'added', 'updated', 'deleted' messaging 
-	 * 
-	 * @param  string $object_name  The name of the type of objects we are manipulating
-	 * @return void
-	 */
-	static public function showMessages($object_name)
-	{
-		if (fRequest::get('added', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully added</p><?	
-		}
-		
-		if (fRequest::get('updated', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully updated</p><?	
-		}
-		
-		if (fRequest::get('deleted', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully deleted</p><?	
-		}
-	}
-	
-	
-	/**
-	 * Prints standard sub nav based on list/add/edit/delete 
-	 * 
-	 * @param  string  $method         The currently selected method
-	 * @param  string  $parameter      The parameter for the primary key of the object we are managing
-	 * @param  boolean $show_all_link  If the add link should be shown on the list view
-	 * @return void
-	 */
-	static public function showSubNav($method, $parameter, $show_add_link=TRUE)
-	{
-		if (($method == 'list' && $show_add_link) || $method != 'list') {
-			?>
-			<ul>
-				<? if ($method == 'edit' || $method == 'update') { ?>
-					<li><a href="<?= fURL::get() ?>?method=delete&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Delete</a></li>
-				<? } ?>
-				<? if ($method == 'delete' || $method == 'delete_action') { ?>
-					<li><a href="<?= fURL::get() ?>?method=edit&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Edit</a></li>
-				<? } ?>
-				<? if ($method == 'list' && $show_add_link) { ?>
-					<li><a href="<?= fURL::get() ?>?method=add">Add</a></li>
-				<? } ?>
-				<? if ($method != 'list') { ?>
-					<li><a href="<?= fURL::get() ?>">List</a></li>
-				<? } ?>
-			</ul>
-			<?	
-		}
+		return self::$search_values[$column];	
 	}
 	
 	
@@ -225,6 +217,7 @@ class fCRUD
 	{
 		if (self::checkForAction() && self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
 			self::$sort_column = self::getPreviousSortColumn();	
+			self::$loaded_values['sort'] = self::$sort_column;
 		} else {
 			self::$sort_column = fRequest::getFromArray('sort', $possible_columns);
 			self::setPreviousSortColumn(self::$sort_column);
@@ -243,31 +236,12 @@ class fCRUD
 	{
 		if (self::checkForAction() && self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
 			self::$sort_direction = self::getPreviousSortDirection();	
+			self::$loaded_values['dir'] = self::$sort_direction;
 		} else {
 			self::$sort_direction = fRequest::getFromArray('dir', array($default_direction, ($default_direction == 'asc') ? 'desc' : 'asc'));
 			self::setPreviousSortDirection(self::$sort_direction);
 		}
 		return self::$sort_direction;	
-	}
-	
-	
-	/**
-	 * Gets the current value of a search field 
-	 * 
-	 * @param  string $column   The column that is being pulled back
-	 * @param  string $cast_to  The data type to cast to
-	 * @param  string $default  The default value
-	 * @return string  The current value
-	 */
-	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
-	{
-		if (self::checkForAction() && self::getPreviousSearchValue($column) && fRequest::get($column) === NULL) {
-			self::$search_values[$column] = self::getPreviousSearchValue();	
-		} else {
-			self::$search_values[$column] = fRequest::get($column, $cast_to, $default);
-			self::setPreviousSearchValue($column, self::$search_values[$column]);
-		}
-		return self::$search_values[$column];	
 	}
 	
 	
@@ -294,9 +268,7 @@ class fCRUD
 		
 		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
 		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
-		?>
-		<a href="<?= fURL::get() . fURL::replaceInQueryString($columns, $values) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a>
-		<?	
+		?><a href="<?= fURL::get() . fURL::replaceInQueryString($columns, $values) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
 	}
 	
 	
@@ -311,6 +283,56 @@ class fCRUD
 		if (self::$sort_column == $column) {
 			echo ' class="sorted"';
 		}	
+	}
+	
+	
+	/**
+	 * Returns a css class name for a row. Will return even, odd, or highlighted if the two parameters are equal and added or updated is true
+	 * 
+	 * @param  mixed $row_value       The value from the row
+	 * @param  mixed $affected_value  The value that was just added or updated
+	 * @return string  The css class
+	 */
+	static public function getRowClass($row_value, $affected_value)
+	{
+		if ($row_value == $affected_value &&
+			(fRequest::get('added', 'boolean') ||
+			 fRequest::get('updated', 'boolean'))) {
+			 self::$row_number++;
+			 return 'highlighted';
+		}
+			
+		$class = (self::$row_number++ % 2) ? 'odd' : 'even';
+		$class .= (self::$row_number == 2) ? ' first' : '';
+		return $class;
+	}
+	
+	
+	/**
+	 * Overrides the value of 'action' in $_REQUEST, $_POST, $_GET based on the 'action::ACTION_NAME' value in $_REQUEST, $_POST, $_GET. Used for multiple submit buttons.
+	 * 
+	 * @return void
+	 */
+	static public function overrideAction()
+	{
+		foreach ($_REQUEST as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$_REQUEST['action'] = substr($key, 8);
+				unset($_REQUEST[$key]);
+			}	
+		}
+		foreach ($_POST as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$_POST['action'] = substr($key, 8);
+				unset($_POST[$key]);
+			}	
+		}
+		foreach ($_GET as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$_GET['action'] = substr($key, 8);
+				unset($_GET[$key]);
+			}	
+		}
 	}
 	
 	

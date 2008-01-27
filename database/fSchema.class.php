@@ -11,6 +11,7 @@
  * @uses  fCore
  * @uses  fIDatabase
  * @uses  fISchema
+ * @uses  fISchema
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
  * 
@@ -20,7 +21,7 @@
 class fSchema implements fISchema
 {
 	/**
-	 * A reference to an instance of a class that implements the fIDatabase interface
+	 * A reference to an instance of the fDatabase class
 	 * 
 	 * @var fIDatabase 
 	 */
@@ -1651,13 +1652,6 @@ class fSchema implements fISchema
  */
 interface fISchema
 {
-    /**
-     * Sets the database
-     * 
-     * @return fISchema
-     */
-    public function __construct();
-    
     /**
      * Returns column information for the table specified
      * 

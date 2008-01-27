@@ -197,12 +197,23 @@ class fSet implements Iterator
 	 */
 	public function __call($method_name, $parameters)
 	{
-		$sort_method = str_replace('sortBy', $method_name);
-		if ($sort_method == $method_name) {
-			fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');	
-		}
-		$sort_method[0] = strtolower($sort_method[0]);
-		$this->sortCallback($parameter[0], $parameter[1], $sort_method);
+		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
+        
+        switch ($action) {
+            case 'sort':
+                $sort_method = substr($element, 3);
+		        $sort_method[0] = strtolower($sort_method[0]);
+		        $this->sortCallback($parameter[0], $parameter[1], $sort_method);
+                break;
+                
+            case 'preload':
+                
+                break;
+            
+            default:
+                fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
+                break;
+        }
 	}
 	
 	

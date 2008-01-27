@@ -46,9 +46,9 @@ class fURL
 	
 	
 	/**
-	 * Returns the requested url
+	 * Returns the requested url, does no include the query string
 	 * 
-	 * @return string  The requested URL
+	 * @return string  The requested URL without the query string
 	 */
 	static public function get()
 	{
