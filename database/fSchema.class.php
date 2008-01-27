@@ -9,8 +9,6 @@
  * @link  http://flourishlib.com/fSchema
  * 
  * @uses  fCore
- * @uses  fIDatabase
- * @uses  fISchema
  * @uses  fISchema
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
@@ -23,7 +21,7 @@ class fSchema implements fISchema
 	/**
 	 * A reference to an instance of the fDatabase class
 	 * 
-	 * @var fIDatabase 
+	 * @var fDatabase 
 	 */
 	private $database = NULL;
 	
@@ -111,7 +109,7 @@ class fSchema implements fISchema
 	 * @param  fIDatabase $database  The fDatabase class
 	 * @return fSchema
 	 */
-	public function __construct(fIDatabase $database)
+	public function __construct(fDatabase $database)
 	{
 		$this->database = $database;    
 	}
