@@ -12,8 +12,6 @@
  * @uses  fNoResultsException
  * @uses  fProgrammerException
  * 
- * @todo  Change the code to not use buffered queries (saves ram) and to not grab all rows when using PDO
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */

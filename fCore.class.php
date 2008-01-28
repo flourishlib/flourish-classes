@@ -499,7 +499,7 @@ class fPrintableException extends Exception
 	public function printMessage() 
 	{
 		$css_class     = 'exception ' . fInflection::underscorize(get_class($this));
-		$no_block_html = strip_tags($this->getMessage(), '<a><abbr><acronym><b><code><em><i><span><strong>') == $this->getMessage();
+		$no_block_html = !fHTML::checkForBlockLevelHTML($this->getMessage());
 		
 		echo '<div class="' . $css_class . '">';
 		echo ($no_block_html) ? '<p>' : '';

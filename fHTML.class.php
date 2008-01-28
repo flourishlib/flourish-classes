@@ -8,7 +8,6 @@
  * 
  * @link  http://flourishlib.com/fHTML
  * 
- * @todo  Add a method to do link parsing
  * @todo  Create functionality for cleaning up HTML
  * 
  * @version  1.0.0
@@ -45,7 +44,7 @@ class fHTML
         }
 
         // Merge the text and html back together  
-        for ($i=0; $i<sizeof($html_matches); $i++) {
+        for ($i = 0; $i < sizeof($html_matches); $i++) {
             $text_matches[$i] .= $html_matches[$i][0];
         }
 
@@ -88,7 +87,57 @@ class fHTML
      */
     static public function convertNewlines($content)
     {
-        return (strip_tags($content, '<a><abbr><acronym><b><code><em><i><span><strong>') != $content) ? $content : nl2br($content);
+        return (self::checkForBlockLevelHTML($content)) ? $content : nl2br($content);
+    }
+    
+    
+    /**
+     * Takes a block of text and converts all URLs into HTML links
+     * 
+     * @param  string $content            The content to parse for links
+     * @param  integer $link_text_length  If non-zero, all link text will be truncated to this many characters
+     * @return string  The content with all URLs converted to HTML link
+     */
+    static public function createLinks($content, $link_text_length=0)
+    {
+    	// Determine what replacement to perform
+    	if ($link_text_length) {
+    	 	$replacement = '((strlen("\1") > ' . $link_text_length . ') ? substr("\1", 0, ' . $link_text_length . ') . "..." : "\1")';	
+		} else {
+			$replacement = '"\1"';
+		}
+    	
+    	// Find all a tags
+        $reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
+        preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
+
+        // Find all text
+        $text_matches = preg_split($reg_exp, $content);
+        
+        // For each chunk of text, convert all URLs to links
+        foreach($text_matches as $key => $text) {
+            
+            // Handle fully qualified urls with protocol
+            $full_url_regex = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
+            $text = preg_replace($full_url_regex, '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"', $text);
+            
+            // Handle domains names that start with www
+            $www_url_regex = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
+            $text = preg_replace($www_url_regex, '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"', $text);
+            
+            // Handle email addresses
+            $email_regex = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
+            $text = preg_replace($email_regex, '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"', $text);
+            
+            $text_matches[$key] = str_replace("\\'", "'", $text);
+        }
+
+        // Merge the text and a tags back together  
+        for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
+            $text_matches[$i] .= $a_tag_matches[$i][0];
+        }
+
+        return implode($text_matches);  
     }
     
     
@@ -259,7 +308,20 @@ class fHTML
         $content = self::convertEntitiesToNumeric($content);
         $content = strtr($content, $character_map);
         return self::decodeEntities($content); 
-	}           
+	}   
+	
+	
+	/**
+	 * Checks a string of HTML for block level elements 
+	 * 
+	 * @param  string $content   The HTML content to check
+	 * @return boolean  If the content contains a block level tag
+	 */
+	static public function checkForBlockLevelHTML($content)
+	{
+		static $inline_tags = '<a><abbr><acronym><b><big><br><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
+		return strip_tags($content, $inline_tags) != $content;
+	}        
 }
 
 

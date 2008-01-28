@@ -110,8 +110,8 @@ class fCRUD
 		if (empty($content)) {
 			return;
 		}		
-		$contains_block_level = strip_tags($content, '<a><abbr><acronym><b><code><em><i><span><strong>') != $content;
-		if ($contains_block_level) {
+
+		if (fHTML::checkForBlockLevelHTML($content)) {
 			echo '<div class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</div>';	
 		} else {
 			echo '<p class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</p>';

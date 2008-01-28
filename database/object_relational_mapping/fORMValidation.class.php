@@ -619,7 +619,7 @@ class fORMValidation
 		}			
 		
 		if ($format_type == 'email') {
-			if (!preg_match('#^[a-z0-9\\.\\-\'_]+@([a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
+			if (!preg_match('#^[a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
 				fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter an email address in the form name@example.com');	
 			}	
 		

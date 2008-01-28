@@ -21,7 +21,6 @@
  * @uses  fRequest
  * @uses  fResult
  * 
- * @todo  Add code to handle association via multiple columns
  * @todo  Add fFile support
  * @todo  Add fImage support
  * @todo  Add various hooks
