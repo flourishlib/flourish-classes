@@ -87,7 +87,8 @@ class fHTML
      */
     static public function convertNewlines($content)
     {
-        return (self::checkForBlockLevelHTML($content)) ? $content : nl2br($content);
+        static $inline_tags_minus_br = '<a><abbr><acronym><b><big><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
+        return (strip_tags($content, $inline_tags_minus_br) != $content) ? $content : nl2br($content);
     }
     
     
@@ -107,37 +108,51 @@ class fHTML
 			$replacement = '"\1"';
 		}
     	
-    	// Find all a tags
-        $reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
-        preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
-
-        // Find all text
-        $text_matches = preg_split($reg_exp, $content);
+    	
+    	// Handle fully qualified urls with protocol
+        $full_url_regex       = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
+        $full_url_replacement = '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"';
         
-        // For each chunk of text, convert all URLs to links
-        foreach($text_matches as $key => $text) {
-            
-            // Handle fully qualified urls with protocol
-            $full_url_regex = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
-            $text = preg_replace($full_url_regex, '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"', $text);
-            
-            // Handle domains names that start with www
-            $www_url_regex = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
-            $text = preg_replace($www_url_regex, '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"', $text);
-            
-            // Handle email addresses
-            $email_regex = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
-            $text = preg_replace($email_regex, '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"', $text);
-            
-            $text_matches[$key] = str_replace("\\'", "'", $text);
-        }
+        // Handle domains names that start with www
+        $www_url_regex       = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
+        $www_url_replacement = '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"';
+        
+        // Handle email addresses
+        $email_regex       = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
+        $email_replacement = '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"';
+    	
+    	$searches = array(
+    		$full_url_regex => $full_url_replacement,
+    		$www_url_regex  => $www_url_replacement,
+    		$email_regex    => $email_replacement	
+    	);
+    	
+    	
+    	// Loop through and do each kind of replacement, by doing a pass for each replacement, we prevent nested links
+    	foreach ($searches as $regex => $replacement) {
+    		
+    		// Find all a tags
+	        $reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
+	        preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
 
-        // Merge the text and a tags back together  
-        for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
-            $text_matches[$i] .= $a_tag_matches[$i][0];
-        }
+	        // Find all text
+	        $text_matches = preg_split($reg_exp, $content);
+	        
+	        // For each chunk of text, convert all URLs to links
+	        foreach($text_matches as $key => $text) {
+	            $text = preg_replace($regex, $replacement, $text);
+	            $text_matches[$key] = str_replace("\\'", "'", $text);
+	        }
 
-        return implode($text_matches);  
+	        // Merge the text and a tags back together  
+	        for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
+	            $text_matches[$i] .= $a_tag_matches[$i][0];
+	        }
+
+	        $content = implode($text_matches);  
+		}
+        
+        return $content;
     }
     
     

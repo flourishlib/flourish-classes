@@ -70,6 +70,29 @@ class fInflection
 		'(.)s$'          => '\1'
 	);
 	
+	/**
+	 * A listing of words that should be converted to all capital letters, instead of just the first letter
+	 * 
+	 * @var array 
+	 */
+	static private $all_capitals_words = array(
+		'api',
+		'css',
+		'gif',
+		'html',
+		'id',
+		'jpg',
+		'mp3',
+		'pdf',
+		'php',
+		'png',
+		'sql',
+		'swf',
+		'url',
+		'xhtml',
+		'xml'
+	);
+	
 	
 	/**
 	 * Prevent instantiation
@@ -77,6 +100,86 @@ class fInflection
 	 * @return fInflection
 	 */
 	private function __construct() { }
+	
+	
+	/**
+	 * Returns the singular or plural form of the word or based on the quantity specified
+	 * 
+	 * @param  mixed $quantity                       The quantity (integer) or an array of objects to count
+	 * @param  string $singular_form                 The string to be returned for when $quantity = 1
+	 * @param  string $plural_form                   The string to be returned for when $quantity != 1, use %d to place the quantity in the string
+	 * @param  boolean $use_words_for_single_digits  If the numbers 0 to 9 should be written out as words
+	 * @return string 
+	 */
+	static public function inflectOnQuantity($quantity, $singular_form, $plural_form, $use_words_for_single_digits=FALSE)
+	{
+	 	if (is_array($quantity)) {
+	 		$quantity = sizeof($quantity);
+		} 
+	 	
+	 	if ($quantity == 1) {
+	 		return $singular_form;	
+	 		
+		} else {
+			$output = $plural_form;
+			
+			// Handle placement of the quantity into the output
+			if (strpos($output, '%d') !== FALSE) {
+				
+				if ($use_words_for_single_digits && $quantity < 10) {
+					$replacements = array(
+						0 => 'zero',
+						1 => 'one',
+						2 => 'two',
+						3 => 'three',
+						4 => 'four',
+						5 => 'five',
+						6 => 'six',
+						7 => 'seven',
+						8 => 'eight',
+						9 => 'nine'
+					);
+					$quantity = $replacements[$quantity];
+				}
+				
+				$output = str_replace('%d', $quantity, $output);			
+			}
+			
+			return $output;
+		}
+	}
+	
+	
+	/**
+	 * Returns the passed terms joined together using rule 2 from Strunk & White's 'The Elements of Style'
+	 * 
+	 * @param  array $terms  An array of terms to be join together
+	 * @return string  The terms joined together
+	 */
+	static public function joinTerms($terms)
+	{
+	 	settype($terms, 'array');
+	 	$terms = array_values($terms);
+	 	
+	 	switch (sizeof($terms)) {
+	 		case 0:
+	 			return '';
+	 			break;
+	 		
+	 		case 1:
+	 			return $terms[0];
+	 			break;
+	 		
+	 		case 2:
+	 			return $terms[0] . ' and ' . $terms[1];
+	 			break;
+	 			
+	 		default:
+	 			$last_term = array_pop($terms);
+	 			return join(', ', $terms) . ', and ' . $last_term;
+	 			break;	
+		}
+	}
 	
 	
 	/**
@@ -150,7 +253,7 @@ class fInflection
 	 * @param  string $plural    The plural version of the noun
 	 * @return void
 	 */
-	static public function addCustomRule($singular, $plural)
+	static public function addSingularPluralRule($singular, $plural)
 	{
 		self::$singular_to_plural_rules = array_merge(array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
 													  self::$singular_to_plural_rules);
@@ -196,8 +299,20 @@ class fInflection
 	 */
 	static public function humanize($string)
 	{
-		return preg_replace('/(\b(id|url|pdf|swf|css)\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
-	}  	  
+		return preg_replace('/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
+	}  
+	
+	
+	/**
+	 * Adds a word to the list of all capital letters words, which is used by {@link fInflection::humanize()} to produce more gramatically correct results
+	 * 
+	 * @param  string $word   The word that should be in all caps when printed
+	 * @return void
+	 */
+	static public function addAllCapitalsWord($word)
+	{
+	 	self::$all_capitals_words[] = strtolower($word);	
+	}  
 }
 
 
