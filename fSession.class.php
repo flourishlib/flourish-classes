@@ -48,6 +48,24 @@ class fSession
 	
 	
 	/**
+	 * Sets the minimum length of a session, PHP might not clean up the session data right once this timestamp has elapsed
+	 * 
+	 * @param string $timespan  An english description of a timespan (e.g. '30 minutes', '1 hour', '1 day 2 hours')
+	 * @return void
+	 */
+	static public function setLength($timespan)
+	{
+	 	if (!self::$open) {
+	 		$seconds = strtotime($timespan) - time();
+			ini_set('session.gc_maxlifetime', $seconds);
+			ini_set('session.cookie_lifetime', 0);
+		} else {
+			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before fSession::open()');	
+		}	
+	}
+	
+	
+	/**
 	 * Opens the session for writing
 	 * 
 	 * @return void
@@ -62,7 +80,7 @@ class fSession
 	
 	
 	/**
-	 * Closes the session for writing
+	 * Closes the session for writing, allowing other pages to open the session
 	 * 
 	 * @return void
 	 */
@@ -76,7 +94,7 @@ class fSession
 	
 	
 	/**
-	 * Destroys the session, removing all traces
+	 * Destroys the session, removing all values
 	 * 
 	 * @return void
 	 */
@@ -112,17 +130,17 @@ class fSession
 	/**
 	 * Gets data from the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
 	 * 
-	 * @param  string $key       The name to get the value for
-	 * @param  mixed  $default   The default value to use if the requested key is not set
-	 * @param  string $prefix    The prefix to stick before the key
+	 * @param  string $key             The name to get the value for
+	 * @param  mixed  $default_value   The default value to use if the requested key is not set
+	 * @param  string $prefix          The prefix to stick before the key
 	 * @return mixed  The data element requested
 	 */
-	static public function get($key, $default=NULL, $prefix='fSession::')
+	static public function get($key, $default_value=NULL, $prefix='fSession::')
 	{
 		if (!self::$open) {
 			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::get()');	
 		}
-		return (isset($_SESSION[$prefix . $key])) ? $_SESSION[$prefix . $key] : $default;
+		return (isset($_SESSION[$prefix . $key])) ? $_SESSION[$prefix . $key] : $default_value;
 	}
 	
 	

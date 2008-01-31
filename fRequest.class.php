@@ -42,19 +42,20 @@ class fRequest
 	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order)
 	 * 
-	 * @param  string $parameter     The parameter to get the value of
+	 * @param  string $key           The key to get the value of
 	 * @param  string $cast_to       Cast the value to this data type
 	 * @param  mixed $default_value  If the parameter is not set in $_POST or $_GET, use this value instead
 	 * @return mixed  The value
 	 */
-	static public function get($parameter, $cast_to=NULL, $default_value=NULL)
+	static public function get($key, $cast_to=NULL, $default_value=NULL)
 	{
 		$value = $default_value;
-		if (isset($_POST[$parameter])) {
-			$value = $_POST[$parameter];   
-		} elseif (isset($_GET[$parameter])) {
-			$value = $_GET[$parameter];
+		if (isset($_POST[$key])) {
+			$value = $_POST[$key];   
+		} elseif (isset($_GET[$key])) {
+			$value = $_GET[$key];
 		}
+		
 		if (get_magic_quotes_gpc()) {
 			if (is_array($value)) {
 				$value = array_map('stripslashes', $value);
@@ -62,19 +63,27 @@ class fRequest
 				$value = stripslashes($value);
 			}   
 		}
+		
 		if ($cast_to == 'array' && is_string($value) && strpos($value, ',') !== FALSE) {
 			$value = explode(',', $value);    
 		}
+		
 		if ($cast_to == 'bool' || $cast_to == 'boolean') {
-			if (strtolower($value) == 'f' || strtolower($value) == 'false' || !$value) {
+			if (strtolower($value) == 'f' || strtolower($value) == 'false' || strtolower($value) == 'no' || !$value) {
 				$value = FALSE;
 			} else {
 				$value = TRUE;
 			}   
 		}
-		if ($cast_to) {
+		
+		if ($cast_to == 'array' && ($value === NULL || $value === '')) {
+		 	$value = array();	
+		} elseif ($cast_to != 'string' && $value === '') {
+			$value = NULL;
+		} elseif ($cast_to && $value !== NULL) {
 			settype($value, $cast_to);   
 		}
+		
 		return $value;
 	}
 	
@@ -82,27 +91,27 @@ class fRequest
 	/**
 	 * Indicated if the parameter specified is set in the $_POST or $_GET superglobals
 	 * 
-	 * @param  string $parameter     The parameter to check
+	 * @param  string $key  The key to check
 	 * @return boolean  If the parameter is set
 	 */
-	static public function check($parameter)
+	static public function check($key)
 	{
-		return isset($_POST[$parameter]) || isset($_GET[$parameter]);
+		return isset($_POST[$key]) || isset($_GET[$key]);
 	}
 	
 	
 	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order), restricting to a specific set of values
 	 * 
-	 * @param  string $parameter      The parameter to get the value of
+	 * @param  string $key            The key to get the value of
 	 * @param  array  $valid_values   The array of values that are permissible, if one is not selected, picks first
 	 * @return mixed  The value
 	 */
-	static public function getFromArray($parameter, $valid_values)
+	static public function getFromArray($key, $valid_values)
 	{
 		settype($valid_values, 'array');
 		$valid_values = array_merge(array_unique($valid_values));
-		$value = self::get($parameter);
+		$value = self::get($key);
 		if (!in_array($value, $valid_values)) {
 			return $valid_values[0];	
 		}
