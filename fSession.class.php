@@ -48,7 +48,7 @@ class fSession
 	
 	
 	/**
-	 * Sets the minimum length of a session, PHP might not clean up the session data right once this timestamp has elapsed
+	 * Sets the minimum length of a session - PHP might not clean up the session data right away once this timespan has elapsed
 	 * 
 	 * @param string $timespan  An english description of a timespan (e.g. '30 minutes', '1 hour', '1 day 2 hours')
 	 * @return void

@@ -34,11 +34,15 @@ class fTemplating
 	/**
 	 * Initializes this templating engine
 	 * 
-	 * @param  string $root   The filesystem path to use when accessing relative files
+	 * @param  string $root   The filesystem path to use when accessing relative files, defaults to $_SERVER['DOCUMENT_ROOT']
 	 * @return fTemplating
 	 */
-	public function __construct($root)
+	public function __construct($root=NULL)
 	{
+		if ($root === NULL) {
+		 	$root = $_SERVER['DOCUMENT_ROOT'];	
+		}
+		
 		if (!file_exists($root)) {
 			fCore::toss('fProgrammerException', 'The root specified does not exist on the filesystem');       
 		}
@@ -71,12 +75,13 @@ class fTemplating
 	/**
 	 * Gets the value of an element
 	 * 
-	 * @param  string $element   The element to get
-	 * @return mixed  The value of the element specified, or NULL if it has not been set
+	 * @param  string $element        The element to get
+	 * @param  mixed  $default_value  The value to return if the element has not been set
+	 * @return mixed  The value of the element specified, or the default value if it has not been set
 	 */
-	public function get($element)
+	public function get($element, $default_value=NULL)
 	{
-		return (isset($this->elements[$element])) ? $this->elements[$element] : NULL;	
+		return (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;	
 	}
 	
 	
@@ -92,28 +97,30 @@ class fTemplating
 			fCore::toss('fProgrammerException', 'The element specified has not been set');       
 		}
 		
-		$values = $this->elements[$element];
-		settype($values, 'array');
+		$__values = $this->elements[$element];
+		settype($__values, 'array');
+		unset($element);
 		
-		foreach ($values as $value) {
-			if (empty($value)) {
+		extract($this->elements);
+		foreach ($__values as $__value) {
+			if (empty($__value)) {
 				fCore::toss('fProgrammerException', 'The element specified is empty');	
 			}
 			
 			// Check to see if the element is an absolute path
-			if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//)#i', $value)) {
-				$value = $this->root . $value;		
+			if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//)#i', $__value)) {
+				$__value = $this->root . $__value;		
 			}
 			
-			if (!file_exists($value)) {
+			if (!file_exists($__value)) {
 				fCore::toss('fProgrammerException', 'The element specified does not exist on the filesystem');       
 			}
 			
-			if (!is_readable($value)) {
+			if (!is_readable($__value)) {
 				fCore::toss('fProgrammerException', 'The element specified can not be read from');       
 			}
 			
-			include($value);	
+			include($__value);	
 		}
 	}
 }
