@@ -5,7 +5,7 @@
  * CRUD stands for Create, Read, Update and Delete - the basic functionality of
  * almost all web applications.
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -180,7 +180,7 @@ class fCRUD
 	 */
 	static public function redirectWithLoadedValues()
 	{
-		$query_string = fURL::replaceInQueryString(array_keys(self::$loaded_values), array_values(self::$loaded_values), FALSE);
+		$query_string = fURL::replaceInQueryString(array_keys(self::$loaded_values), array_values(self::$loaded_values));
 		$url = fURL::get() . $query_string;
 		fURL::redirect($url);	
 	}
@@ -268,7 +268,7 @@ class fCRUD
 		
 		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
 		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
-		?><a href="<?= fURL::get() . fURL::replaceInQueryString($columns, $values) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
+		?><a href="<?= fHTML::prepareText(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
 	}
 	
 	
@@ -425,7 +425,7 @@ class fCRUD
 
 
 /**
- * Copyright (c) 2007 William Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

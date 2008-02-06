@@ -2,7 +2,7 @@
 /**
  * Provides url-related methods
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -18,14 +18,6 @@
 class fURL
 {
 	/**
-	 * If getScript() should strip the file extension
-	 * 
-	 * @var boolean 
-	 */
-	static private $no_extensions = FALSE;    
-	
-	
-	/**
 	 * Forces use as a static class
 	 * 
 	 * @return fURL
@@ -34,48 +26,35 @@ class fURL
 	
 	
 	/**
-	 * Sets the no_extensions for fURL::getScript()
-	 * 
-	 * @param  boolean $no_extensions  If no extensions should be returned via fURL::getScript()
-	 * @return void
-	 */
-	static public function setNoExtensions($no_extensions)
-	{
-		self::$no_extensions = (boolean) $no_extensions;
-	}
-	
-	
-	/**
-	 * Returns the requested url, does no include the query string
+	 * Returns the requested url, does no include the domain name or query string
 	 * 
 	 * @return string  The requested URL without the query string
 	 */
 	static public function get()
 	{
-		$qs = '?' . $_SERVER['QUERY_STRING'];
-		return str_replace($qs, '', $_SERVER['REQUEST_URI']);
+		return $_SERVER['SCRIPT_NAME'];
 	}
 	
 	
 	/**
-	 * Returns the current url including query string
+	 * Returns the current query string
+	 * 
+	 * @return string  The query string
+	 */
+	static public function getQueryString()
+	{
+		return $_SERVER['QUERY_STRING'];
+	}
+	
+	
+	/**
+	 * Returns the current url including query string, but without domain name
 	 * 
 	 * @return string  The url with query string
 	 */
 	static public function getWithQueryString()
 	{
 		return $_SERVER['REQUEST_URI'];
-	}
-	
-	
-	/**
-	 * Returns the current php script filename
-	 * 
-	 * @return string  The current php script
-	 */
-	static public function getScript()
-	{
-		return (self::$no_extensions) ? preg_replace('#\.php$#i', '', $_SERVER['SCRIPT_NAME']) : $_SERVER['SCRIPT_NAME'];
 	}
 	
 	
@@ -93,46 +72,45 @@ class fURL
 	/**
 	 * Replaces a value in the querystring
 	 * 
-	 * @param  string|array  $parameter       The get parameter
-	 * @param  string|array  $value           The value to set the parameter to
-	 * @param  boolean       $html_entities   If &amp; should be used to seperate elements
-	 * @return string  The full querystring with the parameter replaced, first char is '?'
+	 * @param  string|array  $key             The get key/field
+	 * @param  string|array  $value           The value to set the key to
+	 * @return string  The full query string with the key replaced, first char is '?'
 	 */
-	static public function replaceInQueryString($parameter, $value, $html_entities=TRUE)
+	static public function replaceInQueryString($key, $value)
 	{
 		$qs_array = $_GET;
 		if (get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);	
 		}
 		
-		settype($parameter, 'array');
+		settype($key, 'array');
 		settype($value, 'array');
 		
-		if (sizeof($parameter) != sizeof($value)) {
+		if (sizeof($key) != sizeof($value)) {
 			fCore::toss('fProgrammerException', 'There are a different number of parameters and values');	
 		}
 		
-		for ($i=0; $i<sizeof($parameter); $i++) {
-			$qs_array[$parameter[$i]] = $value[$i];		
+		for ($i=0; $i<sizeof($key); $i++) {
+			$qs_array[$key[$i]] = $value[$i];		
 		}
 		
-		return '?' . http_build_query($qs_array, '', ($html_entities) ? '&amp;' : '&');           
+		return '?' . http_build_query($qs_array, '', '&');           
 	}
 	
 	
 	/**
-	 * Removes one or more parameters from the query string, pass as many parameter names as you want
+	 * Removes one or more key/fields from the query string, pass as many key names as you want
 	 * 
-	 * @param  string $parameter  A parameter to remove from the query string
+	 * @param  string $key,...  A key/field to remove from the query string
 	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
 	 */
 	static public function removeFromQueryString()
 	{
-		$parameters = func_get_args();
-		for ($i=0; $i < sizeof($parameters); $i++) {
-			$parameters[$i] = '#\b' . $parameters[$i] . '=[^&]*&?#';    
+		$keys = func_get_args();
+		for ($i=0; $i < sizeof($keys); $i++) {
+			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';    
 		}
-		return '?' . substr(preg_replace($parameters, '', $qs), 1);           
+		return '?' . substr(preg_replace($keys, '', $qs), 1);           
 	}
 		
 	
@@ -170,7 +148,7 @@ class fURL
 
 
 /**
- * Copyright (c) 2007 William Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

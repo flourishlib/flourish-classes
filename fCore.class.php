@@ -2,7 +2,7 @@
 /**
  * Provides low-level debugging, error and exception functionality
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -477,7 +477,7 @@ class fCore
 /**
  * An exception that can easily be printed
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -546,7 +546,7 @@ class fPrintableException extends Exception
 /**
  * An exception that should be handled by the display code
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -564,7 +564,7 @@ class fExpectedException extends fPrintableException
 /**
  * An exception caused by a data not matching a rule or set of rules
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -582,7 +582,7 @@ class fValidationException extends fExpectedException
 /**
  * An exception that should probably not be handled by the display code, fCore::enableExceptionHandler() is recommended
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -615,7 +615,7 @@ class fUnexpectedException extends fPrintableException
 /**
  * An exception caused by an environment error
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -633,7 +633,7 @@ class fEnvironmentException extends fUnexpectedException
 /**
  * An exception caused by a connectivity error
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -651,7 +651,7 @@ class fConnectivityException extends fUnexpectedException
 /**
  * An exception caused by programmer error
  * 
- * @copyright  Copyright (c) 2007 William Bond
+ * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -666,7 +666,7 @@ class fProgrammerException extends fUnexpectedException
 
 
 /**
- * Copyright (c) 2007 William Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
