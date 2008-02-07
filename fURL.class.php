@@ -115,12 +115,12 @@ class fURL
 		
 	
 	/**
-	 * Changes a string into a nice-url style string
+	 * Changes a string into a URL-friendly string
 	 * 
 	 * @param  string $string  The string to convert
 	 * @return void
 	 */
-	static public function makeNice($string)
+	static public function makeFriendly($string)
 	{
 		$string = fHTML::decodeEntities(fHTML::unaccent($string));
 		$string = preg_replace('#[^a-zA-Z -]#', ' ', $string);
@@ -138,7 +138,7 @@ class fURL
 	{
 		if (strpos($url, '/') === 0) {
 			$url = self::getDomain() . $url;   
-		} elseif (strpos($url, '?') === 0) {
+		} elseif (!preg_match('#^https?://#i')) {
 			$url = self::getDomain() . self::get() . $url;	
 		}
 		header('Location: ' . $url);
