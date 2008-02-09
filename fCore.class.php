@@ -498,7 +498,7 @@ class fPrintableException extends Exception
 	 */
 	public function printMessage() 
 	{
-		$css_class     = 'exception ' . fInflection::underscorize(get_class($this));
+		$css_class     = 'exception ' . fInflection::underscorize(preg_replace('#^f#', '', get_class($this)));
 		$no_block_html = !fHTML::checkForBlockLevelHTML($this->getMessage());
 		
 		echo '<div class="' . $css_class . '">';
@@ -596,7 +596,7 @@ class fValidationException extends fExpectedException
 class fUnexpectedException extends fPrintableException
 {
 	/**
-	 * Prints out a generic error message inside of a div with the class being 'exception f_printable_exception'
+	 * Prints out a generic error message inside of a div with the class being 'exception THIS_EXCEPTION_CLASS_NAME'
 	 * 
 	 * @return void
 	 */
