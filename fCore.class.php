@@ -106,29 +106,29 @@ class fCore
 	{
 		self::$toss_callbacks[$exception_type] = $callback;		 
 	}
-    
-    
-    /**
-     * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
-     * 
-     * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
-     * @param  string $message      The error message
-     * @return void
-     */
-    static public function trigger($error_type, $message)
-    {
-        if (!in_array($error_type, array('error', 'warning', 'notice'))) {
-            fCore::toss('fProgrammerException', "Invalid error type '" . $error_type . "' specified. Should be one of: 'error', 'warning' or 'notice'");       
-        }
-        
-        static $error_type_map = array(
-            'error'   => E_USER_ERROR,
-            'warning' => E_USER_WARNING,
-            'notice'  => E_USER_NOTICE
-        );
-        
-        trigger_error($message, $error_type_map[$error_type]);
-    }
+	
+	
+	/**
+	 * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
+	 * 
+	 * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
+	 * @param  string $message      The error message
+	 * @return void
+	 */
+	static public function trigger($error_type, $message)
+	{
+		if (!in_array($error_type, array('error', 'warning', 'notice'))) {
+			fCore::toss('fProgrammerException', "Invalid error type '" . $error_type . "' specified. Should be one of: 'error', 'warning' or 'notice'");       
+		}
+		
+		static $error_type_map = array(
+			'error'   => E_USER_ERROR,
+			'warning' => E_USER_WARNING,
+			'notice'  => E_USER_NOTICE
+		);
+		
+		trigger_error($message, $error_type_map[$error_type]);
+	}
 	
 	
 	/**
@@ -443,33 +443,51 @@ class fCore
 				break;
 		}		 
 	} 
-    
-    
-    /**
-     * Returns the (generalized) operating system the code is currently running on
-     * 
-     * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
-     */
-    static public function getOS()
-    {
-        $uname = php_uname('s');
-        
-        if (stripos($uname, 'linux') !== FALSE) {
-            return 'linux/unix';   
-        }
-        if (stripos($uname, 'bsd') !== FALSE) {
-            return 'linux/unix';   
-        }
-        if (stripos($uname, 'solaris') !== FALSE) {
-            return 'linux/unix';   
-        }
-        if (stripos($uname, 'windows') !== FALSE) {
-            return 'windows';   
-        }
-        
-        self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
-        return 'linux/unix';
-    }         
+	
+	
+	/**
+	 * Returns the (generalized) operating system the code is currently running on
+	 * 
+	 * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
+	 */
+	static public function getOS()
+	{
+		$uname = php_uname('s');
+		
+		if (stripos($uname, 'linux') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'bsd') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'solaris') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'windows') !== FALSE) {
+			return 'windows';   
+		}
+		
+		self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
+		return 'linux/unix';
+	} 
+	
+	
+	/**
+	 * Returns the version of php running, ignoring any information about the OS
+	 * 
+	 * @return string  The PHP version in the format major.minor.version
+	 */
+	static public function getPHPVersion()
+	{
+		static $version = NULL;
+		
+		if ($version === NULL) {
+			$version = phpversion();
+			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#', '\1', $version);
+		}
+		
+		return $version;
+	}        
 }  
 
 
