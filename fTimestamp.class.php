@@ -46,10 +46,10 @@ class fTimestamp
 	 * 
 	 * @param  fDate $date       The date to combine
 	 * @param  fTime $time       The time to combine
-	 * @param  string $timezone  The timezone for the date/time
+	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. . If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}.
 	 * @return fTimestamp
 	 */
-	public function combine(fDate $date, fTime $time, $timezone=NULL)
+	static public function combine(fDate $date, fTime $time, $timezone=NULL)
 	{
 		return new fTimestamp($date . ' ' . $time, $timezone); 
 	}
@@ -62,7 +62,7 @@ class fTimestamp
 	 * @param  string $formatting_string  The format string compatible with the {@link http://php.net/date date()} function
 	 * @return void
 	 */
-	public function createFormat($name, $formatting_string)
+	static public function createFormat($name, $formatting_string)
 	{
 		self::$formats[$name] = $formatting_string;
 	}
@@ -74,7 +74,7 @@ class fTimestamp
 	 * @param  string $format  The format to translate
 	 * @return string  The formatting string. If no matching format was found, this will be the same as the $format parameter.
 	 */
-	public function translateFormat($format)
+	static public function translateFormat($format)
 	{
 		if (isset(self::$formats[$format])) {
 			$format = self::$formats[$format];	
@@ -84,19 +84,60 @@ class fTimestamp
 	
 	
 	/**
+	 * Provides a consistent interface to setting the default timezone. Wraps the {@link http://php.net/date_default_timezone_set date_default_timezone_set()} function.
+	 * 
+	 * @param  string $timezone  The default timezone to use for all date/time calculations
+	 * @return void
+	 */
+	static public function setDefaultTimezone($timezone)
+	{
+		self::checkPHPVersion();
+		
+		$result = date_default_timezone_set($timezone);
+		if (!$result) {
+			fCore::toss('fProgrammerException', 'The timezone specified, ' . $timezone . ', does not appear to be a valid timezone');	
+		}
+	}
+	
+	
+	/**
+	 * Provides a consistent interface to getting the default timezone. Wraps the {@link http://php.net/date_default_timezone_get date_default_timezone_get()} function.
+	 * 
+	 * @return string  The default timezone used for all date/time calculations
+	 */
+	static public function getDefaultTimezone()
+	{
+		self::checkPHPVersion();
+		
+		return date_default_timezone_get();
+	}
+	
+	
+	/**
+	 * Checks to make sure the current version of PHP is high enough to support timezone features
+	 * 
+	 * @return void
+	 */
+	static private function checkPHPVersion()
+	{
+	 	if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
+			fCore::toss('fEnvironmentException', 'The fTimestamp class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.');	
+		}	
+	}
+	
+	
+	/**
 	 * Creates the date/time to represent
 	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string $datetime   The date/time to represent
-	 * @param  string $timezone   The timezone for the date/time. If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}
+	 * @param  string $timezone   The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}.
 	 * @return fTimestamp
 	 */
 	public function __construct($datetime, $timezone=NULL)
 	{
-		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
-			fCore::toss('fEnvironmentException', 'The fTimestamp class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.');	
-		}
+		self::checkPHPVersion();
 		
 		$default_tz = date_default_timezone_get();
 		
@@ -287,7 +328,11 @@ class fTimestamp
 	 */
 	public function adjust($adjustment)
 	{
-		$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
+		if ($this->checkIfValidTimezone($adjustment)) {
+			$this->setTimezone($adjustment);	
+		} else {
+			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
+		}
 	}
 	
 	
@@ -306,11 +351,6 @@ class fTimestamp
 		
 		$timestamp = $this->timestamp;
 		
-		// Handle an adjustment that is a relative date/time
-		if ($adjustment && !$this->checkIfValidTimezone($adjustment)) {
-			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
-		}
-		
 		// Handle an adjustment that is a timezone
 		if ($adjustment && $this->checkIfValidTimezone($adjustment)) {
 			$default_tz = date_default_timezone_get();	
@@ -319,6 +359,11 @@ class fTimestamp
 		} else {
 			$default_tz = date_default_timezone_get();		
 			date_default_timezone_set($this->timezone);	
+		}
+		
+		// Handle an adjustment that is a relative date/time
+		if ($adjustment && !$this->checkIfValidTimezone($adjustment)) {
+			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
 		}
 		
 		$formatted = date($format, $timestamp);
@@ -360,7 +405,7 @@ class fTimestamp
 	private function checkIfValidTimezone($timezone)
 	{
 		$default_tz = date_default_timezone_get();
-		$valid_tz = date_default_timezone_set($timezone);
+		$valid_tz = @date_default_timezone_set($timezone);
 		date_default_timezone_set($default_tz);
 		return $valid_tz;
 	}

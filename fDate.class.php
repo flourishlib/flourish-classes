@@ -161,9 +161,9 @@ class fDate
 	{
 		$format = fTimestamp::translateFormat($format);
 		
-		$restricted_formats = 'aABgGhHisueIOPTZcrU';
-		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#')) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-date formatting characters: ' . join(', ', explode($restricted_formats)));	
+		$restricted_formats = 'aABcegGhHiIOPrsTuUZ';
+		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
+			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-date formatting characters: ' . join(', ', str_split($restricted_formats)));	
 		}
 		
 		$date = $this->date;
@@ -187,16 +187,16 @@ class fDate
 	 */
 	private function makeAdjustment($adjustment, $timestamp)
 	{
-		if (preg_match('#hour|minute|second#i', $adjustment)) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', contains an adjustment of a time such as: hour, minute, second. Only adjustments of date are allowed, such as: day, month, year, week.');	
-		}
-		
 		$timestamp = strtotime($adjustment, $timestamp);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date measurement'); 		
 		}  
 		
+		if (date('H:i:s', $timestamp) != '00:00:00') {
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.');	 		
+		}
+
 		return $timestamp;
 	}
 	
@@ -209,7 +209,7 @@ class fDate
 	 */
 	private function set($timestamp)
 	{
-		$this->date = date('Y-m-d', $timestamp);   
+		$this->date = strtotime(date('Y-m-d 00:00:00', $timestamp));   
 	}
 }
 
