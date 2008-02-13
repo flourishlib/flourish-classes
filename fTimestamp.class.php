@@ -204,10 +204,12 @@ class fTimestamp
 		if ($month < 10) { $month = '0' . $month; }
 		if ($day < 10)   { $day   = '0' . $day; }
 		
-		$timestamp = strtotime($year . '-' . $month . '-' . $day . date(' H:i:s', $this->timestamp));
+		$timestamp = $this->covertToTimestampWithTimezone($year . '-' . $month . '-' . $day . date(' H:i:s', $this->timestamp));
+		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid date'); 		
+			fCore::toss('fValidationException', 'The date specified, ' . $year . '-' . $month . '-' . $day . ', does not appear to be a valid date'); 		
 		}
+		
 		$this->timestamp = $timestamp;
 	}
 	
@@ -225,7 +227,7 @@ class fTimestamp
 	public function setISODate($year, $week, $day_of_week)
 	{
 		$year        = ($year === NULL)        ? date('Y', $this->timestamp) : $year;
-		$week        = ($week === NULL)        ? date('W', $this->timestamp) : $month;
+		$week        = ($week === NULL)        ? date('W', $this->timestamp) : $week;
 		$day_of_week = ($day_of_week === NULL) ? date('N', $this->timestamp) : $day_of_week;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
@@ -242,10 +244,12 @@ class fTimestamp
 		
 		if ($week < 10) { $week = '0' . $week; }
 		
-		$timestamp = strtotime($year . '-W' . $week . '-' . $day_of_week . date(' H:i:s', $this->timestamp));
+		$timestamp = $this->covertToTimestampWithTimezone($year . '-01-01 ' . date('H:i:s', $this->timestamp) . ' +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
+		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid ISO date'); 		
+			fCore::toss('fValidationException', 'The ISO date specified, ' . $year . '-W' . $week . '-' . $day_of_week . ', does not appear to be a valid ISO date'); 		
 		}
+		
 		$this->timestamp = $timestamp;  
 	}
 	
@@ -282,10 +286,12 @@ class fTimestamp
 		if ($minute < 10) { $minute = '0' . $minute; }
 		if ($second < 10) { $second = '0' . $second; }
 		
-		$timestamp = strtotime(date('Y-m-d ', $this->timestamp) . $hour . ':' . $minute . ':' . $second);
+		$timestamp = $this->covertToTimestampWithTimezone(date('Y-m-d ', $this->timestamp) . $hour . ':' . $minute . ':' . $second);
+		
 		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time'); 		
 		}
+		
 		$this->timestamp = $timestamp;
 	}
 	
@@ -391,6 +397,22 @@ class fTimestamp
 			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date/time measurement'); 		
 		}  
 		
+		return $timestamp;
+	}
+	
+	
+	/**
+	 * Takes a date/time to pass to strtotime and interprets it using the current timestamp's timezone
+	 * 
+	 * @param  string $datetime  The datetime to interpret
+	 * @return integer  The timestamp
+	 */
+	private function covertToTimestampWithTimezone($datetime)
+	{
+		$default_tz = date_default_timezone_get();
+		date_default_timezone_set($this->timezone);
+		$timestamp = strtotime($datetime);
+		date_default_timezone_set($default_tz);
 		return $timestamp;
 	}
 	

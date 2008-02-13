@@ -89,7 +89,7 @@ class fDate
 		
 		$timestamp = strtotime($year . '-' . $month . '-' . $day);
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid date'); 		
+			fCore::toss('fValidationException', 'The date specified, ' . $year . '-' . $month . '-' . $day . ', does not appear to be a valid date'); 		
 		}
 		$this->set($timestamp);
 	}
@@ -108,7 +108,7 @@ class fDate
 	public function setISODate($year, $week, $day_of_week)
 	{
 		$year        = ($year === NULL)        ? date('Y', $this->date) : $year;
-		$week        = ($week === NULL)        ? date('W', $this->date) : $month;
+		$week        = ($week === NULL)        ? date('W', $this->date) : $week;
 		$day_of_week = ($day_of_week === NULL) ? date('N', $this->date) : $day_of_week;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
@@ -125,9 +125,9 @@ class fDate
 		
 		if ($week < 10) { $week = '0' . $week; }
 		
-		$timestamp = strtotime($year . '-W' . $week . '-' . $day_of_week);
+		$timestamp = strtotime($year . '-01-01 +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid ISO date'); 		
+			fCore::toss('fValidationException', 'The ISO date specified, ' . $year . '-W' . $week . '-' . $day_of_week . ', does not appear to be a valid ISO date'); 		
 		}
 		$this->set($timestamp);
 	}

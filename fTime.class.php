@@ -155,7 +155,7 @@ class fTime
 			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative time measurement'); 		
 		}  
 		
-		if (!preg_match('#^\s*(([+-]\s*)?\d+(\s+(min(unte)?|sec(ond)?|hour))?\s*|now\s*)+#i', $adjustment)) {
+		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
 			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.');	 		
 		}
 
