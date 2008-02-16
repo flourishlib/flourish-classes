@@ -284,6 +284,12 @@ class fResult implements Iterator
 			$row = $this->result[$this->pointer];	
 		}
 		
+		// This is an unfortunate fix that required for databases that don't support limit
+		// clauses with an offset. It prevents unrequested columns from being returned.
+		if (isset($row['__flourish_limit_offset_row_num'])) {
+			unset($row['__flourish_limit_offset_row_num']);	
+		}
+		
 		$this->pointer++;
 		return $row;   
 	}
