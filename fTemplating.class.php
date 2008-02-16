@@ -52,7 +52,7 @@ class fTemplating
 		}
 		
 		if (substr($root, -1) != '/' && substr($root, -1) != '\\') {
-			$root .= (strpos($root, '\\') !== FALSE) ? '\\' : '/';	
+			$root .= DIRECTORY_SEPARATOR;
 		}
 		
 		$this->root = $root;	
@@ -73,6 +73,25 @@ class fTemplating
 	
 	
 	/**
+	 * Adds a value to an array element
+	 * 
+	 * @param  string $element   The element to add to
+	 * @param  mixed  $value     The value to add
+	 * @return void
+	 */
+	public function add($element, $value)
+	{
+		if (!isset($this->elements[$element])) {
+			$this->elements[$element] = array();	
+		}
+		if (!is_array($this->elements[$element])) {
+			fCore::toss('fProgrammerException', 'add() was called for an element, ' . $element . ', which is not an array'); 		
+		}
+		$this->elements[$element][] = $value;	
+	}
+	
+	
+	/**
 	 * Gets the value of an element
 	 * 
 	 * @param  string $element        The element to get
@@ -86,7 +105,24 @@ class fTemplating
 	
 	
 	/**
-	 * Includes the element specified (element must be set through setElement() first)
+	 * Includes the element specified (element must be set through setElement() first). If the
+	 * element is a file path ending in .css or .js an html tag will be printed. If the element is
+	 * a file path ending in .php it will be included and all elements will be exported into the
+	 * scope of the include.
+	 * 
+	 * You can pass the media attribute of a CSS file or the title attribute of an RSS feed by
+	 * adding an associative array with the following formats:
+	 * 
+	 * <pre>
+	 * array(
+	 *     'path'  => (string) {css file path},
+	 *     'media' => (string) {media type}
+	 * );
+	 * array(
+	 *     'path'  => (string) {rss file path},
+	 *     'title' => (string) {feed title}
+	 * );
+	 * </pre>
 	 * 
 	 * @param  string $element   The element to include
 	 * @return void
@@ -94,34 +130,157 @@ class fTemplating
 	public function place($element)
 	{
 		if (!isset($this->elements[$element])) {
-			fCore::toss('fProgrammerException', 'The element specified has not been set');       
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has not been set');       
 		}
 		
-		$__values = $this->elements[$element];
-		settype($__values, 'array');
-		unset($element);
+		$values = $this->elements[$element];
+		settype($values, 'array');
+		$values = array_values($values);
+		
+		foreach ($values as $value) {
+			
+			$file_extension = $this->verifyValue($element, $value);			
+			
+			switch ($file_extension) {
+				case 'css':
+					$this->placeCSS($value);
+					break;
+				
+				case 'js':
+					$this->placeJS($value);
+					break;
+					
+				case 'php':
+					$this->placePHP($value);	
+					break;
+					
+				case 'rss':
+					$this->placeRSS($value);
+					break;
+			}
+		}
+	}
+	
+	
+	/**
+	 * Ensures the value is valid
+	 * 
+	 * @param  string $element  The element that is being placed
+	 * @param  mixed $value     A value to be placed
+	 * @return string  The file extension of the value being placed
+	 */
+	private function verifyValue($element, $value)
+	{
+		if (empty($value)) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');	
+		}
+		
+		if (is_array($value) && !isset($value['path'])) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value, ' . fCore::dump($value) . ', that is missing the path key');	
+		}
+		
+		$path = (is_array($value)) ? $value['path'] : $value;
+		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+		
+		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .js, .php or .rss file'); 			
+		}
+		
+		return $extension;
+	}
+	
+	
+	/**
+	 * Prints a CSS link html tag to the output
+	 * 
+	 * @param  mixed $info   The path or array containing the path to the css file. If an array can also contain a key with the media.
+	 * @return void
+	 */
+	private function placeCSS($info)
+	{
+		if (!is_array($info)) {
+			$info = array('path'  => $info);	
+		}
+		
+		if (!isset($info['media'])) {
+			$info['media'] = 'all';	
+		}
+		
+		echo '<link rel="stylesheet" type="text/css" href="' . $info['path'] . '" media="' . $info['media'] . '" />' . "\n";
+	}
+	
+	
+	/**
+	 * Prints a javascript html tag to the output
+	 * 
+	 * @param  mixed $info   The path or array containing the path to the javascript file
+	 * @return void
+	 */
+	private function placeJS($info)
+	{
+		if (!is_array($info)) {
+			$info = array('path'  => $info);	
+		}
+		
+		echo '<script type="text/javascript" src="' . $info['path'] . '"></script>' . "\n";
+	}
+	
+	
+	/**
+	 * Includes a PHP file, exporting all of the elements to variables in the scope of the include
+	 * 
+	 * @param  string $path   The path to the PHP file
+	 * @return void
+	 */
+	private function placePHP($path)
+	{
+		// Check to see if the element is a relative path
+		if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
+			$path = $this->root . $path;		
+		
+		// Check to see if the element is relative to the current script
+		} elseif (preg_match('#^(\./|\.\\)#')) {
+			$path = pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_DIRNAME) . substr($path, 2);
+		}
+		
+		if (!file_exists($path)) {
+			fCore::toss('fProgrammerException', 'The path specified, ' . $path . ', does not exist on the filesystem');       
+		}
+		
+		if (!is_readable($path)) {
+			fCore::toss('fProgrammerException', 'The path specified, ' . $path . ', can not be read from');       
+		}
+		
+		$___path = $path;
+		unset($path);
 		
 		extract($this->elements);
-		foreach ($__values as $__value) {
-			if (empty($__value)) {
-				fCore::toss('fProgrammerException', 'The element specified is empty');	
-			}
-			
-			// Check to see if the element is an absolute path
-			if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//)#i', $__value)) {
-				$__value = $this->root . $__value;		
-			}
-			
-			if (!file_exists($__value)) {
-				fCore::toss('fProgrammerException', 'The element specified does not exist on the filesystem');       
-			}
-			
-			if (!is_readable($__value)) {
-				fCore::toss('fProgrammerException', 'The element specified can not be read from');       
-			}
-			
-			include($__value);	
+		
+		include($___path);
+	}
+	
+	
+	/**
+	 * Prints an RSS link html tag to the output
+	 * 
+	 * @param  mixed $info   The path or array containing the path to the RSS xml file. May also contain a title key for the title of the RSS feed.
+	 * @return void
+	 */
+	private function placeRSS($info)
+	{
+		if (!is_array($info)) {
+			$info = array('path'  => $info,
+					 	  'title' => fInflection::humanize(
+					 	                 preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
+					 	             )
+					 	 );	
 		}
+		
+		if (!isset($info['title'])) {
+			fCore::toss('fProgrammerException', 'The value ' . fCore::dump($info) . ' is missing the title key');	
+		}
+		
+		echo '<link rel="alternate" type="application/rss+xml" href="' . $info['path'] . '" title="' . $info['title'] . '" />' . "\n";
 	}
 }
 
