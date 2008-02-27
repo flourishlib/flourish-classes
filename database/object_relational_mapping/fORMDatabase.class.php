@@ -199,9 +199,10 @@ class fORMDatabase
 	 * 
 	 * @param  string $table  The main table to be queried
 	 * @param  string $sql    The SQL to insert the from clause into
+	 * @param  array $joins   The existing joins that have been parsed
 	 * @return string  The from SQL clause
 	 */
-	static public function insertFromClause($table, $sql)
+	static public function insertFromClause($table, $sql, $joins=array())
 	{
 		if (strpos($sql, ':from_clause') === FALSE) {
 			fCore::toss('fProgrammerException', "No :from_clause placeholder was found in:\n" . $sql);	
@@ -212,16 +213,17 @@ class fORMDatabase
 		
 		$table_alias = $table;
 		
-		$joins         = array();
 		$used_aliases  = array();
-		
 		$table_map     = array();
 		
-		$joins[] = array(
-		    'join_type'   => 'none',
-		    'table_name'  => $table,
-		    'table_alias' => $table_alias
-		);
+		// If we are not passing in existing joins, start with the specified table
+		if ($joins == array()) {
+			$joins[] = array(
+			    'join_type'   => 'none',
+			    'table_name'  => $table,
+			    'table_alias' => $table_alias
+			);
+		}
 		
 		foreach ($matches[0] as $match) {
 			if ($match != "'") {
@@ -279,6 +281,40 @@ class fORMDatabase
 			
 		
 		return $new_sql;
+	}
+	
+	
+	/**
+	 * Adds a join to an existing array of joins
+	 * 
+	 * @param  array  $joins           The existing joins
+	 * @param  string $route           The route to the related table
+	 * @param  array  $relationship    The relationship info for the route specified
+	 * @return array  The joins array with the new join added
+	 */
+	static public function addJoin($joins, $route, $relationship)
+	{
+		$table         = $relationship['table'];
+		$related_table = $relationship['related_table'];
+		
+		if (isset($joins[$table . '_' . $related_table . '[' . $route . ']'])) {
+		 	return $joins;	
+		}
+		
+		$table_alias = self::findTableAlias($join['table_name'], $joins);
+		
+		if (!$table_alias) {
+		 	fCore::toss('fProgrammerException', 'The table, ' . $table . ', has not been joined to yet, so it can not be joined from');	
+		}
+		
+		$aliases = array();
+		foreach ($joins as $join) {
+		 	$aliases[] = $join['table_alias'];	
+		}
+		
+		self::createJoin($table, $table_alias, $related_table, $route, $joins, $aliases);
+		
+		return $joins;
 	}
 	
 	
@@ -394,13 +430,31 @@ class fORMDatabase
 	
 	
 	/**
+	 * Finds the first table alias for the table specified in the list of joins provided
+	 * 
+	 * @param  string $table   The table to find the alias for
+	 * @param  array  $joins   The joins to look through
+	 * @return string  The alias to use for the table
+	 */
+	static public function findTableAlias($table, $joins)
+	{
+		foreach ($joins as $join) {
+		 	if ($join['table_name'] == $table) {
+		 		return $join['table_alias'];
+			}	
+		}
+		return NULL;
+	}
+	
+	
+	/**
 	 * Creates a new table alias
 	 * 
 	 * @param  string $table          The table to create an alias for
 	 * @param  array  &$used_aliases  The aliases that have been used
 	 * @return string  The alias to use for the table
 	 */
-	static public function createNewAlias($table, &$used_aliases)
+	static private function createNewAlias($table, &$used_aliases)
 	{
 		if (!in_array($table, $used_aliases)) {
 		 	$used_aliases[] = $table;
@@ -544,6 +598,71 @@ class fORMDatabase
 		}
 		
 		return join(', ', $sql);				
+	}
+	
+	
+	/**
+	 * Creates a where clause condition for primary keys of the table specified
+	 * 
+	 * @param  string $table         The table to build the where clause condition for
+	 * @param  string $table_alias   The alias for the table
+	 * @param  mixed  $primary_keys  The primary key or keys to use in building the condition
+	 * @return string  A single WHERE clause condition (possibly in parentheses) representing the primary keys provided
+	 */
+	static public function createPrimaryKeyWhereCondition($table, $table_alias, $primary_keys)
+	{
+		$sql = '';
+		
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
+		
+		// We have a multi-field primary key, making things kinda ugly
+		if (sizeof($primary_key_fields) > 1) {
+			
+			// If the multi-field primary key is just a single primary key we'll convert it so we don't need lots of conditional code to generate SQL
+			if (!isset($primary_keys[0])) {
+			 	$primary_keys = array($primary_keys);	
+			}
+			
+			$sql .= '((';
+			$first = TRUE;
+			foreach ($primary_keys as $primary_key) {
+			 	if (!$first) {
+			 	 	$sql .= ') OR (';	
+				}
+				for ($i=0; $i < sizeof($primary_key_fields); $i++) {
+			 	 	$field = $primary_key_fields[$i];
+			 	 	if ($i) {
+			 	 		$sql .= ' AND ';
+					} 
+			 	 	$sql .= $table_alias . '.' . $field;
+			 	 	$sql .= fORMDatabase::prepareBySchema($table, $field, $primary_key[$field], '=');
+				}
+			 	$first = FALSE;
+			}
+			$sql .= '))';
+		
+		// We have a single primary key field, making things nice and easy
+		} else {
+			$primary_key_field = $primary_key_fields[0];
+			
+			// If we don't have an array of primary keys, just return a regular equation comparison
+			if (!is_array($primary_keys)) {
+			 	return $table_alias . '.' . $primary_key_field . fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_keys, '=');	
+			}
+			
+			$sql .= $table_alias . '.' . $primary_key_field . ' IN (';
+			$first = TRUE;
+			foreach ($primary_keys as $primary_key) {
+			 	if (!$first) {
+			 	 	$sql .= ', ';	
+				}
+			 	$sql .= fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_key);
+			 	$first = FALSE;
+			}
+			$sql .= ')';	
+		}
+		
+		return $sql;
 	}
 	
 	

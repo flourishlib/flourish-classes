@@ -166,14 +166,30 @@ class fORMRelatedData
 	 * Creates associations for many-to-many relationships
 	 * 
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
-	 * @param  array  &$values                 The values existing in the {@link fActiveRecord} class
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
 	 * @param  string $related_class           The class we are associating with the current record
 	 * @param  fSequence $records              The records are associating
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	public function linkRecords($table, &$values, &$related_records, $related_class, fSequence $records, $route=NULL)
+	public function linkRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
+	{
+		self::setRecords($table, $related_records, $related_class, $records, $route);
+		$records->flag('associate');
+	}
+	
+	
+	/**
+	 * Sets the related records for many-to-many relationships
+	 * 
+	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
+	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
+	 * @param  string $related_class           The class we are associating with the current record
+	 * @param  fSequence $records              The records are associating
+	 * @param  string $route                   The route to use between the current class and the related class
+	 * @return void
+	 */
+	public function setRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	

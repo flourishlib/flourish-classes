@@ -372,107 +372,63 @@ class fSequence implements Iterator
 		$sql = ($this->result_object->getUntranslatedSQL()) ? $this->result_object->getUntranslatedSQL() : $this->result_object->getSQL();
 		
 		$clauses = fSQLParsing::parseSelectSQL($sql);
-		$aliases = fSQLParsing::parseTableAliases($clauses['FROM']);
 		
 		if (!empty($clauses['GROUP BY'])) {
 			fCore::toss('fProgrammerException', 'Preloading related data is not possible for queries that contain a GROUP BY clause');	
 		}
 		
-		$this_table = fORM::tablize($this->class_name);
+		$table = fORM::tablize($this->class_name);
 		
-		$routes = fORMSchema::getToManyRoutes($this_table, $related_table);
-		
+		// Determine the route to use
+		$routes = fORMSchema::getToManyRoutes($table, $related_table);
 		if (empty($route)) {
-		 	try {
-		 		$route = fORMSchema::getOnlyToManyRouteName($this_table, $related_table);	
-			} catch (fValidationException $e) {
-				fCore::toss('fProgrammerException', 'The related table being preloaded, ' . $related_table . ', is related to the ' . $this->class_name . ' object by more than one route and no route was specified');
-			}
+		 	$route = fORMSchema::getOnlyToManyRouteName($table, $related_table);	
 		}
-
-		$related_table_info = $routes[$route];
+		$relationship  = $routes[$route];
+		$related_table = $relationship['related_table'];
 		
-		$related_table_alias = (isset($aliases[$related_table])) ? $aliases[$related_table] : $related_table;
+		// Get the existing joins and add any necessary ones
+		$joins = fSQLParsing::parseJoins($clauses['FROM'], fORMSchema::getInstance());
+		$joins = fORMDatabase::addJoin($joins, $route, $relationship);
 		
-		$new_sql  = 'SELECT ' . $related_table_alias . '.* ';
-		$new_sql .= 'FROM ' . $clauses['FROM'];
+		// Find the aliases we are gonna need
+		$table_alias         = fORMDatabase::findTableAlias($table, $joins);
+		$join_name           = $table . '_' . $related_table . '[' . $route . ']';
+		$related_table_alias = $joins[$join_name]['table_alias'];
 		
-		
-		$this_column_name    = $aliases[$this_table] . '.' . $related_table_info['column'];
-		$related_column_name = $related_table_alias . '.' . $related_table_info['related_column'];
-		
-		// Figure out if we have already joined and if not, do the joins the appropriate way
-		if (isset($related_table_info['join_table'])) {
-			
-			if (!isset($aliases[$related_table])) {
-				$join_table_alias         = (isset($aliases[$related_table_info['join_table']])) ? $aliases[$related_table_info['join_table']] : $related_table_info['join_table'];
-				$join_column_name         = $join_table_alias . '.' . $related_table_info['join_column'];
-				$join_related_column_name = $join_table_alias . '.' . $related_table_info['join_related_column'];
-				
-				$new_sql = ' INNER JOIN ' . $join_table_alias . ' ON ' . $this_column_name . ' = ' . $join_column_name . ' ';
-				$new_sql = ' INNER JOIN ' . $related_table_alias . ' ON ' . $join_related_column_name . ' = ' . $related_column_name . ' ';
-			}
-			
-		} else {
-			
-			if (!isset($aliases[$related_table])) {
-				$new_sql = ' INNER JOIN ' . $related_table_alias . ' ON ' . $this_column_name . ' = ' . $related_column_name . ' ';
-			}		
-			
-		}
+		// Build the query out
+		$new_sql  = 'SELECT DISTINCT ' . $related_table_alias . '.* ';
+		$new_sql .= 'FROM :from_clause ';
 		
 		if (!empty($clauses['WHERE'])) {
 			$new_sql .= 'WHERE (' . $clauses['WHERE'] . ') ';
 		}
 		
-		// Limited queries require a slight bit of additional modification
+		// Limited queries require a slight bit of additional modification so that we only load the related data for the elements returned
 		if (!empty($clauses['LIMIT'])) {
 			if (!empty($clauses['WHERE'])) {
 			 	$new_sql .= ' AND ';	
 			} else {
 			 	$new_sql .= 'WHERE ';	
 			}
-			
-			$primary_keys = $this->getPrimaryKeys();
-			$primary_key_fields = fORMSchema::getInstance()->getKeys($this_table, 'primary');
-			
-			// We have a multi-field primary key, making things kinda ugly
-			if (is_array($primary_keys[0])) {
-				$new_sql .= '((';
-			 	$first = TRUE;
-			 	foreach ($primary_keys as $primary_key) {
-			 	 	if (!$first) {
-			 	 	 	$new_sql .= ') OR (';	
-					}
-					for ($i=0; $i < sizeof($primary_key_fields); $i++) {
-			 	 		if ($i) {
-			 	 			$new_sql .= ' AND ';
-						} 
-			 	 		$new_sql .= $aliases[$this_table] . '.' . $primary_key_fields[$i];
-			 	 		$new_sql .= fORMDatabase::prepareBySchema($this_table, $primary_key_fields[$i], $primary_key, '=');
-					}
-			 	 	$first = FALSE;
-				}
-			 	$new_sql .= ')) ';
-			
-			// We have a single primary key field, making things nice and easy
-			} else {
-			 	$new_sql .= $aliases[$this_table] . '.' . $primary_key_fields[0] . ' IN (';
-			 	$first = TRUE;
-			 	foreach ($primary_keys as $primary_key) {
-			 	 	if (!$first) {
-			 	 	 	$new_sql .= ', ';	
-					}
-			 	 	$new_sql .= fORMDatabase::prepareBySchema($this_table, $primary_key_fields[0], $primary_key);
-			 	 	$first = FALSE;
-				}
-			 	$new_sql .= ') ';	
-			}
+			$new_sql .= fORMDatabase::createPrimaryKeyWhereCondition($table, $table_alias, $this->getPrimaryKeys());
 		}
 		
-		if (!empty($clauses['ORDER BY'])) {
+		// We need to add the related data order bys to the existing order bys
+		$order_bys = fORMRelatedData::getOrderBys($table, $related_table, $route);
+		if (!empty($clauses['ORDER BY']) || $order_bys != array()) {
 			$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
+				
+			if ($clauses['ORDER BY'] && $order_bys != array()) {
+				$new_sql .= ', ';
+			}
+			
+			if ($order_bys != array()) {
+			 	$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);	
+			}
 		} 
+		
+		$new_sql = fORMDatabase::insertFromClause($this_table, $new_sql, $joins);
 		
 		if (!isset($this->preloaded_result_objects[$related_table])) {
 		 	$this->preloaded_result_objects[$related_table] = array();	

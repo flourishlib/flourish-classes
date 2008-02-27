@@ -75,14 +75,14 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Sets the database type
+	 * Sets the PHP extension the query occured through
 	 * 
-	 * @param  string $extension  The type of the database
+	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo', 'array')
 	 * @return fResult
 	 */
 	public function __construct($extension)
 	{
-		if (!in_array($extension, array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo'))) {
+		if (!in_array($extension, array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo', 'array'))) {
 			fCore::toss('fProgrammerException', 'Invalid database extension selected');       
 		}
 		$this->extension = $extension; 
@@ -310,7 +310,7 @@ class fResult implements Iterator
 			$row = pg_fetch_assoc($this->result);   
 		} elseif ($this->extension == 'sqlite') {
 			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);	
-		} elseif ($this->extension == 'pdo') {
+		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
 			$row = $this->result[$this->pointer];	
 		}
 		
@@ -403,7 +403,7 @@ class fResult implements Iterator
 			return pg_result_seek($this->result, $row);
 		} elseif ($this->extension == 'sqlite') {
 			return sqlite_seek($this->result, $row);
-		} elseif ($this->extension == 'pdo') {
+		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
 			// Do nothing since pdo results are arrays
 		} 
 	}    

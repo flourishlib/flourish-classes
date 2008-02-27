@@ -90,6 +90,26 @@ class fSQLParsing
 	/**
 	 * Takes the FROM clause from parseSelectSQL() and returns all of the tables and how they are joined
 	 * 
+	 * The output array will be an associative array having keys in the following formats. The keys
+	 * with route names are standard joins for associating related tables. The keys with 'complex' in them
+	 * have an ON clause that is non-standard and the keys with 'simple' in them have no ON clause.
+	 *  - {first_table}_{second_table}[{route}]
+	 *  - {first_table}_{second_table}[{route}]_join
+	 *  - {first_table}_complex_{#}
+	 *  - {first_table}_simple_{#}
+	 * 
+	 * The values of the associative array will be in the following format:
+	 * <pre>
+	 * array(
+	 *     'join_type'        => (string) {the join type, such as 'INNER JOIN', 'LEFT JOIN', etc}
+	 *     'table_name'       => (string) {the table to be joined},
+	 *     'table_alias'      => (string) {the alias for the table},
+	 *     'on_clause_type'   => (string) {this optional element will be 'simple_equation' or 'complex_expression'},
+	 *     'on_clause_fields' => (array)  {only present when the on_clause_type is 'simple_equation', this will be a 2-element array with the two fields being equated},
+	 *     'on_clause'        => (string) {only present when the on_clause_type is 'complex_expression', this will be the literal ON clause}
+	 * );
+	 * </pre>
+	 * 
 	 * @param  string $clause    The sql clause to parse
 	 * @param  fISchema $schema  An instance of a class implementing the fISchema interface, used to find join tables for proper join naming
 	 * @return array  The tables in the from clause (see method description for format)
@@ -289,7 +309,7 @@ class fSQLParsing
 	 * Takes the FROM clause from parseSelectSQL() and returns all of the tables and each one's alias
 	 * 
 	 * @param  string $clause   The sql clause to parse
-	 * @return array  The tables in the from clause, with the table name being the key and value being the alias
+	 * @return array  The tables in the from clause, with the table alias being the key and value being the name
 	 */
 	static public function parseTableAliases($sql)
 	{
@@ -298,7 +318,7 @@ class fSQLParsing
 		$aliases = array();
 		
 		foreach ($joins as $join) {
-			$aliases[$join['table_name']] = $join['table_alias'];	
+			$aliases[$join['table_alias']] = $join['table_name'];	
 		}
 		
 		return $aliases;

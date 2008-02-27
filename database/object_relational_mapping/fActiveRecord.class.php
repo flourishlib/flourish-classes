@@ -178,9 +178,10 @@ abstract class fActiveRecord
 		} 
 		
 		// If we got a result back, it is the object we are creating
-		$this->values     = &$object->values;
-		$this->old_values = &$object->old_values;
-		$this->debug      = &$object->debug;
+		$this->values          = &$object->values;
+		$this->old_values      = &$object->old_values;
+		$this->related_records = &$object->related_records;
+		$this->debug           = &$object->debug;
 		return TRUE;
 	}
 	
@@ -294,9 +295,15 @@ abstract class fActiveRecord
 				break;
 			case 'associate':
 				if (isset($parameters[1])) {
-					return fORMRelatedData::linkRecords($this, $this->values, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelatedData::linkRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
+				break;
+			case 'inject':
+				if (isset($parameters[1])) {
+					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
 				break;
 			
 			// Error handler
