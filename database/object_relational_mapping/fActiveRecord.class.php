@@ -46,6 +46,13 @@ abstract class fActiveRecord
 	protected $old_values = array();
 	
 	/**
+	 * Related that are related to the current record via some relationship
+	 * 
+	 * @var array 
+	 */
+	protected $related_records = array();
+	
+	/**
 	 * If debugging is turned on for the class
 	 * 
 	 * @var boolean 
@@ -69,7 +76,7 @@ abstract class fActiveRecord
 			fORM::flagFeaturesSet(get_class($this));
 		}
 		
-		// Handle loading by a result object passed via the fSet class
+		// Handle loading by a result object passed via the fSequence class
 		if (is_object($primary_key) && $primary_key instanceof fResult) {
 			if ($this->loadFromIdentityMap($primary_key)) {
 				return;  
@@ -246,36 +253,53 @@ abstract class fActiveRecord
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		// This will prevent quiet failure
+		if (($action == 'set' || $action == 'associate') && !isset($parameters[0])) {
+			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires a single parameter');
+		}
 		
 		switch ($action) {
+			
+			// Value methods
 			case 'get':
 				if (isset($parameters[0])) {
-					return $this->retrieveValue($column, $parameters[0]);
+					return $this->retrieveValue($subject, $parameters[0]);
 				}
-				return $this->retrieveValue($column);
+				return $this->retrieveValue($subject);
 				break;
 			case 'format':
 				if (isset($parameters[0])) {
-					return $this->prepareValue($column, $parameters[0]);
+					return $this->prepareValue($subject, $parameters[0]);
 				}
-				return $this->prepareValue($column);
+				return $this->prepareValue($subject);
 				break;
 			case 'set':
-				return $this->assignValue($column, $parameters[0]);
+				return $this->assignValue($subject, $parameters[0]);
 				break;
-			case 'find':
-				return fORMRelatedData::retrieveValues($this, $this->values, $column);
-				break;
-			case 'link':
-				return fORMRelatedData::assignValues($this, $this->values, $column, $parameters[0]);
-				break;
+				
+			// Related data methods
 			case 'create':
-				return fORMRelatedData::buildObject($this, $this->values, $column);
+				if (isset($parameters[0])) {
+					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::constructRecord($this, $this->values, $subject);
 				break;
-			case 'form':
-				return fORMRelatedData::buildSet($this, $column);
+			case 'build':
+				if (isset($parameters[0])) {
+					return fORMRelatedData::constructSequence($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::constructSequence($this, $this->values, $this->related_records, $subject);
 				break;
+			case 'associate':
+				if (isset($parameters[1])) {
+					return fORMRelatedData::linkRecords($this, $this->values, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelatedData::linkRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				break;
+			
+			// Error handler
 			default:
 				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
 				break;
@@ -302,7 +326,7 @@ abstract class fActiveRecord
 		foreach ($relationships as $rel) {
 			$column = fInflection::pluralize($rel['related_column']);
 			if (fRequest::check($column)) {
-				$method = 'link' . fInflection::camelize($column, TRUE);
+				$method = 'associate' . fInflection::camelize($column, TRUE);
 				$this->$method(fRequest::get($column, 'array', array()));	
 			}
 		}	

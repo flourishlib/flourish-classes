@@ -212,7 +212,9 @@ class fDatabase
 		if (!$this->translation) {
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
 		}	
-		return $this->query($this->translation->translate($sql));
+		$result = $this->query($this->translation->translate($sql));
+		$result->setUntranslatedSQL($sql);
+		return $result;
 	}
 	
 	

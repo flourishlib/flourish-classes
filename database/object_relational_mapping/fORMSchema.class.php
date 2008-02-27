@@ -12,6 +12,7 @@
  * @uses  fISchema
  * @uses  fORMDatabase
  * @uses  fSchema
+ * @uses  fValidationException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
@@ -57,6 +58,164 @@ class fORMSchema
 			self::$schema_object = new fSchema(fORMDatabase::getInstance());
 		}
 		return self::$schema_object;
+	}
+	
+	
+	/**
+	 * Returns an array of all routes from a table to one of its related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getRoutes($table, $related_table)
+	{
+		$relationship_types = self::getInstance()->getRelationships($table);
+		
+		$routes = array();
+		
+		foreach ($relationship_types as $type => $relationships) {
+		 	foreach ($relationships as $relationship) {
+		 		if ($relationship['related_table'] == $related_table) {
+		 			if ($type == 'many-to-many') {
+						$routes[$relationship['join_table']] = $relationship;		
+					} elseif ($type == 'one-to-many') {
+						$routes[$relationship['related_column']] = $relationship;		
+					} else {
+						$routes[$relationship['column']] = $relationship;		
+					}
+				}
+			}	
+		}
+		
+		return $routes; 
+	}
+	
+	
+	/**
+	 * Returns the name of the only route from the specified table to one of its related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getOnlyRouteName($table, $related_table)
+	{
+		$routes = self::getRoutes($table, $related_table);
+		$keys = array_keys($routes);
+		
+		if (sizeof($keys) > 1) {
+			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);	
+		}
+		if (sizeof($keys) == 0) {
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table);
+		}
+		
+		return $keys[0];
+	}
+	
+	
+	/**
+	 * Returns an array of all routes from a table to one of its one-to-many or many-to-many related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getToManyRoutes($table, $related_table)
+	{
+		$relationship_types = self::getInstance()->getRelationships($table);
+		unset($relationship_types['one-to-one']);
+		unset($relationship_types['many-to-one']);
+		
+		$routes = array();
+		
+		foreach ($relationship_types as $type => $relationships) {
+		 	foreach ($relationships as $relationship) {
+		 		if ($relationship['related_table'] == $related_table) {
+		 			if ($type == 'many-to-many') {
+						$routes[$relationship['join_table']] = $relationship;		
+					} else {
+						$routes[$relationship['related_column']] = $relationship;		
+					}
+				}
+			}	
+		}
+		
+		return $routes; 
+	}
+	
+	
+	/**
+	 * Returns the name of the only to-many route from the specified table to one of its related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getOnlyToManyRouteName($table, $related_table)
+	{
+		$routes = self::getToManyRoutes($table, $related_table);
+		$keys = array_keys($routes);
+		
+		if (sizeof($keys) > 1) {
+			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);	
+		}
+		if (sizeof($keys) == 0) {
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-many relationship');
+		}
+		
+		return $keys[0];
+	}
+	
+	
+	/**
+	 * Returns an array of all routes from a table to one of its one-to-one or many-to-one related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getToOneRoutes($table, $related_table)
+	{
+		$relationship_types = self::getInstance()->getRelationships($table);
+		unset($relationship_types['one-to-many']);
+		unset($relationship_types['many-to-many']);
+		
+		$routes = array();
+		
+		foreach ($relationship_types as $type => $relationships) {
+		 	foreach ($relationships as $relationship) {
+		 		if ($relationship['related_table'] == $related_table) {
+		 			$routes[$relationship['column']] = $relationship;		
+				}
+			}	
+		}
+		
+		return $routes; 
+	}
+	
+	
+	/**
+	 * Returns the name of the only to-one route from the specified table to one of its related tables
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @return void
+	 */
+	static public function getOnlyToOneRouteName($table, $related_table)
+	{
+		$routes = self::getToOneRoutes($table, $related_table);
+		$keys = array_keys($routes);
+		
+		if (sizeof($keys) > 1) {
+			fCore::toss('fProgrammerException', 'There is more than one to-one route for ' . $table . ' to ' . $related_table);	
+		}
+		if (sizeof($keys) == 0) {
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-one relationship');
+		}
+		
+		return $keys[0];
 	}
 	
 	

@@ -13,8 +13,6 @@
  * @uses  fORMSchema
  * @uses  fProgrammerException
  * 
- * @todo  Check code for creating order bys to make sure it handles expressions properly without adding "table_name." to the beginning of function calls
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -186,7 +184,7 @@ class fORMDatabase
 	{
 		$modified_array = array();
 		foreach ($array as $key => $value) {
-			if (preg_match('#^\w+$#', $value)) {
+			if (preg_match('#^\w+$#', $key)) {
 				$modified_array[$table . '.' . $key] = $value;
 			} else {
 				$modified_array[$key] = $value;
@@ -212,116 +210,56 @@ class fORMDatabase
 		// Separate the SQL from quoted values
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
 		
-		// Look through all of the non-string values for database table names
-		$second_tier_tables = array();
-		$third_tier_tables = array();
+		$table_alias = $table;
+		
+		$joins         = array();
+		$used_aliases  = array();
+		
+		$table_map     = array();
+		
+		$joins[] = array(
+		    'join_type'   => 'none',
+		    'table_name'  => $table,
+		    'table_alias' => $table_alias
+		);
 		
 		foreach ($matches[0] as $match) {
 			if ($match != "'") {
-				preg_match_all('#\b((?:(\w+)=>)?\w+)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
+				preg_match_all('#\b((?:(\w+)(?:\[(\w+)\])?=>)?(\w+)(?:\[(\w+)\])?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
 				foreach ($table_matches as $table_match) {
-					if (!isset($table_match[1])) {
-						continue;	
-					}
-					if (!empty($table_match[2])) {
-						$third_tier_tables[] = $table_match[1];
-						$second_tier_tables[] = $table_match[2];
-						continue;	
-					}
-					$second_tier_tables[] = $table_match[1];
-				}
-			}
-		}
-		$second_tier_tables = array_diff($second_tier_tables, array($table));
-		$second_tier_tables = array_unique($second_tier_tables);
-		sort($second_tier_tables);
-		$used_relationships = array();
-		
-		
-		// Find all of the related tables for this table
-		$relationships = fORMSchema::getInstance()->getRelationships($table);
-		$related_tables = array();
-		foreach ($relationships as $type => $entries) {
-			foreach ($entries as $relationship) {
-				$related_tables[] = $relationship['related_table'];
-				if (in_array($relationship['related_table'], $second_tier_tables)) {
-					$used_relationships[$relationship['related_table']] = $relationship;
-				}	
-			}
-		}
-		$related_tables = array_unique($related_tables);
-		sort($related_tables);
-		
-		if (array_diff($second_tier_tables, $related_tables) != array()) {
-			fCore::toss('fProgrammerException', 'One of the tables specified in the following SQL is not related to the table ' . $table . ":\n" . $sql);	
-		}
-		
-		
-		// Make the second tier joins
-		$from_clause = $table;
-		foreach ($second_tier_tables as $joined_table) {		
-			$rel = $used_relationships[$joined_table];
-			if (isset($rel['join_table'])) {
-				$from_clause .= ' LEFT JOIN ' . $rel['join_table'];
-				$from_clause .= ' ON ' . $table . '.' . $rel['column'];
-				$from_clause .= ' = ' . $rel['join_table'] . '.' . $rel['join_column'];	
-				$from_clause .= ' LEFT JOIN ' . $rel['related_table'];
-				$from_clause .= ' ON ' . $rel['join_table'] . '.' . $rel['join_related_column'];
-				$from_clause .= ' = ' . $rel['related_table'] . '.' . $rel['related_column'];
-			} else {
-				$from_clause .= ' LEFT JOIN ' . $rel['related_table'];
-				$from_clause .= ' ON ' . $table . '.' . $rel['column'];
-				$from_clause .= ' = ' . $rel['related_table'] . '.' . $rel['related_column'];
-			}
-		}
-		
-		
-		
-		// Make the third tier joins
-		static $table_number = 0;
-		$table_map = array();
-		
-		foreach ($third_tier_tables as $chained_table) {		
-			
-			$st_table = preg_replace('#=>\w+#', '', $chained_table);
-			$tt_table = preg_replace('#\w+=>#', '', $chained_table);
-			$relationships = fORMSchema::getInstance()->getRelationships($st_table); 
-			
-			foreach ($relationships as $type => $rels) {
-				foreach ($rels as $rel) {
-					if ($rel['related_table'] != $tt_table) {
-						continue;	
-					}
 					
-					if (isset($rel['join_table'])) {
-						$jt = 'table' . $table_number;
-						$table_number++;
-						$rt = 'table' . $table_number;
-						$table_number++;
+					// This is a related table that is going to join to a once-removed table
+					if (!empty($table_match[2])) {
 						
-						$table_map[$chained_table] = $rt;
+						$related_table = $table_match[2];
+						$route = (!empty($table_match[3])) ? $table_match[3] : fORMSchema::getOnlyRouteName($table, $related_table);	
 						
-						$from_clause .= ' LEFT JOIN ' . $rel['join_table'] . ' AS ' . $jt;
-						$from_clause .= ' ON ' . $st_table . '.' . $rel['column'];
-						$from_clause .= ' = ' . $jt . '.' . $rel['join_column'];	
-						$from_clause .= ' LEFT JOIN ' . $rel['related_table'] . ' AS ' . $rt;
-						$from_clause .= ' ON ' . $jt . '.' . $rel['join_related_column'];
-						$from_clause .= ' = ' . $rt . '.' . $rel['related_column'];
+						$join_name = $table . '_' . $related_table . '[' . $route . ']';
 						
-					} else {
-						$rt = 'table' . $table_number;
-						$table_number++;
+						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
-						$table_map[$chained_table] = $rt;
+						$once_removed_table = $table_match[4];
+						$route = (!empty($table_match[5])) ? $table_match[5] : fORMSchema::getOnlyRouteName($related_table, $once_removed_table);	
 						
-						$from_clause .= ' LEFT JOIN ' . $rel['related_table'] . ' AS ' . $rt;
-						$from_clause .= ' ON ' . $st_table . '.' . $rel['column'];
-						$from_clause .= ' = ' . $rt . '.' . $rel['related_column'];
-					}
+						$join_name = self::createJoin($related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
+						
+						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
+					
+					// This is a related table
+					} elseif ($table_match[4] != $table) {
+					
+						$related_table = $table_match[4];
+						$route = (!empty($table_match[5])) ? $table_match[5] : fORMSchema::getOnlyRouteName($table, $related_table);	
+						
+						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
+						
+						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
+					}	
 				}
 			}
 		}
 		
+		$from_clause = self::createFromClauseFromJoins($joins);		
 		
 		// Put the SQL back together
 		$new_sql = '';
@@ -345,10 +283,143 @@ class fORMDatabase
 	
 	
 	/**
+	 * Creates join information for the table shortcut provided
+	 * 
+	 * @param  string $table           The primary table
+	 * @param  string $table_alias     The primary table alias
+	 * @param  string $related_table   The related table
+	 * @param  string $route           The route to the related table
+	 * @param  array  &$joins          The names of the joins that have been created
+	 * @param  array  &$used_aliases   The aliases that have been used
+	 * @return string  The name of the significant join created
+	 */
+	static private function createJoin($table, $table_alias, $related_table, $route, &$joins, &$used_aliases)
+	{
+		$routes = fORMSchema::getRoutes($table, $related_table);
+						
+		if (!isset($routes[$route])) {
+			fCore::toss('fProgrammerException', 'An invalid route, ' . $route . ', was specified for the relationship ' . $table . ' to ' . $related_table);	
+		}
+		
+		if (isset($joins[$table . '_' . $related_table . '[' . $route . ']'])) {
+			return  $table . '_' . $related_table . '[' . $route . ']';	
+		}
+		
+		// If the route uses a join table
+		if (isset($routes[$route]['join_table'])) {
+			$join = array(
+				'join_type' => 'INNER JOIN',
+				'table_name' => $routes[$route]['join_table'],
+				'table_alias' => self::createNewAlias($routes[$route]['join_table'], $used_aliases), // Fix this
+				'on_clause_type' => 'simple_equation',
+				'on_clause_fields' => array()
+			);
+			
+			$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
+			$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_column'];
+			
+			$join2 = array(
+				'join_type' => 'INNER JOIN',
+				'table_name' => $related_table,
+				'table_alias' => self::createNewAlias($related_table, $used_aliases),
+				'on_clause_type' => 'simple_equation',
+				'on_clause_fields' => array()
+			);
+			
+			$join2['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_related_column'];
+			$join2['on_clause_fields'][] = $join2['table_alias'] . '.' . $routes[$route]['related_column'];
+			
+			$joins[$table . '_' . $related_table . '[' . $route . ']_join'] = $join;
+			$joins[$table . '_' . $related_table . '[' . $route . ']'] = $join2;
+				
+		// If the route is a direct join
+		} else {
+			
+			$join = array(
+				'join_type' => 'INNER JOIN',
+				'table_name' => $related_table,
+				'table_alias' => self::createNewAlias($related_table, $used_aliases), // Fix this
+				'on_clause_type' => 'simple_equation',
+				'on_clause_fields' => array()
+			);
+			
+			$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
+			$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['related_column'];
+		
+			$joins[$table . '_' . $related_table . '[' . $route . ']'] = $join;
+		
+		}
+		
+		return $table . '_' . $related_table . '[' . $route . ']';
+	}
+	
+	
+	/**
+	 * Creates a FROM clause from a join array
+	 * 
+	 * @param  array $joins   The joins to create the FROM clause out of
+	 * @return string  The from clause (does not include the word 'FROM')
+	 */
+	static public function createFromClauseFromJoins($joins)
+	{
+		$sql = '';
+		
+		foreach ($joins as $join) {
+		 	// Here we handle the first table in a join
+		 	if ($join['join_type'] == 'none') {
+		 		$sql .= $join['table_name'];
+		 		if ($join['table_alias'] != $join['table_name']) {
+		 		 	$sql .= ' AS ' . $join['table_alias'];	
+				}
+			
+			// Here we handle all other joins
+			} else {
+				$sql .= ' ' . strtoupper($join['join_type']) . ' ' . $join['table_name'];
+				if ($join['table_alias'] != $join['table_name']) {
+		 		 	$sql .= ' AS ' . $join['table_alias'];	
+				}
+				if (isset($join['on_clause_type'])) {
+					if ($join['on_clause_type'] == 'simple_equation') {
+						$sql .= ' ON ' . $join['on_clause_fields'][0] . ' = ' . $join['on_clause_fields'][1];
+						
+					} else {
+						$sql .= ' ON ' . $join['on_clause'];
+					}	
+				}
+			}
+		}
+		
+		return $sql;
+	}
+	
+	
+	/**
+	 * Creates a new table alias
+	 * 
+	 * @param  string $table          The table to create an alias for
+	 * @param  array  &$used_aliases  The aliases that have been used
+	 * @return string  The alias to use for the table
+	 */
+	static public function createNewAlias($table, &$used_aliases)
+	{
+		if (!in_array($table, $used_aliases)) {
+		 	$used_aliases[] = $table;
+		 	return $table;	
+		}
+		$i = 1;
+		while(in_array($table . $i, $used_aliases)) {
+			$i++;	
+		}
+		$used_aliases[] = $table . $i;
+		return $table . $i;
+	}
+	
+	
+	/**
 	 * Creates a where clause from an array of conditions
 	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
-	 * @param  array  $conditions  The array of conditions  (see {@link fSet::create()} for format)
+	 * @param  array  $conditions  The array of conditions  (see {@link fSequence::create()} for format)
 	 * @return string  The SQL WHERE clause
 	 */
 	static public function createWhereClause($table, $conditions)
@@ -446,7 +517,7 @@ class fORMDatabase
 	 * Creates an order by clause from an array of columns/expressions and directions
 	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
-	 * @param  array  $order_bys  The array of order bys to use (see {@link fSet::create()} for format)
+	 * @param  array  $order_bys  The array of order bys to use (see {@link fSequence::create()} for format)
 	 * @return string  The SQL ORDER BY clause
 	 */
 	static public function createOrderByClause($table, $order_bys)
@@ -460,7 +531,7 @@ class fORMDatabase
 				fCore::toss('fProgrammerException', 'Invalid direction, ' . $direction . ', specified');
 			}
 			
-			if (preg_match('#^(\w+)\.(\w+)$#', $column, $matches)) {
+			if (preg_match('#^(?:\w+(?:\[\w+\])?=>)?(\w+)(?:\[\w+\])?\.(\w+)$#', $column, $matches)) {
 				$column_type = fORMSchema::getInstance()->getColumnInfo($matches[1], $matches[2], 'type');
 				if (in_array($column_type, array('varchar', 'char', 'text'))) {
 					$sql[] = 'LOWER(' . $column . ') ' . $direction;	
@@ -469,7 +540,7 @@ class fORMDatabase
 				}
 			} else {
 				$sql[] = $column . ' ' . $direction;
-			}	
+			}
 		}
 		
 		return join(', ', $sql);				
@@ -500,129 +571,6 @@ class fORMDatabase
 		
 		return $rows;
 	}
-    
-    
-    /**
-     * Takes a Flourish SQL SELECT query and parses it into clauses.
-     * 
-     * The select statement must be of the format:
-     * 
-     * SELECT [ table_name. | alias. ]*
-     * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
-     * [ WHERE condition [ , condition ]... ]
-     * [ GROUP BY conditions ]
-     * [ HAVING conditions ]
-     * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
-     * [ LIMIT integer ]
-     * 
-     * The returned array will contain the following keys, which may have a NULL or non-empty string value:
-     *  - 'SELECT'
-     *  - 'FROM'
-     *  - 'WHERE'
-     *  - 'GROUP BY'
-     *  - 'HAVING'
-     *  - 'ORDER BY'
-     *  - 'LIMIT'
-     * 
-     * @param  string $sql   The sql to parse
-     * @return array  The various clauses of the SELECT statement (see method descript for details)
-     */
-    static public function parseSelectSQL($sql)
-    {
-        preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
-        
-        $possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
-        $found_clauses    = array();
-        foreach ($possible_clauses as $possible_clause) {
-            $found_clauses[$possible_clause] = NULL;   
-        }
-        
-        $current_clause = 0;
-        
-        foreach ($matches[0] as $match) {
-            // This is a quoted string value, don't do anything to it
-            if ($match[0] == "'") {
-                $found_clauses[$possible_clauses[$current_clause]] .= $match;    
-            
-            // Non-quoted strings should be checked for clause markers
-            } else {
-                
-                // Look to see if a new clause starts in this string
-                $i = 1;
-                while ($current_clause+$i < sizeof($possible_clauses)) {
-                    // If the next clause is found in this string
-                    if (stripos($match, $possible_clauses[$current_clause+$i]) !== FALSE) {
-                        list($before, $after) = preg_split('#\s*' . $possible_clauses[$current_clause+$i] . '\s*#i', $match);
-                        $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $before);
-                        $match = $after;
-                        $current_clause = $current_clause + $i;
-                        $i = 0;
-                    }  
-                    $i++;      
-                }
-                
-                // Otherwise just add on to the current clause
-                if (!empty($match)) {
-                    $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
-                }  
-            }
-        }  
-        
-        return $found_clauses; 
-    }
-    
-    
-    /**
-     * Takes the FROM clause from parseSelectSQL() and returns all of the tables and each one's alias
-     * 
-     * @param  string $clause   The sql clause to parse
-     * @return array  The tables in the from clause, with the table name being the key and value being the alias
-     */
-    static public function parseTableAliases($sql)
-    {
-        preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
-        
-        $new_sql = '';
-        
-        // Skip quoted values since they could possible mess up parsing and don't matter anyway
-        foreach ($matches[0] as $match) {
-            if ($match[0] != "'") {
-                $new_sql .= $match;    
-            }
-        }  
-        
-        $aliases = array();
-        
-        // Parse complex joins with on clauses
-        if (preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#is', $new_sql)) {
-            $tables = preg_split('#((CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*?JOIN#i', $new_sql);
-            foreach ($tables as $table) {
-                preg_match('#\s*([\w.]+)(?:\s+(?:as\s+)?((?!ON)[\w.]+))?\s*#im', $table, $match);
-                if (!empty($match[2])) {
-                    $aliases[$match[1]] = $match[2];    
-                } else {
-                    $aliases[$match[1]] = $match[1];   
-                }   
-            }  
-            
-        // Parse simple comma-separated joins  
-        } elseif (preg_match('#(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s*,\s*(?:\w+(?:\s+(?:as\s+)?(?:\w+))?))*#is', $new_sql)) {
-            $tables = explode(',', $new_sql);
-            foreach ($tables as $table) {
-                preg_match('#\s*([\w.]+)(?:\s+(?:as\s+)?([\w.]+))?\s*#im', $table, $match);
-                if (!empty($match[2])) {
-                    $aliases[$match[1]] = $match[2];    
-                } else {
-                    $aliases[$match[1]] = $match[1];   
-                }   
-            }
-            
-        } else {
-            fCore::toss('fProgrammerException', 'Unable to parse FROM clause, does not appears to be in comma style or join style');   
-        }  
-        
-        return $aliases;
-    }
 }
 
 

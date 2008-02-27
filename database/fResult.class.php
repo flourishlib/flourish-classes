@@ -53,6 +53,13 @@ class fResult implements Iterator
 	private $sql = '';
 	
 	/**
+	 * The sql from before translation
+	 * 
+	 * @var string 
+	 */
+	private $untranslated_sql = NULL;
+	
+	/**
 	 * The auto incremented value from the query
 	 * 
 	 * @var integer 
@@ -91,6 +98,18 @@ class fResult implements Iterator
 	public function setSQL($sql)
 	{
 		$this->sql = $sql;
+	}
+	
+	
+	/**
+	 * Sets the sql from before translation
+	 * 
+	 * @param  string $untranslated_sql  The sql from before translation
+	 * @return void
+	 */
+	public function setUntranslatedSQL($untranslated_sql)
+	{
+		$this->untranslated_sql = $untranslated_sql;
 	} 
 	
 	
@@ -153,6 +172,17 @@ class fResult implements Iterator
 	public function getSQL()
 	{
 		return $this->sql;   
+	}
+	
+	
+	/**
+	 * Returns the sql as it was before translation
+	 * 
+	 * @return string  The sql from before translation
+	 */
+	public function getUntranslatedSQL()
+	{
+		return $this->untranslated_sql;   
 	}
 	
 	
@@ -286,7 +316,7 @@ class fResult implements Iterator
 		
 		// This is an unfortunate fix that required for databases that don't support limit
 		// clauses with an offset. It prevents unrequested columns from being returned.
-		if (isset($row['__flourish_limit_offset_row_num'])) {
+		if ($this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
 			unset($row['__flourish_limit_offset_row_num']);	
 		}
 		

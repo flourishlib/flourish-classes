@@ -17,76 +17,6 @@
 class fSQLTranslation
 {
 	/**
-     * Takes a Flourish SQL SELECT query and parses it into clauses.
-     * 
-     * The select statement must be of the format:
-     * 
-     * SELECT [ table_name. | alias. ]*
-     * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
-     * [ WHERE condition [ , condition ]... ]
-     * [ GROUP BY conditions ]
-     * [ HAVING conditions ]
-     * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
-     * [ LIMIT integer [ OFFSET integer ] ]
-     * 
-     * The returned array will contain the following keys, which may have a NULL or non-empty string value:
-     *  - 'SELECT'
-     *  - 'FROM'
-     *  - 'WHERE'
-     *  - 'GROUP BY'
-     *  - 'HAVING'
-     *  - 'ORDER BY'
-     *  - 'LIMIT'
-     * 
-     * @param  string $sql   The sql to parse
-     * @return array  The various clauses of the SELECT statement (see method descript for details)
-     */
-    static public function parseSelectSQL($sql)
-    {
-        preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
-        
-        $possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
-        $found_clauses    = array();
-        foreach ($possible_clauses as $possible_clause) {
-            $found_clauses[$possible_clause] = NULL;   
-        }
-        
-        $current_clause = 0;
-        
-        foreach ($matches[0] as $match) {
-            // This is a quoted string value, don't do anything to it
-            if ($match[0] == "'") {
-                $found_clauses[$possible_clauses[$current_clause]] .= $match;    
-            
-            // Non-quoted strings should be checked for clause markers
-            } else {
-                
-                // Look to see if a new clause starts in this string
-                $i = 1;
-                while ($current_clause+$i < sizeof($possible_clauses)) {
-                    // If the next clause is found in this string
-                    if (stripos($match, $possible_clauses[$current_clause+$i]) !== FALSE) {
-                        list($before, $after) = preg_split('#\s*' . $possible_clauses[$current_clause+$i] . '\s*#i', $match);
-                        $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $before);
-                        $match = $after;
-                        $current_clause = $current_clause + $i;
-                        $i = 0;
-                    }  
-                    $i++;      
-                }
-                
-                // Otherwise just add on to the current clause
-                if (!empty($match)) {
-                    $found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
-                }  
-            }
-        }  
-        
-        return $found_clauses; 
-    }
-	
-	
-	/**
 	 * If debugging is enabled
 	 * 
 	 * @var boolean 
@@ -320,7 +250,7 @@ class fSQLTranslation
 		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
-		 	$clauses = self::parseSelectSQL($match[1]);
+		 	$clauses = fSQLParsing::parseSelectSQL($match[1]);
 		 	
 		 	if ($clauses['ORDER BY'] == NULL) {
 		 	 	$clauses['ORDER BY'] = '1 ASC';	
