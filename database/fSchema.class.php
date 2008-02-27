@@ -124,10 +124,10 @@ class fSchema implements fISchema
 	public function setCacheFile($file)
 	{
 		if (file_exists($file) && !is_writable($file)) {
-			fCore::toss('fEnvironmentException', 'The cache file is not writable');   
+			fCore::toss('fEnvironmentException', 'The cache file specified, ' . $file . ', is not writable');   
 		}
 		if (!file_exists($file) && !is_writable(dirname($file))) {
-			fCore::toss('fEnvironmentException', 'The cache file directory is not writable');
+			fCore::toss('fEnvironmentException', 'The cache file directory, ' . dirname($file) . ', is not writable');
 		}
 		$this->cache_file = $file;
 		
@@ -197,8 +197,9 @@ class fSchema implements fISchema
 	 */
 	public function setKeysOverride($keys, $table, $key_type=NULL)
 	{
-		if (!in_array($key_type, array('primary', 'foreign', 'unique'))) {
-			fCore::toss('fProgrammerException', 'Invalid key type selected');       
+		$valid_key_types = array('primary', 'foreign', 'unique');
+		if (!in_array($key_type, $valid_key_types)) {
+			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');       
 		}
 		
 		if (!isset($this->keys_override[$table])) {
@@ -265,8 +266,9 @@ class fSchema implements fISchema
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
 	{
-		if ($element && !in_array($element, array('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment'))) {
-			fCore::toss('fProgrammerException', 'The element type specified is not valid');
+		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment');
+		if ($element && !in_array($element, $valid_elements)) {
+			fCore::toss('fProgrammerException', 'The element type specified, ' . $element . ', is not valid. Must be one of: ' . join(', ', $valid_elements) . '.');
 		}
 		
 		// Return the saved column info if possible
@@ -333,8 +335,9 @@ class fSchema implements fISchema
 	 */
 	public function getKeys($table, $key_type=NULL)
 	{
-		if ($key_type !== NULL && !in_array($key_type, array('primary', 'foreign', 'unique'))) {
-			fCore::toss('fProgrammerException', 'Invalid key type selected');       
+		$valid_key_types = array('primary', 'foreign', 'unique');
+		if ($key_type !== NULL && !in_array($key_type, $valid_key_types)) {
+			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');       
 		}
 		
 		// Return the saved column info if possible
@@ -409,8 +412,9 @@ class fSchema implements fISchema
 	 */
 	public function getRelationships($table, $relationship_type=NULL)
 	{
-		if ($relationship_type !== NULL && !in_array($relationship_type, array('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many'))) {
-			fCore::toss('fProgrammerException', 'Invalid relationship type selected');       
+		$valid_relationship_types = array('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many');
+		if ($relationship_type !== NULL && !in_array($relationship_type, $valid_relationship_types)) {
+			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $relationship_type . ', selected. Must be one of: ' . join(', ', $valid_relationship_types) . '.');       
 		}
 		
 		// Return the saved column info if possible

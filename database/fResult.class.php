@@ -77,13 +77,14 @@ class fResult implements Iterator
 	/**
 	 * Sets the PHP extension the query occured through
 	 * 
-	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo', 'array')
+	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
 	 * @return fResult
 	 */
 	public function __construct($extension)
 	{
-		if (!in_array($extension, array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo', 'array'))) {
-			fCore::toss('fProgrammerException', 'Invalid database extension selected');       
+		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
+		if (!in_array($extension, $valid_extensions)) {
+			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Should be one of: ' . join(', ', $valid_extensions) . '.');       
 		}
 		$this->extension = $extension; 
 	}

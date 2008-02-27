@@ -135,8 +135,9 @@ class fDatabase
 	 */
 	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
 	{
-		if (!in_array($type, array('mssql', 'mysql', 'postgresql', 'sqlite'))) {
-			fCore::toss('fProgrammerException', 'Invalid database type specified');       
+		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss('fProgrammerException', 'Invalid database type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');       
 		}
 		
 		$this->type = $type;			
