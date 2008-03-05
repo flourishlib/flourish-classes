@@ -9,6 +9,7 @@
  * @link  http://flourishlib.com/fTemplating
  * 
  * @uses  fCore
+ * @uses  fHTML
  * @uses  fProgrammerException
  * 
  * @version  1.0.0
@@ -40,7 +41,7 @@ class fTemplating
 	public function __construct($root=NULL)
 	{
 		if ($root === NULL) {
-		 	$root = $_SERVER['DOCUMENT_ROOT'];	
+			$root = $_SERVER['DOCUMENT_ROOT'];	
 		}
 		
 		if (!file_exists($root)) {
@@ -105,10 +106,22 @@ class fTemplating
 	
 	
 	/**
+	 * Gets the value of an element and runs it through {@link fHTML::prepare()}
+	 * 
+	 * @param  string $element        The element to get
+	 * @param  mixed  $default_value  The value to return if the element has not been set
+	 * @return mixed  The value of the element specified run through {@link fHTML::prepare()}, or the default value if it has not been set
+	 */
+	public function prepare($element, $default_value=NULL)
+	{
+		return fHTML::prepare($this->get($element, $default_value));	
+	}
+	
+	
+	/**
 	 * Includes the element specified (element must be set through setElement() first). If the
 	 * element is a file path ending in .css or .js an html tag will be printed. If the element is
-	 * a file path ending in .php it will be included and all elements will be exported into the
-	 * scope of the include.
+	 * a file path ending in .php it will be included.
 	 * 
 	 * You can pass the media attribute of a CSS file or the title attribute of an RSS feed by
 	 * adding an associative array with the following formats:
@@ -250,13 +263,8 @@ class fTemplating
 		if (!is_readable($path)) {
 			fCore::toss('fProgrammerException', 'The path specified, ' . $path . ', can not be read from');       
 		}
-		
-		$___path = $path;
-		unset($path);
-		
-		extract($this->elements);
-		
-		include($___path);
+				
+		include($path);
 	}
 	
 	
@@ -270,10 +278,10 @@ class fTemplating
 	{
 		if (!is_array($info)) {
 			$info = array('path'  => $info,
-					 	  'title' => fInflection::humanize(
-					 	                 preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
-					 	             )
-					 	 );	
+						  'title' => fInflection::humanize(
+										 preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
+									 )
+						 );	
 		}
 		
 		if (!isset($info['title'])) {
