@@ -62,6 +62,30 @@ class fORMSchema
 	
 	
 	/**
+	 * Returns information about the specified route
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are searching under
+	 * @param  string $route          The route to get info about
+	 * @return void
+	 */
+	static public function getRoute($table, $related_table, $route)
+	{
+		if ($route === NULL) {
+		 	$route = self::getOnlyRouteName($table, $related_table);	
+		}
+		
+		$routes = self::getRoutes($table, $related_table);
+		
+		if (!isset($routes[$route])) {
+			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+		}
+		
+		return $routes[$route];
+	}
+	
+	
+	/**
 	 * Returns an array of all routes from a table to one of its related tables
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
@@ -97,11 +121,17 @@ class fORMSchema
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route that was preselected, will be verified if present
 	 * @return void
 	 */
-	static public function getOnlyRouteName($table, $related_table)
+	static public function getRouteName($table, $related_table, $route=NULL)
 	{
 		$routes = self::getRoutes($table, $related_table);
+		
+		if (!empty($route) && isset($routes[$route])) {
+		 	return $route;	
+		}
+		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
@@ -112,6 +142,28 @@ class fORMSchema
 		}
 		
 		return $keys[0];
+	}
+	
+	
+	/**
+	 * Returns information about the specified to-many route
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are searching under
+	 * @param  string $route          The route to get info about
+	 * @return void
+	 */
+	static public function getToManyRoute($table, $related_table, $route)
+	{
+		$route = self::getToManyRouteName($table, $related_table, $route);	
+		
+		$routes = self::getToManyRoutes($table, $related_table);
+		
+		if (!isset($routes[$route])) {
+			fCore::toss('fProgrammerException', 'The to-many route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+		}
+		
+		return $routes[$route];
 	}
 	
 	
@@ -151,11 +203,17 @@ class fORMSchema
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route that was preselected, will be verified if present
 	 * @return void
 	 */
-	static public function getOnlyToManyRouteName($table, $related_table)
+	static public function getToManyRouteName($table, $related_table, $route=NULL)
 	{
 		$routes = self::getToManyRoutes($table, $related_table);
+		
+		if (!empty($route) && isset($routes[$route])) {
+		 	return $route;	
+		}
+		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
@@ -166,6 +224,28 @@ class fORMSchema
 		}
 		
 		return $keys[0];
+	}
+	
+	
+	/**
+	 * Returns information about the specified to-one route
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are searching under
+	 * @param  string $route          The route to get info about
+	 * @return void
+	 */
+	static public function getToOneRoute($table, $related_table, $route)
+	{
+		$route = self::getToOneRouteName($table, $related_table, $route);	
+		
+		$routes = self::getToOneRoutes($table, $related_table);
+		
+		if (!isset($routes[$route])) {
+			fCore::toss('fProgrammerException', 'The to-one route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+		}
+		
+		return $routes[$route];
 	}
 	
 	
@@ -201,11 +281,17 @@ class fORMSchema
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route that was preselected, will be verified if present
 	 * @return void
 	 */
-	static public function getOnlyToOneRouteName($table, $related_table)
+	static public function getToOneRouteName($table, $related_table, $route=NULL)
 	{
 		$routes = self::getToOneRoutes($table, $related_table);
+		
+		if (!empty($route) && isset($routes[$route])) {
+		 	return $route;	
+		}
+		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {

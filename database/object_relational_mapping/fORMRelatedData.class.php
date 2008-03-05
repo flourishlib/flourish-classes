@@ -105,14 +105,9 @@ class fORMRelatedData
 		
 		$related_table = fORM::tablize($related_class);
 		
-		// Get the route for the relationship
-		$routes = fORMSchema::getToOneRoutes($table, $related_table);
-		if (empty($route)) {
-		 	$route = fORMSchema::getOnlyToOneRouteName($table, $related_table);	
-		}
-		$selected_route = $routes[$route];
+		$relationship = fORMSchema::getToOneRoute($table, $related_table, $route);
 		
-		return new $class($values[$selected_route['column']]);	
+		return new $class($values[$relationship['column']]);	
 	}
 	
 	
@@ -139,26 +134,22 @@ class fORMRelatedData
 			return $related_records[$related_table][$route];	
 		}
 		
-		// Get the route for the relationship
-		$routes = fORMSchema::getToManyRoutes($table, $related_table);
-		if (empty($route)) {
-		 	$route = fORMSchema::getOnlyToManyRouteName($table, $related_table);	
-		}
-		$selected_route = $routes[$route];
+		$route        = fORMSchema::getToManyRouteName($table, $related_table, $route);
+		$relationship = fORMSchema::getToManyRoute($table, $related_table, $route);
 		
 		// Determine how we are going to build the sequence
-		$where_conditions = array($table . '.' . $selected_route['column'] . '=' => $values[$selected_route['column']]);
+		$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
 		$order_bys = self::getOrderBys($table, $related_table, $route);
 		
-		$set = fSequence::create($related_class, $where_conditions, $order_bys);	
+		$sequence = fSequence::create($related_class, $where_conditions, $order_bys);	
 		
 		// Cache the results for subsequent calls
 		if (!isset($related_records[$related_table])) {
 		 	$related_records[$related_table] = array();	
 		}
-		$related_records[$related_table][$route] = $set;
+		$related_records[$related_table][$route] = $sequence;
 		
-		return $set;
+		return $sequence;
 	}
 	
 	
@@ -197,12 +188,7 @@ class fORMRelatedData
 		
 		$related_table = fORM::tablize($related_class);	
 		
-		// Get the route for the relationship
-		$routes = fORMSchema::getToManyRoutes($table, $related_table);
-		if (empty($route)) {
-		 	$route = fORMSchema::getOnlyToManyRouteName($table, $related_table);	
-		}
-		$selected_route = $routes[$route];
+		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);	
 		
 		$related_records[$related_table][$route] = $records;
 	}

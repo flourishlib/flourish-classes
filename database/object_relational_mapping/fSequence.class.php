@@ -379,12 +379,8 @@ class fSequence implements Iterator
 		
 		$table = fORM::tablize($this->class_name);
 		
-		// Determine the route to use
-		$routes = fORMSchema::getToManyRoutes($table, $related_table);
-		if (empty($route)) {
-		 	$route = fORMSchema::getOnlyToManyRouteName($table, $related_table);	
-		}
-		$relationship  = $routes[$route];
+		$route         = fORMSchema::getToManyRouteName($table, $related_table, $route);
+		$relationship  = fORMSchema::getToManyRoute($table, $related_table, $route);
 		$related_table = $relationship['related_table'];
 		
 		// Get the existing joins and add any necessary ones
@@ -439,6 +435,54 @@ class fSequence implements Iterator
 	
 	
 	/**
+	 * Injects a sequences of related information into the current record
+	 * 
+	 * @param string $related_table   The table we are injecting the values for
+	 * @param string $route           The route to the related table
+	 * @param fResult $result_object  The pre-loaded result object that we are extracting the sequence from
+	 * @return void
+	 */
+	private function injectSubSequence($related_table, $route, $result_object) 
+	{
+	 	$rows = array();
+		
+		$keys = $this->primary_keys[$this->key()];
+		settype($keys, 'array');
+					
+		try {
+			while (array_diff($keys, $result_object->current()) == array()) {
+				$rows[] = $result_object->fetchRow();	
+			}	
+		} catch (fPrintableException $e) { }		
+		
+		$table = fORM::tablize($this->class_name);
+		$relationship = fORMSchema::getRoute($table, $related_table, $route);
+		
+		$record = $this->records[$this->key()];
+		$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
+		
+		$sql = 'SELECT *
+					FROM ' . $related_table . '
+					WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
+		
+		$result = new fResult('array');
+		$result->setSQL($sql);
+		$result->setResult($rows);
+		$result->setReturnedRows(sizeof($rows));
+		$result->setAffectedRows(0);
+		$result->setAutoIncrementedValue(NULL);
+		
+		$class_name = fORM::classize($related_table);
+		
+		$sequence = new fSequence($class_name, $result);
+		
+		$method = 'inject' . fInflection::pluralize($class_name);
+		$record->$method($result);	
+	}
+	
+	
+	
+	/**
 	 * Rewinds the sequence to the first record (used for iteration)
 	 * 
 	 * @return void
@@ -459,14 +503,6 @@ class fSequence implements Iterator
 		if (!isset($this->records[$this->key()])) {
 			$this->records[$this->key()] = new $this->class_name($this->result_object);
 			
-			// Pass the preloaded data to the object
-			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
-				foreach ($result_objects as $route => $result_object) {
-					$method = 'preload' . fInflection::camelize($related_table, TRUE);
-					$this->records[$this->key()]->$method($route, $result_object);
-				}
-			}
-			
 			// Fetch the primary keys for this object
 			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this->class_name), 'primary');
 			$keys = array();
@@ -475,6 +511,13 @@ class fSequence implements Iterator
 			 	$keys[$primary_key] = $this->records[$this->key()]->$method();	
 			}
 			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[$primary_keys[0]] : $keys;
+			
+			// Pass the preloaded data to the object
+			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
+				foreach ($result_objects as $route => $result_object) {
+					$this->injectSubSequence($related_table, $route, $result_object);
+				}
+			}
 		}
 		return $this->records[$this->key()];
 	}

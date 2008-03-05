@@ -55,8 +55,8 @@ class fSession
 	 */
 	static public function setLength($timespan)
 	{
-	 	if (!self::$open) {
-	 		$seconds = strtotime($timespan) - time();
+		if (!self::$open) {
+			$seconds = strtotime($timespan) - time();
 			ini_set('session.gc_maxlifetime', $seconds);
 			ini_set('session.cookie_lifetime', 0);
 		} else {
@@ -141,27 +141,6 @@ class fSession
 			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::get()');	
 		}
 		return (isset($_SESSION[$prefix . $key])) ? $_SESSION[$prefix . $key] : $default_value;
-	}
-	
-	
-	/**
-	 * Gets all of the data from the session superglobal, filtering by fSession:: (can be overridden)
-	 * 
-	 * @param  string $prefix   The prefix to filter key => values by
-	 * @return array  All of the session values for the prefix specified
-	 */
-	static public function getAll($prefix='fSession::')
-	{
-		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::getAll()');	
-		}
-		$output = array();
-		foreach ($_SESSION as $key => $value) {
-			if (strpos($key, $prefix) === 0) {
-				$output[str_replace($prefix, '', $key)] = $value;
-			}	
-		}
-		return $output;
 	}
 }
 

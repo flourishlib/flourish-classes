@@ -145,7 +145,7 @@ class fDirectory
 	 * 
 	 * @return boolean  If the directory is a temp directory
 	 */
-	public function checkIfTemp()
+	public function isTemp()
 	{
 		if ($this->exception) { throw $this->exception; }
 		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);    
@@ -157,7 +157,7 @@ class fDirectory
 	 * 
 	 * @return boolean  If the directory is writable
 	 */
-	public function checkIfWritable()
+	public function isWritable()
 	{
 		if ($this->exception) { throw $this->exception; }
 		return is_writable($this->directory);   
@@ -171,7 +171,7 @@ class fDirectory
 	 */
 	public function getTemp()
 	{
-		if ($this->checkIfTemp()) {
+		if ($this->isTemp()) {
 			fCore::toss('fProgrammerException', 'The current directory is a temporary directory');   
 		}
 		$temp_dir = $this->directory . self::TEMP_DIRECTORY;
@@ -203,7 +203,7 @@ class fDirectory
 	 */
 	public function clean() 
 	{
-		if (!$this->checkIfTemp()) {
+		if (!$this->isTemp()) {
 			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');   
 		}
 		

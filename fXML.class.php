@@ -24,16 +24,16 @@ class fXML
 	
 	
 	/**
-     * Prepares content for display in a UTF-8 encoded XML document 
-     * 
-     * @param  string $content   The content to prepare
-     * @return string  The encoded xml
-     */
-    static public function prepare($content)
-    {
-        $content = fHTML::prepareText($content);
-        return fHTML::convertEntitiesToNumeric($content);         
-    }
+	 * Prepares content for display in a UTF-8 encoded XML document 
+	 * 
+	 * @param  string $content   The content to prepare
+	 * @return string  The encoded xml
+	 */
+	static public function prepare($content)
+	{
+		$content = fHTML::preparePlainText($content);
+		return fHTML::convertEntitiesToNumeric($content);         
+	}
 }
 
 

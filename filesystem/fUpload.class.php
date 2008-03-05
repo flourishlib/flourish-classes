@@ -127,21 +127,21 @@ class fUpload
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $field      The file upload field to get the file(s) from
-     * @param  string|fDirectory $directory  The directory to upload the file to
+	 * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @return fFile|array  An fFile object or an array of fFile objects
 	 */
 	static public function uploadFile($field, $directory) 
 	{
 		if (!is_object($directory)) {
-            $directory = new fDirectory($directory);   
-        }
+			$directory = new fDirectory($directory);   
+		}
 		
-		if (!$directory->checkIfWritable()) {
+		if (!$directory->isWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified is not writable');
 		}
 		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-            fCore::toss('fProgrammerException', 'Missing method="POST" attribute in form tag');
-        }
+			fCore::toss('fProgrammerException', 'Missing method="POST" attribute in form tag');
+		}
 		if (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
 			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
 		}
@@ -175,8 +175,8 @@ class fUpload
 	/**
 	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
 	 * 
-     * @throws  fValidationException
-     * 
+	 * @throws  fValidationException
+	 * 
 	 * @param  array $file_array      The array of information from the $_FILES array 
 	 * @param  string $field          The field the file was uploaded through
 	 * @param  fDirectory $directory  The directory the file is being uploaded into
@@ -186,7 +186,7 @@ class fUpload
 	{
 		try {
 			// Do some validation of the file provided
-            if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
+			if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
 				fCore::toss('fValidationException', fInflection::humanize($field) . ': Please upload a file'); 
 			}
 			if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
@@ -219,40 +219,40 @@ class fUpload
 				fCore::toss('fEnvironmentException', fInflection::humanize($field) . ': There was an error moving the uploaded file');    
 			}
 			
-            return self::createObject($file_name); 
+			return self::createObject($file_name); 
 			
 		} catch (Exception $e) {
 			// If no file was uploaded, check to see if a temp file was referenced
 			$temp_field = '__temp_' . $field;
-            if ($e->getMessage() == fInflection::humanize($field) . ': Please upload a file' && !empty($_REQUEST[$temp_field]) && file_exists($directory->getTemp()->getPath() . $_REQUEST[$temp_field])) {
+			if ($e->getMessage() == fInflection::humanize($field) . ': Please upload a file' && !empty($_REQUEST[$temp_field]) && file_exists($directory->getTemp()->getPath() . $_REQUEST[$temp_field])) {
 				$file_name = fFile::createUniqueName($directory->getPath() . $_REQUEST[$temp_field]);
-                rename($directory->getTemp()->getPath() . $_REQUEST[$temp_field], $file_name);
+				rename($directory->getTemp()->getPath() . $_REQUEST[$temp_field], $file_name);
 				return self::createObject($file_name);
 			}
 			
 			return new fFile(NULL, $e);
 		}    
 	}
-    
-    
-    /**
-     * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
-     * 
-     * @throws  fValidationException
-     * 
-     * @param  string $file_name  The path to the file on the filesystem
-     * @return void
-     */
-    static private function createObject($file_name) 
-    {
-        try {
-            fImage::checkIfImageIncompatible($file_name);
-            return new fImage($file_name);
-            
-        } catch (fPrintableException $e) {
-            return new fFile($file_name);
-        }    
-    }
+	
+	
+	/**
+	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
+	 * 
+	 * @throws  fValidationException
+	 * 
+	 * @param  string $file_name  The path to the file on the filesystem
+	 * @return void
+	 */
+	static private function createObject($file_name) 
+	{
+		try {
+			fImage::verifyImageCompatible($file_name);
+			return new fImage($file_name);
+			
+		} catch (fPrintableException $e) {
+			return new fFile($file_name);
+		}    
+	}
 } 
 
 

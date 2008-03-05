@@ -144,7 +144,7 @@ class fFile
 		
 		$file_info = self::getInfo($this->file);
 		$directory = $this->getDirectory();
-		if (!$directory->checkIfTemp()) {
+		if (!$directory->isTemp()) {
 			$temp_dir = $directory->getTemp();
 			$new_file = $temp_dir->getPath() . $this->getFilename();
 			rename($this->file, $new_file);
@@ -163,7 +163,7 @@ class fFile
 		if ($this->exception) { throw $this->exception; }
 		
 		$directory = $this->getDirectory();
-		if ($directory->checkIfTemp()) {
+		if ($directory->isTemp()) {
 			$new_file = $directory->getParent() . $this->getFilename();
 			rename($this->file, $new_file);
 			$this->file = $new_file;
@@ -185,11 +185,11 @@ class fFile
 			$new_directory = fDirectory($new_directory);
 		}   
 		
-		if (!$new_directory->checkIfWritable()) {
+		if (!$new_directory->isWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified is not writable');
 		}
 		
-		if ($this->getDirectory()->checkIfTemp()) {
+		if ($this->getDirectory()->isTemp()) {
 			$new_directory = $new_directory->getTemp();
 		}       
 		
@@ -203,7 +203,7 @@ class fFile
 	 * 
 	 * @return boolean  If the file is writable
 	 */
-	public function checkIfWritable()
+	public function isWritable()
 	{
 		if ($this->exception) { throw $this->exception; }
 		return is_writable($this->file);   
@@ -221,7 +221,7 @@ class fFile
 		
 		$dir = $this->getDirectory();
 		
-		if (!$dir->checkIfWritable()) {
+		if (!$dir->isWritable()) {
 			fCore::toss('fProgrammerException', 'The file can not be deleted because the directory containing it is not writable');
 		} 
 		
@@ -244,7 +244,7 @@ class fFile
 	 */
 	public function write($data) 
 	{
-		if (!$this->checkIfWritable()) {
+		if (!$this->isWritable()) {
 			fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
 		} 
 		

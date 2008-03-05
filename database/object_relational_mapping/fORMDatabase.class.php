@@ -234,14 +234,14 @@ class fORMDatabase
 					if (!empty($table_match[2])) {
 						
 						$related_table = $table_match[2];
-						$route = (!empty($table_match[3])) ? $table_match[3] : fORMSchema::getOnlyRouteName($table, $related_table);	
+						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[3]);	
 						
 						$join_name = $table . '_' . $related_table . '[' . $route . ']';
 						
 						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
 						$once_removed_table = $table_match[4];
-						$route = (!empty($table_match[5])) ? $table_match[5] : fORMSchema::getOnlyRouteName($related_table, $once_removed_table);	
+						$route = fORMSchema::getOnlyRouteName($related_table, $once_removed_table, $table_match[5]);
 						
 						$join_name = self::createJoin($related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
 						
@@ -251,7 +251,7 @@ class fORMDatabase
 					} elseif ($table_match[4] != $table) {
 					
 						$related_table = $table_match[4];
-						$route = (!empty($table_match[5])) ? $table_match[5] : fORMSchema::getOnlyRouteName($table, $related_table);	
+						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[5]);
 						
 						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						

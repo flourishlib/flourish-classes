@@ -54,7 +54,7 @@ class fImage extends fFile
 		
 		try {
 
-			self::checkIfImageIncompatible($image);
+			self::verifyImageCompatible($image);
 			parent::__construct($image, $exception);
 				
 		} catch (fExpectedException $e) {
@@ -106,7 +106,7 @@ class fImage extends fFile
 	 * @param  string $image   The image to check for incompatibility
 	 * @return void
 	 */
-	static public function checkIfImageIncompatible($image)
+	static public function verifyImageCompatible($image)
 	{
 		self::determineProcessor();
 		
@@ -485,7 +485,7 @@ class fImage extends fFile
 	 * 
 	 * @return boolean  If the image is an animated gif
 	 */
-	private function checkIfAnimatedGif()
+	private function isAnimatedGif()
 	{
 		$info = self::getInfo($this->file);
 		if ($info['type'] == 'gif') {
@@ -618,7 +618,7 @@ class fImage extends fFile
 		$command_line .= ' ' . escapeshellarg($this->file) . ' ';
 		
 		// Animated gifs need to be coalesced
-		if ($this->checkIfAnimatedGif()) {
+		if ($this->isAnimatedGif()) {
 			$command_line .= ' -coalesce ';	
 		}
 		

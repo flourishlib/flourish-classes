@@ -112,9 +112,9 @@ class fCRUD
 		}		
 
 		if (fHTML::checkForBlockLevelHTML($content)) {
-			echo '<div class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</div>';	
+			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';	
 		} else {
-			echo '<p class="' . $css_class . '">' . fHTML::prepareHTML($content) . '</p>';
+			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
 		}
 	}
 	
@@ -268,7 +268,7 @@ class fCRUD
 		
 		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
 		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
-		?><a href="<?= fHTML::prepareText(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
+		?><a href="<?= fHTML::preparePlainText(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
 	}
 	
 	

@@ -120,7 +120,7 @@ class fTimestamp
 	 */
 	static private function checkPHPVersion()
 	{
-	 	if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
+		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
 			fCore::toss('fEnvironmentException', 'The fTimestamp class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.');	
 		}	
 	}
@@ -142,7 +142,7 @@ class fTimestamp
 		$default_tz = date_default_timezone_get();
 		
 		if ($timezone) {
-			if (!$this->checkIfValidTimezone($timezone)) {
+			if (!$this->isValidTimezone($timezone)) {
 				fCore::toss('fValidationException', 'The timezone specified, ' . $timezone . ', is not a valid timezone');	
 			}
 			
@@ -306,7 +306,7 @@ class fTimestamp
 	 */
 	public function setTimezone($timezone)
 	{
-		if (!$this->checkIfValidTimezone($timezone)) {
+		if (!$this->isValidTimezone($timezone)) {
 			fCore::toss('fValidationException', 'The timezone specified, ' . $timezone . ', is not a valid timezone');	
 		}	
 		$this->timezone = $timezone;
@@ -334,7 +334,7 @@ class fTimestamp
 	 */
 	public function adjust($adjustment)
 	{
-		if ($this->checkIfValidTimezone($adjustment)) {
+		if ($this->isValidTimezone($adjustment)) {
 			$this->setTimezone($adjustment);	
 		} else {
 			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
@@ -358,7 +358,7 @@ class fTimestamp
 		$timestamp = $this->timestamp;
 		
 		// Handle an adjustment that is a timezone
-		if ($adjustment && $this->checkIfValidTimezone($adjustment)) {
+		if ($adjustment && $this->isValidTimezone($adjustment)) {
 			$default_tz = date_default_timezone_get();	
 			date_default_timezone_set($adjustment);
 			
@@ -368,7 +368,7 @@ class fTimestamp
 		}
 		
 		// Handle an adjustment that is a relative date/time
-		if ($adjustment && !$this->checkIfValidTimezone($adjustment)) {
+		if ($adjustment && !$this->isValidTimezone($adjustment)) {
 			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
 		}
 		
@@ -424,7 +424,7 @@ class fTimestamp
 	 * @param  integer $timestamp  The time to adjust
 	 * @return integer  The adjusted timestamp
 	 */
-	private function checkIfValidTimezone($timezone)
+	private function isValidTimezone($timezone)
 	{
 		$default_tz = date_default_timezone_get();
 		$valid_tz = @date_default_timezone_set($timezone);

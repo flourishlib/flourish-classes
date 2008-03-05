@@ -357,7 +357,7 @@ abstract class fActiveRecord
 	 * Retrieves a value from the record and formats it for output into html.
 	 * 
 	 * Below are the transformations performed:
-	 *   - varchar, char, text columns: will run through fHTML::prepareHTML()
+	 *   - varchar, char, text columns: will run through fHTML::prepare()
 	 *   - date, time, timestamp: takes 1 parameter, php date() formatting string
 	 *   - boolean: will return 'Yes' or 'No'
 	 * 
@@ -382,7 +382,7 @@ abstract class fActiveRecord
 			case 'varchar':
 			case 'char':
 			case 'text':
-				return fHTML::prepareHTML($this->$method_name());
+				return fHTML::prepare($this->$method_name());
 
 			case 'date':
 			case 'time':

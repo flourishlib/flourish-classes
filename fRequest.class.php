@@ -77,7 +77,7 @@ class fRequest
 		}
 		
 		if ($cast_to == 'array' && ($value === NULL || $value === '')) {
-		 	$value = array();	
+			$value = array();	
 		} elseif ($cast_to != 'string' && $value === '') {
 			$value = NULL;
 		} elseif ($cast_to && $value !== NULL) {
@@ -107,7 +107,7 @@ class fRequest
 	 * @param  array  $valid_values   The array of values that are permissible, if one is not selected, picks first
 	 * @return mixed  The value
 	 */
-	static public function getFromArray($key, $valid_values)
+	static public function getValid($key, $valid_values)
 	{
 		settype($valid_values, 'array');
 		$valid_values = array_merge(array_unique($valid_values));
@@ -116,6 +116,17 @@ class fRequest
 			return $valid_values[0];	
 		}
 		return $value;
+	}
+	
+	
+	/**
+	 * Indicates if the URL was accessed via the POST HTTP method
+	 * 
+	 * @return boolean  If the URL was accessed via the POST HTTP method
+	 */
+	static public function isPost()
+	{
+		return strtolower($_SERVER['REQUEST_METHOD']) == 'post';
 	}
 	
 	

@@ -262,7 +262,7 @@ class fResult implements Iterator
 	 * 
 	 * @return boolean  If there are remaining rows in the result
 	 */
-	public function checkIfRemainingRows()
+	public function areRemainingRows()
 	{
 		return $this->valid();
 	}
@@ -336,22 +336,22 @@ class fResult implements Iterator
 	{
 		static $using_dblib = NULL;
 		
-        if ($using_dblib === NULL) {
+		if ($using_dblib === NULL) {
 		
-        	// If it is not a windows box we are definitely not using dblib
-            if (fCore::getOS() != 'windows') {
-                $using_dblib = FALSE;    
-            
-            // Check this windows box for dblib
-            } else {
-                ob_start();
-			    phpinfo(INFO_MODULES);
-			    $module_info = ob_get_contents();
-			    ob_end_clean();	
-			    
-			    preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">(.*?)</td>#ims', $module_info, $match);
-			    $using_dblib = (trim($match[1]) != 'FreeTDS');
-            }
+			// If it is not a windows box we are definitely not using dblib
+			if (fCore::getOS() != 'windows') {
+				$using_dblib = FALSE;    
+			
+			// Check this windows box for dblib
+			} else {
+				ob_start();
+				phpinfo(INFO_MODULES);
+				$module_info = ob_get_contents();
+				ob_end_clean();	
+				
+				preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">(.*?)</td>#ims', $module_info, $match);
+				$using_dblib = (trim($match[1]) != 'FreeTDS');
+			}
 		}
 		
 		if (!$using_dblib) {
