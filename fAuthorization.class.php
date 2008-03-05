@@ -259,6 +259,29 @@ class fAuthorization
 	
 	
 	/**
+	 * Sets some piece of information to use to identify the current user
+	 * 
+	 * @param  mixed $token   The user's token. This could be a user id, an email address, a user object, etc.
+	 * @return void
+	 */
+	static public function setUserToken($token)
+	{
+		fSession::set('user_token', $token, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
+	 * Gets the value that was set as the user token, NULL if no token has been set
+	 * 
+	 * @return mixed   The user token that had been set, NULL if none
+	 */
+	static public function getUserToken()
+	{
+		return fSession::get('user_token', NULL, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
 	 * Destroys the user's auth level and/or ACLs
 	 * 
 	 * @return void
@@ -266,7 +289,23 @@ class fAuthorization
 	static public function destroyUserInfo()
 	{
 		fSession::set('user_auth_level', NULL, self::SESSION_PREFIX);
-		fSession::set('user_acls', NULL, self::SESSION_PREFIX);	
+		fSession::set('user_acls', NULL, self::SESSION_PREFIX);
+		fSession::set('user_token', NULL, self::SESSION_PREFIX);
+		fSession::set('requested_url', NULL, self::SESSION_PREFIX);	
+	}
+	
+	
+	/**
+	 * Returns the URL requested before the user was redirected to the login page
+	 * 
+	 * @param  string $default_url   The default URL to redirect to if the user was not redirected
+	 * @return string  The URL that was requested before they were redirected to the login page
+	 */
+	static public function getRequestedURL($default_url)
+	{
+		$requested_url = fSession::get('requested_url', $default_url, self::SESSION_PREFIX);
+		fSession::set('requested_url', NULL, self::SESSION_PREFIX);
+		return $requested_url;
 	}
 	
 	
@@ -277,10 +316,8 @@ class fAuthorization
 	 */
 	static private function redirect()
 	{
-		$qs_append  = (strpos(self::$login_page, '?') === FALSE) ? '?' : '&';
-		$qs_append .= 'requested_url=' . urlencode(fURL::getWithQueryString());
-		
-		fURL::redirect(self::$login_page . $qs_append);
+		fSession::set('requested_url', fURL::getWithQueryString(), self::SESSION_PREFIX);
+		fURL::redirect(self::$login_page);
 	}	
 	
 	
