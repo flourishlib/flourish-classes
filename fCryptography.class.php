@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides cryptography functionality, including hashing and encrypting
+ * Provides cryptography functionality, including hashing, symmetric key encryption and public key encryption
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -9,7 +9,9 @@
  * @link  http://flourishlib.com/fCryptography
  * 
  * @uses  fCore
+ * @uses  fEnvironmentException
  * @uses  fProgrammerException
+ * @uses  fValidationException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-11-27]
@@ -26,7 +28,7 @@ class fCryptography
 	
 	
 	/**
-	 * Returns a random string of the length specified
+	 * Returns a random string of the type and length specified
 	 * 
 	 * @param  integer $length  The length of string to return
 	 * @param  string $type		The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
