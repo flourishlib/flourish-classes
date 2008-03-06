@@ -30,7 +30,7 @@ class fCryptography
 	 * 
 	 * @param  integer $length  The length of string to return
 	 * @param  string $type		The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
-	 * @return string  A random string of the length specified
+	 * @return string  A random string of the type and length specified
 	 */
 	static public function generateRandomString($length, $type='alphanumeric')
 	{
@@ -253,7 +253,7 @@ class fCryptography
 	 * 
 	 * @param  string $plaintext        The content to be encrypted
 	 * @param  string $public_key_file  The path to an X.509 public key certificate
-	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link symmetricKeyDecrypt()}
+	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link publicKeyDecrypt()}
 	 */
 	static public function publicKeyEncrypt($plaintext, $public_key_file)
 	{
