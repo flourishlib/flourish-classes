@@ -146,7 +146,7 @@ class fCryptography
 		$key      = substr($secret_key, 0, mcrypt_enc_get_key_size($module));
 		srand();
 		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
-
+		
 		// Encrypt the IV for storage to prevent man in the middle attacks. This uses
 		// electronic codebook since it is suitable for encrypting the IV. 
 		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
@@ -155,11 +155,11 @@ class fCryptography
 		$encrypted_iv = mcrypt_generic($iv_module, $iv);
 		mcrypt_generic_deinit($iv_module);
 		mcrypt_module_close($iv_module);
-
+		
 		// Finish the main encryption
 		mcrypt_generic_init($module, $key, $iv);
 		$ciphertext = mcrypt_generic($module, $plaintext);
-
+		
 		// Clean up the main encryption
 		mcrypt_generic_deinit($module);
 		mcrypt_module_close($module);
@@ -170,10 +170,9 @@ class fCryptography
 		// All of the data is then encoded using base64 to prevent issues with character sets
 		$encoded_iv         = base64_encode($encrypted_iv);
 		$encoded_ciphertext = base64_encode($ciphertext);
-		$encoded_hmac       = base64_encode($hmac);
 		
 		// Indicate in the resulting encrypted data what the encryption tool was
-		return 'fCyptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $encoded_hmac;
+		return 'fCyptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $hmac;
 	}
 	
 	
@@ -199,13 +198,13 @@ class fCryptography
 		
 		$encrypted_iv  = base64_decode($elements[1]);
 		$ciphertext    = base64_decode($elements[2]);
-		$provided_hmac = base64_decode($elements[3]);
+		$provided_hmac = $elements[3];
 		
 		$hmac = hash_hmac('sha256', $encrypted_iv . $ciphertext, $secret_key);
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
-		fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
+			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
 		}
 		
 		// Decrypt the IV so we can feed it into the main decryption
