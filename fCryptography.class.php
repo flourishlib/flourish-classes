@@ -77,11 +77,11 @@ class fCryptography
 	 * Hashes a password using a loop of sha1 hashes and a salt, making rainbow table attacks infeasible
 	 * 
 	 * @param  string $password  The password to hash
-	 * @return string  A 64 character string of the password hash
+	 * @return string  An 80 character string of the Flourish fingerprint, salt and hashed password
 	 */
 	static public function hashPassword($password)
 	{
-		$salt = self::generateRandomString(5);
+		$salt = self::generateRandomString(10);
 
 		return self::hashWithSalt($password, $salt);
 	}
@@ -96,7 +96,7 @@ class fCryptography
 	 */
 	static public function checkPasswordHash($password, $hash)
 	{
-		$salt = substr($hash, 20, 5);
+		$salt = substr($hash, 29, 10);
 
 		if (self::hashWithSalt($password, $salt) == $hash) {
 			return TRUE;	
@@ -111,16 +111,16 @@ class fCryptography
 	 * 
 	 * @param  string $source  The string to hash
 	 * @param  string $salt    The salt for the hash
-	 * @return string  The hash of the source, a 64 character string
+	 * @return string  An 80 character string of the Flourish fingerprint, salt and hashed password
 	 */
 	static private function hashWithSalt($source, $salt)
 	{
 		$sha1 = sha1($salt . $source);
-		for ($i = 0; $i < 1000; $i++) {
+		for ($i = 0; $i < 5000; $i++) {
 			$sha1 = sha1($sha1 . (($i % 2 == 0) ? $source : $salt));
 		}  
 		
-		return 'fCryptography::hash#' . $salt . '#' . $sha1;
+		return 'fCryptography::password_hash#' . $salt . '#' . $sha1;
 	}
 	
 	
@@ -151,7 +151,7 @@ class fCryptography
 		// electronic codebook since it is suitable for encrypting the IV. 
 		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
 		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, NULL);
+		mcrypt_generic_init($iv_module, $iv_key, '12345678');
 		$encrypted_iv = mcrypt_generic($iv_module, $iv);
 		mcrypt_generic_deinit($iv_module);
 		mcrypt_module_close($iv_module);
@@ -165,14 +165,14 @@ class fCryptography
 		mcrypt_module_close($module);
 		
 		// Here we are generating the HMAC for the encrypted data to ensure data integrity
-		$hmac = hash_hmac('sha256', $encrypted_iv . $ciphertext, $secret_key);
+		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
 		
 		// All of the data is then encoded using base64 to prevent issues with character sets
 		$encoded_iv         = base64_encode($encrypted_iv);
 		$encoded_ciphertext = base64_encode($ciphertext);
 		
 		// Indicate in the resulting encrypted data what the encryption tool was
-		return 'fCyptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $hmac;
+		return 'fCryptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $hmac;
 	}
 	
 	
@@ -200,7 +200,7 @@ class fCryptography
 		$ciphertext    = base64_decode($elements[2]);
 		$provided_hmac = $elements[3];
 		
-		$hmac = hash_hmac('sha256', $encrypted_iv . $ciphertext, $secret_key);
+		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
@@ -210,8 +210,8 @@ class fCryptography
 		// Decrypt the IV so we can feed it into the main decryption
 		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
 		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, NULL);
-		$iv        = mdecrypt_generic($iv_module, $iv);
+		mcrypt_generic_init($iv_module, $iv_key, '12345678');
+		$iv        = mdecrypt_generic($iv_module, $encrypted_iv);
 		mcrypt_generic_deinit($iv_module);
 		mcrypt_module_close($iv_module);
 		
