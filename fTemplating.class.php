@@ -61,7 +61,7 @@ class fTemplating
 	
 	
 	/**
-	 * Set a value for an element
+	 * Sets the value for an element
 	 * 
 	 * @param  string $element   The element to set
 	 * @param  mixed  $value     The value for the element
@@ -135,6 +135,8 @@ class fTemplating
 	 *     'path'  => (string) {css file path},
 	 *     'media' => (string) {media type}
 	 * );
+	 * </pre>
+	 * <pre>
 	 * array(
 	 *     'path'  => (string) {rss file path},
 	 *     'title' => (string) {feed title}
