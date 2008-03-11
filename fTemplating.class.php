@@ -123,6 +123,10 @@ class fTemplating
 	 * element is a file path ending in .css, .js or .rss an html tag will be printed. If the
 	 * element is a file path ending in .php it will be included.
 	 * 
+	 * Paths that start with './' will be loaded relative to the current script. Paths that
+	 * start with a file or directory name will be loaded relative to the root passed in the
+	 * constructor. Paths that start with '/' will be loaded from the root of the filesystem.
+	 * 
 	 * You can pass the media attribute of a CSS file or the title attribute of an RSS feed by
 	 * adding an associative array with the following formats:
 	 * 
