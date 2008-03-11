@@ -1,6 +1,6 @@
 <?php
 /**
- * Allows for quick and flexible html templating
+ * Allows for quick and flexible HTML templating
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -27,7 +27,7 @@ class fTemplating
 	/**
 	 * The directory to look for files
 	 * 
-	 * @var array 
+	 * @var string 
 	 */
 	private $root;
 	
@@ -120,8 +120,8 @@ class fTemplating
 	
 	/**
 	 * Includes the element specified (element must be set through setElement() first). If the
-	 * element is a file path ending in .css or .js an html tag will be printed. If the element is
-	 * a file path ending in .php it will be included.
+	 * element is a file path ending in .css, .js or .rss an html tag will be printed. If the
+	 * element is a file path ending in .php it will be included.
 	 * 
 	 * You can pass the media attribute of a CSS file or the title attribute of an RSS feed by
 	 * adding an associative array with the following formats:
@@ -137,7 +137,7 @@ class fTemplating
 	 * );
 	 * </pre>
 	 * 
-	 * @param  string $element   The element to include
+	 * @param  string $element   The element to place
 	 * @return void
 	 */
 	public function place($element)
@@ -206,7 +206,7 @@ class fTemplating
 	/**
 	 * Prints a CSS link html tag to the output
 	 * 
-	 * @param  mixed $info   The path or array containing the path to the css file. If an array can also contain a key with the media.
+	 * @param  mixed $info   The path or array containing the 'path' to the css file. Array can also contain a key 'media'.
 	 * @return void
 	 */
 	private function placeCSS($info)
@@ -226,7 +226,7 @@ class fTemplating
 	/**
 	 * Prints a javascript html tag to the output
 	 * 
-	 * @param  mixed $info   The path or array containing the path to the javascript file
+	 * @param  mixed $info   The path or array containing the 'path' to the javascript file
 	 * @return void
 	 */
 	private function placeJS($info)
@@ -271,17 +271,17 @@ class fTemplating
 	/**
 	 * Prints an RSS link html tag to the output
 	 * 
-	 * @param  mixed $info   The path or array containing the path to the RSS xml file. May also contain a title key for the title of the RSS feed.
+	 * @param  mixed $info   The path or array containing the 'path' to the RSS xml file. May also contain a 'title' key for the title of the RSS feed.
 	 * @return void
 	 */
 	private function placeRSS($info)
 	{
 		if (!is_array($info)) {
 			$info = array('path'  => $info,
-						  'title' => fInflection::humanize(
-										 preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
-									 )
-						 );	
+				'title' => fInflection::humanize(
+					preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
+				)
+			);	
 		}
 		
 		if (!isset($info['title'])) {
