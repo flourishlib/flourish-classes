@@ -300,7 +300,7 @@ class fCryptography
 		}
 		
 		$private_key = file_get_contents($private_key_file);
-		$private_key_resource = openssl_pkey_get_private($private_key);
+		$private_key_resource = openssl_pkey_get_private($private_key, $password);
 		
 		if ($private_key_resource === FALSE) {
 			fCore::toss('fValidationException', 'The private key password specified does not appear to be valid for the private key specified');	
@@ -316,7 +316,7 @@ class fCryptography
 		$ciphertext = base64_decode($elements[1]);
 		
 		$plaintext = '';
-		openssl_public_decrypt($ciphertext, $plaintext, $private_key_resource);
+		openssl_private_decrypt($ciphertext, $plaintext, $private_key_resource);
 		openssl_free_key($private_key_resource);
 		
 		return $plaintext;
