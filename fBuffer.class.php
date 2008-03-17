@@ -1,0 +1,167 @@
+<?php
+/**
+ * Controls and supplements output buffering
+ * 
+ * @copyright  Copyright (c) 2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fBuffer
+ * 
+ * @uses  fCore
+ * @uses  fProgrammerException
+ * 
+ * @version  1.0.0
+ * @changes  1.0.0    The initial implementation [wb, 2008-03-16]
+ */
+class fBuffer
+{
+	/**
+	 * If output buffering has been started
+	 * 
+	 * @var integer 
+	 */
+	static private $started = FALSE;
+	
+	/**
+	 * If output capturing is currently active
+	 * 
+	 * @var boolean 
+	 */
+	static private $capturing = FALSE;
+	
+	/**
+	 * Prevent instantiation
+	 * 
+	 * @return fBuffering
+	 */
+	private function __construct() { }
+	
+	
+	/**
+	 * Starts output buffering
+	 * 
+	 * @return void
+	 */
+	static public function start()
+	{
+		if (self::$started) {
+			fCore::toss('fProgrammingException', 'Output buffering has already been started');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before the buffering can be started');	
+		}
+		ob_start();	
+		self::$started = TRUE;
+	}
+	
+	
+	/**
+	 * Erases the output buffer
+	 * 
+	 * @return void
+	 */
+	static public function erase()
+	{
+		if (!self::$started) {
+			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');	
+		}
+		ob_clean();	
+	}
+	
+	
+	/**
+	 * Erases the output buffer
+	 * 
+	 * @param mixed $find     The string or array of strings to find
+	 * @param mixed $replace  The string or array or strings to replace
+	 * @return void
+	 */
+	static public function replace($find, $replace)
+	{
+		if (!self::$started) {
+			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');	
+		}
+		echo str_replace($find, $replace, ob_get_clean());	
+	}
+	
+	
+	/**
+	 * Stops output buffering, flushing everything to the browser
+	 * 
+	 * @return void
+	 */
+	static public function stop()
+	{
+		if (!self::$started) {
+			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');	
+		}
+		ob_end_flush();	
+		self::$started = FALSE;
+	}
+	
+	
+	/**
+	 * Starts capturing output. Output can be retrieved by calling {@link stopCapture()}.
+	 * 
+	 * @return void
+	 */
+	static public function startCapture()
+	{
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing has already been started');	
+		}
+		ob_start();	
+		self::$capturing = TRUE;
+	}
+	
+	
+	/**
+	 * Stops capturing output, returning what was captured.
+	 * 
+	 * @return string   The captured output
+	 */
+	static public function stopCapture()
+	{
+		if (!self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing has not yet been started');	
+		}
+		self::$capturing = FALSE;
+		$contents = ob_get_contents();
+		ob_end_clean();
+		return $contents;
+	}
+}
+
+
+/**
+ * Copyright (c) 2008 William Bond <will@flourishlib.com>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */  
+?>
