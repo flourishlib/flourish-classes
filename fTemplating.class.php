@@ -8,6 +8,7 @@
  * 
  * @link  http://flourishlib.com/fTemplating
  * 
+ * @uses  fBuffer
  * @uses  fCore
  * @uses  fHTML
  * @uses  fProgrammerException
@@ -30,6 +31,13 @@ class fTemplating
 	 * @var string 
 	 */
 	private $root;
+	
+	/**
+	 * If this template if buffered
+	 * 
+	 * @var boolean 
+	 */
+	private $buffered;
 	
 	
 	/**
@@ -56,7 +64,27 @@ class fTemplating
 			$root .= DIRECTORY_SEPARATOR;
 		}
 		
-		$this->root = $root;	
+		$this->root     = $root;
+		$this->buffered = FALSE;
+	}
+	
+	
+	/**
+	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before
+	 * 
+	 * @return void
+	 */
+	public function buffer()
+	{
+		if ($this->buffered) {
+			fCore::toss('fProgrammerException', 'Buffering has already been started');	
+		}
+		
+		if (!fBuffer::isStarted()) {
+			fBuffer::start();	
+		}
+		
+		$this->buffered = TRUE;
 	}
 	
 	
@@ -152,6 +180,24 @@ class fTemplating
 			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has not been set');       
 		}
 		
+		// Put in a buffered placeholder
+		if ($this->buffered) {
+			echo '%%fTemplating::' . substr((string)$this, 11) . '::' . $element . '%%';
+			return;	
+		}
+		
+		$this->placeElement($element);
+	}
+	
+	
+	/**
+	 * Performs the action of actually placing an element
+	 * 
+	 * @param  string $element  The element that is being placed
+	 * @return void
+	 */
+	private function placeElement($element)
+	{
 		$values = $this->elements[$element];
 		settype($values, 'array');
 		$values = array_values($values);
@@ -170,14 +216,14 @@ class fTemplating
 					break;
 					
 				case 'php':
-					$this->placePHP($value);	
+					$this->placePHP($element, $value);	
 					break;
 					
 				case 'rss':
 					$this->placeRSS($value);
 					break;
 			}
-		}
+		}	
 	}
 	
 	
@@ -248,10 +294,11 @@ class fTemplating
 	/**
 	 * Includes a PHP file, exporting all of the elements to variables in the scope of the include
 	 * 
-	 * @param  string $path   The path to the PHP file
+	 * @param  string $element  The element being placed
+	 * @param  string $path     The path to the PHP file
 	 * @return void
 	 */
-	private function placePHP($path)
+	private function placePHP($element, $path)
 	{
 		// Check to see if the element is a relative path
 		if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
@@ -263,11 +310,11 @@ class fTemplating
 		}
 		
 		if (!file_exists($path)) {
-			fCore::toss('fProgrammerException', 'The path specified, ' . $path . ', does not exist on the filesystem');       
+			fCore::toss('fProgrammerException', 'The path specified for ' . $element . ', ' . $path . ', does not exist on the filesystem');       
 		}
 		
 		if (!is_readable($path)) {
-			fCore::toss('fProgrammerException', 'The path specified, ' . $path . ', can not be read from');       
+			fCore::toss('fProgrammerException', 'The path specified for ' . $element . ', ' . $path . ', can not be read from');       
 		}
 				
 		include($path);
@@ -295,6 +342,48 @@ class fTemplating
 		}
 		
 		echo '<link rel="alternate" type="application/rss+xml" href="' . $info['path'] . '" title="' . $info['title'] . '" />' . "\n";
+	}
+	
+	
+	/**
+	 * Performs buffered replacements
+	 * 
+	 * @return void
+	 */
+	private function placeBuffered()
+	{
+		if (!$this->buffered) {
+			return;	
+		}
+		
+		$segments = explode('%%fTemplating::' . substr((string)$this, 11) . '::', fBuffer::get());
+		fBuffer::erase();
+		
+		echo array_shift($segments);
+		
+		foreach ($segments as $segment) {
+			$close_percent = strpos($segment, '%%');
+			$element       = substr($segment, 0, $close_percent);
+			
+			$this->placeElement($element);	
+			echo substr($segment, $close_percent + 2);	
+		}
+	}
+	
+	
+	/**
+	 * Finishing placing elements if buffering was used
+	 * 
+	 * @return void
+	 */
+	public function __destruct()
+	{
+		// The __destruct method can't throw unhandled exceptions intelligently, so we will always catch here just in case
+		try {
+			$this->placeBuffered();
+		} catch (Exception $e) {
+			fCore::handleException($e);	
+		}
 	}
 }
 
