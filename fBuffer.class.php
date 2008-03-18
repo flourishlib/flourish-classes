@@ -57,6 +57,34 @@ class fBuffer
 	
 	
 	/**
+	 * Checks if buffering has been started
+	 * 
+	 * @return boolean  If buffering has been started
+	 */
+	static public function isStarted()
+	{
+		return self::$started;
+	}
+	
+	
+	/**
+	 * Returns the contents of output buffer
+	 * 
+	 * @return string  The contents of the output buffer
+	 */
+	static public function get()
+	{
+		if (!self::$started) {
+			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before the buffer can be retrieved');	
+		}
+		return ob_get_contents();
+	}
+	
+	
+	/**
 	 * Erases the output buffer
 	 * 
 	 * @return void
@@ -76,11 +104,11 @@ class fBuffer
 	/**
 	 * Erases the output buffer
 	 * 
-	 * @param mixed $find     The string or array of strings to find
-	 * @param mixed $replace  The string or array or strings to replace
+	 * @param string $find     The string to find
+	 * @param string $replace  The string to replace
 	 * @return void
 	 */
-	static public function replace($find, $replace)
+	static public function replace($find, $replace, $limit=0)
 	{
 		if (!self::$started) {
 			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
@@ -88,7 +116,18 @@ class fBuffer
 		if (self::$capturing) {
 			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');	
 		}
-		echo str_replace($find, $replace, ob_get_clean());	
+		
+		// ob_end_clean() actually turns off output buffering, so we do it the long way
+		$contents = ob_get_contents();
+		ob_clean();
+		
+		// Limiting isn't possible with str_replace(), this is about 1/2 the speed of str_replace()
+		if ($limit) {
+			echo preg_replace('/' . preg_quote($find) . '/', $replace, $contents, $limit);
+			return;
+		}
+		
+		echo str_replace($find, $replace, $contents);	
 	}
 	
 	
@@ -136,9 +175,7 @@ class fBuffer
 			fCore::toss('fProgrammingException', 'Output capturing has not yet been started');	
 		}
 		self::$capturing = FALSE;
-		$contents = ob_get_contents();
-		ob_end_clean();
-		return $contents;
+		return ob_get_clean();
 	}
 }
 
