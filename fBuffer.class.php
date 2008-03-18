@@ -106,10 +106,9 @@ class fBuffer
 	 * 
 	 * @param string $find     The string to find
 	 * @param string $replace  The string to replace
-	 * @param integer $limit   The number of time to perform replacements, 0 means unlimited
 	 * @return void
 	 */
-	static public function replace($find, $replace, $limit=0)
+	static public function replace($find, $replace)
 	{
 		if (!self::$started) {
 			fCore::toss('fProgrammingException', 'Output buffering is not currently active');
@@ -118,15 +117,9 @@ class fBuffer
 			fCore::toss('fProgrammingException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');	
 		}
 		
-		// ob_end_clean() actually turns off output buffering, so we do it the long way
+		// ob_get_clean() actually turns off output buffering, so we do it the long way
 		$contents = ob_get_contents();
 		ob_clean();
-		
-		// Limiting isn't possible with str_replace(), this is about 1/2 the speed of str_replace()
-		if ($limit) {
-			echo preg_replace('/' . preg_quote($find) . '/', $replace, $contents, $limit);
-			return;
-		}
 		
 		echo str_replace($find, $replace, $contents);	
 	}
