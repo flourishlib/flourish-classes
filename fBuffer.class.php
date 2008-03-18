@@ -106,6 +106,7 @@ class fBuffer
 	 * 
 	 * @param string $find     The string to find
 	 * @param string $replace  The string to replace
+	 * @param integer $limit   The number of time to perform replacements, 0 means unlimited
 	 * @return void
 	 */
 	static public function replace($find, $replace, $limit=0)
