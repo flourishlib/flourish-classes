@@ -166,7 +166,7 @@ class fDate
 	{
 		$valid_interval_styles = array('word', 'abbr', 'letter');
 		if (!in_array($interval_style, $valid_interval_styles)) {
-			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Should be one of: " . join(', ', $valid_interval_styles) . '.');       
+			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Must be one of: " . join(', ', $valid_interval_styles) . '.');       
 		}
 		
 		$relative_to_now = FALSE;

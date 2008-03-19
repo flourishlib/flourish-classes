@@ -84,7 +84,7 @@ class fResult implements Iterator
 	{
 		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Should be one of: ' . join(', ', $valid_extensions) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');       
 		}
 		$this->extension = $extension; 
 	}

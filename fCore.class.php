@@ -117,8 +117,9 @@ class fCore
 	 */
 	static public function trigger($error_type, $message)
 	{
-		if (!in_array($error_type, array('error', 'warning', 'notice'))) {
-			fCore::toss('fProgrammerException', "Invalid error type '" . $error_type . "' specified. Should be one of: 'error', 'warning' or 'notice'");       
+		$valid_error_types = array('error', 'warning', 'notice');
+		if (!in_array($error_type, $valid_error_types)) {
+			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');       
 		}
 		
 		static $error_type_map = array(
