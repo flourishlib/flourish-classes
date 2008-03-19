@@ -116,7 +116,7 @@ class fCryptography
 	static private function hashWithSalt($source, $salt)
 	{
 		$sha1 = sha1($salt . $source);
-		for ($i = 0; $i < 5000; $i++) {
+		for ($i = 0; $i < 1000; $i++) {
 			$sha1 = sha1($sha1 . (($i % 2 == 0) ? $source : $salt));
 		}  
 		
@@ -139,11 +139,11 @@ class fCryptography
 		
 		self::verifySymmetricKeyEnvironment();
 		
-		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256)
+		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192)
 		// in cipher feedback mode. Cipher feedback mode is chosen because no extra padding
 		// is added, ensuring we always get the exact same plaintext out of the decrypt method
-		$module   = mcrypt_module_open('rijndael-256', '', 'cfb', '');
-		$key      = substr($secret_key, 0, mcrypt_enc_get_key_size($module));
+		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
+		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		srand();
 		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
 		
@@ -216,8 +216,8 @@ class fCryptography
 		mcrypt_module_close($iv_module);
 		
 		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256) in cipher feedback mode
-		$module   = mcrypt_module_open('rijndael-256', '', 'cfb', '');
-		$key      = substr($secret_key, 0, mcrypt_enc_get_key_size($module));
+		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
+		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		mcrypt_generic_init($module, $key, $iv);
 		$plaintext = mdecrypt_generic($module, $ciphertext);
 		mcrypt_generic_deinit($module);
@@ -241,10 +241,10 @@ class fCryptography
 			fCore::toss('fEnvironmentException', 'The PHP hash extension is required, however is does not appear to be loaded');    
 		}
 		if (!function_exists('mcrypt_module_open')) {
-			fCore::toss('fEnvironmentException', 'The cipher used, AES-256 (also known as rijndael-256), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.');
+			fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.');
 		}	
-		if (!in_array('rijndael-256', mcrypt_list_algorithms())) {
-		fCore::toss('fEnvironmentException', 'The cipher used, AES-256 (also known as rijndael-256), does not appear to be supported by the installed version of libmcrypt');
+		if (!in_array('rijndael-192', mcrypt_list_algorithms())) {
+		fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), does not appear to be supported by the installed version of libmcrypt');
 		}
 	}
 	
@@ -270,11 +270,14 @@ class fCryptography
 		$public_key = file_get_contents($public_key_file);
 		$public_key_resource = openssl_pkey_get_public($public_key);
 		
-		$ciphertext = '';
-		openssl_public_encrypt($plaintext, $ciphertext, $public_key_resource);
+		$ciphertext     = '';
+		$encrypted_keys = array();
+		openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
 		openssl_free_key($public_key_resource);
 		
-		return 'fCryptography::public#' . base64_encode($ciphertext);
+		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
+		
+		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
 	}
 	
 	
@@ -309,15 +312,24 @@ class fCryptography
 		$elements = explode('#', $ciphertext);
 		
 		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
-		if (sizeof($elements) != 2 || $elements[0] != 'fCryptography::public') {
+		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::public') {
 			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::publicKeyEncrypt()');	
 		}
 		
-		$ciphertext = base64_decode($elements[1]);
+		$encrypted_key = base64_decode($elements[1]);
+		$ciphertext    = base64_decode($elements[2]);
+		$provided_hmac = $elements[3];
 		
 		$plaintext = '';
-		openssl_private_decrypt($ciphertext, $plaintext, $private_key_resource);
+		openssl_open($ciphertext, $plaintext, $encrypted_key, $private_key_resource);
 		openssl_free_key($private_key_resource);
+		
+		$hmac = hash_hmac('sha1', $encrypted_key . $ciphertext, $plaintext);
+		
+		// By verifying the HMAC we ensure the integrity of the data
+		if ($hmac != $provided_hmac) {
+			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
+		}
 		
 		return $plaintext;
 	}
