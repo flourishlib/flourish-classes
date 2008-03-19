@@ -325,6 +325,95 @@ class fTimestamp
 	
 	
 	/**
+	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
+	 * 
+	 * The output will read like:
+	 *  - "This timestamp is {return value} than the provided one" when a timestamp it passed
+	 *  -" This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
+	 * 
+	 * Examples of output for a timestamp passed might be:
+	 *  - 5 minutes later
+	 *  - 2 hours before
+	 *  - 2 days later
+	 *  - at the same time
+	 * 
+	 * Examples of output for no timestamp passed might be:
+	 *  - 5 minutes ago
+	 *  - 2 hours ago
+	 *  - 2 days from now
+	 *  - 1 year ago
+	 *  - now
+	 * 
+	 * You would never get the following output since it includes more than one unit of time measurement:
+	 *  - 5 minutes and 28 seconds
+	 *  - 3 weeks, 1 day and 4 hours
+	 * 
+	 * Values that are close to the next largest unit of measure will be rounded up:
+	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
+	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
+	 * 
+	 * @param  fTimestamp $other_timestamp     The timestamp to create the difference with, passing NULL will get the difference with the current timestamp
+	 * @param  string     $interval_style      If the interval should be represented by a 'word', 'abbr' or 'letter'. A word would be 'seconds', abbr would be 'sec' and letter would be 's'.
+	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
+	 */
+	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL, $interval_style='word')
+	{
+		$valid_interval_styles = array('word', 'abbr', 'letter');
+		if (!in_array($interval_style, $valid_interval_styles)) {
+			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Should be one of: " . join(', ', $valid_interval_styles) . '.');       
+		}
+		
+		$relative_to_now = FALSE;
+		if ($other_timestamp === NULL) {
+			$other_timestamp = new fTimestamp('now');
+			$relative_to_now = TRUE;
+		}
+		
+		$diff = $this->timestamp - $other_timestamp->format('U');
+		
+		if (abs($diff) < 10) {
+			if ($interval_style == 'word') {
+				return ($relative_to_now) ? 'right now' : 'at the same time';
+			} else {
+				return ($relative_to_now) ? 'now' : 'simultaneously';
+			}
+		}
+		
+		if ($relative_to_now) {
+			$suffix = ($diff > 0) ? ' from now' : ' ago';
+		} else {
+			$suffix = ($diff > 0) ? ' later' : ' before';	
+		}
+		
+		$diff = abs($diff);
+		
+		$break_points = array(
+			45         /* 45 seconds  */ => array(1,        'second', 'sec', 's'),
+			2700       /* 45 minutes  */ => array(60,       'minute', 'min', 'm'),
+			64800      /* 18 hours    */ => array(3600,     'hour',   'hr',  'h'),
+			432000     /* 5 days      */ => array(86400,    'day',    'day', 'd'),
+			1814400    /* 3 weeks     */ => array(604800,   'week',   'wk',  'w'),
+			23328000   /* 9 months    */ => array(2592000,  'month',  'mo',  'mo'),
+			2147483647 /* largest int */ => array(31536000, 'year',   'yr',  'y')
+		);
+		
+		foreach ($break_points as $break_point => $unit_info) {
+			if ($diff > $break_point) { continue; }	
+			
+			$unit_diff = round($diff/$unit_info[0]);
+			
+			switch ($interval_style) {
+				case 'abbr':   $units = $unit_info[2]; break;
+				case 'letter': $units = $unit_info[3]; break;
+				case 'word':   $units = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
+			}
+			
+			return $unit_diff . ' ' . $units . $suffix;
+		}
+	}
+	
+	
+	/**
 	 * Changes the time by the adjustment specified
 	 * 
 	 * @throws fValidationException

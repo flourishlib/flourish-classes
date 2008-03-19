@@ -134,6 +134,85 @@ class fDate
 	
 	
 	/**
+	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
+	 * 
+	 * The output will read like:
+	 *  - "This date is {return value} than the provided one" when a date it passed
+	 *  -" This date is {return value}" when no date is passed and comparing with today
+	 * 
+	 * Examples of output for a date passed might be:
+	 *  - 2 days later
+	 *  - 1 year before
+	 *  - same day
+	 * 
+	 * Examples of output for no date passed might be:
+	 *  - 2 days from now
+	 *  - 1 year ago
+	 *  - today
+	 * 
+	 * You would never get the following output since it includes more than one unit of time measurement:
+	 *  - 3 weeks and 1 day
+	 *  - 1 year and 2 months
+	 * 
+	 * Values that are close to the next largest unit of measure will be rounded up:
+	 *  - 6 days would be represented as 1 week, however 5 days would not
+	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
+	 * 
+	 * @param  fDate   $other_date       The date to create the difference with, if NULL is passed will compare with current date
+	 * @param  string  $interval_style   If the interval should be represented by a 'word', 'abbr' or 'letter'. A word would be 'year', abbr would be 'yr' and letter would be 'y'.
+	 * @return string  The fuzzy difference in time between the this date and the one provided
+	 */
+	public function getFuzzyDifference(fDate $other_date=NULL, $interval_style='word')
+	{
+		$valid_interval_styles = array('word', 'abbr', 'letter');
+		if (!in_array($interval_style, $valid_interval_styles)) {
+			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Should be one of: " . join(', ', $valid_interval_styles) . '.');       
+		}
+		
+		$relative_to_now = FALSE;
+		if ($other_date === NULL) {
+			$other_date = new fDate('now');
+			$relative_to_now = TRUE;
+		}
+		
+		$diff = $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
+		
+		if (abs($diff) < 86400) {
+			return ($relative_to_now) ? 'today' : 'same day';	
+		}
+		
+		if ($relative_to_now) {
+			$suffix = ($diff > 0) ? ' from now' : ' ago';
+		} else {
+			$suffix = ($diff > 0) ? ' later' : ' before';	
+		}
+		
+		$diff = abs($diff);
+		
+		$break_points = array(
+			432000     /* 5 days      */ => array(86400,    'day',    'day', 'd'),
+			1814400    /* 3 weeks     */ => array(604800,   'week',   'wk',  'w'),
+			23328000   /* 9 months    */ => array(2592000,  'month',  'mo',  'mo'),
+			2147483647 /* largest int */ => array(31536000, 'year',   'yr',  'y')
+		);
+		
+		foreach ($break_points as $break_point => $unit_info) {
+			if ($diff > $break_point) { continue; }	
+			
+			$unit_diff = round($diff/$unit_info[0]);
+			
+			switch ($interval_style) {
+				case 'abbr':   $units = $unit_info[2]; break;
+				case 'letter': $units = $unit_info[3]; break;
+				case 'word':   $units = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
+			}
+			
+			return $unit_diff . ' ' . $units . $suffix;
+		}
+	}
+	
+	
+	/**
 	 * Changes the date by the adjustment specified, only asjustments of a day or more will be made
 	 * 
 	 * @throws fValidationException
