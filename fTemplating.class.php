@@ -33,11 +33,11 @@ class fTemplating
 	private $root;
 	
 	/**
-	 * If this template if buffered
+	 * The buffered object id, used for differentiating different instances when doing replacements
 	 * 
-	 * @var boolean 
+	 * @var integer 
 	 */
-	private $buffered;
+	private $buffered_id;
 	
 	
 	/**
@@ -64,8 +64,8 @@ class fTemplating
 			$root .= DIRECTORY_SEPARATOR;
 		}
 		
-		$this->root     = $root;
-		$this->buffered = FALSE;
+		$this->root        = $root;
+		$this->buffered_id = NULL;
 	}
 	
 	
@@ -76,7 +76,9 @@ class fTemplating
 	 */
 	public function buffer()
 	{
-		if ($this->buffered) {
+		static $id_sequence = 1;
+		
+		if ($this->buffered_id) {
 			fCore::toss('fProgrammerException', 'Buffering has already been started');	
 		}
 		
@@ -84,7 +86,9 @@ class fTemplating
 			fBuffer::start();	
 		}
 		
-		$this->buffered = TRUE;
+		$this->buffered_id = $id_sequence;
+		
+		$id_sequence++;
 	}
 	
 	
@@ -181,8 +185,8 @@ class fTemplating
 		}
 		
 		// Put in a buffered placeholder
-		if ($this->buffered) {
-			echo '%%fTemplating::' . substr((string)$this, 11) . '::' . $element . '%%';
+		if ($this->buffered_id) {
+			echo '%%fTemplating::' . $this->buffered_id . '::' . $element . '%%';
 			return;	
 		}
 		
@@ -352,22 +356,22 @@ class fTemplating
 	 */
 	private function placeBuffered()
 	{
-		if (!$this->buffered) {
+		if (!$this->buffered_id) {
 			return;	
-		}
+		} 
 		
-		$segments = explode('%%fTemplating::' . substr((string)$this, 11) . '::', fBuffer::get());
+		$contents = fBuffer::get();
 		fBuffer::erase();
 		
-		echo array_shift($segments);
+		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)%%/e';
+		$replacement = 'fBuffer::startCapture() . $this->placeElement("$1") . fBuffer::stopCapture()';
 		
-		foreach ($segments as $segment) {
-			$close_percent = strpos($segment, '%%');
-			$element       = substr($segment, 0, $close_percent);
-			
-			$this->placeElement($element);	
-			echo substr($segment, $close_percent + 2);	
-		}
+		$count = 0;
+		do {
+			$contents = preg_replace($regex, $replacement, $contents, -1, $count);
+		} while ($count);
+		
+		echo $contents;
 	}
 	
 	
