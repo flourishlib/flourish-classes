@@ -288,23 +288,26 @@ class fAuthorization
 	 */
 	static public function destroyUserInfo()
 	{
-		fSession::set('user_auth_level', NULL, self::SESSION_PREFIX);
-		fSession::set('user_acls', NULL, self::SESSION_PREFIX);
-		fSession::set('user_token', NULL, self::SESSION_PREFIX);
-		fSession::set('requested_url', NULL, self::SESSION_PREFIX);	
+		fSession::clear('user_auth_level', self::SESSION_PREFIX);
+		fSession::clear('user_acls', self::SESSION_PREFIX);
+		fSession::clear('user_token',self::SESSION_PREFIX);
+		fSession::clear('requested_url', self::SESSION_PREFIX);	
 	}
 	
 	
 	/**
 	 * Returns the URL requested before the user was redirected to the login page
 	 * 
-	 * @param  string $default_url   The default URL to redirect to if the user was not redirected
+	 * @param  boolean $clear        If the requested url should be cleared from the session after it is retrieved
+	 * @param  string $default_url   The default URL to return if the user was not redirected
 	 * @return string  The URL that was requested before they were redirected to the login page
 	 */
-	static public function getRequestedURL($default_url)
+	static public function getRequestedURL($clear, $default_url=NULL)
 	{
 		$requested_url = fSession::get('requested_url', $default_url, self::SESSION_PREFIX);
-		fSession::set('requested_url', NULL, self::SESSION_PREFIX);
+		if ($clear) {
+			fSession::clear('requested_url', self::SESSION_PREFIX);
+		}
 		return $requested_url;
 	}
 	
