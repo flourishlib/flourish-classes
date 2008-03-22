@@ -213,6 +213,22 @@ class fDate
 	
 	
 	/**
+	 * Returns the difference between the two dates in seconds
+	 * 
+	 * @param  fDate   $other_date    The date to calculate the difference with, if NULL is passed will compare with current date
+	 * @return integer  The difference between the two dates in seconds, positive if $other_date is before this date or negative if after
+	 */
+	public function getSecondsDifference(fDate $other_date=NULL)
+	{
+		if ($other_date === NULL) {
+			$other_date = new fDate('now');
+		}
+		
+		return $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
+	}
+	
+	
+	/**
 	 * Changes the date by the adjustment specified, only asjustments of a day or more will be made
 	 * 
 	 * @throws fValidationException

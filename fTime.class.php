@@ -178,6 +178,22 @@ class fTime
 	
 	
 	/**
+	 * Returns the difference between the two times in seconds
+	 * 
+	 * @param  fTime   $other_time    The time to calculate the difference with, if NULL is passed will compare with current time
+	 * @return integer  The difference between the two times in seconds, positive if $other_time is before this time or negative if after
+	 */
+	public function getSecondsDifference(fTime $other_time=NULL)
+	{
+		if ($other_time === NULL) {
+			$other_time = new fTime('now');
+		}
+		
+		return $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
+	}
+	
+	
+	/**
 	 * Changes the time by the adjustment specified, only asjustments of 'hours', 'minutes', 'seconds' are allowed
 	 * 
 	 * @throws fValidationException

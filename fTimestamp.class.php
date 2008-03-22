@@ -40,6 +40,18 @@ class fTimestamp
 	
 	
 	/**
+	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fDate::getSecondsDifference()}, {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
+	 * 
+	 * @param  string $timespan  The timespan to calculate the number of seconds in
+	 * @return integer  The number of seconds in the timestamp specified
+	 */
+	static public function getSeconds($timespan)
+	{
+		return strtotime($timespan) - time();
+	}
+	
+	
+	/**
 	 * Creates an fTimestamp object from fDate, fTime objects and optionally a timezone
 	 * 
 	 * @throws fValidationException
@@ -410,6 +422,22 @@ class fTimestamp
 			
 			return $unit_diff . ' ' . $units . $suffix;
 		}
+	}
+	
+	
+	/**
+	 * Returns the difference between the two timestamps in seconds
+	 * 
+	 * @param  fTimestamp   $other_timestamp    The timestamp to calculate the difference with, if NULL is passed will compare with current timestamp
+	 * @return integer  The difference between the two timestamps in seconds, positive if $other_timestamp is before this time or negative if after
+	 */
+	public function getSecondsDifference(fTimestamp $other_timestamp=NULL)
+	{
+		if ($other_timestamp === NULL) {
+			$other_timestamp = new fTimestamp('now');
+		}
+		
+		return $this->timestamp - $other_timestamp->format('U');
 	}
 	
 	
