@@ -25,14 +25,14 @@ class fCore
 	 * 
 	 * @var string 
 	 */
-	static private $error_destination = NULL;
+	static private $error_destination = 'html';
 	
 	/**
 	 * Exception destination
 	 * 
 	 * @var string 
 	 */
-	static private $exception_destination = NULL;
+	static private $exception_destination = 'html';
 	
 	/**
 	 * Exceptation handler callback
@@ -251,7 +251,7 @@ class fCore
 	 * @param  array    $parameters     The parameters to send to $closing_code
 	 * @return void
 	 */
-	static public function enableExceptionHandling($destination, $closing_code, $parameters=array())
+	static public function enableExceptionHandling($destination, $closing_code=NULL, $parameters=array())
 	{
 		if (!self::checkDestination($destination)) {
 			return;	
@@ -363,6 +363,10 @@ class fCore
 		}
 				
 		self::sendMessageToDestination(self::$exception_destination, $message);
+		
+		if (self::$exception_handler_callback === NULL) {
+			return;	
+		}
 				
 		try {
 			call_user_func_array(self::$exception_handler_callback, self::$exception_handler_parameters);
