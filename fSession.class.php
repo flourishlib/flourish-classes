@@ -142,6 +142,22 @@ class fSession
 		}
 		return (isset($_SESSION[$prefix . $key])) ? $_SESSION[$prefix . $key] : $default_value;
 	}
+	
+	
+	/**
+	 * Unsets a key from the session superglobal using the prefix provided
+	 * 
+	 * @param  string $key      The name to unset
+	 * @param  string $prefix   The prefix to stick before the key
+	 * @return void
+	 */
+	static public function clear($key, $prefix='fSession::')
+	{
+		if (!self::$open) {
+			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::clear()');	
+		}
+		unset($_SESSION[$prefix . $key]);
+	}
 }
 
 
