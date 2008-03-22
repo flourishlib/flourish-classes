@@ -99,11 +99,11 @@ class fTime
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This time is {return value} than the provided one" when a time it passed
-	 *  -" This time is {return value}" when no time is passed and comparing with the current time
+	 *  - "This time is {return value} the provided one" when a time it passed
+	 *  - "This time is {return value}" when no time is passed and comparing with the current time
 	 * 
 	 * Examples of output for a time passed might be:
-	 *  - 5 minutes later
+	 *  - 5 minutes after
 	 *  - 2 hours before
 	 *  - at the same time
 	 * 
@@ -149,7 +149,7 @@ class fTime
 		if ($relative_to_now) {
 			$suffix = ($diff > 0) ? ' from now' : ' ago';
 		} else {
-			$suffix = ($diff > 0) ? ' later' : ' before';	
+			$suffix = ($diff > 0) ? ' after' : ' before';	
 		}
 		
 		$diff = abs($diff);

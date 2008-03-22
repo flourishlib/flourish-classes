@@ -340,13 +340,13 @@ class fTimestamp
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This timestamp is {return value} than the provided one" when a timestamp it passed
-	 *  -" This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
+	 *  - "This timestamp is {return value} the provided one" when a timestamp it passed
+	 *  - "This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
 	 * 
 	 * Examples of output for a timestamp passed might be:
-	 *  - 5 minutes later
+	 *  - 5 minutes after
 	 *  - 2 hours before
-	 *  - 2 days later
+	 *  - 2 days after
 	 *  - at the same time
 	 * 
 	 * Examples of output for no timestamp passed might be:
@@ -394,7 +394,7 @@ class fTimestamp
 		if ($relative_to_now) {
 			$suffix = ($diff > 0) ? ' from now' : ' ago';
 		} else {
-			$suffix = ($diff > 0) ? ' later' : ' before';	
+			$suffix = ($diff > 0) ? ' after' : ' before';	
 		}
 		
 		$diff = abs($diff);

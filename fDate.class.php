@@ -137,8 +137,8 @@ class fDate
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This date is {return value} than the provided one" when a date it passed
-	 *  -" This date is {return value}" when no date is passed and comparing with today
+	 *  - "This date is {return value} the provided one" when a date it passed
+	 *  - "This date is {return value}" when no date is passed and comparing with today
 	 * 
 	 * Examples of output for a date passed might be:
 	 *  - 2 days later
@@ -184,7 +184,7 @@ class fDate
 		if ($relative_to_now) {
 			$suffix = ($diff > 0) ? ' from now' : ' ago';
 		} else {
-			$suffix = ($diff > 0) ? ' later' : ' before';	
+			$suffix = ($diff > 0) ? ' after' : ' before';	
 		}
 		
 		$diff = abs($diff);
