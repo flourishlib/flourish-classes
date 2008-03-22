@@ -48,7 +48,7 @@ class fMessaging
 	{
 		$prefix = 'fMessaging::' . $recipient . '::';
 		$message = fSession::get($name, NULL, $prefix); 
-		fSession::set($name, NULL, $prefix);  
+		fSession::clear($name, $prefix);  
 		return $message;      
 	}
 }
