@@ -68,37 +68,6 @@ class fCRUD
 	
 	
 	/**
-	 * Prints standard sub nav based on list/add/edit/delete 
-	 * 
-	 * @param  string  $action         The currently selected action
-	 * @param  string  $parameter      The parameter for the primary key of the object we are managing
-	 * @param  boolean $show_all_link  If the add link should be shown on the list view
-	 * @return void
-	 */
-	static public function showSubNav($action, $parameter, $show_add_link=TRUE)
-	{
-		if (($action == 'list' && $show_add_link) || $action != 'list') {
-			?>
-			<ul>
-				<? if ($action == 'edit' || $action == 'update') { ?>
-					<li><a href="<?= fURL::get() ?>?action=delete&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Delete</a></li>
-				<? } ?>
-				<? if ($action == 'delete' || $action == 'remove') { ?>
-					<li><a href="<?= fURL::get() ?>?action=edit&amp;<?= $parameter ?>=<?= fRequest::get($parameter) ?>">Edit</a></li>
-				<? } ?>
-				<? if ($action == 'list' && $show_add_link) { ?>
-					<li><a href="<?= fURL::get() ?>?action=add">Add</a></li>
-				<? } ?>
-				<? if ($action != 'list') { ?>
-					<li><a href="<?= fURL::get() ?>">List</a></li>
-				<? } ?>
-			</ul>
-			<?	
-		}
-	}
-	
-	
-	/**
 	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content 
 	 * 
 	 * @param  string $content    The content to display
@@ -115,28 +84,6 @@ class fCRUD
 			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';	
 		} else {
 			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
-		}
-	}
-	
-	
-	/**
-	 * Prints successful 'added', 'updated', 'deleted' messaging 
-	 * 
-	 * @param  string $object_name  The name of the type of objects we are manipulating
-	 * @return void
-	 */
-	static public function showSuccessMessages($object_name)
-	{
-		if (fRequest::get('added', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully added</p><?	
-		}
-		
-		if (fRequest::get('updated', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully updated</p><?	
-		}
-		
-		if (fRequest::get('deleted', 'boolean')) {
-			?><p class="success">The <?= fHTML::encodeEntities($object_name) ?> was successfully deleted</p><?	
 		}
 	}
 	
@@ -295,9 +242,7 @@ class fCRUD
 	 */
 	static public function getRowClass($row_value, $affected_value)
 	{
-		if ($row_value == $affected_value &&
-			(fRequest::get('added', 'boolean') ||
-			 fRequest::get('updated', 'boolean'))) {
+		if ($row_value == $affected_value) {
 			 self::$row_number++;
 			 return 'highlighted';
 		}
@@ -309,29 +254,25 @@ class fCRUD
 	
 	
 	/**
-	 * Overrides the value of 'action' in $_REQUEST, $_POST, $_GET based on the 'action::ACTION_NAME' value in $_REQUEST, $_POST, $_GET. Used for multiple submit buttons.
+	 * Overrides the value of 'action' in $_POST based on the 'action::ACTION_NAME' value in $_POST. Used for multiple submit buttons.
 	 * 
+	 * @param  string $redirect  The url to redirect to if the action is overriden. %%action%% will be replaced with the overridden action.
 	 * @return void
 	 */
-	static public function overrideAction()
+	static public function overrideAction($redirect=NULL)
 	{
-		foreach ($_REQUEST as $key => $value) {
-			if (substr($key, 0, 8) == 'action::') {
-				$_REQUEST['action'] = substr($key, 8);
-				unset($_REQUEST[$key]);
-			}	
-		}
+		$found = FALSE;
+		
 		foreach ($_POST as $key => $value) {
 			if (substr($key, 0, 8) == 'action::') {
 				$_POST['action'] = substr($key, 8);
 				unset($_POST[$key]);
+				$found = $_POST['action'];
 			}	
 		}
-		foreach ($_GET as $key => $value) {
-			if (substr($key, 0, 8) == 'action::') {
-				$_GET['action'] = substr($key, 8);
-				unset($_GET[$key]);
-			}	
+		
+		if ($redirect && $found) {
+			fURL::redirect(str_replace('%%action%%', $found, $redirect));	
 		}
 	}
 	
