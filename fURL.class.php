@@ -32,7 +32,7 @@ class fURL
 	 */
 	static public function get()
 	{
-		return $_SERVER['SCRIPT_NAME'];
+		return str_replace('?' . $_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI']);
 	}
 	
 	
