@@ -141,7 +141,7 @@ class fDate
 	 *  - "This date is {return value}" when no date is passed and comparing with today
 	 * 
 	 * Examples of output for a date passed might be:
-	 *  - 2 days later
+	 *  - 2 days after
 	 *  - 1 year before
 	 *  - same day
 	 * 
