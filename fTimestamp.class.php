@@ -175,13 +175,13 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns this date/time in the UTC timezone
+	 * Returns this date/time in the current default timezone
 	 * 
-	 * @return string  The 'Y-m-d H:i:s' format of this date/time in the UTC timezone
+	 * @return string  The 'Y-m-d H:i:s' format of this date/time in the current default timezone
 	 */
 	public function __toString()
 	{
-		return $this->format('Y-m-d H:i:s', 'UTC'); 
+		return $this->format('Y-m-d H:i:s', self::getDefaultTimezone()); 
 	}
 	
 	
