@@ -9,6 +9,7 @@
  * @link  http://flourishlib.com/fTime
  * 
  * @uses  fCore
+ * @uses  fInflection
  * @uses  fProgrammerException
  * @uses  fTimestamp
  * @uses  fValidationException
@@ -110,7 +111,7 @@ class fTime
 	 * Examples of output for no time passed might be:
 	 *  - 5 minutes ago
 	 *  - 2 hours ago
-	 *  - now
+	 *  - right now
 	 * 
 	 * You would never get the following output since it includes more than one unit of time measurement:
 	 *  - 5 minutes and 28 seconds
@@ -120,16 +121,10 @@ class fTime
 	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
 	 * 
 	 * @param  fTime   $other_time      The time to create the difference with, passing NULL will get the difference with the current time
-	 * @param  string  $interval_style  If the interval should be represented by a 'word', 'abbr' or 'letter'. A word would be 'seconds', abbr would be 'sec' and letter would be 's'.
 	 * @return string  The fuzzy difference in time between the this time and the one provided
 	 */
-	public function getFuzzyDifference(fTime $other_time=NULL, $interval_style='word')
+	public function getFuzzyDifference(fTime $other_time=NULL)
 	{
-		$valid_interval_styles = array('word', 'abbr', 'letter');
-		if (!in_array($interval_style, $valid_interval_styles)) {
-			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Must be one of: " . join(', ', $valid_interval_styles) . '.');       
-		}
-		
 		$relative_to_now = FALSE;
 		if ($other_time === NULL) {
 			$other_time = new fTime('now');
@@ -139,11 +134,7 @@ class fTime
 		$diff = $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
 		
 		if (abs($diff) < 10) {
-			if ($interval_style == 'word') {
-				return ($relative_to_now) ? 'right now' : 'at the same time';
-			} else {
-				return ($relative_to_now) ? 'now' : 'simultaneously';
-			}
+			return ($relative_to_now) ? 'right now' : 'at the same time';
 		}
 		
 		if ($relative_to_now) {
@@ -155,22 +146,17 @@ class fTime
 		$diff = abs($diff);
 		
 		$break_points = array(
-			45         /* 45 seconds  */ => array(1,        'second', 'sec', 's'),
-			2700       /* 45 minutes  */ => array(60,       'minute', 'min', 'm'),
-			64800      /* 18 hours    */ => array(3600,     'hour',   'hr',  'h'),
-			432000     /* 5 days      */ => array(86400,    'day',    'day', 'd')
+			45         /* 45 seconds  */ => array(1,     'second'),
+			2700       /* 45 minutes  */ => array(60,    'minute'),
+			64800      /* 18 hours    */ => array(3600,  'hour'),
+			432000     /* 5 days      */ => array(86400, 'day')
 		);
 		
 		foreach ($break_points as $break_point => $unit_info) {
 			if ($diff > $break_point) { continue; }	
 			
 			$unit_diff = round($diff/$unit_info[0]);
-			
-			switch ($interval_style) {
-				case 'abbr':   $units = $unit_info[2]; break;
-				case 'letter': $units = $unit_info[3]; break;
-				case 'word':   $units = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
-			}
+			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
 			
 			return $unit_diff . ' ' . $units . $suffix;
 		}

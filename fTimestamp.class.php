@@ -10,6 +10,7 @@
  * 
  * @uses  fCore
  * @uses  fEnvironmentException
+ * @uses  fInflection
  * @uses  fValidationException
  * 
  * @version  1.0.0 
@@ -354,7 +355,7 @@ class fTimestamp
 	 *  - 2 hours ago
 	 *  - 2 days from now
 	 *  - 1 year ago
-	 *  - now
+	 *  - right now
 	 * 
 	 * You would never get the following output since it includes more than one unit of time measurement:
 	 *  - 5 minutes and 28 seconds
@@ -365,16 +366,10 @@ class fTimestamp
 	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
 	 * @param  fTimestamp $other_timestamp     The timestamp to create the difference with, passing NULL will get the difference with the current timestamp
-	 * @param  string     $interval_style      If the interval should be represented by a 'word', 'abbr' or 'letter'. A word would be 'seconds', abbr would be 'sec' and letter would be 's'.
 	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
 	 */
-	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL, $interval_style='word')
+	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL)
 	{
-		$valid_interval_styles = array('word', 'abbr', 'letter');
-		if (!in_array($interval_style, $valid_interval_styles)) {
-			fCore::toss('fProgrammerException', "Invalid interval style, " . $interval_style . ", specified. Must be one of: " . join(', ', $valid_interval_styles) . '.');       
-		}
-		
 		$relative_to_now = FALSE;
 		if ($other_timestamp === NULL) {
 			$other_timestamp = new fTimestamp('now');
@@ -384,11 +379,7 @@ class fTimestamp
 		$diff = $this->timestamp - $other_timestamp->format('U');
 		
 		if (abs($diff) < 10) {
-			if ($interval_style == 'word') {
-				return ($relative_to_now) ? 'right now' : 'at the same time';
-			} else {
-				return ($relative_to_now) ? 'now' : 'simultaneously';
-			}
+			return ($relative_to_now) ? 'right now' : 'at the same time';
 		}
 		
 		if ($relative_to_now) {
@@ -400,25 +391,20 @@ class fTimestamp
 		$diff = abs($diff);
 		
 		$break_points = array(
-			45         /* 45 seconds  */ => array(1,        'second', 'sec', 's'),
-			2700       /* 45 minutes  */ => array(60,       'minute', 'min', 'm'),
-			64800      /* 18 hours    */ => array(3600,     'hour',   'hr',  'h'),
-			432000     /* 5 days      */ => array(86400,    'day',    'day', 'd'),
-			1814400    /* 3 weeks     */ => array(604800,   'week',   'wk',  'w'),
-			23328000   /* 9 months    */ => array(2592000,  'month',  'mo',  'mo'),
-			2147483647 /* largest int */ => array(31536000, 'year',   'yr',  'y')
+			45         /* 45 seconds  */ => array(1,        'second'),
+			2700       /* 45 minutes  */ => array(60,       'minute'),
+			64800      /* 18 hours    */ => array(3600,     'hour'),
+			432000     /* 5 days      */ => array(86400,    'day'),
+			1814400    /* 3 weeks     */ => array(604800,   'week'),
+			23328000   /* 9 months    */ => array(2592000,  'month'),
+			2147483647 /* largest int */ => array(31536000, 'year')
 		);
 		
 		foreach ($break_points as $break_point => $unit_info) {
 			if ($diff > $break_point) { continue; }	
 			
 			$unit_diff = round($diff/$unit_info[0]);
-			
-			switch ($interval_style) {
-				case 'abbr':   $units = $unit_info[2]; break;
-				case 'letter': $units = $unit_info[3]; break;
-				case 'word':   $units = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
-			}
+			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
 			
 			return $unit_diff . ' ' . $units . $suffix;
 		}
