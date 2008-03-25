@@ -10,6 +10,7 @@
  * 
  * @uses  fCore
  * @uses  fEnvironmentException
+ * @uses  fFilesystem
  * @uses  fProgrammerException
  * @uses  fValidationException
  * 
@@ -438,7 +439,7 @@ class fImage extends fFile
 		}
 		
 		if ($new_image_type) {
-			$output_file = fFile::createUniqueName($this->file, $new_image_type);		
+			$output_file = fFilesystem::createUniqueName($this->file, $new_image_type);		
 		} else {
 			$output_file = $this->file;	
 		}
@@ -584,7 +585,7 @@ class fImage extends fFile
 		}
 		
 		// Save the file
-		$info = fFile::getInfo($output_file);
+		$info = fFilesystem::getInfo($output_file);
 		
 		switch ($info['extension']) {
 			case 'gif':
@@ -655,7 +656,7 @@ class fImage extends fFile
 		}
 		
 		// Set up jpeg compression
-		$info = fFile::getInfo($output_file);
+		$info = fFilesystem::getInfo($output_file);
 		if ($info['extension'] == 'jpg') {
 			$command_line .= ' -compress JPEG -quality 90 ';	
 		}

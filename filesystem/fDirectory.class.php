@@ -11,6 +11,7 @@
  * @uses  fCore
  * @uses  fEnvironmentException
  * @uses  fFile
+ * @uses  fFilesystem
  * @uses  fProgrammerException
  * 
  * @version  1.0.0 
@@ -136,7 +137,7 @@ class fDirectory
 			return $size;    
 		}
 		
-		return fFile::formatFilesize($size, $decimal_places);
+		return fFilesystem::formatFilesize($size, $decimal_places);
 	}
 	
 	

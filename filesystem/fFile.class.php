@@ -11,6 +11,7 @@
  * @uses  fCore
  * @uses  fDirectory
  * @uses  fEnvironmentException
+ * @uses  fFilesystem
  * @uses  fProgrammerException
  * 
  * @version  1.0.0 
@@ -80,7 +81,7 @@ class fFile
 	{
 		if ($this->exception) { throw $this->exception; }
 		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
-		return self::getInfo($this->file, 'basename');    
+		return fFilesystem::getInfo($this->file, 'basename');    
 	}
 	
 	
@@ -92,7 +93,7 @@ class fFile
 	public function getDirectory()
 	{
 		if ($this->exception) { throw $this->exception; }
-		return new fDirectory(self::getInfo($this->file, 'dirname'));    
+		return new fDirectory(fFilesystem::getInfo($this->file, 'dirname'));    
 	}
 	
 	
@@ -129,7 +130,7 @@ class fFile
 			return $size;	
 		}
 		
-		return self::formatFilesize($size, $decimal_places);
+		return fFilesystem::formatFilesize($size, $decimal_places);
 	}
 	
 	
@@ -142,7 +143,7 @@ class fFile
 	{
 		if ($this->exception) { throw $this->exception; }
 		
-		$file_info = self::getInfo($this->file);
+		$file_info = fFilesystem::getInfo($this->file);
 		$directory = $this->getDirectory();
 		if (!$directory->isTemp()) {
 			$temp_dir = $directory->getTemp();
@@ -261,112 +262,6 @@ class fFile
 	public function read() 
 	{
 		return file_get_contents($this->file);
-	}
-	
-	
-	/**
-	 * Returns a unique name for a file 
-	 * 
-	 * @param  string $file           The filename to check
-	 * @param  string $new_extension  The new extension for the filename, do not include .
-	 * @return string  The unique file name
-	 */
-	static public function createUniqueName($file, $new_extension=NULL) 
-	{
-		$info = self::getInfo($file);
-		
-		// Change the file extension
-		if ($new_extension !== NULL) {
-			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
-			$file = $info['dirname'] . $info['filename'] . $new_extension;
-			$info = self::getInfo($file);
-		}
-		
-		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', '.' . $info['extension'], $file); 	
-		
-		// Look for a unique name by adding _copy# to the end of the file
-		while (file_exists($file)) {
-			$info = self::getInfo($file);
-			if (preg_match('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', $file, $match)) {
-				$file = preg_replace('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', '_copy' . ($match[1]+1) . '.' . $info['extension'], $file);
-			} else {
-				$file = $info['dirname'] . $info['filename'] . '_copy1.' . $info['extension'];    
-			}    
-		}
-		
-		return $file;
-	}
-	
-	
-	/**
-	 * Returns info about a file including dirname, basename, extension and filename 
-	 * 
-	 * @param  string $file_path   The file to rename
-	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
-	 * @return array  The file's dirname, basename, extension and filename
-	 */
-	static public function getInfo($file, $element=NULL) 
-	{
-		if ($element !== NULL && !in_array($element, array('dirname', 'basename', 'extension', 'filename'))) {
-			fCore::toss('fProgrammerException', 'Invalid element requested');  
-		}
-		
-		$path_info = pathinfo($file);
-		if (!isset($path_info['filename'])) {
-			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension']) . '$#', '', $path_info['basename']);   
-		}
-		$path_info['dirname'] .= '/';
-		
-		if ($element) {
-			return $path_info[$element];   
-		}
-		
-		return $path_info;
-	} 
-	
-	
-	/**
-	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
-	 * 
-	 * @param  integer $bytes           The size of the file in bytes
-	 * @param  integer $decimal_places  The number of decimal places to display
-	 * @return string  
-	 */
-	static public function formatFilesize($bytes, $decimal_places=1) 
-	{
-		if ($bytes < 0) {
-			$bytes = 0;        
-		}
-		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
-		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
-		$suffix    = floor(log($bytes)/6.9314718);
-		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
-	}
-	
-	
-	/**
-	 * Takes a file size and converts it to bytes 
-	 * 
-	 * @param  string $size  The size to convert to bytes
-	 * @return integer  The number of bytes represented by the size  
-	 */
-	static public function convertToBytes($size) 
-	{
-		if (!preg_match('#^(\d+)\s*(k|m|g|t)?b?$#', strtolower(trim($size)), $matches)) {
-			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');   
-		}
-		
-		if ($matches[1] == '') {
-			$matches[1] = 'b';   
-		}
-		
-		$size_map = array('b' => 1,
-						  'k' => 1024,
-						  'm' => 1048576,
-						  'g' => 1073741824,
-						  't' => 1099511627776);
-		return $matches[0] * $size_map[$matches[1]];
 	}         
 }  
 

@@ -12,6 +12,7 @@
  * @uses  fDirectory
  * @uses  fEnvironmentException
  * @uses  fFile
+ * @uses  fFilesystem
  * @uses  fImage
  * @uses  fInflection
  * @uses  fProgrammerException
@@ -117,7 +118,7 @@ class fUpload
 	 */
 	static public function setMaxFileSize($size) 
 	{
-		self::$max_file_size = fFile::convertToBytes($size);
+		self::$max_file_size = fFilesystem::convertToBytes($size);
 	}
 	
 	
@@ -190,7 +191,7 @@ class fUpload
 				fCore::toss('fValidationException', fInflection::humanize($field) . ': Please upload a file'); 
 			}
 			if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
-				fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is over the limit of ' . fFile::formatFilesize(self::$max_file_size));   
+				fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));   
 			}
 			if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
 				if (self::$type != 'mime') {
@@ -208,13 +209,13 @@ class fUpload
 				}    
 			}
 			if (self::$type == 'non_php') {
-				$file_info = fFile::getInfo($file_array['name']);
+				$file_info = fFilesystem::getInfo($file_array['name']);
 				if ($file_info['extension'] == 'php') {
 					fCore::toss('fValidationException', fInflection::humanize($field) . ': You are not allowed to upload a PHP file'); 
 				}   
 			}
 			
-			$file_name = fFile::createUniqueName($directory->getPath() . $file_array['name']);
+			$file_name = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
 			if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
 				fCore::toss('fEnvironmentException', fInflection::humanize($field) . ': There was an error moving the uploaded file');    
 			}
@@ -225,7 +226,7 @@ class fUpload
 			// If no file was uploaded, check to see if a temp file was referenced
 			$temp_field = '__temp_' . $field;
 			if ($e->getMessage() == fInflection::humanize($field) . ': Please upload a file' && !empty($_REQUEST[$temp_field]) && file_exists($directory->getTemp()->getPath() . $_REQUEST[$temp_field])) {
-				$file_name = fFile::createUniqueName($directory->getPath() . $_REQUEST[$temp_field]);
+				$file_name = fFilesystem::createUniqueName($directory->getPath() . $_REQUEST[$temp_field]);
 				rename($directory->getTemp()->getPath() . $_REQUEST[$temp_field], $file_name);
 				return self::createObject($file_name);
 			}
