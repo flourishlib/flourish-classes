@@ -72,13 +72,10 @@ class fTemplating
 	/**
 	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before.
 	 * 
-	 * Please note that using buffered output will affect the order in which elements are called
-	 * if any PHP pages are placed within another placed PHP page. The first level of PHP pages
-	 * will be executed first and then the buffering will loop back through and place the next
-	 * level of PHP pages. This could have a negative affect on code that must be executed sequentially.
-	 * 
-	 * If you code relies of specific ordering of code execution for certain elements, it is
-	 * recommended that you do not use this buffering output mode.
+	 * Please note that using buffered output will affect the order in which code is executed
+	 * since the elements are not actually place()'ed until the destructor is called. If the 
+	 * non-template code depends on template code being executed sequentially before it, you
+	 * may not want to use output buffering.
 	 * 
 	 * @return void
 	 */
@@ -371,15 +368,14 @@ class fTemplating
 		$contents = fBuffer::get();
 		fBuffer::erase();
 		
+		// We are gonna use a regex replacement that is eval()'ed as PHP code
 		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)%%/e';
 		$replacement = 'fBuffer::startCapture() . $this->placeElement("$1") . fBuffer::stopCapture()';
 		
-		$count = 0;
-		do {
-			$contents = preg_replace($regex, $replacement, $contents, -1, $count);
-		} while ($count);
+		// Remove the buffered id, thus making any nested place() calls be executed immediately
+		$this->buffered_id = NULL;
 		
-		echo $contents;
+		echo preg_replace($regex, $replacement, $contents);
 	}
 	
 	
