@@ -68,55 +68,87 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content 
+	 * Removes list items from an fPrintableException based on their contents
 	 * 
-	 * @param  string $content    The content to display
-	 * @param  string $css_class  The css class to apply
+	 * @param  fPrintableException $e           The exception to remove field names from
+	 * @param  string              $filter,...  If this content is found in a list item, the list item will be removed
 	 * @return void
 	 */
-	static public function show($content, $css_class)
+	static public function removeListItems(fPrintableException $e, $filter)
 	{
-		if (empty($content)) {
-			return;
-		}		
-
-		if (fHTML::checkForBlockLevelHTML($content)) {
-			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';	
-		} else {
-			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
+		$filters = array_slice(func_get_args(), 1);
+		$message = $e->getMessage();
+		
+		// If we can't find a list, don't bother continuing
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $matches)) {
+			return;	
 		}
+		
+		$beginning   = $matches[1];
+		$list_items  = $matches[2];
+		$ending      = $matches[3];
+
+		preg_match_all('#<li(.*?)</li>#i', $list_items, $matches, PREG_SET_ORDER);
+		
+		$new_list_items = array();
+		foreach ($matches as $match) {
+			foreach ($filters as $filter) {
+				if (strpos($match[1], $filter) !== FALSE) {
+					continue 2;
+				}
+			}
+			
+			$new_list_items[] = $match[0];			
+		}
+		
+		$e->setMessage($beginning . join("\n", $new_list_items) . $ending);
 	}
 	
 	
 	/**
-	 * Removes lines from a fPrintableException based on the field name
+	 * Reorders list items in an fPrintableException based on their contents
 	 * 
-	 * @param  fPrintableException $e          The exception to remove field names from
-	 * @param  string              $field,...  The fields to remove from the exception error message
+	 * @param  fPrintableException $e           The exception to remove field names from
+	 * @param  string              $filter,...  If this content is found in a list item, the list item will be displayed in the order it appears in this parameter list
 	 * @return void
 	 */
-	static public function removeFields(fPrintableException $e)
+	static public function reorderListItems(fPrintableException $e, $filter)
 	{
-		$fields = func_get_args();
-		$fields = array_map(array('fInflection', 'humanize'), array_slice($fields, 1));
+		$filters = array_slice(func_get_args(), 1);
 		$message = $e->getMessage();
-		$lines   = array_merge(array_filter(preg_split("#\n|((?<=</li>)(?=<li>))|((?<=<ul>)(?=<li>))|((?<=</li>)(?=</ul>))#", $message)));
-
-		$new_lines = array();
-		foreach ($lines as $line) {
-			$found = FALSE;
-			foreach ($fields as $field) {
-				if (strpos($line, $field) !== FALSE) {
-					$found = TRUE;
-				}
-			}
-			if ($found) {
-				continue;
-			}	
-			$new_lines[] = $line;			
+		
+		// If we can't find a list, don't bother continuing
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $matches)) {
+			return;	
 		}
 		
-		$e->setMessage(join("\n", $new_lines));
+		$beginning   = $matches[1];
+		$list_items  = $matches[2];
+		$ending      = $matches[3];
+
+		preg_match_all('#<li(.*?)</li>#i', $list_items, $matches, PREG_SET_ORDER);
+		
+		$ordered_items = array_fill(0, sizeof($filters), array());
+		$other_items   = array();
+		
+		foreach ($matches as $match) {
+			foreach ($filters as $num => $filter) {
+				if (strpos($match[1], $filter) !== FALSE) {
+					$ordered_items[$num][] = $match[0];
+					continue 2;
+				}
+			}
+			
+			$other_items[] = $match[0];			
+		}
+		
+		$list_items = array();
+		foreach ($ordered_items as $ordered_item) {
+			$list_items = array_merge($list_items, $ordered_item);	
+		}
+		$list_items = array_merge($list_items, $other_items);
+		
+		$e->setMessage($beginning . join("\n", $list_items) . $ending);
 	}
 	
 	
@@ -143,7 +175,7 @@ class fCRUD
 	 */
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
-		if (self::checkForAction() && self::getPreviousSearchValue($column) && fRequest::get($column) === NULL) {
+		if (self::getPreviousSearchValue($column) && fRequest::get($column) === NULL) {
 			self::$search_values[$column] = self::getPreviousSearchValue($column);	
 			self::$loaded_values[$column] = self::$search_values[$column];
 		} else {
@@ -162,7 +194,7 @@ class fCRUD
 	 */
 	static public function getSortColumn($possible_columns)
 	{
-		if (self::checkForAction() && self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
+		if (self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
 			self::$sort_column = self::getPreviousSortColumn();	
 			self::$loaded_values['sort'] = self::$sort_column;
 		} else {
@@ -181,7 +213,7 @@ class fCRUD
 	 */
 	static public function getSortDirection($default_direction)
 	{
-		if (self::checkForAction() && self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
+		if (self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
 			self::$sort_direction = self::getPreviousSortDirection();	
 			self::$loaded_values['dir'] = self::$sort_direction;
 		} else {
@@ -250,46 +282,6 @@ class fCRUD
 		$class = (self::$row_number++ % 2) ? 'odd' : 'even';
 		$class .= (self::$row_number == 2) ? ' first' : '';
 		return $class;
-	}
-	
-	
-	/**
-	 * Overrides the value of 'action' in $_POST based on the 'action::ACTION_NAME' value in $_POST. Used for multiple submit buttons.
-	 * 
-	 * @param  string $redirect  The url to redirect to if the action is overriden. %%action%% will be replaced with the overridden action.
-	 * @return void
-	 */
-	static public function overrideAction($redirect=NULL)
-	{
-		$found = FALSE;
-		
-		foreach ($_POST as $key => $value) {
-			if (substr($key, 0, 8) == 'action::') {
-				$_POST['action'] = substr($key, 8);
-				unset($_POST[$key]);
-				$found = $_POST['action'];
-			}	
-		}
-		
-		if ($redirect && $found) {
-			fURL::redirect(str_replace('%%action%%', $found, $redirect));	
-		}
-	}
-	
-	
-	/**
-	 * Indicates if something was just added, updated, or deleted
-	 * 
-	 * @return void
-	 */
-	static private function checkForAction()
-	{
-		if (fRequest::get('added', 'boolean') ||
-			fRequest::get('updated', 'boolean') ||
-			fRequest::get('deleted', 'boolean')) {
-			return TRUE;	
-		}	
-		return FALSE;
 	}
 	
 	

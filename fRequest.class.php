@@ -10,6 +10,7 @@
  * 
  * @uses  fCore
  * @uses  fProgrammerException
+ * @uses  fURL
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
@@ -127,6 +128,43 @@ class fRequest
 	static public function isPost()
 	{
 		return strtolower($_SERVER['REQUEST_METHOD']) == 'post';
+	}
+	
+	
+	/**
+	 * Overrides the value of 'action' in $_POST, $_GET and $_REQUEST based on the 'action::ACTION_NAME' value in $_POST, $_GET and $_REQUEST. Used for multiple submit buttons.
+	 * 
+	 * @param  string $redirect  The url to redirect to if the action is overriden. %%action%% will be replaced with the overridden action.
+	 * @return void
+	 */
+	static public function overrideAction($redirect=NULL)
+	{
+		$found = FALSE;
+		
+		foreach ($_REQUEST as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$found = $_REQUEST['action'] = substr($key, 8);
+				unset($_REQUEST[$key]);
+			}	
+		}
+		
+		foreach ($_GET as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$found = $_GET['action'] = substr($key, 8);
+				unset($_GET[$key]);
+			}	
+		}
+		
+		foreach ($_POST as $key => $value) {
+			if (substr($key, 0, 8) == 'action::') {
+				$found = $_POST['action'] = substr($key, 8);
+				unset($_POST[$key]);
+			}	
+		}
+		
+		if ($redirect && $found) {
+			fURL::redirect(str_replace('%%action%%', $found, $redirect));	
+		}
 	}
 	
 	

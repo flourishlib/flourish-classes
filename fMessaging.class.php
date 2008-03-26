@@ -8,6 +8,7 @@
  * 
  * @link  http://flourishlib.com/fMessaging
  * 
+ * @uses  fHTML
  * @uses  fSession
  * 
  * @version  1.0.0
@@ -40,7 +41,7 @@ class fMessaging
 	/**
 	 * Retrieves and removes a message from the session
 	 * 
-	 * @param  string $name       A name of the message to retrieve
+	 * @param  string $name       The name of the message to retrieve
 	 * @param  string $recipient  The intended recipient
 	 * @return string  The message contents
 	 */
@@ -50,6 +51,27 @@ class fMessaging
 		$message = fSession::get($name, NULL, $prefix); 
 		fSession::clear($name, $prefix);  
 		return $message;      
+	}
+	
+	
+	/**
+	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content. 
+	 * 
+	 * @param  string $content    The content to display
+	 * @param  string $css_class  The css class to apply
+	 * @return void
+	 */
+	static public function show($content, $css_class)
+	{
+		if (empty($content)) {
+			return;
+		}		
+
+		if (fHTML::checkForBlockLevelHTML($content)) {
+			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';	
+		} else {
+			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
+		}
 	}
 }
 
