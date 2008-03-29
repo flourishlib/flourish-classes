@@ -142,7 +142,7 @@ class fURL
 			$url = self::getDomain() . self::get() . $url;	
 		}
 		header('Location: ' . $url);
-		exit;
+		exit($url);
 	}
 } 
 
