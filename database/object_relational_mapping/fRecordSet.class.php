@@ -6,10 +6,10 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fSequence
+ * @link  http://flourishlib.com/fRecordSet
  * 
  * @uses  fCore
- * @uses  fEmptySequenceException
+ * @uses  fEmptySetException
  * @uses  fInflection
  * @uses  fORM
  * @uses  fORMDatabase
@@ -22,10 +22,10 @@
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
-class fSequence implements Iterator
+class fRecordSet implements Iterator
 {
 	/**
-	 * Creates an fSequence by specifying the class to create plus the where conditions and order by rules
+	 * Creates an fRecordSet by specifying the class to create plus the where conditions and order by rules
 	 * 
 	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
 	 * <pre>
@@ -59,10 +59,10 @@ class fSequence implements Iterator
 	 *  - '{related_table}[{route}]=>{once_removed_related_table}[{route}].{column}' // e.g. 'user_groups[user_group_id]=>permissions[read].level'
 	 * </pre>
 	 * 
-	 * @param  string $class_name        The class to create the fSequence of
+	 * @param  string $class_name        The class to create the fRecordSet of
 	 * @param  array  $where_conditions  The column => value comparisons for the where clause
 	 * @param  array  $order_bys         The column => direction values to use for sorting
-	 * @return fSequence  A sequence of {@link fActiveRecord fActiveRecords}
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecords}
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array())
 	{
@@ -80,17 +80,17 @@ class fSequence implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fSequence($class_name, fORMDatabase::getInstance()->translatedQuery($sql));			
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));			
 	}
 	
 	
 	/**
-	 * Creates an fSequence from an array of primary keys
+	 * Creates an fRecordSet from an array of primary keys
 	 * 
 	 * @param  string $class_name    The type of object to create
 	 * @param  array  $primary_keys  The primary keys of the objects to create
-	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fSequence::create()} for format)
-	 * @return fSequence  A sequence of ActiveRecords
+	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
+	 * @return fRecordSet  A set of ActiveRecords
 	 */
 	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
 	{
@@ -135,21 +135,21 @@ class fSequence implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fSequence($class_name, fORMDatabase::getInstance()->translatedQuery($sql));	
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));	
 	}
 	
 	
 	/**
-	 * Creates an fSequence from an SQL statement
+	 * Creates an fRecordSet from an SQL statement
 	 * 
 	 * @param  string $class_name  The type of object to create
-	 * @param  string $sql         The sql to create the sequence from
-	 * @return fSequence  A sequence of ActiveRecords
+	 * @param  string $sql         The sql to create the set from
+	 * @return fRecordSet  A set of ActiveRecords
 	 */
 	static public function createFromSql($class_name, $sql)
 	{
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		return new fSequence($class_name, $result);	
+		return new fRecordSet($class_name, $result);	
 	}
 	
 	
@@ -175,14 +175,14 @@ class fSequence implements Iterator
 	private $preloaded_result_objects = array();
 	
 	/**
-	 * An array of the records in the sequence, initially empty
+	 * An array of the records in the set, initially empty
 	 * 
 	 * @var array 
 	 */
 	private $records = array();
 	
 	/**
-	 * An array of the primary keys for the records in the sequence, initially empty
+	 * An array of the primary keys for the records in the set, initially empty
 	 * 
 	 * @var array 
 	 */
@@ -190,11 +190,11 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Sets the contents of the sequence
+	 * Sets the contents of the set
 	 * 
 	 * @param  string $class_name     The type of records to create
 	 * @param  object $result_object  The primary keys or fResult object of the records to create
-	 * @return fSequence
+	 * @return fRecordSet
 	 */
 	protected function __construct($class_name, fResult $result_object)
 	{
@@ -217,29 +217,29 @@ class fSequence implements Iterator
 	public function __call($method_name, $parameters)
 	{
 		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
-        
-        switch ($action) {
-            case 'sort':
-                $sort_method = substr($element, 3);
-		        $sort_method = fInflection::camelize($sort_method, FALSE);
-		        $this->performSort($parameters[0], $parameters[1], $sort_method);
-                break;
-                
-            case 'preload':
-                $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
-                break;
-            
-            default:
-                fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
-                break;
-        }
+		
+		switch ($action) {
+			case 'sort':
+				$sort_method = substr($element, 3);
+				$sort_method = fInflection::camelize($sort_method, FALSE);
+				$this->performSort($parameters[0], $parameters[1], $sort_method);
+				break;
+				
+			case 'preload':
+				$this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
+				break;
+			
+			default:
+				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
+				break;
+		}
 	}
 	
 	
 	/**
 	 * Returns the class name of the record being stored
 	 * 
-	 * @return string  The class name of the records in the sequence
+	 * @return string  The class name of the records in the set
 	 */
 	public function getClassName()
 	{
@@ -248,9 +248,9 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Returns all of the records in the sequence
+	 * Returns all of the records in the set
 	 * 
-	 * @return array  The records in the sequence
+	 * @return array  The records in the set
 	 */
 	public function getRecords()
 	{
@@ -264,9 +264,9 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Returns the primary keys for all of the records in the sequence
+	 * Returns the primary keys for all of the records in the set
 	 * 
-	 * @return array  The primary keys of all the records in the sequence
+	 * @return array  The primary keys of all the records in the set
 	 */
 	public function getPrimaryKeys()
 	{
@@ -280,9 +280,9 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Returns the number of records in the sequence
+	 * Returns the number of records in the set
 	 * 
-	 * @return integer  The number of records in the sequence
+	 * @return integer  The number of records in the set
 	 */
 	public function getSizeOf()
 	{
@@ -291,22 +291,22 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Throws a fEmptySequenceException if the fSequence is empty
+	 * Throws a fEmptySetException if the fRecordSet is empty
 	 * 
-	 * @throws  fEmptySequenceException
+	 * @throws  fEmptySetException
 	 * 
 	 * @return void
 	 */
 	public function tossIfEmpty()
 	{
 		if (!$this->getSizeOf()) {
-			fCore::toss('fEmptySequenceException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
+			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
 		}
 	}
 	
 	
 	/**
-	 * Sorts the sequence by the return value of a method from the class created
+	 * Sorts the set by the return value of a method from the class created
 	 * 
 	 * @param  string $method_name  The method to call on each object to get the value to sort
 	 * @param  string $direction    Either 'asc' or 'desc'
@@ -403,9 +403,9 @@ class fSequence implements Iterator
 		// Limited queries require a slight bit of additional modification so that we only load the related data for the elements returned
 		if (!empty($clauses['LIMIT'])) {
 			if (!empty($clauses['WHERE'])) {
-			 	$new_sql .= ' AND ';	
+				$new_sql .= ' AND ';	
 			} else {
-			 	$new_sql .= 'WHERE ';	
+				$new_sql .= 'WHERE ';	
 			}
 			$new_sql .= fORMDatabase::createPrimaryKeyWhereCondition($table, $table_alias, $this->getPrimaryKeys());
 		}
@@ -420,14 +420,14 @@ class fSequence implements Iterator
 			}
 			
 			if ($order_bys != array()) {
-			 	$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);	
+				$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);	
 			}
 		} 
 		
 		$new_sql = fORMDatabase::insertFromClause($this_table, $new_sql, $joins);
 		
 		if (!isset($this->preloaded_result_objects[$related_table])) {
-		 	$this->preloaded_result_objects[$related_table] = array();	
+			$this->preloaded_result_objects[$related_table] = array();	
 		}
 		
 		$this->preloaded_result_objects[$related_table][$route] = fORMDatabase::getInstance()->translatedQuery($new_sql);
@@ -435,16 +435,16 @@ class fSequence implements Iterator
 	
 	
 	/**
-	 * Injects a sequences of related information into the current record
+	 * Injects a set of related information into the current record
 	 * 
 	 * @param string $related_table   The table we are injecting the values for
 	 * @param string $route           The route to the related table
 	 * @param fResult $result_object  The pre-loaded result object that we are extracting the sequence from
 	 * @return void
 	 */
-	private function injectSubSequence($related_table, $route, $result_object) 
+	private function injectSubSet($related_table, $route, $result_object) 
 	{
-	 	$rows = array();
+		$rows = array();
 		
 		$keys = $this->primary_keys[$this->key()];
 		settype($keys, 'array');
@@ -474,16 +474,16 @@ class fSequence implements Iterator
 		
 		$class_name = fORM::classize($related_table);
 		
-		$sequence = new fSequence($class_name, $result);
+		$set = new fRecordSet($class_name, $result);
 		
 		$method = 'inject' . fInflection::pluralize($class_name);
-		$record->$method($result);	
+		$record->$method($set);	
 	}
 	
 	
 	
 	/**
-	 * Rewinds the sequence to the first record (used for iteration)
+	 * Rewinds the set to the first record (used for iteration)
 	 * 
 	 * @return void
 	 */
@@ -494,7 +494,7 @@ class fSequence implements Iterator
 
 	
 	/**
-	 * Returns the current record in the sequence (used for iteration)
+	 * Returns the current record in the set (used for iteration)
 	 * 
 	 * @return object  The current record
 	 */
@@ -508,14 +508,14 @@ class fSequence implements Iterator
 			$keys = array();
 			foreach ($primary_keys as $primary_key) {
 				$method = 'get' . fInflection::camelize($primary_key, TRUE);
-			 	$keys[$primary_key] = $this->records[$this->key()]->$method();	
+				$keys[$primary_key] = $this->records[$this->key()]->$method();	
 			}
 			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[$primary_keys[0]] : $keys;
 			
 			// Pass the preloaded data to the object
 			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
 				foreach ($result_objects as $route => $result_object) {
-					$this->injectSubSequence($related_table, $route, $result_object);
+					$this->injectSubSet($related_table, $route, $result_object);
 				}
 			}
 		}
@@ -535,7 +535,7 @@ class fSequence implements Iterator
 
 	
 	/**
-	 * Moves to the next record in the sequence (used for iteration)
+	 * Moves to the next record in the set (used for iteration)
 	 * 
 	 * @return void
 	 */
@@ -546,7 +546,7 @@ class fSequence implements Iterator
 
 	
 	/**
-	 * Returns if the sequence has any records left (used for iteration)
+	 * Returns if the set has any records left (used for iteration)
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */
@@ -562,18 +562,18 @@ if (!class_exists('fCore')) { }
 
 
 /**
- * An exception when an fSequence does not contain any elements
+ * An exception when an fRecordSet does not contain any elements
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fEmptySequenceException
+ * @link  http://flourishlib.com/fEmptySetException
  * 
  * @version  1.0.0 
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fEmptySequenceException extends fExpectedException
+class fEmptySetException extends fExpectedException
 {
 } 
 
