@@ -169,7 +169,7 @@ class fDirectory
 	/**
 	 * Check to see if the current directory is a temporary directory
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @return boolean  If the directory is a temp directory
 	 */
@@ -197,7 +197,7 @@ class fDirectory
 	/**
 	 * Gets (and creates if necessary) a temp dir for the current directory
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @return fDirectory  The object representing the temp dir
 	 */
@@ -236,7 +236,7 @@ class fDirectory
 	 * 
 	 * This operation is not part of the filesystem transaction model and will be executed immediately.
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @return void
 	 */

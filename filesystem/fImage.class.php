@@ -103,7 +103,7 @@ class fImage extends fFile
 	 * Checks to make sure the class can handle the image file specified
 	 * 
 	 * @throws fValidationException
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string $image   The image to check for incompatibility
 	 * @return void

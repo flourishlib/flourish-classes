@@ -168,7 +168,7 @@ class fFile
 	/**
 	 * Moves the file to the temp directory if it is not there already
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @return void
 	 */
@@ -189,7 +189,7 @@ class fFile
 	/**
 	 * Moves the file from the temp directory if it is not in the main directory already
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @return void
 	 */

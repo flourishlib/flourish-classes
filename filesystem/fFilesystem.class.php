@@ -51,7 +51,7 @@ class fFilesystem
 	/**
 	 * Hooks a file into the exception map entry for that filename. Since the value is returned by reference, all objects that represent this file always see the same exception.
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string    $file  The name of the file or directory
 	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
@@ -68,7 +68,7 @@ class fFilesystem
 	/**
 	 * Saves an object to the identity map
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string    $file		 A file or directory name, directories should end in / or \
 	 * @param  Exception $exception  The exception for this file/directory
@@ -83,7 +83,7 @@ class fFilesystem
 	/**
 	 * Hooks a file/directory name to the filename map, allowing all objects representing this file to be updated when it is renamed
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string    $file  The name of the file or directory
 	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
@@ -100,7 +100,7 @@ class fFilesystem
 	/**
 	 * Updates the filename map, causing all objects representing a file/directory to be updated
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string $existing_filename  The existing filename
 	 * @param  string $new_filename       The new filename
@@ -122,7 +122,7 @@ class fFilesystem
 	 * Updates the filename map recursively, causing all objects representing a directory to be
 	 * updated. Also updated all files and directories in the specified directory to the new paths.
 	 * 
-	 * @access protected
+	 * @internal
 	 * 
 	 * @param  string $existing_dirname  The existing directory name
 	 * @param  string $new_dirname       The new dirname
