@@ -183,7 +183,7 @@ class fRequest
 		$_REQUEST = array();
 		foreach (self::$_request as $field => $value) {
 			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field) . '#', '', $field);
+				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
 				if (is_array($value)) {
 					if (isset($value[$key])) {
 						$_REQUEST[$new_field] = $value[$key];    
@@ -195,7 +195,7 @@ class fRequest
 		$_FILES = array();
 		foreach (self::$_files as $field => $value) {
 			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field) . '#', '', $field);
+				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
 				if (is_array($value)) {
 					if (isset($value['name'][$key])) {
 						$_FILES[$new_field]['name']     = $value['name'][$key];
