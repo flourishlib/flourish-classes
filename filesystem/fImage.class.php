@@ -102,7 +102,8 @@ class fImage extends fFile
 	/**
 	 * Checks to make sure the class can handle the image file specified
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
+	 * @access protected
 	 * 
 	 * @param  string $image   The image to check for incompatibility
 	 * @return void
@@ -165,7 +166,6 @@ class fImage extends fFile
 					
 					$path = 'C:\Program Files\\' . $win_output . '\\';
 				}
-				
 				
 				if (fCore::getOS() == 'linux/unix') {
 					$nix_search = 'whereis -b convert';
@@ -280,7 +280,7 @@ class fImage extends fFile
 
 	
 	/**
-	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until save() is called.
+	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until {@link fImage::saveChanges()} is called.
 	 * 
 	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
 	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
@@ -288,6 +288,8 @@ class fImage extends fFile
 	 */
 	public function resize($canvas_width, $canvas_height) 
 	{
+		$this->tossIfException();
+		
 		// Make sure the user input is valid
 		if (!is_int($canvas_width) || $canvas_width < 0) {
 			fCore::toss('fProgrammerException', 'The canvas width specified is not an integer or is less than zero');  
@@ -342,7 +344,7 @@ class fImage extends fFile
   
 	
 	/**
-	 * Crops the biggest area possible from the center of the image that matches the ratio provided. Crop does not occur until save() is called.
+	 * Crops the biggest area possible from the center of the image that matches the ratio provided. Crop does not occur until {@link fImage::saveChanges()} is called.
 	 * 
 	 * @param  numeric $ratio_width   The width to crop the image to
 	 * @param  numeric $ratio_height  The height to crop the image to
@@ -350,6 +352,8 @@ class fImage extends fFile
 	 */
 	public function cropToRatio($ratio_width, $ratio_height) 
 	{
+		$this->tossIfException();
+		
 		// Make sure the user input is valid
 		if (!is_numeric($ratio_width) || $ratio_width < 0) {
 			fCore::toss('fProgrammerException', 'The ratio width specified is not a number or is less than or equal to zero');  
@@ -400,12 +404,14 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Converts the image to grayscale. Desaturation does not occur until save() is called.
+	 * Converts the image to grayscale. Desaturation does not occur until {@link fImage::saveChanges()} is called.
 	 * 
 	 * @return void
 	 */
 	public function desaturate() 
 	{
+		$this->tossIfException();
+		
 		$dim = $this->getCurrentDimensions();
 		
 		// Record what we are supposed to do
@@ -423,8 +429,10 @@ class fImage extends fFile
 	 * @param  string $new_image_type  The new file type for the image, can be 'jpg', 'gif' or 'png'
 	 * @return void
 	 */
-	public function save($new_image_type=NULL) 
+	public function saveChanges($new_image_type=NULL) 
 	{
+		$this->tossIfException();
+		
 		if (self::$processor == 'none') {
 			fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
 		}
@@ -454,7 +462,7 @@ class fImage extends fFile
 		if ($output_file != $this->file) {
 			unlink($this->file);	
 		}
-		$this->file = $output_file;
+		fFilesystem::updateFilenameMap($this->file, $output_file);
 		
 		$this->pending_modifications = array();
 	}
@@ -585,7 +593,7 @@ class fImage extends fFile
 		}
 		
 		// Save the file
-		$info = fFilesystem::getInfo($output_file);
+		$info = fFilesystem::getPathInfo($output_file);
 		
 		switch ($info['extension']) {
 			case 'gif':
@@ -656,7 +664,7 @@ class fImage extends fFile
 		}
 		
 		// Set up jpeg compression
-		$info = fFilesystem::getInfo($output_file);
+		$info = fFilesystem::getPathInfo($output_file);
 		if ($info['extension'] == 'jpg') {
 			$command_line .= ' -compress JPEG -quality 90 ';	
 		}

@@ -209,7 +209,7 @@ class fUpload
 				}    
 			}
 			if (self::$type == 'non_php') {
-				$file_info = fFilesystem::getInfo($file_array['name']);
+				$file_info = fFilesystem::getPathInfo($file_array['name']);
 				if ($file_info['extension'] == 'php') {
 					fCore::toss('fValidationException', fInflection::humanize($field) . ': You are not allowed to upload a PHP file'); 
 				}   

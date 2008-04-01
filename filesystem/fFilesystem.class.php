@@ -19,6 +19,20 @@
 class fFilesystem
 {
 	/**
+	 * Maps exceptions to all instances of a file or directory, providing consistency
+	 * 
+	 * @var array 
+	 */
+	static private $exception_map = array();
+	
+	/**
+	 * Stores file and directory names by reference, allowing all object instances to be updated at once
+	 * 
+	 * @var array 
+	 */
+	static private $filename_map = array();
+	
+	/**
 	 * Stores the pending transaction for this filesystem transaction
 	 * 
 	 * @var array 
@@ -35,7 +49,122 @@ class fFilesystem
 	
 	
 	/**
-	 * Starts a filesystem transaction, should only be called when no transaction is in progress
+	 * Hooks a file into the exception map entry for that filename. Since the value is returned by reference, all objects that represent this file always see the same exception.
+	 * 
+	 * @access protected
+	 * 
+	 * @param  string    $file  The name of the file or directory
+	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
+	 */
+	static public function &hookExceptionMap($file)
+	{
+		if (!isset(self::$exception_map[$file])) {
+			self::$exception_map[$file] = NULL;   
+		}
+		return self::$exception_map[$file];
+	}
+	
+	
+	/**
+	 * Saves an object to the identity map
+	 * 
+	 * @access protected
+	 * 
+	 * @param  string    $file		 A file or directory name, directories should end in / or \
+	 * @param  Exception $exception  The exception for this file/directory
+	 * @return void
+	 */
+	static public function updateExceptionMap($file, Exception $exception)
+	{              
+		self::$exception_map[$file] = $exception;
+	}
+	
+	
+	/**
+	 * Hooks a file/directory name to the filename map, allowing all objects representing this file to be updated when it is renamed
+	 * 
+	 * @access protected
+	 * 
+	 * @param  string    $file  The name of the file or directory
+	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
+	 */
+	static public function &hookFilenameMap($file)
+	{
+		if (!isset(self::$filename_map[$file])) {
+			self::$filename_map[$file] = $file; 
+		}
+		return self::$filename_map[$file];
+	}
+	
+	
+	/**
+	 * Updates the filename map, causing all objects representing a file/directory to be updated
+	 * 
+	 * @access protected
+	 * 
+	 * @param  string $existing_filename  The existing filename
+	 * @param  string $new_filename       The new filename
+	 * @return void
+	 */
+	static public function updateFilenameMap($existing_filename, $new_filename)
+	{              
+		self::$filename_map[$new_filename]  =& self::$filename_map[$existing_filename];
+		self::$exception_map[$new_filename] =& self::$exception_map[$existing_filename];
+		
+		unset(self::$filename_map[$existing_filename]);
+		unset(self::$exception_map[$existing_filename]); 
+		
+		self::$filename_map[$new_filename] = $new_filename;
+	}
+	
+	
+	/**
+	 * Updates the filename map recursively, causing all objects representing a directory to be
+	 * updated. Also updated all files and directories in the specified directory to the new paths.
+	 * 
+	 * @access protected
+	 * 
+	 * @param  string $existing_dirname  The existing directory name
+	 * @param  string $new_dirname       The new dirname
+	 * @return void
+	 */
+	static public function updateFilenameMapForDirectory($existing_dirname, $new_dirname)
+	{              
+		// Handle the directory name
+		self::$filename_map[$new_dirname]  =& self::$filename_map[$existing_dirname];
+		self::$exception_map[$new_dirname] =& self::$exception_map[$existing_dirname];
+		
+		unset(self::$filename_map[$existing_dirname]);
+		unset(self::$exception_map[$existing_dirname]); 
+		
+		self::$filename_map[$new_dirname] = $new_dirname;
+		
+		// Handle all of the directories and files inside this directory
+		foreach (self::$filename_map as $filename => $ignore) {
+			if (preg_match('#^' . preg_quote($existing_dirname, '#') . '#', $filename)) {
+				$new_filename = preg_replace('#^' . preg_quote($existing_dirname, '#') . '#', $new_dirname, $filename);
+				
+				self::$filename_map[$new_filename]  =& self::$filename_map[$filename];
+				self::$exception_map[$new_filename] =& self::$exception_map[$filename];
+				
+				unset(self::$filename_map[$filename]);
+				unset(self::$exception_map[$filename]); 
+				
+				self::$filename_map[$new_filename] = $new_filename;
+					
+			} 		
+		}
+	}
+	
+	
+	/**
+	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
+	 * 
+	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
+	 * filesystem undo buffer which can return the filesystem to the state when startTransaction() was
+	 * called. If your PHP script dies in the middle of an operation this functionality will do nothing
+	 * for you and all operations will be retained, except for deletes which only occur once the
+	 * transaction is committed.
 	 * 
 	 * @return void
 	 */
@@ -45,6 +174,17 @@ class fFilesystem
 			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
 		}
 		self::$pending_operations = array();
+	}
+	
+	
+	/**
+	 * Indicates if a transaction is in progress
+	 * 
+	 * @return void
+	 */
+	static public function isTransactionInProgress()
+	{
+		return is_array(self::$pending_operations);
 	}
 	
 	
@@ -66,7 +206,7 @@ class fFilesystem
 	 */
 	static public function commitTransaction()
 	{
-		if (self::$pending_operations === NULL) {
+		if (!self::isTransactionInProgress()) {
 			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
 		}
 		self::performOperations(self::$pending_operations);
@@ -74,7 +214,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Returns a unique name for a file 
+	 * Returns a unique name for a file
 	 * 
 	 * @param  string $file           The filename to check
 	 * @param  string $new_extension  The new extension for the filename, do not include .
@@ -91,16 +231,19 @@ class fFilesystem
 			$info = self::getInfo($file);
 		}
 		
+		// If there is an extension, be sure to add . before it
+		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
+		
 		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', '.' . $info['extension'], $file); 	
+		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file); 	
 		
 		// Look for a unique name by adding _copy# to the end of the file
 		while (file_exists($file)) {
 			$info = self::getInfo($file);
-			if (preg_match('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', $file, $match)) {
-				$file = preg_replace('#_copy(\d+)\.' . preg_quote($info['extension']) . '$#', '_copy' . ($match[1]+1) . '.' . $info['extension'], $file);
+			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
+				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
 			} else {
-				$file = $info['dirname'] . $info['filename'] . '_copy1.' . $info['extension'];    
+				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;    
 			}    
 		}
 		
@@ -109,13 +252,13 @@ class fFilesystem
 	
 	
 	/**
-	 * Returns info about a file including dirname, basename, extension and filename 
+	 * Returns info about a path including dirname, basename, extension and filename 
 	 * 
 	 * @param  string $file_path   The file to rename
 	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
 	 * @return array  The file's dirname, basename, extension and filename
 	 */
-	static public function getInfo($file, $element=NULL) 
+	static public function getPathInfo($file, $element=NULL) 
 	{
 		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
 		if ($element !== NULL && !in_array($element, $valid_elements)) {
@@ -124,9 +267,9 @@ class fFilesystem
 		
 		$path_info = pathinfo($file);
 		if (!isset($path_info['filename'])) {
-			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension']) . '$#', '', $path_info['basename']);   
+			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);   
 		}
-		$path_info['dirname'] .= '/';
+		$path_info['dirname'] .= DIRECTORY_SEPARATOR;
 		
 		if ($element) {
 			return $path_info[$element];   

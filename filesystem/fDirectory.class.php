@@ -20,18 +20,18 @@
 class fDirectory
 {
 	/**
-	 * An exception to be thrown after a deletion has happened
-	 * 
-	 * @var object 
-	 */
-	protected $exception;
-	
-	/**
 	 * The full path to the directory
 	 * 
 	 * @var string 
 	 */
 	protected $directory;
+	
+	/**
+	 * An exception to be thrown after a deletion has happened
+	 * 
+	 * @var object 
+	 */
+	protected $exception;
 	
 	/**
 	 * The temporary directory to use for various tasks
@@ -49,14 +49,23 @@ class fDirectory
 	 */
 	public function __construct($directory)
 	{
+		if (empty($directory)) {
+			fCore::toss('fProgrammerException', 'No directory was specified');	
+		}
+		
 		if (!file_exists($directory)) {
-			fCore::toss('fEnvironmentException', 'The directory specified does not exist');   
+			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', does not exist');   
 		}
 		if (!is_dir($directory)) {
-			fCore::toss('fEnvironmentException', 'The path specified is not a directory');   
+			fCore::toss('fEnvironmentException', 'The path specified, ' . $directory . ', is not a directory');   
 		}
-		self::makeCanonical($directory);
-		$this->directory = $directory;
+		
+		$directory = self::makeCanonical(realpath($directory));
+		
+		$this->directory =& fFilesystem::hookFilenameMap($directory);
+		$this->exception =& fFilesystem::hookExceptionMap($directory);
+		
+		
 	}
 	
 	
@@ -87,6 +96,19 @@ class fDirectory
 	
 	
 	/**
+	 * Throws the directory exception if exists
+	 * 
+	 * @return void
+	 */
+	protected function tossIfException()
+	{
+		if ($this->exception) {
+			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+		}
+	}
+	
+	
+	/**
 	 * Gets the directory's current path
 	 * 
 	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
@@ -94,7 +116,8 @@ class fDirectory
 	 */
 	public function getPath($from_doc_root=FALSE)
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
+		
 		if ($from_doc_root) {
 			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);    
 		}
@@ -111,6 +134,8 @@ class fDirectory
 	 */
 	public function getDiskUsage($format=FALSE, $decimal_places=1)
 	{
+		$this->tossIfException();
+		
 		if (fCore::getOS() == 'linux/unix') {
 			$output = shell_exec('du -sb ' . escapeshellarg($this->directory));
 			list($size, $trash) = explode("\t", $output);    		
@@ -144,11 +169,14 @@ class fDirectory
 	/**
 	 * Check to see if the current directory is a temporary directory
 	 * 
+	 * @access protected
+	 * 
 	 * @return boolean  If the directory is a temp directory
 	 */
 	public function isTemp()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
+		
 		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);    
 	}
 	
@@ -160,7 +188,8 @@ class fDirectory
 	 */
 	public function isWritable()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
+		
 		return is_writable($this->directory);   
 	}
 	
@@ -168,10 +197,14 @@ class fDirectory
 	/**
 	 * Gets (and creates if necessary) a temp dir for the current directory
 	 * 
+	 * @access protected
+	 * 
 	 * @return fDirectory  The object representing the temp dir
 	 */
 	public function getTemp()
 	{
+		$this->tossIfException();
+		
 		if ($this->isTemp()) {
 			fCore::toss('fProgrammerException', 'The current directory is a temporary directory');   
 		}
@@ -192,7 +225,8 @@ class fDirectory
 	 */
 	public function getParent()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
+		
 		return new fDirectory(preg_replace('#[^/\\\\]+(/|\\\\)$#', '', $this->directory));    
 	}
 	
@@ -200,10 +234,16 @@ class fDirectory
 	/**
 	 * Will clean out a temp directory of all files/directories. Removes all files over 6 hours old.
 	 * 
+	 * This operation is not part of the filesystem transaction model and will be executed immediately.
+	 * 
+	 * @access protected
+	 * 
 	 * @return void
 	 */
 	public function clean() 
 	{
+		$this->tossIfException();
+		
 		if (!$this->isTemp()) {
 			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');   
 		}
@@ -231,37 +271,13 @@ class fDirectory
 	
 	
 	/**
-	 * Will delete a directory and all files and folders inside of it
-	 * 
-	 * @return void
-	 */
-	public function delete() 
-	{
-		$files = $this->scan();
-		
-		foreach ($files as $file) {
-			$file->delete();
-		}  
-		
-		rmdir($this->directory);  
-		$this->directory = NULL;
-		
-		try {
-			fCore::toss('fProgrammerException', 'The action requested can not be performed because the directory has been deleted');   
-		} catch (fPrintableException $e) {
-			$this->exception = $e;
-		}
-	}
-	
-	
-	/**
 	 * Performs a scandir on a directory, removing the . and .. folder references
 	 * 
 	 * @return array  The fFile and fDirectory objects for the files/folders in this directory
 	 */
 	public function scan()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
 		
 		$files = array_diff(scandir($this->directory), array('.', '..')); 
 		$objects = array();
@@ -283,19 +299,97 @@ class fDirectory
 	 * 
 	 * @return array  The fFile and fDirectory objects for the files/folders (listed recursively) in this directory
 	 */
-	public function recursiveScan()
+	public function scanRecursive()
 	{
+		$this->tossIfException();
+		
 		$files  = $this->scan();
 		$objects = $files;
 		
 		$total_files = sizeof($files);
 		for ($i=0; $i < $total_files; $i++) {
 			if ($files[$i] instanceof fDirectory) {
-				$objects = array_splice($objects, $i, 0, $files[$i]->recursiveScan());   
+				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());   
 			}
 		}  
 		
 		return $objects;
+	}
+	
+	
+	/**
+	 * Renames the current directory
+	 * 
+	 * This operation will NOT be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory (and all contained files/dirs) as existing with the old paths until that point.
+	 * 
+	 * @param  string $new_dirname  The new full path to the directory
+	 * @return void
+	 */
+	public function rename($new_dirname) 
+	{
+		$this->tossIfException();
+		
+		if (!$this->getParent()->isWritable()) {
+			fCore::toss('fProgrammerException', 'The directory, ' . $this->directory . ', can not be renamed because the directory containing it is not writable');	
+		}
+		
+		$info = fFilesystem::getPathInfo($new_dirname);
+		
+		if (!file_exists($info['dirname'])) {
+			fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', is inside of a directory that does not exist');
+		}
+		
+		// Make the dirname absolute
+		$new_dirname = fDirectory::makeCanonical(realpath($new_dirname));
+		
+		if (file_exists($new_dirname)) {
+			if (!is_writable($new_dirname)) {
+				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', already exists, but is not writable'); 		
+			}
+		} else {
+			$new_dir = new fDirectory($info['dirname']);
+			if (!$new_dir->isWritable()) {
+				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', is inside of a directory that is not writable');
+			} 
+		}
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			fFilesystem::rename($this, $new_dirname);	
+		}
+		
+		@rename($this->directory, $new_dirname);
+		
+		fFilesystem::updateFilenameMapForDirectory($this->directory, $new_dirname);
+	}
+	
+	
+	/**
+	 * Will delete a directory and all files and folders inside of it
+	 * 
+	 * This operation will not be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory and all contents as existing until that point.
+	 * 
+	 * @return void
+	 */
+	public function delete() 
+	{
+		$this->tossIfException();
+		
+		$files = $this->scan();
+		
+		foreach ($files as $file) {
+			$file->delete();
+		} 
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			return fFilesystem::delete($this);	
+		} 
+		
+		rmdir($this->directory);  
+		
+		$exception = new fProgrammerException('The action requested can not be performed because the directory has been deleted');
+		fFilesystem::updateExceptionMap($this->directory, $exception);
 	}    
 }  
 

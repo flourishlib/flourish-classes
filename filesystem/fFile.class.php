@@ -20,18 +20,18 @@
 class fFile
 {
 	/**
-	 * If an exception was caused while uploading the file or creating the object, this is it
-	 * 
-	 * @var object 
-	 */
-	protected $exception;
-	
-	/**
 	 * The full path to the file
 	 * 
 	 * @var string 
 	 */
 	protected $file;
+	
+	/**
+	 * An exception to be thrown if an action is performed on the file
+	 * 
+	 * @var Exception 
+	 */
+	protected $exception;
 	
 	
 	/**
@@ -43,21 +43,35 @@ class fFile
 	 */
 	public function __construct($file, Exception $exception=NULL)
 	{
-		if ($exception) {
+		if (empty($file)) {
+			// No file and no exception means we have nothing to work with
+			if (!$exception) {
+				fCore::toss('fProgrammerException', 'No filename was specified');	
+			}
+			
+			// If we don't have a file, but have an exception, there may have been an issue creating the file
 			$this->exception = $exception;
 			return;
-		}    
-		try {
-			if (!file_exists($file)) {
-				fCore::toss('fEnvironmentException', 'The file specified does not exist');   
-			}
-			if (!is_readable($file)) {
-				fCore::toss('fEnvironmentException', 'The file specified is not readable');   
-			}
-			$this->file = $file;
-		} catch (Exception $e) {
-			$this->exception = $e;   
 		}
+		
+		if (!file_exists($file)) {
+			throw new fEnvironmentException('The file specified does not exist');   
+		}
+		if (!is_readable($file)) {
+			throw new fEnvironmentException('The file specified is not readable');   
+		}
+		
+		// Store the file as an absolute path
+		$file = realpath($file);
+		
+		// Hook into the global file and exception maps
+		$this->file      =& fFilesystem::hookFilenameMap($file);   
+		$this->exception =& fFilesystem::hookExceptionMap($file);
+		
+		// If we have an exception for this file, save it to the global exception map
+		if ($exception) {
+			fFilesystem::updateExceptionMap($file, $exception);
+		}   
 	}
 	
 	
@@ -73,15 +87,29 @@ class fFile
 	
 	
 	/**
+	 * Throws the file exception if exists
+	 * 
+	 * @return void
+	 */
+	protected function tossIfException()
+	{
+		if ($this->exception) {
+			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+		}
+	}
+	
+	
+	/**
 	 * Gets the filename (i.e. does not include the directory)
 	 * 
 	 * @return string  The filename of the file
 	 */
 	public function getFilename()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
+		
 		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
-		return fFilesystem::getInfo($this->file, 'basename');    
+		return fFilesystem::getPathInfo($this->file, 'basename');    
 	}
 	
 	
@@ -92,8 +120,9 @@ class fFile
 	 */
 	public function getDirectory()
 	{
-		if ($this->exception) { throw $this->exception; }
-		return new fDirectory(fFilesystem::getInfo($this->file, 'dirname'));    
+		$this->tossIfException();
+		
+		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));    
 	}
 	
 	
@@ -105,7 +134,7 @@ class fFile
 	 */
 	public function getPath($from_doc_root=FALSE)
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
 		
 		if ($from_doc_root) {
 			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->file);    
@@ -123,6 +152,8 @@ class fFile
 	 */
 	public function getFilesize($format=FALSE, $decimal_places=1)
 	{
+		$this->tossIfException();
+		
 		// This technique can overcome signed integer limit
 		$size = sprintf("%u", filesize($this->file));    
 		
@@ -137,19 +168,20 @@ class fFile
 	/**
 	 * Moves the file to the temp directory if it is not there already
 	 * 
+	 * @access protected
+	 * 
 	 * @return void
 	 */
 	public function moveToTemp()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
 		
-		$file_info = fFilesystem::getInfo($this->file);
+		$file_info = fFilesystem::getPathInfo($this->file);
 		$directory = $this->getDirectory();
 		if (!$directory->isTemp()) {
 			$temp_dir = $directory->getTemp();
 			$new_file = $temp_dir->getPath() . $this->getFilename();
-			rename($this->file, $new_file);
-			$this->file = $new_file;
+			$this->rename($new_file);
 		}    
 	}
 	
@@ -157,30 +189,46 @@ class fFile
 	/**
 	 * Moves the file from the temp directory if it is not in the main directory already
 	 * 
+	 * @access protected
+	 * 
 	 * @return void
 	 */
 	public function moveFromTemp()
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
 		
 		$directory = $this->getDirectory();
 		if ($directory->isTemp()) {
 			$new_file = $directory->getParent() . $this->getFilename();
-			rename($this->file, $new_file);
-			$this->file = $new_file;
+			$this->rename($new_file);
 		}    
+	}
+	
+
+	/**
+	 * Check to see if the current file is writable
+	 * 
+	 * @return boolean  If the file is writable
+	 */
+	public function isWritable()
+	{
+		$this->tossIfException();
+		
+		return is_writable($this->file);   
 	}
 	
 	
 	/**
 	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name. Will also put the file into the temp dir if it is currently in a temp dir.
 	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * 
 	 * @param  string|fDirectory $new_directory  The directory to duplicate the file into
 	 * @return fFile  The new fFile object
 	 */
 	public function duplicate($new_directory)
 	{
-		if ($this->exception) { throw $this->exception; }
+		$this->tossIfException();
 		
 		if (!is_object($new_directory)) {
 			$new_directory = fDirectory($new_directory);
@@ -195,74 +243,129 @@ class fFile
 		}       
 		
 		@copy($this->getPath(), $new_directory->getPath() . $this->getFilename());
-		return new fFile($new_directory->getPath() . $this->getFilename());
-	}
-	
-	
-	/**
-	 * Check to see if the current file is writable
-	 * 
-	 * @return boolean  If the file is writable
-	 */
-	public function isWritable()
-	{
-		if ($this->exception) { throw $this->exception; }
-		return is_writable($this->file);   
-	}
-	
-	
-	/**
-	 * Deletes the current file
-	 * 
-	 * @return void
-	 */
-	public function delete() 
-	{
-		if ($this->exception) { throw $this->exception; }
+		$file = new fFile($new_directory->getPath() . $this->getFilename());
 		
-		$dir = $this->getDirectory();
-		
-		if (!$dir->isWritable()) {
-			fCore::toss('fProgrammerException', 'The file can not be deleted because the directory containing it is not writable');
-		} 
-		
-		@unlink($this->file);
-		$this->file = NULL;
-		
-		try {
-			fCore::toss('fProgrammerException', 'The action requested can not be performed because the file has been deleted');   
-		} catch (fPrintableException $e) {
-			$this->exception = $e;
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			fFilesystem::copy($file);	
 		}
-	}
-	
-	
-	/**
-	 * Writes the provided data to the file
-	 * 
-	 * @param  mixed $data  The data to write to the file
-	 * @return void
-	 */
-	public function write($data) 
-	{
-		if (!$this->isWritable()) {
-			fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
-		} 
 		
-		file_put_contents($this->file, $data);
+		return $file;
 	}
 	
 	
 	/**
-	 * Reads the data from the file
+	 * Reads the data from the file. Reads all file data into memory, use with caution on large files!
+	 * 
+	 * This operation will read the data that has been written during the current transaction if one is in progress.
 	 * 
 	 * @param  mixed $data  The data to write to the file
 	 * @return string  The contents of the file
 	 */
 	public function read() 
 	{
+		$this->tossIfException();
+		
 		return file_get_contents($this->file);
-	}         
+	} 
+	
+	
+	/**
+	 * Writes the provided data to the file. Requires all previous data to be stored in memory if inside a transaction, use with caution on large files!
+	 * 
+	 * If a filesystem transaction is in progress and is rolled back, the previous data will be restored.
+	 * 
+	 * @param  mixed $data  The data to write to the file
+	 * @return void
+	 */
+	public function write($data) 
+	{
+		$this->tossIfException();
+		
+		if (!$this->isWritable()) {
+			fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
+		} 
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			fFilesystem::write($this);	
+		}
+		
+		file_put_contents($this->file, $data);
+	}
+	
+	
+	/**
+	 * Renames the current file
+	 * 
+	 * This operation will be reverted if a filesystem transaction is in progress and is later rolled back.
+	 * 
+	 * @param  string $new_filename  The new full path to the file
+	 * @return void
+	 */
+	public function rename($new_filename) 
+	{
+		$this->tossIfException();
+		
+		if (!$this->getDirectory()->isWritable()) {
+			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be renamed because the directory containing it is not writable');	
+		}
+		
+		$info    = fFilesystem::getPathInfo($new_filename);
+		
+		if (!file_exists($info['dirname'])) {
+			fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', is inside of a directory that does not exist');
+		}
+		
+		// Make the filename absolute
+		$new_filename = fDirectory::makeCanonical(realpath($info['dirname'])) . $info['basename'];
+		
+		if (file_exists($new_filename)) {
+			if (!is_writable($new_filename)) {
+				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', already exists, but is not writable'); 		
+			}
+		} else {
+			$new_dir = new fDirectory($info['dirname']);
+			if (!$new_dir->isWritable()) {
+				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', is inside of a directory that is not writable');
+			} 
+		}
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			fFilesystem::rename($this, $new_filename);	
+		}
+		
+		@rename($this->file, $new_filename);
+		fFilesystem::updateFilenameMap($this->file, $new_filename);
+	}
+	
+	
+	/**
+	 * Deletes the current file
+	 * 
+	 * This operation will NOT be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this file as existing until that point.
+	 * 
+	 * @return void
+	 */
+	public function delete() 
+	{
+		$this->tossIfException();
+		
+		if (!$this->getDirectory()->isWritable()) {
+			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be deleted because the directory containing it is not writable');
+		} 
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			return fFilesystem::delete($this);	
+		}
+		
+		@unlink($this->file);
+		
+		$exception = new fProgrammerException('The action requested can not be performed because the file has been deleted');
+		fFilesystem::updateExceptionMap($this->file, $exception);
+	}      
 }  
 
 
