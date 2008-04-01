@@ -312,7 +312,7 @@ class fRecordSet implements Iterator
 	 * @param  string $direction    Either 'asc' or 'desc'
 	 * @return void
 	 */
-	public function sort($method_name, $direction)
+	protected function sort($method_name, $direction)
 	{
 		if (!in_array($direction, array('asc', 'desc'))) {
 			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
@@ -485,6 +485,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Rewinds the set to the first record (used for iteration)
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function rewind()
@@ -495,6 +497,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Returns the current record in the set (used for iteration)
+	 * 
+	 * @internal
 	 * 
 	 * @return object  The current record
 	 */
@@ -526,6 +530,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the primary key for the current record (used for iteration)
 	 * 
+	 * @internal
+	 * 
 	 * @return mixed  The primay key of the current record
 	 */
 	public function key()
@@ -537,6 +543,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Moves to the next record in the set (used for iteration)
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function next()
@@ -547,6 +555,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Returns if the set has any records left (used for iteration)
+	 * 
+	 * @internal
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */

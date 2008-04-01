@@ -1,12 +1,15 @@
 <?php
 /**
- * Takes a subset of SQL from MySQL, PostgreSQL, SQLite and MSSQL and translates into the various dialects allowing for cross-database code
+ * Takes a subset of SQL from MySQL, PostgreSQL, SQLite and MSSQL and translates into the
+ * various dialects allowing for cross-database code.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @link  http://flourishlib.com/fSQLTranslation
+ * 
+ * @internal
  * 
  * @uses  fCore
  * @uses  fProgrammerException
@@ -51,6 +54,8 @@ class fSQLTranslation
 	/**
 	 * Sets up the class and creates functions for sqlite databases
 	 * 
+	 * @internal
+	 * 
 	 * @param  mixed  $connection  The connection resource or PDO object
 	 * @param  string $type        The type of the database ('mssql', 'mysql', 'postgresql', or 'sqlite')
 	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', or 'pdo')
@@ -83,6 +88,8 @@ class fSQLTranslation
 	/**
 	 * Enabled debugging
 	 * 
+	 * @internal
+	 * 
 	 * @param  boolean $enable  If debugging should be enabled
 	 * @return void
 	 */
@@ -94,6 +101,8 @@ class fSQLTranslation
 	
 	/**
 	 * Translates SimpleSQL into the dialect for the current Database
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
@@ -250,26 +259,26 @@ class fSQLTranslation
 		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
-		 	$clauses = fSQLParsing::parseSelectSQL($match[1]);
-		 	
-		 	if ($clauses['ORDER BY'] == NULL) {
-		 	 	$clauses['ORDER BY'] = '1 ASC';	
+			$clauses = fSQLParsing::parseSelectSQL($match[1]);
+			
+			if ($clauses['ORDER BY'] == NULL) {
+				$clauses['ORDER BY'] = '1 ASC';	
 			}
 			
 			$replacement = '';
 			foreach ($clauses as $key => $value) {
-			 	if (empty($value)) {
-			 		continue;
+				if (empty($value)) {
+					continue;
 				}	
 				
 				if ($key == 'SELECT') {
-				 	$replacement .= 'SELECT ' . $value . ', ROW_NUMBER() OVER (';
-				 	$replacement .= 'ORDER BY ' . $clauses['ORDER BY'];
-				 	$replacement .= ') AS __flourish_limit_offset_row_num ';	
+					$replacement .= 'SELECT ' . $value . ', ROW_NUMBER() OVER (';
+					$replacement .= 'ORDER BY ' . $clauses['ORDER BY'];
+					$replacement .= ') AS __flourish_limit_offset_row_num ';	
 				} elseif ($key == 'LIMIT' || $key == 'ORDER BY') {
 					// Skip this clause
 				} else {
-				 	$replacement .= $key . ' ' . $value . ' ';	
+					$replacement .= $key . ' ' . $value . ' ';	
 				}
 			}
 			
@@ -644,6 +653,8 @@ class fSQLTranslation
 	/**
 	 * Callback for custom SQLite function; calculates the cotangent of a number
 	 * 
+	 * @internal
+	 * 
 	 * @param  numeric $x   The number to calculate the cotangent of
 	 * @return numeric  The contangent of $x
 	 */
@@ -655,6 +666,8 @@ class fSQLTranslation
 	
 	/**
 	 * Callback for custom SQLite function; calculates the log to a specific base of a number
+	 * 
+	 * @internal
 	 * 
 	 * @param  integer $base   The base for the log calculation
 	 * @param  numeric $num    The number to calculate the logarithm of
@@ -668,6 +681,8 @@ class fSQLTranslation
 	
 	/**
 	 * Callback for custom SQLite function; changes the sign of a number
+	 * 
+	 * @internal
 	 * 
 	 * @param  numeric $x   The number to change the sign of
 	 * @return numeric  $x with a changed sign

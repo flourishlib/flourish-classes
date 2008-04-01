@@ -64,6 +64,8 @@ class fORMSchema
 	/**
 	 * Returns information about the specified route
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are searching under
 	 * @param  string $route          The route to get info about
@@ -72,7 +74,7 @@ class fORMSchema
 	static public function getRoute($table, $related_table, $route)
 	{
 		if ($route === NULL) {
-		 	$route = self::getOnlyRouteName($table, $related_table);	
+			$route = self::getOnlyRouteName($table, $related_table);	
 		}
 		
 		$routes = self::getRoutes($table, $related_table);
@@ -88,6 +90,8 @@ class fORMSchema
 	/**
 	 * Returns an array of all routes from a table to one of its related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @return void
@@ -99,9 +103,9 @@ class fORMSchema
 		$routes = array();
 		
 		foreach ($relationship_types as $type => $relationships) {
-		 	foreach ($relationships as $relationship) {
-		 		if ($relationship['related_table'] == $related_table) {
-		 			if ($type == 'many-to-many') {
+			foreach ($relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table) {
+					if ($type == 'many-to-many') {
 						$routes[$relationship['join_table']] = $relationship;		
 					} elseif ($type == 'one-to-many') {
 						$routes[$relationship['related_column']] = $relationship;		
@@ -119,6 +123,8 @@ class fORMSchema
 	/**
 	 * Returns the name of the only route from the specified table to one of its related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @param  string $route          The route that was preselected, will be verified if present
@@ -129,7 +135,7 @@ class fORMSchema
 		$routes = self::getRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-		 	return $route;	
+			return $route;	
 		}
 		
 		$keys = array_keys($routes);
@@ -147,6 +153,8 @@ class fORMSchema
 	
 	/**
 	 * Returns information about the specified to-many route
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are searching under
@@ -170,6 +178,8 @@ class fORMSchema
 	/**
 	 * Returns an array of all routes from a table to one of its one-to-many or many-to-many related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @return void
@@ -183,9 +193,9 @@ class fORMSchema
 		$routes = array();
 		
 		foreach ($relationship_types as $type => $relationships) {
-		 	foreach ($relationships as $relationship) {
-		 		if ($relationship['related_table'] == $related_table) {
-		 			if ($type == 'many-to-many') {
+			foreach ($relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table) {
+					if ($type == 'many-to-many') {
 						$routes[$relationship['join_table']] = $relationship;		
 					} else {
 						$routes[$relationship['related_column']] = $relationship;		
@@ -201,6 +211,8 @@ class fORMSchema
 	/**
 	 * Returns the name of the only to-many route from the specified table to one of its related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @param  string $route          The route that was preselected, will be verified if present
@@ -211,7 +223,7 @@ class fORMSchema
 		$routes = self::getToManyRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-		 	return $route;	
+			return $route;	
 		}
 		
 		$keys = array_keys($routes);
@@ -229,6 +241,8 @@ class fORMSchema
 	
 	/**
 	 * Returns information about the specified to-one route
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are searching under
@@ -252,6 +266,8 @@ class fORMSchema
 	/**
 	 * Returns an array of all routes from a table to one of its one-to-one or many-to-one related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @return void
@@ -265,9 +281,9 @@ class fORMSchema
 		$routes = array();
 		
 		foreach ($relationship_types as $type => $relationships) {
-		 	foreach ($relationships as $relationship) {
-		 		if ($relationship['related_table'] == $related_table) {
-		 			$routes[$relationship['column']] = $relationship;		
+			foreach ($relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table) {
+					$routes[$relationship['column']] = $relationship;		
 				}
 			}	
 		}
@@ -279,6 +295,8 @@ class fORMSchema
 	/**
 	 * Returns the name of the only to-one route from the specified table to one of its related tables
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @param  string $route          The route that was preselected, will be verified if present
@@ -289,7 +307,7 @@ class fORMSchema
 		$routes = self::getToOneRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-		 	return $route;	
+			return $route;	
 		}
 		
 		$keys = array_keys($routes);
@@ -314,9 +332,9 @@ class fORMSchema
 	static public function enableSmartCaching($cache_file)
 	{
 		if (!self::getInstance() instanceof fSchema) {
-            fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');        
-        }
-        self::getInstance()->setCacheFile($cache_file);
+			fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');        
+		}
+		self::getInstance()->setCacheFile($cache_file);
 		fCore::addTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo')); 
 	}
 }

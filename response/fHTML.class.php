@@ -196,6 +196,8 @@ class fHTML
 	/**
 	 * Converts alphabetical entities to their numeric counterparts 
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $content   The content to convert
 	 * @return string  The converted content
 	 */
@@ -293,6 +295,8 @@ class fHTML
 	
 	/**
 	 * Converts accented characters to their non-accented counterparts 
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $content   The content to convert
 	 * @return string  The converted content

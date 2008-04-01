@@ -85,6 +85,8 @@ class fORM
 	/**
 	 * Checks to see if an object has been saved to the identity map
 	 * 
+	 * @internal
+	 * 
 	 * @param  mixed  $class             The name of the class, or an instance of it
 	 * @param  array  $primary_key_data  The primary key(s) for the instance
 	 * @return mixed  Will return FALSE if no match, or the instance of the object if a match occurs
@@ -105,6 +107,8 @@ class fORM
 	
 	/**
 	 * Saves an object to the identity map
+	 * 
+	 * @internal
 	 * 
 	 * @param  mixed  $object            An instance of an fActiveRecord class
 	 * @param  array  $primary_key_data  The primary key(s) for the instance
@@ -153,6 +157,8 @@ class fORM
 	/**
 	 * Returns the record name for a class. The default record name is a humanize-d version of the class name.
 	 * 
+	 * @internal
+	 * 
 	 * @param  mixed $class   The class/class name to get the record name of
 	 * @return string  The record name for the class specified
 	 */
@@ -188,6 +194,8 @@ class fORM
 
 	/**
 	 * Returns the column name. The default column name is a humanize-d version of the column.
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table   The table the column is located in
 	 * @param  string $column  The database column
@@ -253,6 +261,8 @@ class fORM
 	/**
 	 * Sets a flag indicating features have been set for a class
 	 *
+	 * @internal
+	 * 
 	 * @param  mixed $class    The class/class name the features have been set for
 	 * @return void 
 	 */
@@ -265,6 +275,8 @@ class fORM
 	/**
 	 * Checks for the feature set flag on the specified class
 	 *
+	 * @internal
+	 * 
 	 * @param  mixed $class    The class/class name to check
 	 * @return void 
 	 */

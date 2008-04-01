@@ -68,6 +68,8 @@ class fORMDatabase
 	/**
 	 * Prepares a value for a DB call based on database schema
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table                The table to store the value
 	 * @param  string $column               The column to store the value in
 	 * @param  mixed  $value                The value to prepare
@@ -119,6 +121,8 @@ class fORMDatabase
 	/**
 	 * Prepares a value for a DB call based on variable type
 	 * 
+	 * @internal
+	 * 
 	 * @param  mixed  $value                The value to prepare
 	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
 	 * @return string  The SQL-ready representation of the value
@@ -155,6 +159,8 @@ class fORMDatabase
 	/**
 	 * Prepends the table_name. to the values of the array
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table  The table to prepend
 	 * @param  array  $array  The array to modify
 	 * @return array  The modified array
@@ -176,6 +182,8 @@ class fORMDatabase
 	/**
 	 * Prepends the table_name. to the keys of the array
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table  The table to prepend
 	 * @param  array  $array  The array to modify
 	 * @return array  The modified array
@@ -196,6 +204,8 @@ class fORMDatabase
 	
 	/**
 	 * Finds all of the table names in the sql and creates a from clause
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table  The main table to be queried
 	 * @param  string $sql    The SQL to insert the from clause into
@@ -219,9 +229,9 @@ class fORMDatabase
 		// If we are not passing in existing joins, start with the specified table
 		if ($joins == array()) {
 			$joins[] = array(
-			    'join_type'   => 'none',
-			    'table_name'  => $table,
-			    'table_alias' => $table_alias
+				'join_type'   => 'none',
+				'table_name'  => $table,
+				'table_alias' => $table_alias
 			);
 		}
 		
@@ -287,6 +297,8 @@ class fORMDatabase
 	/**
 	 * Adds a join to an existing array of joins
 	 * 
+	 * @internal
+	 * 
 	 * @param  array  $joins           The existing joins
 	 * @param  string $route           The route to the related table
 	 * @param  array  $relationship    The relationship info for the route specified
@@ -298,18 +310,18 @@ class fORMDatabase
 		$related_table = $relationship['related_table'];
 		
 		if (isset($joins[$table . '_' . $related_table . '[' . $route . ']'])) {
-		 	return $joins;	
+			return $joins;	
 		}
 		
 		$table_alias = self::findTableAlias($join['table_name'], $joins);
 		
 		if (!$table_alias) {
-		 	fCore::toss('fProgrammerException', 'The table, ' . $table . ', has not been joined to yet, so it can not be joined from');	
+			fCore::toss('fProgrammerException', 'The table, ' . $table . ', has not been joined to yet, so it can not be joined from');	
 		}
 		
 		$aliases = array();
 		foreach ($joins as $join) {
-		 	$aliases[] = $join['table_alias'];	
+			$aliases[] = $join['table_alias'];	
 		}
 		
 		self::createJoin($table, $table_alias, $related_table, $route, $joins, $aliases);
@@ -320,6 +332,8 @@ class fORMDatabase
 	
 	/**
 	 * Creates join information for the table shortcut provided
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table           The primary table
 	 * @param  string $table_alias     The primary table alias
@@ -393,6 +407,8 @@ class fORMDatabase
 	/**
 	 * Creates a FROM clause from a join array
 	 * 
+	 * @internal
+	 * 
 	 * @param  array $joins   The joins to create the FROM clause out of
 	 * @return string  The from clause (does not include the word 'FROM')
 	 */
@@ -401,18 +417,18 @@ class fORMDatabase
 		$sql = '';
 		
 		foreach ($joins as $join) {
-		 	// Here we handle the first table in a join
-		 	if ($join['join_type'] == 'none') {
-		 		$sql .= $join['table_name'];
-		 		if ($join['table_alias'] != $join['table_name']) {
-		 		 	$sql .= ' AS ' . $join['table_alias'];	
+			// Here we handle the first table in a join
+			if ($join['join_type'] == 'none') {
+				$sql .= $join['table_name'];
+				if ($join['table_alias'] != $join['table_name']) {
+					$sql .= ' AS ' . $join['table_alias'];	
 				}
 			
 			// Here we handle all other joins
 			} else {
 				$sql .= ' ' . strtoupper($join['join_type']) . ' ' . $join['table_name'];
 				if ($join['table_alias'] != $join['table_name']) {
-		 		 	$sql .= ' AS ' . $join['table_alias'];	
+					$sql .= ' AS ' . $join['table_alias'];	
 				}
 				if (isset($join['on_clause_type'])) {
 					if ($join['on_clause_type'] == 'simple_equation') {
@@ -432,6 +448,8 @@ class fORMDatabase
 	/**
 	 * Finds the first table alias for the table specified in the list of joins provided
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table   The table to find the alias for
 	 * @param  array  $joins   The joins to look through
 	 * @return string  The alias to use for the table
@@ -439,8 +457,8 @@ class fORMDatabase
 	static public function findTableAlias($table, $joins)
 	{
 		foreach ($joins as $join) {
-		 	if ($join['table_name'] == $table) {
-		 		return $join['table_alias'];
+			if ($join['table_name'] == $table) {
+				return $join['table_alias'];
 			}	
 		}
 		return NULL;
@@ -450,6 +468,8 @@ class fORMDatabase
 	/**
 	 * Creates a new table alias
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table          The table to create an alias for
 	 * @param  array  &$used_aliases  The aliases that have been used
 	 * @return string  The alias to use for the table
@@ -457,8 +477,8 @@ class fORMDatabase
 	static private function createNewAlias($table, &$used_aliases)
 	{
 		if (!in_array($table, $used_aliases)) {
-		 	$used_aliases[] = $table;
-		 	return $table;	
+			$used_aliases[] = $table;
+			return $table;	
 		}
 		$i = 1;
 		while(in_array($table . $i, $used_aliases)) {
@@ -471,6 +491,8 @@ class fORMDatabase
 	
 	/**
 	 * Creates a where clause from an array of conditions
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
 	 * @param  array  $conditions  The array of conditions  (see {@link fSequence::create()} for format)
@@ -570,6 +592,8 @@ class fORMDatabase
 	/**
 	 * Creates an order by clause from an array of columns/expressions and directions
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
 	 * @param  array  $order_bys  The array of order bys to use (see {@link fSequence::create()} for format)
 	 * @return string  The SQL ORDER BY clause
@@ -604,6 +628,8 @@ class fORMDatabase
 	/**
 	 * Creates a where clause condition for primary keys of the table specified
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $table         The table to build the where clause condition for
 	 * @param  string $table_alias   The alias for the table
 	 * @param  mixed  $primary_keys  The primary key or keys to use in building the condition
@@ -620,24 +646,24 @@ class fORMDatabase
 			
 			// If the multi-field primary key is just a single primary key we'll convert it so we don't need lots of conditional code to generate SQL
 			if (!isset($primary_keys[0])) {
-			 	$primary_keys = array($primary_keys);	
+				$primary_keys = array($primary_keys);	
 			}
 			
 			$sql .= '((';
 			$first = TRUE;
 			foreach ($primary_keys as $primary_key) {
-			 	if (!$first) {
-			 	 	$sql .= ') OR (';	
+				if (!$first) {
+					$sql .= ') OR (';	
 				}
 				for ($i=0; $i < sizeof($primary_key_fields); $i++) {
-			 	 	$field = $primary_key_fields[$i];
-			 	 	if ($i) {
-			 	 		$sql .= ' AND ';
+					$field = $primary_key_fields[$i];
+					if ($i) {
+						$sql .= ' AND ';
 					} 
-			 	 	$sql .= $table_alias . '.' . $field;
-			 	 	$sql .= fORMDatabase::prepareBySchema($table, $field, $primary_key[$field], '=');
+					$sql .= $table_alias . '.' . $field;
+					$sql .= fORMDatabase::prepareBySchema($table, $field, $primary_key[$field], '=');
 				}
-			 	$first = FALSE;
+				$first = FALSE;
 			}
 			$sql .= '))';
 		
@@ -647,17 +673,17 @@ class fORMDatabase
 			
 			// If we don't have an array of primary keys, just return a regular equation comparison
 			if (!is_array($primary_keys)) {
-			 	return $table_alias . '.' . $primary_key_field . fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_keys, '=');	
+				return $table_alias . '.' . $primary_key_field . fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_keys, '=');	
 			}
 			
 			$sql .= $table_alias . '.' . $primary_key_field . ' IN (';
 			$first = TRUE;
 			foreach ($primary_keys as $primary_key) {
-			 	if (!$first) {
-			 	 	$sql .= ', ';	
+				if (!$first) {
+					$sql .= ', ';	
 				}
-			 	$sql .= fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_key);
-			 	$first = FALSE;
+				$sql .= fORMDatabase::prepareBySchema($table, $primary_key_field, $primary_key);
+				$first = FALSE;
 			}
 			$sql .= ')';	
 		}
@@ -668,6 +694,8 @@ class fORMDatabase
 	
 	/**
 	 * Takes an array of rows containing primary keys for a table. If there is only a single primary key, condense the array of rows into single-dimensional array
+	 * 
+	 * @internal
 	 * 
 	 * @param  array $rows   The rows of primary keys
 	 * @return array  A possibly condensed array of primary keys

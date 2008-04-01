@@ -77,6 +77,8 @@ class fResult implements Iterator
 	/**
 	 * Sets the PHP extension the query occured through
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
 	 * @return fResult
 	 */
@@ -93,6 +95,8 @@ class fResult implements Iterator
 	/**
 	 * Sets the sql used in the query
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $sql  The sql used in the query
 	 * @return void
 	 */
@@ -104,6 +108,8 @@ class fResult implements Iterator
 	
 	/**
 	 * Sets the sql from before translation
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $untranslated_sql  The sql from before translation
 	 * @return void
@@ -117,6 +123,8 @@ class fResult implements Iterator
 	/**
 	 * Sets the result from the query
 	 * 
+	 * @internal
+	 * 
 	 * @param  mixed $result  The result from the query
 	 * @return void
 	 */
@@ -128,6 +136,8 @@ class fResult implements Iterator
 	
 	/**
 	 * Sets the number of rows returned
+	 * 
+	 * @internal
 	 * 
 	 * @param  integer $returned_rows  The number of rows returned
 	 * @return void
@@ -144,6 +154,8 @@ class fResult implements Iterator
 	/**
 	 * Sets the number of affected rows
 	 * 
+	 * @internal
+	 * 
 	 * @param  integer $affected_rows  The number of affected rows
 	 * @return void
 	 */
@@ -155,6 +167,8 @@ class fResult implements Iterator
 	
 	/**
 	 * Sets the auto incremented value
+	 * 
+	 * @internal
 	 * 
 	 * @param  integer $auto_incremented_value  The auto incremented value
 	 * @return void
@@ -413,6 +427,8 @@ class fResult implements Iterator
 	/**
 	 * Rewinds the query (required by iterator interface)
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function rewind()
@@ -427,6 +443,7 @@ class fResult implements Iterator
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
 	 * @throws  fNoResultsException
+	 * @internal
 	 * 
 	 * @return array  The current Row
 	 */
@@ -441,6 +458,8 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row number (required by iterator interface)
 	 * 
+	 * @internal
+	 * 
 	 * @return integer  The current row number
 	 */
 	public function key()
@@ -451,6 +470,8 @@ class fResult implements Iterator
 	
 	/**
 	 * Rewinds the next row in the result (required by iterator interface)
+	 * 
+	 * @internal
 	 * 
 	 * @return array|null  The next row or null
 	 */
@@ -470,6 +491,8 @@ class fResult implements Iterator
 	
 	/**
 	 * Returns if the query has any rows left (required by iterator interface)
+	 * 
+	 * @internal
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */

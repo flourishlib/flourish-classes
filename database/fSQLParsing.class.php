@@ -8,6 +8,8 @@
  * 
  * @link  http://flourishlib.com/fSQLParsing
  * 
+ * @internal
+ * 
  * @uses  fCore
  * @uses  fProgrammerException
  * 
@@ -37,6 +39,8 @@ class fSQLParsing
 	 *  - 'HAVING'
 	 *  - 'ORDER BY'
 	 *  - 'LIMIT'
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $sql   The sql to parse
 	 * @return array  The various clauses of the SELECT statement (see method descript for details)
@@ -109,6 +113,8 @@ class fSQLParsing
 	 *     'on_clause'        => (string) {only present when the on_clause_type is 'complex_expression', this will be the literal ON clause}
 	 * );
 	 * </pre>
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $clause    The sql clause to parse
 	 * @param  fISchema $schema  An instance of a class implementing the fISchema interface, used to find join tables for proper join naming
@@ -238,6 +244,8 @@ class fSQLParsing
 	/**
 	 * Checks to see if the second table is a join table for the first table
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $first_table   This table will be used as a basis to see if the second table is a join table
 	 * @param  string $second_table  This table will be checked against the first table to see if it is a join table
 	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
@@ -263,6 +271,8 @@ class fSQLParsing
 	
 	/**
 	 * Changes the route name if the route is for a one-to-many relationship
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $route         The current route name we have determined
 	 * @param  string $first_table   This table will be checked for one-to-many relationships
@@ -291,6 +301,8 @@ class fSQLParsing
 	/**
 	 * Creates a unique join table for the prefix specified
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $prefix   The join name prefix to use
 	 * @param  array $joins     The current joins
 	 * @return string   A unique join name for the prefix specified
@@ -307,6 +319,8 @@ class fSQLParsing
 		
 	/**
 	 * Takes the FROM clause from parseSelectSQL() and returns all of the tables and each one's alias
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $clause   The sql clause to parse
 	 * @return array  The tables in the from clause, with the table alias being the key and value being the name

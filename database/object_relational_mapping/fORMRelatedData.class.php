@@ -69,6 +69,8 @@ class fORMRelatedData
 	/**
 	 * Gets the ordering to use when returning {@link fSequence fSequences} of related objects
 	 *
+	 * @internal
+	 * 
 	 * @param  mixed  $table          The database table (or {@link fActiveRecord} class) this ordering rule applies to
 	 * @param  string $related_table  The related table the ordering rules apply to
 	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
@@ -90,6 +92,8 @@ class fORMRelatedData
 	
 	/**
 	 * Builds the object for the related class specified
+	 * 
+	 * @internal
 	 * 
 	 * @param  mixed  $table           The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  $values          The values existing in the {@link fActiveRecord} class
@@ -113,6 +117,8 @@ class fORMRelatedData
 	
 	/**
 	 * Builds a sequence of related records along a one-to-many or many-to-many relationship
+	 * 
+	 * @internal
 	 * 
 	 * @param  mixed  $table              The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$values            The values for the {@link fActiveRecord} class
@@ -145,7 +151,7 @@ class fORMRelatedData
 		
 		// Cache the results for subsequent calls
 		if (!isset($related_records[$related_table])) {
-		 	$related_records[$related_table] = array();	
+			$related_records[$related_table] = array();	
 		}
 		$related_records[$related_table][$route] = $sequence;
 		
@@ -155,6 +161,8 @@ class fORMRelatedData
 	
 	/**
 	 * Creates associations for many-to-many relationships
+	 * 
+	 * @internal
 	 * 
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
@@ -172,6 +180,8 @@ class fORMRelatedData
 	
 	/**
 	 * Sets the related records for many-to-many relationships
+	 * 
+	 * @internal
 	 * 
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class

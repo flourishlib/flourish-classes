@@ -71,6 +71,7 @@ class fORMValidation
 	 * Validates values for an fActiveRecord object
 	 *
 	 * @throws  fValidationException
+	 * @internal
 	 * 
 	 * @param  string $table        The table to validate against
 	 * @param  array  &$values      The values to validate
@@ -290,7 +291,7 @@ class fORMValidation
 	 * @param  array  &$old_values   The old values for the record
 	 * @return void
 	 */
-	static public function checkPrimaryKeys($table, &$values, &$old_values)
+	static private function checkPrimaryKeys($table, &$values, &$old_values)
 	{
 		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
 		
@@ -341,7 +342,7 @@ class fORMValidation
 	 * @param  array  &$values       An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @return void
 	 */
-	static public function checkAgainstSchema($table, $column, &$values)
+	static private function checkAgainstSchema($table, $column, &$values)
 	{
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
@@ -492,7 +493,7 @@ class fORMValidation
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return void
 	 */
-	static public function checkConditionalRule($table, &$record_values, $main_column, $conditional_values, $conditional_columns)
+	static private function checkConditionalRule($table, &$record_values, $main_column, $conditional_values, $conditional_columns)
 	{
 		if (!empty($conditional_values))  {
 			settype($conditional_values, 'array');
@@ -527,7 +528,7 @@ class fORMValidation
 	 * @param  array  $columns         The columns to check
 	 * @return void
 	 */
-	static public function checkOneOrMoreRule($table, &$record_values, $columns)
+	static private function checkOneOrMoreRule($table, &$record_values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -561,7 +562,7 @@ class fORMValidation
 	 * @param  array  $columns         The columns to check
 	 * @return void
 	 */
-	static public function checkOnlyOneRule($table, &$record_values, $columns)
+	static private function checkOnlyOneRule($table, &$record_values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -593,7 +594,7 @@ class fORMValidation
 	 * @param  string $plural_related_column  The plural name of the related column
 	 * @return void
 	 */
-	static public function checkManyToManyRule(&$values, $plural_related_column)
+	static private function checkManyToManyRule(&$values, $plural_related_column)
 	{
 		if (!isset($values[$plural_related_column]) || empty($values[$plural_related_column])) {
 			fCore::toss('fValidationException', fInflection::humanize($plural_related_column) . ': Please select at least one');	
@@ -612,7 +613,7 @@ class fORMValidation
 	 * @param  string $format_type  The type of formatting the column should have
 	 * @return void
 	 */
-	static public function checkFormattingRule($table, &$values, $column, $format_type)
+	static private function checkFormattingRule($table, &$values, $column, $format_type)
 	{
 		if ($values[$column] === NULL) {
 			return;

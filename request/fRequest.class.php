@@ -171,6 +171,8 @@ class fRequest
 	/**
 	 * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $prefix   The prefix to filter by
 	 * @param  mixed  $key      If the field is an array, get the value corresponding to this key
 	 * @return void
@@ -212,6 +214,8 @@ class fRequest
 	
 	/**
 	 * Returns $_REQUEST and $_FILES to the state they were at before filter() was called
+	 * 
+	 * @internal
 	 * 
 	 * @return void
 	 */

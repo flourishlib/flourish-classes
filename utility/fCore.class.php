@@ -267,6 +267,8 @@ class fCore
 	/**
 	 * Handles an error
 	 * 
+	 * @internal
+	 * 
 	 * @param  integer $error_number   The error type
 	 * @param  string  $error_string   The message for the error
 	 * @param  string  $error_file     The file the error occured in
@@ -345,6 +347,8 @@ class fCore
 	
 	/**
 	 * Handles an uncaught exception
+	 * 
+	 * @internal
 	 * 
 	 * @param  object $exception  The uncaught exception to handle
 	 * @return void

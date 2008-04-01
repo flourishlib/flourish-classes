@@ -148,6 +148,8 @@ class fSchema implements fISchema
 	/**
 	 * Makes sure the info is current, if not it deletes it so that all info is current
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function flushInfo()
@@ -1648,6 +1650,8 @@ class fSchema implements fISchema
  * @license    http://flourishlib.com/license
  * 
  * @link  http://flourishlib.com/fISchema
+ * 
+ * @internal
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial definition [wb, 2008-01-15]
