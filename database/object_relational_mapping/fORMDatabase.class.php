@@ -495,7 +495,7 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
-	 * @param  array  $conditions  The array of conditions  (see {@link fSequence::create()} for format)
+	 * @param  array  $conditions  The array of conditions  (see {@link fRecordSet::create()} for format)
 	 * @return string  The SQL WHERE clause
 	 */
 	static public function createWhereClause($table, $conditions)
@@ -595,7 +595,7 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
-	 * @param  array  $order_bys  The array of order bys to use (see {@link fSequence::create()} for format)
+	 * @param  array  $order_bys  The array of order bys to use (see {@link fRecordSet::create()} for format)
 	 * @return string  The SQL ORDER BY clause
 	 */
 	static public function createOrderByClause($table, $order_bys)

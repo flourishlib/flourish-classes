@@ -76,7 +76,7 @@ abstract class fActiveRecord
 			fORM::flagFeaturesSet(get_class($this));
 		}
 		
-		// Handle loading by a result object passed via the fSequence class
+		// Handle loading by a result object passed via the fRecordSet class
 		if (is_object($primary_key) && $primary_key instanceof fResult) {
 			if ($this->loadFromIdentityMap($primary_key)) {
 				return;  

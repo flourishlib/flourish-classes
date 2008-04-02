@@ -14,7 +14,7 @@
  * @uses  fORMDatabase
  * @uses  fORMSchema
  * @uses  fProgrammerException
- * @uses  fSequence
+ * @uses  fRecordSet
  * 
  * @todo  Finish rewriting retrieveValues()
  * 
@@ -40,12 +40,12 @@ class fORMRelatedData
 	
 	
 	/**
-	 * Sets the ordering to use when returning {@link fSequence fSequences} of related objects
+	 * Sets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
 	 *
 	 * @param  mixed  $table           The database table (or {@link fActiveRecord} class) this ordering rule applies to
 	 * @param  string $related_table   The related table we are getting info from
 	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
-	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fSequence::create()} for format)
+	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::create()} for format)
 	 * @return void
 	 */
 	static public function setOrderBys($table, $related_table, $route, $order_bys)
@@ -67,14 +67,14 @@ class fORMRelatedData
 	
 	
 	/**
-	 * Gets the ordering to use when returning {@link fSequence fSequences} of related objects
+	 * Gets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
 	 *
 	 * @internal
 	 * 
 	 * @param  mixed  $table          The database table (or {@link fActiveRecord} class) this ordering rule applies to
 	 * @param  string $related_table  The related table the ordering rules apply to
 	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
-	 * @return array  An array of the order bys (see {@link fSequence::create()} for format)
+	 * @return array  An array of the order bys (see {@link fRecordSet::create()} for format)
 	 */
 	static public function getOrderBys($table, $related_table, $route)
 	{
@@ -147,7 +147,7 @@ class fORMRelatedData
 		$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
 		$order_bys = self::getOrderBys($table, $related_table, $route);
 		
-		$sequence = fSequence::create($related_class, $where_conditions, $order_bys);	
+		$sequence = fRecordSet::create($related_class, $where_conditions, $order_bys);	
 		
 		// Cache the results for subsequent calls
 		if (!isset($related_records[$related_table])) {
@@ -167,11 +167,11 @@ class fORMRelatedData
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
 	 * @param  string $related_class           The class we are associating with the current record
-	 * @param  fSequence $records              The records are associating
+	 * @param  fRecordSet $records             The records are associating
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function linkRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
+	static public function linkRecords($table, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
 		self::setRecords($table, $related_records, $related_class, $records, $route);
 		$records->flag('associate');
@@ -186,11 +186,11 @@ class fORMRelatedData
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
 	 * @param  string $related_class           The class we are associating with the current record
-	 * @param  fSequence $records              The records are associating
+	 * @param  fRecordSet $records             The records are associating
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function setRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
+	static public function setRecords($table, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
