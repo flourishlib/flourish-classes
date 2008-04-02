@@ -101,7 +101,7 @@ class fORMRelatedData
 	 * @param  string $route           The route to the related class
 	 * @return fActiveRecord  An instace of the class specified
 	 */
-	public function constructRecord($table, $values, $related_class, $route=NULL)
+	static public function constructRecord($table, $values, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
@@ -127,7 +127,7 @@ class fORMRelatedData
 	 * @param  string $route              The route to follow for the class specified
 	 * @return array  An array of the related column values
 	 */
-	public function constructSequence($table, &$values, &$related_records, $related_class, $route=NULL)
+	static public function constructSequence($table, &$values, &$related_records, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
@@ -171,7 +171,7 @@ class fORMRelatedData
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	public function linkRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
+	static public function linkRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
 	{
 		self::setRecords($table, $related_records, $related_class, $records, $route);
 		$records->flag('associate');
@@ -190,7 +190,7 @@ class fORMRelatedData
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	public function setRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
+	static public function setRecords($table, &$related_records, $related_class, fSequence $records, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
