@@ -510,9 +510,6 @@ class fCore
  * 
  * @link  http://flourishlib.com/fPrintableException
  * 
- * @uses  fHTML
- * @uses  fInflection
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -525,12 +522,45 @@ class fPrintableException extends Exception
 	 */
 	public function printMessage() 
 	{
-		$css_class     = 'exception ' . fInflection::underscorize(preg_replace('#^f#', '', get_class($this)));
-		$no_block_html = !fHTML::checkForBlockLevelHTML($this->getMessage());
+		// underscorize the current exception class name, extracted from fInflection::underscorize() to reduce dependencies
+		$exception_class = strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
+		$css_class       = 'exception ' . $exception_class;
 		
+		// See if the message has newline characters but not br tags, extracted from fHTML::convertNewlines() to reduce dependencies
+		static $inline_tags_minus_br = '<a><abbr><acronym><b><big><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
+		$message_with_newlines = (strip_tags($this->message, $inline_tags_minus_br)) ? $this->message : nl2br($this->message);
+		
+		// Check to see if we have any block-level html, extracted from fHTML::checkForBlockLevelHtml() to reduce dependencies
+		$inline_tags = $inline_tags_minus_br . '<br>';
+		$no_block_html = strip_tags($this->message, $inline_tags) == $this->message;
+		
+		// This code ensures the output is properly encoded for display in (X)HTML, extracted from fHTML::prepare() to reduce dependencies
+		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
+		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
+		$text_matches = preg_split($reg_exp, $message_with_newlines);
+		foreach($text_matches as $key => $value) {
+			$value = htmlentities($value, ENT_COMPAT, 'UTF-8');    
+			$windows_characters = array(
+				chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;', 
+				chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
+				chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;', 
+				chr(139) => '&lsaquo;', chr(140) => '&OElig;',  chr(145) => '&lsquo;',
+				chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;', 
+				chr(149) => '&bull;',   chr(150) => '&ndash;',  chr(151) => '&mdash;',
+				chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;', 
+				chr(155) => '&rsaquo;', chr(156) => '&oelig;',  chr(159) => '&Yuml;'
+			);
+			$text_matches[$key] = strtr($value, $windows_characters);
+		}
+		for ($i = 0; $i < sizeof($html_matches); $i++) {
+			$text_matches[$i] .= $html_matches[$i][0];
+		}
+		$message_with_newlines = implode($text_matches); 
+		
+		// Display the message
 		echo '<div class="' . $css_class . '">';
 		echo ($no_block_html) ? '<p>' : '';
-		echo fHTML::prepare(fHTML::convertNewlines($this->getMessage()));
+		echo $message_with_newlines;
 		echo ($no_block_html) ? '</p>' : '';
 		echo '</div>';
 	}
@@ -551,7 +581,7 @@ class fPrintableException extends Exception
 		$backtrace = str_replace($doc_root, '{doc_root}/', $backtrace);
 		$backtrace = array_diff($backtrace, array('{main}'));     
 		$backtrace = array_reverse($backtrace);
-
+		
 		return join("\n", $backtrace);
 	}
 	
@@ -583,6 +613,60 @@ class fPrintableException extends Exception
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fExpectedException extends fPrintableException
+{
+}
+
+
+
+/**
+ * An exception when an {@link fRecordSet} does not contain any elements
+ * 
+ * @copyright  Copyright (c) 2007-2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fEmptySetException
+ * 
+ * @version  1.0.0 
+ * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ */
+class fEmptySetException extends fExpectedException
+{
+}
+
+
+
+/**
+ * An exception when no results are returned
+ * 
+ * @copyright  Copyright (c) 2007-2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fNoResultsException
+ * 
+ * @version  1.0.0
+ * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ */
+class fNoResultsException extends fExpectedException
+{
+}
+
+
+
+/**
+ * An exception when an {@link fActiveRecord} is not found in the database
+ * 
+ * @copyright  Copyright (c) 2007-2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fNotFoundException
+ * 
+ * @version  1.0.0
+ * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ */
+class fNotFoundException extends fExpectedException
 {
 }
 
@@ -690,6 +774,25 @@ class fConnectivityException extends fUnexpectedException
 class fProgrammerException extends fUnexpectedException
 {
 }  
+
+
+
+/**
+ * An exception dealing with sql
+ * 
+ * @copyright  Copyright (c) 2007-2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @link  http://flourishlib.com/fSQLException
+ * 
+ * @version  1.0.0 
+ * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ */
+class fSQLException extends fUnexpectedException
+{
+}
+
 
 
 /**

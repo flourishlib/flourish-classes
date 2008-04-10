@@ -614,27 +614,6 @@ abstract class fActiveRecord
 }  
 
 
-// Handle dependency load order for extending exceptions
-if (!class_exists('fCore')) { }
-
-
-/**
- * An exception when an fActiveRecord is not found in the database
- * 
- * @copyright  Copyright (c) 2007-2008 William Bond
- * @author     William Bond [wb] <will@flourishlib.com>
- * @license    http://flourishlib.com/license
- * 
- * @link  http://flourishlib.com/fNotFoundException
- * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
- */
-class fNotFoundException extends fExpectedException
-{
-}
-
-
 
 /**
  * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
