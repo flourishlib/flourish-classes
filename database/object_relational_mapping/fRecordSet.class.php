@@ -15,6 +15,7 @@
  * @uses  fORMDatabase
  * @uses  fORMSchema
  * @uses  fProgrammerException
+ * @uses  fSQLParsing
  * 
  * @todo  Add order by support of related data to preloading code
  * @todo  Add pagination (limit/offset) support to create()
@@ -199,10 +200,14 @@ class fRecordSet implements Iterator
 	protected function __construct($class_name, fResult $result_object)
 	{
 		if (!class_exists($class_name)) {
-			fCore::toss('fProgrammerException', 'The class ' . $class_name . ' could not be loaded');	
+			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', could not be loaded');	
 		}
-		$this->class_name = $class_name;
 		
+		if (!is_subclass_of($class_name, 'fActiveRecord')) {
+			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', does not extend fActiveRecord. All classes used with fRecordSet must extend fActiveRecord.');	
+		}
+		
+		$this->class_name    = $class_name;
 		$this->result_object = $result_object;
 	}
 	

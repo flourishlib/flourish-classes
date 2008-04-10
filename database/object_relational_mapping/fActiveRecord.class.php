@@ -15,6 +15,7 @@
  * @uses  fNotFoundException
  * @uses  fORM
  * @uses  fORMDatabase
+ * @uses  fORMRelatedData
  * @uses  fORMSchema
  * @uses  fORMValidation
  * @uses  fProgrammerException
