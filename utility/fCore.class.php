@@ -699,8 +699,6 @@ class fValidationException extends fExpectedException
  * 
  * @link  http://flourishlib.com/fUnexpectedException
  * 
- * @uses  fInflection
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
@@ -713,7 +711,9 @@ class fUnexpectedException extends fPrintableException
 	 */
 	public function printMessage() 
 	{
-		$css_class     = 'exception ' . fInflection::underscorize(get_class($this));
+		// underscorize the current exception class name, extracted from fInflection::underscorize() to reduce dependencies
+		$exception_class = strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
+		$css_class       = 'exception ' . $exception_class;
 
 		echo '<div class="' . $css_class . '">';
 		echo '<p>It appears an error has occured &mdash; we apologize for the inconvenience. The problem may be resolved if you try again.</p>';
