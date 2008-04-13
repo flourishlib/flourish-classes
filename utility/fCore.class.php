@@ -513,7 +513,7 @@ class fCore
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fPrintableException extends Exception
+abstract class fPrintableException extends Exception
 {
 	/**
 	 * Prints the message inside of a div with the class being 'exception THIS_EXCEPTION_CLASS_NAME'
@@ -612,7 +612,7 @@ class fPrintableException extends Exception
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fExpectedException extends fPrintableException
+abstract class fExpectedException extends fPrintableException
 {
 }
 
@@ -702,7 +702,7 @@ class fValidationException extends fExpectedException
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
-class fUnexpectedException extends fPrintableException
+abstract class fUnexpectedException extends fPrintableException
 {
 	/**
 	 * Prints out a generic error message inside of a div with the class being 'exception THIS_EXCEPTION_CLASS_NAME'
