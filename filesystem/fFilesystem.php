@@ -33,11 +33,18 @@ class fFilesystem
 	static private $filename_map = array();
 	
 	/**
-	 * Stores the pending transaction for this filesystem transaction
+	 * Stores the operations to perform if a rollback occurs
 	 * 
 	 * @var array 
 	 */
-	static private $pending_operations = NULL;
+	static private $rollback_operations = NULL;
+	
+	/**
+	 * Stores the operations to perform when a commit occurs
+	 * 
+	 * @var array 
+	 */
+	static private $commit_operations = NULL;
 	
 	
 	/**
@@ -170,10 +177,11 @@ class fFilesystem
 	 */
 	static public function startTransaction()
 	{
-		if (self::$pending_operations !== NULL) {
+		if (self::$commit_operations !== NULL) {
 			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
 		}
-		self::$pending_operations = array();
+		self::$commit_operations   = array();
+		self::$rollback_operations = array();
 	}
 	
 	
@@ -184,7 +192,7 @@ class fFilesystem
 	 */
 	static public function isTransactionInProgress()
 	{
-		return is_array(self::$pending_operations);
+		return is_array(self::$commit_operations);
 	}
 	
 	
@@ -195,7 +203,10 @@ class fFilesystem
 	 */
 	static public function rollbackTransaction()
 	{
-		self::$pending_operations = NULL;
+		// Execute rollback operations
+		
+		self::$commit_operations = NULL;
+		self::$rollback_operations = NULL;
 	}
 	
 	
@@ -209,7 +220,60 @@ class fFilesystem
 		if (!self::isTransactionInProgress()) {
 			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
 		}
-		self::performOperations(self::$pending_operations);
+		
+		// Execute commit operations
+	}
+	
+	
+	/**
+	 * Keeps a record of duplicated files so they can be cleaned up in case of a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function duplicate()
+	{
+			
+	}
+	
+	
+	/**
+	 * Keeps backup copies of files so they can be restored if there is a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function write()
+	{
+		
+	}
+	
+	
+	/**
+	 * Keeps a temp file in place of the old filename so the file can be restored during a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function rename()
+	{
+		
+	}
+	
+	
+	/**
+	 * Keeps track of file and directory names to delete once a transaction is committed. This way no files are lost during a rollback.
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function delete()
+	{
+		
 	}
 	
 	

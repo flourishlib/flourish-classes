@@ -219,36 +219,68 @@ class fFile
 	
 	
 	/**
-	 * Creates a new file object with a copy of the file in the new directory, will overwrite an existing file of the same name. Will also put the file into the temp dir if it is currently in a temp dir.
+	 * Creates a new file object with a copy of this file. If no directory is specified, the file
+	 * is created with a new name in the current directory. If a new directory is specified, you must
+	 * also indicate if you wish to overwrite an existing file with the same name in the new directory
+	 * or create a unique name.
+	 * 
+	 * Will also put the file into the temp dir if it is currently in a temp dir.
 	 * 
 	 * This operation will be reverted by a filesystem transaction being rolled back.
 	 * 
-	 * @param  string|fDirectory $new_directory  The directory to duplicate the file into
+	 * @param  string|fDirectory $new_directory  The directory to duplicate the file into if different than the current directory
+	 * @param  boolean           $overwrite      If a new directory is specified, this indicates if a file with the same name should be overwritten.
 	 * @return fFile  The new fFile object
 	 */
-	public function duplicate($new_directory)
+	public function duplicate($new_directory=NULL, $overwrite=NULL)
 	{
 		$this->tossIfException();
 		
+		if ($new_directory === NULL) {
+			$new_directory = $this->getDirectory();	
+		}
+		
 		if (!is_object($new_directory)) {
 			$new_directory = fDirectory($new_directory);
-		}   
-		
-		if (!$new_directory->isWritable()) {
-			fCore::toss('fProgrammerException', 'The directory specified is not writable');
 		}
+		
+		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
+			fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory->getPath() . ', is the same as the current file\'s directory');
+		}  
 		
 		if ($this->getDirectory()->isTemp()) {
 			$new_directory = $new_directory->getTemp();
-		}       
+		}
 		
-		@copy($this->getPath(), $new_directory->getPath() . $this->getFilename());
-		$file = new fFile($new_directory->getPath() . $this->getFilename());
+		$new_filename = $new_directory->getPath() . $this->getFilename();
+		
+		$check_dir_permissions = FALSE;
+		
+		if (file_exists($new_filename)) {
+			if (!is_writable($new_filename)) {
+				fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory . ', already contains a file with the name ' . $this->getFilename() . ', but is not writable'); 		
+			}
+			if (!$overwrite) {
+				$new_filename = fFilesystem::createUniqueName($new_filename);	
+				$check_dir_permissions = TRUE;
+			}
+		} else {
+			$check_dir_permissions = TRUE; 
+		} 
+		
+		if ($check_dir_permissions) {
+			if (!$new_directory->isWritable()) {
+				fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory . ', is not writable');
+			}	
+		}		       
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
 			fFilesystem::copy($file);	
 		}
+		
+		@copy($this->getPath(), $new_filename);
+		$file = new fFile($new_filename);
 		
 		return $file;
 	}
@@ -296,14 +328,15 @@ class fFile
 	
 	
 	/**
-	 * Renames the current file
+	 * Renames the current file, if the filename already exists and the overwrite flag is set to false, a new filename will be created
 	 * 
 	 * This operation will be reverted if a filesystem transaction is in progress and is later rolled back.
 	 * 
-	 * @param  string $new_filename  The new full path to the file
+	 * @param  string  $new_filename  The new full path to the file
+	 * @param  boolean $overwrite     If the new filename already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
 	 * @return void
 	 */
-	public function rename($new_filename) 
+	public function rename($new_filename, $overwrite) 
 	{
 		$this->tossIfException();
 		
@@ -311,7 +344,7 @@ class fFile
 			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be renamed because the directory containing it is not writable');	
 		}
 		
-		$info    = fFilesystem::getPathInfo($new_filename);
+		$info = fFilesystem::getPathInfo($new_filename);
 		
 		if (!file_exists($info['dirname'])) {
 			fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', is inside of a directory that does not exist');
@@ -323,6 +356,9 @@ class fFile
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
 				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', already exists, but is not writable'); 		
+			}
+			if (!$overwrite) {
+				$new_filename = fFilesystem::createUniqueName($new_filename);	
 			}
 		} else {
 			$new_dir = new fDirectory($info['dirname']);

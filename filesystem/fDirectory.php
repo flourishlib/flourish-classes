@@ -318,14 +318,15 @@ class fDirectory
 	
 	
 	/**
-	 * Renames the current directory
+	 * Renames the current directory, overwriting any existing file/directory
 	 * 
 	 * This operation will NOT be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory (and all contained files/dirs) as existing with the old paths until that point.
 	 * 
 	 * @param  string $new_dirname  The new full path to the directory
+	 * @param  boolean $overwrite   If the new dirname already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
 	 * @return void
 	 */
-	public function rename($new_dirname) 
+	public function rename($new_dirname, $overwrite) 
 	{
 		$this->tossIfException();
 		
@@ -346,9 +347,12 @@ class fDirectory
 			if (!is_writable($new_dirname)) {
 				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', already exists, but is not writable'); 		
 			}
+			if (!$overwrite) {
+				$new_dirname = fFilesystem::createUniqueName($new_dirname);	
+			}
 		} else {
-			$new_dir = new fDirectory($info['dirname']);
-			if (!$new_dir->isWritable()) {
+			$parent_dir = new fDirectory($info['dirname']);
+			if (!$parent_dir->isWritable()) {
 				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', is inside of a directory that is not writable');
 			} 
 		}
