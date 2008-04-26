@@ -52,6 +52,18 @@ class fORMDatabase
 	
 	
 	/**
+	 * Allows attaching a class that is or extends fDatabase instead of just using the provided implementation
+	 * 
+	 * @param  fDatabase $database  An object that is or extends the fDatabase class
+	 * @return void
+	 */
+	static public function attach(fDatabase $database)
+	{
+		self::$database_object = $database;
+	}
+	
+	
+	/**
 	 * Return the instance of the fDatabase class
 	 * 
 	 * @return fDatabase  The database instance
