@@ -203,9 +203,25 @@ class fFilesystem
 	 */
 	static public function rollbackTransaction()
 	{
-		// Execute rollback operations
+		foreach (self::$rollback_operations as $operation) {
+			switch($operation['action']) {
+				
+				case 'delete':
+					@unlink($operation['filename']);
+					break;	
+					
+				case 'write':
+					file_put_contents($operation['filename'], $operation['old_data']);
+					break;
+					
+				case 'rename':
+					@rename($operation['new_name'], $operation['old_name']);	
+					break;
+					
+			}
+		}
 		
-		self::$commit_operations = NULL;
+		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
 	}
 	
@@ -221,7 +237,19 @@ class fFilesystem
 			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
 		}
 		
-		// Execute commit operations
+		$commit_operations = self::$commit_operations;
+		
+		self::$commit_operations   = NULL;
+		self::$rollback_operations = NULL;
+		
+		foreach ($commit_operations as $operation) {
+			// Commit operations only include deletes, however it could be a filename or object
+			if (isset($operation['filename'])) {
+				@unlink($operation['filename']);	
+			} else {
+				$operation['object']->delete();
+			}			
+		}
 	}
 	
 	
@@ -230,11 +258,15 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
+	 * @param fFile $file  The duplicate file to get rid of on rollback
 	 * @return void
 	 */
-	static public function duplicate()
+	static public function duplicate(fFile $file)
 	{
-			
+		$this->rollback_operations[] = array(
+			'action'   => 'delete',
+			'filename' => $file->getPath()
+		);		
 	}
 	
 	
@@ -243,11 +275,16 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
+	 * @param fFile $file  The file that is being written to
 	 * @return void
 	 */
-	static public function write()
+	static public function write(fFile $file)
 	{
-		
+		$this->rollback_operations[] = array(
+			'action'   => 'write',
+			'filename' => $file->getPath(),
+			'old_data' => file_get_contents($file->getPath())
+		);	
 	}
 	
 	
@@ -256,10 +293,25 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
+	 * @param string $old_name  The old file or directory name
+	 * @param string $new_name  The new file or directory name
 	 * @return void
 	 */
-	static public function rename()
+	static public function rename($old_name, $new_name)
 	{
+		$this->rollback_operations[] = array(
+			'action'   => 'rename',
+			'old_name' => $old_name,
+			'new_name' => $new_name
+		);	
+		
+		// Create the file with no content to prevent overwriting by another process
+		file_put_contents($old_name, '');
+		
+		$this->commit_operations[] = array(
+			'action'   => 'delete',
+			'filename' => $old_name
+		);
 		
 	}
 	
@@ -269,11 +321,15 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
+	 * @param fFile|fDirectory $object  The filesystem object to delete
 	 * @return void
 	 */
-	static public function delete()
+	static public function delete($object)
 	{
-		
+		$this->commit_operations[] = array(
+			'action' => 'delete',
+			'object' => $object
+		);	
 	}
 	
 	

@@ -357,12 +357,13 @@ class fDirectory
 			} 
 		}
 		
-		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::rename($this, $new_dirname);	
-		}
 		
 		@rename($this->directory, $new_dirname);
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			fFilesystem::rename($this->directory, $new_dirname);	
+		}
 		
 		fFilesystem::updateFilenameMapForDirectory($this->directory, $new_dirname);
 	}

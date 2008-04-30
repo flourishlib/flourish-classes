@@ -274,13 +274,13 @@ class fFile
 			}	
 		}		       
 		
+		@copy($this->getPath(), $new_filename);
+		$file = new fFile($new_filename);
+		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
 			fFilesystem::copy($file);	
 		}
-		
-		@copy($this->getPath(), $new_filename);
-		$file = new fFile($new_filename);
 		
 		return $file;
 	}
@@ -367,12 +367,13 @@ class fFile
 			} 
 		}
 		
+		@rename($this->file, $new_filename);
+		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::rename($this, $new_filename);	
+			fFilesystem::rename($this->file, $new_filename);	
 		}
 		
-		@rename($this->file, $new_filename);
 		fFilesystem::updateFilenameMap($this->file, $new_filename);
 	}
 	
