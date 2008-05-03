@@ -17,9 +17,6 @@
  * @uses  fProgrammerException
  * @uses  fSQLParsing
  * 
- * @todo  Add order by support of related data to preloading code
- * @todo  Add pagination (limit/offset) support to create()
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
@@ -63,9 +60,11 @@ class fRecordSet implements Iterator
 	 * @param  string $class_name        The class to create the fRecordSet of
 	 * @param  array  $where_conditions  The column => value comparisons for the where clause
 	 * @param  array  $order_bys         The column => direction values to use for sorting
+	 * @param  integer $limit            The number of records to fetch
+	 * @param  integer $offset           The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecords}
 	 */
-	static public function create($class_name, $where_conditions=array(), $order_bys=array())
+	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
 		$table_name   = fORM::tablize($class_name);
 		
@@ -81,7 +80,23 @@ class fRecordSet implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));			
+		// Add the limit clause and create a query to get the non-limited total
+		$non_limited_count_sql = NULL;
+		if ($limit !== NULL) {
+			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
+			
+			$non_limited_count_sql = str_replace('SELECT DISTINCT ' . $table_name . '.*', 'SELECT DISTINCT ' . join(', ', $primary_key_fields), $sql);
+			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
+			
+			$sql .= ' LIMIT ' . $limit;	
+			
+			if ($offset !== NULL) {
+				$sql .= ' OFFSET ' . $offset;	
+			}
+		}
+		
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);			
 	}
 	
 	
@@ -91,9 +106,11 @@ class fRecordSet implements Iterator
 	 * @param  string $class_name    The type of object to create
 	 * @param  array  $primary_keys  The primary keys of the objects to create
 	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
+	 * @param  integer $limit        The number of records to fetch
+	 * @param  integer $offset       The offset to use before limiting
 	 * @return fRecordSet  A set of ActiveRecords
 	 */
-	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
+	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
 		$table_name   = fORM::tablize($class_name);
 		
@@ -136,21 +153,38 @@ class fRecordSet implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));	
+		// Add the limit clause and create a query to get the non-limited total
+		$non_limited_count_sql = NULL;
+		if ($limit !== NULL) {
+			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
+			
+			$non_limited_count_sql = str_replace('SELECT DISTINCT ' . $table_name . '.*', 'SELECT DISTINCT ' . join(', ', $primary_key_fields), $sql);
+			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
+			
+			$sql .= ' LIMIT ' . $limit;	
+			
+			if ($offset !== NULL) {
+				$sql .= ' OFFSET ' . $offset;	
+			}
+		}
+		
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);	
 	}
 	
 	
 	/**
 	 * Creates an fRecordSet from an SQL statement
 	 * 
-	 * @param  string $class_name  The type of object to create
-	 * @param  string $sql         The sql to create the set from
+	 * @param  string $class_name             The type of object to create
+	 * @param  string $sql                    The SQL to create the set from
+	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet  A set of ActiveRecords
 	 */
-	static public function createFromSql($class_name, $sql)
+	static public function createFromSql($class_name, $sql, $grand_total_sql=NULL)
 	{
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		return new fRecordSet($class_name, $result);	
+		return new fRecordSet($class_name, $result, $non_limited_count_sql);	
 	}
 	
 	
@@ -167,6 +201,20 @@ class fRecordSet implements Iterator
 	 * @var object 
 	 */
 	private $result_object;
+	
+	/**
+	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
+	 * 
+	 * @var string 
+	 */
+	private $non_limited_count_sql;
+	
+	/**
+	 * The number of rows that would have been returned if a LIMIT clause had not been used
+	 * 
+	 * @var integer 
+	 */
+	private $non_limited_count;
 	
 	/**
 	 * The result objects for preloaded data
@@ -189,15 +237,23 @@ class fRecordSet implements Iterator
 	 */
 	private $primary_keys = array();
 	
+	/**
+	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
+	 * 
+	 * @var boolean 
+	 */
+	private $associate = FALSE;
+	
 	
 	/**
 	 * Sets the contents of the set
 	 * 
-	 * @param  string $class_name     The type of records to create
-	 * @param  object $result_object  The primary keys or fResult object of the records to create
+	 * @param  string $class_name             The type of records to create
+	 * @param  object $result_object          The primary keys or fResult object of the records to create
+	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet
 	 */
-	protected function __construct($class_name, fResult $result_object)
+	protected function __construct($class_name, fResult $result_object, $non_limited_count_sql=NULL)
 	{
 		if (!class_exists($class_name)) {
 			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', could not be loaded');	
@@ -207,8 +263,9 @@ class fRecordSet implements Iterator
 			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', does not extend fActiveRecord. All classes used with fRecordSet must extend fActiveRecord.');	
 		}
 		
-		$this->class_name    = $class_name;
-		$this->result_object = $result_object;
+		$this->class_name            = $class_name;
+		$this->result_object         = $result_object;
+		$this->non_limited_count_sql = $non_limited_count_sql;
 	}
 	
 	
@@ -224,20 +281,17 @@ class fRecordSet implements Iterator
 		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		switch ($action) {
-			case 'sort':
+			case 'sort':                                           
+				// Trim the "by_" off of the beginning
 				$sort_method = substr($element, 3);
-				$sort_method = fInflection::camelize($sort_method, FALSE);
-				$this->performSort($parameters[0], $parameters[1], $sort_method);
-				break;
+				$sort_method = fInflection::camelize($sort_method, FALSE); 
+				return $this->performSort($parameters[0], $parameters[1], $sort_method);      
 				
 			case 'preload':
-				$this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
-				break;
-			
-			default:
-				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
-				break;
-		}
+				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
+		}     
+		
+		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
 	}
 	
 	
@@ -289,9 +343,28 @@ class fRecordSet implements Iterator
 	 * 
 	 * @return integer  The number of records in the set
 	 */
-	public function getSizeOf()
+	public function getCount()
 	{
 		return $this->result_object->getReturnedRows();	
+	}
+	
+	
+	/**
+	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
+	 * 
+	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
+	 */
+	public function getNonLimitedCount()
+	{
+		// A query that does not use a LIMIT clause just returns the number of returned rows 
+		if ($this->non_limited_count_sql === NULL) {
+			return $this->getCount();			
+		}
+		
+		if ($this->non_limited_count !== NULL) {
+			$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+		}
+		return $this->non_limited_count;
 	}
 	
 	
@@ -311,13 +384,39 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Flags this record set for association with the fActiveRecord object that references it
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function flagForAssociation()
+	{
+		$this->associate = TRUE;
+	}
+	
+	
+	/**
+	 * Returns if this record set is flagged for association with the fActiveRecord object that references it
+	 * 
+	 * @internal
+	 * 
+	 * @return boolean  If this record set is flagged for association
+	 */
+	public function isFlaggedForAssociation()
+	{
+		return $this->associate;
+	}
+	
+	
+	/**
 	 * Sorts the set by the return value of a method from the class created
 	 * 
 	 * @param  string $method_name  The method to call on each object to get the value to sort
 	 * @param  string $direction    Either 'asc' or 'desc'
 	 * @return void
 	 */
-	protected function sort($method_name, $direction)
+	public function sort($method_name, $direction)
 	{
 		if (!in_array($direction, array('asc', 'desc'))) {
 			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
@@ -359,7 +458,7 @@ class fRecordSet implements Iterator
 	 * @param  string $method  The method to sort by
 	 * @return integer  < 0 if a is less than b; 0 if a = b; > 0 if a is greater than b
 	 */
-	private function performSort($a, $b, $method)
+	protected function performSort($a, $b, $method)
 	{
 		return strnatcasecmp($a->$method(), $b->$method());  
 	}

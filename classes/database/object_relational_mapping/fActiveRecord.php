@@ -9,6 +9,7 @@
  * @link  http://flourishlib.com/fActiveRecord
  * 
  * @uses  fCore
+ * @uses  fFilesystem
  * @uses  fHTML
  * @uses  fInflection
  * @uses  fNoResultsException
@@ -25,7 +26,8 @@
  * @todo  Add fFile support
  * @todo  Add fImage support
  * @todo  Add various hooks
- * @todo  Allow preloading of related data
+ * @todo  Add reordering support
+ * @todo  Add populateRelatedClass()
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
@@ -196,7 +198,7 @@ abstract class fActiveRecord
 	 */
 	public function load()
 	{
-		$sql = "SELECT * FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
+		$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->getPrimaryKeyWhereClause();
 		
 		try {
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
@@ -270,16 +272,15 @@ abstract class fActiveRecord
 					return $this->retrieveValue($subject, $parameters[0]);
 				}
 				return $this->retrieveValue($subject);
-				break;
+
 			case 'format':
 				if (isset($parameters[0])) {
 					return $this->prepareValue($subject, $parameters[0]);
 				}
 				return $this->prepareValue($subject);
-				break;
+
 			case 'set':
 				return $this->assignValue($subject, $parameters[0]);
-				break;
 				
 			// Related data methods
 			case 'create':
@@ -287,30 +288,28 @@ abstract class fActiveRecord
 					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
 				}
 				return fORMRelatedData::constructRecord($this, $this->values, $subject);
-				break;
+
 			case 'build':
 				if (isset($parameters[0])) {
-					return fORMRelatedData::constructSequence($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelatedData::constructSequence($this, $this->values, $this->related_records, $subject);
-				break;
+				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
+
 			case 'associate':
 				if (isset($parameters[1])) {
 					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
-				break;
+
 			case 'inject':
 				if (isset($parameters[1])) {
 					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
-				break;
 			
 			// Error handler
 			default:
 				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
-				break;
 		}			
 	}
 	
@@ -439,61 +438,160 @@ abstract class fActiveRecord
 	public function store($use_transaction=TRUE)
 	{
 		try {
+			$table = fORM::tablize($this);
+			
+			// New auto-incrementing records require lots of special stuff, so we'll detect them here
+			$new_autoincrementing_record = FALSE;
+			if (!$this->checkIfExists()) {
+				$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+				if (sizeof($primary_keys) == 1 && $column_info[$primary_keys[0]]['auto_increment']) {
+					$new_autoincrementing_record = TRUE;
+					$pk_field = $primary_keys[0];
+				}
+			}
+			
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("BEGIN");
+				fORMDatabase::getInstance()->translatedQuery('BEGIN');
+				fFilesystem::startTransaction();
 			}
 			
 			$this->validate();
 			
 			
-			/********************
-			 * Storing main table
-			 */
+			// Storing main table 
 			
-			$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
-				$sql_values[$column] = fORMDatabase::prepareBySchema(fORM::tablize($this), $column, $this->values[$column]);	
+				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $this->values[$column]);	
 			}
 			
-			if (!$this->checkIfExists()) {
-				// Most database don't like the auto incrementing primary key to be set to NULL
-				$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-				if (sizeof($primary_keys) == 1 && $column_info[$primary_keys[0]]['auto_increment'] && $sql_values[$primary_keys[0]] == 'NULL') {
-					unset($sql_values[$primary_keys[0]]);	
-				}
-				
-				$sql = $this->prepareInsertSql($sql_values);
-			} else {
-				$sql = $this->prepareUpdateSql($sql_values);
+			// Most databases don't like the auto incrementing primary key to be set to NULL
+			if ($new_autoincrementing_record && $sql_values[$pk_field] == 'NULL') {
+				unset($sql_values[$pk_field]);	
 			}
-			
+			   
+			$sql    = $this->prepareInsertSql($sql_values);
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
-			
-			/************************************
-			 * Storing many-to-many relationships
-			 */
-			
-			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("COMMIT");
+			// If there is an auto-incrementing primary key, grab the value from the database
+			if ($new_autoincrementing_record) {
+				$this->old_values[$pk_field] = $this->values[$pk_field];
+				$this->values[$pk_field]     = $result->getAutoIncrementedValue();	  
 			}
 			
-			if (!$this->checkIfExists()) {
-				$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-				if (sizeof($primary_keys) == 1 && $column_info[$primary_keys[0]]['auto_increment']) {
-					$this->old_values[$primary_keys[0]] = $this->values[$primary_keys[0]];
-					$this->values[$primary_keys[0]] = $result->getAutoIncrementedValue();	
-				}
+			
+			// Storing *-to-many relationships
+			 
+			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
+			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many'); 
+			
+			foreach ($this->related_records as $related_table => $relationship) {
+				foreach ($relationship as $route => $record_set) {
+					if (!$record_set->isFlaggedForAssociation()) {
+						continue;	
+					}
+					
+					$relationship = fORMSchema::getRoute($table, $related_table, $route);
+					if (isset($relationship['join_table'])) {
+						$this->associateManyToManyRelatedRecords($relationship, $record_set);
+					} else {
+						$this->storeOneToManyRelatedRecords($relationship, $record_set);	
+					}
+				}  	
+			}
+			 
+			
+			if ($use_transaction) {
+				fORMDatabase::getInstance()->translatedQuery('COMMIT');
+				fFilesystem::commitTransaction(); 
 			}
 			
 		} catch (fPrintableException $e) {
 
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("ROLLBACK");
+				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+				fFilesystem::rollbackTransaction();
+			}
+			
+			if ($new_autoincrementing_record) {
+				$this->values[$pk_field] = $this->old_values[$pk_field];	
+				unset($this->old_values[$pk_field]);
 			}
 			
 			throw $e;	
+		}
+	}
+	
+	
+	/**
+	 * Stores a set of one-to-many related records in the database
+	 * 
+	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set  The set of records to store
+	 * @return void
+	 */
+	protected function storeOneToManyRelatedRecords($relationship, $record_set)
+	{
+		$get_method_name = 'get' . fInflection::camelize($relationship['column'], TRUE);
+		
+		$where_conditions = array(
+			$relationship['related_column'] . '=' => $this->$get_method_name()
+		);
+		
+		$class_name = $record_set->getClassName();
+		$existing_records = fRecordSet::create($class_name, $where_conditions);		
+		
+		$existing_primary_keys  = $existing_records->getPrimaryKeys();
+		$new_primary_keys       = $record_set->getPrimaryKeys();
+		
+		$primary_keys_to_delete = array_diff($existing_primary_keys, $new_primary_keys);
+		
+		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
+			$object_to_delete = new $class_name();
+			$object_to_delete->delete(FALSE);	
+		}
+		
+		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
+		foreach ($record_set as $record) {
+			$record->$set_method_name($this->$get_method_name());
+			$record->store(FALSE); 		
+		}
+	}
+	
+	
+	/**
+	 * Associates a set of many-to-many related records with the current record
+	 * 
+	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set  The set of records to associate
+	 * @return void
+	 */
+	protected function associateManyToManyRelatedRecords($relationship, $record_set)
+	{
+		// First, we remove all existing relationships between the two tables
+		$join_table        = $relationship['join_table'];
+		$join_column       = $relationship['join_column'];
+		
+		$get_method_name   = fInflection::camelize($relationship['column'], TRUE);
+		$join_column_value = fORMDatabase::prepareBySchema($join_table, $join_column, $this->$get_method_name());
+		
+		$delete_sql  = 'DELETE FROM ' . $join_table;
+		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
+
+		fORMDatabase::getInstance()->translatedQuery($delete_sql);
+		
+		// Then we add back the ones in the record set
+		$join_related_column     = $relationship['join_related_column'];
+		$get_related_method_name = fInflection::camelize($relationship['related_column'], TRUE);
+		
+		foreach ($record_set as $record) {
+			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());
+			
+			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
+			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
+				
+			fORMDatabase::getInstance()->translatedQuery($insert_sql);
 		}
 	}
 	
@@ -512,20 +610,31 @@ abstract class fActiveRecord
 		
 		try {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("BEGIN");
+				fORMDatabase::getInstance()->translatedQuery('BEGIN');
+				fFilesystem::startTransaction();
 			}
 			
-			$sql = "DELETE FROM " . fORM::tablize($this) . " WHERE " . $this->getPrimaryKeyWhereClause();
-			
+			$table  = fORM::tablize($this);
+			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->getPrimaryKeyWhereClause();
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("COMMIT");
+				fORMDatabase::getInstance()->translatedQuery('COMMIT');
+				fFilesystem::commitTransaction();
+			}
+			
+			// If we just deleted an object that has an auto-incrementing primary key, lets delete that value from the object since it is no longer valid
+			$column_info  = fORMSchema::getInstance()->getColumnInfo($table);
+			$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+			if (sizeof($primary_keys) == 1 && $column_info[$primary_keys[0]]['auto_increment']) {
+				$this->values[$primary_keys[0]] = NULL;	
+				unset($this->old_values[$primary_keys[0]]); 
 			}
 			
 		} catch (fPrintableException $e) {
 			if ($use_transaction) {
-				fORMDatabase::getInstance()->translatedQuery("ROLLBACK");
+				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+				fFilesystem::rollbackTransaction();
 			}
 			
 			throw $e;	
@@ -577,19 +686,19 @@ abstract class fActiveRecord
 	 */
 	protected function prepareInsertSql($sql_values)
 	{
-		$sql = "INSERT INTO " . fORM::tablize($this) . " (";
+		$sql = 'INSERT INTO ' . fORM::tablize($this) . ' (';
 		
 		$columns = '';
 		$values  = '';
 		
 		$column_num = 0;
 		foreach ($sql_values as $column => $sql_value) {
-			if ($column_num) { $columns .= ", "; $values .= ", "; }
+			if ($column_num) { $columns .= ', '; $values .= ', '; }
 			$columns .= $column;
 			$values  .= $sql_value;
 			$column_num++;
 		}
-		$sql .= $columns . ") VALUES (" . $values . ")";
+		$sql .= $columns . ') VALUES (' . $values . ')';
 		return $sql;		
 	}
 	
@@ -602,14 +711,14 @@ abstract class fActiveRecord
 	 */
 	protected function prepareUpdateSql($sql_values)
 	{
-		$sql = "UPDATE " . fORM::tablize($this) . " SET ";
+		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
 		$column_num = 0;
 		foreach ($sql_values as $column => $sql_value) {
-			if ($column_num) { $sql .= ", "; }
-			$sql .= $column . " = " . $sql_value;
+			if ($column_num) { $sql .= ', '; }
+			$sql .= $column . ' = ' . $sql_value;
 			$column_num++;
 		}
-		$sql .= " WHERE " . $this->getPrimaryKeyWhereClause();
+		$sql .= ' WHERE ' . $this->getPrimaryKeyWhereClause();
 		return $sql;		
 	}
 }  

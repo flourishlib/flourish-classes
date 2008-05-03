@@ -70,8 +70,9 @@ class fORMValidation
 	/**
 	 * Validates values for an fActiveRecord object
 	 *
-	 * @throws  fValidationException
 	 * @internal
+	 * 
+	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table to validate against
 	 * @param  array  &$values      The values to validate

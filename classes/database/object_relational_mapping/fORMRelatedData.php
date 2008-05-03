@@ -16,8 +16,6 @@
  * @uses  fProgrammerException
  * @uses  fRecordSet
  * 
- * @todo  Finish rewriting retrieveValues()
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-30]
  */
@@ -127,7 +125,7 @@ class fORMRelatedData
 	 * @param  string $route              The route to follow for the class specified
 	 * @return array  An array of the related column values
 	 */
-	static public function constructSequence($table, &$values, &$related_records, $related_class, $route=NULL)
+	static public function constructRecordSet($table, &$values, &$related_records, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
@@ -173,8 +171,9 @@ class fORMRelatedData
 	 */
 	static public function linkRecords($table, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
-		self::setRecords($table, $related_records, $related_class, $records, $route);
-		$records->flag('associate');
+		$cloned_records = clone $records;
+		self::setRecords($table, $related_records, $related_class, $cloned_records, $route);
+		$cloned_records->flagForAssociation();
 	}
 	
 	
