@@ -341,6 +341,20 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Wraps around {@link fetchRow()} and returns the first field from the row instead of the whole row.
+	 * 
+	 * @throws  fNoResultsException
+	 * 
+	 * @return string|number  The first scalar value from {@link fetchRow()}
+	 */
+	public function fetchScalar()
+	{
+		$row = $this->fetchRow();
+		return array_shift($row);  
+	}
+	
+	
+	/**
 	 * Warns the user about bugs in the dblib driver for mssql, fixes some bugs
 	 * 
 	 * @param  array $row  The row from the database
