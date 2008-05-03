@@ -35,18 +35,58 @@ class fFile
 	
 	
 	/**
+	 * Creates a file on the filesystem and returns an object representing it.
+	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $file_path  The path to the new file
+	 * @param  string $contents   The contents to write to the file, must be a non-NULL value to be written
+	 * @return fFile
+	 */
+	static public function create($file_path, $contents)
+	{
+		if (empty($file_path)) {
+			if (!$exception) {
+				fCore::toss('fValidationException', 'No filename was specified');	
+			}
+		}
+		
+		if (file_exists($file_path)) {
+			fCore::toss('fValidationException', 'The file specified already exists');		
+		}
+		
+		$directory = fFilesystem::getPathInfo($file_path, 'dirname');
+		if (!is_writable($directory)) {
+			fCore::toss('fEnvironmentException', 'The file path specified is inside of a directory that is not writable');		
+		}
+
+		file_put_contents($file_path, $contents);	
+		
+		$file = new fFile($file_path);
+		
+		fFilesystem::recordCreate($file);
+		
+		return $file;
+	}
+	
+	
+	/**
 	 * Creates an object to represent a file on the filesystem
 	 * 
-	 * @param  string $file       The full path to the file
+	 * @throws fValidationException
+	 * 
+	 * @param  string $file_path  The path to the file
 	 * @param  object $exception  An exception that was tossed during the object creation process
 	 * @return fFile
 	 */
-	public function __construct($file, Exception $exception=NULL)
+	public function __construct($file_path, Exception $exception=NULL)
 	{
-		if (empty($file)) {
+		if (empty($file_path)) {
 			// No file and no exception means we have nothing to work with
 			if (!$exception) {
-				fCore::toss('fProgrammerException', 'No filename was specified');	
+				fCore::toss('fValidationException', 'No filename was specified');	
 			}
 			
 			// If we don't have a file, but have an exception, there may have been an issue creating the file
@@ -54,23 +94,23 @@ class fFile
 			return;
 		}
 		
-		if (!file_exists($file)) {
-			throw new fEnvironmentException('The file specified does not exist');   
+		if (!file_exists($file_path)) {
+			fCore::toss('fValidationException', 'The file specified does not exist');   
 		}
-		if (!is_readable($file)) {
-			throw new fEnvironmentException('The file specified is not readable');   
+		if (!is_readable($file_path)) {
+			fCore::toss('fEnvironmentException', 'The file specified is not readable');   
 		}
 		
 		// Store the file as an absolute path
-		$file = realpath($file);
+		$file_path = realpath($file_path);
 		
 		// Hook into the global file and exception maps
-		$this->file      =& fFilesystem::hookFilenameMap($file);   
-		$this->exception =& fFilesystem::hookExceptionMap($file);
+		$this->file      =& fFilesystem::hookFilenameMap($file_path);   
+		$this->exception =& fFilesystem::hookExceptionMap($file_path);
 		
 		// If we have an exception for this file, save it to the global exception map
 		if ($exception) {
-			fFilesystem::updateExceptionMap($file, $exception);
+			fFilesystem::updateExceptionMap($file_path, $exception);
 		}   
 	}
 	
@@ -279,7 +319,7 @@ class fFile
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::copy($file);	
+			fFilesystem::recordDuplicate($file);	
 		}
 		
 		return $file;
@@ -320,7 +360,7 @@ class fFile
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::write($this);	
+			fFilesystem::recordWrite($this);	
 		}
 		
 		file_put_contents($this->file, $data);
@@ -371,7 +411,7 @@ class fFile
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::rename($this->file, $new_filename);	
+			fFilesystem::recordRename($this->file, $new_filename);	
 		}
 		
 		fFilesystem::updateFilenameMap($this->file, $new_filename);
@@ -395,7 +435,7 @@ class fFile
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			return fFilesystem::delete($this);	
+			return fFilesystem::recordDelete($this);	
 		}
 		
 		@unlink($this->file);

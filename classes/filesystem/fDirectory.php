@@ -36,6 +36,8 @@ class fDirectory
 	/**
 	 * The temporary directory to use for various tasks
 	 * 
+	 * @internal
+	 * 
 	 * @var string 
 	 */
 	const TEMP_DIRECTORY = '__temp/';

@@ -18,8 +18,6 @@
  * @uses  fProgrammerException
  * @uses  fValidationException
  * 
- * @todo  Test this class
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

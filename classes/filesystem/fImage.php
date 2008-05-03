@@ -40,23 +40,61 @@ class fImage extends fFile
 	 */
 	private $pending_modifications = array();
 	
+	
+	/**
+	 * Creates an image on the filesystem and returns an object representing it.
+	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $file_path  The path to the new image
+	 * @param  string $contents   The contents to write to the image
+	 * @return fImage
+	 */
+	static public function create($file_path, $contents)
+	{
+		if (empty($file_path)) {
+			if (!$exception) {
+				fCore::toss('fValidationException', 'No filename was specified');	
+			}
+		}
+		
+		if (file_exists($file_path)) {
+			fCore::toss('fValidationException', 'The image specified already exists');		
+		}
+		
+		$directory = fFilesystem::getPathInfo($file_path, 'dirname');
+		if (!is_writable($directory)) {
+			fCore::toss('fEnvironmentException', 'The file path specified is inside of a directory that is not writable');		
+		}
+
+		file_put_contents($file_path, $contents);	
+		
+		$image = new fImage($file_path);
+		
+		fFilesystem::recordCreate($image);
+		
+		return $image;
+	}
+	
+	
 	/**
 	 * Creates an object to represent an image on the filesystem
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $image      The full path to the image
-	 * @param  object $exception  An exception that was tossed during the object creation process
+	 * @param  string $file_path  The path to the image
 	 * @return fImage
 	 */
-	public function __construct($image, Exception $exception=NULL) 
+	public function __construct($file_path) 
 	{
 		self::determineProcessor();
 		
 		try {
 
-			self::verifyImageCompatible($image);
-			parent::__construct($image, $exception);
+			self::verifyImageCompatible($file_path);
+			parent::__construct($file_path);
 				
 		} catch (fExpectedException $e) {
 			$this->file = NULL;
@@ -424,7 +462,13 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Saves any changes to the image
+	 * Saves any changes to the image, if the file type is different than the
+	 * current one, removes the current file once the new one is created.
+	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * If a transaction is in progress and the new image type causes a new file
+	 * to be created, the old file will not be deleted until the transaction is
+	 * committed.
 	 * 
 	 * @param  string $new_image_type  The new file type for the image, can be 'jpg', 'gif' or 'png'
 	 * @return void
@@ -452,17 +496,25 @@ class fImage extends fFile
 			$output_file = $this->file;	
 		}
 		
+		// Wrap changes to the image into the filesystem transaction
+		if ($output_file == $this->file && fFilesystem::isTransactionInProgress()) {
+			fFilesystem::recordWrite($this);		
+		}
+		
 		if (self::$processor == 'gd') {
 			$this->processWithGD($output_file);	
 		} elseif (self::$processor == 'imagemagick') {
 			$this->processWithImageMagick($output_file);
 		}
 		
-		// If we created a new image, delete the old one
-		if ($output_file != $this->file) {
-			unlink($this->file);	
-		}
+		$old_file = $this->file;
 		fFilesystem::updateFilenameMap($this->file, $output_file);
+		
+		// If we created a new image, delete the old one
+		if ($output_file != $old_file) {
+			$old_image = new fImage($old_file);	
+			$old_image->delete();
+		}
 		
 		$this->pending_modifications = array();
 	}

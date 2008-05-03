@@ -203,6 +203,8 @@ class fFilesystem
 	 */
 	static public function rollbackTransaction()
 	{
+		self::$rollback_operations = array_reverse(self::$rollback_operations);
+		
 		foreach (self::$rollback_operations as $operation) {
 			switch($operation['action']) {
 				
@@ -242,6 +244,8 @@ class fFilesystem
 		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
 		
+		$commit_operations = array_reverse($commit_operations);
+		
 		foreach ($commit_operations as $operation) {
 			// Commit operations only include deletes, however it could be a filename or object
 			if (isset($operation['filename'])) {
@@ -254,6 +258,23 @@ class fFilesystem
 	
 	
 	/**
+	 * Keeps a record of created files so they can be deleted up in case of a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @param object $object  The new file or directory to get rid of on rollback
+	 * @return void
+	 */
+	static public function recordCreate($object)
+	{
+		$this->rollback_operations[] = array(
+			'action' => 'delete',
+			'object' => $object
+		);		
+	}
+	
+	
+	/**
 	 * Keeps a record of duplicated files so they can be cleaned up in case of a rollback
 	 * 
 	 * @internal
@@ -261,7 +282,7 @@ class fFilesystem
 	 * @param fFile $file  The duplicate file to get rid of on rollback
 	 * @return void
 	 */
-	static public function duplicate(fFile $file)
+	static public function recordDuplicate(fFile $file)
 	{
 		$this->rollback_operations[] = array(
 			'action'   => 'delete',
@@ -278,7 +299,7 @@ class fFilesystem
 	 * @param fFile $file  The file that is being written to
 	 * @return void
 	 */
-	static public function write(fFile $file)
+	static public function recordWrite(fFile $file)
 	{
 		$this->rollback_operations[] = array(
 			'action'   => 'write',
@@ -297,7 +318,7 @@ class fFilesystem
 	 * @param string $new_name  The new file or directory name
 	 * @return void
 	 */
-	static public function rename($old_name, $new_name)
+	static public function recordRename($old_name, $new_name)
 	{
 		$this->rollback_operations[] = array(
 			'action'   => 'rename',
@@ -324,7 +345,7 @@ class fFilesystem
 	 * @param fFile|fDirectory $object  The filesystem object to delete
 	 * @return void
 	 */
-	static public function delete($object)
+	static public function recordDelete($object)
 	{
 		$this->commit_operations[] = array(
 			'action' => 'delete',
