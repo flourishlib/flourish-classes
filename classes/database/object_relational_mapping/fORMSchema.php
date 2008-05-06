@@ -340,9 +340,6 @@ class fORMSchema
 }
 
 
-// Handle loading the fISchema interface
-if (!class_exists('fSchema')) { }
-
 
 /**
  * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>

@@ -256,6 +256,45 @@ class fORM
 		}
 		return self::$table_class_map[$table_name];
 	}
+	
+	
+	/**
+	 * If the value passed is an object, calls __toString() on it
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed $value    The value to get the scalar value of
+	 * @return mixed  The scalar value of the value
+	 */
+	static public function scalarize($value)
+	{
+		if (is_object($value)) {
+			return $value->__toString();
+		}	
+		return $value;
+	}
+	
+	
+	/**
+	 * Takes a scalar value and turns it into an object if applicable
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $table    The table the column is located in, or an instance of the fActiveRecord class
+	 * @param  string $column   The database column
+	 * @param  mixed  $value    The value to possibly objectify
+	 * @return mixed  The scalar or object version of the value, depending on the column type and column options
+	 */
+	static public function objectify($table, $column, $value)
+	{
+		if (is_object($table)) {
+			$table = self::tablize($table);	
+		}
+		
+		
+		
+		return $value;
+	}
 
 	
 	/**

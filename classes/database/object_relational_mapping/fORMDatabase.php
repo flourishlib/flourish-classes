@@ -90,6 +90,8 @@ class fORMDatabase
 	 */
 	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
+		$value = fORM::scalarize($value);
+		
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
 			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');	
 		}
@@ -249,7 +251,7 @@ class fORMDatabase
 		
 		foreach ($matches[0] as $match) {
 			if ($match != "'") {
-				preg_match_all('#\b((?:(\w+)(?:\[(\w+)\])?=>)?(\w+)(?:\[(\w+)\])?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
+				preg_match_all('#\b((?:(\w+)(?:\{(\w+)\})?=>)?(\w+)(?:\{(\w+)\})?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
 				foreach ($table_matches as $table_match) {
 					
 					// This is a related table that is going to join to a once-removed table
@@ -258,7 +260,7 @@ class fORMDatabase
 						$related_table = $table_match[2];
 						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[3]);	
 						
-						$join_name = $table . '_' . $related_table . '[' . $route . ']';
+						$join_name = $table . '_' . $related_table . '{' . $route . '}';
 						
 						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
@@ -321,7 +323,7 @@ class fORMDatabase
 		$table         = $relationship['table'];
 		$related_table = $relationship['related_table'];
 		
-		if (isset($joins[$table . '_' . $related_table . '[' . $route . ']'])) {
+		if (isset($joins[$table . '_' . $related_table . '{' . $route . '}'])) {
 			return $joins;	
 		}
 		
@@ -363,8 +365,8 @@ class fORMDatabase
 			fCore::toss('fProgrammerException', 'An invalid route, ' . $route . ', was specified for the relationship ' . $table . ' to ' . $related_table);	
 		}
 		
-		if (isset($joins[$table . '_' . $related_table . '[' . $route . ']'])) {
-			return  $table . '_' . $related_table . '[' . $route . ']';	
+		if (isset($joins[$table . '_' . $related_table . '{' . $route . '}'])) {
+			return  $table . '_' . $related_table . '{' . $route . '}';	
 		}
 		
 		// If the route uses a join table
@@ -391,8 +393,8 @@ class fORMDatabase
 			$join2['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_related_column'];
 			$join2['on_clause_fields'][] = $join2['table_alias'] . '.' . $routes[$route]['related_column'];
 			
-			$joins[$table . '_' . $related_table . '[' . $route . ']_join'] = $join;
-			$joins[$table . '_' . $related_table . '[' . $route . ']'] = $join2;
+			$joins[$table . '_' . $related_table . '{' . $route . '}_join'] = $join;
+			$joins[$table . '_' . $related_table . '{' . $route . '}'] = $join2;
 				
 		// If the route is a direct join
 		} else {
@@ -408,11 +410,11 @@ class fORMDatabase
 			$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
 			$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['related_column'];
 		
-			$joins[$table . '_' . $related_table . '[' . $route . ']'] = $join;
+			$joins[$table . '_' . $related_table . '{' . $route . '}'] = $join;
 		
 		}
 		
-		return $table . '_' . $related_table . '[' . $route . ']';
+		return $table . '_' . $related_table . '{' . $route . '}';
 	}
 	
 	
@@ -621,7 +623,7 @@ class fORMDatabase
 				fCore::toss('fProgrammerException', 'Invalid direction, ' . $direction . ', specified');
 			}
 			
-			if (preg_match('#^(?:\w+(?:\[\w+\])?=>)?(\w+)(?:\[\w+\])?\.(\w+)$#', $column, $matches)) {
+			if (preg_match('#^(?:\w+(?:\{\w+\})?=>)?(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $matches)) {
 				$column_type = fORMSchema::getInstance()->getColumnInfo($matches[1], $matches[2], 'type');
 				if (in_array($column_type, array('varchar', 'char', 'text'))) {
 					$sql[] = 'LOWER(' . $column . ') ' . $direction;	

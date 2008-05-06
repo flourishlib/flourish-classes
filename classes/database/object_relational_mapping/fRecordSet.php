@@ -27,34 +27,34 @@ class fRecordSet implements Iterator
 	 * 
 	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
 	 * <pre>
-	 *  - '{column}='                     => VALUE,                    // column = VALUE
-	 *  - '{column}!'                     => VALUE,                    // column <> VALUE
-	 *  - '{column}~'                     => VALUE,                    // column LIKE '%VALUE%'
-	 *  - '{column}='                     => array(VALUE, VALUE2,...), // column IN (VALUE, VALUE2, ...)
-	 *  - '{column}!'                     => array(VALUE, VALUE2,...), // columnld NOT IN (VALUE, VALUE2, ...)
-	 *  - '{column}~'                     => array(VALUE, VALUE2,...), // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
-	 *  - '{column}|{column2}|{column3}~' => VALUE,                    // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
-	 *  - '{column}|{column2}|{column3}~' => array(VALUE, VALUE2,...), // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
+	 *  - '%column%='                     => VALUE,                    // column = VALUE
+	 *  - '%column%!'                     => VALUE,                    // column <> VALUE
+	 *  - '%column%~'                     => VALUE,                    // column LIKE '%VALUE%'
+	 *  - '%column%='                     => array(VALUE, VALUE2,...), // column IN (VALUE, VALUE2, ...)
+	 *  - '%column%!'                     => array(VALUE, VALUE2,...), // column NOT IN (VALUE, VALUE2, ...)
+	 *  - '%column%~'                     => array(VALUE, VALUE2,...), // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
+	 *  - '%column%|%column2%|%column3%~' => VALUE,                    // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
+	 *  - '%column%|%column2%|%column3%~' => array(VALUE, VALUE2,...), // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
 	 * </pre>
 	 * 
 	 * The order bys array can contain key => value entries in any of the following formats:
 	 * <pre>
-	 *  - '{column}' => 'asc'           // 'first_name' => 'asc'
-	 *  - '{column}' => 'desc'          // 'last_name'  => 'desc'
-	 *  - '{expression}'  => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
-	 *  - '{expression}'  => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
+	 *  - '%column%' => 'asc'           // 'first_name' => 'asc'
+	 *  - '%column%' => 'desc'          // 'last_name'  => 'desc'
+	 *  - '%expression%'  => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
+	 *  - '%expression%'  => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
 	 * </pre>
 	 * 
-	 * The {column} in both the where conditions and order bys can be in any of the formats:
+	 * The %column% in both the where conditions and order bys can be in any of the formats:
 	 * <pre>
-	 *  - '{column}'                                                                 // e.g. 'first_name'
-	 *  - '{current_table}.{column}'                                                 // e.g. 'users.first_name'
-	 *  - '{related_table}.{column}'                                                 // e.g. 'user_groups.name'
-	 *  - '{related_table}[{route}].{column}'                                        // e.g. 'user_groups[user_group_id].name'
-	 *  - '{related_table}=>{once_removed_related_table}.{column}'                   // e.g. 'user_groups=>permissions.level'
-	 *  - '{related_table}[{route}]=>{once_removed_related_table}.{column}'          // e.g. 'user_groups[user_group_id]=>permissions.level'
-	 *  - '{related_table}=>{once_removed_related_table}[{route}].{column}'          // e.g. 'user_groups=>permissions[read].level'
-	 *  - '{related_table}[{route}]=>{once_removed_related_table}[{route}].{column}' // e.g. 'user_groups[user_group_id]=>permissions[read].level'
+	 *  - '%column%'                                                                 // e.g. 'first_name'
+	 *  - '%current_table%.%column%'                                                 // e.g. 'users.first_name'
+	 *  - '%related_table%.%column%'                                                 // e.g. 'user_groups.name'
+	 *  - '%related_table%{%route%}.%column%'                                        // e.g. 'user_groups{user_group_id}.name'
+	 *  - '%related_table%=>%once_removed_related_table%.%column%'                   // e.g. 'user_groups=>permissions.level'
+	 *  - '%related_table%{%route%}=>%once_removed_related_table%.%column%'          // e.g. 'user_groups{user_group_id}=>permissions.level'
+	 *  - '%related_table%=>%once_removed_related_table%{%route%}.%column%'          // e.g. 'user_groups=>permissions{read}.level'
+	 *  - '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * </pre>
 	 * 
 	 * @param  string $class_name        The class to create the fRecordSet of
@@ -62,7 +62,7 @@ class fRecordSet implements Iterator
 	 * @param  array  $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit            The number of records to fetch
 	 * @param  integer $offset           The offset to use before limiting
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecords}
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
@@ -103,12 +103,14 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet from an array of primary keys
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $class_name    The type of object to create
 	 * @param  array  $primary_keys  The primary keys of the objects to create
 	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
 	 * @param  integer $limit        The number of records to fetch
 	 * @param  integer $offset       The offset to use before limiting
-	 * @return fRecordSet  A set of ActiveRecords
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
 	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
@@ -123,29 +125,20 @@ class fRecordSet implements Iterator
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
 		$total_pk_fields = sizeof($primary_key_fields);
 		
-		// If it is a multi-field primary key, the sql is more complex
-		if ($total_pk_fields > 1) {
+		$total_primary_keys = sizeof($primary_keys);
+		for ($i=0; $i < $total_primary_keys; $i++) {
+			$sql .= ($i > 0) ? 'OR' : '';
+			$sql .= ($total_pk_fields > 1) ? ' (' : '';     
 			
-			$total_primary_keys = sizeof($primary_keys);
-			for ($i=0; $i < $total_primary_keys; $i++) {
-				if ($i > 0) {
-					$sql .= 'OR';
-				}
-				$sql .= ' (';
-				for ($j=0; $j < $total_pk_fields; $j++) {
-					if ($j > 0) {
-						$sql .= ' AND ';	
-					}
-					$pkf = $primary_key_fields[$j];
-					$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');	
-				}
-				$sql .= ') ';	
+			for ($j=0; $j < $total_pk_fields; $j++) {
+				$pkf = $primary_key_fields[$j];
+				
+				$sql .= ($j > 0) ? ' AND ' : '';
+				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');	
 			}
 			
-		// Single field primary keys are simple
-		} else {
-			$sql .= fORMDatabase::createWhereClause($table_name, array($primary_key_fields[0] . '=' => $primary_keys));
-		}	
+			$sql .= ($total_pk_fields > 1) ? ' (' : '';
+		}
 		
 		if (!empty($order_bys)) {
 			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);				
@@ -170,6 +163,67 @@ class fRecordSet implements Iterator
 		}
 		
 		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);	
+	}
+	
+	
+	/**
+	 * Creates an fRecordSet from an array of records
+	 * 
+	 * @internal
+	 * 
+	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 */
+	static public function createFromObjects($records)
+	{
+		$class_name = get_class($records[0]);
+		$table_name = fORM::tablize($class_name);
+		
+		$sql  = 'SELECT DISTINCT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
+		
+		// Build the where clause
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+		$total_pk_fields = sizeof($primary_key_fields);
+		
+		$primary_keys = array();
+		
+		$i = 0;
+		foreach ($records as $record) {
+			$sql .= ($i > 0) ? 'OR' : '';
+			$sql .= ($total_pk_fields > 1) ? ' (' : '';
+			
+			for ($j=0; $j < $total_pk_fields; $j++) {
+				$pk_field      = $primary_key_fields[$j];
+				$pk_get_method = 'get' . fInflection::camelize($pk_field, TRUE);
+				
+				$pk_value = $record->$pk_get_method();
+				if ($j == 0 && $total_pk_fields == 1) {
+					$primary_keys[$i] = $pk_value;	
+				} elseif ($j == 0) {
+					$primary_keys[$i] = array();	
+				}
+				if ($total_pk_fields > 1) {
+					$primary_keys[$i][$pk_field] = $pk_value;	
+				}
+				
+				$sql .= ($j > 0) ? ' AND ' : '';
+				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');	
+			}
+			
+			$sql .= ($total_pk_fields > 1) ? ') ' : '';	
+			$i++;
+		}
+		
+		$result = new fResult('array');
+		$result->setResult(array());
+		$result->setReturnedRows(sizeof($records));
+		$result->setSQL($sql);
+		
+		$record_set = new fRecordSet($class_name, $result);	
+		$record_set->records      = $records;
+		$record_set->primary_keys = $primary_keys;
+		
+		return $record_set;
 	}
 	
 	
@@ -618,7 +672,7 @@ class fRecordSet implements Iterator
 				$method = 'get' . fInflection::camelize($primary_key, TRUE);
 				$keys[$primary_key] = $this->records[$this->key()]->$method();	
 			}
-			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[$primary_keys[0]] : $keys;
+			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_unshift($primary_keys)] : $keys;
 			
 			// Pass the preloaded data to the object
 			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {

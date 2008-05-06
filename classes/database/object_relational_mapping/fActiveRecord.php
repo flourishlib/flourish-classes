@@ -27,7 +27,6 @@
  * @todo  Add fImage support
  * @todo  Add various hooks
  * @todo  Add reordering support
- * @todo  Add populateRelatedClass()
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
@@ -260,8 +259,8 @@ abstract class fActiveRecord
 		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate') && !isset($parameters[0])) {
-			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires a single parameter');
+		if (($action == 'set' || $action == 'associate' || $action == 'link') && !isset($parameters[0])) {
+			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
 		}
 		
 		switch ($action) {
@@ -273,11 +272,11 @@ abstract class fActiveRecord
 				}
 				return $this->retrieveValue($subject);
 
-			case 'format':
+			case 'prepare':
 				if (isset($parameters[0])) {
-					return $this->prepareValue($subject, $parameters[0]);
+					return $this->formatValue($subject, $parameters[0]);
 				}
-				return $this->prepareValue($subject);
+				return $this->formatValue($subject);
 
 			case 'set':
 				return $this->assignValue($subject, $parameters[0]);
@@ -321,7 +320,9 @@ abstract class fActiveRecord
 	 */
 	public function populate()
 	{
-		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+		$table = fORM::tablize($this);
+		
+		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
 				$method = 'set' . fInflection::camelize($column, TRUE);
@@ -329,14 +330,80 @@ abstract class fActiveRecord
 			}
 		}
 		
-		$relationships = fORMSchema::getInstance()->getRelationships(fORM::tablize($this), 'many-to-many');
+		// This handles associating many-to-many relationships
+		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 		foreach ($relationships as $rel) {
-			$column = fInflection::pluralize($rel['related_column']);
-			if (fRequest::check($column)) {
-				$method = 'associate' . fInflection::camelize($column, TRUE);
-				$this->$method(fRequest::get($column, 'array', array()));	
+			$routes = fORMSchema::getRoutes($table, $rel['related_table']);
+			$field  = fInflection::underscorize(fORM::classize($rel['related_table']));
+			
+			if (sizeof($routes) > 1 && fRequest::check($field)) {
+				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field . ' since there is more than one.');		
+			}
+			
+			$route = NULL;
+			if (sizeof($routes) > 1) {
+				$route = $rel['join_table'];  
+				$field .= '{' . $route . '}';	
+			}
+			
+			if (fRequest::check($field)) {
+				$method = 'associate' . fInflection::camelize(fORM::classize($rel['related_table']), TRUE);
+				$this->$method(fRequest::get($field, 'array', array()), $route);	
 			}
 		}	
+	}
+	
+	
+	/**
+	 * Sets the values for records in a one-to-many relationship with this record
+	 * 
+	 * @param  string $class_name  The related class to populate
+	 * @param  string $route       The route to the related class
+	 * @return void
+	 */
+	protected function populateOneToMany($class_name, $route=NULL)
+	{
+		$related_table = fORM::tablize($class_name);
+		$primary_keys  = fORMSchema::getInstance()->getKeys($related_table, 'primary');		
+		
+		$table_with_route = $related_table;
+		$table_with_route = ($route !== NULL) ? '{' . $route . '}' : '';
+		
+		$first_primary_key_column = $primary_keys[0];
+		$primary_key_field        = $table_with_route . '::' . $first_primary_key_column;
+		
+		$total_records = sizeof(fRequest::get($primary_key_field, 'array', array()));
+		$records       = array();
+		
+		for ($i = 0; $i < $total_records; $i++) {
+			fRequest::filter($table_with_route . '::', $i);	
+			
+			// Existing record are loaded out of the database before populating
+			if (fRequest::get($first_primary_key_column) !== NULL) {
+				if (sizeof($primary_keys) == 1) {
+					$primary_key_values = fRequest::get($first_primary_key_column);	
+				} else {
+					$primary_key_values = array();
+					foreach ($primary_keys as $primary_key) {
+						$primary_key_values[$primary_key] = fRequest::get($primary_key);
+					}		
+				}
+				$record = new $class_name($primary_key_values);	
+			
+			// If we have a new record, created an empty object
+			} else {
+				$record = new $class_name();
+			}
+			
+			$record->populate();
+			$records[] = $record;
+			
+			fRequest::unfilter();
+		}
+		
+		$record_set = fRecordSet::createFromObjects($records);
+		
+		fORMRelatedData::linkRecords($this, $this->related_records, $class_name, $record_set, $route);
 	}
 	
 	
@@ -348,50 +415,97 @@ abstract class fActiveRecord
 	 */
 	protected function retrieveValue($column)
 	{
-		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		if (!isset($this->values[$column])) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+		}
 		return $this->values[$column];	
 	}
 	
 	
 	/**
-	 * Retrieves a value from the record and formats it for output into html.
+	 * Retrieves a value from the record and prepares it for output into html.
 	 * 
 	 * Below are the transformations performed:
+	 *   - varchar, char, text columns with email formatting rule: an <a> html tag with a mailto link to the email address - empty() values will return a blank string
+	 *   - varchar, char, text columns with link formatting rule: an <a> html tag for the link - empty() values will return a blank string
 	 *   - varchar, char, text columns: will run through fHTML::prepare()
-	 *   - date, time, timestamp: takes 1 parameter, php date() formatting string
 	 *   - boolean: will return 'Yes' or 'No'
+	 *   - integer: will add thousands/millions/etc. separators
+	 *   - float: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
+	 *   - date, time, timestamp: these can not be formatted since they are represented by objects 
+	 *   - objects: can not be formatted since they are objects and not scalar values
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  If php date() formatting string for date values
 	 * @return mixed  The formatted value for the column specified
 	 */
-	protected function prepareValue($column, $formatting=NULL)
+	protected function formatValue($column, $formatting=NULL)
 	{
+		if (!isset($this->values[$column])) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+		}
+		
 		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
 		
-		if (in_array($column_type, array('integer', 'float', 'blob'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is of the type ' . $column_type);
+		$email_formatted = fORMValidation::hasFormattingRule($this, $column, 'email');
+		$link_formatted  = fORMValidation::hasFormattingRule($this, $column, 'link'); 
+		
+		// Ensure the programmer is calling the function properly
+		if (in_array($column_type, array('blob'))) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is a blob column');
 		}
 		
-		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support a formatting string');
+		if ($formatting !== NULL && !$email_formatted && !$link_formatted && $column_type != 'float') {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
 		}
 		
+		if ($formatting === NULL && $column_type == 'float') {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one parameter, the number of decimal places');	
+		}
+		
+		// Grab the value for empty value checking
 		$method_name = 'get' . fInflection::camelize($column, TRUE);
+		$value       = $this->$method_name();
+		
+		// Values that are objects can not be formatted
+		if (is_object($value) || in_array($column_type, array('date', 'time', 'timestamp'))) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' has a value that is represented by an object, and thus can not be formatted'); 		
+		}
+		
+		// If we are formatting in a situation where empty values will produce incorrect results, exit early
+		if (empty($value) && ($email_formatted || $link_formatted)) {
+			return $value;	
+		}
+		
+		// Handle the email and link formatting
+		if ($email_formatted) {
+			$css_class = ($formatting) ? ' class="' . $formatting . '"' : '';
+			return '<a href="mailto:' . $value . '"' . $css_class . '>' . $value . '</a>';
+		}
+		if ($link_formatted) {
+			$css_class = ($formatting) ? ' class="' . $formatting . '"' : '';
+			return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
+		}	
+		
+		// Handle the "standard" formatting
 		switch ($column_type) {
 			case 'varchar':
 			case 'char':
 			case 'text':
-				return fHTML::prepare($this->$method_name());
-
-			case 'date':
-			case 'time':
-			case 'timestamp':
-				return date($formatting, strtotime($this->$method_name()));
+				return fHTML::prepare($value);
 
 			case 'boolean':
-				return ($this->$method_name()) ? 'Yes' : 'No';
+				return ($value) ? 'Yes' : 'No';
+				
+			case 'integer':
+				return number_format($value, 0, '', ',');
+				
+			case 'float':
+				return number_format($value, $formatting, '.', ',');
 		}
+		
+		// In case some other sort of column type gets added without this being updated
+		return $value;
 	}
 	
 	
@@ -404,13 +518,28 @@ abstract class fActiveRecord
 	 */
 	protected function assignValue($column, $value)
 	{
+		if (!isset($this->values[$column])) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+		}
+		
 		// We consider an empty string to be equivalent to NULL
 		if ($value === '') {
 			$value = NULL;	
 		}
 		
+		// Turn date/time values into objects
+		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		if ($value !== NULL && in_array($column_type, array('date', 'time', 'timestamp'))) {
+			try {
+				$class = 'f' . fInflection::camelize($column_type, TRUE);
+				$value = new $class($value);
+			} catch (fValidationException $e) {
+				// Validation exception result in the raw value being saved
+			}	
+		}
+		
 		$this->old_values[$column] = $this->values[$column];
-		$this->values[$column] = $value;
+		$this->values[$column]     = $value;
 	}
 	
 	
@@ -463,7 +592,8 @@ abstract class fActiveRecord
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
-				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $this->values[$column]);	
+				$value = fORM::scalarize($this->values[$column]);
+				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $value);	
 			}
 			
 			// Most databases don't like the auto incrementing primary key to be set to NULL
@@ -671,7 +801,14 @@ abstract class fActiveRecord
 		$key_num = 0;
 		foreach ($primary_keys as $primary_key) {
 			if ($key_num) { $sql .= " AND "; }
-			$sql .= $primary_key . fORMDatabase::prepareBySchema(fORM::tablize($this), $primary_key, (!empty($this->old_values[$primary_key])) ? $this->old_values[$primary_key] : $this->values[$primary_key], '=');
+			
+			if (!empty($this->old_values[$primary_key])) {
+				$value = fORM::scalarize($this->old_values[$primary_key]);	
+			} else {
+				$value = fORM::scalarize($this->values[$primary_key]);	
+			}
+			
+			$sql .= $primary_key . fORMDatabase::prepareBySchema(fORM::tablize($this), $primary_key, $value, '=');
 			$key_num++;
 		}
 		return $sql;	

@@ -75,13 +75,21 @@ class fORMValidation
 	 * @throws  fValidationException
 	 * 
 	 * @param  string $table        The table to validate against
-	 * @param  array  &$values      The values to validate
-	 * @param  array  &$old_values  The old values for the record
+	 * @param  array  $values      The values to validate
+	 * @param  array  $old_values  The old values for the record
 	 * @return void
 	 */
-	static public function validate($table, &$values, &$old_values)
+	static public function validate($table, $values, $old_values)
 	{
 		$validation_messages = array();
+		
+		// Convert objects into values for alidation
+		foreach ($values as $key => $value) {
+			$values[$key] = fORM::scalarize($value);
+		}
+		foreach ($old_values as $key => $value) {
+			$old_values[$key] = fORM::scalarize($value);
+		}
 		
 		try {
 			self::checkPrimaryKeys($table, $values, $old_values);
@@ -274,11 +282,45 @@ class fORMValidation
 			self::$formatting_rules[$table] = array();		
 		}
 		
-		if (!in_array($format_type, array('email', 'link'))) {
-			fCore::toss('fProgrammerException', "The format type specified, '" . $format_type , "', should be either 'email' or 'link'");	
+		$valid_formats = array('email', 'link');
+		if (!in_array($format_type, $valid_formats)) {
+			fCore::toss('fProgrammerException', 'The format type specified, ' . $format_type . ', should be one of: ' . join(', ', $valid_formats));	
 		}
 		
 		self::$formatting_rules[$table][$column] = $format_type;
+	}
+	
+	
+	/**
+	 * Checks to see if there is a column format rule
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $table         The database table (or (@link fActiveRecord} class) this validation rule applies to
+	 * @param  string $column        The column to check the format of
+	 * @param  string $format_type   The format to check for: email, link
+	 * @return void
+	 */
+	static public function hasFormattingRule($table, $column, $format_type)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		if (!isset(self::$formatting_rules[$table])) {
+			return FALSE;		
+		}
+		
+		$valid_formats = array('email', 'link');
+		if (!in_array($format_type, $valid_formats)) {
+			fCore::toss('fProgrammerException', 'The format type specified, ' . $format_type , ', should be one of the following: ' . join(', ', $valid_formats));	
+		}
+		
+		if (!isset(self::$formatting_rules[$table][$column]) || self::$formatting_rules[$table][$column] != $format_type) {
+			return FALSE;	
+		}
+		
+		return TRUE;
 	}
 	
 	

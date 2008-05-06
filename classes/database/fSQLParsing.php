@@ -221,19 +221,19 @@ class fSQLParsing
 			
 			// If this table is a join table it needs to be named differently
 			if ($join_relationship = self::checkForJoinTable($original_table, $table_name, $schema)) {
-				$joins[$original_table . '_' . $join_relationship['related_table'] . '[' . $table_name . ']_join'] = $join;
+				$joins[$original_table . '_' . $join_relationship['related_table'] . '{' . $table_name . '}_join'] = $join;
 				$joined_table[$table_name] = $original_table;	
 				continue;
 			}
 			
 			// This indicates that this table is being joined to a join table, affecting the naming
 			if (isset($joined_table[$original_table])) {
-				$joins[$joined_table[$original_table] . '_' . $table_name . '[' . $original_table . ']'] = $join;
+				$joins[$joined_table[$original_table] . '_' . $table_name . '{' . $original_table . '}'] = $join;
 				continue;
 			}
 			
 			// And here we have a plain old join
-			$joins[$original_table . '_' . $table_name . '[' . $route . ']'] = $join;
+			$joins[$original_table . '_' . $table_name . '{' . $route . '}'] = $join;
 
 		}  
 

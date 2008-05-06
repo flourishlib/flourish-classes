@@ -455,12 +455,12 @@ class fSchema implements fISchema
 		
 		switch ($this->database->getType()) {
 			case 'mssql':
-				$sql = "SELECT
+				$sql = 'SELECT
 								TABLE_NAME
 							FROM
 								INFORMATION_SCHEMA.TABLES
 							ORDER BY
-								LOWER(TABLE_NAME)";
+								LOWER(TABLE_NAME)';
 				break;
 			
 			case 'mysql':
