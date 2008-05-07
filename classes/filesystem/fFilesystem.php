@@ -48,11 +48,142 @@ class fFilesystem
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Commits a filesystem transaction, should only be called when a transaction is in progress
 	 * 
-	 * @return fFilesystem
+	 * @return void
 	 */
-	private function __construct() { }
+	static public function commitTransaction()
+	{
+		if (!self::isTransactionInProgress()) {
+			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
+		}
+		
+		$commit_operations = self::$commit_operations;
+		
+		self::$commit_operations   = NULL;
+		self::$rollback_operations = NULL;
+		
+		$commit_operations = array_reverse($commit_operations);
+		
+		foreach ($commit_operations as $operation) {
+			// Commit operations only include deletes, however it could be a filename or object
+			if (isset($operation['filename'])) {
+				@unlink($operation['filename']);	
+			} else {
+				$operation['object']->delete();
+			}			
+		}
+	}
+	
+	
+	/**
+	 * Takes a file size and converts it to bytes 
+	 * 
+	 * @param  string $size  The size to convert to bytes
+	 * @return integer  The number of bytes represented by the size  
+	 */
+	static public function convertToBytes($size) 
+	{
+		if (!preg_match('#^(\d+)\s*(k|m|g|t)?b?$#', strtolower(trim($size)), $matches)) {
+			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');   
+		}
+		
+		if ($matches[1] == '') {
+			$matches[1] = 'b';   
+		}
+		
+		$size_map = array('b' => 1,
+						  'k' => 1024,
+						  'm' => 1048576,
+						  'g' => 1073741824,
+						  't' => 1099511627776);
+		return $matches[0] * $size_map[$matches[1]];
+	}
+	
+	
+	/**
+	 * Returns a unique name for a file
+	 * 
+	 * @param  string $file           The filename to check
+	 * @param  string $new_extension  The new extension for the filename, do not include .
+	 * @return string  The unique file name
+	 */
+	static public function createUniqueName($file, $new_extension=NULL) 
+	{
+		$info = self::getInfo($file);
+		
+		// Change the file extension
+		if ($new_extension !== NULL) {
+			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
+			$file = $info['dirname'] . $info['filename'] . $new_extension;
+			$info = self::getInfo($file);
+		}
+		
+		// If there is an extension, be sure to add . before it
+		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
+		
+		// Remove _copy# from the filename to start
+		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file); 	
+		
+		// Look for a unique name by adding _copy# to the end of the file
+		while (file_exists($file)) {
+			$info = self::getInfo($file);
+			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
+				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
+			} else {
+				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;    
+			}    
+		}
+		
+		return $file;
+	}
+	
+	
+	/**
+	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
+	 * 
+	 * @param  integer $bytes           The size of the file in bytes
+	 * @param  integer $decimal_places  The number of decimal places to display
+	 * @return string  
+	 */
+	static public function formatFilesize($bytes, $decimal_places=1) 
+	{
+		if ($bytes < 0) {
+			$bytes = 0;        
+		}
+		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
+		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
+		$suffix    = floor(log($bytes)/6.9314718);
+		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
+	}
+	
+	
+	/**
+	 * Returns info about a path including dirname, basename, extension and filename 
+	 * 
+	 * @param  string $file_path   The file to rename
+	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
+	 * @return array  The file's dirname, basename, extension and filename
+	 */
+	static public function getPathInfo($file, $element=NULL) 
+	{
+		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
+		if ($element !== NULL && !in_array($element, $valid_elements)) {
+			fCore::toss('fProgrammerException', 'Invalid element, ' . $element . ', requested. Must be one of: ' . join(', ', $valid_elements) . '.');  
+		}
+		
+		$path_info = pathinfo($file);
+		if (!isset($path_info['filename'])) {
+			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);   
+		}
+		$path_info['dirname'] .= DIRECTORY_SEPARATOR;
+		
+		if ($element) {
+			return $path_info[$element];   
+		}
+		
+		return $path_info;
+	}
 	
 	
 	/**
@@ -73,21 +204,6 @@ class fFilesystem
 	
 	
 	/**
-	 * Saves an object to the identity map
-	 * 
-	 * @internal
-	 * 
-	 * @param  string    $file		 A file or directory name, directories should end in / or \
-	 * @param  Exception $exception  The exception for this file/directory
-	 * @return void
-	 */
-	static public function updateExceptionMap($file, Exception $exception)
-	{              
-		self::$exception_map[$file] = $exception;
-	}
-	
-	
-	/**
 	 * Hooks a file/directory name to the filename map, allowing all objects representing this file to be updated when it is renamed
 	 * 
 	 * @internal
@@ -101,6 +217,32 @@ class fFilesystem
 			self::$filename_map[$file] = $file; 
 		}
 		return self::$filename_map[$file];
+	}
+	
+	
+	/**
+	 * Indicates if a transaction is in progress
+	 * 
+	 * @return void
+	 */
+	static public function isTransactionInProgress()
+	{
+		return is_array(self::$commit_operations);
+	}
+	
+	
+	/**
+	 * Saves an object to the identity map
+	 * 
+	 * @internal
+	 * 
+	 * @param  string    $file		 A file or directory name, directories should end in / or \
+	 * @param  Exception $exception  The exception for this file/directory
+	 * @return void
+	 */
+	static public function updateExceptionMap($file, Exception $exception)
+	{              
+		self::$exception_map[$file] = $exception;
 	}
 	
 	
@@ -165,34 +307,99 @@ class fFilesystem
 	
 	
 	/**
-	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
+	 * Keeps a record of created files so they can be deleted up in case of a rollback
 	 * 
-	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
-	 * filesystem undo buffer which can return the filesystem to the state when startTransaction() was
-	 * called. If your PHP script dies in the middle of an operation this functionality will do nothing
-	 * for you and all operations will be retained, except for deletes which only occur once the
-	 * transaction is committed.
+	 * @internal
 	 * 
+	 * @param object $object  The new file or directory to get rid of on rollback
 	 * @return void
 	 */
-	static public function startTransaction()
+	static public function recordCreate($object)
 	{
-		if (self::$commit_operations !== NULL) {
-			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
-		}
-		self::$commit_operations   = array();
-		self::$rollback_operations = array();
+		$this->rollback_operations[] = array(
+			'action' => 'delete',
+			'object' => $object
+		);		
 	}
 	
 	
 	/**
-	 * Indicates if a transaction is in progress
+	 * Keeps track of file and directory names to delete once a transaction is committed. This way no files are lost during a rollback.
 	 * 
+	 * @internal
+	 * 
+	 * @param fFile|fDirectory $object  The filesystem object to delete
 	 * @return void
 	 */
-	static public function isTransactionInProgress()
+	static public function recordDelete($object)
 	{
-		return is_array(self::$commit_operations);
+		$this->commit_operations[] = array(
+			'action' => 'delete',
+			'object' => $object
+		);	
+	}
+	
+	
+	/**
+	 * Keeps a record of duplicated files so they can be cleaned up in case of a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @param fFile $file  The duplicate file to get rid of on rollback
+	 * @return void
+	 */
+	static public function recordDuplicate(fFile $file)
+	{
+		$this->rollback_operations[] = array(
+			'action'   => 'delete',
+			'filename' => $file->getPath()
+		);		
+	}
+	
+	
+	/**
+	 * Keeps a temp file in place of the old filename so the file can be restored during a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @param string $old_name  The old file or directory name
+	 * @param string $new_name  The new file or directory name
+	 * @return void
+	 */
+	static public function recordRename($old_name, $new_name)
+	{
+		$this->rollback_operations[] = array(
+			'action'   => 'rename',
+			'old_name' => $old_name,
+			'new_name' => $new_name
+		);	
+		
+		// Create the file with no content to prevent overwriting by another process
+		file_put_contents($old_name, '');
+		
+		$this->commit_operations[] = array(
+			'action'   => 'delete',
+			'filename' => $old_name
+		);
+		
+	}
+	
+	
+	/**
+	 * Keeps backup copies of files so they can be restored if there is a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @param fFile $file  The file that is being written to
+	 * @return void
+	 */
+	static public function recordWrite(fFile $file)
+	{
+		$this->rollback_operations[] = array(
+			'action'   => 'write',
+			'filename' => $file->getPath(),
+			'old_data' => file_get_contents($file->getPath())
+		);	
 	}
 	
 	
@@ -229,240 +436,34 @@ class fFilesystem
 	
 	
 	/**
-	 * Commits a filesystem transaction, should only be called when a transaction is in progress
+	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
+	 * 
+	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
+	 * filesystem undo buffer which can return the filesystem to the state when startTransaction() was
+	 * called. If your PHP script dies in the middle of an operation this functionality will do nothing
+	 * for you and all operations will be retained, except for deletes which only occur once the
+	 * transaction is committed.
 	 * 
 	 * @return void
 	 */
-	static public function commitTransaction()
+	static public function startTransaction()
 	{
-		if (!self::isTransactionInProgress()) {
-			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
+		if (self::$commit_operations !== NULL) {
+			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
 		}
-		
-		$commit_operations = self::$commit_operations;
-		
-		self::$commit_operations   = NULL;
-		self::$rollback_operations = NULL;
-		
-		$commit_operations = array_reverse($commit_operations);
-		
-		foreach ($commit_operations as $operation) {
-			// Commit operations only include deletes, however it could be a filename or object
-			if (isset($operation['filename'])) {
-				@unlink($operation['filename']);	
-			} else {
-				$operation['object']->delete();
-			}			
-		}
-	}
-	
-	
-	/**
-	 * Keeps a record of created files so they can be deleted up in case of a rollback
-	 * 
-	 * @internal
-	 * 
-	 * @param object $object  The new file or directory to get rid of on rollback
-	 * @return void
-	 */
-	static public function recordCreate($object)
-	{
-		$this->rollback_operations[] = array(
-			'action' => 'delete',
-			'object' => $object
-		);		
-	}
-	
-	
-	/**
-	 * Keeps a record of duplicated files so they can be cleaned up in case of a rollback
-	 * 
-	 * @internal
-	 * 
-	 * @param fFile $file  The duplicate file to get rid of on rollback
-	 * @return void
-	 */
-	static public function recordDuplicate(fFile $file)
-	{
-		$this->rollback_operations[] = array(
-			'action'   => 'delete',
-			'filename' => $file->getPath()
-		);		
-	}
-	
-	
-	/**
-	 * Keeps backup copies of files so they can be restored if there is a rollback
-	 * 
-	 * @internal
-	 * 
-	 * @param fFile $file  The file that is being written to
-	 * @return void
-	 */
-	static public function recordWrite(fFile $file)
-	{
-		$this->rollback_operations[] = array(
-			'action'   => 'write',
-			'filename' => $file->getPath(),
-			'old_data' => file_get_contents($file->getPath())
-		);	
-	}
-	
-	
-	/**
-	 * Keeps a temp file in place of the old filename so the file can be restored during a rollback
-	 * 
-	 * @internal
-	 * 
-	 * @param string $old_name  The old file or directory name
-	 * @param string $new_name  The new file or directory name
-	 * @return void
-	 */
-	static public function recordRename($old_name, $new_name)
-	{
-		$this->rollback_operations[] = array(
-			'action'   => 'rename',
-			'old_name' => $old_name,
-			'new_name' => $new_name
-		);	
-		
-		// Create the file with no content to prevent overwriting by another process
-		file_put_contents($old_name, '');
-		
-		$this->commit_operations[] = array(
-			'action'   => 'delete',
-			'filename' => $old_name
-		);
-		
-	}
-	
-	
-	/**
-	 * Keeps track of file and directory names to delete once a transaction is committed. This way no files are lost during a rollback.
-	 * 
-	 * @internal
-	 * 
-	 * @param fFile|fDirectory $object  The filesystem object to delete
-	 * @return void
-	 */
-	static public function recordDelete($object)
-	{
-		$this->commit_operations[] = array(
-			'action' => 'delete',
-			'object' => $object
-		);	
-	}
-	
-	
-	/**
-	 * Returns a unique name for a file
-	 * 
-	 * @param  string $file           The filename to check
-	 * @param  string $new_extension  The new extension for the filename, do not include .
-	 * @return string  The unique file name
-	 */
-	static public function createUniqueName($file, $new_extension=NULL) 
-	{
-		$info = self::getInfo($file);
-		
-		// Change the file extension
-		if ($new_extension !== NULL) {
-			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
-			$file = $info['dirname'] . $info['filename'] . $new_extension;
-			$info = self::getInfo($file);
-		}
-		
-		// If there is an extension, be sure to add . before it
-		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
-		
-		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file); 	
-		
-		// Look for a unique name by adding _copy# to the end of the file
-		while (file_exists($file)) {
-			$info = self::getInfo($file);
-			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
-				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
-			} else {
-				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;    
-			}    
-		}
-		
-		return $file;
-	}
-	
-	
-	/**
-	 * Returns info about a path including dirname, basename, extension and filename 
-	 * 
-	 * @param  string $file_path   The file to rename
-	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
-	 * @return array  The file's dirname, basename, extension and filename
-	 */
-	static public function getPathInfo($file, $element=NULL) 
-	{
-		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
-		if ($element !== NULL && !in_array($element, $valid_elements)) {
-			fCore::toss('fProgrammerException', 'Invalid element, ' . $element . ', requested. Must be one of: ' . join(', ', $valid_elements) . '.');  
-		}
-		
-		$path_info = pathinfo($file);
-		if (!isset($path_info['filename'])) {
-			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);   
-		}
-		$path_info['dirname'] .= DIRECTORY_SEPARATOR;
-		
-		if ($element) {
-			return $path_info[$element];   
-		}
-		
-		return $path_info;
+		self::$commit_operations   = array();
+		self::$rollback_operations = array();
 	} 
 	
 	
 	/**
-	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
+	 * Prevent instantiation
 	 * 
-	 * @param  integer $bytes           The size of the file in bytes
-	 * @param  integer $decimal_places  The number of decimal places to display
-	 * @return string  
+	 * @return fFilesystem
 	 */
-	static public function formatFilesize($bytes, $decimal_places=1) 
-	{
-		if ($bytes < 0) {
-			$bytes = 0;        
-		}
-		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
-		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
-		$suffix    = floor(log($bytes)/6.9314718);
-		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
-	}
-	
-	
-	/**
-	 * Takes a file size and converts it to bytes 
-	 * 
-	 * @param  string $size  The size to convert to bytes
-	 * @return integer  The number of bytes represented by the size  
-	 */
-	static public function convertToBytes($size) 
-	{
-		if (!preg_match('#^(\d+)\s*(k|m|g|t)?b?$#', strtolower(trim($size)), $matches)) {
-			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');   
-		}
-		
-		if ($matches[1] == '') {
-			$matches[1] = 'b';   
-		}
-		
-		$size_map = array('b' => 1,
-						  'k' => 1024,
-						  'm' => 1048576,
-						  'g' => 1073741824,
-						  't' => 1099511627776);
-		return $matches[0] * $size_map[$matches[1]];
-	}
+	private function __construct() { }
 }  
+
 
 
 /**
@@ -486,4 +487,3 @@ class fFilesystem
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

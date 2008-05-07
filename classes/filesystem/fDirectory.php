@@ -20,6 +20,31 @@
 class fDirectory
 {
 	/**
+	 * Makes sure a directory has a / or \ at the end
+	 * 
+	 * @param  string $directory  The directory to check
+	 * @return string  The directory name in canonical form
+	 */
+	static public function makeCanonical($directory)
+	{
+		if (substr($directory, -1) != '/' && substr($directory, -1) != '\\') {
+			$directory .= DIRECTORY_SEPARATOR;   
+		}
+		return $directory;
+	}
+	
+	
+	/**
+	 * The temporary directory to use for various tasks
+	 * 
+	 * @internal
+	 * 
+	 * @var string 
+	 */
+	const TEMP_DIRECTORY = '__temp/';
+	
+	
+	/**
 	 * The full path to the directory
 	 * 
 	 * @var string 
@@ -32,15 +57,6 @@ class fDirectory
 	 * @var object 
 	 */
 	protected $exception;
-	
-	/**
-	 * The temporary directory to use for various tasks
-	 * 
-	 * @internal
-	 * 
-	 * @var string 
-	 */
-	const TEMP_DIRECTORY = '__temp/';
 	
 	
 	/**
@@ -72,21 +88,6 @@ class fDirectory
 	
 	
 	/**
-	 * Makes sure a directory has a / or \ at the end
-	 * 
-	 * @param  string $directory  The directory to check
-	 * @return string  The directory name in canonical form
-	 */
-	static public function makeCanonical($directory)
-	{
-		if (substr($directory, -1) != '/' && substr($directory, -1) != '\\') {
-			$directory .= DIRECTORY_SEPARATOR;   
-		}
-		return $directory;
-	}
-	
-	
-	/**
 	 * When used in a string context, represents the file as the filename
 	 * 
 	 * @return string  The filename of the file
@@ -98,32 +99,70 @@ class fDirectory
 	
 	
 	/**
-	 * Throws the directory exception if exists
+	 * Will clean out a temp directory of all files/directories. Removes all files over 6 hours old.
+	 * 
+	 * This operation is not part of the filesystem transaction model and will be executed immediately.
+	 * 
+	 * @internal
 	 * 
 	 * @return void
 	 */
-	protected function tossIfException()
+	public function clean() 
 	{
-		if ($this->exception) {
-			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+		$this->tossIfException();
+		
+		if (!$this->isTemp()) {
+			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');   
 		}
+		
+		// Delete the files
+		$files = $this->recursiveScan();
+		foreach ($files as $file) {
+			if ($file instanceof fFile) {
+				if (filemtime($file->getPath()) < strtotime('-6 hours')) {
+					$file->delete();
+				}
+			}
+		}
+		
+		// Delete the directories
+		$dirs = $this->recursiveScan();
+		foreach ($dirs as $dir) {
+			if ($dir instanceof fDirectory) {    
+				if (filemtime($dir->getPath()) < strtotime('-6 hours') && $dir->scan() == array()) {
+					$dir->delete();
+				}
+			}
+		}    
 	}
 	
 	
 	/**
-	 * Gets the directory's current path
+	 * Will delete a directory and all files and folders inside of it
 	 * 
-	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
-	 * @return string  The path for the directory
+	 * This operation will not be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory and all contents as existing until that point.
+	 * 
+	 * @return void
 	 */
-	public function getPath($from_doc_root=FALSE)
+	public function delete() 
 	{
 		$this->tossIfException();
 		
-		if ($from_doc_root) {
-			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);    
-		}
-		return $this->directory;    
+		$files = $this->scan();
+		
+		foreach ($files as $file) {
+			$file->delete();
+		} 
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isTransactionInProgress()) {
+			return fFilesystem::delete($this);	
+		} 
+		
+		rmdir($this->directory);  
+		
+		$exception = new fProgrammerException('The action requested can not be performed because the directory has been deleted');
+		fFilesystem::updateExceptionMap($this->directory, $exception);
 	}
 	
 	
@@ -169,30 +208,32 @@ class fDirectory
 	
 	
 	/**
-	 * Check to see if the current directory is a temporary directory
+	 * Gets the parent directory
 	 * 
-	 * @internal
-	 * 
-	 * @return boolean  If the directory is a temp directory
+	 * @return fDirectory  The object representing the parent dir
 	 */
-	public function isTemp()
+	public function getParent()
 	{
 		$this->tossIfException();
 		
-		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);    
+		return new fDirectory(preg_replace('#[^/\\\\]+(/|\\\\)$#', '', $this->directory));    
 	}
 	
 	
 	/**
-	 * Check to see if the current directory is writable
+	 * Gets the directory's current path
 	 * 
-	 * @return boolean  If the directory is writable
+	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
+	 * @return string  The path for the directory
 	 */
-	public function isWritable()
+	public function getPath($from_doc_root=FALSE)
 	{
 		$this->tossIfException();
 		
-		return is_writable($this->directory);   
+		if ($from_doc_root) {
+			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);    
+		}
+		return $this->directory;    
 	}
 	
 	
@@ -221,101 +262,30 @@ class fDirectory
 	
 	
 	/**
-	 * Gets the parent directory
-	 * 
-	 * @return fDirectory  The object representing the parent dir
-	 */
-	public function getParent()
-	{
-		$this->tossIfException();
-		
-		return new fDirectory(preg_replace('#[^/\\\\]+(/|\\\\)$#', '', $this->directory));    
-	}
-	
-	
-	/**
-	 * Will clean out a temp directory of all files/directories. Removes all files over 6 hours old.
-	 * 
-	 * This operation is not part of the filesystem transaction model and will be executed immediately.
+	 * Check to see if the current directory is a temporary directory
 	 * 
 	 * @internal
 	 * 
-	 * @return void
+	 * @return boolean  If the directory is a temp directory
 	 */
-	public function clean() 
+	public function isTemp()
 	{
 		$this->tossIfException();
 		
-		if (!$this->isTemp()) {
-			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');   
-		}
-		
-		// Delete the files
-		$files = $this->recursiveScan();
-		foreach ($files as $file) {
-			if ($file instanceof fFile) {
-				if (filemtime($file->getPath()) < strtotime('-6 hours')) {
-					$file->delete();
-				}
-			}
-		}
-		
-		// Delete the directories
-		$dirs = $this->recursiveScan();
-		foreach ($dirs as $dir) {
-			if ($dir instanceof fDirectory) {    
-				if (filemtime($dir->getPath()) < strtotime('-6 hours') && $dir->scan() == array()) {
-					$dir->delete();
-				}
-			}
-		}    
+		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);    
 	}
 	
 	
 	/**
-	 * Performs a scandir on a directory, removing the . and .. folder references
+	 * Check to see if the current directory is writable
 	 * 
-	 * @return array  The fFile and fDirectory objects for the files/folders in this directory
+	 * @return boolean  If the directory is writable
 	 */
-	public function scan()
+	public function isWritable()
 	{
 		$this->tossIfException();
 		
-		$files = array_diff(scandir($this->directory), array('.', '..')); 
-		$objects = array();
-		
-		foreach ($files as $file) {
-			if (is_dir($this->directory . $file)) {
-				$objects[] = new fDirectory($this->directory . $file);   
-			} else {
-				$objects[] = new fFile($this->directory . $file); 
-			}
-		}  
-		
-		return $objects;
-	}
-	
-	
-	/**
-	 * Performs a recursive scandir on a directory, removing the . and .. folder references
-	 * 
-	 * @return array  The fFile and fDirectory objects for the files/folders (listed recursively) in this directory
-	 */
-	public function scanRecursive()
-	{
-		$this->tossIfException();
-		
-		$files  = $this->scan();
-		$objects = $files;
-		
-		$total_files = sizeof($files);
-		for ($i=0; $i < $total_files; $i++) {
-			if ($files[$i] instanceof fDirectory) {
-				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());   
-			}
-		}  
-		
-		return $objects;
+		return is_writable($this->directory);   
 	}
 	
 	
@@ -372,33 +342,65 @@ class fDirectory
 	
 	
 	/**
-	 * Will delete a directory and all files and folders inside of it
+	 * Performs a scandir on a directory, removing the . and .. folder references
 	 * 
-	 * This operation will not be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory and all contents as existing until that point.
-	 * 
-	 * @return void
+	 * @return array  The fFile and fDirectory objects for the files/folders in this directory
 	 */
-	public function delete() 
+	public function scan()
 	{
 		$this->tossIfException();
 		
-		$files = $this->scan();
+		$files = array_diff(scandir($this->directory), array('.', '..')); 
+		$objects = array();
 		
 		foreach ($files as $file) {
-			$file->delete();
-		} 
+			if (is_dir($this->directory . $file)) {
+				$objects[] = new fDirectory($this->directory . $file);   
+			} else {
+				$objects[] = new fFile($this->directory . $file); 
+			}
+		}  
 		
-		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
-			return fFilesystem::delete($this);	
-		} 
+		return $objects;
+	}
+	
+	
+	/**
+	 * Performs a recursive scandir on a directory, removing the . and .. folder references
+	 * 
+	 * @return array  The fFile and fDirectory objects for the files/folders (listed recursively) in this directory
+	 */
+	public function scanRecursive()
+	{
+		$this->tossIfException();
 		
-		rmdir($this->directory);  
+		$files  = $this->scan();
+		$objects = $files;
 		
-		$exception = new fProgrammerException('The action requested can not be performed because the directory has been deleted');
-		fFilesystem::updateExceptionMap($this->directory, $exception);
+		$total_files = sizeof($files);
+		for ($i=0; $i < $total_files; $i++) {
+			if ($files[$i] instanceof fDirectory) {
+				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());   
+			}
+		}  
+		
+		return $objects;
+	}
+	
+	
+	/**
+	 * Throws the directory exception if exists
+	 * 
+	 * @return void
+	 */
+	protected function tossIfException()
+	{
+		if ($this->exception) {
+			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+		}
 	}    
 }  
+
 
 
 /**
@@ -422,4 +424,3 @@ class fDirectory
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

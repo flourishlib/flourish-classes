@@ -20,13 +20,6 @@
 class fImage extends fFile
 {     
 	/**
-	 * The processor to use for the image manipulation
-	 * 
-	 * @var string 
-	 */
-	static private $processor = NULL;
-	
-	/**
 	 * If we are using the imagemagick processor, this stores the path to the binaries
 	 * 
 	 * @var string 
@@ -34,11 +27,42 @@ class fImage extends fFile
 	static private $imagemagick_dir = NULL;
 	
 	/**
-	 * The modifications to perform on the image when it is saved
+	 * The processor to use for the image manipulation
 	 * 
-	 * @var array 
+	 * @var string 
 	 */
-	private $pending_modifications = array();
+	static private $processor = NULL;
+	
+	
+	/**
+	 * Checks to make sure we can get to and execute the ImageMagick convert binary
+	 * 
+	 * @param  string $path   The path to ImageMagick on the filesystem
+	 * @return void
+	 */
+	static private function checkImageMagickBinary($path)
+	{
+		if (!file_exists($path . 'convert.exe') && !file_exists($path . 'convert')) {
+			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary could not be found');	
+		}
+		if (!is_executable($path . 'convert.exe') && !is_executable($path . 'convert')) {
+			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary is not executable');	
+		}
+		
+		// Make sure we can execute the convert binary
+		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
+			$exec_dirs = explode(';', ini_get('safe_mode_exec_dir'));
+			$found = FALSE;
+			foreach ($exec_dirs as $exec_dir) {
+				if (stripos($path, $exec_dir) === 0) {
+					$found = TRUE;	
+				}
+			}
+			if (!$found) {
+				fCore::toss('fEnvironmentException', 'Safe mode is turned on and the ImageMagick convert binary is not in one of the paths defined by the safe_mode_exec_dir ini setting');
+			}	
+		}
+	}
 	
 	
 	/**
@@ -80,26 +104,126 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Creates an object to represent an image on the filesystem
+	 * Determines what processor to use for image manipulation
 	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $file_path  The path to the image
-	 * @return fImage
+	 * @return void
 	 */
-	public function __construct($file_path) 
+	static private function determineProcessor()
+	{
+		// Determine what processor to use
+		if (self::$processor === NULL) {
+			
+			// Look for imagemagick first since it can handle more than GD
+			try {
+				
+				if (fCore::getOS() == 'windows') {
+					$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+					$win_output = trim(shell_exec($win_search));
+					
+					if (stripos($win_output, 'File not found') !== FALSE) {
+						throw new Exception();    
+					}
+					
+					$path = 'C:\Program Files\\' . $win_output . '\\';
+				}
+				
+				if (fCore::getOS() == 'linux/unix') {
+					$nix_search = 'whereis -b convert';
+					$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+					
+					if (empty($nix_output)) {
+						throw new Exception();
+					}
+				
+					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
+				}
+				
+				self::checkImageMagickBinary($path);
+				
+				self::$imagemagick_dir = $path;
+				self::$processor = 'imagemagick';
+				
+			} catch (Exception $e) {
+
+				// Look for GD last since it does not support tiff files
+				if (function_exists('gd_info')) {
+					
+					self::$processor = 'gd';
+				
+				} else {
+					self::$processor = 'none';
+				}
+			}
+		}	
+	}
+	
+	
+	/**
+	 * Returns an array of acceptable mimetype for the processor installed
+	 * 
+	 * @return array  The mimetypes that the installed processor can manipulate
+	 */
+	static public function getCompatibleMimetypes()
 	{
 		self::determineProcessor();
 		
-		try {
-
-			self::verifyImageCompatible($file_path);
-			parent::__construct($file_path);
-				
-		} catch (fExpectedException $e) {
-			$this->file = NULL;
-			$this->exception = $e;	
+		$mimetypes = array('image/gif', 'image/jpeg', 'image/pjpeg', 'image/png');
+		
+		if (self::$processor == 'imagemagick') {
+			$mimetypes[] = 'image/tiff';
 		}
+		
+		return $mimetypes;
+	}
+	
+	
+	/**
+	 * Gets the dimensions and type of an image stored on the filesystem
+	 * 
+	 * The 'type' element will be one of the following:
+	 *  - {null} (File type is not supported)
+	 *  - 'jpg'
+	 *  - 'gif'
+	 *  - 'png'
+	 *  - 'tif'
+	 * 
+	 * @throws  fValidationException
+	 * 
+	 * @param  string $image    The image to get stats for
+	 * @param  string $element  The element to retrieve ('type', 'width', 'height')
+	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
+	 */
+	static public function getInfo($image, $element=NULL)
+	{
+		$image_info = @getimagesize($image);
+		if ($image_info == FALSE) {
+			fCore::toss('fValidationException', 'The file specified is not an image');    
+		}
+		
+		if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
+			fCore::toss('fProgrammerException', 'Invalid element requested');  
+		}
+		
+		$types = array(IMAGETYPE_GIF     => 'gif',
+					   IMAGETYPE_JPEG    => 'jpg',
+					   IMAGETYPE_PNG     => 'png',
+					   IMAGETYPE_TIFF_II => 'tif',
+					   IMAGETYPE_TIFF_MM => 'tif');
+		
+		$output           = array();
+		$output['width']  = $image_info[0];
+		$output['height'] = $image_info[1];
+		if (isset($types[$image_info[2]])) {
+			$output['type'] = $types[$image_info[2]];
+		} else {
+			$output['type'] = NULL;	
+		}
+		
+		if ($element !== NULL) {
+			return $output[$element];    
+		}
+		
+		return $output;	
 	}
 	
 	
@@ -163,223 +287,36 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Returns an array of acceptable mimetype for the processor installed
+	 * The modifications to perform on the image when it is saved
 	 * 
-	 * @return array  The mimetypes that the installed processor can manipulate
+	 * @var array 
 	 */
-	static public function getCompatibleMimetypes()
+	private $pending_modifications = array();
+	
+	
+	/**
+	 * Creates an object to represent an image on the filesystem
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $file_path  The path to the image
+	 * @return fImage
+	 */
+	public function __construct($file_path) 
 	{
 		self::determineProcessor();
 		
-		$mimetypes = array('image/gif', 'image/jpeg', 'image/pjpeg', 'image/png');
-		
-		if (self::$processor == 'imagemagick') {
-			$mimetypes[] = 'image/tiff';
-		}
-		
-		return $mimetypes;
-	}
-	
-	
-	/**
-	 * Determines what processor to use for image manipulation
-	 * 
-	 * @return void
-	 */
-	static private function determineProcessor()
-	{
-		// Determine what processor to use
-		if (self::$processor === NULL) {
-			
-			// Look for imagemagick first since it can handle more than GD
-			try {
-				
-				if (fCore::getOS() == 'windows') {
-					$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
-					$win_output = trim(shell_exec($win_search));
-					
-					if (stripos($win_output, 'File not found') !== FALSE) {
-						throw new Exception();    
-					}
-					
-					$path = 'C:\Program Files\\' . $win_output . '\\';
-				}
-				
-				if (fCore::getOS() == 'linux/unix') {
-					$nix_search = 'whereis -b convert';
-					$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
-					
-					if (empty($nix_output)) {
-						throw new Exception();
-					}
-				
-					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 
-				}
-				
-				self::checkImageMagickBinary($path);
-				
-				self::$imagemagick_dir = $path;
-				self::$processor = 'imagemagick';
-				
-			} catch (Exception $e) {
+		try {
 
-				// Look for GD last since it does not support tiff files
-				if (function_exists('gd_info')) {
-					
-					self::$processor = 'gd';
+			self::verifyImageCompatible($file_path);
+			parent::__construct($file_path);
 				
-				} else {
-					self::$processor = 'none';
-				}
-			}
-		}	
-	}
-	
-	
-	/**
-	 * Checks to make sure we can get to and execute the ImageMagick convert binary
-	 * 
-	 * @param  string $path   The path to ImageMagick on the filesystem
-	 * @return void
-	 */
-	static private function checkImageMagickBinary($path)
-	{
-		if (!file_exists($path . 'convert.exe') && !file_exists($path . 'convert')) {
-			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary could not be found');	
+		} catch (fExpectedException $e) {
+			$this->file = NULL;
+			$this->exception = $e;	
 		}
-		if (!is_executable($path . 'convert.exe') && !is_executable($path . 'convert')) {
-			fCore::toss('fEnvironmentException', 'The ImageMagick convert binary is not executable');	
-		}
-		
-		// Make sure we can execute the convert binary
-		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
-			$exec_dirs = explode(';', ini_get('safe_mode_exec_dir'));
-			$found = FALSE;
-			foreach ($exec_dirs as $exec_dir) {
-				if (stripos($path, $exec_dir) === 0) {
-					$found = TRUE;	
-				}
-			}
-			if (!$found) {
-				fCore::toss('fEnvironmentException', 'Safe mode is turned on and the ImageMagick convert binary is not in one of the paths defined by the safe_mode_exec_dir ini setting');
-			}	
-		}
-	}
-	
-	
-	/**
-	 * Gets the dimensions and type of an image stored on the filesystem
-	 * 
-	 * The 'type' element will be one of the following:
-	 *  - {null} (File type is not supported)
-	 *  - 'jpg'
-	 *  - 'gif'
-	 *  - 'png'
-	 *  - 'tif'
-	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @param  string $image    The image to get stats for
-	 * @param  string $element  The element to retrieve ('type', 'width', 'height')
-	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
-	 */
-	static public function getInfo($image, $element=NULL)
-	{
-		$image_info = @getimagesize($image);
-		if ($image_info == FALSE) {
-			fCore::toss('fValidationException', 'The file specified is not an image');    
-		}
-		
-		if ($element !== NULL && !in_array($element, array('type', 'width', 'height'))) {
-			fCore::toss('fProgrammerException', 'Invalid element requested');  
-		}
-		
-		$types = array(IMAGETYPE_GIF     => 'gif',
-					   IMAGETYPE_JPEG    => 'jpg',
-					   IMAGETYPE_PNG     => 'png',
-					   IMAGETYPE_TIFF_II => 'tif',
-					   IMAGETYPE_TIFF_MM => 'tif');
-		
-		$output           = array();
-		$output['width']  = $image_info[0];
-		$output['height'] = $image_info[1];
-		if (isset($types[$image_info[2]])) {
-			$output['type'] = $types[$image_info[2]];
-		} else {
-			$output['type'] = NULL;	
-		}
-		
-		if ($element !== NULL) {
-			return $output[$element];    
-		}
-		
-		return $output;	
 	}
 
-	
-	/**
-	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until {@link fImage::saveChanges()} is called.
-	 * 
-	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
-	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
-	 * @return void
-	 */
-	public function resize($canvas_width, $canvas_height) 
-	{
-		$this->tossIfException();
-		
-		// Make sure the user input is valid
-		if (!is_int($canvas_width) || $canvas_width < 0) {
-			fCore::toss('fProgrammerException', 'The canvas width specified is not an integer or is less than zero');  
-		}
-		if (!is_int($canvas_height) || $canvas_height < 0) {
-			fCore::toss('fProgrammerException', 'The canvas height specified is not an integer or is less than zero');   
-		}
-		if ($canvas_width == 0 && $canvas_height == 0) {
-			fCore::toss('fProgrammerException', 'The canvas width and canvas height are both zero, no resizing will occur');     
-		}
-
-		// Calculate what the new dimensions will be
-		$dim = $this->getCurrentDimensions();
-		$orig_width  = $dim['width'];
-		$orig_height = $dim['height'];
-		
-		if ($canvas_width == 0) {
-			$new_height = $canvas_height;
-			$new_width  = (int) (($new_height/$orig_height) * $orig_width);    
-		
-		} elseif ($canvas_height == 0) {
-			$new_width  = $canvas_width;
-			$new_height = (int) (($new_width/$orig_width) * $orig_height);    
-		
-		} else {
-			$orig_ratio   = $orig_width/$orig_height;
-			$canvas_ratio = $canvas_width/$canvas_height;
-			
-			if ($canvas_ratio > $orig_ratio) {
-				$new_height = $canvas_height;
-				$new_width  = (int) ($orig_ratio * $new_height);
-			} else {
-				$new_width  = $canvas_width;
-				$new_height = (int) ($new_width / $orig_ratio);		        
-			}
-		}
-
-		// If the size did not go down, don't even record the modification
-		if ($orig_width <= $new_width || $orig_height <= $new_height) {
-			return;	
-		}
-		
-		// Record what we are supposed to do
-		$this->pending_modifications[] = array(
-			'operation'  => 'resize',
-			'width'      => $new_width,
-			'height'     => $new_height,
-			'old_width'  => $orig_width,
-			'old_height' => $orig_height
-		);
-	}
-  
 	
 	/**
 	 * Crops the biggest area possible from the center of the image that matches the ratio provided. Crop does not occur until {@link fImage::saveChanges()} is called.
@@ -458,65 +395,6 @@ class fImage extends fFile
 			'width'      => $dim['width'],
 			'height'     => $dim['height']
 		);
-	}
-	
-	
-	/**
-	 * Saves any changes to the image, if the file type is different than the
-	 * current one, removes the current file once the new one is created.
-	 * 
-	 * This operation will be reverted by a filesystem transaction being rolled back.
-	 * If a transaction is in progress and the new image type causes a new file
-	 * to be created, the old file will not be deleted until the transaction is
-	 * committed.
-	 * 
-	 * @param  string $new_image_type  The new file type for the image, can be 'jpg', 'gif' or 'png'
-	 * @return void
-	 */
-	public function saveChanges($new_image_type=NULL) 
-	{
-		$this->tossIfException();
-		
-		if (self::$processor == 'none') {
-			fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
-		}
-		
-		$info = self::getInfo($this->file);     
-		if ($info['type'] == 'tif' && self::$processor == 'gd') {
-			fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
-		}
-		
-		if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
-			fCore::toss('fProgrammerException', 'Invalid new image type specified');  
-		}
-		
-		if ($new_image_type) {
-			$output_file = fFilesystem::createUniqueName($this->file, $new_image_type);		
-		} else {
-			$output_file = $this->file;	
-		}
-		
-		// Wrap changes to the image into the filesystem transaction
-		if ($output_file == $this->file && fFilesystem::isTransactionInProgress()) {
-			fFilesystem::recordWrite($this);		
-		}
-		
-		if (self::$processor == 'gd') {
-			$this->processWithGD($output_file);	
-		} elseif (self::$processor == 'imagemagick') {
-			$this->processWithImageMagick($output_file);
-		}
-		
-		$old_file = $this->file;
-		fFilesystem::updateFilenameMap($this->file, $output_file);
-		
-		// If we created a new image, delete the old one
-		if ($output_file != $old_file) {
-			$old_image = new fImage($old_file);	
-			$old_image->delete();
-		}
-		
-		$this->pending_modifications = array();
 	}
 	
 	
@@ -725,7 +603,131 @@ class fImage extends fFile
 		
 		shell_exec($command_line);
 	}
+	
+	
+	/**
+	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until {@link fImage::saveChanges()} is called.
+	 * 
+	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
+	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
+	 * @return void
+	 */
+	public function resize($canvas_width, $canvas_height) 
+	{
+		$this->tossIfException();
+		
+		// Make sure the user input is valid
+		if (!is_int($canvas_width) || $canvas_width < 0) {
+			fCore::toss('fProgrammerException', 'The canvas width specified is not an integer or is less than zero');  
+		}
+		if (!is_int($canvas_height) || $canvas_height < 0) {
+			fCore::toss('fProgrammerException', 'The canvas height specified is not an integer or is less than zero');   
+		}
+		if ($canvas_width == 0 && $canvas_height == 0) {
+			fCore::toss('fProgrammerException', 'The canvas width and canvas height are both zero, no resizing will occur');     
+		}
+
+		// Calculate what the new dimensions will be
+		$dim = $this->getCurrentDimensions();
+		$orig_width  = $dim['width'];
+		$orig_height = $dim['height'];
+		
+		if ($canvas_width == 0) {
+			$new_height = $canvas_height;
+			$new_width  = (int) (($new_height/$orig_height) * $orig_width);    
+		
+		} elseif ($canvas_height == 0) {
+			$new_width  = $canvas_width;
+			$new_height = (int) (($new_width/$orig_width) * $orig_height);    
+		
+		} else {
+			$orig_ratio   = $orig_width/$orig_height;
+			$canvas_ratio = $canvas_width/$canvas_height;
+			
+			if ($canvas_ratio > $orig_ratio) {
+				$new_height = $canvas_height;
+				$new_width  = (int) ($orig_ratio * $new_height);
+			} else {
+				$new_width  = $canvas_width;
+				$new_height = (int) ($new_width / $orig_ratio);		        
+			}
+		}
+
+		// If the size did not go down, don't even record the modification
+		if ($orig_width <= $new_width || $orig_height <= $new_height) {
+			return;	
+		}
+		
+		// Record what we are supposed to do
+		$this->pending_modifications[] = array(
+			'operation'  => 'resize',
+			'width'      => $new_width,
+			'height'     => $new_height,
+			'old_width'  => $orig_width,
+			'old_height' => $orig_height
+		);
+	}
+	
+	
+	/**
+	 * Saves any changes to the image, if the file type is different than the
+	 * current one, removes the current file once the new one is created.
+	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * If a transaction is in progress and the new image type causes a new file
+	 * to be created, the old file will not be deleted until the transaction is
+	 * committed.
+	 * 
+	 * @param  string $new_image_type  The new file type for the image, can be 'jpg', 'gif' or 'png'
+	 * @return void
+	 */
+	public function saveChanges($new_image_type=NULL) 
+	{
+		$this->tossIfException();
+		
+		if (self::$processor == 'none') {
+			fCore::toss('fEnvironmentException', "The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server");   
+		}
+		
+		$info = self::getInfo($this->file);     
+		if ($info['type'] == 'tif' && self::$processor == 'gd') {
+			fCore::toss('fEnvironmentException', 'The image specified is a TIFF file and the GD extension can not handle TIFF files');    
+		}
+		
+		if ($new_image_type !== NULL && !in_array($new_image_type, array('jpg', 'gif', 'png'))) {
+			fCore::toss('fProgrammerException', 'Invalid new image type specified');  
+		}
+		
+		if ($new_image_type) {
+			$output_file = fFilesystem::createUniqueName($this->file, $new_image_type);		
+		} else {
+			$output_file = $this->file;	
+		}
+		
+		// Wrap changes to the image into the filesystem transaction
+		if ($output_file == $this->file && fFilesystem::isTransactionInProgress()) {
+			fFilesystem::recordWrite($this);		
+		}
+		
+		if (self::$processor == 'gd') {
+			$this->processWithGD($output_file);	
+		} elseif (self::$processor == 'imagemagick') {
+			$this->processWithImageMagick($output_file);
+		}
+		
+		$old_file = $this->file;
+		fFilesystem::updateFilenameMap($this->file, $output_file);
+		
+		// If we created a new image, delete the old one
+		if ($output_file != $old_file) {
+			$old_image = new fImage($old_file);	
+			$old_image->delete();
+		}
+		
+		$this->pending_modifications = array();
+	}
 } 
+
 
 
 /**
@@ -748,5 +750,4 @@ class fImage extends fFile
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */
