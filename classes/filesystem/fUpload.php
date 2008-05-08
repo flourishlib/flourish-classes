@@ -255,7 +255,7 @@ class fUpload
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Forces use as a static class
 	 * 
 	 * @return fUpload
 	 */

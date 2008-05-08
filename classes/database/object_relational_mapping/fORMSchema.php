@@ -25,14 +25,6 @@ class fORMSchema
 	 * @var fISchema
 	 */
 	static private $schema_object;
-
-	
-	/**
-	 * Private class constructor to prevent instantiating the class
-	 * 
-	 * @return fORMSchema
-	 */
-	private function __construct() { }
 	
 	
 	/**
@@ -88,6 +80,37 @@ class fORMSchema
 	
 	
 	/**
+	 * Returns the name of the only route from the specified table to one of its related tables
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route that was preselected, will be verified if present
+	 * @return void
+	 */
+	static public function getRouteName($table, $related_table, $route=NULL)
+	{
+		$routes = self::getRoutes($table, $related_table);
+		
+		if (!empty($route) && isset($routes[$route])) {
+			return $route;	
+		}
+		
+		$keys = array_keys($routes);
+		
+		if (sizeof($keys) > 1) {
+			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);	
+		}
+		if (sizeof($keys) == 0) {
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table);
+		}
+		
+		return $keys[0];
+	}
+	
+	
+	/**
 	 * Returns an array of all routes from a table to one of its related tables
 	 * 
 	 * @internal
@@ -121,37 +144,6 @@ class fORMSchema
 	
 	
 	/**
-	 * Returns the name of the only route from the specified table to one of its related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @param  string $route          The route that was preselected, will be verified if present
-	 * @return void
-	 */
-	static public function getRouteName($table, $related_table, $route=NULL)
-	{
-		$routes = self::getRoutes($table, $related_table);
-		
-		if (!empty($route) && isset($routes[$route])) {
-			return $route;	
-		}
-		
-		$keys = array_keys($routes);
-		
-		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);	
-		}
-		if (sizeof($keys) == 0) {
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table);
-		}
-		
-		return $keys[0];
-	}
-	
-	
-	/**
 	 * Returns information about the specified to-many route
 	 * 
 	 * @internal
@@ -172,6 +164,37 @@ class fORMSchema
 		}
 		
 		return $routes[$route];
+	}
+	
+	
+	/**
+	 * Returns the name of the only to-many route from the specified table to one of its related tables
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route that was preselected, will be verified if present
+	 * @return void
+	 */
+	static public function getToManyRouteName($table, $related_table, $route=NULL)
+	{
+		$routes = self::getToManyRoutes($table, $related_table);
+		
+		if (!empty($route) && isset($routes[$route])) {
+			return $route;	
+		}
+		
+		$keys = array_keys($routes);
+		
+		if (sizeof($keys) > 1) {
+			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);	
+		}
+		if (sizeof($keys) == 0) {
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-many relationship');
+		}
+		
+		return $keys[0];
 	}
 	
 	
@@ -209,37 +232,6 @@ class fORMSchema
 	
 	
 	/**
-	 * Returns the name of the only to-many route from the specified table to one of its related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @param  string $route          The route that was preselected, will be verified if present
-	 * @return void
-	 */
-	static public function getToManyRouteName($table, $related_table, $route=NULL)
-	{
-		$routes = self::getToManyRoutes($table, $related_table);
-		
-		if (!empty($route) && isset($routes[$route])) {
-			return $route;	
-		}
-		
-		$keys = array_keys($routes);
-		
-		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);	
-		}
-		if (sizeof($keys) == 0) {
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-many relationship');
-		}
-		
-		return $keys[0];
-	}
-	
-	
-	/**
 	 * Returns information about the specified to-one route
 	 * 
 	 * @internal
@@ -260,35 +252,6 @@ class fORMSchema
 		}
 		
 		return $routes[$route];
-	}
-	
-	
-	/**
-	 * Returns an array of all routes from a table to one of its one-to-one or many-to-one related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @return void
-	 */
-	static public function getToOneRoutes($table, $related_table)
-	{
-		$relationship_types = self::getInstance()->getRelationships($table);
-		unset($relationship_types['one-to-many']);
-		unset($relationship_types['many-to-many']);
-		
-		$routes = array();
-		
-		foreach ($relationship_types as $type => $relationships) {
-			foreach ($relationships as $relationship) {
-				if ($relationship['related_table'] == $related_table) {
-					$routes[$relationship['column']] = $relationship;		
-				}
-			}	
-		}
-		
-		return $routes; 
 	}
 	
 	
@@ -324,19 +287,40 @@ class fORMSchema
 	
 	
 	/**
-	 * Turns on schema caching, using fUnexpectedException flushing
+	 * Returns an array of all routes from a table to one of its one-to-one or many-to-one related tables
 	 * 
-	 * @param  string  $cache_file  The file to use for caching
+	 * @internal
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @return void
 	 */
-	static public function enableSmartCaching($cache_file)
+	static public function getToOneRoutes($table, $related_table)
 	{
-		if (!self::getInstance() instanceof fSchema) {
-			fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');        
+		$relationship_types = self::getInstance()->getRelationships($table);
+		unset($relationship_types['one-to-many']);
+		unset($relationship_types['many-to-many']);
+		
+		$routes = array();
+		
+		foreach ($relationship_types as $type => $relationships) {
+			foreach ($relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table) {
+					$routes[$relationship['column']] = $relationship;		
+				}
+			}	
 		}
-		self::getInstance()->setCacheFile($cache_file);
-		fCore::addTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo')); 
+		
+		return $routes; 
 	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fORMSchema
+	 */
+	private function __construct() { }
 }
 
 
@@ -362,4 +346,3 @@ class fORMSchema
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

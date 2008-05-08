@@ -42,20 +42,6 @@
 class fDatabase
 {
 	/**
-	 * If debugging is enabled
-	 * 
-	 * @var boolean 
-	 */
-	private $debug;
-	
-	/**
-	 * The total number of seconds spent executing queries
-	 * 
-	 * @var float 
-	 */
-	private $query_time;
-	
-	/**
 	 * Database connection resource or PDO object 
 	 * 
 	 * @var mixed 
@@ -63,12 +49,19 @@ class fDatabase
 	private $connection;
 	
 	/**
-	 * The database type (postgresql, mysql, sqlite)
+	 * The database name
 	 * 
 	 * @var string 
 	 */
-	private $type;
-
+	private $database;
+	
+	/**
+	 * If debugging is enabled
+	 * 
+	 * @var boolean 
+	 */
+	private $debug;
+	
 	/**
 	 * The extension to use for the database specified
 	 * 
@@ -80,25 +73,11 @@ class fDatabase
 	private $extension;
 	
 	/**
-	 * The fSQLTranslation object for this database
-	 * 
-	 * @var object 
-	 */
-	private $translation;
-	
-	/**
-	 * The database name
+	 * The host the database server is located on
 	 * 
 	 * @var string 
 	 */
-	private $database;
-	
-	/**
-	 * The user to connect to the database as
-	 * 
-	 * @var string 
-	 */
-	private $username;
+	private $host;
 	
 	/**
 	 * The password for the user specified
@@ -108,18 +87,39 @@ class fDatabase
 	private $password;
 	
 	/**
-	 * The host the database server is located on
-	 * 
-	 * @var string 
-	 */
-	private $host;
-	
-	/**
 	 * The port number for the host
 	 * 
 	 * @var string 
 	 */
 	private $port;
+	
+	/**
+	 * The total number of seconds spent executing queries
+	 * 
+	 * @var float 
+	 */
+	private $query_time;
+	
+	/**
+	 * The fSQLTranslation object for this database
+	 * 
+	 * @var object 
+	 */
+	private $translation;
+	
+	/**
+	 * The database type (postgresql, mysql, sqlite)
+	 * 
+	 * @var string 
+	 */
+	private $type;
+	
+	/**
+	 * The user to connect to the database as
+	 * 
+	 * @var string 
+	 */
+	private $username;
 	
 
 	/**
@@ -155,359 +155,63 @@ class fDatabase
 	
 	
 	/**
-	 * Enabled debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	public function setDebug($enable)
-	{
-		$this->debug = (boolean) $enable;
-		if ($this->translation) {
-			$this->translation->setDebug($this->debug);	
-		}
-	}
-	
-	
-	/**
-	 * Gets the database type
-	 * 
-	 * @return string  The database type (mssql, mysql, pgsql or sqlite)
-	 */
-	public function getType()
-	{
-		return $this->type;
-	}
-	
-	
-	/**
-	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
-	 * 
-	 * @return string  The php extension used for database interaction
-	 */
-	public function getExtension()
-	{
-		return $this->extension;
-	}
-	
-	
-	/**
-	 * Gets the name of the database currently connected to
-	 * 
-	 * @return string  The name of the database currently connected to
-	 */
-	public function getDatabase()
-	{
-		return $this->database;
-	}
-	
-	
-	/**
-	 * Translates the SQL statement using fSQLTranslation and executes it
-	 * 
-	 * @param  string  $sql  An SQL statement
-	 * @return string  The translated SQL
-	 */
-	public function translatedQuery($sql)
-	{
-		if (!$this->translation) {
-			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
-		}	
-		$result = $this->query($this->translation->translate($sql));
-		$result->setUntranslatedSQL($sql);
-		return $result;
-	}
-	
-	
-	/**
-	 * Executes one or more sql queries
-	 * 
-	 * @param  string  $sql  One or more SQL statements
-	 * @return fResult|array  The fResult object(s) for the query
-	 */
-	public function query($sql)
-	{
-		// Ensure an SQL statement was passed
-		if (empty($sql)) {
-			fCore::toss('fProgrammerException', 'No SQL statement passed');
-		}
-		
-		// Split multiple queries
-		if (strpos($sql, ';') !== FALSE) {
-			$sql_queries = $this->explodeQueries($sql);
-			$sql = array_shift($sql_queries);
-		}
-		
-		$result = new fResult($this->extension);
-		$result->setSQL($sql);
-		
-		$start_time = microtime(TRUE);
-		$this->executeQuery($result);
-		
-		// Write some debugging info
-		$query_time = microtime(TRUE) - $start_time;
-		$this->query_time += $query_time;
-		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);          
-		
-		// If we get a resource or TRUE back then the query was successful
-		if ($result->getResult() === FALSE) {
-			fCore::toss('fSQLException', 'There was an error in the SQL statement ' . $result->getSql());	
-		}
-		
-		$this->handleAutoIncrementedValue($result);
-		
-		// Handle multiple SQL queries
-		if (!empty($sql_queries)) {
-			$result = array($result);
-			foreach ($sql_queries as $sql_query) {
-				$result[] = $this->query($sql_query);
-			}	
-		}
-		
-		return $result;
-	}
-	
-	
-	/**
-	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
-	 * 
-	 * @param  string $value  The value to escape 
-	 * @return string  The escaped string
-	 */
-	public function escapeString($value)
-	{
-		if ($this->extension == 'mysql') {
-			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
-		} elseif ($this->extension == 'mysqli') {
-			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
-		} elseif ($this->extension == 'pgsql') {
-			return "'" . pg_escape_string($value) . "'";
-		} elseif ($this->extension == 'sqlite') {
-			return "'" . sqlite_escape_string($value) . "'";	
-		} elseif ($this->extension == 'pdo') {
-			return $this->connection->quote($value);	
-		} elseif ($this->extension == 'mssql') {
-			return "'" . str_replace("'", "''", $value) . "'";	
-		}
-	}
-	
-	
-	/**
-	 * Unescapes strings coming out of the database, included for completeness
-	 * 
-	 * @param  string $value  The value to unescape 
-	 * @return string  The unescaped string
-	 */
-	public function unescapeString($value)
-	{
-		return $value;
-	}
-	
-	
-	/**
-	 * Escapes blobs to prevent breaking queries, includes surrounding quotes when appropriate
-	 * 
-	 * @param  string $value  The value to escape 
-	 * @return string  The escaped blob
-	 */
-	public function escapeBlob($value)
-	{
-		if ($this->extension == 'mysql') {
-			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
-		} elseif ($this->extension == 'mysqli') {
-			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
-		} elseif ($this->extension == 'pgsql') {
-			return "'" . pg_escape_bytea($this->connection, $value) . "'";
-		} elseif ($this->extension == 'sqlite') {
-			return "X'" . bin2hex($value) . "'";	
-		} elseif ($this->extension == 'pdo') {
-			return $this->connection->quote($value);	
-		} elseif ($this->extension == 'mssql') {
-			return '0x' . bin2hex($value);	
-		}
-	}
-	
-	
-	/**
-	 * Unescapes blobs coming out of the database
-	 * 
-	 * @param  string $value  The value to unescape 
-	 * @return binary  The binary data from the blob
-	 */
-	public function unescapeBlob($value)
-	{
-		if ($this->extension == 'pgsql') {
-			return pg_unescape_bytea($this->connection, $value);
-		} else  {
-			return $value;	
-		}
-	}
-	
-
-	/**
-	 * Translates a boolean to a value the database will understand
-	 * 
-	 * @param  string $value  The boolean to escape
-	 * @return string  The database equivalent of the boolean passed
-	 */
-	public function escapeBoolean($value)
-	{
-		if (in_array($this->type, array('postgresql', 'mysql'))) {
-			return ($value) ? 'TRUE' : 'FALSE';	
-		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
-			return ($value) ? "'1'" : "'0'";	
-		}
-	}
-	
-	
-	/**
-	 * Interprets a boolean coming out of the database
-	 * 
-	 * @param  string $value  The value to interpret 
-	 * @return boolean  The boolean equivalent of the value passed
-	 */
-	public function unescapeBoolean($value)
-	{
-		return ($value == 'f' || !$value) ? FALSE : TRUE;
-	}
-	
-	
-	/**
-	 * Escapes a timestamp for insertion into the database
-	 * 
-	 * @param  string $value  The value to escape 
-	 * @return string  The escaped timestamp
-	 */
-	public function escapeTimestamp($value)
-	{
-		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
-	}
-	
-	
-	/**
-	 * Unescapes timestamps coming out of the database
-	 * 
-	 * @param  string $value  The value to unescape 
-	 * @return string  The timestamp
-	 */
-	public function unescapeTimestamp($value)
-	{
-		return date('Y-m-d H:i:s', strtotime($value));
-	}
-	
-	
-	/**
-	 * Escapes a date for insertion into the database
-	 * 
-	 * @param  string $value  The value to escape 
-	 * @return string  The escaped date
-	 */
-	public function escapeDate($value)
-	{
-		return "'" . date('Y-m-d', strtotime($value)) . "'";
-	}
-	
-	
-	/**
-	 * Unescapes dates coming out of the database
-	 * 
-	 * @param  string $value  The value to unescape 
-	 * @return string  The date
-	 */
-	public function unescapeDate($value)
-	{
-		return date('Y-m-d', strtotime($value));
-	}
-	
-	
-	/**
-	 * Escapes a time for insertion into the database
-	 * 
-	 * @param  string $value  The value to escape 
-	 * @return string  The escaped time
-	 */
-	public function escapeTime($value)
-	{
-		return "'" . date('H:i:s', strtotime($value)) . "'";
-	}
-	
-	
-	/**
-	 * Unescapes times coming out of the database
-	 * 
-	 * @param  string $value  The value to unescape 
-	 * @return string  The time
-	 */
-	public function unescapeTime($value)
-	{
-		return date('H:i:s', strtotime($value));
-	}
-		  
-	
-	/**
-	 * Figures out which extension to use for the database type selected
+	 * Closes the open database connection
 	 * 
 	 * @return void
 	 */
-	private function determineExtension()
+	public function __destruct()
 	{
-		switch ($this->type) {
-			case 'mssql':
-				if (extension_loaded('mssql')) {
-					$this->extension = 'mssql';	
-				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: mssql');	
+		fCore::debug('Total query time: ' . $this->query_time . ' seconds', $this->debug);
+		if ($this->extension == 'mssql') {
+			mssql_close($this->connection);
+		} elseif ($this->extension == 'mysql') {
+			mysql_close($this->connection);
+		} elseif ($this->extension == 'mysqli') {
+			mysqli_close($this->connection);
+		} elseif ($this->extension == 'pgsql') {
+			pg_close($this->connection);    
+		} elseif ($this->extension == 'sqlite') {
+			sqlite_close($this->connection);	
+		} elseif ($this->extension == 'pdo') {
+			// PDO objects close their own connections when destroyed	
+		}
+	}
+	
+	
+	/**
+	 * Checks to see if an SQL error occured
+	 * 
+	 * @param  fResult $result  The result object for the query
+	 * @return void
+	 */
+	private function checkForError(fResult $result)
+	{
+		if ($result->getResult() === FALSE) {	
+			if ($this->extension == 'mssql') {
+				$message = 'MSSQL error (' . mssql_get_last_message() . ') in ' . $result->getSql();
+			} elseif ($this->extension == 'mysql') {
+				$message = 'MySQL error (' . mysql_error($this->connection) . ') in ' . $result->getSql();
+			} elseif ($this->extension == 'mysqli') {
+				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();   
+			} elseif ($this->extension == 'pgsql') {
+				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();   
+			} elseif ($this->extension == 'sqlite') {
+				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();   
+			} elseif ($this->extension == 'pdo') {
+				$error_info = $this->connection->errorInfo();
+				switch ($this->type) {
+					case 'mysql':
+						$message = 'MySQL error (' . $error_info[2] . ') in ' . $result->getSql();   
+						break;
+					case 'postgresql':
+						$message = 'PostgreSQL error (' . $error_info[2] . ') in ' . $result->getSql();   
+						break;
+					case 'sqlite':
+						$message = 'SQLite error (' . $error_info[2] . ') in ' . $result->getSql();   
+						break;	
 				}
-				break;
-			
-			case 'mysql':
-				if (extension_loaded('mysql')) {
-					$this->extension = 'mysql';	
-				} elseif (extension_loaded('mysqli')) {
-					$this->extension = 'mysqli';	
-				} elseif (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
-				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');	
-				}
-				break;
-				
-			case 'postgresql':
-				if (extension_loaded('pgsql')) {
-					$this->extension = 'pgsql';	
-				} elseif (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
-				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');	
-				}  
-				break; 
-				
-			case 'sqlite':
-				$sqlite_version = 0;
-				if (file_exists($this->database)) {
-					$database_handle  = fopen($this->database, 'r');
-					$database_version = fread($database_handle, 64);	
-					fclose($database_handle);
-					if (strpos($database_version, 'SQLite format 3') !== FALSE) {
-						$sqlite_version = 3;
-					} elseif (strpos($database_version, '** This file contains an SQLite 2.1 database **') !== FALSE) {
-						$sqlite_version = 2;
-					} else {
-						fCore::toss('fConnectivityException', 'The database specified does not appear to be a valid SQLite v2.1 or v3 database');
-					}		
-				}
-				if ((!$sqlite_version || $sqlite_version == 3) && class_exists('PDO', FALSE) && in_array('sqlite', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
-				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || in_array('sqlite', PDO::getAvailableDrivers()))) {
-					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v3 database and the pdo_sqlite extension is not installed');
-				} elseif ((!$sqlite_version || $sqlite_version == 2) && extension_loaded('sqlite')) {
-					$this->extension = 'sqlite';	
-				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
-					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v2.1 database and the sqlite extension is not installed');
-				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for SQLite support: pdo_sqlite, sqlite');	
-				}
-				break; 
+			}
+			fCore::toss('fSQLException', $message);
 		}	
 	}
 	
@@ -601,6 +305,207 @@ class fDatabase
 	
 	
 	/**
+	 * Figures out which extension to use for the database type selected
+	 * 
+	 * @return void
+	 */
+	private function determineExtension()
+	{
+		switch ($this->type) {
+			case 'mssql':
+				if (extension_loaded('mssql')) {
+					$this->extension = 'mssql';	
+				} else {
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: mssql');	
+				}
+				break;
+			
+			case 'mysql':
+				if (extension_loaded('mysql')) {
+					$this->extension = 'mysql';	
+				} elseif (extension_loaded('mysqli')) {
+					$this->extension = 'mysqli';	
+				} elseif (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
+					$this->extension = 'pdo';	
+				} else {
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');	
+				}
+				break;
+				
+			case 'postgresql':
+				if (extension_loaded('pgsql')) {
+					$this->extension = 'pgsql';	
+				} elseif (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
+					$this->extension = 'pdo';	
+				} else {
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');	
+				}  
+				break; 
+				
+			case 'sqlite':
+				$sqlite_version = 0;
+				if (file_exists($this->database)) {
+					$database_handle  = fopen($this->database, 'r');
+					$database_version = fread($database_handle, 64);	
+					fclose($database_handle);
+					if (strpos($database_version, 'SQLite format 3') !== FALSE) {
+						$sqlite_version = 3;
+					} elseif (strpos($database_version, '** This file contains an SQLite 2.1 database **') !== FALSE) {
+						$sqlite_version = 2;
+					} else {
+						fCore::toss('fConnectivityException', 'The database specified does not appear to be a valid SQLite v2.1 or v3 database');
+					}		
+				}
+				if ((!$sqlite_version || $sqlite_version == 3) && class_exists('PDO', FALSE) && in_array('sqlite', PDO::getAvailableDrivers())) {
+					$this->extension = 'pdo';	
+				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || in_array('sqlite', PDO::getAvailableDrivers()))) {
+					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v3 database and the pdo_sqlite extension is not installed');
+				} elseif ((!$sqlite_version || $sqlite_version == 2) && extension_loaded('sqlite')) {
+					$this->extension = 'sqlite';	
+				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
+					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v2.1 database and the sqlite extension is not installed');
+				} else {
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for SQLite support: pdo_sqlite, sqlite');	
+				}
+				break; 
+		}	
+	}
+	
+	
+	/**
+	 * Escapes blobs to prevent breaking queries, includes surrounding quotes when appropriate
+	 * 
+	 * @param  string $value  The value to escape 
+	 * @return string  The escaped blob
+	 */
+	public function escapeBlob($value)
+	{
+		if ($this->extension == 'mysql') {
+			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
+		} elseif ($this->extension == 'mysqli') {
+			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
+		} elseif ($this->extension == 'pgsql') {
+			return "'" . pg_escape_bytea($this->connection, $value) . "'";
+		} elseif ($this->extension == 'sqlite') {
+			return "X'" . bin2hex($value) . "'";	
+		} elseif ($this->extension == 'pdo') {
+			return $this->connection->quote($value);	
+		} elseif ($this->extension == 'mssql') {
+			return '0x' . bin2hex($value);	
+		}
+	}
+	
+	
+	/**
+	 * Translates a boolean to a value the database will understand
+	 * 
+	 * @param  string $value  The boolean to escape
+	 * @return string  The database equivalent of the boolean passed
+	 */
+	public function escapeBoolean($value)
+	{
+		if (in_array($this->type, array('postgresql', 'mysql'))) {
+			return ($value) ? 'TRUE' : 'FALSE';	
+		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
+			return ($value) ? "'1'" : "'0'";	
+		}
+	}
+	
+	
+	/**
+	 * Escapes a date for insertion into the database
+	 * 
+	 * @param  string $value  The value to escape 
+	 * @return string  The escaped date
+	 */
+	public function escapeDate($value)
+	{
+		return "'" . date('Y-m-d', strtotime($value)) . "'";
+	}
+	
+	
+	/**
+	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
+	 * 
+	 * @param  string $value  The value to escape 
+	 * @return string  The escaped string
+	 */
+	public function escapeString($value)
+	{
+		if ($this->extension == 'mysql') {
+			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
+		} elseif ($this->extension == 'mysqli') {
+			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
+		} elseif ($this->extension == 'pgsql') {
+			return "'" . pg_escape_string($value) . "'";
+		} elseif ($this->extension == 'sqlite') {
+			return "'" . sqlite_escape_string($value) . "'";	
+		} elseif ($this->extension == 'pdo') {
+			return $this->connection->quote($value);	
+		} elseif ($this->extension == 'mssql') {
+			return "'" . str_replace("'", "''", $value) . "'";	
+		}
+	}
+	
+	
+	/**
+	 * Escapes a time for insertion into the database
+	 * 
+	 * @param  string $value  The value to escape 
+	 * @return string  The escaped time
+	 */
+	public function escapeTime($value)
+	{
+		return "'" . date('H:i:s', strtotime($value)) . "'";
+	}
+	
+	
+	/**
+	 * Escapes a timestamp for insertion into the database
+	 * 
+	 * @param  string $value  The value to escape 
+	 * @return string  The escaped timestamp
+	 */
+	public function escapeTimestamp($value)
+	{
+		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
+	}
+	
+	
+	/**
+	 * Executes an SQL query
+	 * 
+	 * @param  fResult $result  The result object for the query
+	 * @return void
+	 */
+	private function executeQuery(fResult $result)
+	{
+		if ($this->extension == 'mssql') {
+			$result->setResult(@mssql_query($result->getSql(), $this->connection)); 
+		} elseif ($this->extension == 'mysql') {
+			$result->setResult(@mysql_query($result->getSql(), $this->connection)); 
+		} elseif ($this->extension == 'mysqli') {
+			$result->setResult(@mysqli_query($this->connection, $result->getSql()));   
+		} elseif ($this->extension == 'pgsql') {
+			$result->setResult(@pg_query($this->connection, $result->getSql()));   
+		} elseif ($this->extension == 'sqlite') {
+			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));	
+		} elseif ($this->extension == 'pdo') {
+			$pdo_statement = $this->connection->query($result->getSql());
+			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);	
+		}
+		
+		$this->checkForError($result);
+		if ($this->extension != 'pdo') {
+			$this->setAffectedRows($result);
+		} else {
+			$this->setAffectedRows($result, $pdo_statement); 
+		}
+		$this->setReturnedRows($result);
+	}
+	
+	
+	/**
 	 * Takes in a string of SQL that contains multiple queries and returns any array of them
 	 * 
 	 * @param  string $sql  The string of SQL to parse for queries
@@ -647,133 +552,35 @@ class fDatabase
 	
 	
 	/**
-	 * Executes an sql query
+	 * Gets the name of the database currently connected to
 	 * 
-	 * @param  fResult $result  The result object for the query
-	 * @return void
+	 * @return string  The name of the database currently connected to
 	 */
-	private function executeQuery(fResult $result)
+	public function getDatabase()
 	{
-		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSql(), $this->connection)); 
-		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_query($result->getSql(), $this->connection)); 
-		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSql()));   
-		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSql()));   
-		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));	
-		} elseif ($this->extension == 'pdo') {
-			$pdo_statement = $this->connection->query($result->getSql());
-			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);	
-		}
-		
-		$this->checkForError($result);
-		if ($this->extension != 'pdo') {
-			$this->setAffectedRows($result);
-		} else {
-			$this->setAffectedRows($result, $pdo_statement); 
-		}
-		$this->setReturnedRows($result);
+		return $this->database;
 	}
 	
 	
 	/**
-	 * Checks to see if an SQL error occured
+	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
 	 * 
-	 * @param  fResult $result  The result object for the query
-	 * @return void
+	 * @return string  The php extension used for database interaction
 	 */
-	private function checkForError(fResult $result)
+	public function getExtension()
 	{
-		if ($result->getResult() === FALSE) {	
-			if ($this->extension == 'mssql') {
-				$message = 'MSSQL error (' . mssql_get_last_message() . ') in ' . $result->getSql();
-			} elseif ($this->extension == 'mysql') {
-				$message = 'MySQL error (' . mysql_error($this->connection) . ') in ' . $result->getSql();
-			} elseif ($this->extension == 'mysqli') {
-				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();   
-			} elseif ($this->extension == 'pgsql') {
-				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();   
-			} elseif ($this->extension == 'sqlite') {
-				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();   
-			} elseif ($this->extension == 'pdo') {
-				$error_info = $this->connection->errorInfo();
-				switch ($this->type) {
-					case 'mysql':
-						$message = 'MySQL error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;
-					case 'postgresql':
-						$message = 'PostgreSQL error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;
-					case 'sqlite':
-						$message = 'SQLite error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;	
-				}
-			}
-			fCore::toss('fSQLException', $message);
-		}	
+		return $this->extension;
 	}
 	
 	
 	/**
-	 * Sets the number of rows returned by the query
+	 * Gets the database type
 	 * 
-	 * @param  fResult $result  The result object for the query
-	 * @return void
+	 * @return string  The database type (mssql, mysql, pgsql or sqlite)
 	 */
-	private function setReturnedRows(fResult $result)
+	public function getType()
 	{
-		if (is_resource($result->getResult())) {
-			if ($this->extension == 'mssql') {
-				$result->setReturnedRows(@mssql_num_rows($result->getResult())); 
-			} elseif ($this->extension == 'mysql') {
-				$result->setReturnedRows(@mysql_num_rows($result->getResult())); 
-			} elseif ($this->extension == 'mysqli') {
-				$result->setReturnedRows(@mysqli_num_rows($result->getResult()));
-			} elseif ($this->extension == 'pgsql') {
-				$result->setReturnedRows(@pg_num_rows($result->getResult()));
-			} elseif ($this->extension == 'sqlite') {
-				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));	
-			}
-		} elseif (is_array($result->getResult())) {
-			$result->setReturnedRows(sizeof($result->getResult()));		
-		}	
-	}
-	
-	
-	/**
-	 * Sets the number of rows affected by the query
-	 * 
-	 * @param  fResult      $result         The result object for the query
-	 * @param  PDOStatement $pdo_statement  The PDOStatement object for the PDO extension
-	 * @return void
-	 */
-	private function setAffectedRows(fResult $result, PDOStatement $pdo_statement=NULL)
-	{
-		if ($this->extension == 'mssql') {
-			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
-			$result->setAffectedRows((int) @mssql_result($affected_rows_result, 0, 'rows'));   
-		} elseif ($this->extension == 'mysql') {
-			$result->setAffectedRows(@mysql_affected_rows($this->connection));   
-		} elseif ($this->extension == 'mysqli') {
-			$result->setAffectedRows(@mysqli_affected_rows($this->connection)); 
-		} elseif ($this->extension == 'pgsql') {
-			$result->setAffectedRows(@pg_affected_rows($result->getResult())); 
-		} elseif ($this->extension == 'sqlite') {
-			$result->setAffectedRows(@sqlite_changes($this->connection));
-		} elseif ($this->extension == 'pdo') {
-			// This fixes the fact that rowCount is not reset for non INSERT/UPDATE/DELETE statements
-			try {
-				if (!$pdo_statement->fetch()) {
-					throw new PDOException();	
-				}
-				$result->setAffectedRows(0);
-			} catch (PDOException $e) {
-				$result->setAffectedRows($pdo_statement->rowCount());
-			}
-		}	
+		return $this->type;
 	}
 	
 	
@@ -841,28 +648,220 @@ class fDatabase
 	
 	
 	/**
-	 * Closes open db connection
+	 * Executes one or more sql queries
 	 * 
+	 * @param  string  $sql  One or more SQL statements
+	 * @return fResult|array  The fResult object(s) for the query
+	 */
+	public function query($sql)
+	{
+		// Ensure an SQL statement was passed
+		if (empty($sql)) {
+			fCore::toss('fProgrammerException', 'No SQL statement passed');
+		}
+		
+		// Split multiple queries
+		if (strpos($sql, ';') !== FALSE) {
+			$sql_queries = $this->explodeQueries($sql);
+			$sql = array_shift($sql_queries);
+		}
+		
+		$result = new fResult($this->extension);
+		$result->setSQL($sql);
+		
+		$start_time = microtime(TRUE);
+		$this->executeQuery($result);
+		
+		// Write some debugging info
+		$query_time = microtime(TRUE) - $start_time;
+		$this->query_time += $query_time;
+		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);          
+		
+		// If we get a resource or TRUE back then the query was successful
+		if ($result->getResult() === FALSE) {
+			fCore::toss('fSQLException', 'There was an error in the SQL statement ' . $result->getSql());	
+		}
+		
+		$this->handleAutoIncrementedValue($result);
+		
+		// Handle multiple SQL queries
+		if (!empty($sql_queries)) {
+			$result = array($result);
+			foreach ($sql_queries as $sql_query) {
+				$result[] = $this->query($sql_query);
+			}	
+		}
+		
+		return $result;
+	}
+	
+	
+	/**
+	 * Sets the number of rows affected by the query
+	 * 
+	 * @param  fResult      $result         The result object for the query
+	 * @param  PDOStatement $pdo_statement  The PDOStatement object for the PDO extension
 	 * @return void
 	 */
-	public function __destruct()
+	private function setAffectedRows(fResult $result, PDOStatement $pdo_statement=NULL)
 	{
-		fCore::debug('Total query time: ' . $this->query_time . ' seconds', $this->debug);
 		if ($this->extension == 'mssql') {
-			mssql_close($this->connection);
+			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
+			$result->setAffectedRows((int) @mssql_result($affected_rows_result, 0, 'rows'));   
 		} elseif ($this->extension == 'mysql') {
-			mysql_close($this->connection);
+			$result->setAffectedRows(@mysql_affected_rows($this->connection));   
 		} elseif ($this->extension == 'mysqli') {
-			mysqli_close($this->connection);
+			$result->setAffectedRows(@mysqli_affected_rows($this->connection)); 
 		} elseif ($this->extension == 'pgsql') {
-			pg_close($this->connection);    
+			$result->setAffectedRows(@pg_affected_rows($result->getResult())); 
 		} elseif ($this->extension == 'sqlite') {
-			sqlite_close($this->connection);	
+			$result->setAffectedRows(@sqlite_changes($this->connection));
 		} elseif ($this->extension == 'pdo') {
-			// PDO objects close their own connections when destroyed	
+			// This fixes the fact that rowCount is not reset for non INSERT/UPDATE/DELETE statements
+			try {
+				if (!$pdo_statement->fetch()) {
+					throw new PDOException();	
+				}
+				$result->setAffectedRows(0);
+			} catch (PDOException $e) {
+				$result->setAffectedRows($pdo_statement->rowCount());
+			}
+		}	
+	}
+	
+	
+	/**
+	 * Enabled debugging
+	 * 
+	 * @param  boolean $enable  If debugging should be enabled
+	 * @return void
+	 */
+	public function setDebug($enable)
+	{
+		$this->debug = (boolean) $enable;
+		if ($this->translation) {
+			$this->translation->setDebug($this->debug);	
 		}
 	}
 	
+	
+	/**
+	 * Sets the number of rows returned by the query
+	 * 
+	 * @param  fResult $result  The result object for the query
+	 * @return void
+	 */
+	private function setReturnedRows(fResult $result)
+	{
+		if (is_resource($result->getResult())) {
+			if ($this->extension == 'mssql') {
+				$result->setReturnedRows(@mssql_num_rows($result->getResult())); 
+			} elseif ($this->extension == 'mysql') {
+				$result->setReturnedRows(@mysql_num_rows($result->getResult())); 
+			} elseif ($this->extension == 'mysqli') {
+				$result->setReturnedRows(@mysqli_num_rows($result->getResult()));
+			} elseif ($this->extension == 'pgsql') {
+				$result->setReturnedRows(@pg_num_rows($result->getResult()));
+			} elseif ($this->extension == 'sqlite') {
+				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));	
+			}
+		} elseif (is_array($result->getResult())) {
+			$result->setReturnedRows(sizeof($result->getResult()));		
+		}	
+	}
+	
+	
+	/**
+	 * Translates the SQL statement using fSQLTranslation and executes it
+	 * 
+	 * @param  string  $sql  An SQL statement
+	 * @return string  The translated SQL
+	 */
+	public function translatedQuery($sql)
+	{
+		if (!$this->translation) {
+			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
+		}	
+		$result = $this->query($this->translation->translate($sql));
+		$result->setUntranslatedSQL($sql);
+		return $result;
+	}
+	
+	
+	/**
+	 * Unescapes blobs coming out of the database
+	 * 
+	 * @param  string $value  The value to unescape 
+	 * @return binary  The binary data from the blob
+	 */
+	public function unescapeBlob($value)
+	{
+		if ($this->extension == 'pgsql') {
+			return pg_unescape_bytea($this->connection, $value);
+		} else  {
+			return $value;	
+		}
+	}
+	
+	
+	/**
+	 * Interprets a boolean coming out of the database
+	 * 
+	 * @param  string $value  The value to interpret 
+	 * @return boolean  The boolean equivalent of the value passed
+	 */
+	public function unescapeBoolean($value)
+	{
+		return ($value == 'f' || !$value) ? FALSE : TRUE;
+	}
+	
+	
+	/**
+	 * Unescapes dates coming out of the database
+	 * 
+	 * @param  string $value  The value to unescape 
+	 * @return string  The date
+	 */
+	public function unescapeDate($value)
+	{
+		return date('Y-m-d', strtotime($value));
+	}
+	
+	
+	/**
+	 * Unescapes strings coming out of the database, included for completeness
+	 * 
+	 * @param  string $value  The value to unescape 
+	 * @return string  The unescaped string
+	 */
+	public function unescapeString($value)
+	{
+		return $value;
+	}
+	
+	
+	/**
+	 * Unescapes times coming out of the database
+	 * 
+	 * @param  string $value  The value to unescape 
+	 * @return string  The time
+	 */
+	public function unescapeTime($value)
+	{
+		return date('H:i:s', strtotime($value));
+	}
+	
+	
+	/**
+	 * Unescapes timestamps coming out of the database
+	 * 
+	 * @param  string $value  The value to unescape 
+	 * @return string  The timestamp
+	 */
+	public function unescapeTimestamp($value)
+	{
+		return date('Y-m-d H:i:s', strtotime($value));
+	}	
 }
 
 
@@ -887,5 +886,4 @@ class fDatabase
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

@@ -67,6 +67,7 @@ interface fISchema
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL);
 	
+	
 	/**
 	 * Returns a list of primary key, foreign key and unique key constraints for the table specified
 	 * 
@@ -99,6 +100,7 @@ interface fISchema
 	 * @return array  An array of all keys, or just the type specified (see method description for format)
 	 */
 	public function getKeys($table, $key_type=NULL);
+	
 	
 	/**
 	 * Returns a list of one-to-one, many-to-one, one-to-many and many-to-many relationships for the table specified
@@ -149,6 +151,7 @@ interface fISchema
 	 */
 	public function getRelationships($table, $relationship_type=NULL);
 	
+	
 	/**
 	 * Returns the tables in the current database
 	 * 
@@ -179,5 +182,4 @@ interface fISchema
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

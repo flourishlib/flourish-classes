@@ -18,46 +18,11 @@
 class fResult implements Iterator
 {
 	/**
-	 * The position of the pointer in the result set
-	 * 
-	 * @var integer 
-	 */
-	private $pointer = 0;
-	
-	/**
-	 * The number of rows returned by a select
-	 * 
-	 * @var integer 
-	 */
-	private $returned_rows = 0;
-	
-	/**
 	 * The number of rows affected by an insert, update, select, etc
 	 * 
 	 * @var integer 
 	 */
 	private $affected_rows = 0;
-	
-	/**
-	 * The result resource
-	 * 
-	 * @var resource 
-	 */
-	private $result = NULL;
-	
-	/**
-	 * The sql query
-	 * 
-	 * @var string 
-	 */
-	private $sql = '';
-	
-	/**
-	 * The sql from before translation
-	 * 
-	 * @var string 
-	 */
-	private $untranslated_sql = NULL;
 	
 	/**
 	 * The auto incremented value from the query
@@ -71,7 +36,42 @@ class fResult implements Iterator
 	 * 
 	 * @var string 
 	 */
-	private $extension = NULL;   
+	private $extension = NULL;
+	
+	/**
+	 * The position of the pointer in the result set
+	 * 
+	 * @var integer 
+	 */
+	private $pointer = 0;
+	
+	/**
+	 * The result resource
+	 * 
+	 * @var resource 
+	 */
+	private $result = NULL;
+	
+	/**
+	 * The number of rows returned by a select
+	 * 
+	 * @var integer 
+	 */
+	private $returned_rows = 0;
+	
+	/**
+	 * The sql query
+	 * 
+	 * @var string 
+	 */
+	private $sql = '';
+	
+	/**
+	 * The sql from before translation
+	 * 
+	 * @var string 
+	 */
+	private $untranslated_sql = NULL;   
 	
 	
 	/**
@@ -90,187 +90,8 @@ class fResult implements Iterator
 		}
 		$this->extension = $extension; 
 	}
+	
 
-	
-	/**
-	 * Sets the sql used in the query
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $sql  The sql used in the query
-	 * @return void
-	 */
-	public function setSQL($sql)
-	{
-		$this->sql = $sql;
-	}
-	
-	
-	/**
-	 * Sets the sql from before translation
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $untranslated_sql  The sql from before translation
-	 * @return void
-	 */
-	public function setUntranslatedSQL($untranslated_sql)
-	{
-		$this->untranslated_sql = $untranslated_sql;
-	} 
-	
-	
-	/**
-	 * Sets the result from the query
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed $result  The result from the query
-	 * @return void
-	 */
-	public function setResult($result)
-	{
-		$this->result = $result;   
-	}
-	
-	
-	/**
-	 * Sets the number of rows returned
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $returned_rows  The number of rows returned
-	 * @return void
-	 */
-	public function setReturnedRows($returned_rows)
-	{
-		$this->returned_rows = (int) $returned_rows;
-		if ($this->returned_rows) {
-			$this->affected_rows = 0;
-		}   
-	}
-	
-	
-	/**
-	 * Sets the number of affected rows
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $affected_rows  The number of affected rows
-	 * @return void
-	 */
-	public function setAffectedRows($affected_rows)
-	{
-		$this->affected_rows = (int) $affected_rows;   
-	}
-	
-	
-	/**
-	 * Sets the auto incremented value
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $auto_incremented_value  The auto incremented value
-	 * @return void
-	 */
-	public function setAutoIncrementedValue($auto_incremented_value)
-	{
-		$this->auto_incremented_value = ($auto_incremented_value == 0) ? NULL : $auto_incremented_value;   
-	}
-	
-	
-	/**
-	 * Returns the sql used in the query
-	 * 
-	 * @return string  The sql used in the query
-	 */
-	public function getSQL()
-	{
-		return $this->sql;   
-	}
-	
-	
-	/**
-	 * Returns the sql as it was before translation
-	 * 
-	 * @return string  The sql from before translation
-	 */
-	public function getUntranslatedSQL()
-	{
-		return $this->untranslated_sql;   
-	}
-	
-	
-	/**
-	 * Returns the result
-	 * 
-	 * @return mixed  The result of the query
-	 */
-	public function getResult()
-	{
-		return $this->result;   
-	}
-	
-	
-	/**
-	 * Returns the number of rows returned by the query
-	 * 
-	 * @return integer  The number of rows returned by the query
-	 */
-	public function getReturnedRows()
-	{
-		return $this->returned_rows;   
-	}
-	
-	
-	/**
-	 * Returns the number of rows affected by the query
-	 * 
-	 * @return integer  The number of rows affected by the query
-	 */
-	public function getAffectedRows()
-	{
-		return $this->affected_rows;   
-	}
-	
-	
-	/**
-	 * Returns the current position of the pointer in the result set
-	 * 
-	 * @return integer  The current position of the pointer in the result set
-	 */
-	public function getPointer()
-	{
-		return $this->pointer;   
-	}
-	
-	
-	/**
-	 * Returns the last auto incremented value for this database connection. This may or may not be from the current query.
-	 * 
-	 * @return integer  The auto incremented value
-	 */
-	public function getAutoIncrementedValue()
-	{
-		return $this->auto_incremented_value;   
-	}
-	
-	
-	/**
-	 * Throws an fNoResultException if the fResult did not return or affect any rows
-	 * 
-	 * @throws  fNoResultsException
-	 * 
-	 * @return void
-	 */
-	public function tossIfNoResults()
-	{
-		if (empty($this->returned_rows) && empty($this->affected_rows)) {
-			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
-		}
-	}
-	
-	
 	/**
 	 * Returns if there are any remaining rows
 	 * 
@@ -281,7 +102,23 @@ class fResult implements Iterator
 		return $this->valid();
 	}
 	
-
+	
+	/**
+	 * Returns the current row in the result set (required by iterator interface)
+	 * 
+	 * @throws  fNoResultsException
+	 * @internal
+	 * 
+	 * @return array  The current Row
+	 */
+	public function current()
+	{
+		$row = $this->fetchRow();
+		$this->seek($this->pointer-1);
+		return $row;
+	}
+	
+	
 	/**
 	 * Returns all of the rows from the result set
 	 * 
@@ -404,6 +241,132 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Returns the number of rows affected by the query
+	 * 
+	 * @return integer  The number of rows affected by the query
+	 */
+	public function getAffectedRows()
+	{
+		return $this->affected_rows;   
+	}
+	
+	
+	/**
+	 * Returns the last auto incremented value for this database connection. This may or may not be from the current query.
+	 * 
+	 * @return integer  The auto incremented value
+	 */
+	public function getAutoIncrementedValue()
+	{
+		return $this->auto_incremented_value;   
+	}
+	
+	
+	/**
+	 * Returns the current position of the pointer in the result set
+	 * 
+	 * @return integer  The current position of the pointer in the result set
+	 */
+	public function getPointer()
+	{
+		return $this->pointer;   
+	}
+	
+	
+	/**
+	 * Returns the result
+	 * 
+	 * @return mixed  The result of the query
+	 */
+	public function getResult()
+	{
+		return $this->result;   
+	}
+	
+	
+	/**
+	 * Returns the number of rows returned by the query
+	 * 
+	 * @return integer  The number of rows returned by the query
+	 */
+	public function getReturnedRows()
+	{
+		return $this->returned_rows;   
+	}
+	
+	
+	/**
+	 * Returns the sql used in the query
+	 * 
+	 * @return string  The sql used in the query
+	 */
+	public function getSQL()
+	{
+		return $this->sql;   
+	}
+	
+	
+	/**
+	 * Returns the sql as it was before translation
+	 * 
+	 * @return string  The sql from before translation
+	 */
+	public function getUntranslatedSQL()
+	{
+		return $this->untranslated_sql;   
+	}
+	
+	
+	/**
+	 * Returns the current row number (required by iterator interface)
+	 * 
+	 * @internal
+	 * 
+	 * @return integer  The current row number
+	 */
+	public function key()
+	{
+		return $this->pointer;
+	}
+	
+	
+	/**
+	 * Rewinds the next row in the result (required by iterator interface)
+	 * 
+	 * @internal
+	 * 
+	 * @return array|null  The next row or null
+	 */
+	public function next()
+	{
+		try {
+			$this->seek($this->pointer+1);
+			$row = $this->fetchRow();
+			$this->seek($this->pointer-1);
+			return $row;
+		} catch (Exception $e) {
+			$this->pointer++;
+			return NULL;   
+		}
+	}
+	
+	
+	/**
+	 * Rewinds the query (required by iterator interface)
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function rewind()
+	{
+		try {
+			$this->seek(0);    
+		} catch (Exception $e) { }
+	}
+	
+	
+	/**
 	 * Seeks to the specified zero-based row for the specified SQL query.
 	 * 
 	 * @throws  fNoResultsException
@@ -435,72 +398,109 @@ class fResult implements Iterator
 		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
 			// Do nothing since pdo results are arrays
 		} 
-	}    
+	}
 	
 	
 	/**
-	 * Rewinds the query (required by iterator interface)
+	 * Sets the number of affected rows
 	 * 
 	 * @internal
+	 * 
+	 * @param  integer $affected_rows  The number of affected rows
+	 * @return void
+	 */
+	public function setAffectedRows($affected_rows)
+	{
+		$this->affected_rows = (int) $affected_rows;   
+	}
+	
+	
+	/**
+	 * Sets the auto incremented value
+	 * 
+	 * @internal
+	 * 
+	 * @param  integer $auto_incremented_value  The auto incremented value
+	 * @return void
+	 */
+	public function setAutoIncrementedValue($auto_incremented_value)
+	{
+		$this->auto_incremented_value = ($auto_incremented_value == 0) ? NULL : $auto_incremented_value;   
+	}
+	
+	
+	/**
+	 * Sets the result from the query
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed $result  The result from the query
+	 * @return void
+	 */
+	public function setResult($result)
+	{
+		$this->result = $result;   
+	}
+	
+	
+	/**
+	 * Sets the number of rows returned
+	 * 
+	 * @internal
+	 * 
+	 * @param  integer $returned_rows  The number of rows returned
+	 * @return void
+	 */
+	public function setReturnedRows($returned_rows)
+	{
+		$this->returned_rows = (int) $returned_rows;
+		if ($this->returned_rows) {
+			$this->affected_rows = 0;
+		}   
+	}
+	
+	
+	/**
+	 * Sets the sql used in the query
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $sql  The sql used in the query
+	 * @return void
+	 */
+	public function setSQL($sql)
+	{
+		$this->sql = $sql;
+	}
+	
+	
+	/**
+	 * Sets the sql from before translation
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $untranslated_sql  The sql from before translation
+	 * @return void
+	 */
+	public function setUntranslatedSQL($untranslated_sql)
+	{
+		$this->untranslated_sql = $untranslated_sql;
+	}  
+	
+	
+	/**
+	 * Throws an fNoResultException if the fResult did not return or affect any rows
+	 * 
+	 * @throws  fNoResultsException
 	 * 
 	 * @return void
 	 */
-	public function rewind()
+	public function tossIfNoResults()
 	{
-		try {
-			$this->seek(0);    
-		} catch (Exception $e) { }
-	}
-
-	
-	/**
-	 * Returns the current row in the result set (required by iterator interface)
-	 * 
-	 * @throws  fNoResultsException
-	 * @internal
-	 * 
-	 * @return array  The current Row
-	 */
-	public function current()
-	{
-		$row = $this->fetchRow();
-		$this->seek($this->pointer-1);
-		return $row;
-	}
-
-	
-	/**
-	 * Returns the current row number (required by iterator interface)
-	 * 
-	 * @internal
-	 * 
-	 * @return integer  The current row number
-	 */
-	public function key()
-	{
-		return $this->pointer;
-	}
-
-	
-	/**
-	 * Rewinds the next row in the result (required by iterator interface)
-	 * 
-	 * @internal
-	 * 
-	 * @return array|null  The next row or null
-	 */
-	public function next()
-	{
-		try {
-			$this->seek($this->pointer+1);
-			$row = $this->fetchRow();
-			$this->seek($this->pointer-1);
-			return $row;
-		} catch (Exception $e) {
-			$this->pointer++;
-			return NULL;   
+		if (empty($this->returned_rows) && empty($this->affected_rows)) {
+			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
 		}
-	}
+	}   
 
 	
 	/**
@@ -539,4 +539,3 @@ class fResult implements Iterator
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

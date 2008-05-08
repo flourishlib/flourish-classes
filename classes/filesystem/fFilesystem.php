@@ -457,7 +457,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Forces use as a static class
 	 * 
 	 * @return fFilesystem
 	 */

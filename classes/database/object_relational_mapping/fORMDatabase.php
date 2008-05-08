@@ -27,288 +27,6 @@ class fORMDatabase
 	
 	
 	/**
-	 * Private class constructor to prevent instantiating the class
-	 * 
-	 * @return fORMDatabase
-	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Initializes a singleton instance of the fDatabase class
-	 * 
-	 * @param  string  $type      The type of the database
-	 * @param  string  $database  Name of database
-	 * @param  string  $username  Database username
-	 * @param  string  $password  User's password
-	 * @param  string  $host      Database server host or ip with optional port
-	 * @param  integer $port      The port number of the database server
-	 * @return void
-	 */
-	static public function initialize($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
-	{
-		self::$database_object = new fDatabase($type, $database, $username, $password, $host, $port);
-	}
-	
-	
-	/**
-	 * Allows attaching a class that is or extends fDatabase instead of just using the provided implementation
-	 * 
-	 * @param  fDatabase $database  An object that is or extends the fDatabase class
-	 * @return void
-	 */
-	static public function attach(fDatabase $database)
-	{
-		self::$database_object = $database;
-	}
-	
-	
-	/**
-	 * Return the instance of the fDatabase class
-	 * 
-	 * @return fDatabase  The database instance
-	 */
-	static public function getInstance()
-	{
-		if (!self::$database_object) {
-			fCore::toss('fProgrammerException', 'The method initialize() needs to be called before getInstance()');
-		}
-		return self::$database_object;
-	}
-	
-	
-	/**
-	 * Prepares a value for a DB call based on database schema
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table                The table to store the value
-	 * @param  string $column               The column to store the value in
-	 * @param  mixed  $value                The value to prepare
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
-	 * @return string  The SQL-ready representation of the value
-	 */
-	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
-	{
-		$value = fORM::scalarize($value);
-		
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
-			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');	
-		}
-		
-		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
-
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
-		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
-			$value = $column_info['default'];	
-		}
-		
-		if (is_null($value)) {
-			if ($co) {
-				if (in_array(trim($co), array('=', 'IN'))) {
-					$co = ' IS ';	
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
-					$co = ' IS NOT ';
-				}
-			}
-			$prepared = $co . 'NULL';
-		} elseif (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-			$prepared = $co . self::getInstance()->escapeString($value);
-		} elseif ($column_info['type'] == 'timestamp') {
-			$prepared = $co . "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
-		} elseif ($column_info['type'] == 'date') {
-			$prepared = $co . "'" . date('Y-m-d', strtotime($value)) . "'";
-		} elseif ($column_info['type'] == 'time') {
-			$prepared = $co . "'" . date('H:i:s', strtotime($value)) . "'";
-		} elseif ($column_info['type'] == 'blob') {
-			$prepared = $co . self::getInstance()->escapeBlob($value);
-		} elseif ($column_info['type'] == 'boolean') {
-			$prepared = $co . self::getInstance()->escapeBoolean($value);
-		} else {
-			$prepared = $co . $value;	
-		}
-		
-		return $prepared;
-	}
-	
-	
-	/**
-	 * Prepares a value for a DB call based on variable type
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed  $value                The value to prepare
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
-	 * @return string  The SQL-ready representation of the value
-	 */
-	static public function prepareByType($value, $comparison_operator=NULL)
-	{
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
-			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');	
-		}
-		
-		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
-
-		if (is_int($value) || is_float($value)) {
-			$prepared = $co . $value;	
-		} elseif (is_bool($value)) {
-			$prepared = $co . self::getInstance()->escapeBoolean($value);
-		} elseif (is_null($value)) {
-			if ($co) {
-				if (in_array(trim($co), array('=', 'IN'))) {
-					$co = ' IS ';	
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
-					$co = ' IS NOT ';
-				}
-			}
-			$prepared = $co . "NULL";
-		} else {
-			$prepared = $co . self::getInstance()->escapeString($value);
-		} 
-		
-		return $prepared;
-	}
-	
-	
-	/**
-	 * Prepends the table_name. to the values of the array
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table  The table to prepend
-	 * @param  array  $array  The array to modify
-	 * @return array  The modified array
-	 */
-	static public function addTableToValues($table, $array)
-	{
-		$modified_array = array();
-		foreach ($array as $key => $value) {
-			if (preg_match('#^\w+$#', $value)) {
-				$modified_array[$key] = $table . '.' . $value;
-			} else {
-				$modified_array[$key] = $value;
-			}
-		}	
-		return $modified_array;
-	}
-	
-	
-	/**
-	 * Prepends the table_name. to the keys of the array
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table  The table to prepend
-	 * @param  array  $array  The array to modify
-	 * @return array  The modified array
-	 */
-	static public function addTableToKeys($table, $array)
-	{
-		$modified_array = array();
-		foreach ($array as $key => $value) {
-			if (preg_match('#^\w+$#', $key)) {
-				$modified_array[$table . '.' . $key] = $value;
-			} else {
-				$modified_array[$key] = $value;
-			}
-		}	
-		return $modified_array;
-	}
-	
-	
-	/**
-	 * Finds all of the table names in the sql and creates a from clause
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table  The main table to be queried
-	 * @param  string $sql    The SQL to insert the from clause into
-	 * @param  array $joins   The existing joins that have been parsed
-	 * @return string  The from SQL clause
-	 */
-	static public function insertFromClause($table, $sql, $joins=array())
-	{
-		if (strpos($sql, ':from_clause') === FALSE) {
-			fCore::toss('fProgrammerException', "No :from_clause placeholder was found in:\n" . $sql);	
-		}
-		
-		// Separate the SQL from quoted values
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
-		
-		$table_alias = $table;
-		
-		$used_aliases  = array();
-		$table_map     = array();
-		
-		// If we are not passing in existing joins, start with the specified table
-		if ($joins == array()) {
-			$joins[] = array(
-				'join_type'   => 'none',
-				'table_name'  => $table,
-				'table_alias' => $table_alias
-			);
-		}
-		
-		foreach ($matches[0] as $match) {
-			if ($match != "'") {
-				preg_match_all('#\b((?:(\w+)(?:\{(\w+)\})?=>)?(\w+)(?:\{(\w+)\})?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
-				foreach ($table_matches as $table_match) {
-					
-					// This is a related table that is going to join to a once-removed table
-					if (!empty($table_match[2])) {
-						
-						$related_table = $table_match[2];
-						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[3]);	
-						
-						$join_name = $table . '_' . $related_table . '{' . $route . '}';
-						
-						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
-						
-						$once_removed_table = $table_match[4];
-						$route = fORMSchema::getOnlyRouteName($related_table, $once_removed_table, $table_match[5]);
-						
-						$join_name = self::createJoin($related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
-						
-						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
-					
-					// This is a related table
-					} elseif ($table_match[4] != $table) {
-					
-						$related_table = $table_match[4];
-						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[5]);
-						
-						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
-						
-						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
-					}	
-				}
-			}
-		}
-		
-		$from_clause = self::createFromClauseFromJoins($joins);		
-		
-		// Put the SQL back together
-		$new_sql = '';
-		foreach ($matches[0] as $match) {
-			$temp_sql = $match;
-			
-			// Get rid of the => notation and the :from_clause placeholder
-			if ($match[0] !== "'") {
-				foreach ($table_map as $arrow_table => $alias) {
-					$temp_sql = str_replace($arrow_table, $alias, $temp_sql);
-				}
-				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
-			}
-			
-			$new_sql .= $temp_sql;
-		}	
-			
-		
-		return $new_sql;
-	}
-	
-	
-	/**
 	 * Adds a join to an existing array of joins
 	 * 
 	 * @internal
@@ -341,6 +59,133 @@ class fORMDatabase
 		self::createJoin($table, $table_alias, $related_table, $route, $joins, $aliases);
 		
 		return $joins;
+	}
+	
+	
+	/**
+	 * Prepends the table_name. to the keys of the array
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table  The table to prepend
+	 * @param  array  $array  The array to modify
+	 * @return array  The modified array
+	 */
+	static public function addTableToKeys($table, $array)
+	{
+		$modified_array = array();
+		foreach ($array as $key => $value) {
+			if (preg_match('#^\w+$#', $key)) {
+				$modified_array[$table . '.' . $key] = $value;
+			} else {
+				$modified_array[$key] = $value;
+			}
+		}	
+		return $modified_array;
+	}
+	
+	
+	/**
+	 * Prepends the table_name. to the values of the array
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table  The table to prepend
+	 * @param  array  $array  The array to modify
+	 * @return array  The modified array
+	 */
+	static public function addTableToValues($table, $array)
+	{
+		$modified_array = array();
+		foreach ($array as $key => $value) {
+			if (preg_match('#^\w+$#', $value)) {
+				$modified_array[$key] = $table . '.' . $value;
+			} else {
+				$modified_array[$key] = $value;
+			}
+		}	
+		return $modified_array;
+	}
+	
+	
+	/**
+	 * Allows attaching a class that is or extends fDatabase instead of just using the provided implementation
+	 * 
+	 * @param  fDatabase $database  An object that is or extends the fDatabase class
+	 * @return void
+	 */
+	static public function attach(fDatabase $database)
+	{
+		self::$database_object = $database;
+	}
+	
+	
+	/**
+	 * Takes an array of rows containing primary keys for a table. If there is only a single primary key, condense the array of rows into single-dimensional array
+	 * 
+	 * @internal
+	 * 
+	 * @param  array $rows   The rows of primary keys
+	 * @return array  A possibly condensed array of primary keys
+	 */
+	static public function condensePrimaryKeyArray($rows)
+	{
+		if (empty($rows)) {
+			return $rows;	
+		}
+		
+		$test_row = $rows[0];
+		if (sizeof($test_row) == 1) {
+			$new_rows = array();
+			$row_keys = array_keys($test_row);
+			foreach ($rows as $row) {
+				$new_rows[] = $row[$row_keys[0]];
+			}
+			$rows = $new_rows;	
+		}	
+		
+		return $rows;
+	}
+	
+	
+	/**
+	 * Creates a FROM clause from a join array
+	 * 
+	 * @internal
+	 * 
+	 * @param  array $joins   The joins to create the FROM clause out of
+	 * @return string  The from clause (does not include the word 'FROM')
+	 */
+	static public function createFromClauseFromJoins($joins)
+	{
+		$sql = '';
+		
+		foreach ($joins as $join) {
+			// Here we handle the first table in a join
+			if ($join['join_type'] == 'none') {
+				$sql .= $join['table_name'];
+				if ($join['table_alias'] != $join['table_name']) {
+					$sql .= ' AS ' . $join['table_alias'];	
+				}
+			
+			// Here we handle all other joins
+			} else {
+				$sql .= ' ' . strtoupper($join['join_type']) . ' ' . $join['table_name'];
+				if ($join['table_alias'] != $join['table_name']) {
+					$sql .= ' AS ' . $join['table_alias'];	
+				}
+				if (isset($join['on_clause_type'])) {
+					if ($join['on_clause_type'] == 'simple_equation') {
+						$sql .= ' ON ' . $join['on_clause_fields'][0] . ' = ' . $join['on_clause_fields'][1];
+						
+					} else {
+						$sql .= ' ON ' . $join['on_clause'];
+					}	
+				}
+			}
+		}
+		
+		return $sql;
 	}
 	
 	
@@ -419,67 +264,6 @@ class fORMDatabase
 	
 	
 	/**
-	 * Creates a FROM clause from a join array
-	 * 
-	 * @internal
-	 * 
-	 * @param  array $joins   The joins to create the FROM clause out of
-	 * @return string  The from clause (does not include the word 'FROM')
-	 */
-	static public function createFromClauseFromJoins($joins)
-	{
-		$sql = '';
-		
-		foreach ($joins as $join) {
-			// Here we handle the first table in a join
-			if ($join['join_type'] == 'none') {
-				$sql .= $join['table_name'];
-				if ($join['table_alias'] != $join['table_name']) {
-					$sql .= ' AS ' . $join['table_alias'];	
-				}
-			
-			// Here we handle all other joins
-			} else {
-				$sql .= ' ' . strtoupper($join['join_type']) . ' ' . $join['table_name'];
-				if ($join['table_alias'] != $join['table_name']) {
-					$sql .= ' AS ' . $join['table_alias'];	
-				}
-				if (isset($join['on_clause_type'])) {
-					if ($join['on_clause_type'] == 'simple_equation') {
-						$sql .= ' ON ' . $join['on_clause_fields'][0] . ' = ' . $join['on_clause_fields'][1];
-						
-					} else {
-						$sql .= ' ON ' . $join['on_clause'];
-					}	
-				}
-			}
-		}
-		
-		return $sql;
-	}
-	
-	
-	/**
-	 * Finds the first table alias for the table specified in the list of joins provided
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table   The table to find the alias for
-	 * @param  array  $joins   The joins to look through
-	 * @return string  The alias to use for the table
-	 */
-	static public function findTableAlias($table, $joins)
-	{
-		foreach ($joins as $join) {
-			if ($join['table_name'] == $table) {
-				return $join['table_alias'];
-			}	
-		}
-		return NULL;
-	}
-	
-	
-	/**
 	 * Creates a new table alias
 	 * 
 	 * @internal
@@ -500,106 +284,6 @@ class fORMDatabase
 		}
 		$used_aliases[] = $table . $i;
 		return $table . $i;
-	}
-	
-	
-	/**
-	 * Creates a where clause from an array of conditions
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table       The table any ambigious column references will refer to
-	 * @param  array  $conditions  The array of conditions  (see {@link fRecordSet::create()} for format)
-	 * @return string  The SQL WHERE clause
-	 */
-	static public function createWhereClause($table, $conditions)
-	{
-		$sql = array();
-		foreach ($conditions as $column => $values) {
-			$type   = substr($column, -1);
-			$column = substr($column, 0, -1);
-			settype($values, 'array');
-			if ($values === array()) { $values = array(NULL); }
-			
-			
-			// Multi-column condition
-			if (strpos($column, '|') !== FALSE) {
-				if ($type != '~') {
-					fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
-				}
-				$columns = self::addTableToValues($table, explode('|', $column));
-				
-				$condition = array();
-				foreach ($values as $value) {
-					$sub_condition = array();
-					foreach ($columns as $column) {
-						$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
-					}
-					$condition[] = '(' . join(' OR ', $sub_condition) . ')';
-				}		
-				$sql[] = ' (' . join(' AND ', $condition) . ') ';
-				
-				
-			// Single column condition	
-			} else {
-				
-				$columns = self::addTableToValues($table, array($column));
-				$column  = $columns[0];
-				
-				// More than one value
-				if (sizeof($values) > 1) {
-					switch ($type) {
-						case '=':
-							$condition = array();
-							foreach ($values as $value) {
-								$condition[] = self::prepareByType($value);	
-							}
-							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
-							break;
-						case '!':
-							$condition = array();
-							foreach ($values as $value) {
-								$condition[] = self::prepareByType($value);	
-							}
-							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
-							break;
-						case '~':
-							$condition = array();
-							foreach ($values as $value) {
-								$condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
-							}
-							$sql[] = '(' . join(' OR ', $condition) . ')';
-							break;
-						default:
-							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
-							break;	
-					}
-					
-				// A single value
-				} else {
-					switch ($type) {
-						case '=':
-							$sql[] = $column . self::prepareByType($values[0], '=');
-							break;
-						case '!':
-							if ($values[0] !== NULL) {
-								$sql[] = '(' . $column . self::prepareByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
-							} else {
-								$sql[] = $column . self::prepareByType($values[0], '<>');
-							}
-							break;
-						case '~':
-							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');	
-							break;
-						default:
-							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
-							break;	
-					}	
-				}		
-			}
-		}
-		
-		return join(' AND ', $sql);				
 	}
 	
 	
@@ -707,31 +391,347 @@ class fORMDatabase
 	
 	
 	/**
-	 * Takes an array of rows containing primary keys for a table. If there is only a single primary key, condense the array of rows into single-dimensional array
+	 * Creates a where clause from an array of conditions
 	 * 
 	 * @internal
 	 * 
-	 * @param  array $rows   The rows of primary keys
-	 * @return array  A possibly condensed array of primary keys
+	 * @param  string $table       The table any ambigious column references will refer to
+	 * @param  array  $conditions  The array of conditions  (see {@link fRecordSet::create()} for format)
+	 * @return string  The SQL WHERE clause
 	 */
-	static public function condensePrimaryKeyArray($rows)
+	static public function createWhereClause($table, $conditions)
 	{
-		if (empty($rows)) {
-			return $rows;	
+		$sql = array();
+		foreach ($conditions as $column => $values) {
+			$type   = substr($column, -1);
+			$column = substr($column, 0, -1);
+			settype($values, 'array');
+			if ($values === array()) { $values = array(NULL); }
+			
+			
+			// Multi-column condition
+			if (strpos($column, '|') !== FALSE) {
+				if ($type != '~') {
+					fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+				}
+				$columns = self::addTableToValues($table, explode('|', $column));
+				
+				$condition = array();
+				foreach ($values as $value) {
+					$sub_condition = array();
+					foreach ($columns as $column) {
+						$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
+					}
+					$condition[] = '(' . join(' OR ', $sub_condition) . ')';
+				}		
+				$sql[] = ' (' . join(' AND ', $condition) . ') ';
+				
+				
+			// Single column condition	
+			} else {
+				
+				$columns = self::addTableToValues($table, array($column));
+				$column  = $columns[0];
+				
+				// More than one value
+				if (sizeof($values) > 1) {
+					switch ($type) {
+						case '=':
+							$condition = array();
+							foreach ($values as $value) {
+								$condition[] = self::prepareByType($value);	
+							}
+							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
+							break;
+						case '!':
+							$condition = array();
+							foreach ($values as $value) {
+								$condition[] = self::prepareByType($value);	
+							}
+							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
+							break;
+						case '~':
+							$condition = array();
+							foreach ($values as $value) {
+								$condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');	
+							}
+							$sql[] = '(' . join(' OR ', $condition) . ')';
+							break;
+						default:
+							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+							break;	
+					}
+					
+				// A single value
+				} else {
+					switch ($type) {
+						case '=':
+							$sql[] = $column . self::prepareByType($values[0], '=');
+							break;
+						case '!':
+							if ($values[0] !== NULL) {
+								$sql[] = '(' . $column . self::prepareByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
+							} else {
+								$sql[] = $column . self::prepareByType($values[0], '<>');
+							}
+							break;
+						case '~':
+							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');	
+							break;
+						default:
+							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+							break;	
+					}	
+				}		
+			}
 		}
 		
-		$test_row = $rows[0];
-		if (sizeof($test_row) == 1) {
-			$new_rows = array();
-			$row_keys = array_keys($test_row);
-			foreach ($rows as $row) {
-				$new_rows[] = $row[$row_keys[0]];
-			}
-			$rows = $new_rows;	
-		}	
-		
-		return $rows;
+		return join(' AND ', $sql);				
 	}
+	
+	
+	/**
+	 * Finds the first table alias for the table specified in the list of joins provided
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table   The table to find the alias for
+	 * @param  array  $joins   The joins to look through
+	 * @return string  The alias to use for the table
+	 */
+	static public function findTableAlias($table, $joins)
+	{
+		foreach ($joins as $join) {
+			if ($join['table_name'] == $table) {
+				return $join['table_alias'];
+			}	
+		}
+		return NULL;
+	}
+	
+	
+	/**
+	 * Return the instance of the fDatabase class
+	 * 
+	 * @return fDatabase  The database instance
+	 */
+	static public function getInstance()
+	{
+		if (!self::$database_object) {
+			fCore::toss('fProgrammerException', 'The method initialize() needs to be called before getInstance()');
+		}
+		return self::$database_object;
+	}
+	
+	
+	/**
+	 * Initializes a singleton instance of the fDatabase class
+	 * 
+	 * @param  string  $type      The type of the database
+	 * @param  string  $database  Name of database
+	 * @param  string  $username  Database username
+	 * @param  string  $password  User's password
+	 * @param  string  $host      Database server host or ip with optional port
+	 * @param  integer $port      The port number of the database server
+	 * @return void
+	 */
+	static public function initialize($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
+	{
+		self::$database_object = new fDatabase($type, $database, $username, $password, $host, $port);
+	}
+	
+	
+	/**
+	 * Finds all of the table names in the sql and creates a from clause
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table  The main table to be queried
+	 * @param  string $sql    The SQL to insert the from clause into
+	 * @param  array $joins   The existing joins that have been parsed
+	 * @return string  The from SQL clause
+	 */
+	static public function insertFromClause($table, $sql, $joins=array())
+	{
+		if (strpos($sql, ':from_clause') === FALSE) {
+			fCore::toss('fProgrammerException', "No :from_clause placeholder was found in:\n" . $sql);	
+		}
+		
+		// Separate the SQL from quoted values
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		
+		$table_alias = $table;
+		
+		$used_aliases  = array();
+		$table_map     = array();
+		
+		// If we are not passing in existing joins, start with the specified table
+		if ($joins == array()) {
+			$joins[] = array(
+				'join_type'   => 'none',
+				'table_name'  => $table,
+				'table_alias' => $table_alias
+			);
+		}
+		
+		foreach ($matches[0] as $match) {
+			if ($match != "'") {
+				preg_match_all('#\b((?:(\w+)(?:\{(\w+)\})?=>)?(\w+)(?:\{(\w+)\})?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
+				foreach ($table_matches as $table_match) {
+					
+					// This is a related table that is going to join to a once-removed table
+					if (!empty($table_match[2])) {
+						
+						$related_table = $table_match[2];
+						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[3]);	
+						
+						$join_name = $table . '_' . $related_table . '{' . $route . '}';
+						
+						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
+						
+						$once_removed_table = $table_match[4];
+						$route = fORMSchema::getOnlyRouteName($related_table, $once_removed_table, $table_match[5]);
+						
+						$join_name = self::createJoin($related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
+						
+						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
+					
+					// This is a related table
+					} elseif ($table_match[4] != $table) {
+					
+						$related_table = $table_match[4];
+						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[5]);
+						
+						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
+						
+						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
+					}	
+				}
+			}
+		}
+		
+		$from_clause = self::createFromClauseFromJoins($joins);		
+		
+		// Put the SQL back together
+		$new_sql = '';
+		foreach ($matches[0] as $match) {
+			$temp_sql = $match;
+			
+			// Get rid of the => notation and the :from_clause placeholder
+			if ($match[0] !== "'") {
+				foreach ($table_map as $arrow_table => $alias) {
+					$temp_sql = str_replace($arrow_table, $alias, $temp_sql);
+				}
+				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
+			}
+			
+			$new_sql .= $temp_sql;
+		}	
+			
+		
+		return $new_sql;
+	}
+	
+	
+	/**
+	 * Prepares a value for a DB call based on database schema
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table                The table to store the value
+	 * @param  string $column               The column to store the value in
+	 * @param  mixed  $value                The value to prepare
+	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @return string  The SQL-ready representation of the value
+	 */
+	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
+	{
+		$value = fORM::scalarize($value);
+		
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
+			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');	
+		}
+		
+		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
+
+		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
+			$value = $column_info['default'];	
+		}
+		
+		if (is_null($value)) {
+			if ($co) {
+				if (in_array(trim($co), array('=', 'IN'))) {
+					$co = ' IS ';	
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+					$co = ' IS NOT ';
+				}
+			}
+			$prepared = $co . 'NULL';
+		} elseif (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
+			$prepared = $co . self::getInstance()->escapeString($value);
+		} elseif ($column_info['type'] == 'timestamp') {
+			$prepared = $co . "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
+		} elseif ($column_info['type'] == 'date') {
+			$prepared = $co . "'" . date('Y-m-d', strtotime($value)) . "'";
+		} elseif ($column_info['type'] == 'time') {
+			$prepared = $co . "'" . date('H:i:s', strtotime($value)) . "'";
+		} elseif ($column_info['type'] == 'blob') {
+			$prepared = $co . self::getInstance()->escapeBlob($value);
+		} elseif ($column_info['type'] == 'boolean') {
+			$prepared = $co . self::getInstance()->escapeBoolean($value);
+		} else {
+			$prepared = $co . $value;	
+		}
+		
+		return $prepared;
+	}
+	
+	
+	/**
+	 * Prepares a value for a DB call based on variable type
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $value                The value to prepare
+	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @return string  The SQL-ready representation of the value
+	 */
+	static public function prepareByType($value, $comparison_operator=NULL)
+	{
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
+			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');	
+		}
+		
+		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
+
+		if (is_int($value) || is_float($value)) {
+			$prepared = $co . $value;	
+		} elseif (is_bool($value)) {
+			$prepared = $co . self::getInstance()->escapeBoolean($value);
+		} elseif (is_null($value)) {
+			if ($co) {
+				if (in_array(trim($co), array('=', 'IN'))) {
+					$co = ' IS ';	
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+					$co = ' IS NOT ';
+				}
+			}
+			$prepared = $co . "NULL";
+		} else {
+			$prepared = $co . self::getInstance()->escapeString($value);
+		} 
+		
+		return $prepared;
+	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fORMDatabase
+	 */
+	private function __construct() { }
 }
 
 
@@ -756,4 +756,3 @@ class fORMDatabase
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

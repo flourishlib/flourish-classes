@@ -15,6 +15,7 @@
  * @uses  fORMSchema
  * @uses  fProgrammerException
  * @uses  fRecordSet
+ * @uses  fRequest
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-30]
@@ -27,65 +28,6 @@ class fORMRelatedData
 	 * @var array 
 	 */
 	static private $order_bys = array();
-	
-	
-	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fORMRelatedData
-	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Sets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
-	 *
-	 * @param  mixed  $table           The database table (or {@link fActiveRecord} class) this ordering rule applies to
-	 * @param  string $related_table   The related table we are getting info from
-	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
-	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::create()} for format)
-	 * @return void
-	 */
-	static public function setOrderBys($table, $related_table, $route, $order_bys)
-	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);	
-		}
-		
-		if (!isset(self::$order_bys[$table])) {
-			self::$order_bys[$table] = array();		
-		}
-		
-		if (!isset(self::$order_bys[$table][$related_table])) {
-			self::$order_bys[$table][$related_table] = array();		
-		}
-		
-		self::$order_bys[$table][$related_table][$route] = $order_bys;
-	}
-	
-	
-	/**
-	 * Gets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed  $table          The database table (or {@link fActiveRecord} class) this ordering rule applies to
-	 * @param  string $related_table  The related table the ordering rules apply to
-	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
-	 * @return array  An array of the order bys (see {@link fRecordSet::create()} for format)
-	 */
-	static public function getOrderBys($table, $related_table, $route)
-	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);	
-		}
-		
-		if (!isset(self::$order_bys[$table][$related_table]) || !isset(self::$order_bys[$table][$related_table][$route])) {
-			return array();		
-		}
-		
-		return self::$order_bys[$table][$related_table][$route];
-	}
 	
 	
 	/**
@@ -158,6 +100,30 @@ class fORMRelatedData
 	
 	
 	/**
+	 * Gets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $table          The database table (or {@link fActiveRecord} class) this ordering rule applies to
+	 * @param  string $related_table  The related table the ordering rules apply to
+	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
+	 * @return array  An array of the order bys (see {@link fRecordSet::create()} for format)
+	 */
+	static public function getOrderBys($table, $related_table, $route)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		if (!isset(self::$order_bys[$table][$related_table]) || !isset(self::$order_bys[$table][$related_table][$route])) {
+			return array();		
+		}
+		
+		return self::$order_bys[$table][$related_table][$route];
+	}
+	
+	
+	/**
 	 * Creates associations for many-to-many relationships
 	 * 
 	 * @internal
@@ -174,6 +140,94 @@ class fORMRelatedData
 		$cloned_records = clone $records;
 		self::setRecords($table, $related_records, $related_class, $cloned_records, $route);
 		$cloned_records->flagForAssociation();
+	}
+	
+	
+	/**
+	 * Sets the values for records in a one-to-many relationship with this record
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $table             The database table (or {@link fActiveRecord} class) to get the related values for
+	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  string $related_class     The related class to populate
+	 * @param  string $route             The route to the related class
+	 * @return void
+	 */
+	static protected function populateRecords($table, &$related_records, $related_class, $route=NULL)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		$related_table = fORM::tablize($related_class);
+		$pk_columns    = fORMSchema::getInstance()->getKeys($related_table, 'primary');		
+		
+		$table_with_route = $related_table;
+		$table_with_route = ($route !== NULL) ? '{' . $route . '}' : '';
+		
+		$first_pk_column  = $pk_columns[0];
+		$pk_field         = $table_with_route . '::' . $first_pk_column;
+		
+		$total_records = sizeof(fRequest::get($pk_field, 'array', array()));
+		$records       = array();
+		
+		for ($i = 0; $i < $total_records; $i++) {
+			fRequest::filter($table_with_route . '::', $i);	
+			
+			// Existing record are loaded out of the database before populating
+			if (fRequest::get($first_pk_column) !== NULL) {
+				if (sizeof($pk_columns) == 1) {
+					$primary_key_values = fRequest::get($first_pk_column);	
+				} else {
+					$primary_key_values = array();
+					foreach ($pk_columns as $pk_column) {
+						$primary_key_values[$pk_column] = fRequest::get($pk_column);
+					}		
+				}
+				$record = new $related_class($primary_key_values);	
+			
+			// If we have a new record, created an empty object
+			} else {
+				$record = new $related_class();
+			}
+			
+			$record->populate();
+			$records[] = $record;
+			
+			fRequest::unfilter();
+		}
+		
+		$record_set = fRecordSet::createFromObjects($records);
+		
+		self::linkRecords($table, $related_records, $related_class, $record_set, $route);
+	}
+	
+	
+	/**
+	 * Sets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
+	 *
+	 * @param  mixed  $table           The database table (or {@link fActiveRecord} class) this ordering rule applies to
+	 * @param  string $related_table   The related table we are getting info from
+	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
+	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::create()} for format)
+	 * @return void
+	 */
+	static public function setOrderBys($table, $related_table, $route, $order_bys)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		if (!isset(self::$order_bys[$table])) {
+			self::$order_bys[$table] = array();		
+		}
+		
+		if (!isset(self::$order_bys[$table][$related_table])) {
+			self::$order_bys[$table][$related_table] = array();		
+		}
+		
+		self::$order_bys[$table][$related_table][$route] = $order_bys;
 	}
 	
 	
@@ -201,6 +255,14 @@ class fORMRelatedData
 		
 		$related_records[$related_table][$route] = $records;
 	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fORMRelatedData
+	 */
+	private function __construct() { }
 }
 
 
@@ -225,4 +287,3 @@ class fORMRelatedData
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

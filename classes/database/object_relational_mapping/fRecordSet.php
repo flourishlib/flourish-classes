@@ -101,6 +101,67 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Creates an fRecordSet from an array of records
+	 * 
+	 * @internal
+	 * 
+	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 */
+	static public function createFromObjects($records)
+	{
+		$class_name = get_class($records[0]);
+		$table_name = fORM::tablize($class_name);
+		
+		$sql  = 'SELECT DISTINCT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
+		
+		// Build the where clause
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+		$total_pk_fields = sizeof($primary_key_fields);
+		
+		$primary_keys = array();
+		
+		$i = 0;
+		foreach ($records as $record) {
+			$sql .= ($i > 0) ? 'OR' : '';
+			$sql .= ($total_pk_fields > 1) ? ' (' : '';
+			
+			for ($j=0; $j < $total_pk_fields; $j++) {
+				$pk_field      = $primary_key_fields[$j];
+				$pk_get_method = 'get' . fInflection::camelize($pk_field, TRUE);
+				
+				$pk_value = $record->$pk_get_method();
+				if ($j == 0 && $total_pk_fields == 1) {
+					$primary_keys[$i] = $pk_value;	
+				} elseif ($j == 0) {
+					$primary_keys[$i] = array();	
+				}
+				if ($total_pk_fields > 1) {
+					$primary_keys[$i][$pk_field] = $pk_value;	
+				}
+				
+				$sql .= ($j > 0) ? ' AND ' : '';
+				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');	
+			}
+			
+			$sql .= ($total_pk_fields > 1) ? ') ' : '';	
+			$i++;
+		}
+		
+		$result = new fResult('array');
+		$result->setResult(array());
+		$result->setReturnedRows(sizeof($records));
+		$result->setSQL($sql);
+		
+		$record_set = new fRecordSet($class_name, $result);	
+		$record_set->records      = $records;
+		$record_set->primary_keys = $primary_keys;
+		
+		return $record_set;
+	}
+	
+	
+	/**
 	 * Creates an fRecordSet from an array of primary keys
 	 * 
 	 * @internal
@@ -167,67 +228,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an fRecordSet from an array of records
-	 * 
-	 * @internal
-	 * 
-	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
-	 */
-	static public function createFromObjects($records)
-	{
-		$class_name = get_class($records[0]);
-		$table_name = fORM::tablize($class_name);
-		
-		$sql  = 'SELECT DISTINCT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
-		
-		// Build the where clause
-		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
-		$total_pk_fields = sizeof($primary_key_fields);
-		
-		$primary_keys = array();
-		
-		$i = 0;
-		foreach ($records as $record) {
-			$sql .= ($i > 0) ? 'OR' : '';
-			$sql .= ($total_pk_fields > 1) ? ' (' : '';
-			
-			for ($j=0; $j < $total_pk_fields; $j++) {
-				$pk_field      = $primary_key_fields[$j];
-				$pk_get_method = 'get' . fInflection::camelize($pk_field, TRUE);
-				
-				$pk_value = $record->$pk_get_method();
-				if ($j == 0 && $total_pk_fields == 1) {
-					$primary_keys[$i] = $pk_value;	
-				} elseif ($j == 0) {
-					$primary_keys[$i] = array();	
-				}
-				if ($total_pk_fields > 1) {
-					$primary_keys[$i][$pk_field] = $pk_value;	
-				}
-				
-				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');	
-			}
-			
-			$sql .= ($total_pk_fields > 1) ? ') ' : '';	
-			$i++;
-		}
-		
-		$result = new fResult('array');
-		$result->setResult(array());
-		$result->setReturnedRows(sizeof($records));
-		$result->setSQL($sql);
-		
-		$record_set = new fRecordSet($class_name, $result);	
-		$record_set->records      = $records;
-		$record_set->primary_keys = $primary_keys;
-		
-		return $record_set;
-	}
-	
-	
-	/**
 	 * Creates an fRecordSet from an SQL statement
 	 * 
 	 * @param  string $class_name             The type of object to create
@@ -243,25 +243,18 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
+	 * 
+	 * @var boolean 
+	 */
+	private $associate = FALSE;
+	
+	/**
 	 * The type of class to create from the primary keys provided
 	 * 
 	 * @var string 
 	 */
 	private $class_name;
-	
-	/**
-	 * The result object that will act as the data source
-	 * 
-	 * @var object 
-	 */
-	private $result_object;
-	
-	/**
-	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
-	 * 
-	 * @var string 
-	 */
-	private $non_limited_count_sql;
 	
 	/**
 	 * The number of rows that would have been returned if a LIMIT clause had not been used
@@ -271,18 +264,18 @@ class fRecordSet implements Iterator
 	private $non_limited_count;
 	
 	/**
+	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
+	 * 
+	 * @var string 
+	 */
+	private $non_limited_count_sql;
+	
+	/**
 	 * The result objects for preloaded data
 	 * 
 	 * @var array 
 	 */
 	private $preloaded_result_objects = array();
-	
-	/**
-	 * An array of the records in the set, initially empty
-	 * 
-	 * @var array 
-	 */
-	private $records = array();
 	
 	/**
 	 * An array of the primary keys for the records in the set, initially empty
@@ -292,11 +285,18 @@ class fRecordSet implements Iterator
 	private $primary_keys = array();
 	
 	/**
-	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
+	 * An array of the records in the set, initially empty
 	 * 
-	 * @var boolean 
+	 * @var array 
 	 */
-	private $associate = FALSE;
+	private $records = array();
+	
+	/**
+	 * The result object that will act as the data source
+	 * 
+	 * @var object 
+	 */
+	private $result_object;		
 	
 	
 	/**
@@ -350,6 +350,65 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Creates all records for the primary keys provided
+	 * 
+	 * @return void
+	 */
+	private function createAllRecords()
+	{
+		while ($this->valid()) {
+			$this->current();
+			$this->next();
+		}   
+	}
+	
+	
+	/**
+	 * Returns the current record in the set (used for iteration)
+	 * 
+	 * @internal
+	 * 
+	 * @return object  The current record
+	 */
+	public function current()
+	{
+		if (!isset($this->records[$this->key()])) {
+			$this->records[$this->key()] = new $this->class_name($this->result_object);
+			
+			// Fetch the primary keys for this object
+			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this->class_name), 'primary');
+			$keys = array();
+			foreach ($primary_keys as $primary_key) {
+				$method = 'get' . fInflection::camelize($primary_key, TRUE);
+				$keys[$primary_key] = $this->records[$this->key()]->$method();	
+			}
+			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_unshift($primary_keys)] : $keys;
+			
+			// Pass the preloaded data to the object
+			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
+				foreach ($result_objects as $route => $result_object) {
+					$this->injectSubSet($related_table, $route, $result_object);
+				}
+			}
+		}
+		return $this->records[$this->key()];
+	}
+	
+	
+	/**
+	 * Flags this record set for association with the fActiveRecord object that references it
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function flagForAssociation()
+	{
+		$this->associate = TRUE;
+	}
+	
+	
+	/**
 	 * Returns the class name of the record being stored
 	 * 
 	 * @return string  The class name of the records in the set
@@ -357,6 +416,36 @@ class fRecordSet implements Iterator
 	public function getClassName()
 	{
 		return $this->class_name;   
+	}
+	
+	
+	/**
+	 * Returns the number of records in the set
+	 * 
+	 * @return integer  The number of records in the set
+	 */
+	public function getCount()
+	{
+		return $this->result_object->getReturnedRows();	
+	}
+	
+	
+	/**
+	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
+	 * 
+	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
+	 */
+	public function getNonLimitedCount()
+	{
+		// A query that does not use a LIMIT clause just returns the number of returned rows 
+		if ($this->non_limited_count_sql === NULL) {
+			return $this->getCount();			
+		}
+		
+		if ($this->non_limited_count !== NULL) {
+			$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+		}
+		return $this->non_limited_count;
 	}
 	
 	
@@ -393,60 +482,49 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Returns the number of records in the set
+	 * Injects a set of related information into the current record
 	 * 
-	 * @return integer  The number of records in the set
+	 * @param string $related_table   The table we are injecting the values for
+	 * @param string $route           The route to the related table
+	 * @param fResult $result_object  The pre-loaded result object that we are extracting the sequence from
+	 * @return void
 	 */
-	public function getCount()
+	private function injectSubSet($related_table, $route, $result_object) 
 	{
-		return $this->result_object->getReturnedRows();	
-	}
-	
-	
-	/**
-	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
-	 * 
-	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
-	 */
-	public function getNonLimitedCount()
-	{
-		// A query that does not use a LIMIT clause just returns the number of returned rows 
-		if ($this->non_limited_count_sql === NULL) {
-			return $this->getCount();			
-		}
+		$rows = array();
 		
-		if ($this->non_limited_count !== NULL) {
-			$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
-		}
-		return $this->non_limited_count;
-	}
-	
-	
-	/**
-	 * Throws a fEmptySetException if the fRecordSet is empty
-	 * 
-	 * @throws  fEmptySetException
-	 * 
-	 * @return void
-	 */
-	public function tossIfEmpty()
-	{
-		if (!$this->getSizeOf()) {
-			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
-		}
-	}
-	
-	
-	/**
-	 * Flags this record set for association with the fActiveRecord object that references it
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	public function flagForAssociation()
-	{
-		$this->associate = TRUE;
+		$keys = $this->primary_keys[$this->key()];
+		settype($keys, 'array');
+					
+		try {
+			while (array_diff($keys, $result_object->current()) == array()) {
+				$rows[] = $result_object->fetchRow();	
+			}	
+		} catch (fPrintableException $e) { }		
+		
+		$table = fORM::tablize($this->class_name);
+		$relationship = fORMSchema::getRoute($table, $related_table, $route);
+		
+		$record = $this->records[$this->key()];
+		$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
+		
+		$sql = 'SELECT *
+					FROM ' . $related_table . '
+					WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
+		
+		$result = new fResult('array');
+		$result->setSQL($sql);
+		$result->setResult($rows);
+		$result->setReturnedRows(sizeof($rows));
+		$result->setAffectedRows(0);
+		$result->setAutoIncrementedValue(NULL);
+		
+		$class_name = fORM::classize($related_table);
+		
+		$set = new fRecordSet($class_name, $result);
+		
+		$method = 'inject' . fInflection::pluralize($class_name);
+		$record->$method($set);	
 	}
 	
 	
@@ -464,57 +542,28 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Sorts the set by the return value of a method from the class created
+	 * Returns the primary key for the current record (used for iteration)
 	 * 
-	 * @param  string $method_name  The method to call on each object to get the value to sort
-	 * @param  string $direction    Either 'asc' or 'desc'
-	 * @return void
+	 * @internal
+	 * 
+	 * @return mixed  The primay key of the current record
 	 */
-	public function sort($method_name, $direction)
+	public function key()
 	{
-		if (!in_array($direction, array('asc', 'desc'))) {
-			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
-		}
-		
-		$this->createAllRecords(); 
-		
-		if (!method_exists($this->records[0], $method_name)) {
-			fCore::toss('fProgrammerException', 'The method specified for sorting, ' . $method_name . '(), does not exist');
-		}
-		
-		// Use __call to pass the desired method name through to the sort callback
-		usort($this->records, array($this, 'sortBy' . fInflection::camelize($method_name, TRUE)));
-		if ($direction == 'desc') {
-			array_reverse($this->records);	
-		}
+		return $this->result_object->key();
 	}
-	
+
 	
 	/**
-	 * Creates all records for the primary keys provided
+	 * Moves to the next record in the set (used for iteration)
+	 * 
+	 * @internal
 	 * 
 	 * @return void
 	 */
-	private function createAllRecords()
+	public function next()
 	{
-		while ($this->valid()) {
-			$this->current();
-			$this->next();
-		}   
-	}
-	
-	
-	/**
-	 * Does the action of sorting records
-	 * 
-	 * @param  object $a       Record a
-	 * @param  object $b       Record b
-	 * @param  string $method  The method to sort by
-	 * @return integer  < 0 if a is less than b; 0 if a = b; > 0 if a is greater than b
-	 */
-	protected function performSort($a, $b, $method)
-	{
-		return strnatcasecmp($a->$method(), $b->$method());  
+		$this->result_object->next();
 	}
 	
 	
@@ -593,51 +642,17 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Injects a set of related information into the current record
+	 * Does the action of sorting records
 	 * 
-	 * @param string $related_table   The table we are injecting the values for
-	 * @param string $route           The route to the related table
-	 * @param fResult $result_object  The pre-loaded result object that we are extracting the sequence from
-	 * @return void
+	 * @param  object $a       Record a
+	 * @param  object $b       Record b
+	 * @param  string $method  The method to sort by
+	 * @return integer  < 0 if a is less than b; 0 if a = b; > 0 if a is greater than b
 	 */
-	private function injectSubSet($related_table, $route, $result_object) 
+	protected function performSort($a, $b, $method)
 	{
-		$rows = array();
-		
-		$keys = $this->primary_keys[$this->key()];
-		settype($keys, 'array');
-					
-		try {
-			while (array_diff($keys, $result_object->current()) == array()) {
-				$rows[] = $result_object->fetchRow();	
-			}	
-		} catch (fPrintableException $e) { }		
-		
-		$table = fORM::tablize($this->class_name);
-		$relationship = fORMSchema::getRoute($table, $related_table, $route);
-		
-		$record = $this->records[$this->key()];
-		$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
-		
-		$sql = 'SELECT *
-					FROM ' . $related_table . '
-					WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
-		
-		$result = new fResult('array');
-		$result->setSQL($sql);
-		$result->setResult($rows);
-		$result->setReturnedRows(sizeof($rows));
-		$result->setAffectedRows(0);
-		$result->setAutoIncrementedValue(NULL);
-		
-		$class_name = fORM::classize($related_table);
-		
-		$set = new fRecordSet($class_name, $result);
-		
-		$method = 'inject' . fInflection::pluralize($class_name);
-		$record->$method($set);	
+		return strnatcasecmp($a->$method(), $b->$method());  
 	}
-	
 	
 	
 	/**
@@ -651,64 +666,48 @@ class fRecordSet implements Iterator
 	{
 		$this->result_object->rewind();
 	}
-
+	
 	
 	/**
-	 * Returns the current record in the set (used for iteration)
+	 * Sorts the set by the return value of a method from the class created
 	 * 
-	 * @internal
-	 * 
-	 * @return object  The current record
+	 * @param  string $method_name  The method to call on each object to get the value to sort
+	 * @param  string $direction    Either 'asc' or 'desc'
+	 * @return void
 	 */
-	public function current()
+	public function sort($method_name, $direction)
 	{
-		if (!isset($this->records[$this->key()])) {
-			$this->records[$this->key()] = new $this->class_name($this->result_object);
-			
-			// Fetch the primary keys for this object
-			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this->class_name), 'primary');
-			$keys = array();
-			foreach ($primary_keys as $primary_key) {
-				$method = 'get' . fInflection::camelize($primary_key, TRUE);
-				$keys[$primary_key] = $this->records[$this->key()]->$method();	
-			}
-			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_unshift($primary_keys)] : $keys;
-			
-			// Pass the preloaded data to the object
-			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
-				foreach ($result_objects as $route => $result_object) {
-					$this->injectSubSet($related_table, $route, $result_object);
-				}
-			}
+		if (!in_array($direction, array('asc', 'desc'))) {
+			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
 		}
-		return $this->records[$this->key()];
+		
+		$this->createAllRecords(); 
+		
+		if (!method_exists($this->records[0], $method_name)) {
+			fCore::toss('fProgrammerException', 'The method specified for sorting, ' . $method_name . '(), does not exist');
+		}
+		
+		// Use __call to pass the desired method name through to the sort callback
+		usort($this->records, array($this, 'sortBy' . fInflection::camelize($method_name, TRUE)));
+		if ($direction == 'desc') {
+			array_reverse($this->records);	
+		}
 	}
-
+	
 	
 	/**
-	 * Returns the primary key for the current record (used for iteration)
+	 * Throws a fEmptySetException if the fRecordSet is empty
 	 * 
-	 * @internal
-	 * 
-	 * @return mixed  The primay key of the current record
-	 */
-	public function key()
-	{
-		return $this->result_object->key();
-	}
-
-	
-	/**
-	 * Moves to the next record in the set (used for iteration)
-	 * 
-	 * @internal
+	 * @throws  fEmptySetException
 	 * 
 	 * @return void
 	 */
-	public function next()
+	public function tossIfEmpty()
 	{
-		$this->result_object->next();
-	}
+		if (!$this->getSizeOf()) {
+			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
+		}
+	}	
 
 	
 	/**
@@ -746,5 +745,4 @@ class fRecordSet implements Iterator
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */
