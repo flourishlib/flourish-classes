@@ -174,15 +174,15 @@ class fTemplating
 	 * @return void
 	 */
 	public function place($element)
-	{
-		if (!isset($this->elements[$element])) {
-			return;       
-		}
-		
+	{		
 		// Put in a buffered placeholder
 		if ($this->buffered_id) {
 			echo '%%fTemplating::' . $this->buffered_id . '::' . $element . '%%';
 			return;	
+		}
+		
+		if (!isset($this->elements[$element])) {
+			return;       
 		}
 		
 		$this->placeElement($element);
