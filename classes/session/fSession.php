@@ -25,57 +25,18 @@ class fSession
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Unsets a key from the session superglobal using the prefix provided
 	 * 
-	 * @return fSession
-	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
-	 * 
+	 * @param  string $key      The name to unset
+	 * @param  string $prefix   The prefix to stick before the key
 	 * @return void
 	 */
-	static public function ignoreSubdomain()
+	static public function clear($key, $prefix='fSession::')
 	{
 		if (!self::$open) {
-			session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
-		} else {
-			fCore::toss('fProgrammerException', 'fSession::ignoreSubdomain() must be called before fSession::open()');	
+			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::clear()');	
 		}
-	}
-	
-	
-	/**
-	 * Sets the minimum length of a session - PHP might not clean up the session data right away once this timespan has elapsed
-	 * 
-	 * @param string $timespan  An english description of a timespan (e.g. '30 minutes', '1 hour', '1 day 2 hours')
-	 * @return void
-	 */
-	static public function setLength($timespan)
-	{
-		if (!self::$open) {
-			$seconds = strtotime($timespan) - time();
-			ini_set('session.gc_maxlifetime', $seconds);
-			ini_set('session.cookie_lifetime', 0);
-		} else {
-			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before fSession::open()');	
-		}	
-	}
-	
-	
-	/**
-	 * Opens the session for writing
-	 * 
-	 * @return void
-	 */
-	static public function open()
-	{
-		if (!self::$open) {
-			session_start();
-			self::$open = TRUE;
-		}
+		unset($_SESSION[$prefix . $key]);
 	}
 	
 	
@@ -111,23 +72,6 @@ class fSession
 	
 	
 	/**
-	 * Sets data to the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
-	 * 
-	 * @param  string $key      The name to save the value under
-	 * @param  mixed  $value    The value to store
-	 * @param  string $prefix   The prefix to stick before the key
-	 * @return void
-	 */
-	static public function set($key, $value, $prefix='fSession::')
-	{
-		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::set()');	
-		}
-		$_SESSION[$prefix . $key] = $value;
-	}
-	
-	
-	/**
 	 * Gets data from the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
 	 * 
 	 * @param  string $key             The name to get the value for
@@ -145,20 +89,77 @@ class fSession
 	
 	
 	/**
-	 * Unsets a key from the session superglobal using the prefix provided
+	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
 	 * 
-	 * @param  string $key      The name to unset
+	 * @return void
+	 */
+	static public function ignoreSubdomain()
+	{
+		if (!self::$open) {
+			session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
+		} else {
+			fCore::toss('fProgrammerException', 'fSession::ignoreSubdomain() must be called before fSession::open()');	
+		}
+	}
+	
+	
+	/**
+	 * Opens the session for writing
+	 * 
+	 * @return void
+	 */
+	static public function open()
+	{
+		if (!self::$open) {
+			session_start();
+			self::$open = TRUE;
+		}
+	}
+	
+	
+	/**
+	 * Sets data to the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
+	 * 
+	 * @param  string $key      The name to save the value under
+	 * @param  mixed  $value    The value to store
 	 * @param  string $prefix   The prefix to stick before the key
 	 * @return void
 	 */
-	static public function clear($key, $prefix='fSession::')
+	static public function set($key, $value, $prefix='fSession::')
 	{
 		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::clear()');	
+			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::set()');	
 		}
-		unset($_SESSION[$prefix . $key]);
+		$_SESSION[$prefix . $key] = $value;
 	}
+	
+	
+	/**
+	 * Sets the minimum length of a session - PHP might not clean up the session data right away once this timespan has elapsed
+	 * 
+	 * @param string $timespan  An english description of a timespan (e.g. '30 minutes', '1 hour', '1 day 2 hours')
+	 * @return void
+	 */
+	static public function setLength($timespan)
+	{
+		if (!self::$open) {
+			$seconds = strtotime($timespan) - time();
+			ini_set('session.gc_maxlifetime', $seconds);
+			ini_set('session.cookie_lifetime', 0);
+		} else {
+			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before fSession::open()');	
+		}	
+	}
+	
+	
+	/**
+	 * Prevent instantiation
+	 * 
+	 * @return fSession
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -181,5 +182,4 @@ class fSession
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

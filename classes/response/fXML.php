@@ -14,15 +14,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2008-01-13]
  */
 class fXML
-{
-	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fXML
-	 */
-	private function __construct() { }
-	
-	
+{	
 	/**
 	 * Prepares content for display in a UTF-8 encoded XML document 
 	 * 
@@ -34,7 +26,16 @@ class fXML
 		$content = fHTML::preparePlainText($content);
 		return fHTML::convertEntitiesToNumeric($content);         
 	}
+
+
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fXML
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -57,5 +58,4 @@ class fXML
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

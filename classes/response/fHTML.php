@@ -12,183 +12,18 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
 class fHTML
-{
+{	
 	/**
-	 * Forces use as a static class
+	 * Checks a string of HTML for block level elements 
 	 * 
-	 * @return fHTML
+	 * @param  string $content   The HTML content to check
+	 * @return boolean  If the content contains a block level tag
 	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Prepares content for display in HTML, allows HTML tags. Converts all special characters that are not part of html tags or existing entites to entities 
-	 * 
-	 * @param  string $content   The content to prepare
-	 * @return string  The encoded html
-	 */
-	static public function prepare($content)
+	static public function checkForBlockLevelHTML($content)
 	{
-		// Find all html tags, entities and comments
-		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
-		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
-
-		// Find all text
-		$text_matches = preg_split($reg_exp, $content);
-
-		// For each chunk of text, make sure it is converted to entities
-		foreach($text_matches as $key => $value) {
-			$text_matches[$key] = self::encodeEntities($value);
-		}
-
-		// Merge the text and html back together  
-		for ($i = 0; $i < sizeof($html_matches); $i++) {
-			$text_matches[$i] .= $html_matches[$i][0];
-		}
-
-		return implode($text_matches);         
-	}
-	
-	
-	/**
-	 * Prepares content for display in HTML, does not allow HTML tags. Converts all special characters that are not already entites to entities 
-	 * 
-	 * @param  string $content   The content to prepare
-	 * @return string  The encoded html
-	 */
-	static public function preparePlainText($content)
-	{
-		// Remove existing entities to prevent double-encoding
-		$content = self::decodeEntities($content);
-		
-		return self::encodeEntities($content);        
-	}
-	
-	
-	/**
-	 * Prepares content for display in an HTML form element
-	 * 
-	 * @param  string $content   The content to prepare
-	 * @return string  The encoded html
-	 */
-	static public function prepareFormValue($content)
-	{
-		return self::encodeEntities($content);        
-	}
-	
-	
-	/**
-	 * Prints text, turning newlines into breaks as long as there aren't any block-level html tags
-	 * 
-	 * @param  string $content  The content to display
-	 * @return void
-	 */
-	static public function convertNewlines($content)
-	{
-		static $inline_tags_minus_br = '<a><abbr><acronym><b><big><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
-		return (strip_tags($content, $inline_tags_minus_br) != $content) ? $content : nl2br($content);
-	}
-	
-	
-	/**
-	 * Takes a block of text and converts all URLs into HTML links
-	 * 
-	 * @param  string $content            The content to parse for links
-	 * @param  integer $link_text_length  If non-zero, all link text will be truncated to this many characters
-	 * @return string  The content with all URLs converted to HTML link
-	 */
-	static public function createLinks($content, $link_text_length=0)
-	{
-		// Determine what replacement to perform
-		if ($link_text_length) {
-			$replacement = '((strlen("\1") > ' . $link_text_length . ') ? substr("\1", 0, ' . $link_text_length . ') . "..." : "\1")';	
-		} else {
-			$replacement = '"\1"';
-		}
-		
-		
-		// Handle fully qualified urls with protocol
-		$full_url_regex       = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
-		$full_url_replacement = '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"';
-		
-		// Handle domains names that start with www
-		$www_url_regex       = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
-		$www_url_replacement = '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"';
-		
-		// Handle email addresses
-		$email_regex       = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
-		$email_replacement = '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"';
-		
-		$searches = array(
-			$full_url_regex => $full_url_replacement,
-			$www_url_regex  => $www_url_replacement,
-			$email_regex    => $email_replacement	
-		);
-		
-		
-		// Loop through and do each kind of replacement, by doing a pass for each replacement, we prevent nested links
-		foreach ($searches as $regex => $replacement) {
-			
-			// Find all a tags
-			$reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
-			preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
-
-			// Find all text
-			$text_matches = preg_split($reg_exp, $content);
-			
-			// For each chunk of text, convert all URLs to links
-			foreach($text_matches as $key => $text) {
-				$text = preg_replace($regex, $replacement, $text);
-				$text_matches[$key] = str_replace("\\'", "'", $text);
-			}
-
-			// Merge the text and a tags back together  
-			for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
-				$text_matches[$i] .= $a_tag_matches[$i][0];
-			}
-
-			$content = implode($text_matches);  
-		}
-		
-		return $content;
-	}
-	
-	
-	/**
-	 * Converts all special characters to entites, using utf-8. Handles Windows-specific characters.
-	 * 
-	 * @param  string $content   The content to encode
-	 * @return string  The encoded content
-	 */
-	static public function encodeEntities($content)
-	{
-		$content = htmlentities($content, ENT_COMPAT, 'UTF-8');    
-		
-		$windows_characters = array(
-			chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;', 
-			chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
-			chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;', 
-			chr(139) => '&lsaquo;', chr(140) => '&OElig;',  chr(145) => '&lsquo;',
-			chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;', 
-			chr(149) => '&bull;',   chr(150) => '&ndash;',  chr(151) => '&mdash;',
-			chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;', 
-			chr(155) => '&rsaquo;', chr(156) => '&oelig;',  chr(159) => '&Yuml;'
-		);
-		
-		return strtr($content, $windows_characters);      
-	}
-	
-	
-	/**
-	 * Converts all html entities to normal characters, using utf-8
-	 * 
-	 * @param  string $content   The content to decode
-	 * @return string  The decoded content
-	 */
-	static public function decodeEntities($content)
-	{
-		return html_entity_decode($content, ENT_COMPAT, 'UTF-8');
-	}
+		static $inline_tags = '<a><abbr><acronym><b><big><br><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
+		return strip_tags($content, $inline_tags) != $content;
+	}  
 	
 	
 	/**
@@ -292,6 +127,176 @@ class fHTML
 	
 	
 	/**
+	 * Prints text, turning newlines into breaks as long as there aren't any block-level html tags
+	 * 
+	 * @param  string $content  The content to display
+	 * @return void
+	 */
+	static public function convertNewlines($content)
+	{
+		static $inline_tags_minus_br = '<a><abbr><acronym><b><big><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
+		return (strip_tags($content, $inline_tags_minus_br) != $content) ? $content : nl2br($content);
+	}
+	
+	
+	/**
+	 * Takes a block of text and converts all URLs into HTML links
+	 * 
+	 * @param  string $content            The content to parse for links
+	 * @param  integer $link_text_length  If non-zero, all link text will be truncated to this many characters
+	 * @return string  The content with all URLs converted to HTML link
+	 */
+	static public function createLinks($content, $link_text_length=0)
+	{
+		// Determine what replacement to perform
+		if ($link_text_length) {
+			$replacement = '((strlen("\1") > ' . $link_text_length . ') ? substr("\1", 0, ' . $link_text_length . ') . "..." : "\1")';	
+		} else {
+			$replacement = '"\1"';
+		}
+		
+		
+		// Handle fully qualified urls with protocol
+		$full_url_regex       = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
+		$full_url_replacement = '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"';
+		
+		// Handle domains names that start with www
+		$www_url_regex       = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
+		$www_url_replacement = '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"';
+		
+		// Handle email addresses
+		$email_regex       = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
+		$email_replacement = '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"';
+		
+		$searches = array(
+			$full_url_regex => $full_url_replacement,
+			$www_url_regex  => $www_url_replacement,
+			$email_regex    => $email_replacement	
+		);
+		
+		
+		// Loop through and do each kind of replacement, by doing a pass for each replacement, we prevent nested links
+		foreach ($searches as $regex => $replacement) {
+			
+			// Find all a tags
+			$reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
+			preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
+
+			// Find all text
+			$text_matches = preg_split($reg_exp, $content);
+			
+			// For each chunk of text, convert all URLs to links
+			foreach($text_matches as $key => $text) {
+				$text = preg_replace($regex, $replacement, $text);
+				$text_matches[$key] = str_replace("\\'", "'", $text);
+			}
+
+			// Merge the text and a tags back together  
+			for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
+				$text_matches[$i] .= $a_tag_matches[$i][0];
+			}
+
+			$content = implode($text_matches);  
+		}
+		
+		return $content;
+	}
+	
+	
+	/**
+	 * Converts all html entities to normal characters, using utf-8
+	 * 
+	 * @param  string $content   The content to decode
+	 * @return string  The decoded content
+	 */
+	static public function decodeEntities($content)
+	{
+		return html_entity_decode($content, ENT_COMPAT, 'UTF-8');
+	}
+	
+	
+	/**
+	 * Converts all special characters to entites, using utf-8. Handles Windows-specific characters.
+	 * 
+	 * @param  string $content   The content to encode
+	 * @return string  The encoded content
+	 */
+	static public function encodeEntities($content)
+	{
+		$content = htmlentities($content, ENT_COMPAT, 'UTF-8');    
+		
+		$windows_characters = array(
+			chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;', 
+			chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
+			chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;', 
+			chr(139) => '&lsaquo;', chr(140) => '&OElig;',  chr(145) => '&lsquo;',
+			chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;', 
+			chr(149) => '&bull;',   chr(150) => '&ndash;',  chr(151) => '&mdash;',
+			chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;', 
+			chr(155) => '&rsaquo;', chr(156) => '&oelig;',  chr(159) => '&Yuml;'
+		);
+		
+		return strtr($content, $windows_characters);      
+	}
+	
+	
+	/**
+	 * Prepares content for display in HTML, allows HTML tags. Converts all special characters that are not part of html tags or existing entites to entities 
+	 * 
+	 * @param  string $content   The content to prepare
+	 * @return string  The encoded html
+	 */
+	static public function prepare($content)
+	{
+		// Find all html tags, entities and comments
+		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
+		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
+
+		// Find all text
+		$text_matches = preg_split($reg_exp, $content);
+
+		// For each chunk of text, make sure it is converted to entities
+		foreach($text_matches as $key => $value) {
+			$text_matches[$key] = self::encodeEntities($value);
+		}
+
+		// Merge the text and html back together  
+		for ($i = 0; $i < sizeof($html_matches); $i++) {
+			$text_matches[$i] .= $html_matches[$i][0];
+		}
+
+		return implode($text_matches);         
+	}
+	
+	
+	/**
+	 * Prepares content for display in an HTML form element
+	 * 
+	 * @param  string $content   The content to prepare
+	 * @return string  The encoded html
+	 */
+	static public function prepareFormValue($content)
+	{
+		return self::encodeEntities($content);        
+	}
+	
+	
+	/**
+	 * Prepares content for display in HTML, does not allow HTML tags. Converts all special characters that are not already entites to entities 
+	 * 
+	 * @param  string $content   The content to prepare
+	 * @return string  The encoded html
+	 */
+	static public function preparePlainText($content)
+	{
+		// Remove existing entities to prevent double-encoding
+		$content = self::decodeEntities($content);
+		
+		return self::encodeEntities($content);        
+	}
+	
+	
+	/**
 	 * Converts accented characters to their non-accented counterparts 
 	 * 
 	 * @internal
@@ -329,17 +334,13 @@ class fHTML
 	
 	
 	/**
-	 * Checks a string of HTML for block level elements 
+	 * Forces use as a static class
 	 * 
-	 * @param  string $content   The HTML content to check
-	 * @return boolean  If the content contains a block level tag
+	 * @return fHTML
 	 */
-	static public function checkForBlockLevelHTML($content)
-	{
-		static $inline_tags = '<a><abbr><acronym><b><big><br><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
-		return strip_tags($content, $inline_tags) != $content;
-	}        
+	private function __construct() { }      
 }
+
 
 
 /**
@@ -362,5 +363,4 @@ class fHTML
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

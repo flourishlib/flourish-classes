@@ -35,6 +35,7 @@
  * @uses  fResult
  * @uses  fSQLException
  * @uses  fSQLTranslation
+ * @uses  fUnbufferedResult
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
@@ -115,6 +116,13 @@ class fDatabase
 	private $type;
 	
 	/**
+	 * The unbuffered query instance
+	 * 
+	 * @var fUnbufferedResult 
+	 */
+	private $unbuffered_result;
+	
+	/**
 	 * The user to connect to the database as
 	 * 
 	 * @var string 
@@ -181,10 +189,11 @@ class fDatabase
 	/**
 	 * Checks to see if an SQL error occured
 	 * 
-	 * @param  fResult $result  The result object for the query
+	 * @param  fResult|fUnbufferedResult $result  The result object for the query
+	 * @param  string  $sqlite_error_message      If we are using the sqlite extension, this will contain an error message if one exists
 	 * @return void
 	 */
-	private function checkForError(fResult $result)
+	private function checkForError($result, $sqlite_error_message=NULL)
 	{
 		if ($result->getResult() === FALSE) {	
 			if ($this->extension == 'mssql') {
@@ -321,22 +330,22 @@ class fDatabase
 				break;
 			
 			case 'mysql':
-				if (extension_loaded('mysql')) {
-					$this->extension = 'mysql';	
+				if (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
+					$this->extension = 'pdo';	
 				} elseif (extension_loaded('mysqli')) {
 					$this->extension = 'mysqli';	
-				} elseif (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
+				} elseif (extension_loaded('mysql')) {
+					$this->extension = 'mysql';	
 				} else {
 					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');	
 				}
 				break;
 				
 			case 'postgresql':
-				if (extension_loaded('pgsql')) {
-					$this->extension = 'pgsql';	
-				} elseif (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
+				if (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
 					$this->extension = 'pdo';	
+				} elseif (extension_loaded('pgsql')) {
+					$this->extension = 'pgsql';	
 				} else {
 					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');	
 				}  
@@ -358,9 +367,9 @@ class fDatabase
 				}
 				if ((!$sqlite_version || $sqlite_version == 3) && class_exists('PDO', FALSE) && in_array('sqlite', PDO::getAvailableDrivers())) {
 					$this->extension = 'pdo';	
-				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || in_array('sqlite', PDO::getAvailableDrivers()))) {
+				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || !in_array('sqlite', PDO::getAvailableDrivers()))) {
 					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v3 database and the pdo_sqlite extension is not installed');
-				} elseif ((!$sqlite_version || $sqlite_version == 2) && extension_loaded('sqlite')) {
+				} elseif ($sqlite_version == 2 && extension_loaded('sqlite')) {
 					$this->extension = 'sqlite';	
 				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
 					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v2.1 database and the sqlite extension is not installed');
@@ -495,13 +504,51 @@ class fDatabase
 			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);	
 		}
 		
-		$this->checkForError($result);
+		if ($this->extension == 'sqlite') {
+			$this->checkForError($result, $sqlite_error_message);	
+		} else {
+			$this->checkForError($result);
+		}
+		
 		if ($this->extension != 'pdo') {
 			$this->setAffectedRows($result);
 		} else {
 			$this->setAffectedRows($result, $pdo_statement); 
 		}
+		
 		$this->setReturnedRows($result);
+		
+		$this->handleAutoIncrementedValue($result);
+	}
+	
+	
+	/**
+	 * Executes an unbuffered SQL query
+	 * 
+	 * @param  fUnbufferedResult $result  The result object for the query
+	 * @return void
+	 */
+	private function executeUnbufferedQuery(fUnbufferedResult $result)
+	{
+		if ($this->extension == 'mssql') {
+			$result->setResult(@mssql_query($result->getSql(), $this->connection, 20)); 
+		} elseif ($this->extension == 'mysql') {
+			$result->setResult(@mysql_unbuffered_query($result->getSql(), $this->connection)); 
+		} elseif ($this->extension == 'mysqli') {
+			$result->setResult(@mysqli_query($this->connection, $result->getSql(), MYSQLI_USE_RESULT));   
+		} elseif ($this->extension == 'pgsql') {
+			$result->setResult(@pg_query($this->connection, $result->getSql()));   
+		} elseif ($this->extension == 'sqlite') {
+			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));	
+		} elseif ($this->extension == 'pdo') {
+			$result->setResult($this->connection->query($result->getSql()));	
+		}
+		
+		if ($this->extension == 'sqlite') {
+			$this->checkForError($result, $sqlite_error_message);	
+		} else {
+			$this->checkForError($result);
+		}
 	}
 	
 	
@@ -677,13 +724,6 @@ class fDatabase
 		$this->query_time += $query_time;
 		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);          
 		
-		// If we get a resource or TRUE back then the query was successful
-		if ($result->getResult() === FALSE) {
-			fCore::toss('fSQLException', 'There was an error in the SQL statement ' . $result->getSql());	
-		}
-		
-		$this->handleAutoIncrementedValue($result);
-		
 		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
 			$result = array($result);
@@ -774,8 +814,8 @@ class fDatabase
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
-	 * @param  string  $sql  An SQL statement
-	 * @return string  The translated SQL
+	 *  @param  string  $sql  One or more SQL statements
+	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function translatedQuery($sql)
 	{
@@ -783,6 +823,65 @@ class fDatabase
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
 		}	
 		$result = $this->query($this->translation->translate($sql));
+		$result->setUntranslatedSQL($sql);
+		return $result;
+	}
+	
+	
+	/**
+	 * Executes a single SQL statement in unbuffered mode. This is optimal for
+	 * large results sets since it does not load the whole result set into 
+	 * memory first. The gotcha is that only one unbuffered result can exist at
+	 * one time. If another unbuffered query is executed, the old result will
+	 * be deleted.
+	 * 
+	 * @param  string  $sql  A single SQL statement
+	 * @return fUnbufferedResult  The result object for the unbuffered query
+	 */
+	public function unbufferedQuery($sql)
+	{
+		// Ensure an SQL statement was passed
+		if (empty($sql)) {
+			fCore::toss('fProgrammerException', 'No SQL statement passed');
+		}
+		
+		if ($this->unbuffered_result) {
+			$this->unbuffered_result->destroy();	
+		}
+		
+		$result = new fUnbufferedResult($this->extension);
+		$result->setSQL($sql);
+		
+		$start_time = microtime(TRUE);
+		$this->executeUnbufferedQuery($result);
+		
+		// Write some debugging info
+		$query_time = microtime(TRUE) - $start_time;
+		$this->query_time += $query_time;
+		fCore::debug('Query time was ' . $query_time . " seconds for (unbuffered):\n" . $result->getSql(), $this->debug);          
+		
+		$this->unbuffered_result = $result;
+		
+		return $result;
+	}
+	
+	
+	/**
+	 * Translates the SQL statement using fSQLTranslation and then executes it
+	 * in unbuffered mode. This is optimal for large results sets since it does
+	 * not load the whole result set into memory first. The gotcha is that only
+	 * one unbuffered result can exist at one time. If another unbuffered query
+	 * is executed, the old result will be deleted.
+	 * 
+	 * @param  string  $sql  A single SQL statement
+	 * @return fUnbufferedResult  The result object for the unbuffered query
+	 */
+	public function unbufferedTranslatedQuery($sql)
+	{
+		if (!$this->translation) {
+			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
+		}	
+		$result = $this->unbufferedQuery($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
 		return $result;
 	}

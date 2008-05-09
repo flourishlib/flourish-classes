@@ -23,6 +23,7 @@ class fAuthorization
 	 */
 	const SESSION_PREFIX = 'fAuthorization::';
 	
+	
 	/**
 	 * The valid auth levels
 	 * 
@@ -36,140 +37,6 @@ class fAuthorization
 	 * @var string 
 	 */
 	static private $login_page = NULL;
-	
-	
-	
-	/**
-	 * Prevent instantiation
-	 * 
-	 * @return fAuthorization
-	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Sets the authorization levels to use for level checking
-	 * 
-	 * @param  array $levels  An associative array of (string) {level} => (integer), for each level
-	 * @return void
-	 */
-	static public function setAuthLevels($levels)
-	{
-		self::$levels = $levels;
-	}
-	
-	
-	/**
-	 * Sets the login page to redirect users to
-	 * 
-	 * @param  string $url  The URL of the login page
-	 * @return void
-	 */
-	static public function setLoginPage($url)
-	{
-		self::$login_page = $url;
-	}
-	
-	
-	/**
-	 * Sets the authorization level for the logged in user
-	 * 
-	 * @param  string $level  The logged in user's auth level
-	 * @return void
-	 */
-	static public function setUserAuthLevel($level)
-	{
-		self::validateAuthLevel($level);
-		fSession::set('user_auth_level', $level, self::SESSION_PREFIX);
-	}
-	
-	
-	/**
-	 * Gets the authorization level for the logged in user
-	 * 
-	 * @return string  The logged in user's auth level
-	 */
-	static public function getUserAuthLevel()
-	{
-		return fSession::get('user_auth_level', NULL, self::SESSION_PREFIX);
-	}
-	
-	
-	/**
-	 * Checks to see if the logged in user has the specified auth level
-	 * 
-	 * @param  string $level  The level to check against the logged in user's level
-	 * @return boolean  If the user has the required auth level
-	 */
-	static public function checkAuthLevel($level)
-	{
-		if (self::getUserAuthLevel()) {
-			
-			self::validateAuthLevel(self::getUserAuthLevel());
-			self::validateAuthLevel($level);
-			
-			$user_number = self::$levels[self::getUserAuthLevel()];
-			$required_number = self::$levels[$level];
-			
-			if ($user_number >= $required_number) {
-				return TRUE;	
-			}		
-		}
-		
-		return FALSE;	
-	}
-	
-	
-	/**
-	 * Redirect the user to the login page if they do not have the auth level required
-	 * 
-	 * @param  string $level  The level to check against the logged in user's level
-	 * @return void
-	 */
-	static public function requireAuthLevel($level)
-	{
-		self::validateLoginPage();
-		
-		if (self::checkAuthLevel($level)) {
-			return;	
-		}
-		
-		self::redirect();	
-	}
-	
-	
-	/**
-	 * Sets the ACLs for the logged in user.
-	 * 
-	 * Array should be formatted like:
-	 * 
-	 * <pre>
-	 * array (
-	 *     (string) {resource name}  => array((mixed) {permission},...),...
-	 * )
-	 * </pre>
-	 * 
-	 * The resource name or the permission may be the single character '*'
-	 * which acts as a wildcard.
-	 * 
-	 * @param  array $acls  The logged in user's ACLs (see method description for format)
-	 * @return void
-	 */
-	static public function setUserACLs($acls)
-	{
-		fSession::set('user_acls', $acls, self::SESSION_PREFIX);
-	}
-	
-	
-	/**
-	 * Gets the ACLs for the logged in user
-	 * 
-	 * @return array  The logged in user's ACLs
-	 */
-	static public function getUserACLs()
-	{
-		return fSession::get('user_acls', NULL, self::SESSION_PREFIX);
-	}
 	
 	
 	/**
@@ -208,21 +75,27 @@ class fAuthorization
 	
 	
 	/**
-	 * Redirect the user to the login page if they do not have the permissions required
+	 * Checks to see if the logged in user has the specified auth level
 	 * 
-	 * @param  string $resource    The resource we are checking permissions for
-	 * @param  string $permission  The permission to require from the user
-	 * @return void
+	 * @param  string $level  The level to check against the logged in user's level
+	 * @return boolean  If the user has the required auth level
 	 */
-	static public function requireACL($resource, $permission)
+	static public function checkAuthLevel($level)
 	{
-		self::validateLoginPage();
-		
-		if (self::checkACL($resource, $permission)) {
-			return;	
+		if (self::getUserAuthLevel()) {
+			
+			self::validateAuthLevel(self::getUserAuthLevel());
+			self::validateAuthLevel($level);
+			
+			$user_number = self::$levels[self::getUserAuthLevel()];
+			$required_number = self::$levels[$level];
+			
+			if ($user_number >= $required_number) {
+				return TRUE;	
+			}		
 		}
 		
-		self::redirect();	
+		return FALSE;	
 	}
 	
 	
@@ -238,46 +111,6 @@ class fAuthorization
 			return TRUE;	
 		}	
 		return FALSE;
-	}
-	
-	
-	/**
-	 * Redirect the user to the login page if they do not have an auth level or ACLs
-	 * 
-	 * @return void
-	 */
-	static public function requireLoggedIn()
-	{
-		self::validateLoginPage();
-		
-		if (self::checkLoggedIn()) {
-			return;	
-		}
-		
-		self::redirect();	
-	}
-	
-	
-	/**
-	 * Sets some piece of information to use to identify the current user
-	 * 
-	 * @param  mixed $token   The user's token. This could be a user id, an email address, a user object, etc.
-	 * @return void
-	 */
-	static public function setUserToken($token)
-	{
-		fSession::set('user_token', $token, self::SESSION_PREFIX);
-	}
-	
-	
-	/**
-	 * Gets the value that was set as the user token, NULL if no token has been set
-	 * 
-	 * @return mixed   The user token that had been set, NULL if none
-	 */
-	static public function getUserToken()
-	{
-		return fSession::get('user_token', NULL, self::SESSION_PREFIX);
 	}
 	
 	
@@ -313,6 +146,39 @@ class fAuthorization
 	
 	
 	/**
+	 * Gets the ACLs for the logged in user
+	 * 
+	 * @return array  The logged in user's ACLs
+	 */
+	static public function getUserACLs()
+	{
+		return fSession::get('user_acls', NULL, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
+	 * Gets the authorization level for the logged in user
+	 * 
+	 * @return string  The logged in user's auth level
+	 */
+	static public function getUserAuthLevel()
+	{
+		return fSession::get('user_auth_level', NULL, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
+	 * Gets the value that was set as the user token, NULL if no token has been set
+	 * 
+	 * @return mixed   The user token that had been set, NULL if none
+	 */
+	static public function getUserToken()
+	{
+		return fSession::get('user_token', NULL, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
 	 * Redirects the user to the login page
 	 * 
 	 * @return void
@@ -325,15 +191,128 @@ class fAuthorization
 	
 	
 	/**
-	 * Makes sure a login page has been defined
+	 * Redirect the user to the login page if they do not have the permissions required
+	 * 
+	 * @param  string $resource    The resource we are checking permissions for
+	 * @param  string $permission  The permission to require from the user
+	 * @return void
+	 */
+	static public function requireACL($resource, $permission)
+	{
+		self::validateLoginPage();
+		
+		if (self::checkACL($resource, $permission)) {
+			return;	
+		}
+		
+		self::redirect();	
+	}
+	
+	
+	/**
+	 * Redirect the user to the login page if they do not have the auth level required
+	 * 
+	 * @param  string $level  The level to check against the logged in user's level
+	 * @return void
+	 */
+	static public function requireAuthLevel($level)
+	{
+		self::validateLoginPage();
+		
+		if (self::checkAuthLevel($level)) {
+			return;	
+		}
+		
+		self::redirect();	
+	}
+	
+	
+	/**
+	 * Redirect the user to the login page if they do not have an auth level or ACLs
 	 * 
 	 * @return void
 	 */
-	static private function validateLoginPage()
+	static public function requireLoggedIn()
 	{
-		if (self::$login_page === NULL) {
-			fCore::toss('fProgrammerException', 'No login page has been set, please call fAuthorization::setLoginPage()');	
-		}	
+		self::validateLoginPage();
+		
+		if (self::checkLoggedIn()) {
+			return;	
+		}
+		
+		self::redirect();	
+	}
+	
+	
+	/**
+	 * Sets the authorization levels to use for level checking
+	 * 
+	 * @param  array $levels  An associative array of (string) {level} => (integer), for each level
+	 * @return void
+	 */
+	static public function setAuthLevels($levels)
+	{
+		self::$levels = $levels;
+	}
+	
+	
+	/**
+	 * Sets the login page to redirect users to
+	 * 
+	 * @param  string $url  The URL of the login page
+	 * @return void
+	 */
+	static public function setLoginPage($url)
+	{
+		self::$login_page = $url;
+	}
+	
+	
+	/**
+	 * Sets the ACLs for the logged in user.
+	 * 
+	 * Array should be formatted like:
+	 * 
+	 * <pre>
+	 * array (
+	 *     (string) {resource name}  => array((mixed) {permission},...),...
+	 * )
+	 * </pre>
+	 * 
+	 * The resource name or the permission may be the single character '*'
+	 * which acts as a wildcard.
+	 * 
+	 * @param  array $acls  The logged in user's ACLs (see method description for format)
+	 * @return void
+	 */
+	static public function setUserACLs($acls)
+	{
+		fSession::set('user_acls', $acls, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
+	 * Sets the authorization level for the logged in user
+	 * 
+	 * @param  string $level  The logged in user's auth level
+	 * @return void
+	 */
+	static public function setUserAuthLevel($level)
+	{
+		self::validateAuthLevel($level);
+		fSession::set('user_auth_level', $level, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
+	 * Sets some piece of information to use to identify the current user
+	 * 
+	 * @param  mixed $token   The user's token. This could be a user id, an email address, a user object, etc.
+	 * @return void
+	 */
+	static public function setUserToken($token)
+	{
+		fSession::set('user_token', $token, self::SESSION_PREFIX);
 	}
 	
 	
@@ -352,7 +331,29 @@ class fAuthorization
 			fCore::toss('fProgrammerException', 'The authorization level specified, ' . $level . ', is not a valid authorization level');	
 		}		
 	}
+	
+	
+	/**
+	 * Makes sure a login page has been defined
+	 * 
+	 * @return void
+	 */
+	static private function validateLoginPage()
+	{
+		if (self::$login_page === NULL) {
+			fCore::toss('fProgrammerException', 'No login page has been set, please call fAuthorization::setLoginPage()');	
+		}	
+	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fAuthorization
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -375,5 +376,4 @@ class fAuthorization
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

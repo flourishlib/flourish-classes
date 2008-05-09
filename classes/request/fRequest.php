@@ -18,26 +18,74 @@
 class fRequest
 {
 	/**
-	 * A backup copy of $_REQUEST for unfilter()
-	 * 
-	 * @var array 
-	 */
-	static private $_request = NULL;
-
-	/**
 	 * A backup copy of $_FILES for unfilter()
 	 * 
 	 * @var array 
 	 */
 	static private $_files = NULL;
 	
+	/**
+	 * A backup copy of $_REQUEST for unfilter()
+	 * 
+	 * @var array 
+	 */
+	static private $_request = NULL;
+	
 	
 	/**
-	 * Prevent instantiation
+	 * Indicated if the parameter specified is set in the $_POST or $_GET superglobals
 	 * 
-	 * @return fRequest
+	 * @param  string $key  The key to check
+	 * @return boolean  If the parameter is set
 	 */
-	private function __construct() { }
+	static public function check($key)
+	{
+		return isset($_POST[$key]) || isset($_GET[$key]);
+	}
+	
+	
+	/**
+	 * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $prefix   The prefix to filter by
+	 * @param  mixed  $key      If the field is an array, get the value corresponding to this key
+	 * @return void
+	 */
+	static public function filter($prefix, $key)
+	{
+		self::$_request = $_REQUEST;
+		self::$_files   = $_FILES;
+			
+		$_REQUEST = array();
+		foreach (self::$_request as $field => $value) {
+			if (strpos($field, $prefix) === 0) {
+				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
+				if (is_array($value)) {
+					if (isset($value[$key])) {
+						$_REQUEST[$new_field] = $value[$key];    
+					}
+				}               
+			} 
+		}
+		
+		$_FILES = array();
+		foreach (self::$_files as $field => $value) {
+			if (strpos($field, $prefix) === 0) {
+				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
+				if (is_array($value)) {
+					if (isset($value['name'][$key])) {
+						$_FILES[$new_field]['name']     = $value['name'][$key];
+						$_FILES[$new_field]['type']     = $value['type'][$key];
+						$_FILES[$new_field]['tmp_name'] = $value['tmp_name'][$key];
+						$_FILES[$new_field]['error']    = $value['error'][$key];
+						$_FILES[$new_field]['size']     = $value['size'][$key]; 
+					}
+				}                 
+			} 
+		}      
+	}
 	
 	
 	/**
@@ -86,18 +134,6 @@ class fRequest
 		}
 		
 		return $value;
-	}
-	
-	
-	/**
-	 * Indicated if the parameter specified is set in the $_POST or $_GET superglobals
-	 * 
-	 * @param  string $key  The key to check
-	 * @return boolean  If the parameter is set
-	 */
-	static public function check($key)
-	{
-		return isset($_POST[$key]) || isset($_GET[$key]);
 	}
 	
 	
@@ -169,50 +205,6 @@ class fRequest
 	
 	
 	/**
-	 * Parses through $_REQUEST and $_FILES and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $prefix   The prefix to filter by
-	 * @param  mixed  $key      If the field is an array, get the value corresponding to this key
-	 * @return void
-	 */
-	static public function filter($prefix, $key)
-	{
-		self::$_request = $_REQUEST;
-		self::$_files   = $_FILES;
-			
-		$_REQUEST = array();
-		foreach (self::$_request as $field => $value) {
-			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
-				if (is_array($value)) {
-					if (isset($value[$key])) {
-						$_REQUEST[$new_field] = $value[$key];    
-					}
-				}               
-			} 
-		}
-		
-		$_FILES = array();
-		foreach (self::$_files as $field => $value) {
-			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
-				if (is_array($value)) {
-					if (isset($value['name'][$key])) {
-						$_FILES[$new_field]['name']     = $value['name'][$key];
-						$_FILES[$new_field]['type']     = $value['type'][$key];
-						$_FILES[$new_field]['tmp_name'] = $value['tmp_name'][$key];
-						$_FILES[$new_field]['error']    = $value['error'][$key];
-						$_FILES[$new_field]['size']     = $value['size'][$key]; 
-					}
-				}                 
-			} 
-		}      
-	}
-	
-	
-	/**
 	 * Returns $_REQUEST and $_FILES to the state they were at before filter() was called
 	 * 
 	 * @internal
@@ -227,7 +219,16 @@ class fRequest
 		$_REQUEST = self::$_request;
 		$_FILES   = self::$_files;
 	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fRequest
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -250,5 +251,4 @@ class fRequest
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

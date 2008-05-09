@@ -21,13 +21,6 @@
 class fSQLTranslation
 {
 	/**
-	 * If debugging is enabled
-	 * 
-	 * @var boolean 
-	 */
-	private $debug;
-	
-	/**
 	 * The database connection resource or PDO object
 	 * 
 	 * @var mixed 
@@ -35,12 +28,12 @@ class fSQLTranslation
 	private $connection;
 	
 	/**
-	 * The database type (mssql, mysql, postgresql, sqlite)
+	 * If debugging is enabled
 	 * 
-	 * @var string 
+	 * @var boolean 
 	 */
-	private $type;
-
+	private $debug;
+	
 	/**
 	 * The extension to use for the database specified.
 	 * 
@@ -50,6 +43,13 @@ class fSQLTranslation
 	 * @var string 
 	 */
 	private $extension;
+	
+	/**
+	 * The database type (mssql, mysql, postgresql, sqlite)
+	 * 
+	 * @var string 
+	 */
+	private $type;
 	
 	
 	/**
@@ -81,7 +81,172 @@ class fSQLTranslation
 		$this->extension  = $extension;
 		
 		if ($this->type == 'sqlite') {
-			$this->addSqliteFunctions();
+			$this->createSqliteFunctions();
+		}	
+	}
+	
+	
+	/**
+	 * Creates a trigger for sqlite that handles an on delete clause
+	 * 
+	 * @param  string $referencing_table      The table that contains the foreign key
+	 * @param  string $referencing_column     The column the foriegn key constraint is on
+	 * @param  string $referenced_table       The table the foreign key references
+	 * @param  string $referenced_column      The column the foreign key references
+	 * @param  string $delete_clause          What is to be done on a delete
+	 * @return string  The trigger
+	 */
+	private function createSqliteForeignKeyTriggerOnDelete($referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
+	{
+		switch (strtolower($delete_clause)) {
+			case 'no action':
+			case 'restrict':
+				$sql = "\nCREATE TRIGGER fkd_res_" . $referencing_table . "_" . $referencing_column . " 
+							 BEFORE DELETE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 SELECT RAISE(ROLLBACK, 'delete on table \"" . $referenced_table . "\" can not be executed because it would violate the foreign key constraint on column \"" . $referencing_column . "\" of table \"" . $referencing_table . "\"')
+								 WHERE (SELECT " . $referencing_column . " FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_table . ") IS NOT NULL;
+							 END;";
+				break;	
+			
+			case 'set null':
+				$sql = "\nCREATE TRIGGER fkd_nul_" . $referencing_table . "_" . $referencing_column . "  
+							 BEFORE DELETE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NULL WHERE " . $referencing_column . " = OLD." . $referenced_column . ";
+							 END;";
+				break;
+				
+			case 'cascade':
+				$sql = "\nCREATE TRIGGER fkd_cas_" . $referencing_table . "_" . $referencing_column . "
+							 BEFORE DELETE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 DELETE FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_column . ";
+							 END;";				
+				break;
+		}
+		return $sql;	   
+	}
+	
+	
+	/**
+	 * Creates a trigger for sqlite that handles an on update clause
+	 * 
+	 * @param  string $referencing_table      The table that contains the foreign key
+	 * @param  string $referencing_column     The column the foriegn key constraint is on
+	 * @param  string $referenced_table       The table the foreign key references
+	 * @param  string $referenced_column      The column the foreign key references
+	 * @param  string $update_clause          What is to be done on an update
+	 * @return string  The trigger
+	 */
+	private function createSqliteForeignKeyTriggerOnUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
+	{
+		switch (strtolower($update_clause)) {
+			case 'no action':
+			case 'restrict':
+				$sql = "\nCREATE TRIGGER fku_res_" . $referencing_table . "_" . $referencing_column . "
+							 BEFORE UPDATE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 SELECT RAISE(ROLLBACK, 'update on table \"" . $referenced_table . "\" can not be executed because it would violate the foreign key constraint on column \"" . $referencing_column . "\" of table \"" . $referencing_table . "\"')
+								 WHERE (SELECT " . $referencing_column . " FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_column . ") IS NOT NULL;
+							 END;";
+				break;	
+			
+			case 'set null':
+				$sql = "\nCREATE TRIGGER fku_nul_" . $referencing_table . "_" . $referencing_column . "
+							 BEFORE UPDATE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NULL WHERE OLD." . $referenced_column . " <> NEW." . $referenced_column . " AND " . $referencing_column . " = OLD." . $referenced_column . ";
+							 END;";
+				break;
+				
+			case 'cascade':
+				$sql = "\nCREATE TRIGGER fku_cas_" . $referencing_table . "_" . $referencing_column . "
+							 BEFORE UPDATE ON " . $referenced_table . "
+							 FOR EACH ROW BEGIN
+								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NEW." . $referenced_column . " WHERE OLD." . $referenced_column . " <> NEW." . $referenced_column . " AND " . $referencing_column . " = OLD." . $referenced_column . ";
+							 END;";				
+				break;
+		}
+		return $sql;	   
+	}
+	
+	
+	/**
+	 * Creates a trigger for sqlite that prevents inserting or updating to values the violate a foreign key constraint
+	 * 
+	 * @param  string $referencing_table      The table that contains the foreign key
+	 * @param  string $referencing_column     The column the foriegn key constraint is on
+	 * @param  string $referenced_table       The table the foreign key references
+	 * @param  string $referenced_column      The column the foreign key references
+	 * @param  boolean $referencing_not_null  If the referencing columns is set to not null
+	 * @return string  The trigger
+	 */
+	private function createSqliteForeignKeyTriggerValidInsertUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
+	{
+		// Verify key on inserts
+		$sql  = "\nCREATE TRIGGER fki_ver_" . $referencing_table . "_" . $referencing_column . " 
+					  BEFORE INSERT ON " . $referencing_table . "
+					  FOR EACH ROW BEGIN
+						  SELECT RAISE(ROLLBACK, 'insert on table \"" . $referencing_table . "\" violates foreign key constraint on column \"" . $referencing_column . "\"')
+							  WHERE ";
+		if (!$referencing_not_null) {
+			$sql .= "NEW." . $referencing_column . " IS NOT NULL AND ";	
+		}
+		$sql .= " (SELECT " . $referenced_column . " FROM " . $referenced_table . " WHERE " . $referenced_column . " = NEW." . $referencing_column . ") IS NULL;
+					  END;";
+					  
+		// Verify key on updates
+		$sql .= "\nCREATE TRIGGER fku_ver_" . $referencing_table . "_" . $referencing_column . "
+					  BEFORE UPDATE ON " . $referencing_table . "
+					  FOR EACH ROW BEGIN
+						  SELECT RAISE(ROLLBACK, 'update on table \"" . $referencing_table . "\" violates foreign key constraint on column \"" . $referencing_column . "\"')
+							  WHERE ";
+		if (!$referencing_not_null) {
+			$sql .= "NEW." . $referencing_column . " IS NOT NULL AND ";	
+		}
+		$sql .= " (SELECT " . $referenced_column . " FROM " . $referenced_table . " WHERE " . $referenced_column . " = NEW." . $referencing_column . ") IS NULL;
+					  END;";
+		
+		return $sql;	   
+	}
+	
+	
+	/**
+	 * Adds a number of math functions to SQLite that MySQL and PostgreSQL have by default
+	 * 
+	 * @return void
+	 */
+	private function createSqliteFunctions()
+	{
+		$function = array();
+		$functions[] = array('acos',     'acos',                                         1);
+		$functions[] = array('asin',     'asin',                                         1);
+		$functions[] = array('atan',     'atan',                                         1);
+		$functions[] = array('atan2',    'atan2',                                        2);
+		$functions[] = array('ceil',     'ceil',                                         1); 
+		$functions[] = array('ceiling',  'ceil',                                         1);
+		$functions[] = array('cos',      'cos',                                          1);
+		$functions[] = array('cot',      array('fSqlTranslation', 'sqliteCotangent'),    1);
+		$functions[] = array('degrees',  'rad2deg',                                      1); 
+		$functions[] = array('exp',      'exp',                                          1);
+		$functions[] = array('floor',    'floor',                                        1);
+		$functions[] = array('ln',       'log',                                          1);
+		$functions[] = array('log',      array('fSqlTranslation', 'sqliteLogBaseFirst'), 2);
+		$functions[] = array('pi',       'pi',                                           1);
+		$functions[] = array('power',    'pow',                                          1);
+		$functions[] = array('radians',  'deg2rad',                                      1);
+		$functions[] = array('sign',     array('fSqlTranslation', 'sqliteSign'),         1);
+		$functions[] = array('sqrt',     'sqrt',                                         1);
+		$functions[] = array('sin',      'sin',                                          1);
+		$functions[] = array('tan',      'tan',                                          1);
+		
+		foreach ($functions as $function) {
+			if ($this->extension == 'pdo') {
+				$this->connection->sqliteCreateFunction($function[0], $function[1], $function[2]);	
+			} else {
+				sqlite_create_function($this->connection, $function[0], $function[1], $function[2]);
+			}
 		}	
 	}
 	
@@ -101,6 +266,49 @@ class fSQLTranslation
 	
 	
 	/**
+	 * Callback for custom SQLite function; calculates the cotangent of a number
+	 * 
+	 * @internal
+	 * 
+	 * @param  numeric $x   The number to calculate the cotangent of
+	 * @return numeric  The contangent of $x
+	 */
+	public static function sqliteCotangent($x)
+	{
+		return 1/tan($x);
+	}
+	
+	
+	/**
+	 * Callback for custom SQLite function; calculates the log to a specific base of a number
+	 * 
+	 * @internal
+	 * 
+	 * @param  integer $base   The base for the log calculation
+	 * @param  numeric $num    The number to calculate the logarithm of
+	 * @return numeric  The logarithm of $num to $base
+	 */
+	public static function sqliteLogBaseFirst($base, $num)
+	{
+		return log($num, $base);
+	} 
+	
+	
+	/**
+	 * Callback for custom SQLite function; changes the sign of a number
+	 * 
+	 * @internal
+	 * 
+	 * @param  numeric $x   The number to change the sign of
+	 * @return numeric  $x with a changed sign
+	 */
+	public static function sqliteSign($x)
+	{
+		return -1 * $x;
+	}
+	
+	
+	/**
 	 * Translates SimpleSQL into the dialect for the current Database
 	 * 
 	 * @internal
@@ -110,8 +318,6 @@ class fSQLTranslation
 	 */
 	public function translate($sql)
 	{
-		$sql = $this->outdentSql($sql);
-		
 		// Separate the SQL from quoted values
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
 		
@@ -248,120 +454,6 @@ class fSQLTranslation
 	}
 	
 	
-	
-	/**
-	 * Translates limit x offset x to row_number() over (order by) syntax
-	 * 
-	 * @param  string $sql   The SQL to translate
-	 * @return string  The translated SQL
-	 */
-	private function translateLimitOffsetToRowNumber($sql)
-	{
-		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
-		
-		foreach ($matches as $match) {
-			$clauses = fSQLParsing::parseSelectSQL($match[1]);
-			
-			if ($clauses['ORDER BY'] == NULL) {
-				$clauses['ORDER BY'] = '1 ASC';	
-			}
-			
-			$replacement = '';
-			foreach ($clauses as $key => $value) {
-				if (empty($value)) {
-					continue;
-				}	
-				
-				if ($key == 'SELECT') {
-					$replacement .= 'SELECT ' . $value . ', ROW_NUMBER() OVER (';
-					$replacement .= 'ORDER BY ' . $clauses['ORDER BY'];
-					$replacement .= ') AS __flourish_limit_offset_row_num ';	
-				} elseif ($key == 'LIMIT' || $key == 'ORDER BY') {
-					// Skip this clause
-				} else {
-					$replacement .= $key . ' ' . $value . ' ';	
-				}
-			}
-			
-			$replacement = 'SELECT * FROM (' . trim($replacement) . ') AS original_query WHERE __flourish_limit_offset_row_num > ' . $match[4] . ' AND __flourish_limit_offset_row_num <= ' . ($match[3] + $match[4]) . ' ORDER BY __flourish_limit_offset_row_num';
-			
-			$sql = str_replace($match[1], $replacement, $sql);
-		}
-		
-		return $sql;			
-	}
-	
-	
-	/**
-	 * Translates custom date/time functions to the current Database
-	 * 
-	 * @param  string $sql   The SQL to translate
-	 * @return string  The translated SQL
-	 */
-	private function translateDateFunctions($sql)
-	{
-		// fix diff_seconds()
-		preg_match_all("#diff_seconds\\(((?>(?:[^()',]+|'[^']+')|\\((?1)(?:,(?1))?\\)|\\(\\))+)\\s*,\\s*((?>(?:[^()',]+|'[^']+')|\\((?2)(?:,(?2))?\\)|\\(\\))+)\\)#ims", $sql, $diff_matches, PREG_SET_ORDER);
-		foreach ($diff_matches as $match) {
-			
-			// SQLite
-			if ($this->type == 'sqlite') {
-				$sql = str_replace($match[0], "round((julianday(" . $match[2] . ") - julianday('1970-01-01 00:00:00')) * 86400) - round((julianday(" . $match[1] . ") - julianday('1970-01-01 00:00:00')) * 86400)", $sql);			
-			
-			// PostgreSQL
-			} elseif ($this->type == 'postgresql') {
-				$sql = str_replace($match[0], "extract(EPOCH FROM age(" . $match[2] . ", " . $match[1] . "))", $sql);		
-			
-			// MySQL
-			} elseif ($this->type == 'mysql') {
-				$sql = str_replace($match[0], "(UNIX_TIMESTAMP(" . $match[2] . ") - UNIX_TIMESTAMP(" . $match[1] . "))", $sql);	
-
-			// MSSQL
-			} elseif ($this->type == 'mssql') {
-				$sql = str_replace($match[0], "DATEDIFF(second, " . $match[1] . ", " . $match[2] . ")", $sql);	
-			}
-		}
-		
-		// fix add_interval() 
-		preg_match_all("#add_interval\\(((?>(?:[^()',]+|'[^']+')|\\((?1)(?:,(?1))?\\)|\\(\\))+)\\s*,\\s*'([^']+)'\\s*\\)#i", $sql, $add_matches, PREG_SET_ORDER);
-		foreach ($add_matches as $match) {
-			
-			// SQLite
-			if ($this->type == 'sqlite') {
-				preg_match_all("#(?:\\+|\\-)\\d+\\s+(?:year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches);
-				$strings = "'" . join("', '", $individual_matches[0]) . "'";
-				$sql = str_replace($match[0], "datetime(" . $match[1] . ", " . $strings . ")", $sql);			
-			
-			// PostgreSQL
-			} elseif ($this->type == 'postgresql') {
-				$sql = str_replace($match[0], "(" . $match[1] . " + INTERVAL '" . $match[2] . "')", $sql);		
-			
-			// MySQL
-			} elseif ($this->type == 'mysql') {
-				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
-				$intervals_string = '';
-				foreach ($individual_matches as $individual_match) {
-					$intervals_string .= ' ' . $individual_match[1] . ' INTERVAL ' . $individual_match[2] . ' ' . strtoupper($individual_match[3]);	
-				}
-				$sql = str_replace($match[0], "(" . $match[1] . $intervals_string . ")", $sql);	
-			
-			// MSSQL
-			} elseif ($this->type == 'mssql') {
-				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
-				$date_add_string = '';
-				$stack = 0;
-				foreach ($individual_matches as $individual_match) {
-					$stack++;
-					$date_add_string .= 'DATEADD(' . $individual_match[3] . ', ' . $individual_match[1] . $individual_match[2] . ', ';	
-				}
-				$sql = str_replace($match[0], $date_add_string . $match[1] . str_pad('', $stack, ')'), $sql);	
-			}	
-		}
-		
-		return $sql;       
-	}
-	
-	
 	/**
 	 * Translates the structure of create table statements to the database specific syntax
 	 * 
@@ -451,248 +543,118 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Creates a trigger for sqlite that prevents inserting or updating to values the violate a foreign key constraint
-	 * 
-	 * @param  string $referencing_table      The table that contains the foreign key
-	 * @param  string $referencing_column     The column the foriegn key constraint is on
-	 * @param  string $referenced_table       The table the foreign key references
-	 * @param  string $referenced_column      The column the foreign key references
-	 * @param  boolean $referencing_not_null  If the referencing columns is set to not null
-	 * @return string  The trigger
-	 */
-	private function createSqliteForeignKeyTriggerValidInsertUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
-	{
-		// Verify key on inserts
-		$sql  = "\nCREATE TRIGGER fki_ver_" . $referencing_table . "_" . $referencing_column . " 
-					  BEFORE INSERT ON " . $referencing_table . "
-					  FOR EACH ROW BEGIN
-						  SELECT RAISE(ROLLBACK, 'insert on table \"" . $referencing_table . "\" violates foreign key constraint on column \"" . $referencing_column . "\"')
-							  WHERE ";
-		if (!$referencing_not_null) {
-			$sql .= "NEW." . $referencing_column . " IS NOT NULL AND ";	
-		}
-		$sql .= " (SELECT " . $referenced_column . " FROM " . $referenced_table . " WHERE " . $referenced_column . " = NEW." . $referencing_column . ") IS NULL;
-					  END;";
-					  
-		// Verify key on updates
-		$sql .= "\nCREATE TRIGGER fku_ver_" . $referencing_table . "_" . $referencing_column . "
-					  BEFORE UPDATE ON " . $referencing_table . "
-					  FOR EACH ROW BEGIN
-						  SELECT RAISE(ROLLBACK, 'update on table \"" . $referencing_table . "\" violates foreign key constraint on column \"" . $referencing_column . "\"')
-							  WHERE ";
-		if (!$referencing_not_null) {
-			$sql .= "NEW." . $referencing_column . " IS NOT NULL AND ";	
-		}
-		$sql .= " (SELECT " . $referenced_column . " FROM " . $referenced_table . " WHERE " . $referenced_column . " = NEW." . $referencing_column . ") IS NULL;
-					  END;";
-		
-		return $sql;	   
-	}
-	
-	
-	/**
-	 * Creates a trigger for sqlite that handles an on delete clause
-	 * 
-	 * @param  string $referencing_table      The table that contains the foreign key
-	 * @param  string $referencing_column     The column the foriegn key constraint is on
-	 * @param  string $referenced_table       The table the foreign key references
-	 * @param  string $referenced_column      The column the foreign key references
-	 * @param  string $delete_clause          What is to be done on a delete
-	 * @return string  The trigger
-	 */
-	private function createSqliteForeignKeyTriggerOnDelete($referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
-	{
-		switch (strtolower($delete_clause)) {
-			case 'no action':
-			case 'restrict':
-				$sql = "\nCREATE TRIGGER fkd_res_" . $referencing_table . "_" . $referencing_column . " 
-							 BEFORE DELETE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 SELECT RAISE(ROLLBACK, 'delete on table \"" . $referenced_table . "\" can not be executed because it would violate the foreign key constraint on column \"" . $referencing_column . "\" of table \"" . $referencing_table . "\"')
-								 WHERE (SELECT " . $referencing_column . " FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_table . ") IS NOT NULL;
-							 END;";
-				break;	
-			
-			case 'set null':
-				$sql = "\nCREATE TRIGGER fkd_nul_" . $referencing_table . "_" . $referencing_column . "  
-							 BEFORE DELETE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NULL WHERE " . $referencing_column . " = OLD." . $referenced_column . ";
-							 END;";
-				break;
-				
-			case 'cascade':
-				$sql = "\nCREATE TRIGGER fkd_cas_" . $referencing_table . "_" . $referencing_column . "
-							 BEFORE DELETE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 DELETE FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_column . ";
-							 END;";				
-				break;
-		}
-		return $sql;	   
-	}
-	
-	
-	/**
-	 * Creates a trigger for sqlite that handles an on update clause
-	 * 
-	 * @param  string $referencing_table      The table that contains the foreign key
-	 * @param  string $referencing_column     The column the foriegn key constraint is on
-	 * @param  string $referenced_table       The table the foreign key references
-	 * @param  string $referenced_column      The column the foreign key references
-	 * @param  string $update_clause          What is to be done on an update
-	 * @return string  The trigger
-	 */
-	private function createSqliteForeignKeyTriggerOnUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
-	{
-		switch (strtolower($update_clause)) {
-			case 'no action':
-			case 'restrict':
-				$sql = "\nCREATE TRIGGER fku_res_" . $referencing_table . "_" . $referencing_column . "
-							 BEFORE UPDATE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 SELECT RAISE(ROLLBACK, 'update on table \"" . $referenced_table . "\" can not be executed because it would violate the foreign key constraint on column \"" . $referencing_column . "\" of table \"" . $referencing_table . "\"')
-								 WHERE (SELECT " . $referencing_column . " FROM " . $referencing_table . " WHERE " . $referencing_column . " = OLD." . $referenced_column . ") IS NOT NULL;
-							 END;";
-				break;	
-			
-			case 'set null':
-				$sql = "\nCREATE TRIGGER fku_nul_" . $referencing_table . "_" . $referencing_column . "
-							 BEFORE UPDATE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NULL WHERE OLD." . $referenced_column . " <> NEW." . $referenced_column . " AND " . $referencing_column . " = OLD." . $referenced_column . ";
-							 END;";
-				break;
-				
-			case 'cascade':
-				$sql = "\nCREATE TRIGGER fku_cas_" . $referencing_table . "_" . $referencing_column . "
-							 BEFORE UPDATE ON " . $referenced_table . "
-							 FOR EACH ROW BEGIN
-								 UPDATE " . $referencing_table . " SET " . $referencing_column . " = NEW." . $referenced_column . " WHERE OLD." . $referenced_column . " <> NEW." . $referenced_column . " AND " . $referencing_column . " = OLD." . $referenced_column . ";
-							 END;";				
-				break;
-		}
-		return $sql;	   
-	}
-	
-	
-	/**
-	 * Outdents SQL for nice printing
+	 * Translates custom date/time functions to the current Database
 	 * 
 	 * @param  string $sql   The SQL to translate
 	 * @return string  The translated SQL
 	 */
-	private function outdentSql($sql)
+	private function translateDateFunctions($sql)
 	{
-		$lines = explode("\n", $sql);
+		// fix diff_seconds()
+		preg_match_all("#diff_seconds\\(((?>(?:[^()',]+|'[^']+')|\\((?1)(?:,(?1))?\\)|\\(\\))+)\\s*,\\s*((?>(?:[^()',]+|'[^']+')|\\((?2)(?:,(?2))?\\)|\\(\\))+)\\)#ims", $sql, $diff_matches, PREG_SET_ORDER);
+		foreach ($diff_matches as $match) {
+			
+			// SQLite
+			if ($this->type == 'sqlite') {
+				$sql = str_replace($match[0], "round((julianday(" . $match[2] . ") - julianday('1970-01-01 00:00:00')) * 86400) - round((julianday(" . $match[1] . ") - julianday('1970-01-01 00:00:00')) * 86400)", $sql);			
+			
+			// PostgreSQL
+			} elseif ($this->type == 'postgresql') {
+				$sql = str_replace($match[0], "extract(EPOCH FROM age(" . $match[2] . ", " . $match[1] . "))", $sql);		
+			
+			// MySQL
+			} elseif ($this->type == 'mysql') {
+				$sql = str_replace($match[0], "(UNIX_TIMESTAMP(" . $match[2] . ") - UNIX_TIMESTAMP(" . $match[1] . "))", $sql);	
+
+			// MSSQL
+			} elseif ($this->type == 'mssql') {
+				$sql = str_replace($match[0], "DATEDIFF(second, " . $match[1] . ", " . $match[2] . ")", $sql);	
+			}
+		}
 		
-		$i = 0;
-		$min_indent = -1;
-		foreach ($lines as $line) {
-			if ($i > 0) {
-				$count = 0;
-				while ($line[$count] == "\t") {
-					$count++;
-				}		
-				if ($count < $min_indent || $min_indent == -1) {
-					$min_indent = $count;	
+		// fix add_interval() 
+		preg_match_all("#add_interval\\(((?>(?:[^()',]+|'[^']+')|\\((?1)(?:,(?1))?\\)|\\(\\))+)\\s*,\\s*'([^']+)'\\s*\\)#i", $sql, $add_matches, PREG_SET_ORDER);
+		foreach ($add_matches as $match) {
+			
+			// SQLite
+			if ($this->type == 'sqlite') {
+				preg_match_all("#(?:\\+|\\-)\\d+\\s+(?:year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches);
+				$strings = "'" . join("', '", $individual_matches[0]) . "'";
+				$sql = str_replace($match[0], "datetime(" . $match[1] . ", " . $strings . ")", $sql);			
+			
+			// PostgreSQL
+			} elseif ($this->type == 'postgresql') {
+				$sql = str_replace($match[0], "(" . $match[1] . " + INTERVAL '" . $match[2] . "')", $sql);		
+			
+			// MySQL
+			} elseif ($this->type == 'mysql') {
+				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
+				$intervals_string = '';
+				foreach ($individual_matches as $individual_match) {
+					$intervals_string .= ' ' . $individual_match[1] . ' INTERVAL ' . $individual_match[2] . ' ' . strtoupper($individual_match[3]);	
+				}
+				$sql = str_replace($match[0], "(" . $match[1] . $intervals_string . ")", $sql);	
+			
+			// MSSQL
+			} elseif ($this->type == 'mssql') {
+				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
+				$date_add_string = '';
+				$stack = 0;
+				foreach ($individual_matches as $individual_match) {
+					$stack++;
+					$date_add_string .= 'DATEADD(' . $individual_match[3] . ', ' . $individual_match[1] . $individual_match[2] . ', ';	
+				}
+				$sql = str_replace($match[0], $date_add_string . $match[1] . str_pad('', $stack, ')'), $sql);	
+			}	
+		}
+		
+		return $sql;       
+	}	
+	
+	
+	/**
+	 * Translates limit x offset x to row_number() over (order by) syntax
+	 * 
+	 * @param  string $sql   The SQL to translate
+	 * @return string  The translated SQL
+	 */
+	private function translateLimitOffsetToRowNumber($sql)
+	{
+		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
+		
+		foreach ($matches as $match) {
+			$clauses = fSQLParsing::parseSelectSQL($match[1]);
+			
+			if ($clauses['ORDER BY'] == NULL) {
+				$clauses['ORDER BY'] = '1 ASC';	
+			}
+			
+			$replacement = '';
+			foreach ($clauses as $key => $value) {
+				if (empty($value)) {
+					continue;
+				}	
+				
+				if ($key == 'SELECT') {
+					$replacement .= 'SELECT ' . $value . ', ROW_NUMBER() OVER (';
+					$replacement .= 'ORDER BY ' . $clauses['ORDER BY'];
+					$replacement .= ') AS __flourish_limit_offset_row_num ';	
+				} elseif ($key == 'LIMIT' || $key == 'ORDER BY') {
+					// Skip this clause
+				} else {
+					$replacement .= $key . ' ' . $value . ' ';	
 				}
 			}
-			$i++;
-		}
-		$min_indent = ($min_indent > 0) ? $min_indent - 1 : $min_indent;
-		
-		$replace_string = str_pad("", $min_indent, "\t");
-		$new_sql = '';
-		foreach ($lines as $line) {
-			$new_sql .= preg_replace("#^" . $replace_string . "#", '', $line) . "\n";	
+			
+			$replacement = 'SELECT * FROM (' . trim($replacement) . ') AS original_query WHERE __flourish_limit_offset_row_num > ' . $match[4] . ' AND __flourish_limit_offset_row_num <= ' . ($match[3] + $match[4]) . ' ORDER BY __flourish_limit_offset_row_num';
+			
+			$sql = str_replace($match[1], $replacement, $sql);
 		}
 		
-		return trim($new_sql);       
-	}
-	
-	
-	/**
-	 * Adds a number of math functions to SQLite that MySQL and PostgreSQL have by default
-	 * 
-	 * @return void
-	 */
-	private function addSqliteFunctions()
-	{
-		$function = array();
-		$functions[] = array('acos',     'acos',                                   1);
-		$functions[] = array('asin',     'asin',                                   1);
-		$functions[] = array('atan',     'atan',                                   1);
-		$functions[] = array('atan2',    'atan2',                                  2);
-		$functions[] = array('ceil',     'ceil',                                   1); 
-		$functions[] = array('ceiling',  'ceil',                                   1);
-		$functions[] = array('cos',      'cos',                                    1);
-		$functions[] = array('cot',      array('fSqlTranslation', 'cotangent'),    1);
-		$functions[] = array('degrees',  'rad2deg',                                1); 
-		$functions[] = array('exp',      'exp',                                    1);
-		$functions[] = array('floor',    'floor',                                  1);
-		$functions[] = array('ln',       'log',                                    1);
-		$functions[] = array('log',      array('fSqlTranslation', 'logBaseFirst'), 2);
-		$functions[] = array('pi',       'pi',                                     1);
-		$functions[] = array('power',    'pow',                                    1);
-		$functions[] = array('radians',  'deg2rad',                                1);
-		$functions[] = array('sign',     array('fSqlTranslation', 'sign'),         1);
-		$functions[] = array('sqrt',     'sqrt',                                   1);
-		$functions[] = array('sin',      'sin',                                    1);
-		$functions[] = array('tan',      'tan',                                    1);
-		
-		foreach ($functions as $function) {
-			if ($this->extension == 'pdo') {
-				$this->connection->sqliteCreateFunction($function[0], $function[1], $function[2]);	
-			} else {
-				sqlite_create_function($this->connection, $function[0], $function[1], $function[2]);
-			}
-		}	
-	}
-	
-	
-	/**
-	 * Callback for custom SQLite function; calculates the cotangent of a number
-	 * 
-	 * @internal
-	 * 
-	 * @param  numeric $x   The number to calculate the cotangent of
-	 * @return numeric  The contangent of $x
-	 */
-	public static function cotangent($x)
-	{
-		return 1/tan($x);
-	}
-	
-	
-	/**
-	 * Callback for custom SQLite function; calculates the log to a specific base of a number
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $base   The base for the log calculation
-	 * @param  numeric $num    The number to calculate the logarithm of
-	 * @return numeric  The logarithm of $num to $base
-	 */
-	public static function logBaseFirst($base, $num)
-	{
-		return log($num, $base);
-	} 
-	
-	
-	/**
-	 * Callback for custom SQLite function; changes the sign of a number
-	 * 
-	 * @internal
-	 * 
-	 * @param  numeric $x   The number to change the sign of
-	 * @return numeric  $x with a changed sign
-	 */
-	public static function sign($x)
-	{
-		return -1 * $x;
+		return $sql;			
 	}
 } 
+
 
 
 /**
@@ -715,5 +677,4 @@ class fSQLTranslation
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

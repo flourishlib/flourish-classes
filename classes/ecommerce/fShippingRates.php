@@ -20,11 +20,11 @@
 class fShippingRates
 {
 	/**
-	 * The shipping company to get rates for
+	 * The API key
 	 * 
 	 * @var string
 	 */
-	private $shipping_company = NULL;
+	private $api_key = NULL;
 	
 	/**
 	 * The API login
@@ -41,13 +41,6 @@ class fShippingRates
 	private $api_password = NULL;
 	
 	/**
-	 * The API key
-	 * 
-	 * @var string
-	 */
-	private $api_key = NULL;
-	
-	/**
 	 * If debuging is enabled
 	 * 
 	 * @var boolean
@@ -55,18 +48,25 @@ class fShippingRates
 	private $debug = NULL;
 	
 	/**
-	 * If test mode is enabled
-	 * 
-	 * @var boolean
-	 */
-	private $test_mode = NULL;
-	
-	/**
 	 * If info for the current request
 	 * 
 	 * @var array
 	 */
 	private $request_info = array();
+	
+	/**
+	 * The shipping company to get rates for
+	 * 
+	 * @var string
+	 */
+	private $shipping_company = NULL;
+	
+	/**
+	 * If test mode is enabled
+	 * 
+	 * @var boolean
+	 */
+	private $test_mode = NULL;
 	
 	/**
 	 * The field info for UPS
@@ -320,6 +320,7 @@ class fShippingRates
 																   ))
 		);
 	
+	
 	/**
 	 * Sets up to process rate requests
 	 * 
@@ -340,318 +341,6 @@ class fShippingRates
 		$this->api_password     = $api_password;    
 		$this->api_key          = $api_key;    
 	}
-
-	
-	/**
-	 * Enabled debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	public function setDebug($enable)
-	{
-		$this->debug = (boolean) $enable;
-	}
-	
-	
-	/**
-	 * Enters test mode, where transactions are sent to the test api url
-	 * 
-	 * @param  boolean $enable  If test mode should be enabled
-	 * @return void
-	 */
-	public function setTestMode($enable)
-	{
-		$this->test_mode = (boolean) $enable;
-	}
-	
-	
-	/**
-	 * Set the ship from address line 1
-	 * 
-	 * @param  string $ship_from_address_line_1  The address being shipped from
-	 * @return void
-	 */
-	public function setShipFromAddressLine1($ship_from_address_line_1)
-	{
-		$this->request_info['ship_from_address_line_1'] = $ship_from_address_line_1;
-	}
-	
-	
-	/**
-	 * Set the ship from address line 2
-	 * 
-	 * @param  string $ship_from_address_line_2  The address being shipped from
-	 * @return void
-	 */
-	public function setShipFromAddressLine2($ship_from_address_line_2)
-	{
-		$this->request_info['ship_from_address_line_2'] = $ship_from_address_line_2;
-	}
-	
-	
-	/**
-	 * Set the ship from address line 3
-	 * 
-	 * @param  string $ship_from_address_line_3  The address being shipped from
-	 * @return void
-	 */
-	public function setShipFromAddressLine3($ship_from_address_line_3)
-	{
-		$this->request_info['ship_from_address_line_3'] = $ship_from_address_line_3;
-	}
-	
-	
-	/**
-	 * Set the ship from city
-	 * 
-	 * @param  string $ship_from_city  The city being shipped from
-	 * @return void
-	 */
-	public function setShipFromCity($ship_from_city)
-	{
-		$this->request_info['ship_from_city'] = $ship_from_city;
-	}
-	
-	
-	/**
-	 * Set the ship from province
-	 * 
-	 * @param  string $ship_from_province  The province being shipped from
-	 * @return void
-	 */
-	public function setShipFromProvince($ship_from_province)
-	{
-		$this->request_info['ship_from_province'] = $ship_from_province;
-	}
-	
-	
-	/**
-	 * Set the ship from state
-	 * 
-	 * @param  string $ship_from_state  The state being shipped from
-	 * @return void
-	 */
-	public function setShipFromState($ship_from_state)
-	{
-		$this->request_info['ship_from_state'] = $ship_from_state;
-	}
-	
-	
-	/**
-	 * Set the ship from zip code
-	 * 
-	 * @param  string $ship_from_zip_code  The zip code being shipped from
-	 * @return void
-	 */
-	public function setShipFromZipCode($ship_from_zip_code)
-	{
-		$this->request_info['ship_from_zip_code'] = $ship_from_zip_code;
-	}
-	
-	
-	/**
-	 * Set the ship from country
-	 * 
-	 * @param  string $ship_from_country  The country being shipped from
-	 * @return void
-	 */
-	public function setShipFromCountry($ship_from_country)
-	{
-		$this->request_info['ship_from_country'] = $ship_from_country;
-	}
-	
-	
-	/**
-	 * Set the ship to address line 1
-	 * 
-	 * @param  string $ship_to_address_line_1  The address being shipped from
-	 * @return void
-	 */
-	public function setShipToAddressLine1($ship_to_address_line_1)
-	{
-		$this->request_info['ship_to_address_line_1'] = $ship_to_address_line_1;
-	}
-	
-	
-	/**
-	 * Set the ship to address line 2
-	 * 
-	 * @param  string $ship_to_address_line_2  The address being shipped from
-	 * @return void
-	 */
-	public function setShipToAddressLine2($ship_to_address_line_2)
-	{
-		$this->request_info['ship_to_address_line_2'] = $ship_to_address_line_2;
-	}
-	
-	
-	/**
-	 * Set the ship to address line 3
-	 * 
-	 * @param  string $ship_to_address_line_3  The address being shipped from
-	 * @return void
-	 */
-	public function setShipToAddressLine3($ship_to_address_line_3)
-	{
-		$this->request_info['ship_to_address_line_3'] = $ship_to_address_line_3;
-	}
-	
-	
-	/**
-	 * Set the ship to city
-	 * 
-	 * @param  string $ship_to_city  The city being shipped from
-	 * @return void
-	 */
-	public function setShipToCity($ship_to_city)
-	{
-		$this->request_info['ship_to_city'] = $ship_to_city;
-	}
-	
-	
-	/**
-	 * Set the ship to province
-	 * 
-	 * @param  string $ship_to_province  The province being shipped from
-	 * @return void
-	 */
-	public function setShipToProvince($ship_to_province)
-	{
-		$this->request_info['ship_to_province'] = $ship_to_province;
-	}
-	
-	
-	/**
-	 * Set the ship to state
-	 * 
-	 * @param  string $ship_to_state  The state being shipped from
-	 * @return void
-	 */
-	public function setShipToState($ship_to_state)
-	{
-		$this->request_info['ship_to_state'] = $ship_to_state;
-	}
-	
-	
-	/**
-	 * Set the ship to zip code
-	 * 
-	 * @param  string $ship_to_zip_code  The zip code being shipped from
-	 * @return void
-	 */
-	public function setShipToZipCode($ship_to_zip_code)
-	{
-		$this->request_info['ship_to_zip_code'] = $ship_to_zip_code;
-	}
-	
-	
-	/**
-	 * Set the ship to country
-	 * 
-	 * @param  string $ship_to_country  The country being shipped from
-	 * @return void
-	 */
-	public function setShipToCountry($ship_to_country)
-	{
-		$this->request_info['ship_to_country'] = $ship_to_country;
-	}
-	
-	
-	/**
-	 * Set the package type
-	 * 
-	 * @param  string $package_type  The package type
-	 * @return void
-	 */
-	public function setPackageType($package_type)
-	{
-		$this->request_info['package_type'] = $package_type;
-	}
-	
-	
-	/**
-	 * Set the pickup type
-	 * 
-	 * @param  string $pickup_type  The pickup type
-	 * @return void
-	 */
-	public function setPickupType($pickup_type)
-	{
-		$this->request_info['pickup_type'] = $pickup_type;
-	}
-	
-	
-	/**
-	 * Set the package weight
-	 * 
-	 * @param  float $package_weight  The weight of the package being shipped
-	 * @return void
-	 */
-	public function setPackageWeight($package_weight)
-	{
-		$this->request_info['package_weight'] = $package_weight;
-	}
-	
-	
-	/**
-	 * Set the weight units (LBS or KGS)
-	 * 
-	 * @param  string $weight_units  The units that the weight is measured in
-	 * @return void
-	 */
-	public function setWeightUnits($weight_units)
-	{
-		$this->request_info['weight_units'] = $weight_units;
-	}	
-	
-	
-	/**
-	 * Set the package length
-	 * 
-	 * @param  float $package_length  The length of the package being shipped
-	 * @return void
-	 */
-	public function setPackageLength($package_length)
-	{
-		$this->request_info['package_length'] = $package_length;
-	}
-	
-	
-	/**
-	 * Set the package height
-	 * 
-	 * @param  float $package_height  The height of the package being shipped
-	 * @return void
-	 */
-	public function setPackageHeight($package_height)
-	{
-		$this->request_info['package_height'] = $package_height;
-	}
-	
-	
-	/**
-	 * Set the package width
-	 * 
-	 * @param  float $package_width  The width of the package being shipped
-	 * @return void
-	 */
-	public function setPackageWidth($package_width)
-	{
-		$this->request_info['package_width'] = $package_width;
-	}
-	
-	
-	/**
-	 * Set the dimensions units (IN or CM)
-	 * 
-	 * @param  string $dimensions_units  The units that the dimensions are measured in
-	 * @return void
-	 */
-	public function setDimensionsUnits($dimensions_units)
-	{
-		$this->request_info['dimensions_units'] = $dimensions_units;
-	}
 	
 	
 	/**
@@ -670,93 +359,6 @@ class fShippingRates
 		}
 		
 		return $result;
-	}
-
-	
-	/**
-	 * Sets the default values for any fields that have not been manually assigned
-	 * 
-	 * @return void
-	 */
-	private function setDefaultValues()
-	{
-		if ($this->shipping_company == 'ups') {
-			$field_info =& $this->ups_field_info;
-		}
-		
-		foreach ($field_info as $field => $info) {
-			if ($info['default'] !== NULL && !isset($this->request_info[$field])) {
-				$this->request_info[$field] = $info['default'];	
-			}
-		}	
-	}
-	
-	
-	/**
-	 * Makes sure all of the required fields are entered, and that data types are correct
-	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @return void
-	 */
-	public function validate()
-	{
-		if ($this->shipping_company == 'ups') {
-			$field_info =& $this->ups_field_info;
-		}
-		
-		$message = '';
-		
-		$this->setDefaultValues();
-		
-		foreach ($field_info as $field => $info) {
-			// Handle simple required fields
-			if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a value\n";
-			
-			// Handle conditional required fields
-			} elseif (is_array($info['required'])) {
-				$keys = array_keys($info['required']);
-				$conditional_field  = $keys[0];
-				$conditional_values = $info['required'][$conditional_field];
-				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
-					$message .= fInflection::humanize($field) . ": Please enter a value\n";    
-				}
-			}	
-		}
-		
-		foreach ($this->request_info as $field => $value) {
-			$info =& $field_info[$field];
-			
-			if ($this->request_info[$field] === NULL) {
-				continue;	
-			}
-			
-			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
-				$message .= fInflection::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
-				continue;
-			}
-			if ($info['type'] == 'string' && !is_string($this->request_info[$field]) && !is_numeric($this->request_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a string\n";
-				continue;
-			}
-			if (isset($info['max_length']) && strlen($this->request_info[$field]) > $info['max_length']) {
-				$message .= fInflection::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
-				continue;
-			}
-		}	
-		
-		if ($message) {
-			fCore::toss('fValidationException', $message);	
-		}
-		
-		
-		// Make sure empty elements are set to NULL so we don't get php warnings
-		foreach ($field_info as $field => $info) {
-			if (!isset($this->request_info[$field])) {
-				$this->request_info[$field] = NULL;
-			}
-		}
 	}
 	
 	
@@ -900,6 +502,405 @@ XMLDATA;
 		
 		return $output;
 	}
+
+	
+	/**
+	 * Enabled debugging
+	 * 
+	 * @param  boolean $enable  If debugging should be enabled
+	 * @return void
+	 */
+	public function setDebug($enable)
+	{
+		$this->debug = (boolean) $enable;
+	}
+	
+	
+	/**
+	 * Sets the default values for any fields that have not been manually assigned
+	 * 
+	 * @return void
+	 */
+	private function setDefaultValues()
+	{
+		if ($this->shipping_company == 'ups') {
+			$field_info =& $this->ups_field_info;
+		}
+		
+		foreach ($field_info as $field => $info) {
+			if ($info['default'] !== NULL && !isset($this->request_info[$field])) {
+				$this->request_info[$field] = $info['default'];	
+			}
+		}	
+	}
+	
+	
+	/**
+	 * Set the dimensions units (IN or CM)
+	 * 
+	 * @param  string $dimensions_units  The units that the dimensions are measured in
+	 * @return void
+	 */
+	public function setDimensionsUnits($dimensions_units)
+	{
+		$this->request_info['dimensions_units'] = $dimensions_units;
+	}
+	
+	
+	/**
+	 * Set the package height
+	 * 
+	 * @param  float $package_height  The height of the package being shipped
+	 * @return void
+	 */
+	public function setPackageHeight($package_height)
+	{
+		$this->request_info['package_height'] = $package_height;
+	}	
+	
+	
+	/**
+	 * Set the package length
+	 * 
+	 * @param  float $package_length  The length of the package being shipped
+	 * @return void
+	 */
+	public function setPackageLength($package_length)
+	{
+		$this->request_info['package_length'] = $package_length;
+	}
+	
+	
+	/**
+	 * Set the package type
+	 * 
+	 * @param  string $package_type  The package type
+	 * @return void
+	 */
+	public function setPackageType($package_type)
+	{
+		$this->request_info['package_type'] = $package_type;
+	}
+	
+	
+	/**
+	 * Set the package weight
+	 * 
+	 * @param  float $package_weight  The weight of the package being shipped
+	 * @return void
+	 */
+	public function setPackageWeight($package_weight)
+	{
+		$this->request_info['package_weight'] = $package_weight;
+	}
+	
+	
+	/**
+	 * Set the package width
+	 * 
+	 * @param  float $package_width  The width of the package being shipped
+	 * @return void
+	 */
+	public function setPackageWidth($package_width)
+	{
+		$this->request_info['package_width'] = $package_width;
+	}
+	
+	
+	/**
+	 * Set the pickup type
+	 * 
+	 * @param  string $pickup_type  The pickup type
+	 * @return void
+	 */
+	public function setPickupType($pickup_type)
+	{
+		$this->request_info['pickup_type'] = $pickup_type;
+	}
+	
+	
+	/**
+	 * Set the ship from address line 1
+	 * 
+	 * @param  string $ship_from_address_line_1  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine1($ship_from_address_line_1)
+	{
+		$this->request_info['ship_from_address_line_1'] = $ship_from_address_line_1;
+	}
+	
+	
+	/**
+	 * Set the ship from address line 2
+	 * 
+	 * @param  string $ship_from_address_line_2  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine2($ship_from_address_line_2)
+	{
+		$this->request_info['ship_from_address_line_2'] = $ship_from_address_line_2;
+	}
+	
+	
+	/**
+	 * Set the ship from address line 3
+	 * 
+	 * @param  string $ship_from_address_line_3  The address being shipped from
+	 * @return void
+	 */
+	public function setShipFromAddressLine3($ship_from_address_line_3)
+	{
+		$this->request_info['ship_from_address_line_3'] = $ship_from_address_line_3;
+	}
+	
+	
+	/**
+	 * Set the ship from city
+	 * 
+	 * @param  string $ship_from_city  The city being shipped from
+	 * @return void
+	 */
+	public function setShipFromCity($ship_from_city)
+	{
+		$this->request_info['ship_from_city'] = $ship_from_city;
+	}
+	
+	
+	/**
+	 * Set the ship from country
+	 * 
+	 * @param  string $ship_from_country  The country being shipped from
+	 * @return void
+	 */
+	public function setShipFromCountry($ship_from_country)
+	{
+		$this->request_info['ship_from_country'] = $ship_from_country;
+	}
+	
+	
+	/**
+	 * Set the ship from province
+	 * 
+	 * @param  string $ship_from_province  The province being shipped from
+	 * @return void
+	 */
+	public function setShipFromProvince($ship_from_province)
+	{
+		$this->request_info['ship_from_province'] = $ship_from_province;
+	}
+	
+	
+	/**
+	 * Set the ship from state
+	 * 
+	 * @param  string $ship_from_state  The state being shipped from
+	 * @return void
+	 */
+	public function setShipFromState($ship_from_state)
+	{
+		$this->request_info['ship_from_state'] = $ship_from_state;
+	}
+	
+	
+	/**
+	 * Set the ship from zip code
+	 * 
+	 * @param  string $ship_from_zip_code  The zip code being shipped from
+	 * @return void
+	 */
+	public function setShipFromZipCode($ship_from_zip_code)
+	{
+		$this->request_info['ship_from_zip_code'] = $ship_from_zip_code;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 1
+	 * 
+	 * @param  string $ship_to_address_line_1  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine1($ship_to_address_line_1)
+	{
+		$this->request_info['ship_to_address_line_1'] = $ship_to_address_line_1;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 2
+	 * 
+	 * @param  string $ship_to_address_line_2  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine2($ship_to_address_line_2)
+	{
+		$this->request_info['ship_to_address_line_2'] = $ship_to_address_line_2;
+	}
+	
+	
+	/**
+	 * Set the ship to address line 3
+	 * 
+	 * @param  string $ship_to_address_line_3  The address being shipped from
+	 * @return void
+	 */
+	public function setShipToAddressLine3($ship_to_address_line_3)
+	{
+		$this->request_info['ship_to_address_line_3'] = $ship_to_address_line_3;
+	}
+	
+	
+	/**
+	 * Set the ship to city
+	 * 
+	 * @param  string $ship_to_city  The city being shipped from
+	 * @return void
+	 */
+	public function setShipToCity($ship_to_city)
+	{
+		$this->request_info['ship_to_city'] = $ship_to_city;
+	}
+	
+	
+	/**
+	 * Set the ship to country
+	 * 
+	 * @param  string $ship_to_country  The country being shipped from
+	 * @return void
+	 */
+	public function setShipToCountry($ship_to_country)
+	{
+		$this->request_info['ship_to_country'] = $ship_to_country;
+	}
+	
+	
+	/**
+	 * Set the ship to province
+	 * 
+	 * @param  string $ship_to_province  The province being shipped from
+	 * @return void
+	 */
+	public function setShipToProvince($ship_to_province)
+	{
+		$this->request_info['ship_to_province'] = $ship_to_province;
+	}
+	
+	
+	/**
+	 * Set the ship to state
+	 * 
+	 * @param  string $ship_to_state  The state being shipped from
+	 * @return void
+	 */
+	public function setShipToState($ship_to_state)
+	{
+		$this->request_info['ship_to_state'] = $ship_to_state;
+	}
+	
+	
+	/**
+	 * Set the ship to zip code
+	 * 
+	 * @param  string $ship_to_zip_code  The zip code being shipped from
+	 * @return void
+	 */
+	public function setShipToZipCode($ship_to_zip_code)
+	{
+		$this->request_info['ship_to_zip_code'] = $ship_to_zip_code;
+	}
+	
+	
+	/**
+	 * Enters test mode, where transactions are sent to the test api url
+	 * 
+	 * @param  boolean $enable  If test mode should be enabled
+	 * @return void
+	 */
+	public function setTestMode($enable)
+	{
+		$this->test_mode = (boolean) $enable;
+	}
+	
+	
+	/**
+	 * Set the weight units (LBS or KGS)
+	 * 
+	 * @param  string $weight_units  The units that the weight is measured in
+	 * @return void
+	 */
+	public function setWeightUnits($weight_units)
+	{
+		$this->request_info['weight_units'] = $weight_units;
+	}
+	
+	
+	/**
+	 * Makes sure all of the required fields are entered, and that data types are correct
+	 * 
+	 * @throws  fValidationException
+	 * 
+	 * @return void
+	 */
+	public function validate()
+	{
+		if ($this->shipping_company == 'ups') {
+			$field_info =& $this->ups_field_info;
+		}
+		
+		$message = '';
+		
+		$this->setDefaultValues();
+		
+		foreach ($field_info as $field => $info) {
+			// Handle simple required fields
+			if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
+				$message .= fInflection::humanize($field) . ": Please enter a value\n";
+			
+			// Handle conditional required fields
+			} elseif (is_array($info['required'])) {
+				$keys = array_keys($info['required']);
+				$conditional_field  = $keys[0];
+				$conditional_values = $info['required'][$conditional_field];
+				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
+					$message .= fInflection::humanize($field) . ": Please enter a value\n";    
+				}
+			}	
+		}
+		
+		foreach ($this->request_info as $field => $value) {
+			$info =& $field_info[$field];
+			
+			if ($this->request_info[$field] === NULL) {
+				continue;	
+			}
+			
+			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
+				$message .= fInflection::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
+				continue;
+			}
+			if ($info['type'] == 'string' && !is_string($this->request_info[$field]) && !is_numeric($this->request_info[$field])) {
+				$message .= fInflection::humanize($field) . ": Please enter a string\n";
+				continue;
+			}
+			if (isset($info['max_length']) && strlen($this->request_info[$field]) > $info['max_length']) {
+				$message .= fInflection::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
+				continue;
+			}
+		}	
+		
+		if ($message) {
+			fCore::toss('fValidationException', $message);	
+		}
+		
+		
+		// Make sure empty elements are set to NULL so we don't get php warnings
+		foreach ($field_info as $field => $info) {
+			if (!isset($this->request_info[$field])) {
+				$this->request_info[$field] = NULL;
+			}
+		}
+	}
 }
 
 
@@ -924,4 +925,3 @@ XMLDATA;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

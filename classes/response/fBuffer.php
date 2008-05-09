@@ -17,13 +17,6 @@
 class fBuffer
 {
 	/**
-	 * If output buffering has been started
-	 * 
-	 * @var integer 
-	 */
-	static private $started = FALSE;
-	
-	/**
 	 * If output capturing is currently active
 	 * 
 	 * @var boolean 
@@ -31,39 +24,27 @@ class fBuffer
 	static private $capturing = FALSE;
 	
 	/**
-	 * Prevent instantiation
+	 * If output buffering has been started
 	 * 
-	 * @return fBuffering
+	 * @var integer 
 	 */
-	private function __construct() { }
+	static private $started = FALSE;
 	
 	
 	/**
-	 * Starts output buffering
+	 * Erases the output buffer
 	 * 
 	 * @return void
 	 */
-	static public function start()
+	static public function erase()
 	{
-		if (self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering has already been started');
+		if (!self::$started) {
+			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffering can be started');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');	
 		}
-		ob_start();	
-		self::$started = TRUE;
-	}
-	
-	
-	/**
-	 * Checks if buffering has been started
-	 * 
-	 * @return boolean  If buffering has been started
-	 */
-	static public function isStarted()
-	{
-		return self::$started;
+		ob_clean();	
 	}
 	
 	
@@ -85,19 +66,13 @@ class fBuffer
 	
 	
 	/**
-	 * Erases the output buffer
+	 * Checks if buffering has been started
 	 * 
-	 * @return void
+	 * @return boolean  If buffering has been started
 	 */
-	static public function erase()
+	static public function isStarted()
 	{
-		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
-		}
-		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');	
-		}
-		ob_clean();	
+		return self::$started;
 	}
 	
 	
@@ -126,20 +101,20 @@ class fBuffer
 	
 	
 	/**
-	 * Stops output buffering, flushing everything to the browser
+	 * Starts output buffering
 	 * 
 	 * @return void
 	 */
-	static public function stop()
+	static public function start()
 	{
-		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+		if (self::$started) {
+			fCore::toss('fProgrammerException', 'Output buffering has already been started');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffering can be started');	
 		}
-		ob_end_flush();	
-		self::$started = FALSE;
+		ob_start();	
+		self::$started = TRUE;
 	}
 	
 	
@@ -159,6 +134,24 @@ class fBuffer
 	
 	
 	/**
+	 * Stops output buffering, flushing everything to the browser
+	 * 
+	 * @return void
+	 */
+	static public function stop()
+	{
+		if (!self::$started) {
+			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+		}
+		if (self::$capturing) {
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');	
+		}
+		ob_end_flush();	
+		self::$started = FALSE;
+	}
+	
+	
+	/**
 	 * Stops capturing output, returning what was captured.
 	 * 
 	 * @return string   The captured output
@@ -171,7 +164,16 @@ class fBuffer
 		self::$capturing = FALSE;
 		return ob_get_clean();
 	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fBuffer
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -194,5 +196,4 @@ class fBuffer
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

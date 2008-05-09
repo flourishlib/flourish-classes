@@ -17,14 +17,24 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-11-27]
  */
 class fCryptography
-{
-
+{	
 	/**
-	 * Prevent instantiation
+	 * Checks a password against a hash
 	 * 
-	 * @return fSecurity
+	 * @param  string $password  The password to check
+	 * @param  string $hash      The hash to check against
+	 * @return boolean  If the password matches the hash
 	 */
-	private function __construct() { }
+	static public function checkPasswordHash($password, $hash)
+	{
+		$salt = substr($hash, 29, 10);
+
+		if (self::hashWithSalt($password, $salt) == $hash) {
+			return TRUE;	
+		}
+		
+		return FALSE;
+	}
 	
 	
 	/**
@@ -88,25 +98,6 @@ class fCryptography
 	
 	
 	/**
-	 * Checks a password against a hash
-	 * 
-	 * @param  string $password  The password to check
-	 * @param  string $hash      The hash to check against
-	 * @return boolean  If the password matches the hash
-	 */
-	static public function checkPasswordHash($password, $hash)
-	{
-		$salt = substr($hash, 29, 10);
-
-		if (self::hashWithSalt($password, $salt) == $hash) {
-			return TRUE;	
-		}
-		
-		return FALSE;
-	}
-	
-	
-	/**
 	 * Performs a large iteration of hashing a string with a salt
 	 * 
 	 * @param  string $source  The string to hash
@@ -122,164 +113,7 @@ class fCryptography
 		
 		return 'fCryptography::password_hash#' . $salt . '#' . $sha1;
 	}
-	
-	
-	/**
-	 * Encrypts the passed data using symmetric-key encryption. Thus the same key is used for encrypting and decrypting data.
-	 * 
-	 * @param  string $plaintext   The content to be encrypted
-	 * @param  string $secret_key  The secret key to use for encryption
-	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link symmetricKeyDecrypt()}
-	 */
-	static public function symmetricKeyEncrypt($plaintext, $secret_key)
-	{
-		if (strlen($secret_key) < 8) {
-			fCore::toss('fProgrammerException', 'The secret key specified does not meet the minimum requirement of being at least 8 characters long');   
-		}
 		
-		self::verifySymmetricKeyEnvironment();
-		
-		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192)
-		// in cipher feedback mode. Cipher feedback mode is chosen because no extra padding
-		// is added, ensuring we always get the exact same plaintext out of the decrypt method
-		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
-		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
-		srand();
-		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
-		
-		// Encrypt the IV for storage to prevent man in the middle attacks. This uses
-		// electronic codebook since it is suitable for encrypting the IV. 
-		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
-		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, '12345678');
-		$encrypted_iv = mcrypt_generic($iv_module, $iv);
-		mcrypt_generic_deinit($iv_module);
-		mcrypt_module_close($iv_module);
-		
-		// Finish the main encryption
-		mcrypt_generic_init($module, $key, $iv);
-		$ciphertext = mcrypt_generic($module, $plaintext);
-		
-		// Clean up the main encryption
-		mcrypt_generic_deinit($module);
-		mcrypt_module_close($module);
-		
-		// Here we are generating the HMAC for the encrypted data to ensure data integrity
-		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
-		
-		// All of the data is then encoded using base64 to prevent issues with character sets
-		$encoded_iv         = base64_encode($encrypted_iv);
-		$encoded_ciphertext = base64_encode($ciphertext);
-		
-		// Indicate in the resulting encrypted data what the encryption tool was
-		return 'fCryptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $hmac;
-	}
-	
-	
-	/**
-	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link symmetricKeyEncrypt()}. Thus the same key is used for encrypting and decrypting data.
-	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @param  string $ciphertext  The content to be decrypted
-	 * @param  string $secret_key  The secret key to use for decryption
-	 * @return string  The decrypted plaintext
-	 */
-	static public function symmetricKeyDecrypt($ciphertext, $secret_key)
-	{
-		self::verifySymmetricKeyEnvironment();
-		
-		$elements = explode('#', $ciphertext);
-		
-		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
-		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::symmetric') {
-			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::symmetricKeyEncrypt()');	
-		}
-		
-		$encrypted_iv  = base64_decode($elements[1]);
-		$ciphertext    = base64_decode($elements[2]);
-		$provided_hmac = $elements[3];
-		
-		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
-		
-		// By verifying the HMAC we ensure the integrity of the data
-		if ($hmac != $provided_hmac) {
-			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
-		}
-		
-		// Decrypt the IV so we can feed it into the main decryption
-		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
-		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, '12345678');
-		$iv        = mdecrypt_generic($iv_module, $encrypted_iv);
-		mcrypt_generic_deinit($iv_module);
-		mcrypt_module_close($iv_module);
-		
-		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256) in cipher feedback mode
-		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
-		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
-		mcrypt_generic_init($module, $key, $iv);
-		$plaintext = mdecrypt_generic($module, $ciphertext);
-		mcrypt_generic_deinit($module);
-		mcrypt_module_close($module);
-		
-		return $plaintext;
-	}
-	
-	
-	/**
-	 * Makes sure the required PHP extensions and library versions are all correct
-	 * 
-	 * @return void
-	 */
-	static private function verifySymmetricKeyEnvironment()
-	{
-		if (!extension_loaded('mcrypt')) {
-			fCore::toss('fEnvironmentException', 'The PHP mcrypt extension is required, however is does not appear to be loaded');    
-		}
-		if (!extension_loaded('hash')) {
-			fCore::toss('fEnvironmentException', 'The PHP hash extension is required, however is does not appear to be loaded');    
-		}
-		if (!function_exists('mcrypt_module_open')) {
-			fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.');
-		}	
-		if (!in_array('rijndael-192', mcrypt_list_algorithms())) {
-		fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), does not appear to be supported by the installed version of libmcrypt');
-		}
-	}
-	
-	
-	/**
-	 * Encrypts the passed data using public key encryption via OpenSSL. A public key (X.509 certificate) is required for encryption and a private key (PEM) is required for decryption.
-	 * 
-	 * @param  string $plaintext        The content to be encrypted
-	 * @param  string $public_key_file  The path to an X.509 public key certificate
-	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link publicKeyDecrypt()}
-	 */
-	static public function publicKeyEncrypt($plaintext, $public_key_file)
-	{
-		self::verifyPublicKeyEnvironment();   
-		
-		if (!file_exists($public_key_file)) {
-			fCore::toss('fProgrammerException', 'The path to the X.509 certificate specified is not valid');	
-		}
-		if (!is_readable($public_key_file)) {
-		fCore::toss('fProgrammerException', 'The X.509 certificate specified can not be read');	
-		}
-		
-		$public_key = file_get_contents($public_key_file);
-		$public_key_resource = openssl_pkey_get_public($public_key);
-		
-		$ciphertext     = '';
-		$encrypted_keys = array();
-		openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
-		openssl_free_key($public_key_resource);
-		
-		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
-		
-		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
-	}
-	
 	
 	/**
 	 * Decrypts ciphertext encrypted using public-key encryption via {@link publicKeyEncrypt()}. A public key (X.509 certificate) is required for encryption and a private key (PEM) is required for decryption.
@@ -336,6 +170,141 @@ class fCryptography
 	
 	
 	/**
+	 * Encrypts the passed data using public key encryption via OpenSSL. A public key (X.509 certificate) is required for encryption and a private key (PEM) is required for decryption.
+	 * 
+	 * @param  string $plaintext        The content to be encrypted
+	 * @param  string $public_key_file  The path to an X.509 public key certificate
+	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link publicKeyDecrypt()}
+	 */
+	static public function publicKeyEncrypt($plaintext, $public_key_file)
+	{
+		self::verifyPublicKeyEnvironment();   
+		
+		if (!file_exists($public_key_file)) {
+			fCore::toss('fProgrammerException', 'The path to the X.509 certificate specified is not valid');	
+		}
+		if (!is_readable($public_key_file)) {
+		fCore::toss('fProgrammerException', 'The X.509 certificate specified can not be read');	
+		}
+		
+		$public_key = file_get_contents($public_key_file);
+		$public_key_resource = openssl_pkey_get_public($public_key);
+		
+		$ciphertext     = '';
+		$encrypted_keys = array();
+		openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
+		openssl_free_key($public_key_resource);
+		
+		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
+		
+		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
+	}
+	
+	
+	/**
+	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link symmetricKeyEncrypt()}. Thus the same key is used for encrypting and decrypting data.
+	 * 
+	 * @throws  fValidationException
+	 * 
+	 * @param  string $ciphertext  The content to be decrypted
+	 * @param  string $secret_key  The secret key to use for decryption
+	 * @return string  The decrypted plaintext
+	 */
+	static public function symmetricKeyDecrypt($ciphertext, $secret_key)
+	{
+		self::verifySymmetricKeyEnvironment();
+		
+		$elements = explode('#', $ciphertext);
+		
+		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
+		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::symmetric') {
+			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::symmetricKeyEncrypt()');	
+		}
+		
+		$encrypted_iv  = base64_decode($elements[1]);
+		$ciphertext    = base64_decode($elements[2]);
+		$provided_hmac = $elements[3];
+		
+		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
+		
+		// By verifying the HMAC we ensure the integrity of the data
+		if ($hmac != $provided_hmac) {
+			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
+		}
+		
+		// Decrypt the IV so we can feed it into the main decryption
+		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
+		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
+		mcrypt_generic_init($iv_module, $iv_key, '12345678');
+		$iv        = mdecrypt_generic($iv_module, $encrypted_iv);
+		mcrypt_generic_deinit($iv_module);
+		mcrypt_module_close($iv_module);
+		
+		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256) in cipher feedback mode
+		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
+		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
+		mcrypt_generic_init($module, $key, $iv);
+		$plaintext = mdecrypt_generic($module, $ciphertext);
+		mcrypt_generic_deinit($module);
+		mcrypt_module_close($module);
+		
+		return $plaintext;
+	}
+	
+	
+	/**
+	 * Encrypts the passed data using symmetric-key encryption. Thus the same key is used for encrypting and decrypting data.
+	 * 
+	 * @param  string $plaintext   The content to be encrypted
+	 * @param  string $secret_key  The secret key to use for encryption
+	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link symmetricKeyDecrypt()}
+	 */
+	static public function symmetricKeyEncrypt($plaintext, $secret_key)
+	{
+		if (strlen($secret_key) < 8) {
+			fCore::toss('fProgrammerException', 'The secret key specified does not meet the minimum requirement of being at least 8 characters long');   
+		}
+		
+		self::verifySymmetricKeyEnvironment();
+		
+		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192)
+		// in cipher feedback mode. Cipher feedback mode is chosen because no extra padding
+		// is added, ensuring we always get the exact same plaintext out of the decrypt method
+		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
+		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
+		srand();
+		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
+		
+		// Encrypt the IV for storage to prevent man in the middle attacks. This uses
+		// electronic codebook since it is suitable for encrypting the IV. 
+		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
+		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
+		mcrypt_generic_init($iv_module, $iv_key, '12345678');
+		$encrypted_iv = mcrypt_generic($iv_module, $iv);
+		mcrypt_generic_deinit($iv_module);
+		mcrypt_module_close($iv_module);
+		
+		// Finish the main encryption
+		mcrypt_generic_init($module, $key, $iv);
+		$ciphertext = mcrypt_generic($module, $plaintext);
+		
+		// Clean up the main encryption
+		mcrypt_generic_deinit($module);
+		mcrypt_module_close($module);
+		
+		// Here we are generating the HMAC for the encrypted data to ensure data integrity
+		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
+		
+		// All of the data is then encoded using base64 to prevent issues with character sets
+		$encoded_iv         = base64_encode($encrypted_iv);
+		$encoded_ciphertext = base64_encode($ciphertext);
+		
+		// Indicate in the resulting encrypted data what the encryption tool was
+		return 'fCryptography::symmetric#' . $encoded_iv . '#' . $encoded_ciphertext . '#' . $hmac;
+	}
+	
+	
+	/**
 	 * Makes sure the required PHP extensions and library versions are all correct
 	 * 
 	 * @return void
@@ -346,7 +315,38 @@ class fCryptography
 			fCore::toss('fEnvironmentException', 'The PHP openssl extension is required, however is does not appear to be loaded');    
 		}
 	}
+	
+	
+	/**
+	 * Makes sure the required PHP extensions and library versions are all correct
+	 * 
+	 * @return void
+	 */
+	static private function verifySymmetricKeyEnvironment()
+	{
+		if (!extension_loaded('mcrypt')) {
+			fCore::toss('fEnvironmentException', 'The PHP mcrypt extension is required, however is does not appear to be loaded');    
+		}
+		if (!extension_loaded('hash')) {
+			fCore::toss('fEnvironmentException', 'The PHP hash extension is required, however is does not appear to be loaded');    
+		}
+		if (!function_exists('mcrypt_module_open')) {
+			fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.');
+		}	
+		if (!in_array('rijndael-192', mcrypt_list_algorithms())) {
+		fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), does not appear to be supported by the installed version of libmcrypt');
+		}
+	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fSecurity
+	 */
+	private function __construct() { }
 } 
+
 
 
 /**
@@ -369,5 +369,4 @@ class fCryptography
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

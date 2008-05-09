@@ -17,14 +17,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fValidation
-{	
-	/**
-	 * The fields to be required
-	 * 
-	 * @var array 
-	 */
-	private $required_fields;
-	
+{		
 	/**
 	 * Fields that should be formatted as email addresses
 	 * 
@@ -39,82 +32,53 @@ class fValidation
 	 */
 	private $email_header_fields;
 	
+	/**
+	 * The fields to be required
+	 * 
+	 * @var array 
+	 */
+	private $required_fields;
+	
 	
 	/**
-	 * Sets form fields to be required, taking each parameter as a field name.
+	 * Validates the email fields, requiring that any email fields that have a value are formatted like an email address
 	 * 
-	 * To require one of multiple fields, pass an array of fields as the parameter.
-	 * 
-	 * To conditionally require fields, pass an associative array of with the key being the field that will trigger the
-	 * other fields to be required:
-	 * <pre>
-	 * array(
-	 *     'trigger_field' => array(
-	 *         'conditionally_required_field',
-	 *         'second_conditionally_required_field'
-	 *     )
-	 * )
-	 * </pre>
-	 * 
-	 * @param  mixed $field,...  Any number of fields to check
+	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	public function setRequiredFields()
+	private function checkEmailFields(&$messages)
 	{
-		$this->required_fields = func_get_args();		
+		foreach ($this->email_fields as $email_field) {
+			if (is_string($email_field)) {
+				if (fRequest::get($email_field) !== '' && fRequest::get($email_field) !== NULL && !preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', trim(fRequest::get($email_field)))) {
+					$messages[] = fInflection::humanize($email_field) . ' should be in the form name@example.com';	
+				}
+				
+			} else {
+				fCore::toss('fProgrammerException', 'Unrecognized email field structure');
+			}	
+		}	
 	}
 	
 	
 	/**
-	 * Sets form fields to be required to be blank or a valid email address. Use {@link fValidation::setRequiredFields} to not allow blank values.
+	 * Validates email header fields to ensure they don't have newline characters (which allow for email header injection)
 	 * 
-	 * @param  string $field,...  Any number of fields to required valid email addresses for
+	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	public function setEmailFields()
+	private function checkEmailHeaderFields(&$messages)
 	{
-		$this->email_fields = func_get_args();		
-	}
-	
-	
-	/**
-	 * Sets form fields to be checked for email injection. Every field that is included in email headers should be passed to this method.
-	 * 
-	 * @param  string $field,...  Any number of fields to be checked for email injection
-	 * @return void
-	 */
-	public function setEmailHeaderFields()
-	{
-		$this->email_header_fields = func_get_args();		
-	}
-	
-	
-	/**
-	 * Checks for required fields, email field formatting and email header injection using values previously set
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @return void
-	 */
-	public function validate()
-	{
-		if (empty($this->email_header_fields) && empty($this->required_fields) && empty($this->email_fields)) {
-			fCore::toss('fProgrammerException', 'No fields have been set to be validated');
-		}		
-		
-		$messages = array();
-		
-		$this->checkRequiredFields($messages);
-		$this->checkEmailFields($messages);
-		$this->checkEmailHeaderFields($messages);
-		
-		if (!empty($messages)) {
-		 	$errors  = '<p>The following errors were found in your submission:</p><ul><li>';
-		 	$errors .= join('</li><li>', $messages);
-		 	$errors .= '</li></ul>';	
-		 	
-		 	fCore::toss('fValidationException', $errors);
-		}
+		foreach ($this->email_header_fields as $email_header_field) {
+			if (is_string($email_header_field)) {
+				if (preg_match('#\r|\n', fRequest::get($email_header_field))) {
+					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';	
+				}
+				
+			} else {
+				fCore::toss('fProgrammerException', 'Unrecognized email header field structure');
+			}	
+		}	
 	}
 	
 	
@@ -165,46 +129,83 @@ class fValidation
 	
 	
 	/**
-	 * Validates the email fields, requiring that any email fields that have a value are formatted like an email address
+	 * Sets form fields to be required to be blank or a valid email address. Use {@link fValidation::setRequiredFields} to not allow blank values.
 	 * 
-	 * @param  array &$messages  The messages to display to the user
+	 * @param  string $field,...  Any number of fields to required valid email addresses for
 	 * @return void
 	 */
-	private function checkEmailFields(&$messages)
+	public function setEmailFields()
 	{
-		foreach ($this->email_fields as $email_field) {
-			if (is_string($email_field)) {
-				if (fRequest::get($email_field) !== '' && fRequest::get($email_field) !== NULL && !preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', trim(fRequest::get($email_field)))) {
-					$messages[] = fInflection::humanize($email_field) . ' should be in the form name@example.com';	
-				}
-				
-			} else {
-				fCore::toss('fProgrammerException', 'Unrecognized email field structure');
-			}	
-		}	
+		$this->email_fields = func_get_args();		
 	}
 	
 	
 	/**
-	 * Validates email header fields to ensure they don't have newline characters (which allow for email header injection)
+	 * Sets form fields to be checked for email injection. Every field that is included in email headers should be passed to this method.
 	 * 
-	 * @param  array &$messages  The messages to display to the user
+	 * @param  string $field,...  Any number of fields to be checked for email injection
 	 * @return void
 	 */
-	private function checkEmailHeaderFields(&$messages)
+	public function setEmailHeaderFields()
 	{
-		foreach ($this->email_header_fields as $email_header_field) {
-			if (is_string($email_header_field)) {
-				if (preg_match('#\r|\n', fRequest::get($email_header_field))) {
-					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';	
-				}
-				
-			} else {
-				fCore::toss('fProgrammerException', 'Unrecognized email header field structure');
-			}	
-		}	
+		$this->email_header_fields = func_get_args();		
+	}
+	
+	
+	/**
+	 * Sets form fields to be required, taking each parameter as a field name.
+	 * 
+	 * To require one of multiple fields, pass an array of fields as the parameter.
+	 * 
+	 * To conditionally require fields, pass an associative array of with the key being the field that will trigger the
+	 * other fields to be required:
+	 * <pre>
+	 * array(
+	 *     'trigger_field' => array(
+	 *         'conditionally_required_field',
+	 *         'second_conditionally_required_field'
+	 *     )
+	 * )
+	 * </pre>
+	 * 
+	 * @param  mixed $field,...  Any number of fields to check
+	 * @return void
+	 */
+	public function setRequiredFields()
+	{
+		$this->required_fields = func_get_args();		
+	}
+	
+	
+	/**
+	 * Checks for required fields, email field formatting and email header injection using values previously set
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @return void
+	 */
+	public function validate()
+	{
+		if (empty($this->email_header_fields) && empty($this->required_fields) && empty($this->email_fields)) {
+			fCore::toss('fProgrammerException', 'No fields have been set to be validated');
+		}		
+		
+		$messages = array();
+		
+		$this->checkRequiredFields($messages);
+		$this->checkEmailFields($messages);
+		$this->checkEmailHeaderFields($messages);
+		
+		if (!empty($messages)) {
+			$errors  = '<p>The following errors were found in your submission:</p><ul><li>';
+			$errors .= join('</li><li>', $messages);
+			$errors .= '</li></ul>';	
+			
+			fCore::toss('fValidationException', $errors);
+		}
 	}
 }
+
 
 
 /**
@@ -228,4 +229,3 @@ class fValidation
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>

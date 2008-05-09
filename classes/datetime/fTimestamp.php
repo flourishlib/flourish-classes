@@ -25,30 +25,17 @@ class fTimestamp
 	 */
 	static private $formats = array();
 	
-	/**
-	 * The date/time
-	 * 
-	 * @var integer 
-	 */
-	private $timestamp; 
 	
 	/**
-	 * The timezone for this date/time
+	 * Checks to make sure the current version of PHP is high enough to support timezone features
 	 * 
-	 * @var string 
+	 * @return void
 	 */
-	private $timezone;  
-	
-	
-	/**
-	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fDate::getSecondsDifference()}, {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
-	 * 
-	 * @param  string $timespan  The timespan to calculate the number of seconds in
-	 * @return integer  The number of seconds in the timestamp specified
-	 */
-	static public function getSeconds($timespan)
+	static private function checkPHPVersion()
 	{
-		return strtotime($timespan) - time();
+		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
+			fCore::toss('fEnvironmentException', 'The fTimestamp class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.');	
+		}	
 	}
 	
 	
@@ -82,17 +69,27 @@ class fTimestamp
 	
 	
 	/**
-	 * Takes a format name set via {@link fTimestamp::createFormat()} and returns the {@link http://php.net/date date()} function formatting string
+	 * Provides a consistent interface to getting the default timezone. Wraps the {@link http://php.net/date_default_timezone_get date_default_timezone_get()} function.
 	 * 
-	 * @param  string $format  The format to translate
-	 * @return string  The formatting string. If no matching format was found, this will be the same as the $format parameter.
+	 * @return string  The default timezone used for all date/time calculations
 	 */
-	static public function translateFormat($format)
+	static public function getDefaultTimezone()
 	{
-		if (isset(self::$formats[$format])) {
-			$format = self::$formats[$format];	
-		}
-		return $format;
+		self::checkPHPVersion();
+		
+		return date_default_timezone_get();
+	}
+	
+	
+	/**
+	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fDate::getSecondsDifference()}, {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
+	 * 
+	 * @param  string $timespan  The timespan to calculate the number of seconds in
+	 * @return integer  The number of seconds in the timestamp specified
+	 */
+	static public function getSeconds($timespan)
+	{
+		return strtotime($timespan) - time();
 	}
 	
 	
@@ -114,29 +111,35 @@ class fTimestamp
 	
 	
 	/**
-	 * Provides a consistent interface to getting the default timezone. Wraps the {@link http://php.net/date_default_timezone_get date_default_timezone_get()} function.
+	 * Takes a format name set via {@link fTimestamp::createFormat()} and returns the {@link http://php.net/date date()} function formatting string
 	 * 
-	 * @return string  The default timezone used for all date/time calculations
+	 * @internal
+	 * 
+	 * @param  string $format  The format to translate
+	 * @return string  The formatting string. If no matching format was found, this will be the same as the $format parameter.
 	 */
-	static public function getDefaultTimezone()
+	static public function translateFormat($format)
 	{
-		self::checkPHPVersion();
-		
-		return date_default_timezone_get();
+		if (isset(self::$formats[$format])) {
+			$format = self::$formats[$format];	
+		}
+		return $format;
 	}
 	
 	
 	/**
-	 * Checks to make sure the current version of PHP is high enough to support timezone features
+	 * The date/time
 	 * 
-	 * @return void
+	 * @var integer 
 	 */
-	static private function checkPHPVersion()
-	{
-		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
-			fCore::toss('fEnvironmentException', 'The fTimestamp class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.');	
-		}	
-	}
+	private $timestamp; 
+	
+	/**
+	 * The timezone for this date/time
+	 * 
+	 * @var string 
+	 */
+	private $timezone;  
 	
 	
 	/**
@@ -182,6 +185,216 @@ class fTimestamp
 	public function __toString()
 	{
 		return $this->format('Y-m-d H:i:s', self::getDefaultTimezone()); 
+	}
+	
+	
+	/**
+	 * Changes the time by the adjustment specified
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $adjustment  The adjustment to make
+	 * @return void
+	 */
+	public function adjust($adjustment)
+	{
+		if ($this->isValidTimezone($adjustment)) {
+			$this->setTimezone($adjustment);	
+		} else {
+			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
+		}
+	}
+	
+	
+	/**
+	 * Takes a date/time to pass to strtotime and interprets it using the current timestamp's timezone
+	 * 
+	 * @param  string $datetime  The datetime to interpret
+	 * @return integer  The timestamp
+	 */
+	private function covertToTimestampWithTimezone($datetime)
+	{
+		$default_tz = date_default_timezone_get();
+		date_default_timezone_set($this->timezone);
+		$timestamp = strtotime($datetime);
+		date_default_timezone_set($default_tz);
+		return $timestamp;
+	}
+	
+	
+	/**
+	 * Formats the date/time, with an optional adjustment of a relative date/time or a timezone
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @param  string $adjustment  A temporary adjustment to make, can be a relative date/time amount or a timezone
+	 * @return string  The formatted (and possibly adjusted) date/time
+	 */
+	public function format($format, $adjustment=NULL)
+	{
+		$format = self::translateFormat($format);
+		
+		$timestamp = $this->timestamp;
+		
+		// Handle an adjustment that is a timezone
+		if ($adjustment && $this->isValidTimezone($adjustment)) {
+			$default_tz = date_default_timezone_get();	
+			date_default_timezone_set($adjustment);
+			
+		} else {
+			$default_tz = date_default_timezone_get();		
+			date_default_timezone_set($this->timezone);	
+		}
+		
+		// Handle an adjustment that is a relative date/time
+		if ($adjustment && !$this->isValidTimezone($adjustment)) {
+			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
+		}
+		
+		$formatted = date($format, $timestamp);
+		
+		date_default_timezone_set($default_tz);
+		
+		return $formatted;
+	}
+	
+	
+	/**
+	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
+	 * 
+	 * The output will read like:
+	 *  - "This timestamp is {return value} the provided one" when a timestamp it passed
+	 *  - "This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
+	 * 
+	 * Examples of output for a timestamp passed might be:
+	 *  - 5 minutes after
+	 *  - 2 hours before
+	 *  - 2 days after
+	 *  - at the same time
+	 * 
+	 * Examples of output for no timestamp passed might be:
+	 *  - 5 minutes ago
+	 *  - 2 hours ago
+	 *  - 2 days from now
+	 *  - 1 year ago
+	 *  - right now
+	 * 
+	 * You would never get the following output since it includes more than one unit of time measurement:
+	 *  - 5 minutes and 28 seconds
+	 *  - 3 weeks, 1 day and 4 hours
+	 * 
+	 * Values that are close to the next largest unit of measure will be rounded up:
+	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
+	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
+	 * 
+	 * @param  fTimestamp $other_timestamp     The timestamp to create the difference with, passing NULL will get the difference with the current timestamp
+	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
+	 */
+	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL)
+	{
+		$relative_to_now = FALSE;
+		if ($other_timestamp === NULL) {
+			$other_timestamp = new fTimestamp('now');
+			$relative_to_now = TRUE;
+		}
+		
+		$diff = $this->timestamp - $other_timestamp->format('U');
+		
+		if (abs($diff) < 10) {
+			return ($relative_to_now) ? 'right now' : 'at the same time';
+		}
+		
+		if ($relative_to_now) {
+			$suffix = ($diff > 0) ? ' from now' : ' ago';
+		} else {
+			$suffix = ($diff > 0) ? ' after' : ' before';	
+		}
+		
+		$diff = abs($diff);
+		
+		$break_points = array(
+			45         /* 45 seconds  */ => array(1,        'second'),
+			2700       /* 45 minutes  */ => array(60,       'minute'),
+			64800      /* 18 hours    */ => array(3600,     'hour'),
+			432000     /* 5 days      */ => array(86400,    'day'),
+			1814400    /* 3 weeks     */ => array(604800,   'week'),
+			23328000   /* 9 months    */ => array(2592000,  'month'),
+			2147483647 /* largest int */ => array(31536000, 'year')
+		);
+		
+		foreach ($break_points as $break_point => $unit_info) {
+			if ($diff > $break_point) { continue; }	
+			
+			$unit_diff = round($diff/$unit_info[0]);
+			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
+			
+			return $unit_diff . ' ' . $units . $suffix;
+		}
+	}
+	
+	
+	/**
+	 * Returns the difference between the two timestamps in seconds
+	 * 
+	 * @param  fTimestamp   $other_timestamp    The timestamp to calculate the difference with, if NULL is passed will compare with current timestamp
+	 * @return integer  The difference between the two timestamps in seconds, positive if $other_timestamp is before this time or negative if after
+	 */
+	public function getSecondsDifference(fTimestamp $other_timestamp=NULL)
+	{
+		if ($other_timestamp === NULL) {
+			$other_timestamp = new fTimestamp('now');
+		}
+		
+		return $this->timestamp - $other_timestamp->format('U');
+	}
+	
+	
+	/**
+	 * Returns the timezone for this date/time
+	 * 
+	 * @return string  The timezone for thie date/time
+	 */
+	public function getTimezone()
+	{
+		return $this->timezone;
+	}
+	
+	
+	/**
+	 * Checks to see if a timezone is valid
+	 * 
+	 * @param  string $timezone  The timezone to check
+	 * @param  integer $timestamp  The time to adjust
+	 * @return integer  The adjusted timestamp
+	 */
+	private function isValidTimezone($timezone)
+	{
+		$default_tz = date_default_timezone_get();
+		$valid_tz = @date_default_timezone_set($timezone);
+		date_default_timezone_set($default_tz);
+		return $valid_tz;
+	}
+	
+	
+	/**
+	 * Makes an adjustment, returning the adjusted time
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $adjustment  The adjustment to make
+	 * @param  integer $timestamp  The time to adjust
+	 * @return integer  The adjusted timestamp
+	 */
+	private function makeAdjustment($adjustment, $timestamp)
+	{
+		$timestamp = strtotime($adjustment, $timestamp);
+		
+		if ($timestamp === FALSE || $timestamp === -1) {
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date/time measurement'); 		
+		}  
+		
+		return $timestamp;
 	}
 	
 	
@@ -324,217 +537,8 @@ class fTimestamp
 		}	
 		$this->timezone = $timezone;
 	}
-	
-	
-	/**
-	 * Returns the timezone for this date/time
-	 * 
-	 * @return string  The timezone for thie date/time
-	 */
-	public function getTimezone()
-	{
-		return $this->timezone;
-	}
-	
-	
-	/**
-	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
-	 * 
-	 * The output will read like:
-	 *  - "This timestamp is {return value} the provided one" when a timestamp it passed
-	 *  - "This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
-	 * 
-	 * Examples of output for a timestamp passed might be:
-	 *  - 5 minutes after
-	 *  - 2 hours before
-	 *  - 2 days after
-	 *  - at the same time
-	 * 
-	 * Examples of output for no timestamp passed might be:
-	 *  - 5 minutes ago
-	 *  - 2 hours ago
-	 *  - 2 days from now
-	 *  - 1 year ago
-	 *  - right now
-	 * 
-	 * You would never get the following output since it includes more than one unit of time measurement:
-	 *  - 5 minutes and 28 seconds
-	 *  - 3 weeks, 1 day and 4 hours
-	 * 
-	 * Values that are close to the next largest unit of measure will be rounded up:
-	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
-	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
-	 * 
-	 * @param  fTimestamp $other_timestamp     The timestamp to create the difference with, passing NULL will get the difference with the current timestamp
-	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
-	 */
-	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL)
-	{
-		$relative_to_now = FALSE;
-		if ($other_timestamp === NULL) {
-			$other_timestamp = new fTimestamp('now');
-			$relative_to_now = TRUE;
-		}
-		
-		$diff = $this->timestamp - $other_timestamp->format('U');
-		
-		if (abs($diff) < 10) {
-			return ($relative_to_now) ? 'right now' : 'at the same time';
-		}
-		
-		if ($relative_to_now) {
-			$suffix = ($diff > 0) ? ' from now' : ' ago';
-		} else {
-			$suffix = ($diff > 0) ? ' after' : ' before';	
-		}
-		
-		$diff = abs($diff);
-		
-		$break_points = array(
-			45         /* 45 seconds  */ => array(1,        'second'),
-			2700       /* 45 minutes  */ => array(60,       'minute'),
-			64800      /* 18 hours    */ => array(3600,     'hour'),
-			432000     /* 5 days      */ => array(86400,    'day'),
-			1814400    /* 3 weeks     */ => array(604800,   'week'),
-			23328000   /* 9 months    */ => array(2592000,  'month'),
-			2147483647 /* largest int */ => array(31536000, 'year')
-		);
-		
-		foreach ($break_points as $break_point => $unit_info) {
-			if ($diff > $break_point) { continue; }	
-			
-			$unit_diff = round($diff/$unit_info[0]);
-			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
-			
-			return $unit_diff . ' ' . $units . $suffix;
-		}
-	}
-	
-	
-	/**
-	 * Returns the difference between the two timestamps in seconds
-	 * 
-	 * @param  fTimestamp   $other_timestamp    The timestamp to calculate the difference with, if NULL is passed will compare with current timestamp
-	 * @return integer  The difference between the two timestamps in seconds, positive if $other_timestamp is before this time or negative if after
-	 */
-	public function getSecondsDifference(fTimestamp $other_timestamp=NULL)
-	{
-		if ($other_timestamp === NULL) {
-			$other_timestamp = new fTimestamp('now');
-		}
-		
-		return $this->timestamp - $other_timestamp->format('U');
-	}
-	
-	
-	/**
-	 * Changes the time by the adjustment specified
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @return void
-	 */
-	public function adjust($adjustment)
-	{
-		if ($this->isValidTimezone($adjustment)) {
-			$this->setTimezone($adjustment);	
-		} else {
-			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
-		}
-	}
-	
-	
-	/**
-	 * Formats the date/time, with an optional adjustment of a relative date/time or a timezone
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
-	 * @param  string $adjustment  A temporary adjustment to make, can be a relative date/time amount or a timezone
-	 * @return string  The formatted (and possibly adjusted) date/time
-	 */
-	public function format($format, $adjustment=NULL)
-	{
-		$format = self::translateFormat($format);
-		
-		$timestamp = $this->timestamp;
-		
-		// Handle an adjustment that is a timezone
-		if ($adjustment && $this->isValidTimezone($adjustment)) {
-			$default_tz = date_default_timezone_get();	
-			date_default_timezone_set($adjustment);
-			
-		} else {
-			$default_tz = date_default_timezone_get();		
-			date_default_timezone_set($this->timezone);	
-		}
-		
-		// Handle an adjustment that is a relative date/time
-		if ($adjustment && !$this->isValidTimezone($adjustment)) {
-			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
-		}
-		
-		$formatted = date($format, $timestamp);
-		
-		date_default_timezone_set($default_tz);
-		
-		return $formatted;
-	}
-	
-	
-	/**
-	 * Makes an adjustment, returning the adjusted time
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @param  integer $timestamp  The time to adjust
-	 * @return integer  The adjusted timestamp
-	 */
-	private function makeAdjustment($adjustment, $timestamp)
-	{
-		$timestamp = strtotime($adjustment, $timestamp);
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date/time measurement'); 		
-		}  
-		
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Takes a date/time to pass to strtotime and interprets it using the current timestamp's timezone
-	 * 
-	 * @param  string $datetime  The datetime to interpret
-	 * @return integer  The timestamp
-	 */
-	private function covertToTimestampWithTimezone($datetime)
-	{
-		$default_tz = date_default_timezone_get();
-		date_default_timezone_set($this->timezone);
-		$timestamp = strtotime($datetime);
-		date_default_timezone_set($default_tz);
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Checks to see if a timezone is valid
-	 * 
-	 * @param  string $timezone  The timezone to check
-	 * @param  integer $timestamp  The time to adjust
-	 * @return integer  The adjusted timestamp
-	 */
-	private function isValidTimezone($timezone)
-	{
-		$default_tz = date_default_timezone_get();
-		$valid_tz = @date_default_timezone_set($timezone);
-		date_default_timezone_set($default_tz);
-		return $valid_tz;
-	}
 }
+
 
 
 /**
@@ -557,5 +561,4 @@ class fTimestamp
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

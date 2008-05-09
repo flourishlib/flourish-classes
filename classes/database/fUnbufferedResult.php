@@ -1,36 +1,22 @@
 <?php
 /**
- * Representation of a result from a query against the fDatabase class
+ * Representation of an unbuffered result from a query against the fDatabase class
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fResult
+ * @link  http://flourishlib.com/fUnbufferedResult
  * 
  * @uses  fCore
  * @uses  fNoResultsException
  * @uses  fProgrammerException
  * 
  * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
+ * @changes  1.0.0    The initial implementation [wb, 2008-05-07]
  */
-class fResult implements Iterator
+class fUnbufferedResult implements Iterator
 {
-	/**
-	 * The number of rows affected by an insert, update, select, etc
-	 * 
-	 * @var integer 
-	 */
-	private $affected_rows = 0;
-	
-	/**
-	 * The auto incremented value from the query
-	 * 
-	 * @var integer 
-	 */
-	private $auto_incremented_value = NULL;
-	
 	/**
 	 * The current row of the result set
 	 * 
@@ -60,13 +46,6 @@ class fResult implements Iterator
 	private $result = NULL;
 	
 	/**
-	 * The number of rows returned by a select
-	 * 
-	 * @var integer 
-	 */
-	private $returned_rows = 0;
-	
-	/**
 	 * The sql query
 	 * 
 	 * @var string 
@@ -86,30 +65,32 @@ class fResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
-	 * @return fResult
+	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
+	 * @return fUnbufferedResult
 	 */
 	public function __construct($extension)
 	{
-		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
+		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');       
 		}
 		$this->extension = $extension; 
 	}
 	
-
+	
 	/**
-	 * Returns if there are any remaining rows
+	 * Frees up the result object
 	 * 
-	 * @return boolean  If there are remaining rows in the result
+	 * @internal
+	 * 
+	 * @return void
 	 */
-	public function areRemainingRows()
+	public function __destruct()
 	{
-		return $this->valid();
+		
 	}
 	
-	
+
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
@@ -120,40 +101,19 @@ class fResult implements Iterator
 	 */
 	public function current()
 	{
-		if(!$this->returned_rows) {
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
-		}
-		
-		if (!$this->valid()) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');    
-		}
-		
 		// Primes the result set
 		if ($this->pointer === NULL) {
 			$this->pointer = 0;
 			$this->advanceCurrentRow();
 		}
 		
-		return $this->current_row;
-	}
-	
-	
-	/**
-	 * Returns all of the rows from the result set
-	 * 
-	 * @return array  The array of rows
-	 */
-	public function fetchAllRows()
-	{
-		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'It is not possible to fetch all rows from a result if at least one row has already been returned');    
+		if(!$this->current_row && $this->pointer == 0) {
+			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+		} elseif (!$this->current_row) {
+			fCore::toss('fProgrammerException', 'There are no remaining rows');    
 		}
 		
-		$all_rows = array();
-		foreach ($this as $row) {
-			$all_rows[] = $row;
-		}	
-		return $all_rows;
+		return $this->current_row;
 	}
 	
 	
@@ -166,12 +126,18 @@ class fResult implements Iterator
 	{
 		if ($this->extension == 'mssql') {
 			$row = mssql_fetch_assoc($this->result);
-			$row = $this->fixDblibMssqlDriver($row);	
-			
-			// This is an unfortunate fix that required for databases that don't support limit
-			// clauses with an offset. It prevents unrequested columns from being returned.
-			if ($this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
-				unset($row['__flourish_limit_offset_row_num']);	
+			if (empty($row)) {
+				mssql_fetch_batch($this->result);
+				$row = mssql_fetch_assoc($this->result);	
+			}
+			if (!empty($row)) {
+				$row = $this->fixDblibMssqlDriver($row);
+				
+				// This is an unfortunate fix that required for databases that don't support limit
+				// clauses with an offset. It prevents unrequested columns from being returned.
+				if (!empty($row) && $this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
+					unset($row['__flourish_limit_offset_row_num']);	
+				}	
 			}
 				
 		} elseif ($this->extension == 'mysql') {
@@ -182,9 +148,9 @@ class fResult implements Iterator
 			$row = pg_fetch_assoc($this->result);   
 		} elseif ($this->extension == 'sqlite') {
 			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);	
-		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
-			$row = $this->result[$this->pointer];	
-		}	
+		} elseif ($this->extension == 'pdo') {
+			$row = $this->result->fetch(PDO::FETCH_ASSOC);	
+		}
 		
 		$this->current_row = $row;
 	}
@@ -202,20 +168,6 @@ class fResult implements Iterator
 		$row = $this->current();
 		$this->next();	
 		return $row;   
-	}
-	
-	
-	/**
-	 * Wraps around {@link fetchRow()} and returns the first field from the row instead of the whole row.
-	 * 
-	 * @throws  fNoResultsException
-	 * 
-	 * @return string|number  The first scalar value from {@link fetchRow()}
-	 */
-	public function fetchScalar()
-	{
-		$row = $this->fetchRow();
-		return array_shift($row);  
 	}
 	
 	
@@ -268,39 +220,6 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Returns the number of rows affected by the query
-	 * 
-	 * @return integer  The number of rows affected by the query
-	 */
-	public function getAffectedRows()
-	{
-		return $this->affected_rows;   
-	}
-	
-	
-	/**
-	 * Returns the last auto incremented value for this database connection. This may or may not be from the current query.
-	 * 
-	 * @return integer  The auto incremented value
-	 */
-	public function getAutoIncrementedValue()
-	{
-		return $this->auto_incremented_value;   
-	}
-	
-	
-	/**
-	 * Returns the current position of the pointer in the result set
-	 * 
-	 * @return integer  The current position of the pointer in the result set
-	 */
-	public function getPointer()
-	{
-		return $this->pointer;   
-	}
-	
-	
-	/**
 	 * Returns the result
 	 * 
 	 * @return mixed  The result of the query
@@ -308,17 +227,6 @@ class fResult implements Iterator
 	public function getResult()
 	{
 		return $this->result;   
-	}
-	
-	
-	/**
-	 * Returns the number of rows returned by the query
-	 * 
-	 * @return integer  The number of rows returned by the query
-	 */
-	public function getReturnedRows()
-	{
-		return $this->returned_rows;   
 	}
 	
 	
@@ -376,13 +284,8 @@ class fResult implements Iterator
 			$this->current();	
 		}
 		
+		$this->advanceCurrentRow();
 		$this->pointer++;
-		
-		if ($this->valid()) {
-			$this->advanceCurrentRow();
-		} else {
-			$this->current_row = NULL;
-		}
 	}
 	
 	
@@ -402,34 +305,6 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Sets the number of affected rows
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $affected_rows  The number of affected rows
-	 * @return void
-	 */
-	public function setAffectedRows($affected_rows)
-	{
-		$this->affected_rows = (int) $affected_rows;   
-	}
-	
-	
-	/**
-	 * Sets the auto incremented value
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $auto_incremented_value  The auto incremented value
-	 * @return void
-	 */
-	public function setAutoIncrementedValue($auto_incremented_value)
-	{
-		$this->auto_incremented_value = ($auto_incremented_value == 0) ? NULL : $auto_incremented_value;   
-	}
-	
-	
-	/**
 	 * Sets the result from the query
 	 * 
 	 * @internal
@@ -440,23 +315,6 @@ class fResult implements Iterator
 	public function setResult($result)
 	{
 		$this->result = $result; 
-	}
-	
-	
-	/**
-	 * Sets the number of rows returned
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $returned_rows  The number of rows returned
-	 * @return void
-	 */
-	public function setReturnedRows($returned_rows)
-	{
-		$this->returned_rows = (int) $returned_rows;
-		if ($this->returned_rows) {
-			$this->affected_rows = 0;
-		}   
 	}
 	
 	
@@ -497,9 +355,7 @@ class fResult implements Iterator
 	 */
 	public function tossIfNoResults()
 	{
-		if (empty($this->returned_rows) && empty($this->affected_rows)) {
-			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
-		}
+		$this->current();
 	}   
 
 	
@@ -512,15 +368,16 @@ class fResult implements Iterator
 	 */
 	public function valid()
 	{
-		if (!$this->returned_rows) {
+		if (!$this->return_rows) {
 			return FALSE;	
 		}
 		
 		if ($this->pointer === NULL) {
-			return TRUE;
+			$this->advanceCurrentRow();
+			$this->pointer = 0;
 		}
 		
-		return ($this->pointer < $this->returned_rows);
+		return !empty($this->current_row);
 	}
 }
 

@@ -16,15 +16,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fURL
-{
-	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fURL
-	 */
-	private function __construct() { }
-	
-	
+{	
 	/**
 	 * Returns the requested url, does no include the domain name or query string
 	 * 
@@ -33,6 +25,17 @@ class fURL
 	static public function get()
 	{
 		return str_replace('?' . $_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI']);
+	}
+	
+	
+	/**
+	 * Returns the current domain name, with protcol prefix
+	 * 
+	 * @return string  The current domain name (with protocol prefix)
+	 */
+	static public function getDomain()
+	{
+		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];    
 	}
 	
 	
@@ -59,13 +62,50 @@ class fURL
 	
 	
 	/**
-	 * Returns the current domain name, with protcol prefix
+	 * Changes a string into a URL-friendly string
 	 * 
-	 * @return string  The current domain name (with protocol prefix)
+	 * @param  string $string  The string to convert
+	 * @return void
 	 */
-	static public function getDomain()
+	static public function makeFriendly($string)
 	{
-		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];    
+		$string = fHTML::decodeEntities(fHTML::unaccent($string));
+		$string = preg_replace('#[^a-zA-Z -]#', ' ', $string);
+		return preg_replace('#\s+#', '_', trim($string));
+	}
+	
+	
+	/**
+	 * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
+	 * 
+	 * @param  string $url  The url to redirect to
+	 * @return void
+	 */
+	static public function redirect($url)
+	{
+		if (strpos($url, '/') === 0) {
+			$url = self::getDomain() . $url;   
+		} elseif (!preg_match('#^https?://#i')) {
+			$url = self::getDomain() . self::get() . $url;	
+		}
+		header('Location: ' . $url);
+		exit($url);
+	}
+	
+	
+	/**
+	 * Removes one or more key/fields from the query string, pass as many key names as you want
+	 * 
+	 * @param  string $key,...  A key/field to remove from the query string
+	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
+	 */
+	static public function removeFromQueryString()
+	{
+		$keys = func_get_args();
+		for ($i=0; $i < sizeof($keys); $i++) {
+			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';    
+		}
+		return '?' . substr(preg_replace($keys, '', $qs), 1);           
 	}
 	
 	
@@ -99,52 +139,13 @@ class fURL
 	
 	
 	/**
-	 * Removes one or more key/fields from the query string, pass as many key names as you want
+	 * Forces use as a static class
 	 * 
-	 * @param  string $key,...  A key/field to remove from the query string
-	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
+	 * @return fURL
 	 */
-	static public function removeFromQueryString()
-	{
-		$keys = func_get_args();
-		for ($i=0; $i < sizeof($keys); $i++) {
-			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';    
-		}
-		return '?' . substr(preg_replace($keys, '', $qs), 1);           
-	}
-		
-	
-	/**
-	 * Changes a string into a URL-friendly string
-	 * 
-	 * @param  string $string  The string to convert
-	 * @return void
-	 */
-	static public function makeFriendly($string)
-	{
-		$string = fHTML::decodeEntities(fHTML::unaccent($string));
-		$string = preg_replace('#[^a-zA-Z -]#', ' ', $string);
-		return preg_replace('#\s+#', '_', trim($string));
-	}
-	
-	
-	/**
-	 * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
-	 * 
-	 * @param  string $url  The url to redirect to
-	 * @return void
-	 */
-	static public function redirect($url)
-	{
-		if (strpos($url, '/') === 0) {
-			$url = self::getDomain() . $url;   
-		} elseif (!preg_match('#^https?://#i')) {
-			$url = self::getDomain() . self::get() . $url;	
-		}
-		header('Location: ' . $url);
-		exit($url);
-	}
+	private function __construct() { }
 } 
+
 
 
 /**
@@ -167,5 +168,4 @@ class fURL
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

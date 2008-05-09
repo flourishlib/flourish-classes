@@ -15,15 +15,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2008-03-05]
  */
 class fMessaging
-{
-	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fMessaging
-	 */
-	private function __construct() { }
-	
-	
+{	
 	/**
 	 * Creates a message that is stored in the session and retrieved by another page
 	 * 
@@ -73,7 +65,16 @@ class fMessaging
 			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
 		}
 	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fMessaging
+	 */
+	private function __construct() { }
 }
+
 
 
 /**
@@ -96,5 +97,4 @@ class fMessaging
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

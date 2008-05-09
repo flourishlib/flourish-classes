@@ -19,6 +19,13 @@
 class fTemplating
 {
 	/**
+	 * The buffered object id, used for differentiating different instances when doing replacements
+	 * 
+	 * @var integer 
+	 */
+	private $buffered_id;
+	
+	/**
 	 * A data store for templating
 	 * 
 	 * @var array 
@@ -31,13 +38,6 @@ class fTemplating
 	 * @var string 
 	 */
 	private $root;
-	
-	/**
-	 * The buffered object id, used for differentiating different instances when doing replacements
-	 * 
-	 * @var integer 
-	 */
-	private $buffered_id;
 	
 	
 	/**
@@ -70,6 +70,41 @@ class fTemplating
 	
 	
 	/**
+	 * Finishing placing elements if buffering was used
+	 * 
+	 * @return void
+	 */
+	public function __destruct()
+	{
+		// The __destruct method can't throw unhandled exceptions intelligently, so we will always catch here just in case
+		try {
+			$this->placeBuffered();
+		} catch (Exception $e) {
+			fCore::handleException($e);	
+		}
+	}
+	
+	
+	/**
+	 * Adds a value to an array element
+	 * 
+	 * @param  string $element   The element to add to
+	 * @param  mixed  $value     The value to add
+	 * @return void
+	 */
+	public function add($element, $value)
+	{
+		if (!isset($this->elements[$element])) {
+			$this->elements[$element] = array();	
+		}
+		if (!is_array($this->elements[$element])) {
+			fCore::toss('fProgrammerException', 'add() was called for an element, ' . $element . ', which is not an array'); 		
+		}
+		$this->elements[$element][] = $value;	
+	}
+	
+	
+	/**
 	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before.
 	 * 
 	 * Please note that using buffered output will affect the order in which code is executed
@@ -98,38 +133,6 @@ class fTemplating
 	
 	
 	/**
-	 * Sets the value for an element
-	 * 
-	 * @param  string $element   The element to set
-	 * @param  mixed  $value     The value for the element
-	 * @return void
-	 */
-	public function set($element, $value)
-	{
-		$this->elements[$element] = $value;	
-	}
-	
-	
-	/**
-	 * Adds a value to an array element
-	 * 
-	 * @param  string $element   The element to add to
-	 * @param  mixed  $value     The value to add
-	 * @return void
-	 */
-	public function add($element, $value)
-	{
-		if (!isset($this->elements[$element])) {
-			$this->elements[$element] = array();	
-		}
-		if (!is_array($this->elements[$element])) {
-			fCore::toss('fProgrammerException', 'add() was called for an element, ' . $element . ', which is not an array'); 		
-		}
-		$this->elements[$element][] = $value;	
-	}
-	
-	
-	/**
 	 * Gets the value of an element
 	 * 
 	 * @param  string $element        The element to get
@@ -139,19 +142,6 @@ class fTemplating
 	public function get($element, $default_value=NULL)
 	{
 		return (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;	
-	}
-	
-	
-	/**
-	 * Gets the value of an element and runs it through {@link fHTML::prepare()}
-	 * 
-	 * @param  string $element        The element to get
-	 * @param  mixed  $default_value  The value to return if the element has not been set
-	 * @return mixed  The value of the element specified run through {@link fHTML::prepare()}, or the default value if it has not been set
-	 */
-	public function prepare($element, $default_value=NULL)
-	{
-		return fHTML::prepare($this->get($element, $default_value));	
 	}
 	
 	
@@ -186,7 +176,7 @@ class fTemplating
 	public function place($element)
 	{
 		if (!isset($this->elements[$element])) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has not been set');       
+			return;       
 		}
 		
 		// Put in a buffered placeholder
@@ -196,6 +186,26 @@ class fTemplating
 		}
 		
 		$this->placeElement($element);
+	}
+	
+	
+	/**
+	 * Prints a CSS link html tag to the output
+	 * 
+	 * @param  mixed $info   The path or array containing the 'path' to the css file. Array can also contain a key 'media'.
+	 * @return void
+	 */
+	private function placeCSS($info)
+	{
+		if (!is_array($info)) {
+			$info = array('path'  => $info);	
+		}
+		
+		if (!isset($info['media'])) {
+			$info['media'] = 'all';	
+		}
+		
+		echo '<link rel="stylesheet" type="text/css" href="' . $info['path'] . '" media="' . $info['media'] . '" />' . "\n";
 	}
 	
 	
@@ -233,54 +243,6 @@ class fTemplating
 					break;
 			}
 		}	
-	}
-	
-	
-	/**
-	 * Ensures the value is valid
-	 * 
-	 * @param  string $element  The element that is being placed
-	 * @param  mixed $value     A value to be placed
-	 * @return string  The file extension of the value being placed
-	 */
-	private function verifyValue($element, $value)
-	{
-		if (empty($value)) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');	
-		}
-		
-		if (is_array($value) && !isset($value['path'])) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value, ' . fCore::dump($value) . ', that is missing the path key');	
-		}
-		
-		$path = (is_array($value)) ? $value['path'] : $value;
-		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-		
-		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .js, .php or .rss file'); 			
-		}
-		
-		return $extension;
-	}
-	
-	
-	/**
-	 * Prints a CSS link html tag to the output
-	 * 
-	 * @param  mixed $info   The path or array containing the 'path' to the css file. Array can also contain a key 'media'.
-	 * @return void
-	 */
-	private function placeCSS($info)
-	{
-		if (!is_array($info)) {
-			$info = array('path'  => $info);	
-		}
-		
-		if (!isset($info['media'])) {
-			$info['media'] = 'all';	
-		}
-		
-		echo '<link rel="stylesheet" type="text/css" href="' . $info['path'] . '" media="' . $info['media'] . '" />' . "\n";
 	}
 	
 	
@@ -380,20 +342,59 @@ class fTemplating
 	
 	
 	/**
-	 * Finishing placing elements if buffering was used
+	 * Gets the value of an element and runs it through {@link fHTML::prepare()}
 	 * 
+	 * @param  string $element        The element to get
+	 * @param  mixed  $default_value  The value to return if the element has not been set
+	 * @return mixed  The value of the element specified run through {@link fHTML::prepare()}, or the default value if it has not been set
+	 */
+	public function prepare($element, $default_value=NULL)
+	{
+		return fHTML::prepare($this->get($element, $default_value));	
+	}
+	
+	
+	/**
+	 * Sets the value for an element
+	 * 
+	 * @param  string $element   The element to set
+	 * @param  mixed  $value     The value for the element
 	 * @return void
 	 */
-	public function __destruct()
+	public function set($element, $value)
 	{
-		// The __destruct method can't throw unhandled exceptions intelligently, so we will always catch here just in case
-		try {
-			$this->placeBuffered();
-		} catch (Exception $e) {
-			fCore::handleException($e);	
+		$this->elements[$element] = $value;	
+	}
+	
+	
+	/**
+	 * Ensures the value is valid
+	 * 
+	 * @param  string $element  The element that is being placed
+	 * @param  mixed $value     A value to be placed
+	 * @return string  The file extension of the value being placed
+	 */
+	private function verifyValue($element, $value)
+	{
+		if (empty($value)) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');	
 		}
+		
+		if (is_array($value) && !isset($value['path'])) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value, ' . fCore::dump($value) . ', that is missing the path key');	
+		}
+		
+		$path = (is_array($value)) ? $value['path'] : $value;
+		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+		
+		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .js, .php or .rss file'); 			
+		}
+		
+		return $extension;
 	}
 }
+
 
 
 /**
@@ -416,5 +417,4 @@ class fTemplating
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */

@@ -19,75 +19,78 @@
 class fSQLParsing
 {
 	/**
-	 * Takes a Flourish SQL SELECT query and parses it into clauses.
-	 * 
-	 * The select statement must be of the format:
-	 * 
-	 * SELECT [ table_name. | alias. ]*
-	 * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
-	 * [ WHERE condition [ , condition ]... ]
-	 * [ GROUP BY conditions ]
-	 * [ HAVING conditions ]
-	 * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
-	 * [ LIMIT integer [ OFFSET integer ] ]
-	 * 
-	 * The returned array will contain the following keys, which may have a NULL or non-empty string value:
-	 *  - 'SELECT'
-	 *  - 'FROM'
-	 *  - 'WHERE'
-	 *  - 'GROUP BY'
-	 *  - 'HAVING'
-	 *  - 'ORDER BY'
-	 *  - 'LIMIT'
+	 * Checks to see if the second table is a join table for the first table
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $sql   The sql to parse
-	 * @return array  The various clauses of the SELECT statement (see method descript for details)
+	 * @param  string $first_table   This table will be used as a basis to see if the second table is a join table
+	 * @param  string $second_table  This table will be checked against the first table to see if it is a join table
+	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
+	 * @return mixed  Will be FALSE if the second table is not a join table for the first table, or a many-to-many relationship array if it is 
 	 */
-	public function parseSelectSQL($sql)
+	static private function checkForJoinTable($first_table, $second_table, fISchema $schema)
 	{
-		// Split the strings out of the sql so parsing doesn't get messed up by quoted values
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
-		
-		$possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
-		$found_clauses    = array();
-		foreach ($possible_clauses as $possible_clause) {
-			$found_clauses[$possible_clause] = NULL;   
+		if ($schema === NULL) {
+			return FALSE;	
 		}
 		
-		$current_clause = 0;
+		$relationships = $schema->getRelationships($first_table, 'many-to-many');
 		
-		foreach ($matches[0] as $match) {
-			// This is a quoted string value, don't do anything to it
-			if ($match[0] == "'") {
-				$found_clauses[$possible_clauses[$current_clause]] .= $match;    
-			
-			// Non-quoted strings should be checked for clause markers
-			} else {
-				
-				// Look to see if a new clause starts in this string
-				$i = 1;
-				while ($current_clause+$i < sizeof($possible_clauses)) {
-					// If the next clause is found in this string
-					if (stripos($match, $possible_clauses[$current_clause+$i]) !== FALSE) {
-						list($before, $after) = preg_split('#\s*' . $possible_clauses[$current_clause+$i] . '\s*#i', $match);
-						$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $before);
-						$match = $after;
-						$current_clause = $current_clause + $i;
-						$i = 0;
-					}  
-					$i++;      
-				}
-				
-				// Otherwise just add on to the current clause
-				if (!empty($match)) {
-					$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
-				}  
-			}
-		}  
+		foreach ($relationships as $relationship) {
+			if ($relationship['join_table'] == $second_table) {
+				return $relationship;
+			}	
+		}
 		
-		return $found_clauses; 
+		return FALSE;
+	}
+	
+	
+	/**
+	 * Creates a unique join table for the prefix specified
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $prefix   The join name prefix to use
+	 * @param  array $joins     The current joins
+	 * @return string   A unique join name for the prefix specified
+	 */
+	static private function createJoinName($prefix, $joins)
+	{
+		$i = 1;
+		while (isset($joins[$prefix . $i])) {
+			$i++;	
+		}	
+		return $prefix . $i;
+	}   
+	
+	
+	/**
+	 * Changes the route name if the route is for a one-to-many relationship
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $route         The current route name we have determined
+	 * @param  string $first_table   This table will be checked for one-to-many relationships
+	 * @param  string $second_table  This table will be checked to see if it is on the many end of a one-to-many relationships with $first_table
+	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
+	 * @return string  Will return the current route if not in a one-to-many relationship, or the new route name if it is
+	 */
+	static private function fixRouteName($route, $first_table, $second_table, fISchema $schema)
+	{
+		if ($schema === NULL) {
+			return $route;	
+		}
+		
+		$relationships = $schema->getRelationships($first_table, 'one-to-many');
+		
+		foreach ($relationships as $relationship) {
+			if ($relationship['related_table'] == $second_table) {
+				return $relationship['related_column'];
+			}	
+		}
+		
+		return $route;
 	}
 	
 	
@@ -242,78 +245,75 @@ class fSQLParsing
 	
 	
 	/**
-	 * Checks to see if the second table is a join table for the first table
+	 * Takes a Flourish SQL SELECT query and parses it into clauses.
+	 * 
+	 * The select statement must be of the format:
+	 * 
+	 * SELECT [ table_name. | alias. ]*
+	 * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
+	 * [ WHERE condition [ , condition ]... ]
+	 * [ GROUP BY conditions ]
+	 * [ HAVING conditions ]
+	 * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
+	 * [ LIMIT integer [ OFFSET integer ] ]
+	 * 
+	 * The returned array will contain the following keys, which may have a NULL or non-empty string value:
+	 *  - 'SELECT'
+	 *  - 'FROM'
+	 *  - 'WHERE'
+	 *  - 'GROUP BY'
+	 *  - 'HAVING'
+	 *  - 'ORDER BY'
+	 *  - 'LIMIT'
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $first_table   This table will be used as a basis to see if the second table is a join table
-	 * @param  string $second_table  This table will be checked against the first table to see if it is a join table
-	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
-	 * @return mixed  Will be FALSE if the second table is not a join table for the first table, or a many-to-many relationship array if it is 
+	 * @param  string $sql   The sql to parse
+	 * @return array  The various clauses of the SELECT statement (see method descript for details)
 	 */
-	static private function checkForJoinTable($first_table, $second_table, fISchema $schema)
+	public function parseSelectSQL($sql)
 	{
-		if ($schema === NULL) {
-			return FALSE;	
+		// Split the strings out of the sql so parsing doesn't get messed up by quoted values
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		
+		$possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
+		$found_clauses    = array();
+		foreach ($possible_clauses as $possible_clause) {
+			$found_clauses[$possible_clause] = NULL;   
 		}
 		
-		$relationships = $schema->getRelationships($first_table, 'many-to-many');
+		$current_clause = 0;
 		
-		foreach ($relationships as $relationship) {
-			if ($relationship['join_table'] == $second_table) {
-				return $relationship;
-			}	
-		}
+		foreach ($matches[0] as $match) {
+			// This is a quoted string value, don't do anything to it
+			if ($match[0] == "'") {
+				$found_clauses[$possible_clauses[$current_clause]] .= $match;    
+			
+			// Non-quoted strings should be checked for clause markers
+			} else {
+				
+				// Look to see if a new clause starts in this string
+				$i = 1;
+				while ($current_clause+$i < sizeof($possible_clauses)) {
+					// If the next clause is found in this string
+					if (stripos($match, $possible_clauses[$current_clause+$i]) !== FALSE) {
+						list($before, $after) = preg_split('#\s*' . $possible_clauses[$current_clause+$i] . '\s*#i', $match);
+						$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $before);
+						$match = $after;
+						$current_clause = $current_clause + $i;
+						$i = 0;
+					}  
+					$i++;      
+				}
+				
+				// Otherwise just add on to the current clause
+				if (!empty($match)) {
+					$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
+				}  
+			}
+		}  
 		
-		return FALSE;
-	}
-	
-	
-	/**
-	 * Changes the route name if the route is for a one-to-many relationship
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $route         The current route name we have determined
-	 * @param  string $first_table   This table will be checked for one-to-many relationships
-	 * @param  string $second_table  This table will be checked to see if it is on the many end of a one-to-many relationships with $first_table
-	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
-	 * @return string  Will return the current route if not in a one-to-many relationship, or the new route name if it is
-	 */
-	static private function fixRouteName($route, $first_table, $second_table, fISchema $schema)
-	{
-		if ($schema === NULL) {
-			return $route;	
-		}
-		
-		$relationships = $schema->getRelationships($first_table, 'one-to-many');
-		
-		foreach ($relationships as $relationship) {
-			if ($relationship['related_table'] == $second_table) {
-				return $relationship['related_column'];
-			}	
-		}
-		
-		return $route;
-	}
-	
-	
-	/**
-	 * Creates a unique join table for the prefix specified
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $prefix   The join name prefix to use
-	 * @param  array $joins     The current joins
-	 * @return string   A unique join name for the prefix specified
-	 */
-	static private function createJoinName($prefix, $joins)
-	{
-		$i = 1;
-		while (isset($joins[$prefix . $i])) {
-			$i++;	
-		}	
-		return $prefix . $i;
+		return $found_clauses; 
 	}
 	
 		
@@ -340,6 +340,7 @@ class fSQLParsing
 } 
 
 
+
 /**
  * Copyright (c) 2008 William Bond <will@flourishlib.com>
  * 
@@ -360,5 +361,4 @@ class fSQLParsing
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

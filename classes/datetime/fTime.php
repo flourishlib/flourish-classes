@@ -57,42 +57,45 @@ class fTime
 	
 	
 	/**
-	 * Changes the time to the time specified. Any parameters that are NULL are ignored.
+	 * Changes the time by the adjustment specified, only asjustments of 'hours', 'minutes', 'seconds' are allowed
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  integer $hour    The hour to change to
-	 * @param  integer $minute  The minute to change to
-	 * @param  integer $second  The second to change to
+	 * @param  string $adjustment  The adjustment to make
 	 * @return void
 	 */
-	public function setTime($hour, $minute, $second)
+	public function adjust($adjustment)
 	{
-		$hour   = ($hour === NULL)   ? date('H', $this->time) : $hour;
-		$minute = ($minute === NULL) ? date('i', $this->time) : $minute;
-		$second = ($second === NULL) ? date('s', $this->time) : $second;
+		$time = $this->makeAdustment($adjustment, $this->time);
+		$this->set($time);
+	}
+	
+	
+	/**
+	 * Formats the time, with an optional adjustment
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @param  string $adjustment  A temporary adjustment to make
+	 * @return string  The formatted (and possibly adjusted) time
+	 */
+	public function format($format, $adjustment=NULL)
+	{
+		$format = fTimestamp::translateFormat($format);
 		
-		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
-			fCore::toss('fValidationException', 'The hour specified, ' . $hour . ', does not appear to be a valid hour'); 				
-		}
-		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
-			fCore::toss('fValidationException', 'The minute specified, ' . $minute . ', does not appear to be a valid minute'); 				
-		}
-		if (!is_numeric($second) || $second < 0 || $second > 59) {
-			fCore::toss('fValidationException', 'The second specified, ' . $second . ', does not appear to be a valid second'); 				
+		$restricted_formats = 'cdDeFIjlLmMnNoOPrStTUwWyYzZ';
+		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
+			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-time formatting characters: ' . join(', ', str_split($restricted_formats)));	
 		}
 		
-		settype($minute, 'integer');
-		settype($second, 'integer');
+		$time = $this->time;
 		
-		if ($minute < 10) { $minute = '0' . $minute; }
-		if ($second < 10) { $second = '0' . $second; }
-		
-		$parsed = strtotime($hour . ':' . $minute . ':' . $second);
-		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time'); 		
+		if ($adjustment) {
+			$time = $this->makeAdjustment($adjustment, $time);
 		}
-		$this->set($parsed); 
+		
+		return date($format, $time);
 	}
 	
 	
@@ -180,49 +183,6 @@ class fTime
 	
 	
 	/**
-	 * Changes the time by the adjustment specified, only asjustments of 'hours', 'minutes', 'seconds' are allowed
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @return void
-	 */
-	public function adjust($adjustment)
-	{
-		$time = $this->makeAdustment($adjustment, $this->time);
-		$this->set($time);
-	}
-	
-	
-	/**
-	 * Formats the time, with an optional adjustment
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
-	 * @param  string $adjustment  A temporary adjustment to make
-	 * @return string  The formatted (and possibly adjusted) time
-	 */
-	public function format($format, $adjustment=NULL)
-	{
-		$format = fTimestamp::translateFormat($format);
-		
-		$restricted_formats = 'cdDeFIjlLmMnNoOPrStTUwWyYzZ';
-		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-time formatting characters: ' . join(', ', str_split($restricted_formats)));	
-		}
-		
-		$time = $this->time;
-		
-		if ($adjustment) {
-			$time = $this->makeAdjustment($adjustment, $time);
-		}
-		
-		return date($format, $time);
-	}
-	
-	
-	/**
 	 * Makes an adjustment, returning the adjusted time
 	 * 
 	 * @throws fValidationException
@@ -257,7 +217,48 @@ class fTime
 	{
 		$this->time = strtotime(date('1970-01-01 H:i:s', $timestamp));   
 	}
+	
+	
+	/**
+	 * Changes the time to the time specified. Any parameters that are NULL are ignored.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  integer $hour    The hour to change to
+	 * @param  integer $minute  The minute to change to
+	 * @param  integer $second  The second to change to
+	 * @return void
+	 */
+	public function setTime($hour, $minute, $second)
+	{
+		$hour   = ($hour === NULL)   ? date('H', $this->time) : $hour;
+		$minute = ($minute === NULL) ? date('i', $this->time) : $minute;
+		$second = ($second === NULL) ? date('s', $this->time) : $second;
+		
+		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
+			fCore::toss('fValidationException', 'The hour specified, ' . $hour . ', does not appear to be a valid hour'); 				
+		}
+		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
+			fCore::toss('fValidationException', 'The minute specified, ' . $minute . ', does not appear to be a valid minute'); 				
+		}
+		if (!is_numeric($second) || $second < 0 || $second > 59) {
+			fCore::toss('fValidationException', 'The second specified, ' . $second . ', does not appear to be a valid second'); 				
+		}
+		
+		settype($minute, 'integer');
+		settype($second, 'integer');
+		
+		if ($minute < 10) { $minute = '0' . $minute; }
+		if ($second < 10) { $second = '0' . $second; }
+		
+		$parsed = strtotime($hour . ':' . $minute . ':' . $second);
+		if ($parsed === FALSE || $parsed === -1) {
+			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time'); 		
+		}
+		$this->set($parsed); 
+	}
 }
+
 
 
 /**
@@ -280,5 +281,4 @@ class fTime
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */ 
-?>
+ */

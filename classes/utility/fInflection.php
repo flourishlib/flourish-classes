@@ -17,30 +17,26 @@
 class fInflection
 {
 	/**
-	 * Rules for singular to plural inflection of nouns
+	 * A listing of words that should be converted to all capital letters, instead of just the first letter
 	 * 
 	 * @var array 
 	 */
-	static private $singular_to_plural_rules = array(
-		'^(p)hoto$'    => '\1hotos',
-		'^(l)ogo$'     => '\1ogos',
-		'^(n)ews$'     => '\1ews',
-		'^(q)uiz$'     => '\1uizzes',
-		'^(c)hild$'    => '\1hildren',
-		'^(p)erson$'   => '\1eople',
-		'(m)an$'       => '\1en',
-		'([csx])is$'   => '\1es',
-		'([cs]h)$'     => '\1es',
-		'(ss)$'        => '\1es',
-		'([aeo]l)f$'   => '\1ves',
-		'([^d]ea)f$'   => '\1ves',
-		'(ar)f$'       => '\1ves',
-		'([nlw]i)fe$'  => '\1ves',
-		'([aeiou]y)$'  => '\1s',
-		'([^aeiou])y$' => '\1ies',
-		'(x)$'         => '\1es',
-		'(s)$'         => '\1es',
-		'(.)$'         => '\1s'
+	static private $all_capitals_words = array(
+		'api',
+		'css',
+		'gif',
+		'html',
+		'id',
+		'jpg',
+		'mp3',
+		'pdf',
+		'php',
+		'png',
+		'sql',
+		'swf',
+		'url',
+		'xhtml',
+		'xml'
 	);
 	
 	/**
@@ -71,35 +67,88 @@ class fInflection
 	);
 	
 	/**
-	 * A listing of words that should be converted to all capital letters, instead of just the first letter
+	 * Rules for singular to plural inflection of nouns
 	 * 
 	 * @var array 
 	 */
-	static private $all_capitals_words = array(
-		'api',
-		'css',
-		'gif',
-		'html',
-		'id',
-		'jpg',
-		'mp3',
-		'pdf',
-		'php',
-		'png',
-		'sql',
-		'swf',
-		'url',
-		'xhtml',
-		'xml'
+	static private $singular_to_plural_rules = array(
+		'^(p)hoto$'    => '\1hotos',
+		'^(l)ogo$'     => '\1ogos',
+		'^(n)ews$'     => '\1ews',
+		'^(q)uiz$'     => '\1uizzes',
+		'^(c)hild$'    => '\1hildren',
+		'^(p)erson$'   => '\1eople',
+		'(m)an$'       => '\1en',
+		'([csx])is$'   => '\1es',
+		'([cs]h)$'     => '\1es',
+		'(ss)$'        => '\1es',
+		'([aeo]l)f$'   => '\1ves',
+		'([^d]ea)f$'   => '\1ves',
+		'(ar)f$'       => '\1ves',
+		'([nlw]i)fe$'  => '\1ves',
+		'([aeiou]y)$'  => '\1s',
+		'([^aeiou])y$' => '\1ies',
+		'(x)$'         => '\1es',
+		'(s)$'         => '\1es',
+		'(.)$'         => '\1s'
 	);
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Adds a word to the list of all capital letters words, which is used by {@link fInflection::humanize()} to produce more gramatically correct results
 	 * 
-	 * @return fInflection
+	 * @param  string $word   The word that should be in all caps when printed
+	 * @return void
 	 */
-	private function __construct() { }
+	static public function addAllCapitalsWord($word)
+	{
+		self::$all_capitals_words[] = strtolower($word);	
+	}
+	
+	
+	/**
+	 * Adds a custom singular->plural and plural->singular rule
+	 * 
+	 * @param  string $singular  The singular version of the noun
+	 * @param  string $plural    The plural version of the noun
+	 * @return void
+	 */
+	static public function addSingularPluralRule($singular, $plural)
+	{
+		self::$singular_to_plural_rules = array_merge(array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
+													  self::$singular_to_plural_rules);
+		self::$plural_to_singular_rules = array_merge(array('^(' . $plural[0] . ')' . substr($plural, 1) . '$' => '\1' . substr($singular, 1)),
+													  self::$plural_to_singular_rules);
+	}
+	
+	
+	/**
+	 * Converts an underscore notation string to camelCase
+	 * 
+	 * @param  string $string   The string to convert          
+	 * @param  boolean $upper   If the camel case should be upper camel case
+	 * @return string  The converted string
+	 */
+	static public function camelize($string, $upper)
+	{
+		$string = strtolower($string);
+		if ($upper) {
+			$string = strtoupper($string[0]) . substr($string, 1);    
+		}
+		return preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
+	}  
+	
+	
+	/**
+	 * Makes an underscore notation string into a human-friendly string
+	 * 
+	 * @param  string $string   The string to humanize
+	 * @return string  The converted string
+	 */
+	static public function humanize($string)
+	{
+		return preg_replace('/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
+	} 
 	
 	
 	/**
@@ -113,13 +162,13 @@ class fInflection
 	 */
 	static public function inflectOnQuantity($quantity, $singular_form, $plural_form, $use_words_for_single_digits=FALSE)
 	{
-	 	if (is_array($quantity)) {
-	 		$quantity = sizeof($quantity);
+		if (is_array($quantity)) {
+			$quantity = sizeof($quantity);
 		} 
-	 	
-	 	if ($quantity == 1) {
-	 		return $singular_form;	
-	 		
+		
+		if ($quantity == 1) {
+			return $singular_form;	
+			
 		} else {
 			$output = $plural_form;
 			
@@ -158,26 +207,26 @@ class fInflection
 	 */
 	static public function joinTerms($terms)
 	{
-	 	settype($terms, 'array');
-	 	$terms = array_values($terms);
-	 	
-	 	switch (sizeof($terms)) {
-	 		case 0:
-	 			return '';
-	 			break;
-	 		
-	 		case 1:
-	 			return $terms[0];
-	 			break;
-	 		
-	 		case 2:
-	 			return $terms[0] . ' and ' . $terms[1];
-	 			break;
-	 			
-	 		default:
-	 			$last_term = array_pop($terms);
-	 			return join(', ', $terms) . ', and ' . $last_term;
-	 			break;	
+		settype($terms, 'array');
+		$terms = array_values($terms);
+		
+		switch (sizeof($terms)) {
+			case 0:
+				return '';
+				break;
+			
+			case 1:
+				return $terms[0];
+				break;
+			
+			case 2:
+				return $terms[0] . ' and ' . $terms[1];
+				break;
+				
+			default:
+				$last_term = array_pop($terms);
+				return join(', ', $terms) . ', and ' . $last_term;
+				break;	
 		}
 	}
 	
@@ -243,22 +292,6 @@ class fInflection
 		}
 		
 		return array('', $string); 
-	}
-	
-	
-	/**
-	 * Adds a custom singular->plural and plural->singular rule
-	 * 
-	 * @param  string $singular  The singular version of the noun
-	 * @param  string $plural    The plural version of the noun
-	 * @return void
-	 */
-	static public function addSingularPluralRule($singular, $plural)
-	{
-		self::$singular_to_plural_rules = array_merge(array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
-													  self::$singular_to_plural_rules);
-		self::$plural_to_singular_rules = array_merge(array('^(' . $plural[0] . ')' . substr($plural, 1) . '$' => '\1' . substr($singular, 1)),
-													  self::$plural_to_singular_rules);
 	}  
 	
 	
@@ -275,45 +308,13 @@ class fInflection
 	
 	
 	/**
-	 * Converts an underscore notation string to camelCase
+	 * Forces use as a static class
 	 * 
-	 * @param  string $string   The string to convert          
-	 * @param  boolean $upper   If the camel case should be upper camel case
-	 * @return string  The converted string
+	 * @return fInflection
 	 */
-	static public function camelize($string, $upper)
-	{
-		$string = strtolower($string);
-		if ($upper) {
-			$string = strtoupper($string[0]) . substr($string, 1);    
-		}
-		return preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
-	} 
-	
-	
-	/**
-	 * Makes an underscore notation string into a human-friendly string
-	 * 
-	 * @param  string $string   The string to humanize
-	 * @return string  The converted string
-	 */
-	static public function humanize($string)
-	{
-		return preg_replace('/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
-	}  
-	
-	
-	/**
-	 * Adds a word to the list of all capital letters words, which is used by {@link fInflection::humanize()} to produce more gramatically correct results
-	 * 
-	 * @param  string $word   The word that should be in all caps when printed
-	 * @return void
-	 */
-	static public function addAllCapitalsWord($word)
-	{
-	 	self::$all_capitals_words[] = strtolower($word);	
-	}  
+	private function __construct() { }
 }
+
 
 
 /**
@@ -336,5 +337,4 @@ class fInflection
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
- */  
-?>
+ */
