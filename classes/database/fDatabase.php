@@ -36,6 +36,7 @@
  * @uses  fSQLException
  * @uses  fSQLTranslation
  * @uses  fUnbufferedResult
+ * @uses  fValidationException
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
@@ -424,11 +425,16 @@ class fDatabase
 	/**
 	 * Escapes a date for insertion into the database
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped date
 	 */
 	public function escapeDate($value)
 	{
+		if (!strtotime($value)) {
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid date');	
+		}
 		return "'" . date('Y-m-d', strtotime($value)) . "'";
 	}
 	
@@ -460,11 +466,16 @@ class fDatabase
 	/**
 	 * Escapes a time for insertion into the database
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped time
 	 */
 	public function escapeTime($value)
 	{
+		if (!strtotime($value)) {
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid time');	
+		}
 		return "'" . date('H:i:s', strtotime($value)) . "'";
 	}
 	
@@ -472,11 +483,16 @@ class fDatabase
 	/**
 	 * Escapes a timestamp for insertion into the database
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $value  The value to escape 
 	 * @return string  The escaped timestamp
 	 */
 	public function escapeTimestamp($value)
 	{
+		if (!strtotime($value)) {
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid timestamp');	
+		}
 		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
 	}
 	
@@ -514,7 +530,9 @@ class fDatabase
 			$this->setAffectedRows($result);
 		} else {
 			$this->setAffectedRows($result, $pdo_statement); 
-		}
+			$pdo_statement->closeCursor();
+			unset($pdo_statement);
+		}     
 		
 		$this->setReturnedRows($result);
 		
@@ -585,12 +603,15 @@ class fDatabase
 							break;
 						}	
 					}
-					$sql_queries[] = $cur_sql;
+					$cur_sql = trim($cur_sql);
+					if ($cur_sql) {
+						$sql_queries[] = $cur_sql; 
+					}
 					$cur_sql = $sql_strings[$i];
 				}	
 			}
 		}	
-		if ($cur_sql) {
+		if (trim($cur_sql)) {
 			$sql_queries[] = $cur_sql; 
 		}
 		
@@ -846,7 +867,7 @@ class fDatabase
 		}
 		
 		if ($this->unbuffered_result) {
-			$this->unbuffered_result->destroy();	
+			$this->unbuffered_result->__destruct();	
 		}
 		
 		$result = new fUnbufferedResult($this->extension);

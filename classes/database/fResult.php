@@ -98,6 +98,35 @@ class fResult implements Iterator
 		$this->extension = $extension; 
 	}
 	
+	
+	/**
+	 * Frees up the result object to save memory
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function __destruct()
+	{
+		if (!is_resource($this->result) && !is_object($this->result)) {
+			return;	
+		}
+		
+		if ($this->extension == 'mssql') {
+			mssql_free_result($this->result);
+		} elseif ($this->extension == 'mysql') {
+			mysql_free_result($this->result);    
+		} elseif ($this->extension == 'mysqli') {
+			mysqli_free_result($this->result);    
+		} elseif ($this->extension == 'pgsql') {
+			pg_free_result($this->result); 
+		} elseif ($this->extension == 'sqlite') {
+			// Sqlite doesn't have a way to free a result
+		} elseif ($this->extension == 'pdo') {
+			// We have already buffered PDO results, so there is nothing to free
+		}	
+	}
+	
 
 	/**
 	 * Returns if there are any remaining rows

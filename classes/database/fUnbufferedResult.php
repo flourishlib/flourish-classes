@@ -87,33 +87,23 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function __destruct()
 	{
-		
-	}
-	
-
-	/**
-	 * Returns the current row in the result set (required by iterator interface)
-	 * 
-	 * @throws  fNoResultsException
-	 * @internal
-	 * 
-	 * @return array  The current Row
-	 */
-	public function current()
-	{
-		// Primes the result set
-		if ($this->pointer === NULL) {
-			$this->pointer = 0;
-			$this->advanceCurrentRow();
+		if (!is_resource($this->result) && !is_object($this->result)) {
+			return;	
 		}
 		
-		if(!$this->current_row && $this->pointer == 0) {
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
-		} elseif (!$this->current_row) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');    
-		}
-		
-		return $this->current_row;
+		if ($this->extension == 'mssql') {
+			mssql_free_result($this->result);
+		} elseif ($this->extension == 'mysql') {
+			mysql_free_result($this->result);    
+		} elseif ($this->extension == 'mysqli') {
+			mysqli_free_result($this->result);    
+		} elseif ($this->extension == 'pgsql') {
+			pg_free_result($this->result); 
+		} elseif ($this->extension == 'sqlite') {
+			sqlite_fetch_all($this->result);	
+		} elseif ($this->extension == 'pdo') {
+			$this->result->closeCursor();
+		}	
 	}
 	
 	
@@ -153,6 +143,32 @@ class fUnbufferedResult implements Iterator
 		}
 		
 		$this->current_row = $row;
+	}
+	
+
+	/**
+	 * Returns the current row in the result set (required by iterator interface)
+	 * 
+	 * @throws  fNoResultsException
+	 * @internal
+	 * 
+	 * @return array  The current Row
+	 */
+	public function current()
+	{
+		// Primes the result set
+		if ($this->pointer === NULL) {
+			$this->pointer = 0;
+			$this->advanceCurrentRow();
+		}
+		
+		if(!$this->current_row && $this->pointer == 0) {
+			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+		} elseif (!$this->current_row) {
+			fCore::toss('fProgrammerException', 'There are no remaining rows');    
+		}
+		
+		return $this->current_row;
 	}
 	
 	
