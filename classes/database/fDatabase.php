@@ -136,10 +136,10 @@ class fDatabase
 	 * 
 	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
 	 * @param  string  $database  Name (or file for sqlite) of database
-	 * @param  string  $username  Database username
-	 * @param  string  $password  User's password
-	 * @param  string  $host      Database server host or ip
-	 * @param  integer $port      The port to connect to (if non-standard)
+	 * @param  string  $username  Database username, required for all databases except SQLite
+	 * @param  string  $password  The password for the username specified
+	 * @param  string  $host      Database server host or ip, defaults to localhost for all databases except SQLite
+	 * @param  integer $port      The port to connect to, defaults to the standard port for the database type specified
 	 * @return fDatabase
 	 */
 	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
@@ -147,6 +147,19 @@ class fDatabase
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
 			fCore::toss('fProgrammerException', 'Invalid database type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');       
+		}
+		
+		if (empty($database)) {
+			fCore::toss('fProgrammerException', 'No database was specified'); 		
+		}
+		
+		if ($type != 'sqlite') {
+			if (empty($username)) {
+				fCore::toss('fProgrammerException', 'No username was specified');	
+			}
+			if ($host === NULL) {
+				$host = 'localhost';	
+			}
 		}
 		
 		$this->type = $type;			
@@ -237,14 +250,14 @@ class fDatabase
 		if ($this->extension == 'pdo') {
 			if ($this->type == 'mysql') {
 				try {
-					$this->connection = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->database . (($this->port) ? ';port=' . $this->port : ''), $this->user, $this->password);
+					$this->connection = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->database . (($this->port) ? ';port=' . $this->port : ''), $this->username, $this->password);
 				} catch (PDOException $e) {
 					$this->connection = FALSE;	
 				}
 				
 			} elseif ($this->type == 'postgresql') {
 				try {
-					$this->connection = new PDO('pgsql:host=' . $this->host . ' dbname=' . $this->database, $this->user, $this->password);
+					$this->connection = new PDO('pgsql:host=' . $this->host . ' dbname=' . $this->database, $this->username, $this->password);
 				} catch (PDOException $e) {
 					$this->connection = FALSE;	
 				}

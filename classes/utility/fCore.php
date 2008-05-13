@@ -57,45 +57,6 @@ class fCore
 	
 	
 	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fCore
-	 */
-	private function __construct() { }
-	
-	
-	/**
-	 * Turns on or off global debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	static public function setDebug($enable)
-	{
-		self::$debug = (boolean) $enable;
-	}
-	
-	
-	/**
-	 * Throws the exception type specified (if the class exists), otherwise throws a normal exception
-	 * 
-	 * @param  string $exception_type  The type of exception to throw
-	 * @param  string $message         The exception message
-	 * @return void
-	 */
-	static public function toss($exception_type, $message)
-	{
-		$exception = new $exception_type($message);
-		foreach (self::$toss_callbacks as $class => $callback) {
-			if ($exception instanceof $class) {
-				call_user_func($callback);
-			}	
-		}
-		throw $exception;
-	}
-	
-	
-	/**
 	 * Adds a callback for when certain types of exceptions are tossed
 	 * 
 	 * @param  string   $exception_type  The type of exception to call the callback on
@@ -109,26 +70,32 @@ class fCore
 	
 	
 	/**
-	 * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
+	 * Checks an error/exception destination
 	 * 
-	 * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
-	 * @param  string $message      The error message
-	 * @return void
+	 * @param  string $destination     The destination for the exception. An email or file.
+	 * @return string|boolean  'email', 'file' or FALSE
 	 */
-	static public function trigger($error_type, $message)
+	static private function checkDestination($destination)
 	{
-		$valid_error_types = array('error', 'warning', 'notice');
-		if (!in_array($error_type, $valid_error_types)) {
-			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');       
+		if ($destination == 'html') {
+			return 'html';	
 		}
 		
-		static $error_type_map = array(
-			'error'   => E_USER_ERROR,
-			'warning' => E_USER_WARNING,
-			'notice'  => E_USER_NOTICE
-		);
+		if (preg_match('#[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})#i', $destination)) {
+			return 'email';
+		}
 		
-		trigger_error($message, $error_type_map[$error_type]);
+		$path_info     = pathinfo($destination);
+		$dir_exists    = file_exists($path_info['dirname']);
+		$dir_writable  = ($dir_exists) ? is_writable($path_info['dirnam']) : FALSE;
+		$file_exists   = file_exists($destination);
+		$file_writable = ($file_exists) ? is_writable($destination) : FALSE;
+		
+		if (!$dir_exists || ($dir_exists && ((!$file_exists && !$dir_writable) || ($file_exists && !$file_writable)))) {
+			return FALSE;
+		}
+			
+		return 'file';	 
 	}
 	
 	
@@ -210,21 +177,7 @@ class fCore
 		} else {
 			return (string) $data;	
 		} 
-	}
-	
-	
-	/**
-	 * Prints the contents of a variable
-	 * 
-	 * @param  mixed $data   The data to show
-	 * @param  mixed $dump   If a dump of the variable should be shown
-	 * @return void
-	 */
-	static public function expose($data)
-	{
-		$data = self::dump($data);	
-		echo '<pre class="exposed">' . htmlentities((string) $data, ENT_COMPAT, 'UTF-8') . '</pre>';     
-	}
+	} 
 	
 	
 	/**
@@ -262,6 +215,65 @@ class fCore
 		self::$exception_handler_parameters = $parameters;
 		set_exception_handler(array('fCore', 'handleException'));		 
 	}
+	
+	
+	/**
+	 * Prints the contents of a variable
+	 * 
+	 * @param  mixed $data   The data to show
+	 * @param  mixed $dump   If a dump of the variable should be shown
+	 * @return void
+	 */
+	static public function expose($data)
+	{
+		$data = self::dump($data);	
+		echo '<pre class="exposed">' . htmlentities((string) $data, ENT_COMPAT, 'UTF-8') . '</pre>';     
+	}
+	
+	
+	/**
+	 * Returns the (generalized) operating system the code is currently running on
+	 * 
+	 * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
+	 */
+	static public function getOS()
+	{
+		$uname = php_uname('s');
+		
+		if (stripos($uname, 'linux') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'bsd') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'solaris') !== FALSE) {
+			return 'linux/unix';   
+		}
+		if (stripos($uname, 'windows') !== FALSE) {
+			return 'windows';   
+		}
+		
+		self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
+		return 'linux/unix';
+	} 
+	
+	
+	/**
+	 * Returns the version of php running, ignoring any information about the OS
+	 * 
+	 * @return string  The PHP version in the format major.minor.version
+	 */
+	static public function getPHPVersion()
+	{
+		static $version = NULL;
+		
+		if ($version === NULL) {
+			$version = phpversion();
+			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#', '\1', $version);
+		}
+		
+		return $version;
+	} 
 	
 	
 	/**
@@ -381,36 +393,6 @@ class fCore
 	
 	
 	/**
-	 * Checks an error/exception destination
-	 * 
-	 * @param  string $destination     The destination for the exception. An email or file.
-	 * @return string|boolean  'email', 'file' or FALSE
-	 */
-	static private function checkDestination($destination)
-	{
-		if ($destination == 'html') {
-			return 'html';	
-		}
-		
-		if (preg_match('#[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})#i', $destination)) {
-			return 'email';
-		}
-		
-		$path_info     = pathinfo($destination);
-		$dir_exists    = file_exists($path_info['dirname']);
-		$dir_writable  = ($dir_exists) ? is_writable($path_info['dirnam']) : FALSE;
-		$file_exists   = file_exists($destination);
-		$file_writable = ($file_exists) ? is_writable($destination) : FALSE;
-		
-		if (!$dir_exists || ($dir_exists && ((!$file_exists && !$dir_writable) || ($file_exists && !$file_writable)))) {
-			return FALSE;
-		}
-			
-		return 'file';	 
-	}
-	
-	
-	/**
 	 * Handles sending a message to a destination
 	 * 
 	 * @param  string $destination     The destination for the error/exception. An email or file.
@@ -451,52 +433,70 @@ class fCore
 				fclose($handle);
 				break;
 		}		 
+	}
+	
+	
+	/**
+	 * Turns on or off global debugging
+	 * 
+	 * @param  boolean $enable  If debugging should be enabled
+	 * @return void
+	 */
+	static public function setDebug($enable)
+	{
+		self::$debug = (boolean) $enable;
+	}
+	
+	
+	/**
+	 * Throws the exception type specified (if the class exists), otherwise throws a normal exception
+	 * 
+	 * @param  string $exception_type  The type of exception to throw
+	 * @param  string $message         The exception message
+	 * @return void
+	 */
+	static public function toss($exception_type, $message)
+	{
+		$exception = new $exception_type($message);
+		foreach (self::$toss_callbacks as $class => $callback) {
+			if ($exception instanceof $class) {
+				call_user_func($callback);
+			}	
+		}
+		throw $exception;
+	}
+	
+	
+	/**
+	 * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
+	 * 
+	 * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
+	 * @param  string $message      The error message
+	 * @return void
+	 */
+	static public function trigger($error_type, $message)
+	{
+		$valid_error_types = array('error', 'warning', 'notice');
+		if (!in_array($error_type, $valid_error_types)) {
+			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');       
+		}
+		
+		static $error_type_map = array(
+			'error'   => E_USER_ERROR,
+			'warning' => E_USER_WARNING,
+			'notice'  => E_USER_NOTICE
+		);
+		
+		trigger_error($message, $error_type_map[$error_type]);
 	} 
 	
 	
 	/**
-	 * Returns the (generalized) operating system the code is currently running on
+	 * Forces use as a static class
 	 * 
-	 * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
+	 * @return fCore
 	 */
-	static public function getOS()
-	{
-		$uname = php_uname('s');
-		
-		if (stripos($uname, 'linux') !== FALSE) {
-			return 'linux/unix';   
-		}
-		if (stripos($uname, 'bsd') !== FALSE) {
-			return 'linux/unix';   
-		}
-		if (stripos($uname, 'solaris') !== FALSE) {
-			return 'linux/unix';   
-		}
-		if (stripos($uname, 'windows') !== FALSE) {
-			return 'windows';   
-		}
-		
-		self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
-		return 'linux/unix';
-	} 
-	
-	
-	/**
-	 * Returns the version of php running, ignoring any information about the OS
-	 * 
-	 * @return string  The PHP version in the format major.minor.version
-	 */
-	static public function getPHPVersion()
-	{
-		static $version = NULL;
-		
-		if ($version === NULL) {
-			$version = phpversion();
-			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#', '\1', $version);
-		}
-		
-		return $version;
-	}        
+	private function __construct() { }      
 }  
 
 
@@ -522,4 +522,3 @@ class fCore
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-?>
