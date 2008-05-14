@@ -103,6 +103,13 @@ class fDatabase
 	private $query_time;
 	
 	/**
+	 * If a transaction is in progress
+	 * 
+	 * @var boolean 
+	 */
+	private $transaction_in_progress;
+	
+	/**
 	 * The fSQLTranslation object for this database
 	 * 
 	 * @var object 
@@ -222,17 +229,13 @@ class fDatabase
 				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();   
 			} elseif ($this->extension == 'pdo') {
 				$error_info = $this->connection->errorInfo();
-				switch ($this->type) {
-					case 'mysql':
-						$message = 'MySQL error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;
-					case 'postgresql':
-						$message = 'PostgreSQL error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;
-					case 'sqlite':
-						$message = 'SQLite error (' . $error_info[2] . ') in ' . $result->getSql();   
-						break;	
-				}
+				$db_type_map = array(
+					'mysql'      => 'MySQL',
+					'postgresql' => 'PostgreSQL',
+					'sqlite'     => 'SQLite'
+				);
+				
+				$message = $db_type_map[$this->type] . ' error (' . $error_info[2] . ') in ' . $sql;
 			}
 			fCore::toss('fSQLException', $message);
 		}	
@@ -673,6 +676,10 @@ class fDatabase
 	 */
 	private function handleAutoIncrementedValue(fResult $result)
 	{
+		if (!preg_match('#^\s*INSERT#i', $result->getSQL())) {
+			$result->setAutoIncrementedValue(NULL); 		
+		}
+		
 		$insert_id = NULL;
 		
 		if ($this->extension == 'mssql') {
@@ -686,14 +693,10 @@ class fDatabase
 			$insert_id     = @mysqli_insert_id($this->connection);   
 		
 		} elseif ($this->extension == 'pgsql') {
-			@pg_query($this->connection, "BEGIN");
-			pg_query($this->connection, "SAVEPOINT get_last_val");
-			$insert_id_res = @pg_query($this->connection, "SELECT lastval() AS insert_id");
+			$insert_id_res = @pg_query($this->connection, "SELECT lastval()");
 			if (is_resource($insert_id_res)) {
 				$insert_id_row = pg_fetch_assoc($insert_id_res);
-				$insert_id = $insert_id_row['insert_id'];
-			} else {
-				pg_query($this->connection, "ROLLBACK to get_last_val");
+				$insert_id = array_shift($insert_id_row);
 			} 
 		
 		} elseif ($this->extension == 'sqlite') {
@@ -701,17 +704,16 @@ class fDatabase
 		
 		} elseif ($this->extension == 'pdo') {
 			switch ($this->type) {
-		
+				
 				case 'postgresql':
-					@$this->connection->query("BEGIN");
-					$this->connection->query("SAVEPOINT get_last_val");
 					try {
-						$insert_id_statement = @$this->connection->query("SELECT lastval() AS insert_id");
+						$insert_id_statement = @$this->connection->query("SELECT lastval()");
+						if (!$insert_id_statement) {
+							throw new Exception();
+						}
 						$insert_id_row = $insert_id_statement->fetch(PDO::FETCH_ASSOC);
-						$insert_id = $insert_id_row['insert_id'];
-					} catch (Exception $e) {
-						$this->connection->query("ROLLBACK to get_last_val");	
-					}
+						$insert_id = array_shift($insert_id_row);
+					} catch (Exception $e) { }
 					break;
 		
 				case 'mysql':
@@ -725,6 +727,54 @@ class fDatabase
 		}
 		
 		$result->setAutoIncrementedValue($insert_id);	
+	}
+	
+	
+	/**
+	 * Will hand off a transaction query to the PDO method if the current DB connection is via PDO
+	 * 
+	 * @param  string $sql  The SQL to check for a transaction query
+	 * @return false|fResult  If the connection is not via PDO will return FALSE, otherwise an fResult object
+	 */
+	private function handleTransactionQueries($sql)
+	{
+		if (!is_object($this->connection)) {
+			return FALSE;
+		}
+		
+		$success = FALSE;	
+		
+		try {
+			if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
+				$this->connection->beginTransaction(); 
+				$success = TRUE;
+			}
+			if (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
+				$this->connection->commit(); 
+				$success = TRUE;
+			}
+			if (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
+				$this->connection->rollBack(); 
+				$success = TRUE;
+			}
+		} catch (Exception $e) {
+			$db_type_map = array(
+				'mysql'      => 'MySQL',
+				'postgresql' => 'PostgreSQL',
+				'sqlite'     => 'SQLite'
+			);
+			
+			fCore::toss('fSQLException', $db_type_map[$this->type] . ' error (' . $e->getMessage() . ') in ' . $sql);		
+		}
+		
+		if ($success) {
+			$result = new fResult($this->extension);
+			$result->setSQL($sql);
+			$result->setResult(TRUE);
+			return $result;	
+		}
+		
+		return FALSE;
 	}
 	
 	
@@ -747,11 +797,14 @@ class fDatabase
 			$sql = array_shift($sql_queries);
 		}
 		
-		$result = new fResult($this->extension);
-		$result->setSQL($sql);
-		
 		$start_time = microtime(TRUE);
-		$this->executeQuery($result);
+		
+		if (!$result = $this->handleTransactionQueries($sql)) {
+			$result = new fResult($this->extension);
+			$result->setSQL($sql);
+			
+			$this->executeQuery($result);	
+		}
 		
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;

@@ -31,6 +31,13 @@ class fORMValidation
 	static private $conditional_validation_rules = array();
 	
 	/**
+	 * Formatting rules
+	 * 
+	 * @var array 
+	 */
+	static private $formatting_rules = array();
+	
+	/**
 	 * Many-to-many validation rules
 	 * 
 	 * @var array 

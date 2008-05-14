@@ -134,14 +134,20 @@ abstract class fActiveRecord
 		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate' || $action == 'link') && !isset($parameters[0])) {
+		if (($action == 'set' || $action == 'associate' || $action == 'link') && sizeof($parameters) < 1) {
 			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
 		}
 		
 		switch ($action) {
 			
 			// Value methods
-			case 'get':
+			case 'encode':
+				if (isset($parameters[0])) {
+					return $this->entifyValue($subject, $parameters[0]);
+				}
+				return $this->entifyValue($subject);
+			
+			case 'get':                               
 				if (isset($parameters[0])) {
 					return $this->retrieveValue($subject, $parameters[0]);
 				}
@@ -203,7 +209,7 @@ abstract class fActiveRecord
 	 */
 	protected function assignValue($column, $value)
 	{
-		if (!isset($this->values[$column])) {
+		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
 		}
 		
@@ -293,6 +299,72 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Retrieves a value from the record and prepares it for output into an html form element.
+	 * 
+	 * Below are the transformations performed:
+	 *   - float: takes 1 parameter to specify the number of decimal places
+	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified 
+	 *   - objects: if a __toString() method exists, the output of that will be run throught fHTML::prepareFormValue()
+	 *   - all other data types: the value will be run through fHTML::prepareFormValue()
+	 * 
+	 * @param  string $column      The name of the column to retrieve
+	 * @param  string $formatting  If php date() formatting string for date values
+	 * @return mixed  The formatted value for the column specified
+	 */
+	protected function entifyValue($column, $formatting=NULL)
+	{
+		if (!array_key_exists($column, $this->values)) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+		}
+		
+		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		
+		// Ensure the programmer is calling the function properly
+		if (in_array($column_type, array('blob'))) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support forming because it is a blob column');
+		}
+		
+		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text', 'boolean', 'integer'))) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
+		}
+		
+		if ($formatting === NULL && $column_type == 'float') {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');	
+		}
+		
+		// Grab the value for empty value checking
+		$method_name = 'get' . fInflection::camelize($column, TRUE);
+		$value       = $this->$method_name();
+		
+		// Date/time objects
+		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
+			if ($formatting === NULL) {
+				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');	
+			}
+			$value = $value->format($formatting); 		
+		}
+		
+		// Other objects
+		if (is_object($value) && is_callable(array($value, '__toString'))) {
+			$value = $value->__toString();
+		}
+		
+		// If we are left with an object at this point then we don't know what to do with it
+		if (is_object($value)) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');	
+		}
+		
+		// Make sure we don't mangle a non-float value
+		if ($column_type == 'float' && is_numeric($value)) {
+			return number_format($value, $formatting, '.', ''); 		
+		}
+		
+		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
+		return fHTML::prepareFormValue($value);
+	}
+	
+	
+	/**
 	 * Retrieves a value from the record and prepares it for output into html.
 	 * 
 	 * Below are the transformations performed:
@@ -302,8 +374,8 @@ abstract class fActiveRecord
 	 *   - boolean: will return 'Yes' or 'No'
 	 *   - integer: will add thousands/millions/etc. separators
 	 *   - float: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
-	 *   - date, time, timestamp: these can not be formatted since they are represented by objects 
-	 *   - objects: can not be formatted since they are objects and not scalar values
+	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified 
+	 *   - objects: if a __toString() method exists, the output of that will be run throught fHTML::prepare()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  If php date() formatting string for date values
@@ -311,7 +383,7 @@ abstract class fActiveRecord
 	 */
 	protected function formatValue($column, $formatting=NULL)
 	{
-		if (!isset($this->values[$column])) {
+		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
 		}
 		
@@ -330,16 +402,29 @@ abstract class fActiveRecord
 		}
 		
 		if ($formatting === NULL && $column_type == 'float') {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one parameter, the number of decimal places');	
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');	
 		}
 		
 		// Grab the value for empty value checking
 		$method_name = 'get' . fInflection::camelize($column, TRUE);
 		$value       = $this->$method_name();
 		
-		// Values that are objects can not be formatted
-		if (is_object($value) || in_array($column_type, array('date', 'time', 'timestamp'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' has a value that is represented by an object, and thus can not be formatted'); 		
+		// Date/time objects
+		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
+			if ($formatting === NULL) {
+				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');	
+			}
+			return $value->format($formatting); 		
+		}
+		
+		// Other objects
+		if (is_object($value) && is_callable(array($value, '__toString'))) {
+			return fHTML::prepare($value->__toString());
+		}
+		
+		// If we are left with an object at this point then we don't know what to do with it
+		if (is_object($value)) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');	
 		}
 		
 		// If we are formatting in a situation where empty values will produce incorrect results, exit early
@@ -357,25 +442,23 @@ abstract class fActiveRecord
 			return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
 		}	
 		
-		// Handle the "standard" formatting
-		switch ($column_type) {
-			case 'varchar':
-			case 'char':
-			case 'text':
-				return fHTML::prepare($value);
-
-			case 'boolean':
-				return ($value) ? 'Yes' : 'No';
-				
-			case 'integer':
-				return number_format($value, 0, '', ',');
-				
-			case 'float':
-				return number_format($value, $formatting, '.', ',');
+		// Ensure the value matches the data type specified to prevent mangling
+		if ($column_type == 'boolean' && is_bool($value)) {
+			return ($value) ? 'Yes' : 'No';	
 		}
 		
-		// In case some other sort of column type gets added without this being updated
-		return $value;
+		if ($column_type == 'integer' && is_numeric($value)) {
+			return number_format($value, 0, '', ',');	
+		}
+		
+		if ($column_type == 'float' && is_numeric($value)) {
+			return number_format($value, $formatting, '.', ',');	
+		}
+		
+		// Anything that has gotten to here is a string value, or is not the
+		// proper data type for the column, so we just make sure it is marked
+		// up properly for display in HTML
+		return fHTML::prepare($value);
 	}
 	
 	
@@ -601,7 +684,7 @@ abstract class fActiveRecord
 	 */
 	protected function retrieveValue($column)
 	{
-		if (!isset($this->values[$column])) {
+		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
 		}
 		return $this->values[$column];	
@@ -631,7 +714,8 @@ abstract class fActiveRecord
 	public function store($use_transaction=TRUE)
 	{
 		try {
-			$table = fORM::tablize($this);
+			$table       = fORM::tablize($this);
+			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
 			$new_autoincrementing_record = FALSE;
@@ -654,7 +738,6 @@ abstract class fActiveRecord
 			
 			// Storing main table 
 			
-			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
 				$value = fORM::scalarize($this->values[$column]);
@@ -709,7 +792,7 @@ abstract class fActiveRecord
 				fFilesystem::rollbackTransaction();
 			}
 			
-			if ($new_autoincrementing_record) {
+			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
 				$this->values[$pk_column] = $this->old_values[$pk_column];	
 				unset($this->old_values[$pk_column]);
 			}

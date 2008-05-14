@@ -68,7 +68,7 @@ class fRecordSet implements Iterator
 	{
 		$table_name   = fORM::tablize($class_name);
 		
-		$sql  = "SELECT DISTINCT " . $table_name . ".* FROM :from_clause";
+		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
 
 		if (!empty($where_conditions)) {
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);					
@@ -86,7 +86,7 @@ class fRecordSet implements Iterator
 			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
 			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
 			
-			$non_limited_count_sql = str_replace('SELECT DISTINCT ' . $table_name . '.*', 'SELECT DISTINCT ' . join(', ', $primary_key_fields), $sql);
+			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
 			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
 			
 			$sql .= ' LIMIT ' . $limit;	
@@ -113,7 +113,7 @@ class fRecordSet implements Iterator
 		$class_name = get_class($records[0]);
 		$table_name = fORM::tablize($class_name);
 		
-		$sql  = 'SELECT DISTINCT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
+		$sql  = 'SELECT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
 		
 		// Build the where clause
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
@@ -180,7 +180,7 @@ class fRecordSet implements Iterator
 		settype($primary_keys, 'array');
 		$primary_keys = array_merge($primary_keys);
 		
-		$sql  = 'SELECT DISTINCT ' . $table_name . '.* FROM :from_clause WHERE ';
+		$sql  = 'SELECT ' . $table_name . '.* FROM :from_clause WHERE ';
 		
 		// Build the where clause
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
@@ -213,7 +213,7 @@ class fRecordSet implements Iterator
 			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
 			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
 			
-			$non_limited_count_sql = str_replace('SELECT DISTINCT ' . $table_name . '.*', 'SELECT DISTINCT ' . join(', ', $primary_key_fields), $sql);
+			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
 			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
 			
 			$sql .= ' LIMIT ' . $limit;	
@@ -382,7 +382,7 @@ class fRecordSet implements Iterator
 				$method = 'get' . fInflection::camelize($primary_key, TRUE);
 				$keys[$primary_key] = $this->records[$this->key()]->$method();	
 			}
-			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_unshift($primary_keys)] : $keys;
+			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_shift($primary_keys)] : $keys;
 			
 			// Pass the preloaded data to the object
 			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
@@ -704,7 +704,7 @@ class fRecordSet implements Iterator
 	 */
 	public function tossIfEmpty()
 	{
-		if (!$this->getSizeOf()) {
+		if (!$this->getCount()) {
 			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
 		}
 	}	

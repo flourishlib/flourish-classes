@@ -258,7 +258,13 @@ class fDirectory
 	{
 		$this->tossIfException();
 		
-		return new fDirectory(preg_replace('#[^/\\\\]+(/|\\\\)$#', '', $this->directory));    
+		$dirname = fFilesystem::getPathInfo($this->directory, 'dirname');
+		
+		if ($dirname == $this->directory) {
+			fCore::toss('fNotFoundException', 'The current directory does not have a parent directory');	
+		}
+		
+		return new fDirectory();    
 	}
 	
 	

@@ -1496,6 +1496,24 @@ class fSchema implements fISchema
 		
 	
 	/**
+	 * Determines if a table is a joining table
+	 * 
+	 * @param  string $table  The table to check
+	 * @return boolean  If the table is a joining table
+	 */
+	private function isJoiningTable($table)
+	{
+		$primary_key_columns = $this->merged_keys[$table]['primary'];
+		$foreign_key_columns = array();
+		foreach ($this->merged_keys[$table]['foreign'] as $key) {
+			$foreign_key_columns[] = $key['column'];
+		}	
+		$diff = array_diff($primary_key_columns, $foreign_key_columns);
+		return empty($diff);	
+	}
+	
+	
+	/**
 	 * Merges the column info with the column info override
 	 * 
 	 * @return void

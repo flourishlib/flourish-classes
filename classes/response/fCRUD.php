@@ -87,6 +87,28 @@ class fCRUD
 	
 	
 	/**
+	 * Prints an option tag with the provided value, using the selected value to determine if the option should be marked as selected
+	 * 
+	 * @param  string $value           The value to print an option for
+	 * @param  string $selected_value  If the value is the same as this, the option will be marked as selected
+	 * @return void
+	 */
+	static public function displayOptionTag($value, $selected_value)
+	{
+		$selected = FALSE;
+		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
+			$selected = TRUE;
+		}	
+		
+		echo '<option value="' . fHTML::prepareFormValue($value) . '"';
+		if ($selected) {
+			echo ' selected="selected"';	
+		}
+		echo '>' . fHTML::prepare($value) . '</option>';
+	}
+	
+	
+	/**
 	 * Prints a class attribute for a td if that td is part of the sorted column 
 	 * 
 	 * @param  string $column   The column this td is part of
