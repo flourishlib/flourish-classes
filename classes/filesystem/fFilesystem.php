@@ -84,12 +84,12 @@ class fFilesystem
 	 */
 	static public function convertToBytes($size) 
 	{
-		if (!preg_match('#^(\d+)\s*(k|m|g|t)?b?$#', strtolower(trim($size)), $matches)) {
+		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#', strtolower(trim($size)), $matches)) {
 			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');   
 		}
 		
-		if ($matches[1] == '') {
-			$matches[1] = 'b';   
+		if ($matches[2] == '') {
+			$matches[2] = 'b';   
 		}
 		
 		$size_map = array('b' => 1,
@@ -97,7 +97,7 @@ class fFilesystem
 						  'm' => 1048576,
 						  'g' => 1073741824,
 						  't' => 1099511627776);
-		return $matches[0] * $size_map[$matches[1]];
+		return $matches[1] * $size_map[$matches[2]];
 	}
 	
 	

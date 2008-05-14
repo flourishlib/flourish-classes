@@ -33,9 +33,7 @@ class fFile
 	static public function create($file_path, $contents)
 	{
 		if (empty($file_path)) {
-			if (!$exception) {
-				fCore::toss('fValidationException', 'No filename was specified');	
-			}
+			fCore::toss('fValidationException', 'No filename was specified');	
 		}
 		
 		if (file_exists($file_path)) {

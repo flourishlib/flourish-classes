@@ -20,6 +20,58 @@
 class fDirectory
 {
 	/**
+	 * The temporary directory to use for various tasks
+	 * 
+	 * @internal
+	 * 
+	 * @var string 
+	 */
+	const TEMP_DIRECTORY = '__temp/';
+	
+	
+	/**
+	 * Creates a directory on the filesystem and returns an object representing
+	 * it. The directory creation is done recursively, so if any of the parent
+	 * directories do not exist, they will be created.
+	 * 
+	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $directory_path  The path to the new directory
+	 * @param  numeric $mode           The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
+	 * @return fDirectory
+	 */
+	static public function create($directory_path, $mode=0777)
+	{
+		if (empty($directory_path)) {
+			fCore::toss('fValidationException', 'No directory name was specified');
+		}
+		
+		if (file_exists($directory_path)) {
+			fCore::toss('fValidationException', 'The directory specified already exists');		
+		}
+		
+		$parent_directory = fFilesystem::getPathInfo($directory_path, 'dirname');
+		if (!file_exists($parent_directory)) {
+			fDirectory::create($parent_directory, $mode);	
+		}
+		
+		if (!is_writable($parent_directory)) {
+			fCore::toss('fEnvironmentException', 'The directory path specified is inside of a directory that is not writable');		
+		}
+
+		mkdir($directory_path, $mode);	
+		
+		$directory = new fDirectory($directory_path);
+		
+		fFilesystem::recordCreate($directory);
+		
+		return $directory;
+	}
+	
+	
+	/**
 	 * Makes sure a directory has a / or \ at the end
 	 * 
 	 * @param  string $directory  The directory to check
@@ -32,16 +84,6 @@ class fDirectory
 		}
 		return $directory;
 	}
-	
-	
-	/**
-	 * The temporary directory to use for various tasks
-	 * 
-	 * @internal
-	 * 
-	 * @var string 
-	 */
-	const TEMP_DIRECTORY = '__temp/';
 	
 	
 	/**
