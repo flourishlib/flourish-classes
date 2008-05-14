@@ -159,6 +159,8 @@ class fImage extends fFile
 	/**
 	 * Returns an array of acceptable mimetype for the processor installed
 	 * 
+	 * @internal
+	 * 
 	 * @return array  The mimetypes that the installed processor can manipulate
 	 */
 	static public function getCompatibleMimetypes()
@@ -187,11 +189,11 @@ class fImage extends fFile
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $image    The image to get stats for
-	 * @param  string $element  The element to retrieve ('type', 'width', 'height')
+	 * @param  string $image_path  The path to the image to get stats for
+	 * @param  string $element     The element to retrieve ('type', 'width', 'height')
 	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
 	 */
-	static public function getInfo($image, $element=NULL)
+	static public function getInfo($image_path, $element=NULL)
 	{
 		$image_info = @getimagesize($image);
 		if ($image_info == FALSE) {
