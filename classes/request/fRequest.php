@@ -89,7 +89,8 @@ class fRequest
 	
 	
 	/**
-	 * Gets a value from the $_POST or $_GET superglobals (in that order)
+	 * Gets a value from the $_POST or $_GET superglobals (in that order). A
+	 * value that === '' and is not cast to a specific type will become NULL.
 	 * 
 	 * @param  string $key           The key to get the value of
 	 * @param  string $cast_to       Cast the value to this data type

@@ -677,7 +677,8 @@ class fDatabase
 	private function handleAutoIncrementedValue(fResult $result)
 	{
 		if (!preg_match('#^\s*INSERT#i', $result->getSQL())) {
-			$result->setAutoIncrementedValue(NULL); 		
+			$result->setAutoIncrementedValue(NULL); 
+			return;		
 		}
 		
 		$insert_id = NULL;

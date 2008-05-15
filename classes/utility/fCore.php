@@ -70,6 +70,82 @@ class fCore
 	
 	
 	/**
+	 * Creates a nicely formatted backtrace
+	 * 
+	 * @param  integer $remove_lines  The number of trailing lines to remove from the backtrace
+	 * @return string  The formatted backtrace
+	 */
+	static public function backtrace($remove_lines=0)
+	{
+		if ($remove_lines !== NULL && !is_numeric($remove_lines)) {
+			$remove_lines = 0;	
+		}
+		
+		settype($remove_lines, 'integer');
+		
+		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
+		
+		$backtrace = debug_backtrace();
+		
+		while ($remove_lines > 0) {
+			array_shift($backtrace);
+			$remove_lines--;	
+		}
+		
+		$backtrace = array_reverse($backtrace);
+		
+		$bt_string = '';
+		$i = 0;
+		foreach ($backtrace as $call) {
+			if ($i) {
+				$bt_string .= "\n";
+			}
+			if (isset($call['file'])) {
+				$bt_string .= str_replace($doc_root, '{doc_root}/', $call['file']) . '(' . $call['line'] . '): ';
+			} else {
+				$bt_string .= '[internal function]: ';	
+			}
+			if (isset($call['class'])) {
+				$bt_string .= $call['class'] . $call['type'];	
+			}
+			if (isset($call['class']) || isset($call['function'])) {
+				$bt_string .= $call['function'] . '(';
+					$j = 0;
+					foreach ($call['args'] as $arg) {
+						if ($j) {
+							$bt_string .= ', ';	
+						}
+						if (is_bool($arg)) {
+							$bt_string .= ($arg) ? 'true' : 'false';	
+						} elseif (is_null($arg)) {
+							$bt_string .= 'NULL';	
+						} elseif (is_array($arg)) {
+							$bt_string .= 'Array';	
+						} elseif (is_object($arg)) {
+							$bt_string .= 'Object(' . get_class($arg) . ')';	
+						} elseif (is_string($arg)) {
+							if (strlen($arg) > 18) {
+								$arg = substr($arg, 0, 15) . '...';	
+							}
+							$bt_string .= "'" . $arg . "'";	
+						} else {
+							$bt_string .= (string) $arg;	
+						}
+						$j++;		
+					}
+				$bt_string .= ')';	
+			}
+			$i++;
+		}
+		
+		$bt_string .= "\n";		
+		
+		return $bt_string;
+	}
+	
+	
+	/**
 	 * Checks an error/exception destination
 	 * 
 	 * @param  string $destination     The destination for the exception. An email or file.
@@ -294,64 +370,16 @@ class fCore
 			return;	
 		}
 		
-		$doc_root  = $_SERVER['DOCUMENT_ROOT'];
-		$doc_root .= (substr($_SERVER['DOCUMENT_ROOT'], -1) != '/' && substr($_SERVER['DOCUMENT_ROOT'], -1) != '\\') ? '/' : '';
+		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
 		
 		$error_file = str_replace($doc_root, '{doc_root}/', $error_file);
 
-		$backtrace = debug_backtrace();
-		array_shift($backtrace);
-		$backtrace = array_reverse($backtrace);
-		
-		$bt_string = '';
-		$i = 0;
-		foreach ($backtrace as $call) {
-			if ($i) {
-				$bt_string .= "\n";
-			}
-			if (isset($call['file'])) {
-				$bt_string .= str_replace($doc_root, '{doc_root}/', $call['file']) . '(' . $call['line'] . '): ';
-			} else {
-				$bt_string .= '[internal function]: ';	
-			}
-			if (isset($call['class'])) {
-				$bt_string .= $call['class'] . $call['type'];	
-			}
-			if (isset($call['class']) || isset($call['function'])) {
-				$bt_string .= $call['function'] . '(';
-					$j = 0;
-					foreach ($call['args'] as $arg) {
-						if ($j) {
-							$bt_string .= ', ';	
-						}
-						if (is_bool($arg)) {
-							$bt_string .= ($arg) ? 'true' : 'false';	
-						} elseif (is_null($arg)) {
-							$bt_string .= 'NULL';	
-						} elseif (is_array($arg)) {
-							$bt_string .= 'Array';	
-						} elseif (is_object($arg)) {
-							$bt_string .= 'Object(' . get_class($arg) . ')';	
-						} elseif (is_string($arg)) {
-							if (strlen($arg) > 18) {
-								$arg = substr($arg, 0, 15) . '...';	
-							}
-							$bt_string .= "'" . $arg . "'";	
-						} else {
-							$bt_string .= (string) $arg;	
-						}
-						$j++;		
-					}
-				$bt_string .= ')';	
-			}
-			$i++;
-		}
-		$bt_string .= "\n";		
-		$bt_string .= str_replace($doc_root, '{doc_root}/', $error_file) . '(' . $error_line . '):'; 
+		$backtrace = self::backtrace(1) . str_replace($doc_root, '{doc_root}/', $error_file) . '(' . $error_line . '):';
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
-		$error  = "Error\n-----\n" . $bt_string . "\n" . $error_string;
+		$error  = "Error\n-----\n" . $backtrace . "\n" . $error_string;
 		
 		self::sendMessageToDestination(self::$error_destination, $error);			 
 	}

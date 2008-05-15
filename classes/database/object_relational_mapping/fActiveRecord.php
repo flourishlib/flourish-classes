@@ -243,12 +243,57 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Allows the programmer to set features for the class
+	 * Allows the programmer to set features for the class. Only called once per page load for each class.
 	 * 
 	 * @return void
 	 */
 	protected function configure()
 	{
+	}
+	
+	
+	/**
+	 * Creates the SQL to insert this record
+	 *
+	 * @param  array $sql_values    The sql-formatted values for this record
+	 * @return string  The sql insert statement
+	 */
+	protected function constructInsertSql($sql_values)
+	{
+		$sql = 'INSERT INTO ' . fORM::tablize($this) . ' (';
+		
+		$columns = '';
+		$values  = '';
+		
+		$column_num = 0;
+		foreach ($sql_values as $column => $sql_value) {
+			if ($column_num) { $columns .= ', '; $values .= ', '; }
+			$columns .= $column;
+			$values  .= $sql_value;
+			$column_num++;
+		}
+		$sql .= $columns . ') VALUES (' . $values . ')';
+		return $sql;		
+	}
+	
+	
+	/**
+	 * Creates the SQL to update this record
+	 *
+	 * @param  array $sql_values    The sql-formatted values for this record
+	 * @return string  The sql update statement
+	 */
+	protected function constructUpdateSql($sql_values)
+	{
+		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
+		$column_num = 0;
+		foreach ($sql_values as $column => $sql_value) {
+			if ($column_num) { $sql .= ', '; }
+			$sql .= $column . ' = ' . $sql_value;
+			$column_num++;
+		}
+		$sql .= ' WHERE ' . $this->getPrimaryKeyWhereClause();
+		return $sql;		
 	}
 	
 	
@@ -632,51 +677,6 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Creates the SQL to insert this record
-	 *
-	 * @param  array $sql_values    The sql-formatted values for this record
-	 * @return string  The sql insert statement
-	 */
-	protected function prepareInsertSql($sql_values)
-	{
-		$sql = 'INSERT INTO ' . fORM::tablize($this) . ' (';
-		
-		$columns = '';
-		$values  = '';
-		
-		$column_num = 0;
-		foreach ($sql_values as $column => $sql_value) {
-			if ($column_num) { $columns .= ', '; $values .= ', '; }
-			$columns .= $column;
-			$values  .= $sql_value;
-			$column_num++;
-		}
-		$sql .= $columns . ') VALUES (' . $values . ')';
-		return $sql;		
-	}
-	
-	
-	/**
-	 * Creates the SQL to update this record
-	 *
-	 * @param  array $sql_values    The sql-formatted values for this record
-	 * @return string  The sql update statement
-	 */
-	protected function prepareUpdateSql($sql_values)
-	{
-		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
-		$column_num = 0;
-		foreach ($sql_values as $column => $sql_value) {
-			if ($column_num) { $sql .= ', '; }
-			$sql .= $column . ' = ' . $sql_value;
-			$column_num++;
-		}
-		$sql .= ' WHERE ' . $this->getPrimaryKeyWhereClause();
-		return $sql;		
-	}
-	
-	
-	/**
 	 * Retrieves a value from the record.
 	 * 
 	 * @param  string $column      The name of the column to retrieve
@@ -749,7 +749,11 @@ abstract class fActiveRecord
 				unset($sql_values[$pk_column]);	
 			}
 			   
-			$sql    = $this->prepareInsertSql($sql_values);
+			if (!$this->checkIfExists()) {
+				$sql = $this->constructInsertSql($sql_values);
+			} else {
+				$sql = $this->constructUpdateSql($sql_values);	
+			}
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			// If there is an auto-incrementing primary key, grab the value from the database
@@ -875,7 +879,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Validates the record against the database
+	 * Validates the contents of the record
 	 * 
 	 * @throws  fValidationException
 	 * 

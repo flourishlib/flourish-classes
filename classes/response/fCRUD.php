@@ -177,7 +177,7 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current value of a search field 
+	 * Gets the current value of a search field. If a value === '' and no cast to is specified, the value will become NULL. 
 	 * 
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to
@@ -186,7 +186,7 @@ class fCRUD
 	 */
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
-		if (self::getPreviousSearchValue($column) && fRequest::get($column) === NULL) {
+		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
 			self::$search_values[$column] = self::getPreviousSearchValue($column);	
 			self::$loaded_values[$column] = self::$search_values[$column];
 		} else {
@@ -244,7 +244,10 @@ class fCRUD
 	{
 		$query_string = fURL::replaceInQueryString(array_keys(self::$loaded_values), array_values(self::$loaded_values));
 		$url = fURL::get() . $query_string;
-		fURL::redirect($url);	
+		
+		if ($url != fURL::getWithQueryString() && $url != fURL::getWithQueryString() . '?') {
+			fURL::redirect($url);	
+		}
 	}
 	
 	

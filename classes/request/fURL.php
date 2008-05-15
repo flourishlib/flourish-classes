@@ -105,7 +105,7 @@ class fURL
 		$keys = func_get_args();
 		for ($i=0; $i < sizeof($keys); $i++) {
 			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';    
-		}
+		}            
 		return '?' . substr(preg_replace($keys, '', $qs), 1);           
 	}
 	

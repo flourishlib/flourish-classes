@@ -24,6 +24,13 @@
 class fORMValidation
 {
 	/**
+	 * Validation callback entries
+	 * 
+	 * @var array 
+	 */
+	static private $callbacks = array();
+	
+	/**
 	 * Conditional validation rules
 	 * 
 	 * @var array 
@@ -57,6 +64,27 @@ class fORMValidation
 	 * @var array 
 	 */
 	static private $only_one_validation_rules = array();
+	
+	
+	/**
+	 * Adds a validation callback rule. The function/method called w
+	 *
+	 * @param  mixed  $table       The database table (or (@link fActiveRecord} class) this validation rule applies to
+	 * @param  callback $callback  The function/method to call. This function method should accept three parameters: $table, &$values, &$old_values. It should throw an fValidationException if there is an error.
+	 * @return void
+	 */
+	static public function addCallback($table, $callback)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		if (!isset(self::$callbacks[$table])) {
+			self::$callbacks[$table] = array();		
+		}
+		
+		self::$callbacks[$table][] = $callback;
+	}
 	
 	
 	/**
@@ -586,7 +614,7 @@ class fORMValidation
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table        The table to validate against
+	 * @param  string $table       The table to validate against
 	 * @param  array  $values      The values to validate
 	 * @param  array  $old_values  The old values for the record
 	 * @return void
@@ -661,6 +689,15 @@ class fORMValidation
 		foreach (self::$formatting_rules[$table] as $column => $format_type) {
 			try {
 				self::checkFormattingRule($table, $values, $column, $format_type);
+			} catch (fValidationException $e) {
+				$validation_messages[] = $e->getMessage();			
+			}
+		}
+		
+		self::$callbacks[$table] = (isset(self::$callbacks[$table])) ? self::$callbacks[$table] : array();
+		foreach (self::$callbacks[$table] as $callback) {
+			try {
+				call_user_func($callback, $table, $values, $old_values);
 			} catch (fValidationException $e) {
 				$validation_messages[] = $e->getMessage();			
 			}

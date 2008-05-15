@@ -20,13 +20,13 @@ abstract class fPrintableException extends Exception
 	 */
 	public function formatTrace()
 	{
-		$doc_root  = $_SERVER['DOCUMENT_ROOT'];
-		$doc_root .= (substr($_SERVER['DOCUMENT_ROOT'], -1) != '/' && substr($_SERVER['DOCUMENT_ROOT'], -1) != '\\') ? '/' : '';
+		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
 		
 		$backtrace = explode("\n", $this->getTraceAsString());
 		$backtrace = preg_replace('/^#\d+\s+/', '', $backtrace);
 		$backtrace = str_replace($doc_root, '{doc_root}/', $backtrace);
-		$backtrace = array_diff($backtrace, array('{main}'));     
+		$backtrace = array_diff($backtrace, array('{main}'));            
 		$backtrace = array_reverse($backtrace);
 		
 		return join("\n", $backtrace);
