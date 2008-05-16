@@ -230,7 +230,7 @@ abstract class fActiveRecord
 	 *
 	 * @return boolean  If the record exists in the database
 	 */
-	protected function checkIfExists()
+	public function isExisting()
 	{
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
@@ -298,31 +298,99 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Delete a record from the database, does not destroy the object
+	 * Delete a record from the database, does not destroy the object. Will
+	 * start database and filesystem transactions if not already inside them.
 	 * 
-	 * @param  boolean $use_transaction  If a transaction should be wrapped around the delete
 	 * @return void
 	 */
-	public function delete($use_transaction=TRUE)
+	public function delete()
 	{
-		if (!$this->checkIfExists()) {
+		if (!$this->isExisting()) {
 			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');	
 		}
+
+		$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
+		$inside_fs_transaction = fFilesystem::isInsideTransaction();
 		
 		try {
-			if ($use_transaction) {
+			
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
-				fFilesystem::startTransaction();
+			}
+			if (!$inside_fs_transaction) {
+				fFilesystem::startTransaction();	
 			}
 			
+			
+			// Check to ensure no foreign dependencies prevent deletion
+			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
+			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
+			
+			$relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
+			$records_sets  = array();
+			
+			$restriction_message = '';
+
+			foreach ($relationships as $relationship) {
+				
+				// Figure out how to check for related records
+				$type = (isset($relationship['join_table'])) ? 'many-to-many' : 'one-to-many';
+				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
+				
+				$related_class   = fORM::classize($relationship['related_table']);
+				$related_objects = fInflection::pluralize($related_class);
+				$method          = 'build' . fInflection::camelize($related_objects);
+				
+				// Grab the related records
+				$record_set = $this->$method($route);
+				
+				// Save the record set in case we need to delete each record 
+				$record_sets[] = $record_set;
+				
+				if ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
+					
+					// If there are none, we can just move on
+					if (!$record_set->getCount()) {
+						continue;
+					}
+					
+					// Otherwise we have a restriction
+					$related_class_name  = fORM::classize($relationship['foreign_table']);
+					$related_record_name = fORM::getRecordName($related_class_name);
+					$related_record_name = fInflection::pluralize($related_record_name);
+					
+					$restriction_message .= "<li>One or more " . $related_record_name . " references it</li>\n";	
+				}	
+			}
+			
+			if (!empty($restriction_message)) {
+				fCore::toss('fValidationException', '<p>This ' . fORM::getRecordName($this) . ' can not be deleted because:</p><ul>' . $restriction_message . '</ul>');	
+			}
+			
+			
+			// Delete this record
 			$table  = fORM::tablize($this);
 			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->getPrimaryKeyWhereClause();
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
-			if ($use_transaction) {
+			
+			// Delete related records
+			foreach ($record_sets as $record_set) {
+				foreach ($record_set as $record) {
+					if ($record->isExisting()) {
+						$record->delete();	
+					}
+				}	
+			}
+			
+			
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
+			}
+			if (!$inside_fs_transaction) {
 				fFilesystem::commitTransaction();
 			}
+			
 			
 			// If we just deleted an object that has an auto-incrementing primary key, lets delete that value from the object since it is no longer valid
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
@@ -333,9 +401,22 @@ abstract class fActiveRecord
 			}
 			
 		} catch (fPrintableException $e) {
-			if ($use_transaction) {
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+			}
+			if (!$inside_fs_transaction) {
 				fFilesystem::rollbackTransaction();
+			}
+			
+			// Check to see if the validation exception came from a related record, and fix the message
+			if ($e instanceof fValidationException) {
+				$message     = $e->getMessage();
+				$record_name = fORM::getRecordName($this);
+				if (stripos($message, 'This ' . $record_name) === FALSE) {
+					$message = preg_replace('#(This ).*?( can not be deleted because)#is', '\1' . $record_name . '\2');
+					$message = str_replace(' references it', ' indirectly refereces it');	
+					fCore::toss('fValidationException', $message);
+				}	
 			}
 			
 			throw $e;	
@@ -704,14 +785,14 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Stores a record in the database
+	 * Stores a record in the database. Will start database and filesystem
+	 * transactions if not already inside them.
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @param  boolean $use_transaction  If a transaction should be wrapped around the delete
 	 * @return void
 	 */
-	public function store($use_transaction=TRUE)
+	public function store()
 	{
 		try {
 			$table       = fORM::tablize($this);
@@ -719,7 +800,7 @@ abstract class fActiveRecord
 			
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
 			$new_autoincrementing_record = FALSE;
-			if (!$this->checkIfExists()) {
+			if (!$this->isExisting()) {
 				$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
 				
 				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
@@ -728,8 +809,13 @@ abstract class fActiveRecord
 				}
 			}
 			
-			if ($use_transaction) {
+			$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
+			$inside_fs_transaction = fFilesystem::isInsideTransaction();
+			
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
+			}
+			if (!$inside_fs_transaction) {
 				fFilesystem::startTransaction();
 			}
 			
@@ -749,12 +835,13 @@ abstract class fActiveRecord
 				unset($sql_values[$pk_column]);	
 			}
 			   
-			if (!$this->checkIfExists()) {
+			if (!$this->isExisting()) {
 				$sql = $this->constructInsertSql($sql_values);
 			} else {
 				$sql = $this->constructUpdateSql($sql_values);	
 			}
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			
 			
 			// If there is an auto-incrementing primary key, grab the value from the database
 			if ($new_autoincrementing_record) {
@@ -784,15 +871,19 @@ abstract class fActiveRecord
 			}
 			 
 			
-			if ($use_transaction) {
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
-				fFilesystem::commitTransaction(); 
+			}
+			if (!$inside_fs_transaction) {
+				fFilesystem::commitTransaction();
 			}
 			
 		} catch (fPrintableException $e) {
 
-			if ($use_transaction) {
+			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+			}
+			if (!$inside_fs_transaction) {
 				fFilesystem::rollbackTransaction();
 			}
 			

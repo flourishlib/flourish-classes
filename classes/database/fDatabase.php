@@ -107,7 +107,7 @@ class fDatabase
 	 * 
 	 * @var boolean 
 	 */
-	private $transaction_in_progress;
+	private $inside_transaction;
 	
 	/**
 	 * The fSQLTranslation object for this database
@@ -235,7 +235,7 @@ class fDatabase
 					'sqlite'     => 'SQLite'
 				);
 				
-				$message = $db_type_map[$this->type] . ' error (' . $error_info[2] . ') in ' . $sql;
+				$message = $db_type_map[$this->type] . ' error (' . $error_info[2] . ') in ' . $result->getSql();
 			}
 			fCore::toss('fSQLException', $message);
 		}	
@@ -694,27 +694,67 @@ class fDatabase
 			$insert_id     = @mysqli_insert_id($this->connection);   
 		
 		} elseif ($this->extension == 'pgsql') {
+			
+			if (!$this->isInsideTransaction()) {
+				pg_query($this->connection, "BEGIN");
+			} else {
+				pg_query($this->connection, "SAVEPOINT get_last_val"); 
+			}
+			
 			$insert_id_res = @pg_query($this->connection, "SELECT lastval()");
+			
 			if (is_resource($insert_id_res)) {
 				$insert_id_row = pg_fetch_assoc($insert_id_res);
 				$insert_id = array_shift($insert_id_row);
-			} 
+				if (!$this->isInsideTransaction()) {
+					pg_query($this->connection, "COMMIT");
+				}
+				
+			} else {
+				if (!$this->isInsideTransaction()) {
+					pg_query($this->connection, "ROLLBACK");	
+				} else {
+					pg_query($this->connection, "ROLLBACK TO get_last_val"); 	
+				}
+			}
 		
 		} elseif ($this->extension == 'sqlite') {
 			$insert_id = sqlite_last_insert_rowid($this->connection);	
 		
 		} elseif ($this->extension == 'pdo') {
+			
 			switch ($this->type) {
 				
 				case 'postgresql':
 					try {
+						
+						if (!$this->isInsideTransaction()) {
+							$this->connection->beginTransaction();	
+						} else {
+							$this->connection->query("SAVEPOINT get_last_val"); 
+						}
+						
 						$insert_id_statement = @$this->connection->query("SELECT lastval()");
 						if (!$insert_id_statement) {
 							throw new Exception();
 						}
+						
 						$insert_id_row = $insert_id_statement->fetch(PDO::FETCH_ASSOC);
 						$insert_id = array_shift($insert_id_row);
-					} catch (Exception $e) { }
+						
+						if (!$this->isInsideTransaction()) {
+							$this->connection->commit();	
+						}
+						
+					} catch (Exception $e) { 
+						
+						if (!$this->isInsideTransaction()) {
+							$this->connection->rollBack();	
+						} else {
+							$this->connection->query("ROLLBACK TO get_last_val"); 
+						}   
+						
+					}
 					break;
 		
 				case 'mysql':
@@ -734,10 +774,11 @@ class fDatabase
 	/**
 	 * Will hand off a transaction query to the PDO method if the current DB connection is via PDO
 	 * 
-	 * @param  string $sql  The SQL to check for a transaction query
-	 * @return false|fResult  If the connection is not via PDO will return FALSE, otherwise an fResult object
+	 * @param  string $sql           The SQL to check for a transaction query
+	 * @param  string $result_class  The type of result object to create
+	 * @return mixed  If the connection is not via PDO will return FALSE, otherwise an object of the type $result_class
 	 */
-	private function handleTransactionQueries($sql)
+	private function handleTransactionQueries($sql, $result_class)
 	{
 		if (!is_object($this->connection)) {
 			return FALSE;
@@ -769,13 +810,24 @@ class fDatabase
 		}
 		
 		if ($success) {
-			$result = new fResult($this->extension);
+			$result = new $result_class($this->extension);
 			$result->setSQL($sql);
 			$result->setResult(TRUE);
 			return $result;	
 		}
 		
 		return FALSE;
+	}
+	
+	
+	/**
+	 * Will indicate if a transaction is currently in progress
+	 * 
+	 * @return boolean  If a transaction has been started and not yet rolled back or committed
+	 */
+	public function isInsideTransaction()
+	{
+		return $this->inside_transaction;
 	}
 	
 	
@@ -800,7 +852,8 @@ class fDatabase
 		
 		$start_time = microtime(TRUE);
 		
-		if (!$result = $this->handleTransactionQueries($sql)) {
+		$this->trackTransactions($sql);
+		if (!$result = $this->handleTransactionQueries($sql, 'fRequest')) {
 			$result = new fResult($this->extension);
 			$result->setSQL($sql);
 			
@@ -900,6 +953,35 @@ class fDatabase
 	
 	
 	/**
+	 * Keeps track to see if a transaction is being started or stopped
+	 * 
+	 * @param  string $sql  The SQL to check for a transaction query
+	 * @return void
+	 */
+	private function trackTransactions($sql)
+	{
+		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
+			if ($this->inside_transaction) {
+				fCore::toss('fProgrammerException', 'A transaction is already in progress');	
+			}
+			$this->inside_transaction = TRUE; 
+			
+		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
+			if (!$this->inside_transaction) {
+				fCore::toss('fProgrammerException', 'There is no transaction in progress');	
+			}
+			$this->inside_transaction = FALSE;
+			
+		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
+			if (!$this->inside_transaction) {
+				fCore::toss('fProgrammerException', 'There is no transaction in progress');	
+			}
+			$this->inside_transaction = FALSE;
+		}
+	}
+	
+	
+	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
 	 *  @param  string  $sql  One or more SQL statements
@@ -937,11 +1019,15 @@ class fDatabase
 			$this->unbuffered_result->__destruct();	
 		}
 		
-		$result = new fUnbufferedResult($this->extension);
-		$result->setSQL($sql);
-		
 		$start_time = microtime(TRUE);
-		$this->executeUnbufferedQuery($result);
+		
+		$this->trackTransactions($sql);
+		if (!$result = $this->handleTransactionQueries($sql, 'fUnbufferedRequest')) {
+			$result = new fUnbufferedResult($this->extension);
+			$result->setSQL($sql);
+			
+			$this->executeUnbufferedQuery($result);	
+		}		
 		
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;

@@ -87,7 +87,7 @@ class fORMSchema
 	 * @param  string $table          The main table we are searching on behalf of
 	 * @param  string $related_table  The related table we are trying to find the routes for
 	 * @param  string $route          The route that was preselected, will be verified if present
-	 * @return void
+	 * @return string  The only route from the main table to the related table
 	 */
 	static public function getRouteName($table, $related_table, $route=NULL)
 	{
@@ -107,6 +107,34 @@ class fORMSchema
 		}
 		
 		return $keys[0];
+	}
+	
+	
+	/**
+	 * Returns the name of the route specified by the relationship
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $type         The type of relationship: 'one-to-one', 'one-to-many', 'many-to-one', 'many-to-many'
+	 * @param  array $relationship  The relationship array from {@link fISchema::getKeys()}
+	 * @return string  The name of the route
+	 */
+	static public function getRouteNameFromRelationship($type, $relationship)
+	{
+		$valid_types = array('one-to-one', 'one-to-many', 'many-to-one', 'many-to-many');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');       
+		}
+		
+		if (isset($relationship['join_table']) || $type == 'many-to-many') {
+			return $relationship['join_table'];		
+		}
+		
+		if ($type == 'one-to-many') {
+			return $relationship['related_column'];		
+		}
+		
+		return $relationship['column'];		
 	}
 	
 	

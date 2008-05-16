@@ -292,47 +292,46 @@ class fCRUD
 	/**
 	 * Reorders list items in an fPrintableException based on their contents
 	 * 
-	 * @param  fPrintableException $e           The exception to remove field names from
-	 * @param  string              $filter,...  If this content is found in a list item, the list item will be displayed in the order it appears in this parameter list
+	 * @param  fPrintableException $exception  The exception to reorder the list items in
+	 * @param  array               $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array. 
 	 * @return void
 	 */
-	static public function reorderListItems(fPrintableException $e, $filter)
+	static public function reorderListItems($exception, $matches)
 	{
-		$filters = array_slice(func_get_args(), 1);
-		$message = $e->getMessage();
+		$message   = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
-		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $matches)) {
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $message_parts)) {
 			return;	
 		}
 		
-		$beginning   = $matches[1];
-		$list_items  = $matches[2];
-		$ending      = $matches[3];
+		$beginning     = $message_parts[1];
+		$list_contents = $message_parts[2];
+		$ending        = $message_parts[3];
 
-		preg_match_all('#<li(.*?)</li>#i', $list_items, $matches, PREG_SET_ORDER);
+		preg_match_all('#<li(.*?)</li>#i', $list_contents, $list_items, PREG_SET_ORDER);
 		
-		$ordered_items = array_fill(0, sizeof($filters), array());
+		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
 		
-		foreach ($matches as $match) {
-			foreach ($filters as $num => $filter) {
-				if (strpos($match[1], $filter) !== FALSE) {
-					$ordered_items[$num][] = $match[0];
+		foreach ($list_items as $list_item) {
+			foreach ($matches as $num => $match_string) {
+				if (strpos($list_item[1], $match_string) !== FALSE) {
+					$ordered_items[$num][] = $list_item[0];
 					continue 2;
 				}
 			}
 			
-			$other_items[] = $match[0];			
+			$other_items[] = $list_item[0];			
 		}
 		
-		$list_items = array();
+		$final_list = array();
 		foreach ($ordered_items as $ordered_item) {
-			$list_items = array_merge($list_items, $ordered_item);	
+			$final_list = array_merge($final_list, $ordered_item);	
 		}
-		$list_items = array_merge($list_items, $other_items);
+		$final_list = array_merge($final_list, $other_items);
 		
-		$e->setMessage($beginning . join("\n", $list_items) . $ending);
+		$exception->setMessage($beginning . join("\n", $final_list) . $ending);
 	}
 	
 	

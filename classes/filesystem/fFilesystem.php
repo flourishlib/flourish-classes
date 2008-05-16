@@ -225,7 +225,7 @@ class fFilesystem
 	 * 
 	 * @return void
 	 */
-	static public function isTransactionInProgress()
+	static public function isInsideTransaction()
 	{
 		return is_array(self::$commit_operations);
 	}

@@ -139,7 +139,9 @@ interface fISchema
 	 *             'related_column'      => (string) {the related column},
 	 *             'join_table'          => (string) {the table that joins the specified table to the related table},
 	 *             'join_column'         => (string) {the column in the join table that references 'column'},
-	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'}
+	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'},
+	 *             'on_delete'           => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
+	 *             'on_update'           => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
 	 *         ),...
 	 *     )
 	 * )

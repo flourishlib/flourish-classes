@@ -52,6 +52,13 @@ class fORMValidation
 	static private $many_to_many_validation_rules = array();
 	
 	/**
+	 * Ordering rules for validation messages
+	 * 
+	 * @var array 
+	 */
+	static private $message_orders = array();
+	
+	/**
 	 * One or more validation rules
 	 * 
 	 * @var array 
@@ -608,6 +615,67 @@ class fORMValidation
 	
 	
 	/**
+	 * Reorders list items in an html string based on their contents
+	 * 
+	 * @param  string $message  The string to reoder the list items in
+	 * @param  array  $matches  This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array. 
+	 * @return void
+	 */
+	static private function reorderListItems($message, $matches)
+	{
+		// If we can't find a list, don't bother continuing
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $message_parts)) {
+			return $message;	
+		}
+		
+		$beginning     = $message_parts[1];
+		$list_contents = $message_parts[2];
+		$ending        = $message_parts[3];
+
+		preg_match_all('#<li(.*?)</li>#i', $list_contents, $list_items, PREG_SET_ORDER);
+		
+		$ordered_items = array_fill(0, sizeof($matches), array());
+		$other_items   = array();
+		
+		foreach ($list_items as $list_item) {
+			foreach ($matches as $num => $match_string) {
+				if (strpos($list_item[1], $match_string) !== FALSE) {
+					$ordered_items[$num][] = $list_item[0];
+					continue 2;
+				}
+			}
+			
+			$other_items[] = $list_item[0];			
+		}
+		
+		$final_list = array();
+		foreach ($ordered_items as $ordered_item) {
+			$final_list = array_merge($final_list, $ordered_item);	
+		}
+		$final_list = array_merge($final_list, $other_items);
+		
+		return $beginning . join("\n", $final_list) . $ending;
+	}
+	
+	
+	/**
+	 * Allows setting the order that the list items in a validation message will be displayed
+	 *
+	 * @param  mixed $table     The database table (or (@link fActiveRecord} class) the column exists in
+	 * @param  array $matches   This should be an ordered array of strings. If a line contains the string it will be displayed in the relative order it occurs in this array.
+	 * @return void
+	 */
+	static public function setMessageOrder($table, $matches)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);	
+		}
+		
+		self::$message_orders[$table] = $matches;		
+	}
+	
+	
+	/**
 	 * Validates values for an fActiveRecord object
 	 *
 	 * @internal
@@ -704,7 +772,13 @@ class fORMValidation
 		}
 		
 		if (!empty($validation_messages)) {
-			fCore::toss('fValidationException', '<p>The following problems were found:</p><ul><li>' . join('</li><li>', $validation_messages) . '</li></ul>');
+			$message = '<p>The following problems were found:</p><ul><li>' . join('</li><li>', $validation_messages) . '</li></ul>';
+			
+			if (isset(self::$message_orders[$table])) {
+				$message = self::reorderListItems($message, self::$message_orders[$table]);	
+			}
+			
+			fCore::toss('fValidationException', $message);
 		}	
 	}
 }

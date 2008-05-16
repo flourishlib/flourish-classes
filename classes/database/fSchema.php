@@ -1107,6 +1107,8 @@ class fSchema implements fISchema
 		$temp['join_table']          = $table;	
 		$temp['join_column']         = $key1['column'];	
 		$temp['join_related_column'] = $key2['column'];
+		$temp['on_update']           = $key1['on_update'];
+		$temp['on_delete']           = $key1['on_delete'];  
 		$this->relationships[$key1['foreign_table']]['many-to-many'][] = $temp;
 		
 		$temp = array();
@@ -1116,6 +1118,8 @@ class fSchema implements fISchema
 		$temp['join_table']          = $table;	
 		$temp['join_column']         = $key2['column'];	
 		$temp['join_related_column'] = $key1['column'];
+		$temp['on_update']           = $key2['on_update'];
+		$temp['on_delete']           = $key2['on_delete'];
 		$this->relationships[$key2['foreign_table']]['many-to-many'][] = $temp;
 	}
 	
@@ -1396,7 +1400,9 @@ class fSchema implements fISchema
 	 *             'related_column'      => (string) {the related column},
 	 *             'join_table'          => (string) {the table that joins the specified table to the related table},
 	 *             'join_column'         => (string) {the column in the join table that references 'column'},
-	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'}
+	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'},
+	 *             'on_delete'           => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
+	 *             'on_update'           => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
 	 *         ),...
 	 *     )
 	 * )
