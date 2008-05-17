@@ -178,8 +178,6 @@ class fDatabase
 		$this->password = $password;
 		$this->host     = $host;
 		$this->port     = $port;
-		
-		$this->connectToDatabase();
 	}
 	
 	
@@ -190,6 +188,8 @@ class fDatabase
 	 */
 	public function __destruct()
 	{
+		if (!$this->connection) { return; }
+		
 		fCore::debug('Total query time: ' . $this->query_time . ' seconds', $this->debug);
 		if ($this->extension == 'mssql') {
 			mssql_close($this->connection);
@@ -243,12 +243,15 @@ class fDatabase
 	
 	
 	/**
-	 * Actually connects to the database specified
+	 * Connects to the database specified if no connection exists
 	 * 
 	 * @return void
 	 */
 	private function connectToDatabase()
 	{
+		// Don't try to reconnect if we are already connected
+		if ($this->connection) { return; }
+		
 		// Establish a connection to the database
 		if ($this->extension == 'pdo') {
 			if ($this->type == 'mysql') {
@@ -406,6 +409,8 @@ class fDatabase
 	 */
 	public function escapeBlob($value)
 	{
+		$this->connectToDatabase();
+		
 		if ($this->extension == 'mysql') {
 			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
 		} elseif ($this->extension == 'mysqli') {
@@ -463,6 +468,8 @@ class fDatabase
 	 */
 	public function escapeString($value)
 	{
+		$this->connectToDatabase();
+		
 		if ($this->extension == 'mysql') {
 			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
 		} elseif ($this->extension == 'mysqli') {
@@ -839,6 +846,8 @@ class fDatabase
 	 */
 	public function query($sql)
 	{
+		$this->connectToDatabase();
+		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
 			fCore::toss('fProgrammerException', 'No SQL statement passed');
@@ -990,6 +999,7 @@ class fDatabase
 	public function translatedQuery($sql)
 	{
 		if (!$this->translation) {
+			$this->connectToDatabase();
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
 		}
 		$result = $this->query($this->translation->translate($sql));
@@ -1010,6 +1020,8 @@ class fDatabase
 	 */
 	public function unbufferedQuery($sql)
 	{
+		$this->connectToDatabase();
+		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
 			fCore::toss('fProgrammerException', 'No SQL statement passed');
@@ -1053,6 +1065,7 @@ class fDatabase
 	public function unbufferedTranslatedQuery($sql)
 	{
 		if (!$this->translation) {
+			$this->connectToDatabase();
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
 		}
 		$result = $this->unbufferedQuery($this->translation->translate($sql));
@@ -1069,6 +1082,8 @@ class fDatabase
 	 */
 	public function unescapeBlob($value)
 	{
+		$this->connectToDatabase();
+		
 		if ($this->extension == 'pgsql') {
 			return pg_unescape_bytea($this->connection, $value);
 		} else  {
