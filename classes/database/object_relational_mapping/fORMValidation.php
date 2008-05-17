@@ -543,6 +543,8 @@ class fORMValidation
 	/**
 	 * Validates values against unique constraints
 	 *
+	 * @throws fValidationException
+	 * 
 	 * @param  string $table     The database table
 	 * @param  string $column    The column to check
 	 * @param  array  &$values   The values to check

@@ -25,6 +25,20 @@ class fRequest
 	static private $_files = NULL;
 	
 	/**
+	 * A backup copy of $_GET for unfilter()
+	 * 
+	 * @var array 
+	 */
+	static private $_get = NULL;
+	
+	/**
+	 * A backup copy of $_POST for unfilter()
+	 * 
+	 * @var array 
+	 */
+	static private $_post = NULL;
+	
+	/**
 	 * A backup copy of $_REQUEST for unfilter()
 	 * 
 	 * @var array 
@@ -57,11 +71,13 @@ class fRequest
 	{
 		self::$_request = $_REQUEST;
 		self::$_files   = $_FILES;
+		self::$_get     = $_GET;
+		self::$_post    = $_POST;
 			
 		$_REQUEST = array();
 		foreach (self::$_request as $field => $value) {
 			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
+				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
 				if (is_array($value)) {
 					if (isset($value[$key])) {
 						$_REQUEST[$new_field] = $value[$key];    
@@ -70,10 +86,34 @@ class fRequest
 			} 
 		}
 		
+		$_GET = array();
+		foreach (self::$_get as $field => $value) {
+			if (strpos($field, $prefix) === 0) {
+				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
+				if (is_array($value)) {
+					if (isset($value[$key])) {
+						$_GET[$new_field] = $value[$key];    
+					}
+				}               
+			} 
+		}
+		
+		$_POST = array();
+		foreach (self::$_post as $field => $value) {
+			if (strpos($field, $prefix) === 0) {
+				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
+				if (is_array($value)) {
+					if (isset($value[$key])) {
+						$_POST[$new_field] = $value[$key];    
+					}
+				}               
+			} 
+		}
+		
 		$_FILES = array();
 		foreach (self::$_files as $field => $value) {
 			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($field, '#') . '#', '', $field);
+				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
 				if (is_array($value)) {
 					if (isset($value['name'][$key])) {
 						$_FILES[$new_field]['name']     = $value['name'][$key];
@@ -219,6 +259,8 @@ class fRequest
 		}
 		$_REQUEST = self::$_request;
 		$_FILES   = self::$_files;
+		$_GET     = self::$_get;
+		$_POST    = self::$_post;
 	}
 	
 	

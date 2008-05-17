@@ -54,7 +54,7 @@ class fFilesystem
 	 */
 	static public function commitTransaction()
 	{
-		if (!self::isTransactionInProgress()) {
+		if (!self::isInsideTransaction()) {
 			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
 		}
 		

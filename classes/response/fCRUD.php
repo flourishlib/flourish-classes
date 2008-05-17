@@ -89,11 +89,12 @@ class fCRUD
 	/**
 	 * Prints an option tag with the provided value, using the selected value to determine if the option should be marked as selected
 	 * 
-	 * @param  string $value           The value to print an option for
+	 * @param  string $text            The text to display in the option tag
+	 * @param  string $value           The value for the option
 	 * @param  string $selected_value  If the value is the same as this, the option will be marked as selected
 	 * @return void
 	 */
-	static public function displayOptionTag($value, $selected_value)
+	static public function displayOptionTag($text, $value, $selected_value)
 	{
 		$selected = FALSE;
 		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
@@ -104,7 +105,7 @@ class fCRUD
 		if ($selected) {
 			echo ' selected="selected"';	
 		}
-		echo '>' . fHTML::prepare($value) . '</option>';
+		echo '>' . fHTML::prepare($text) . '</option>';
 	}
 	
 	

@@ -103,6 +103,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet from an array of records
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
@@ -164,6 +165,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet from an array of primary keys
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $class_name    The type of object to create
@@ -326,6 +328,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Calls sortCallback with the appropriate method
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
 	 * @return void
@@ -352,6 +356,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates all records for the primary keys provided
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @return void
 	 */
 	private function createAllRecords()
@@ -366,12 +372,17 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the current record in the set (used for iteration)
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @return object  The current record
 	 */
 	public function current()
 	{
+		if (!$this->valid()) {
+			fCore::toss('fProgrammerException', 'There are no remaining records');	
+		}
+		
 		if (!isset($this->records[$this->key()])) {
 			$this->records[$this->key()] = new $this->class_name($this->result_object);
 			
@@ -405,6 +416,25 @@ class fRecordSet implements Iterator
 	public function flagForAssociation()
 	{
 		$this->associate = TRUE;
+	}
+	
+	
+	/**
+	 * Returns the current record in the set and moves the pointer to the next
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @return object|false  The current record or FALSE if no remaining records
+	 */
+	public function fetchRecord()
+	{
+		try {
+			$record = $this->current();
+			$this->next();
+			return $record;
+		} catch (fProgrammerException $e) {
+			return FALSE;	
+		}
 	}
 	
 	
@@ -452,6 +482,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns all of the records in the set
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @return array  The records in the set
 	 */
 	public function getRecords()
@@ -468,6 +500,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the primary keys for all of the records in the set
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @return array  The primary keys of all the records in the set
 	 */
 	public function getPrimaryKeys()
@@ -483,6 +517,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Injects a set of related information into the current record
+	 * 
+	 * @throws fValidationException
 	 * 
 	 * @param string $related_table   The table we are injecting the values for
 	 * @param string $route           The route to the related table
@@ -569,6 +605,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Preloads a result object for related data
+	 * 
+	 * @throws fValidationException
 	 * 
 	 * @param  string $related_table  This should be the of a related table
 	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
@@ -670,6 +708,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Sorts the set by the return value of a method from the class created
+	 * 
+	 * @throws fValidationException
 	 * 
 	 * @param  string $method_name  The method to call on each object to get the value to sort
 	 * @param  string $direction    Either 'asc' or 'desc'

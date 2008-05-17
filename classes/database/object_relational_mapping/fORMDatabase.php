@@ -326,6 +326,7 @@ class fORMDatabase
 	/**
 	 * Creates a where clause condition for primary keys of the table specified
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $table         The table to build the where clause condition for
@@ -575,22 +576,26 @@ class fORMDatabase
 		}
 		
 		foreach ($matches[0] as $match) {
-			if ($match != "'") {
+			if ($match[0] != "'") {
 				preg_match_all('#\b((?:(\w+)(?:\{(\w+)\})?=>)?(\w+)(?:\{(\w+)\})?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);		
 				foreach ($table_matches as $table_match) {
+					
+					if (!isset($table_match[5])) {
+						$table_match[5] = NULL;	
+					}
 					
 					// This is a related table that is going to join to a once-removed table
 					if (!empty($table_match[2])) {
 						
 						$related_table = $table_match[2];
-						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[3]);	
+						$route = fORMSchema::getRouteName($table, $related_table, $table_match[3]);	
 						
 						$join_name = $table . '_' . $related_table . '{' . $route . '}';
 						
 						self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
 						$once_removed_table = $table_match[4];
-						$route = fORMSchema::getOnlyRouteName($related_table, $once_removed_table, $table_match[5]);
+						$route = fORMSchema::getRouteName($related_table, $once_removed_table, $table_match[5]);
 						
 						$join_name = self::createJoin($related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
 						
@@ -600,7 +605,7 @@ class fORMDatabase
 					} elseif ($table_match[4] != $table) {
 					
 						$related_table = $table_match[4];
-						$route = fORMSchema::getOnlyRouteName($table, $related_table, $table_match[5]);
+						$route = fORMSchema::getRouteName($table, $related_table, $table_match[5]);
 						
 						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
@@ -628,7 +633,6 @@ class fORMDatabase
 			$new_sql .= $temp_sql;
 		}	
 			
-		
 		return $new_sql;
 	}
 	
@@ -636,6 +640,7 @@ class fORMDatabase
 	/**
 	 * Prepares a value for a DB call based on database schema
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $table                The table to store the value
@@ -671,16 +676,19 @@ class fORMDatabase
 		} elseif (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
 			$prepared = $co . self::getInstance()->escapeString($value);
 		} elseif ($column_info['type'] == 'timestamp') {
-			$prepared = $co . "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
+			$prepared = $co . self::getInstance()->escapeTimestamp($value);
 		} elseif ($column_info['type'] == 'date') {
-			$prepared = $co . "'" . date('Y-m-d', strtotime($value)) . "'";
+			$prepared = $co . self::getInstance()->escapeDate($value);
 		} elseif ($column_info['type'] == 'time') {
-			$prepared = $co . "'" . date('H:i:s', strtotime($value)) . "'";
+			$prepared = $co . self::getInstance()->escapeTime($value);
 		} elseif ($column_info['type'] == 'blob') {
 			$prepared = $co . self::getInstance()->escapeBlob($value);
 		} elseif ($column_info['type'] == 'boolean') {
 			$prepared = $co . self::getInstance()->escapeBoolean($value);
 		} else {
+			if (!is_numeric($value)) {
+				fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid ' . $column_info['type']); 		
+			}
 			$prepared = $co . $value;	
 		}
 		

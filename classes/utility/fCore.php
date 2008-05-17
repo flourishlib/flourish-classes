@@ -373,7 +373,7 @@ class fCore
 		
 		$error_file = str_replace($doc_root, '{doc_root}/', $error_file);
 
-		$backtrace = self::backtrace(2);
+		$backtrace = self::backtrace(1);
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		

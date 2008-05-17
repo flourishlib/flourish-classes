@@ -177,13 +177,17 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @throws  fNoResultsException
 	 * 
-	 * @return array  The associative array of the row
+	 * @return array|false  The associative array of the row or FALSE if no remaining rows
 	 */
 	public function fetchRow()
 	{
-		$row = $this->current();
-		$this->next();	
-		return $row;   
+		try {
+			$row = $this->current();
+			$this->next();	
+			return $row;   
+		} catch (fProgrammerException $e) {
+			return FALSE;	
+		}
 	}
 	
 	

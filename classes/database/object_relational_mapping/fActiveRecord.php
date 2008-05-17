@@ -125,6 +125,8 @@ abstract class fActiveRecord
 	/**
 	 * Dynamically creates getColumn(), setColumn(), prepareColumn() for columns in the table.
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
 	 * @return void
@@ -164,30 +166,44 @@ abstract class fActiveRecord
 				
 			// Related data methods
 			case 'create':
+				$subject = fInflection::camelize($subject, TRUE);
+			
 				if (isset($parameters[0])) {
 					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
 				}
 				return fORMRelatedData::constructRecord($this, $this->values, $subject);
 
 			case 'build':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
 				if (isset($parameters[0])) {
 					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
 
 			case 'associate':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+			
 				if (isset($parameters[1])) {
 					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
 
 			case 'inject':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+			
 				if (isset($parameters[1])) {
 					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
 				
 			case 'populate':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+			
 				if (isset($parameters[0])) {
 					return fORMRelatedData::populateRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
@@ -286,7 +302,7 @@ abstract class fActiveRecord
 	protected function constructUpdateSql($sql_values)
 	{
 		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
-		$column_num = 0;
+		$column_num = 0;   
 		foreach ($sql_values as $column => $sql_value) {
 			if ($column_num) { $sql .= ', '; }
 			$sql .= $column . ' = ' . $sql_value;
@@ -327,7 +343,7 @@ abstract class fActiveRecord
 			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 			
 			$relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
-			$records_sets  = array();
+			$records_sets_to_delete = array();
 			
 			$restriction_message = '';
 
@@ -344,15 +360,16 @@ abstract class fActiveRecord
 				// Grab the related records
 				$record_set = $this->$method($route);
 				
-				// Save the record set in case we need to delete each record 
-				$record_sets[] = $record_set;
+				// If there are none, we can just move on
+				if (!$record_set->getCount()) {
+					continue;
+				}
+				
+				if ($relationship['on_delete'] == 'cascade') {
+					$records_sets_to_delete[] = $record_set;
+				}
 				
 				if ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
-					
-					// If there are none, we can just move on
-					if (!$record_set->getCount()) {
-						continue;
-					}
 					
 					// Otherwise we have a restriction
 					$related_class_name  = fORM::classize($relationship['foreign_table']);
@@ -375,7 +392,7 @@ abstract class fActiveRecord
 			
 			
 			// Delete related records
-			foreach ($record_sets as $record_set) {
+			foreach ($records_sets_to_delete as $record_set) {
 				foreach ($record_set as $record) {
 					if ($record->isExisting()) {
 						$record->delete();	
@@ -591,6 +608,8 @@ abstract class fActiveRecord
 	/**
 	 * Creates the WHERE clause for the current primary key data
 	 *
+	 * @throws fValidationException
+	 * 
 	 * @return string  The WHERE clause for the current primary key data
 	 */
 	protected function getPrimaryKeyWhereClause()
@@ -625,12 +644,13 @@ abstract class fActiveRecord
 	 */
 	public function load()
 	{
-		$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->getPrimaryKeyWhereClause();
-		
 		try {
+			$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->getPrimaryKeyWhereClause();
+		
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
-		} catch (fNoResultsException $e) {
+			
+		} catch (fExpectedException $e) {
 			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName(get_class($this)) . ' requested could not be found');
 		}
 		
@@ -731,7 +751,7 @@ abstract class fActiveRecord
 				$method = 'set' . fInflection::camelize($column, TRUE);
 				$this->$method(fRequest::get($column));	
 			}
-		}
+		}      
 		
 		// This handles associating many-to-many relationships
 		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
@@ -900,6 +920,8 @@ abstract class fActiveRecord
 	/**
 	 * Stores a set of one-to-many related records in the database
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
 	 * @param  fRecordSet $record_set  The set of records to store
 	 * @return void
@@ -935,6 +957,8 @@ abstract class fActiveRecord
 	
 	/**
 	 * Associates a set of many-to-many related records with the current record
+	 * 
+	 * @throws fValidationException
 	 * 
 	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
 	 * @param  fRecordSet $record_set  The set of records to associate

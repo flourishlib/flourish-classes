@@ -142,7 +142,7 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws  fNoResultsException
+	 * @throws  fNoResultsException   
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -222,15 +222,19 @@ class fResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws  fNoResultsException
+	 * @throws  fNoResultsException  
 	 * 
-	 * @return array  The associative array of the row
+	 * @return array|false  The associative array of the row or FALSE if no remaining records
 	 */
 	public function fetchRow()
 	{
-		$row = $this->current();
-		$this->next();	
-		return $row;   
+		try {
+			$row = $this->current();
+			$this->next();	
+			return $row;  
+		} catch (fProgrammerException $e) {
+			return FALSE;
+		} 
 	}
 	
 	
@@ -424,9 +428,51 @@ class fResult implements Iterator
 	 */
 	public function rewind()
 	{
-		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'Database results can not be iterated through multiple times');	
+		try {
+			$this->seek(0);
+		} catch (Exception $e) { }
+	}
+	
+	
+	/** 
+	 * Seeks to the specified zero-based row for the specified SQL query. 
+	 *  
+	 * @throws  fNoResultsException 
+	 *  
+	 * @param  integer $row  The row number to seek to (zero-based) 
+	 * @return void 
+	 */ 
+	public function seek($row) 
+	{ 
+		if(!$this->returned_rows) { 
+			fCore::toss('fNoResultsException', 'The query specified did not return any rows'); 
+		} 
+		 
+		if ($row >= $this->returned_rows || $row < 0) { 
+			fCore::toss('fProgrammerException', 'The row requested does not exist');    
+		} 
+		 
+		$this->pointer = $row;   
+					  
+		if ($this->extension == 'mssql') { 
+			$success = mssql_data_seek($this->result, $row); 
+		} elseif ($this->extension == 'mysql') { 
+			$success = mysql_data_seek($this->result, $row); 
+		} elseif ($this->extension == 'mysqli') { 
+			$success = mysqli_data_seek($this->result, $row); 
+		} elseif ($this->extension == 'pgsql') { 
+			$success = pg_result_seek($this->result, $row); 
+		} elseif ($this->extension == 'sqlite') { 
+			$success = sqlite_seek($this->result, $row); 
+		} elseif ($this->extension == 'pdo' || $this->extension == 'array') { 
+			// Do nothing since pdo results are arrays 
 		}
+		
+		if (!$success) {
+			fCore::toss('fSQLException', 'There was an error seeking to result ' . $row);	
+		}
+		
+		$this->advanceCurrentRow();
 	}
 	
 	

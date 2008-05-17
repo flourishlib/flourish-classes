@@ -146,6 +146,7 @@ class fORMRelatedData
 	/**
 	 * Sets the values for records in a one-to-many relationship with this record
 	 * 
+	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  mixed  $table             The database table (or {@link fActiveRecord} class) to get the related values for
@@ -154,7 +155,7 @@ class fORMRelatedData
 	 * @param  string $route             The route to the related class
 	 * @return void
 	 */
-	static protected function populateRecords($table, &$related_records, $related_class, $route=NULL)
+	static public function populateRecords($table, &$related_records, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
 			$table = fORM::tablize($table);	
@@ -163,8 +164,8 @@ class fORMRelatedData
 		$related_table = fORM::tablize($related_class);
 		$pk_columns    = fORMSchema::getInstance()->getKeys($related_table, 'primary');		
 		
-		$table_with_route = $related_table;
-		$table_with_route = ($route !== NULL) ? '{' . $route . '}' : '';
+		$table_with_route  = $related_table;
+		$table_with_route .= ($route !== NULL) ? '{' . $route . '}' : '';
 		
 		$first_pk_column  = $pk_columns[0];
 		$pk_field         = $table_with_route . '::' . $first_pk_column;

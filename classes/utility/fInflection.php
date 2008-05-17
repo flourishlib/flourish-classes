@@ -277,13 +277,13 @@ class fInflection
 	{
 		// Handle strings with spaces in them
 		if (strpos($string, ' ') !== FALSE) {
-			return array(substr($string, 0, strrpos($string, ' ')), substr($string, strrpos($string, ' ')+1));	
+			return array(substr($string, 0, strrpos($string, ' ')+1), substr($string, strrpos($string, ' ')+1));	
 		}
 		
 		// Handle underscore notation
 		if ($string == self::underscorize($string)) {
 			if (strpos($string, '_') === FALSE) { return array('', $string); }
-			return array(substr($string, 0, strrpos($string, '_')), substr($string, strrpos($string, '_')+1));	
+			return array(substr($string, 0, strrpos($string, '_')+1), substr($string, strrpos($string, '_')+1));	
 		}
 		
 		// Handle camel case
