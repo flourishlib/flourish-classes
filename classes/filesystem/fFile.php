@@ -14,7 +14,7 @@
  * @uses  fFilesystem
  * @uses  fProgrammerException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fFile
@@ -33,19 +33,19 @@ class fFile
 	static public function create($file_path, $contents)
 	{
 		if (empty($file_path)) {
-			fCore::toss('fValidationException', 'No filename was specified');	
+			fCore::toss('fValidationException', 'No filename was specified');
 		}
 		
 		if (file_exists($file_path)) {
-			fCore::toss('fValidationException', 'The file specified already exists');		
+			fCore::toss('fValidationException', 'The file specified already exists');
 		}
 		
 		$directory = fFilesystem::getPathInfo($file_path, 'dirname');
 		if (!is_writable($directory)) {
-			fCore::toss('fEnvironmentException', 'The file path specified is inside of a directory that is not writable');		
+			fCore::toss('fEnvironmentException', 'The file path specified is inside of a directory that is not writable');
 		}
-
-		file_put_contents($file_path, $contents);	
+		
+		file_put_contents($file_path, $contents);
 		
 		$file = new fFile($file_path);
 		
@@ -58,14 +58,14 @@ class fFile
 	/**
 	 * The full path to the file
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	protected $file;
 	
 	/**
 	 * An exception to be thrown if an action is performed on the file
 	 * 
-	 * @var Exception 
+	 * @var Exception
 	 */
 	protected $exception;
 	
@@ -84,7 +84,7 @@ class fFile
 		if (empty($file_path)) {
 			// No file and no exception means we have nothing to work with
 			if (!$exception) {
-				fCore::toss('fValidationException', 'No filename was specified');	
+				fCore::toss('fValidationException', 'No filename was specified');
 			}
 			
 			// If we don't have a file, but have an exception, there may have been an issue creating the file
@@ -93,23 +93,23 @@ class fFile
 		}
 		
 		if (!file_exists($file_path)) {
-			fCore::toss('fValidationException', 'The file specified does not exist');   
+			fCore::toss('fValidationException', 'The file specified does not exist');
 		}
 		if (!is_readable($file_path)) {
-			fCore::toss('fEnvironmentException', 'The file specified is not readable');   
+			fCore::toss('fEnvironmentException', 'The file specified is not readable');
 		}
 		
 		// Store the file as an absolute path
 		$file_path = realpath($file_path);
 		
 		// Hook into the global file and exception maps
-		$this->file      =& fFilesystem::hookFilenameMap($file_path);   
+		$this->file      =& fFilesystem::hookFilenameMap($file_path);
 		$this->exception =& fFilesystem::hookExceptionMap($file_path);
 		
 		// If we have an exception for this file, save it to the global exception map
 		if ($exception) {
 			fFilesystem::updateExceptionMap($file_path, $exception);
-		}   
+		}
 	}
 	
 	
@@ -133,17 +133,17 @@ class fFile
 	 * 
 	 * @return void
 	 */
-	public function delete() 
+	public function delete()
 	{
 		$this->tossIfException();
 		
 		if (!$this->getDirectory()->isWritable()) {
 			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be deleted because the directory containing it is not writable');
-		} 
+		}
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			return fFilesystem::recordDelete($this);	
+			return fFilesystem::recordDelete($this);
 		}
 		
 		@unlink($this->file);
@@ -172,7 +172,7 @@ class fFile
 		$this->tossIfException();
 		
 		if ($new_directory === NULL) {
-			$new_directory = $this->getDirectory();	
+			$new_directory = $this->getDirectory();
 		}
 		
 		if (!is_object($new_directory)) {
@@ -181,7 +181,7 @@ class fFile
 		
 		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
 			fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory->getPath() . ', is the same as the current file\'s directory');
-		}  
+		}
 		
 		if ($this->getDirectory()->isTemp()) {
 			$new_directory = $new_directory->getTemp();
@@ -193,28 +193,28 @@ class fFile
 		
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
-				fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory . ', already contains a file with the name ' . $this->getFilename() . ', but is not writable'); 		
+				fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory . ', already contains a file with the name ' . $this->getFilename() . ', but is not writable');
 			}
 			if (!$overwrite) {
-				$new_filename = fFilesystem::createUniqueName($new_filename);	
+				$new_filename = fFilesystem::createUniqueName($new_filename);
 				$check_dir_permissions = TRUE;
 			}
 		} else {
-			$check_dir_permissions = TRUE; 
-		} 
+			$check_dir_permissions = TRUE;
+		}
 		
 		if ($check_dir_permissions) {
 			if (!$new_directory->isWritable()) {
 				fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory . ', is not writable');
-			}	
-		}		       
+			}
+		}
 		
 		@copy($this->getPath(), $new_filename);
 		$file = new fFile($new_filename);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::recordDuplicate($file);	
+			fFilesystem::recordDuplicate($file);
 		}
 		
 		return $file;
@@ -230,7 +230,7 @@ class fFile
 	{
 		$this->tossIfException();
 		
-		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));    
+		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));
 	}
 	
 	
@@ -244,7 +244,7 @@ class fFile
 		$this->tossIfException();
 		
 		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
-		return fFilesystem::getPathInfo($this->file, 'basename');    
+		return fFilesystem::getPathInfo($this->file, 'basename');
 	}
 	
 	
@@ -260,10 +260,10 @@ class fFile
 		$this->tossIfException();
 		
 		// This technique can overcome signed integer limit
-		$size = sprintf("%u", filesize($this->file));    
+		$size = sprintf("%u", filesize($this->file));
 		
 		if (!$format) {
-			return $size;	
+			return $size;
 		}
 		
 		return fFilesystem::formatFilesize($size, $decimal_places);
@@ -281,10 +281,10 @@ class fFile
 		$this->tossIfException();
 		
 		if ($from_doc_root) {
-			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->file);    
+			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->file);
 		}
-		return $this->file;    
-	}	
+		return $this->file;
+	}
 	
 	
 	/**
@@ -296,8 +296,8 @@ class fFile
 	{
 		$this->tossIfException();
 		
-		return is_writable($this->file);   
-	} 
+		return is_writable($this->file);
+	}
 	
 	
 	/**
@@ -315,7 +315,7 @@ class fFile
 		if ($directory->isTemp()) {
 			$new_file = $directory->getParent() . $this->getFilename();
 			$this->rename($new_file);
-		}    
+		}
 	}
 	
 	
@@ -336,7 +336,7 @@ class fFile
 			$temp_dir = $directory->getTemp();
 			$new_file = $temp_dir->getPath() . $this->getFilename();
 			$this->rename($new_file);
-		}    
+		}
 	}
 	
 	
@@ -348,7 +348,7 @@ class fFile
 	 * @param  mixed $data  The data to write to the file
 	 * @return string  The contents of the file
 	 */
-	public function read() 
+	public function read()
 	{
 		$this->tossIfException();
 		
@@ -365,12 +365,12 @@ class fFile
 	 * @param  boolean $overwrite     If the new filename already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
 	 * @return void
 	 */
-	public function rename($new_filename, $overwrite) 
+	public function rename($new_filename, $overwrite)
 	{
 		$this->tossIfException();
 		
 		if (!$this->getDirectory()->isWritable()) {
-			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be renamed because the directory containing it is not writable');	
+			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be renamed because the directory containing it is not writable');
 		}
 		
 		$info = fFilesystem::getPathInfo($new_filename);
@@ -384,23 +384,23 @@ class fFile
 		
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
-				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', already exists, but is not writable'); 		
+				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', already exists, but is not writable');
 			}
 			if (!$overwrite) {
-				$new_filename = fFilesystem::createUniqueName($new_filename);	
+				$new_filename = fFilesystem::createUniqueName($new_filename);
 			}
 		} else {
 			$new_dir = new fDirectory($info['dirname']);
 			if (!$new_dir->isWritable()) {
 				fCore::toss('fProgrammerException', 'The new filename specified, ' . $new_filename . ', is inside of a directory that is not writable');
-			} 
+			}
 		}
 		
 		@rename($this->file, $new_filename);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::recordRename($this->file, $new_filename);	
+			fFilesystem::recordRename($this->file, $new_filename);
 		}
 		
 		fFilesystem::updateFilenameMap($this->file, $new_filename);
@@ -428,22 +428,22 @@ class fFile
 	 * @param  mixed $data  The data to write to the file
 	 * @return void
 	 */
-	public function write($data) 
+	public function write($data)
 	{
 		$this->tossIfException();
 		
 		if (!$this->isWritable()) {
 			fCore::toss('fProgrammerException', 'This file can not be written to because it is not writable');
-		} 
+		}
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::recordWrite($this);	
+			fFilesystem::recordWrite($this);
 		}
 		
 		file_put_contents($this->file, $data);
-	}      
-}  
+	}
+}
 
 
 

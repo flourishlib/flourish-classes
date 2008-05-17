@@ -1,6 +1,6 @@
 <?php
 /**
- * Interface to various payment gateway systems for credit card/echeck transactions 
+ * Interface to various payment gateway systems for credit card/echeck transactions
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -13,7 +13,7 @@
  * @uses  fProgrammerException
  * @uses  fValidationException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-20]
  */
 class fFinancialTransaction
@@ -514,10 +514,10 @@ class fFinancialTransaction
 	public function __construct($gateway, $account_number, $transaction_key)
 	{
 		if (!in_array($gateway, array('authorize_net', 'secure_pay'))) {
-			fCore::toss('fProgrammerException', 'Invalid gateway specified');       
+			fCore::toss('fProgrammerException', 'Invalid gateway specified');
 		}
 		
-		$this->gateway = $gateway;	
+		$this->gateway = $gateway;
 		$this->setAccountNumber($account_number);
 		$this->setTransactionKey($transaction_key);
 	}
@@ -533,7 +533,7 @@ class fFinancialTransaction
 	{
 		$post_data['x_version']        = '3.1';
 		$post_data['x_delim_data']     = 'TRUE';
-		$post_data['x_relay_response'] = 'FALSE';	
+		$post_data['x_relay_response'] = 'FALSE';
 		return $post_data;
 	}
 	
@@ -548,9 +548,9 @@ class fFinancialTransaction
 		if ($this->test_mode && $this->gateway == 'authorize_net') {
 			$this->setGatewaySpecificField('x_test_request', 'TRUE');
 			$this->setCreditCardNumber('4007000000027');
-			$this->setCreditCardExpirationDate(date('m/Y', strtotime('+1 year')));		
-		}	
-	}                                            
+			$this->setCreditCardExpirationDate(date('m/Y', strtotime('+1 year')));
+		}
+	}
 	
 	
 	/**
@@ -566,12 +566,12 @@ class fFinancialTransaction
 		
 		fCore::debug("Data being sent to gateway:\n" . print_r($translated_transaction_info, TRUE), $this->debug);
 		
-		$post_data = http_build_query($translated_transaction_info);	
+		$post_data = http_build_query($translated_transaction_info);
 			
 		if ($this->gateway == 'authorize_net') {
-			$server = 'https://secure.authorize.net//gateway/transact.dll';	
+			$server = 'https://secure.authorize.net//gateway/transact.dll';
 		} elseif ($this->gateway == 'secure_pay') {
-			$server = 'https://www.securepay.com/AuthSpayAdapter/process.aspx';	
+			$server = 'https://www.securepay.com/AuthSpayAdapter/process.aspx';
 		}
 		
 		$context_options = array (
@@ -585,11 +585,11 @@ class fFinancialTransaction
 		$context = stream_context_create($context_options);
 		
 		if ($this->gateway == 'secure_pay' && $this->test_mode) {
-			$result  = '1,,1,,,,12345678';	
+			$result  = '1,,1,,,,12345678';
 		} else {
 			// Suppress errors to handle the nasty message from php about IIS not properly terminating an SSL connection
 			$result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));
-		}	
+		}
 		
 		fCore::debug("Data received from gateway:\n" . $result, $this->debug);
 		
@@ -621,7 +621,7 @@ class fFinancialTransaction
 				case '7':
 				case '8':
 					$message = 'The credit card information entered is invalid';
-					break;	
+					break;
 				case '9':
 				case '10':
 					$message = 'The bank account information entered is invalid';
@@ -635,7 +635,7 @@ class fFinancialTransaction
 				default:
 					fCore::toss('fConnectivityException', 'There was an error processing the transaction');
 			}
-			fCore::toss('fValidationException', $message);	
+			fCore::toss('fValidationException', $message);
 		}
 		
 		return $result_array[6];
@@ -868,7 +868,7 @@ class fFinancialTransaction
 	{
 		$this->transaction_info['customer_ip_address'] = $customer_ip_address;
 	}
-
+	
 	
 	/**
 	 * Enabled debugging
@@ -892,14 +892,14 @@ class fFinancialTransaction
 		if ($this->gateway == 'authorize_net') {
 			$field_info =& $this->authorize_net_field_info;
 		} elseif ($this->gateway == 'secure_pay') {
-			$field_info =& $this->secure_pay_field_info;	
+			$field_info =& $this->secure_pay_field_info;
 		}
 		
 		foreach ($field_info as $field => $info) {
 			if ($info['default'] !== NULL && !isset($this->transaction_info[$field])) {
-				$this->transaction_info[$field] = $info['default'];	
+				$this->transaction_info[$field] = $info['default'];
 			}
-		}	
+		}
 	}
 	
 	
@@ -1153,18 +1153,18 @@ class fFinancialTransaction
 	private function standardizeDate($date)
 	{
 		if (!preg_match('#^(\d{1,2})(-|/)?(\d{2}|\d{4})$#', $date, $match)) {
-			return FALSE;	
+			return FALSE;
 		}
-
+		
 		if ($match[1] > 12 || $match[1] < 1) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		$month = (strlen($match[1]) == 1) ? '0' . $match[1] : $match[1];
 		$year  = (strlen($match[3]) == 2) ? '20' . $match[3] : $match[3];
 		
 		if ($year < date('Y')) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		return $month . '/' . substr($year, 2);
@@ -1183,10 +1183,10 @@ class fFinancialTransaction
 			$value = trim($value);
 			if ($value[0] == '$') {
 				$value = trim(substr($value, 1));
-			}	
+			}
 		}
 		if (!is_numeric($value)) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		return '$' . number_format($value, 2, '.', ',');
@@ -1201,24 +1201,24 @@ class fFinancialTransaction
 	private function translateTransactionInfo()
 	{
 		$field_info =& $this->authorize_net_field_info;
-
+		
 		$translated_transaction_info = array();
 		foreach ($this->transaction_info as $field => $value) {
 			// Standardize values for know fields
 			if (isset($field_info[$field])) {
 				if ($field_info[$field]['type'] == 'date') {
-					$value = $this->standardizeDate($value);	
+					$value = $this->standardizeDate($value);
 				} elseif ($field_info[$field]['type'] == 'money') {
 					$value = $this->standardizeMoney($value);
 				} elseif ($field_info[$field]['type'] == 'boolean') {
 					$value = ($value) ? 'TRUE' : 'FALSE';
 				}
-				$translated_transaction_info[$field_info[$field]['field']] = $value;		
+				$translated_transaction_info[$field_info[$field]['field']] = $value;
 					
 			// Just pass on unknown fields
 			} else {
 				$translated_transaction_info[$field] = $value;
-			}	
+			}
 		}
 		
 		return $translated_transaction_info;
@@ -1237,7 +1237,7 @@ class fFinancialTransaction
 		if ($this->gateway == 'authorize_net') {
 			$field_info =& $this->authorize_net_field_info;
 		} elseif ($this->gateway == 'secure_pay') {
-			$field_info =& $this->secure_pay_field_info;	
+			$field_info =& $this->secure_pay_field_info;
 		}
 		
 		$message = '';
@@ -1247,7 +1247,7 @@ class fFinancialTransaction
 		foreach ($field_info as $field => $info) {
 			if ($info['required'] && !isset($this->transaction_info[$field])) {
 				$message .= fInflection::humanize($field) . ": Please enter a value\n";
-			}	
+			}
 		}
 		
 		foreach ($this->transaction_info as $field => $value) {
@@ -1275,14 +1275,15 @@ class fFinancialTransaction
 			if ($info['type'] == 'boolean' && !is_bool($this->transaction_info[$field])) {
 				$message .= fInflection::humanize($field) . ": Please enter a boolean value\n";
 				continue;
-			}	
-		}	
+			}
+		}
 		
 		if ($message) {
-			fCore::toss('fValidationException', $message);	
+			fCore::toss('fValidationException', $message);
 		}
 	}
 }
+
 
 
 /**

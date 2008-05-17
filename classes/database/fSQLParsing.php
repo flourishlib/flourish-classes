@@ -23,15 +23,15 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $first_table   This table will be used as a basis to see if the second table is a join table
-	 * @param  string $second_table  This table will be checked against the first table to see if it is a join table
-	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
-	 * @return mixed  Will be FALSE if the second table is not a join table for the first table, or a many-to-many relationship array if it is 
+	 * @param  string   $first_table   This table will be used as a basis to see if the second table is a join table
+	 * @param  string   $second_table  This table will be checked against the first table to see if it is a join table
+	 * @param  fISchema $schema        The fISchema instance to get the relationship info from
+	 * @return mixed  Will be FALSE if the second table is not a join table for the first table, or a many-to-many relationship array if it is
 	 */
 	static private function checkForJoinTable($first_table, $second_table, fISchema $schema)
 	{
 		if ($schema === NULL) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		$relationships = $schema->getRelationships($first_table, 'many-to-many');
@@ -39,7 +39,7 @@ class fSQLParsing
 		foreach ($relationships as $relationship) {
 			if ($relationship['join_table'] == $second_table) {
 				return $relationship;
-			}	
+			}
 		}
 		
 		return FALSE;
@@ -51,18 +51,18 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $prefix   The join name prefix to use
-	 * @param  array $joins     The current joins
+	 * @param  string $prefix  The join name prefix to use
+	 * @param  array  $joins   The current joins
 	 * @return string   A unique join name for the prefix specified
 	 */
 	static private function createJoinName($prefix, $joins)
 	{
 		$i = 1;
 		while (isset($joins[$prefix . $i])) {
-			$i++;	
-		}	
+			$i++;
+		}
 		return $prefix . $i;
-	}   
+	}
 	
 	
 	/**
@@ -70,16 +70,16 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $route         The current route name we have determined
-	 * @param  string $first_table   This table will be checked for one-to-many relationships
-	 * @param  string $second_table  This table will be checked to see if it is on the many end of a one-to-many relationships with $first_table
-	 * @param  fISchema  $schema     The fISchema instance to get the relationship info from
+	 * @param  string   $route         The current route name we have determined
+	 * @param  string   $first_table   This table will be checked for one-to-many relationships
+	 * @param  string   $second_table  This table will be checked to see if it is on the many end of a one-to-many relationships with $first_table
+	 * @param  fISchema $schema        The fISchema instance to get the relationship info from
 	 * @return string  Will return the current route if not in a one-to-many relationship, or the new route name if it is
 	 */
 	static private function fixRouteName($route, $first_table, $second_table, fISchema $schema)
 	{
 		if ($schema === NULL) {
-			return $route;	
+			return $route;
 		}
 		
 		$relationships = $schema->getRelationships($first_table, 'one-to-many');
@@ -87,7 +87,7 @@ class fSQLParsing
 		foreach ($relationships as $relationship) {
 			if ($relationship['related_table'] == $second_table) {
 				return $relationship['related_column'];
-			}	
+			}
 		}
 		
 		return $route;
@@ -134,14 +134,14 @@ class fSQLParsing
 		foreach ($matches[0] as $match) {
 			if ($match[0] == "'") {
 				$strings[] = $match;
-				$match = ':string_' . (sizeof($strings)-1);		
+				$match = ':string_' . (sizeof($strings)-1);
 			}
 			$temp_sql .= $match;
-		}  
+		}
 		
 		// Turn comma joins into cross joins
 		if (preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s*,\s*(?:\w+(?:\s+(?:as\s+)?(?:\w+))?))*$#is', $temp_sql)) {
-			$temp_sql = str_replace(',', ' CROSS JOIN ', $temp_sql);	
+			$temp_sql = str_replace(',', ' CROSS JOIN ', $temp_sql);
 		}
 		
 		$table_aliases = array();
@@ -161,7 +161,7 @@ class fSQLParsing
 			
 			// This isn't table info but rather just the match consisting of the join type
 			if (substr(strtolower($match), -4) == 'join') {
-				$join = array('join_type' => $match);	
+				$join = array('join_type' => $match);
 				continue;
 			}
 			
@@ -180,7 +180,7 @@ class fSQLParsing
 			// When we don't have an ON clause we are just making a simple CROSS JOIN
 			if (!$on_clause) {
 				$join_name = self::createJoinName($table_name . '_simple_', $joins);
-				$joins[$join_name] = $join;		
+				$joins[$join_name] = $join;
 				continue;
 			}
 			
@@ -189,18 +189,18 @@ class fSQLParsing
 			$simple = preg_match('#^((?:\w+\.)?\w+)\s+=\s+((?:\w+\.)?\w+)$#i', $on_clause, $clause_elements);
 			
 			
-			// Here we have a complex ON clause, so we will just store it	
+			// Here we have a complex ON clause, so we will just store it
 			if (!$simple) {
 				for ($i=0; $i < sizeof($strings); $i++) {
-					$on_clause = str_replace(':string_' . $i, $strings[$i], $on_clause);	
+					$on_clause = str_replace(':string_' . $i, $strings[$i], $on_clause);
 				}
 				
 				$join['on_clause_type'] = 'complex_expression';
-				$join['on_clause']      = $on_clause;	
+				$join['on_clause']      = $on_clause;
 				
 				$join_name              = self::createJoinName($table_name . '_complex_', $joins);
 				$joins[$join_name]      = $join;
-				continue;	
+				continue;
 			}
 				
 			
@@ -211,13 +211,13 @@ class fSQLParsing
 			// This is info we need to name the join
 			if (preg_match('#^' . $join['table_alias'] . '\.#i', $clause_elements[1])) {
 				$original_table = preg_replace('#\.\w+$#i', '', $clause_elements[2]);
-				$route          = preg_replace('#^\w+\.#i', '', $clause_elements[2]);		
+				$route          = preg_replace('#^\w+\.#i', '', $clause_elements[2]);
 			} else {
 				$original_table = preg_replace('#\.\w+$#i', '', $clause_elements[1]);
-				$route          = preg_replace('#^\w+\.#i', '', $clause_elements[1]);	
+				$route          = preg_replace('#^\w+\.#i', '', $clause_elements[1]);
 			}
 			
-			$original_table = $table_aliases[$original_table];	
+			$original_table = $table_aliases[$original_table];
 			
 			// Route names for one-to-many routes are different
 			$route = self::fixRouteName($route, $original_table, $table_name, $schema);
@@ -225,7 +225,7 @@ class fSQLParsing
 			// If this table is a join table it needs to be named differently
 			if ($join_relationship = self::checkForJoinTable($original_table, $table_name, $schema)) {
 				$joins[$original_table . '_' . $join_relationship['related_table'] . '{' . $table_name . '}_join'] = $join;
-				$joined_table[$table_name] = $original_table;	
+				$joined_table[$table_name] = $original_table;
 				continue;
 			}
 			
@@ -237,9 +237,9 @@ class fSQLParsing
 			
 			// And here we have a plain old join
 			$joins[$original_table . '_' . $table_name . '{' . $route . '}'] = $join;
-
-		}  
-
+			
+		}
+		
 		return $joins;
 	}
 	
@@ -268,7 +268,7 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $sql   The sql to parse
+	 * @param  string $sql  The sql to parse
 	 * @return array  The various clauses of the SELECT statement (see method descript for details)
 	 */
 	public function parseSelectSQL($sql)
@@ -279,7 +279,7 @@ class fSQLParsing
 		$possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
 		$found_clauses    = array();
 		foreach ($possible_clauses as $possible_clause) {
-			$found_clauses[$possible_clause] = NULL;   
+			$found_clauses[$possible_clause] = NULL;
 		}
 		
 		$current_clause = 0;
@@ -287,7 +287,7 @@ class fSQLParsing
 		foreach ($matches[0] as $match) {
 			// This is a quoted string value, don't do anything to it
 			if ($match[0] == "'") {
-				$found_clauses[$possible_clauses[$current_clause]] .= $match;    
+				$found_clauses[$possible_clauses[$current_clause]] .= $match;
 			
 			// Non-quoted strings should be checked for clause markers
 			} else {
@@ -302,18 +302,18 @@ class fSQLParsing
 						$match = $after;
 						$current_clause = $current_clause + $i;
 						$i = 0;
-					}  
-					$i++;      
+					}
+					$i++;
 				}
 				
 				// Otherwise just add on to the current clause
 				if (!empty($match)) {
-					$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);    
-				}  
+					$found_clauses[$possible_clauses[$current_clause]] .= preg_replace('#\s*' . $possible_clauses[$current_clause] . '\s*#i', '', $match);
+				}
 			}
-		}  
+		}
 		
-		return $found_clauses; 
+		return $found_clauses;
 	}
 	
 		
@@ -322,7 +322,7 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $clause   The sql clause to parse
+	 * @param  string $clause  The sql clause to parse
 	 * @return array  The tables in the from clause, with the table alias being the key and value being the name
 	 */
 	static public function parseTableAliases($sql)
@@ -332,12 +332,12 @@ class fSQLParsing
 		$aliases = array();
 		
 		foreach ($joins as $join) {
-			$aliases[$join['table_alias']] = $join['table_name'];	
+			$aliases[$join['table_alias']] = $join['table_name'];
 		}
 		
 		return $aliases;
 	}
-} 
+}
 
 
 

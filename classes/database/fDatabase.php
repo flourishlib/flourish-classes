@@ -44,23 +44,23 @@
 class fDatabase
 {
 	/**
-	 * Database connection resource or PDO object 
+	 * Database connection resource or PDO object
 	 * 
-	 * @var mixed 
+	 * @var mixed
 	 */
 	private $connection;
 	
 	/**
 	 * The database name
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $database;
 	
 	/**
 	 * If debugging is enabled
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	private $debug;
 	
@@ -70,74 +70,74 @@ class fDatabase
 	 * Options include:
 	 *   - mssql, mysql, mysqli, pgsql, sqlite, pdo
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $extension;
 	
 	/**
 	 * The host the database server is located on
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $host;
 	
 	/**
 	 * The password for the user specified
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $password;
 	
 	/**
 	 * The port number for the host
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $port;
 	
 	/**
 	 * The total number of seconds spent executing queries
 	 * 
-	 * @var float 
+	 * @var float
 	 */
 	private $query_time;
 	
 	/**
 	 * If a transaction is in progress
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	private $inside_transaction;
 	
 	/**
 	 * The fSQLTranslation object for this database
 	 * 
-	 * @var object 
+	 * @var object
 	 */
 	private $translation;
 	
 	/**
 	 * The database type (postgresql, mysql, sqlite)
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $type;
 	
 	/**
 	 * The unbuffered query instance
 	 * 
-	 * @var fUnbufferedResult 
+	 * @var fUnbufferedResult
 	 */
 	private $unbuffered_result;
 	
 	/**
 	 * The user to connect to the database as
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $username;
 	
-
+	
 	/**
 	 * Establishes a connection to the database.
 	 * 
@@ -153,24 +153,24 @@ class fDatabase
 	{
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'Invalid database type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid database type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');
 		}
 		
 		if (empty($database)) {
-			fCore::toss('fProgrammerException', 'No database was specified'); 		
+			fCore::toss('fProgrammerException', 'No database was specified');
 		}
 		
 		if ($type != 'sqlite') {
 			if (empty($username)) {
-				fCore::toss('fProgrammerException', 'No username was specified');	
+				fCore::toss('fProgrammerException', 'No username was specified');
 			}
 			if ($host === NULL) {
-				$host = 'localhost';	
+				$host = 'localhost';
 			}
 		}
 		
-		$this->type = $type;			
-
+		$this->type = $type;
+		
 		$this->determineExtension();
 		
 		$this->database = $database;
@@ -198,11 +198,11 @@ class fDatabase
 		} elseif ($this->extension == 'mysqli') {
 			mysqli_close($this->connection);
 		} elseif ($this->extension == 'pgsql') {
-			pg_close($this->connection);    
+			pg_close($this->connection);
 		} elseif ($this->extension == 'sqlite') {
-			sqlite_close($this->connection);	
+			sqlite_close($this->connection);
 		} elseif ($this->extension == 'pdo') {
-			// PDO objects close their own connections when destroyed	
+			// PDO objects close their own connections when destroyed
 		}
 	}
 	
@@ -210,23 +210,23 @@ class fDatabase
 	/**
 	 * Checks to see if an SQL error occured
 	 * 
-	 * @param  fResult|fUnbufferedResult $result  The result object for the query
-	 * @param  string  $sqlite_error_message      If we are using the sqlite extension, this will contain an error message if one exists
+	 * @param  fResult|fUnbufferedResult $result                The result object for the query
+	 * @param  string                    $sqlite_error_message  If we are using the sqlite extension, this will contain an error message if one exists
 	 * @return void
 	 */
 	private function checkForError($result, $sqlite_error_message=NULL)
 	{
-		if ($result->getResult() === FALSE) {	
+		if ($result->getResult() === FALSE) {
 			if ($this->extension == 'mssql') {
 				$message = 'MSSQL error (' . mssql_get_last_message() . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'mysql') {
 				$message = 'MySQL error (' . mysql_error($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'mysqli') {
-				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();   
+				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'pgsql') {
-				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();   
+				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'sqlite') {
-				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();   
+				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'pdo') {
 				$error_info = $this->connection->errorInfo();
 				$db_type_map = array(
@@ -238,7 +238,7 @@ class fDatabase
 				$message = $db_type_map[$this->type] . ' error (' . $error_info[2] . ') in ' . $result->getSql();
 			}
 			fCore::toss('fSQLException', $message);
-		}	
+		}
 	}
 	
 	
@@ -255,23 +255,23 @@ class fDatabase
 				try {
 					$this->connection = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->database . (($this->port) ? ';port=' . $this->port : ''), $this->username, $this->password);
 				} catch (PDOException $e) {
-					$this->connection = FALSE;	
+					$this->connection = FALSE;
 				}
 				
 			} elseif ($this->type == 'postgresql') {
 				try {
 					$this->connection = new PDO('pgsql:host=' . $this->host . ' dbname=' . $this->database, $this->username, $this->password);
 				} catch (PDOException $e) {
-					$this->connection = FALSE;	
+					$this->connection = FALSE;
 				}
 				
 			} elseif ($this->type == 'sqlite') {
 				try {
 					$this->connection = new PDO('sqlite:' . $this->database);
 				} catch (PDOException $e) {
-					$this->connection = FALSE;	
+					$this->connection = FALSE;
 				}
-			}		
+			}
 		}
 		
 		if ($this->extension == 'sqlite') {
@@ -305,7 +305,7 @@ class fDatabase
 											dbname='" . addslashes($this->database) . "'
 											user='" . addslashes($this->username) . "'
 											password='" . addslashes($this->password) . "'" .
-											(($this->port) ? " port='" . $this->port . "'" : ''));   
+											(($this->port) ? " port='" . $this->port . "'" : ''));
 		}
 		
 		// Ensure the connection was established
@@ -316,16 +316,16 @@ class fDatabase
 		// Make MySQL act more strict
 		if ($this->type == 'mysql') {
 			$this->query("set sql_mode = 'ANSI'");
-		}	
+		}
 		
 		// Make SQLite behave like other DBs for assoc arrays
 		if ($this->type == 'sqlite') {
-			$this->query('PRAGMA short_column_names = 1');	
-		}	
+			$this->query('PRAGMA short_column_names = 1');
+		}
 		
-		// Fix some issues with mssql 
+		// Fix some issues with mssql
 		if ($this->extension == 'mssql') {
-			$this->query('SET TEXTSIZE 65536');		
+			$this->query('SET TEXTSIZE 65536');
 		}
 	}
 	
@@ -340,39 +340,39 @@ class fDatabase
 		switch ($this->type) {
 			case 'mssql':
 				if (extension_loaded('mssql')) {
-					$this->extension = 'mssql';	
+					$this->extension = 'mssql';
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: mssql');	
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: mssql');
 				}
 				break;
 			
 			case 'mysql':
 				if (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
+					$this->extension = 'pdo';
 				} elseif (extension_loaded('mysqli')) {
-					$this->extension = 'mysqli';	
+					$this->extension = 'mysqli';
 				} elseif (extension_loaded('mysql')) {
-					$this->extension = 'mysql';	
+					$this->extension = 'mysql';
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');	
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');
 				}
 				break;
 				
 			case 'postgresql':
 				if (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
+					$this->extension = 'pdo';
 				} elseif (extension_loaded('pgsql')) {
-					$this->extension = 'pgsql';	
+					$this->extension = 'pgsql';
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');	
-				}  
-				break; 
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');
+				}
+				break;
 				
 			case 'sqlite':
 				$sqlite_version = 0;
 				if (file_exists($this->database)) {
 					$database_handle  = fopen($this->database, 'r');
-					$database_version = fread($database_handle, 64);	
+					$database_version = fread($database_handle, 64);
 					fclose($database_handle);
 					if (strpos($database_version, 'SQLite format 3') !== FALSE) {
 						$sqlite_version = 3;
@@ -380,28 +380,28 @@ class fDatabase
 						$sqlite_version = 2;
 					} else {
 						fCore::toss('fConnectivityException', 'The database specified does not appear to be a valid SQLite v2.1 or v3 database');
-					}		
+					}
 				}
 				if ((!$sqlite_version || $sqlite_version == 3) && class_exists('PDO', FALSE) && in_array('sqlite', PDO::getAvailableDrivers())) {
-					$this->extension = 'pdo';	
+					$this->extension = 'pdo';
 				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || !in_array('sqlite', PDO::getAvailableDrivers()))) {
 					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v3 database and the pdo_sqlite extension is not installed');
 				} elseif ($sqlite_version == 2 && extension_loaded('sqlite')) {
-					$this->extension = 'sqlite';	
+					$this->extension = 'sqlite';
 				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
 					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v2.1 database and the sqlite extension is not installed');
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for SQLite support: pdo_sqlite, sqlite');	
+					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for SQLite support: pdo_sqlite, sqlite');
 				}
-				break; 
-		}	
+				break;
+		}
 	}
 	
 	
 	/**
 	 * Escapes blobs to prevent breaking queries, includes surrounding quotes when appropriate
 	 * 
-	 * @param  string $value  The value to escape 
+	 * @param  string $value  The value to escape
 	 * @return string  The escaped blob
 	 */
 	public function escapeBlob($value)
@@ -413,11 +413,11 @@ class fDatabase
 		} elseif ($this->extension == 'pgsql') {
 			return "'" . pg_escape_bytea($this->connection, $value) . "'";
 		} elseif ($this->extension == 'sqlite') {
-			return "X'" . bin2hex($value) . "'";	
+			return "X'" . bin2hex($value) . "'";
 		} elseif ($this->extension == 'pdo') {
-			return $this->connection->quote($value);	
+			return $this->connection->quote($value);
 		} elseif ($this->extension == 'mssql') {
-			return '0x' . bin2hex($value);	
+			return '0x' . bin2hex($value);
 		}
 	}
 	
@@ -431,9 +431,9 @@ class fDatabase
 	public function escapeBoolean($value)
 	{
 		if (in_array($this->type, array('postgresql', 'mysql'))) {
-			return ($value) ? 'TRUE' : 'FALSE';	
+			return ($value) ? 'TRUE' : 'FALSE';
 		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
-			return ($value) ? "'1'" : "'0'";	
+			return ($value) ? "'1'" : "'0'";
 		}
 	}
 	
@@ -443,13 +443,13 @@ class fDatabase
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape 
+	 * @param  string $value  The value to escape
 	 * @return string  The escaped date
 	 */
 	public function escapeDate($value)
 	{
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid date');	
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid date');
 		}
 		return "'" . date('Y-m-d', strtotime($value)) . "'";
 	}
@@ -458,7 +458,7 @@ class fDatabase
 	/**
 	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
 	 * 
-	 * @param  string $value  The value to escape 
+	 * @param  string $value  The value to escape
 	 * @return string  The escaped string
 	 */
 	public function escapeString($value)
@@ -470,11 +470,11 @@ class fDatabase
 		} elseif ($this->extension == 'pgsql') {
 			return "'" . pg_escape_string($value) . "'";
 		} elseif ($this->extension == 'sqlite') {
-			return "'" . sqlite_escape_string($value) . "'";	
+			return "'" . sqlite_escape_string($value) . "'";
 		} elseif ($this->extension == 'pdo') {
-			return $this->connection->quote($value);	
+			return $this->connection->quote($value);
 		} elseif ($this->extension == 'mssql') {
-			return "'" . str_replace("'", "''", $value) . "'";	
+			return "'" . str_replace("'", "''", $value) . "'";
 		}
 	}
 	
@@ -484,13 +484,13 @@ class fDatabase
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape 
+	 * @param  string $value  The value to escape
 	 * @return string  The escaped time
 	 */
 	public function escapeTime($value)
 	{
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid time');	
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid time');
 		}
 		return "'" . date('H:i:s', strtotime($value)) . "'";
 	}
@@ -501,13 +501,13 @@ class fDatabase
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape 
+	 * @param  string $value  The value to escape
 	 * @return string  The escaped timestamp
 	 */
 	public function escapeTimestamp($value)
 	{
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid timestamp');	
+			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid timestamp');
 		}
 		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
 	}
@@ -522,22 +522,22 @@ class fDatabase
 	private function executeQuery(fResult $result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSql(), $this->connection)); 
+			$result->setResult(@mssql_query($result->getSql(), $this->connection));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_query($result->getSql(), $this->connection)); 
+			$result->setResult(@mysql_query($result->getSql(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSql()));   
+			$result->setResult(@mysqli_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSql()));   
+			$result->setResult(@pg_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));	
+			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'pdo') {
 			$pdo_statement = $this->connection->query($result->getSql());
-			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);	
+			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);
 		}
 		
 		if ($this->extension == 'sqlite') {
-			$this->checkForError($result, $sqlite_error_message);	
+			$this->checkForError($result, $sqlite_error_message);
 		} else {
 			$this->checkForError($result);
 		}
@@ -545,10 +545,10 @@ class fDatabase
 		if ($this->extension != 'pdo') {
 			$this->setAffectedRows($result);
 		} else {
-			$this->setAffectedRows($result, $pdo_statement); 
+			$this->setAffectedRows($result, $pdo_statement);
 			$pdo_statement->closeCursor();
 			unset($pdo_statement);
-		}     
+		}
 		
 		$this->setReturnedRows($result);
 		
@@ -565,21 +565,21 @@ class fDatabase
 	private function executeUnbufferedQuery(fUnbufferedResult $result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSql(), $this->connection, 20)); 
+			$result->setResult(@mssql_query($result->getSql(), $this->connection, 20));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_unbuffered_query($result->getSql(), $this->connection)); 
+			$result->setResult(@mysql_unbuffered_query($result->getSql(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSql(), MYSQLI_USE_RESULT));   
+			$result->setResult(@mysqli_query($this->connection, $result->getSql(), MYSQLI_USE_RESULT));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSql()));   
+			$result->setResult(@pg_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));	
+			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'pdo') {
-			$result->setResult($this->connection->query($result->getSql()));	
+			$result->setResult($this->connection->query($result->getSql()));
 		}
 		
 		if ($this->extension == 'sqlite') {
-			$this->checkForError($result, $sqlite_error_message);	
+			$this->checkForError($result, $sqlite_error_message);
 		} else {
 			$this->checkForError($result);
 		}
@@ -604,7 +604,7 @@ class fDatabase
 			
 			// This is a quoted string value, don't do anything to it
 			if ($match[0] == "'") {
-				$cur_sql .= $match;	
+				$cur_sql .= $match;
 			
 			// Handle the SQL
 			} else {
@@ -617,21 +617,21 @@ class fDatabase
 						$i++;
 						if ($i >= sizeof($sql_strings)) {
 							break;
-						}	
+						}
 					}
 					$cur_sql = trim($cur_sql);
 					if ($cur_sql) {
-						$sql_queries[] = $cur_sql; 
+						$sql_queries[] = $cur_sql;
 					}
 					$cur_sql = $sql_strings[$i];
-				}	
+				}
 			}
-		}	
+		}
 		if (trim($cur_sql)) {
-			$sql_queries[] = $cur_sql; 
+			$sql_queries[] = $cur_sql;
 		}
 		
-		return $sql_queries;	
+		return $sql_queries;
 	}
 	
 	
@@ -677,28 +677,28 @@ class fDatabase
 	private function handleAutoIncrementedValue(fResult $result)
 	{
 		if (!preg_match('#^\s*INSERT#i', $result->getSQL())) {
-			$result->setAutoIncrementedValue(NULL); 
-			return;		
+			$result->setAutoIncrementedValue(NULL);
+			return;
 		}
 		
 		$insert_id = NULL;
 		
 		if ($this->extension == 'mssql') {
 			$insert_id_res = mssql_query("SELECT @@IDENTITY AS insert_id", $this->connection);
-			$insert_id     = mssql_result($insert_id_res, 0, 'insert_id'); 
+			$insert_id     = mssql_result($insert_id_res, 0, 'insert_id');
 		
 		} elseif ($this->extension == 'mysql') {
-			$insert_id     = @mysql_insert_id($this->connection);   
+			$insert_id     = @mysql_insert_id($this->connection);
 		
 		} elseif ($this->extension == 'mysqli') {
-			$insert_id     = @mysqli_insert_id($this->connection);   
+			$insert_id     = @mysqli_insert_id($this->connection);
 		
 		} elseif ($this->extension == 'pgsql') {
 			
 			if (!$this->isInsideTransaction()) {
 				pg_query($this->connection, "BEGIN");
 			} else {
-				pg_query($this->connection, "SAVEPOINT get_last_val"); 
+				pg_query($this->connection, "SAVEPOINT get_last_val");
 			}
 			
 			$insert_id_res = @pg_query($this->connection, "SELECT lastval()");
@@ -712,14 +712,14 @@ class fDatabase
 				
 			} else {
 				if (!$this->isInsideTransaction()) {
-					pg_query($this->connection, "ROLLBACK");	
+					pg_query($this->connection, "ROLLBACK");
 				} else {
-					pg_query($this->connection, "ROLLBACK TO get_last_val"); 	
+					pg_query($this->connection, "ROLLBACK TO get_last_val");
 				}
 			}
 		
 		} elseif ($this->extension == 'sqlite') {
-			$insert_id = sqlite_last_insert_rowid($this->connection);	
+			$insert_id = sqlite_last_insert_rowid($this->connection);
 		
 		} elseif ($this->extension == 'pdo') {
 			
@@ -729,9 +729,9 @@ class fDatabase
 					try {
 						
 						if (!$this->isInsideTransaction()) {
-							$this->connection->beginTransaction();	
+							$this->connection->beginTransaction();
 						} else {
-							$this->connection->query("SAVEPOINT get_last_val"); 
+							$this->connection->query("SAVEPOINT get_last_val");
 						}
 						
 						$insert_id_statement = @$this->connection->query("SELECT lastval()");
@@ -743,16 +743,16 @@ class fDatabase
 						$insert_id = array_shift($insert_id_row);
 						
 						if (!$this->isInsideTransaction()) {
-							$this->connection->commit();	
+							$this->connection->commit();
 						}
 						
-					} catch (Exception $e) { 
+					} catch (Exception $e) {
 						
 						if (!$this->isInsideTransaction()) {
-							$this->connection->rollBack();	
+							$this->connection->rollBack();
 						} else {
-							$this->connection->query("ROLLBACK TO get_last_val"); 
-						}   
+							$this->connection->query("ROLLBACK TO get_last_val");
+						}
 						
 					}
 					break;
@@ -764,10 +764,10 @@ class fDatabase
 				case 'sqlite':
 					$insert_id = $this->connection->lastInsertId();
 					break;
-			}	
+			}
 		}
 		
-		$result->setAutoIncrementedValue($insert_id);	
+		$result->setAutoIncrementedValue($insert_id);
 	}
 	
 	
@@ -784,19 +784,19 @@ class fDatabase
 			return FALSE;
 		}
 		
-		$success = FALSE;	
+		$success = FALSE;
 		
 		try {
 			if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
-				$this->connection->beginTransaction(); 
+				$this->connection->beginTransaction();
 				$success = TRUE;
 			}
 			if (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
-				$this->connection->commit(); 
+				$this->connection->commit();
 				$success = TRUE;
 			}
 			if (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
-				$this->connection->rollBack(); 
+				$this->connection->rollBack();
 				$success = TRUE;
 			}
 		} catch (Exception $e) {
@@ -806,14 +806,14 @@ class fDatabase
 				'sqlite'     => 'SQLite'
 			);
 			
-			fCore::toss('fSQLException', $db_type_map[$this->type] . ' error (' . $e->getMessage() . ') in ' . $sql);		
+			fCore::toss('fSQLException', $db_type_map[$this->type] . ' error (' . $e->getMessage() . ') in ' . $sql);
 		}
 		
 		if ($success) {
 			$result = new $result_class($this->extension);
 			$result->setSQL($sql);
 			$result->setResult(TRUE);
-			return $result;	
+			return $result;
 		}
 		
 		return FALSE;
@@ -834,7 +834,7 @@ class fDatabase
 	/**
 	 * Executes one or more sql queries
 	 * 
-	 * @param  string  $sql  One or more SQL statements
+	 * @param  string $sql  One or more SQL statements
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function query($sql)
@@ -857,20 +857,20 @@ class fDatabase
 			$result = new fResult($this->extension);
 			$result->setSQL($sql);
 			
-			$this->executeQuery($result);	
+			$this->executeQuery($result);
 		}
 		
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
-		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);          
+		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);
 		
 		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
 			$result = array($result);
 			foreach ($sql_queries as $sql_query) {
 				$result[] = $this->query($sql_query);
-			}	
+			}
 		}
 		
 		return $result;
@@ -888,26 +888,26 @@ class fDatabase
 	{
 		if ($this->extension == 'mssql') {
 			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
-			$result->setAffectedRows((int) @mssql_result($affected_rows_result, 0, 'rows'));   
+			$result->setAffectedRows((int) @mssql_result($affected_rows_result, 0, 'rows'));
 		} elseif ($this->extension == 'mysql') {
-			$result->setAffectedRows(@mysql_affected_rows($this->connection));   
+			$result->setAffectedRows(@mysql_affected_rows($this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setAffectedRows(@mysqli_affected_rows($this->connection)); 
+			$result->setAffectedRows(@mysqli_affected_rows($this->connection));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setAffectedRows(@pg_affected_rows($result->getResult())); 
+			$result->setAffectedRows(@pg_affected_rows($result->getResult()));
 		} elseif ($this->extension == 'sqlite') {
 			$result->setAffectedRows(@sqlite_changes($this->connection));
 		} elseif ($this->extension == 'pdo') {
 			// This fixes the fact that rowCount is not reset for non INSERT/UPDATE/DELETE statements
 			try {
 				if (!$pdo_statement->fetch()) {
-					throw new PDOException();	
+					throw new PDOException();
 				}
 				$result->setAffectedRows(0);
 			} catch (PDOException $e) {
 				$result->setAffectedRows($pdo_statement->rowCount());
 			}
-		}	
+		}
 	}
 	
 	
@@ -921,7 +921,7 @@ class fDatabase
 	{
 		$this->debug = (boolean) $enable;
 		if ($this->translation) {
-			$this->translation->setDebug($this->debug);	
+			$this->translation->setDebug($this->debug);
 		}
 	}
 	
@@ -936,19 +936,19 @@ class fDatabase
 	{
 		if (is_resource($result->getResult())) {
 			if ($this->extension == 'mssql') {
-				$result->setReturnedRows(@mssql_num_rows($result->getResult())); 
+				$result->setReturnedRows(@mssql_num_rows($result->getResult()));
 			} elseif ($this->extension == 'mysql') {
-				$result->setReturnedRows(@mysql_num_rows($result->getResult())); 
+				$result->setReturnedRows(@mysql_num_rows($result->getResult()));
 			} elseif ($this->extension == 'mysqli') {
 				$result->setReturnedRows(@mysqli_num_rows($result->getResult()));
 			} elseif ($this->extension == 'pgsql') {
 				$result->setReturnedRows(@pg_num_rows($result->getResult()));
 			} elseif ($this->extension == 'sqlite') {
-				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));	
+				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));
 			}
 		} elseif (is_array($result->getResult())) {
-			$result->setReturnedRows(sizeof($result->getResult()));		
-		}	
+			$result->setReturnedRows(sizeof($result->getResult()));
+		}
 	}
 	
 	
@@ -962,19 +962,19 @@ class fDatabase
 	{
 		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
 			if ($this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'A transaction is already in progress');	
+				fCore::toss('fProgrammerException', 'A transaction is already in progress');
 			}
-			$this->inside_transaction = TRUE; 
+			$this->inside_transaction = TRUE;
 			
 		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'There is no transaction in progress');	
+				fCore::toss('fProgrammerException', 'There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 			
 		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'There is no transaction in progress');	
+				fCore::toss('fProgrammerException', 'There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 		}
@@ -984,14 +984,14 @@ class fDatabase
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
-	 *  @param  string  $sql  One or more SQL statements
+	 *  @param  string $sql  One or more SQL statements
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function translatedQuery($sql)
 	{
 		if (!$this->translation) {
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
-		}	
+		}
 		$result = $this->query($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
 		return $result;
@@ -1000,12 +1000,12 @@ class fDatabase
 	
 	/**
 	 * Executes a single SQL statement in unbuffered mode. This is optimal for
-	 * large results sets since it does not load the whole result set into 
+	 * large results sets since it does not load the whole result set into
 	 * memory first. The gotcha is that only one unbuffered result can exist at
 	 * one time. If another unbuffered query is executed, the old result will
 	 * be deleted.
 	 * 
-	 * @param  string  $sql  A single SQL statement
+	 * @param  string $sql  A single SQL statement
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedQuery($sql)
@@ -1016,7 +1016,7 @@ class fDatabase
 		}
 		
 		if ($this->unbuffered_result) {
-			$this->unbuffered_result->__destruct();	
+			$this->unbuffered_result->__destruct();
 		}
 		
 		$start_time = microtime(TRUE);
@@ -1026,13 +1026,13 @@ class fDatabase
 			$result = new fUnbufferedResult($this->extension);
 			$result->setSQL($sql);
 			
-			$this->executeUnbufferedQuery($result);	
-		}		
+			$this->executeUnbufferedQuery($result);
+		}
 		
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
-		fCore::debug('Query time was ' . $query_time . " seconds for (unbuffered):\n" . $result->getSql(), $this->debug);          
+		fCore::debug('Query time was ' . $query_time . " seconds for (unbuffered):\n" . $result->getSql(), $this->debug);
 		
 		$this->unbuffered_result = $result;
 		
@@ -1047,14 +1047,14 @@ class fDatabase
 	 * one unbuffered result can exist at one time. If another unbuffered query
 	 * is executed, the old result will be deleted.
 	 * 
-	 * @param  string  $sql  A single SQL statement
+	 * @param  string $sql  A single SQL statement
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedTranslatedQuery($sql)
 	{
 		if (!$this->translation) {
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
-		}	
+		}
 		$result = $this->unbufferedQuery($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
 		return $result;
@@ -1064,7 +1064,7 @@ class fDatabase
 	/**
 	 * Unescapes blobs coming out of the database
 	 * 
-	 * @param  string $value  The value to unescape 
+	 * @param  string $value  The value to unescape
 	 * @return binary  The binary data from the blob
 	 */
 	public function unescapeBlob($value)
@@ -1072,7 +1072,7 @@ class fDatabase
 		if ($this->extension == 'pgsql') {
 			return pg_unescape_bytea($this->connection, $value);
 		} else  {
-			return $value;	
+			return $value;
 		}
 	}
 	
@@ -1080,7 +1080,7 @@ class fDatabase
 	/**
 	 * Interprets a boolean coming out of the database
 	 * 
-	 * @param  string $value  The value to interpret 
+	 * @param  string $value  The value to interpret
 	 * @return boolean  The boolean equivalent of the value passed
 	 */
 	public function unescapeBoolean($value)
@@ -1092,7 +1092,7 @@ class fDatabase
 	/**
 	 * Unescapes dates coming out of the database
 	 * 
-	 * @param  string $value  The value to unescape 
+	 * @param  string $value  The value to unescape
 	 * @return string  The date
 	 */
 	public function unescapeDate($value)
@@ -1104,7 +1104,7 @@ class fDatabase
 	/**
 	 * Unescapes strings coming out of the database, included for completeness
 	 * 
-	 * @param  string $value  The value to unescape 
+	 * @param  string $value  The value to unescape
 	 * @return string  The unescaped string
 	 */
 	public function unescapeString($value)
@@ -1116,7 +1116,7 @@ class fDatabase
 	/**
 	 * Unescapes times coming out of the database
 	 * 
-	 * @param  string $value  The value to unescape 
+	 * @param  string $value  The value to unescape
 	 * @return string  The time
 	 */
 	public function unescapeTime($value)
@@ -1128,13 +1128,13 @@ class fDatabase
 	/**
 	 * Unescapes timestamps coming out of the database
 	 * 
-	 * @param  string $value  The value to unescape 
+	 * @param  string $value  The value to unescape
 	 * @return string  The timestamp
 	 */
 	public function unescapeTimestamp($value)
 	{
 		return date('Y-m-d H:i:s', strtotime($value));
-	}	
+	}
 }
 
 

@@ -53,9 +53,9 @@ interface fISchema
 	 *   - char
 	 *   - text
 	 *   - integer
-	 *   - float 
+	 *   - float
 	 *   - timestamp
-	 *   - date 
+	 *   - date
 	 *   - time
 	 *   - boolean
 	 *   - blob
@@ -81,7 +81,7 @@ interface fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(

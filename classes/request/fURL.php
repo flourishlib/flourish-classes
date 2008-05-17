@@ -12,11 +12,11 @@
  * @uses  fHTML
  * @uses  fProgrammerException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fURL
-{	
+{
 	/**
 	 * Returns the requested url, does no include the domain name or query string
 	 * 
@@ -35,7 +35,7 @@ class fURL
 	 */
 	static public function getDomain()
 	{
-		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];    
+		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];
 	}
 	
 	
@@ -85,9 +85,9 @@ class fURL
 	static public function redirect($url)
 	{
 		if (strpos($url, '/') === 0) {
-			$url = self::getDomain() . $url;   
+			$url = self::getDomain() . $url;
 		} elseif (!preg_match('#^https?://#i')) {
-			$url = self::getDomain() . self::get() . $url;	
+			$url = self::getDomain() . self::get() . $url;
 		}
 		header('Location: ' . $url);
 		exit($url);
@@ -104,9 +104,9 @@ class fURL
 	{
 		$keys = func_get_args();
 		for ($i=0; $i < sizeof($keys); $i++) {
-			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';    
-		}            
-		return '?' . substr(preg_replace($keys, '', $qs), 1);           
+			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';
+		}
+		return '?' . substr(preg_replace($keys, '', $qs), 1);
 	}
 	
 	
@@ -121,21 +121,21 @@ class fURL
 	{
 		$qs_array = $_GET;
 		if (get_magic_quotes_gpc()) {
-			$qs_array = array_map('stripslashes', $qs_array);	
+			$qs_array = array_map('stripslashes', $qs_array);
 		}
 		
 		settype($key, 'array');
 		settype($value, 'array');
 		
 		if (sizeof($key) != sizeof($value)) {
-			fCore::toss('fProgrammerException', 'There are a different number of parameters and values');	
+			fCore::toss('fProgrammerException', 'There are a different number of parameters and values');
 		}
 		
 		for ($i=0; $i<sizeof($key); $i++) {
-			$qs_array[$key[$i]] = $value[$i];		
+			$qs_array[$key[$i]] = $value[$i];
 		}
 		
-		return '?' . http_build_query($qs_array, '', '&');           
+		return '?' . http_build_query($qs_array, '', '&');
 	}
 	
 	
@@ -145,7 +145,7 @@ class fURL
 	 * @return fURL
 	 */
 	private function __construct() { }
-} 
+}
 
 
 

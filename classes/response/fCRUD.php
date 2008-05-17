@@ -26,41 +26,41 @@ class fCRUD
 	/**
 	 * Any values that were loaded from the session, used for redirection
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $loaded_values = array();
 	
 	/**
 	 * The current row number for alternating rows
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	static private $row_number = 1;
 	
 	/**
 	 * The values for a search form
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $search_values = array();
 	
 	/**
 	 * The column to sort by
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	static private $sort_column = NULL;
 	
 	/**
 	 * The direction to sort
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	static private $sort_direction = NULL;
 	
 	
 	/**
-	 * Prints a sortable column header 
+	 * Prints a sortable column header
 	 * 
 	 * @param  string $column       The column to create the sortable header for
 	 * @param  string $column_name  This will override the humanized version of the column
@@ -69,20 +69,20 @@ class fCRUD
 	static public function createSortableColumn($column, $column_name=NULL)
 	{
 		if ($column_name === NULL) {
-			$column_name = fInflection::humanize($column);	
+			$column_name = fInflection::humanize($column);
 		}
-
+		
 		if (self::$sort_column == $column) {
 			$sort      = $column;
 			$direction = (self::$sort_direction == 'asc') ? 'desc' : 'asc';
 		} else {
 			$sort      = $column;
-			$direction = 'asc';	
+			$direction = 'asc';
 		}
 		
 		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
 		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
-		?><a href="<?= fHTML::preparePlainText(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::encodeEntities($column_name) ?></a><?	
+		?><a href="<?= fHTML::encode(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::prepare($column_name) ?></a><?
 	}
 	
 	
@@ -99,27 +99,27 @@ class fCRUD
 		$selected = FALSE;
 		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
 			$selected = TRUE;
-		}	
+		}
 		
-		echo '<option value="' . fHTML::prepareFormValue($value) . '"';
+		echo '<option value="' . fHTML::encode($value) . '"';
 		if ($selected) {
-			echo ' selected="selected"';	
+			echo ' selected="selected"';
 		}
 		echo '>' . fHTML::prepare($text) . '</option>';
 	}
 	
 	
 	/**
-	 * Prints a class attribute for a td if that td is part of the sorted column 
+	 * Prints a class attribute for a td if that td is part of the sorted column
 	 * 
-	 * @param  string $column   The column this td is part of
+	 * @param  string $column  The column this td is part of
 	 * @return void
 	 */
 	static public function highlightSortedColumn($column)
 	{
 		if (self::$sort_column == $column) {
 			echo ' class="sorted"';
-		}	
+		}
 	}
 	
 	
@@ -178,7 +178,7 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current value of a search field. If a value === '' and no cast to is specified, the value will become NULL. 
+	 * Gets the current value of a search field. If a value === '' and no cast to is specified, the value will become NULL.
 	 * 
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to
@@ -188,14 +188,14 @@ class fCRUD
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
 		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
-			self::$search_values[$column] = self::getPreviousSearchValue($column);	
+			self::$search_values[$column] = self::getPreviousSearchValue($column);
 			self::$loaded_values[$column] = self::$search_values[$column];
 		} else {
 			self::$search_values[$column] = fRequest::get($column, $cast_to, $default);
 			self::setPreviousSearchValue($column, self::$search_values[$column]);
 		}
-		return self::$search_values[$column];	
-	}	
+		return self::$search_values[$column];
+	}
 	
 	
 	/**
@@ -207,13 +207,13 @@ class fCRUD
 	static public function getSortColumn($possible_columns)
 	{
 		if (self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
-			self::$sort_column = self::getPreviousSortColumn();	
+			self::$sort_column = self::getPreviousSortColumn();
 			self::$loaded_values['sort'] = self::$sort_column;
 		} else {
 			self::$sort_column = fRequest::getFromArray('sort', $possible_columns);
 			self::setPreviousSortColumn(self::$sort_column);
 		}
-		return self::$sort_column;	
+		return self::$sort_column;
 	}
 	
 	
@@ -226,13 +226,13 @@ class fCRUD
 	static public function getSortDirection($default_direction)
 	{
 		if (self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
-			self::$sort_direction = self::getPreviousSortDirection();	
+			self::$sort_direction = self::getPreviousSortDirection();
 			self::$loaded_values['dir'] = self::$sort_direction;
 		} else {
 			self::$sort_direction = fRequest::getFromArray('dir', array($default_direction, ($default_direction == 'asc') ? 'desc' : 'asc'));
 			self::setPreviousSortDirection(self::$sort_direction);
 		}
-		return self::$sort_direction;	
+		return self::$sort_direction;
 	}
 	
 	
@@ -247,7 +247,7 @@ class fCRUD
 		$url = fURL::get() . $query_string;
 		
 		if ($url != fURL::getWithQueryString() && $url != fURL::getWithQueryString() . '?') {
-			fURL::redirect($url);	
+			fURL::redirect($url);
 		}
 	}
 	
@@ -255,24 +255,24 @@ class fCRUD
 	/**
 	 * Removes list items from an fPrintableException based on their contents
 	 * 
-	 * @param  fPrintableException $e           The exception to remove field names from
+	 * @param  fPrintableException $exception   The exception to remove field names from
 	 * @param  string              $filter,...  If this content is found in a list item, the list item will be removed
 	 * @return void
 	 */
-	static public function removeListItems(fPrintableException $e, $filter)
+	static public function removeListItems(fPrintableException $exception, $filter)
 	{
 		$filters = array_slice(func_get_args(), 1);
-		$message = $e->getMessage();
+		$message = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
 		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $matches)) {
-			return;	
+			return;
 		}
 		
 		$beginning   = $matches[1];
 		$list_items  = $matches[2];
 		$ending      = $matches[3];
-
+		
 		preg_match_all('#<li(.*?)</li>#i', $list_items, $matches, PREG_SET_ORDER);
 		
 		$new_list_items = array();
@@ -283,10 +283,10 @@ class fCRUD
 				}
 			}
 			
-			$new_list_items[] = $match[0];			
+			$new_list_items[] = $match[0];
 		}
 		
-		$e->setMessage($beginning . join("\n", $new_list_items) . $ending);
+		$exception->setMessage($beginning . join("\n", $new_list_items) . $ending);
 	}
 	
 	
@@ -294,22 +294,22 @@ class fCRUD
 	 * Reorders list items in an fPrintableException based on their contents
 	 * 
 	 * @param  fPrintableException $exception  The exception to reorder the list items in
-	 * @param  array               $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array. 
+	 * @param  array               $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
 	 */
-	static public function reorderListItems($exception, $matches)
+	static public function reorderListItems(fPrintableException $exception, $matches)
 	{
-		$message   = $exception->getMessage();
+		$message = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
 		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $message_parts)) {
-			return;	
+			return;
 		}
 		
 		$beginning     = $message_parts[1];
 		$list_contents = $message_parts[2];
 		$ending        = $message_parts[3];
-
+		
 		preg_match_all('#<li(.*?)</li>#i', $list_contents, $list_items, PREG_SET_ORDER);
 		
 		$ordered_items = array_fill(0, sizeof($matches), array());
@@ -323,12 +323,12 @@ class fCRUD
 				}
 			}
 			
-			$other_items[] = $list_item[0];			
+			$other_items[] = $list_item[0];
 		}
 		
 		$final_list = array();
 		foreach ($ordered_items as $ordered_item) {
-			$final_list = array_merge($final_list, $ordered_item);	
+			$final_list = array_merge($final_list, $ordered_item);
 		}
 		$final_list = array_merge($final_list, $other_items);
 		
@@ -379,7 +379,7 @@ class fCRUD
 	 * @return fCRUD
 	 */
 	private function __construct() { }
-} 
+}
 
 
 

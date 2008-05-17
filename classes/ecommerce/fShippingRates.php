@@ -1,6 +1,6 @@
 <?php
 /**
- * Returns all available shipping options and prices for the origin and destination locations specified 
+ * Returns all available shipping options and prices for the origin and destination locations specified
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -116,19 +116,19 @@ class fShippingRates
 											 'required'     => array('ship_to_country' => array(
 																   'AX', 'DZ', 'AD', 'AR', 'AM', 'AU', 'AT', 'AZ',
 																   'BH', 'BD', 'BB', 'BY', 'BE', 'BM', 'BO', 'BA',
-																   'BR', 'BN', 'BG', 'KH', 'CA', 'CV', 'KY', 'TD', 
+																   'BR', 'BN', 'BG', 'KH', 'CA', 'CV', 'KY', 'TD',
 																   'CL', 'CN', 'CX', 'CC', 'CO', 'CR', 'HR', 'CU',
 																   'CY', 'CZ', 'DK', 'DO', 'EG', 'SV', 'EE', 'ET',
 																   'FO', 'FI', 'FR', 'GA', 'GE', 'DE', 'GR', 'GT',
 																   'GW', 'HT', 'HN', 'HK', 'HU', 'IS', 'IN', 'ID',
-																   'IR', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 
+																   'IR', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KE',
 																   'KG', 'KR', 'LV', 'LB', 'LA', 'LS', 'LR', 'LY',
 																   'LT', 'LU', 'MK', 'MG', 'MV', 'MY', 'MT', 'MX',
 																   'MD', 'MC', 'MN', 'MA', 'MZ', 'MM', 'NP', 'NL',
-																   'NZ', 'NI', 'NE', 'NG', 'NO', 'OM', 'PK', 'PG', 
+																   'NZ', 'NI', 'NE', 'NG', 'NO', 'OM', 'PK', 'PG',
 																   'PY', 'PE', 'PH', 'PL', 'PT', 'PR', 'RO', 'RU',
 																   'SA', 'CS', 'SG', 'SK', 'ZA', 'SI', 'ES', 'LK',
-																   'SD', 'SZ', 'SE', 'CH', 'TW', 'TJ', 'TH', 'TN', 
+																   'SD', 'SZ', 'SE', 'CH', 'TW', 'TJ', 'TH', 'TN',
 																   'TR', 'TM', 'UA', 'GB', 'US', 'UY', 'UZ', 'VE',
 																   'VN', 'ZM')),
 											 'default'      => NULL,
@@ -138,35 +138,35 @@ class fShippingRates
 											 'default'      => NULL,
 											 'type'         => 'string',
 											 'valid_values' => array(
-																   'AX', 'AF', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI', 
-																   'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ', 
-																   'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ', 
-																   'BM', 'BT', 'BO', 'BA', 'BW', 'BV', 'BR', 'IO', 
-																   'BN', 'BG', 'BF', 'BI', 'KH', 'CM', 'CA', 'CV', 
-																   'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC', 'CO', 
-																   'KM', 'CD', 'CG', 'CK', 'CR', 'CI', 'HR', 'CU', 
-																   'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO', 'EC', 'EG', 
-																   'SV', 'GQ', 'ER', 'EE', 'ET', 'FK', 'FO', 'FJ', 
-																   'FI', 'FR', 'GF', 'PF', 'TF', 'GA', 'GM', 'GE', 
-																   'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU', 
-																   'GT', 'GN', 'GW', 'GY', 'HT', 'HM', 'HN', 'HK', 
-																   'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IL', 
-																   'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KP', 
-																   'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR', 
-																   'LY', 'LI', 'LT', 'LU', 'MO', 'MK', 'MG', 'MW', 
-																   'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU', 
-																   'YT', 'MX', 'FM', 'MD', 'MC', 'MN', 'MS', 'MA', 
-																   'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'AN', 'NC', 
-																   'NZ', 'NI', 'NE', 'NG', 'NU', 'NF', 'MP', 'NO', 
-																   'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 
-																   'PH', 'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO', 
-																   'RU', 'RW', 'SH', 'KN', 'LC', 'PM', 'VC', 'WS', 
-																   'SM', 'ST', 'SA', 'SN', 'CS', 'SC', 'SL', 'SG', 
-																   'SK', 'SI', 'SB', 'SO', 'ZA', 'GS', 'ES', 'LK', 
-																   'SD', 'SR', 'SJ', 'SZ', 'SE', 'CH', 'SY', 'TW', 
-																   'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK', 'TO', 'TT', 
-																   'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE', 
-																   'GB', 'US', 'UM', 'UY', 'UZ', 'VU', 'VA', 'VE', 
+																   'AX', 'AF', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI',
+																   'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ',
+																   'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ',
+																   'BM', 'BT', 'BO', 'BA', 'BW', 'BV', 'BR', 'IO',
+																   'BN', 'BG', 'BF', 'BI', 'KH', 'CM', 'CA', 'CV',
+																   'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC', 'CO',
+																   'KM', 'CD', 'CG', 'CK', 'CR', 'CI', 'HR', 'CU',
+																   'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO', 'EC', 'EG',
+																   'SV', 'GQ', 'ER', 'EE', 'ET', 'FK', 'FO', 'FJ',
+																   'FI', 'FR', 'GF', 'PF', 'TF', 'GA', 'GM', 'GE',
+																   'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU',
+																   'GT', 'GN', 'GW', 'GY', 'HT', 'HM', 'HN', 'HK',
+																   'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IL',
+																   'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KP',
+																   'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR',
+																   'LY', 'LI', 'LT', 'LU', 'MO', 'MK', 'MG', 'MW',
+																   'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU',
+																   'YT', 'MX', 'FM', 'MD', 'MC', 'MN', 'MS', 'MA',
+																   'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'AN', 'NC',
+																   'NZ', 'NI', 'NE', 'NG', 'NU', 'NF', 'MP', 'NO',
+																   'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE',
+																   'PH', 'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO',
+																   'RU', 'RW', 'SH', 'KN', 'LC', 'PM', 'VC', 'WS',
+																   'SM', 'ST', 'SA', 'SN', 'CS', 'SC', 'SL', 'SG',
+																   'SK', 'SI', 'SB', 'SO', 'ZA', 'GS', 'ES', 'LK',
+																   'SD', 'SR', 'SJ', 'SZ', 'SE', 'CH', 'SY', 'TW',
+																   'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK', 'TO', 'TT',
+																   'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE',
+																   'GB', 'US', 'UM', 'UY', 'UZ', 'VU', 'VA', 'VE',
 																   'VN', 'VG', 'VI', 'WF', 'EH', 'YE', 'ZM', 'ZW')),
 		'ship_from_address_line_1'    => array(
 											 'required'     => TRUE,
@@ -210,19 +210,19 @@ class fShippingRates
 											 'required'     => array('ship_to_country' => array(
 																   'AX', 'DZ', 'AD', 'AR', 'AM', 'AU', 'AT', 'AZ',
 																   'BH', 'BD', 'BB', 'BY', 'BE', 'BM', 'BO', 'BA',
-																   'BR', 'BN', 'BG', 'KH', 'CA', 'CV', 'KY', 'TD', 
+																   'BR', 'BN', 'BG', 'KH', 'CA', 'CV', 'KY', 'TD',
 																   'CL', 'CN', 'CX', 'CC', 'CO', 'CR', 'HR', 'CU',
 																   'CY', 'CZ', 'DK', 'DO', 'EG', 'SV', 'EE', 'ET',
 																   'FO', 'FI', 'FR', 'GA', 'GE', 'DE', 'GR', 'GT',
 																   'GW', 'HT', 'HN', 'HK', 'HU', 'IS', 'IN', 'ID',
-																   'IR', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 
+																   'IR', 'IL', 'IT', 'JM', 'JP', 'JO', 'KZ', 'KE',
 																   'KG', 'KR', 'LV', 'LB', 'LA', 'LS', 'LR', 'LY',
 																   'LT', 'LU', 'MK', 'MG', 'MV', 'MY', 'MT', 'MX',
 																   'MD', 'MC', 'MN', 'MA', 'MZ', 'MM', 'NP', 'NL',
-																   'NZ', 'NI', 'NE', 'NG', 'NO', 'OM', 'PK', 'PG', 
+																   'NZ', 'NI', 'NE', 'NG', 'NO', 'OM', 'PK', 'PG',
 																   'PY', 'PE', 'PH', 'PL', 'PT', 'PR', 'RO', 'RU',
 																   'SA', 'CS', 'SG', 'SK', 'ZA', 'SI', 'ES', 'LK',
-																   'SD', 'SZ', 'SE', 'CH', 'TW', 'TJ', 'TH', 'TN', 
+																   'SD', 'SZ', 'SE', 'CH', 'TW', 'TJ', 'TH', 'TN',
 																   'TR', 'TM', 'UA', 'GB', 'US', 'UY', 'UZ', 'VE',
 																   'VN', 'ZM')),
 											 'default'      => NULL,
@@ -232,35 +232,35 @@ class fShippingRates
 											 'default'      => NULL,
 											 'type'         => 'string',
 											 'valid_values' => array(
-																   'AX', 'AF', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI', 
-																   'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ', 
-																   'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ', 
-																   'BM', 'BT', 'BO', 'BA', 'BW', 'BV', 'BR', 'IO', 
-																   'BN', 'BG', 'BF', 'BI', 'KH', 'CM', 'CA', 'CV', 
-																   'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC', 'CO', 
-																   'KM', 'CD', 'CG', 'CK', 'CR', 'CI', 'HR', 'CU', 
-																   'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO', 'EC', 'EG', 
-																   'SV', 'GQ', 'ER', 'EE', 'ET', 'FK', 'FO', 'FJ', 
-																   'FI', 'FR', 'GF', 'PF', 'TF', 'GA', 'GM', 'GE', 
-																   'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU', 
-																   'GT', 'GN', 'GW', 'GY', 'HT', 'HM', 'HN', 'HK', 
-																   'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IL', 
-																   'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KP', 
-																   'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR', 
-																   'LY', 'LI', 'LT', 'LU', 'MO', 'MK', 'MG', 'MW', 
-																   'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU', 
-																   'YT', 'MX', 'FM', 'MD', 'MC', 'MN', 'MS', 'MA', 
-																   'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'AN', 'NC', 
-																   'NZ', 'NI', 'NE', 'NG', 'NU', 'NF', 'MP', 'NO', 
-																   'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 
-																   'PH', 'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO', 
-																   'RU', 'RW', 'SH', 'KN', 'LC', 'PM', 'VC', 'WS', 
-																   'SM', 'ST', 'SA', 'SN', 'CS', 'SC', 'SL', 'SG', 
-																   'SK', 'SI', 'SB', 'SO', 'ZA', 'GS', 'ES', 'LK', 
-																   'SD', 'SR', 'SJ', 'SZ', 'SE', 'CH', 'SY', 'TW', 
-																   'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK', 'TO', 'TT', 
-																   'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE', 
-																   'GB', 'US', 'UM', 'UY', 'UZ', 'VU', 'VA', 'VE', 
+																   'AX', 'AF', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI',
+																   'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ',
+																   'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ',
+																   'BM', 'BT', 'BO', 'BA', 'BW', 'BV', 'BR', 'IO',
+																   'BN', 'BG', 'BF', 'BI', 'KH', 'CM', 'CA', 'CV',
+																   'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC', 'CO',
+																   'KM', 'CD', 'CG', 'CK', 'CR', 'CI', 'HR', 'CU',
+																   'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO', 'EC', 'EG',
+																   'SV', 'GQ', 'ER', 'EE', 'ET', 'FK', 'FO', 'FJ',
+																   'FI', 'FR', 'GF', 'PF', 'TF', 'GA', 'GM', 'GE',
+																   'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU',
+																   'GT', 'GN', 'GW', 'GY', 'HT', 'HM', 'HN', 'HK',
+																   'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IL',
+																   'IT', 'JM', 'JP', 'JO', 'KZ', 'KE', 'KI', 'KP',
+																   'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR',
+																   'LY', 'LI', 'LT', 'LU', 'MO', 'MK', 'MG', 'MW',
+																   'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU',
+																   'YT', 'MX', 'FM', 'MD', 'MC', 'MN', 'MS', 'MA',
+																   'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'AN', 'NC',
+																   'NZ', 'NI', 'NE', 'NG', 'NU', 'NF', 'MP', 'NO',
+																   'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE',
+																   'PH', 'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO',
+																   'RU', 'RW', 'SH', 'KN', 'LC', 'PM', 'VC', 'WS',
+																   'SM', 'ST', 'SA', 'SN', 'CS', 'SC', 'SL', 'SG',
+																   'SK', 'SI', 'SB', 'SO', 'ZA', 'GS', 'ES', 'LK',
+																   'SD', 'SR', 'SJ', 'SZ', 'SE', 'CH', 'SY', 'TW',
+																   'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK', 'TO', 'TT',
+																   'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE',
+																   'GB', 'US', 'UM', 'UY', 'UZ', 'VU', 'VA', 'VE',
 																   'VN', 'VG', 'VI', 'WF', 'EH', 'YE', 'ZM', 'ZW')),
 		'package_weight'              => array(
 											 'required'     => TRUE,
@@ -333,13 +333,13 @@ class fShippingRates
 	public function __construct($shipping_company, $api_login, $api_password, $api_key)
 	{
 		if (!in_array($shipping_company, array('ups'))) {
-			fCore::toss('fProgrammerException', 'Invalid shipping company specified');       
+			fCore::toss('fProgrammerException', 'Invalid shipping company specified');
 		}
 		
-		$this->shipping_company = $shipping_company;	
-		$this->api_login        = $api_login;    
-		$this->api_password     = $api_password;    
-		$this->api_key          = $api_key;    
+		$this->shipping_company = $shipping_company;
+		$this->api_login        = $api_login;
+		$this->api_password     = $api_password;
+		$this->api_key          = $api_key;
 	}
 	
 	
@@ -355,7 +355,7 @@ class fShippingRates
 		$this->validate();
 		
 		if ($this->shipping_company == 'ups') {
-			$result = $this->postUpsRequest();    
+			$result = $this->postUpsRequest();
 		}
 		
 		return $result;
@@ -445,9 +445,9 @@ class fShippingRates
 XMLDATA;
 			
 		if (!$this->test_mode) {
-			$server = 'https://www.ups.com/ups.app/xml/Rate';    
+			$server = 'https://www.ups.com/ups.app/xml/Rate';
 		} else {
-			$server = 'https://wwwcie.ups.com/ups.app/xml/Rate';    
+			$server = 'https://wwwcie.ups.com/ups.app/xml/Rate';
 		}
 		
 		$context_options = array (
@@ -461,14 +461,14 @@ XMLDATA;
 		$context = stream_context_create($context_options);
 		
 		// Suppress errors to handle the nasty message from php about IIS not properly terminating an SSL connection
-		$result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));  
+		$result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));
 		
 		fCore::debug("Data received from gateway:\n" . $result, $this->debug);
 		
 		$xml = new SimpleXMLElement($result);
 		
 		if ($xml->Response->ResponseStatusCode != '1') {
-			fCore::toss('fUnexpectedException', 'There was an error retrieving the rates from the UPS API');   
+			fCore::toss('fUnexpectedException', 'There was an error retrieving the rates from the UPS API');
 		}
 		
 		$service_names = array(
@@ -495,14 +495,14 @@ XMLDATA;
 		);
 		
 		foreach ($xml->RatedShipment as $option) {
-			$output[$service_names[(string) $option->Service->Code]] = $currency_symbol[(string) $option->TotalCharges->CurrencyCode] . number_format((string) $option->TotalCharges->MonetaryValue, 2, '.', ',');    
+			$output[$service_names[(string) $option->Service->Code]] = $currency_symbol[(string) $option->TotalCharges->CurrencyCode] . number_format((string) $option->TotalCharges->MonetaryValue, 2, '.', ',');
 		}
 		
 		natcasesort($output);
 		
 		return $output;
 	}
-
+	
 	
 	/**
 	 * Enabled debugging
@@ -529,9 +529,9 @@ XMLDATA;
 		
 		foreach ($field_info as $field => $info) {
 			if ($info['default'] !== NULL && !isset($this->request_info[$field])) {
-				$this->request_info[$field] = $info['default'];	
+				$this->request_info[$field] = $info['default'];
 			}
-		}	
+		}
 	}
 	
 	
@@ -556,7 +556,7 @@ XMLDATA;
 	public function setPackageHeight($package_height)
 	{
 		$this->request_info['package_height'] = $package_height;
-	}	
+	}
 	
 	
 	/**
@@ -863,16 +863,16 @@ XMLDATA;
 				$conditional_field  = $keys[0];
 				$conditional_values = $info['required'][$conditional_field];
 				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
-					$message .= fInflection::humanize($field) . ": Please enter a value\n";    
+					$message .= fInflection::humanize($field) . ": Please enter a value\n";
 				}
-			}	
+			}
 		}
 		
 		foreach ($this->request_info as $field => $value) {
 			$info =& $field_info[$field];
 			
 			if ($this->request_info[$field] === NULL) {
-				continue;	
+				continue;
 			}
 			
 			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
@@ -887,10 +887,10 @@ XMLDATA;
 				$message .= fInflection::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
 				continue;
 			}
-		}	
+		}
 		
 		if ($message) {
-			fCore::toss('fValidationException', $message);	
+			fCore::toss('fValidationException', $message);
 		}
 		
 		
@@ -902,6 +902,7 @@ XMLDATA;
 		}
 	}
 }
+
 
 
 /**

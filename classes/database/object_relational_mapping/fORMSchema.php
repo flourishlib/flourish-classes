@@ -66,13 +66,13 @@ class fORMSchema
 	static public function getRoute($table, $related_table, $route)
 	{
 		if ($route === NULL) {
-			$route = self::getOnlyRouteName($table, $related_table);	
+			$route = self::getOnlyRouteName($table, $related_table);
 		}
 		
 		$routes = self::getRoutes($table, $related_table);
 		
 		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
 		}
 		
 		return $routes[$route];
@@ -94,13 +94,13 @@ class fORMSchema
 		$routes = self::getRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-			return $route;	
+			return $route;
 		}
 		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);	
+			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);
 		}
 		if (sizeof($keys) == 0) {
 			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table);
@@ -115,26 +115,26 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type         The type of relationship: 'one-to-one', 'one-to-many', 'many-to-one', 'many-to-many'
-	 * @param  array $relationship  The relationship array from {@link fISchema::getKeys()}
+	 * @param  string $type          The type of relationship: 'one-to-one', 'one-to-many', 'many-to-one', 'many-to-many'
+	 * @param  array  $relationship  The relationship array from {@link fISchema::getKeys()}
 	 * @return string  The name of the route
 	 */
 	static public function getRouteNameFromRelationship($type, $relationship)
 	{
 		$valid_types = array('one-to-one', 'one-to-many', 'many-to-one', 'many-to-many');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');
 		}
 		
 		if (isset($relationship['join_table']) || $type == 'many-to-many') {
-			return $relationship['join_table'];		
+			return $relationship['join_table'];
 		}
 		
 		if ($type == 'one-to-many') {
-			return $relationship['related_column'];		
+			return $relationship['related_column'];
 		}
 		
-		return $relationship['column'];		
+		return $relationship['column'];
 	}
 	
 	
@@ -157,17 +157,17 @@ class fORMSchema
 			foreach ($relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table) {
 					if ($type == 'many-to-many') {
-						$routes[$relationship['join_table']] = $relationship;		
+						$routes[$relationship['join_table']] = $relationship;
 					} elseif ($type == 'one-to-many') {
-						$routes[$relationship['related_column']] = $relationship;		
+						$routes[$relationship['related_column']] = $relationship;
 					} else {
-						$routes[$relationship['column']] = $relationship;		
+						$routes[$relationship['column']] = $relationship;
 					}
 				}
-			}	
+			}
 		}
 		
-		return $routes; 
+		return $routes;
 	}
 	
 	
@@ -183,12 +183,12 @@ class fORMSchema
 	 */
 	static public function getToManyRoute($table, $related_table, $route)
 	{
-		$route = self::getToManyRouteName($table, $related_table, $route);	
+		$route = self::getToManyRouteName($table, $related_table, $route);
 		
 		$routes = self::getToManyRoutes($table, $related_table);
 		
 		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The to-many route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+			fCore::toss('fProgrammerException', 'The to-many route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
 		}
 		
 		return $routes[$route];
@@ -210,13 +210,13 @@ class fORMSchema
 		$routes = self::getToManyRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-			return $route;	
+			return $route;
 		}
 		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);	
+			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);
 		}
 		if (sizeof($keys) == 0) {
 			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-many relationship');
@@ -247,15 +247,15 @@ class fORMSchema
 			foreach ($relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table) {
 					if ($type == 'many-to-many') {
-						$routes[$relationship['join_table']] = $relationship;		
+						$routes[$relationship['join_table']] = $relationship;
 					} else {
-						$routes[$relationship['related_column']] = $relationship;		
+						$routes[$relationship['related_column']] = $relationship;
 					}
 				}
-			}	
+			}
 		}
 		
-		return $routes; 
+		return $routes;
 	}
 	
 	
@@ -271,12 +271,12 @@ class fORMSchema
 	 */
 	static public function getToOneRoute($table, $related_table, $route)
 	{
-		$route = self::getToOneRouteName($table, $related_table, $route);	
+		$route = self::getToOneRouteName($table, $related_table, $route);
 		
 		$routes = self::getToOneRoutes($table, $related_table);
 		
 		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The to-one route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');	 		
+			fCore::toss('fProgrammerException', 'The to-one route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
 		}
 		
 		return $routes[$route];
@@ -298,13 +298,13 @@ class fORMSchema
 		$routes = self::getToOneRoutes($table, $related_table);
 		
 		if (!empty($route) && isset($routes[$route])) {
-			return $route;	
+			return $route;
 		}
 		
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one to-one route for ' . $table . ' to ' . $related_table);	
+			fCore::toss('fProgrammerException', 'There is more than one to-one route for ' . $table . ' to ' . $related_table);
 		}
 		if (sizeof($keys) == 0) {
 			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-one relationship');
@@ -334,12 +334,12 @@ class fORMSchema
 		foreach ($relationship_types as $type => $relationships) {
 			foreach ($relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table) {
-					$routes[$relationship['column']] = $relationship;		
+					$routes[$relationship['column']] = $relationship;
 				}
-			}	
+			}
 		}
 		
-		return $routes; 
+		return $routes;
 	}
 	
 	

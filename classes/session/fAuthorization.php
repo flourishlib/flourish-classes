@@ -13,7 +13,7 @@
  * @uses  fSession
  * @uses  fURL
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fAuthorization
@@ -27,14 +27,14 @@ class fAuthorization
 	/**
 	 * The valid auth levels
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $levels = NULL;
 	
 	/**
 	 * The login page
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	static private $login_page = NULL;
 	
@@ -55,22 +55,22 @@ class fAuthorization
 		$acls = self::getUserACLs();
 		
 		if (!isset($acls[$resource]) && !isset($acls['*'])) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		if (isset($acls[$resource])) {
 			if (in_array($permission, $acls[$resource]) || in_array('*', $acls[$resource])) {
 				return TRUE;
-			}	
+			}
 		}
 		
 		if (isset($acls['*'])) {
 			if (in_array($permission, $acls['*']) || in_array('*', $acls['*'])) {
 				return TRUE;
-			}	
+			}
 		}
 		
-		return FALSE;	
+		return FALSE;
 	}
 	
 	
@@ -91,11 +91,11 @@ class fAuthorization
 			$required_number = self::$levels[$level];
 			
 			if ($user_number >= $required_number) {
-				return TRUE;	
-			}		
+				return TRUE;
+			}
 		}
 		
-		return FALSE;	
+		return FALSE;
 	}
 	
 	
@@ -108,8 +108,8 @@ class fAuthorization
 	{
 		if (fSession::get('user_auth_level', NULL, self::SESSION_PREFIX) !== NULL ||
 			fSession::get('user_acls', NULL, self::SESSION_PREFIX) !== NULL) {
-			return TRUE;	
-		}	
+			return TRUE;
+		}
 		return FALSE;
 	}
 	
@@ -124,7 +124,7 @@ class fAuthorization
 		fSession::clear('user_auth_level', self::SESSION_PREFIX);
 		fSession::clear('user_acls', self::SESSION_PREFIX);
 		fSession::clear('user_token',self::SESSION_PREFIX);
-		fSession::clear('requested_url', self::SESSION_PREFIX);	
+		fSession::clear('requested_url', self::SESSION_PREFIX);
 	}
 	
 	
@@ -132,7 +132,7 @@ class fAuthorization
 	 * Returns the URL requested before the user was redirected to the login page
 	 * 
 	 * @param  boolean $clear        If the requested url should be cleared from the session after it is retrieved
-	 * @param  string $default_url   The default URL to return if the user was not redirected
+	 * @param  string  $default_url  The default URL to return if the user was not redirected
 	 * @return string  The URL that was requested before they were redirected to the login page
 	 */
 	static public function getRequestedURL($clear, $default_url=NULL)
@@ -170,7 +170,7 @@ class fAuthorization
 	/**
 	 * Gets the value that was set as the user token, NULL if no token has been set
 	 * 
-	 * @return mixed   The user token that had been set, NULL if none
+	 * @return mixed  The user token that had been set, NULL if none
 	 */
 	static public function getUserToken()
 	{
@@ -187,7 +187,7 @@ class fAuthorization
 	{
 		fSession::set('requested_url', fURL::getWithQueryString(), self::SESSION_PREFIX);
 		fURL::redirect(self::$login_page);
-	}	
+	}
 	
 	
 	/**
@@ -202,10 +202,10 @@ class fAuthorization
 		self::validateLoginPage();
 		
 		if (self::checkACL($resource, $permission)) {
-			return;	
+			return;
 		}
 		
-		self::redirect();	
+		self::redirect();
 	}
 	
 	
@@ -220,10 +220,10 @@ class fAuthorization
 		self::validateLoginPage();
 		
 		if (self::checkAuthLevel($level)) {
-			return;	
+			return;
 		}
 		
-		self::redirect();	
+		self::redirect();
 	}
 	
 	
@@ -237,10 +237,10 @@ class fAuthorization
 		self::validateLoginPage();
 		
 		if (self::checkLoggedIn()) {
-			return;	
+			return;
 		}
 		
-		self::redirect();	
+		self::redirect();
 	}
 	
 	
@@ -307,7 +307,7 @@ class fAuthorization
 	/**
 	 * Sets some piece of information to use to identify the current user
 	 * 
-	 * @param  mixed $token   The user's token. This could be a user id, an email address, a user object, etc.
+	 * @param  mixed $token  The user's token. This could be a user id, an email address, a user object, etc.
 	 * @return void
 	 */
 	static public function setUserToken($token)
@@ -325,11 +325,11 @@ class fAuthorization
 	static private function validateAuthLevel($level=NULL)
 	{
 		if (self::$levels === NULL) {
-			fCore::toss('fProgrammerException', 'No authorization levels have been set, please call fAuthorization::setAuthLevels()');	
+			fCore::toss('fProgrammerException', 'No authorization levels have been set, please call fAuthorization::setAuthLevels()');
 		}
 		if ($level !== NULL && !isset(self::$levels[$level])) {
-			fCore::toss('fProgrammerException', 'The authorization level specified, ' . $level . ', is not a valid authorization level');	
-		}		
+			fCore::toss('fProgrammerException', 'The authorization level specified, ' . $level . ', is not a valid authorization level');
+		}
 	}
 	
 	
@@ -341,8 +341,8 @@ class fAuthorization
 	static private function validateLoginPage()
 	{
 		if (self::$login_page === NULL) {
-			fCore::toss('fProgrammerException', 'No login page has been set, please call fAuthorization::setLoginPage()');	
-		}	
+			fCore::toss('fProgrammerException', 'No login page has been set, please call fAuthorization::setLoginPage()');
+		}
 	}
 	
 	

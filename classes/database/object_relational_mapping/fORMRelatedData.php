@@ -1,6 +1,7 @@
 <?php
 /**
- * Handles related data tasks for (@link fActiveRecord} classes. Related data only works for single-field foreign keys.
+ * Handles related data tasks for (@link fActiveRecord} classes. Related data
+ * only works for single-field foreign keys.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -25,7 +26,7 @@ class fORMRelatedData
 	/**
 	 * Rules that control what order related data is returned in
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $order_bys = array();
 	
@@ -44,14 +45,14 @@ class fORMRelatedData
 	static public function constructRecord($table, $values, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
 		$related_table = fORM::tablize($related_class);
 		
 		$relationship = fORMSchema::getToOneRoute($table, $related_table, $route);
 		
-		return new $class($values[$relationship['column']]);	
+		return new $class($values[$relationship['column']]);
 	}
 	
 	
@@ -70,14 +71,14 @@ class fORMRelatedData
 	static public function constructRecordSet($table, &$values, &$related_records, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
 		$related_table = fORM::tablize($related_class);
 		
 		// If we already have the sequence, we can stop here
 		if (isset($related_records[$related_table][$route])) {
-			return $related_records[$related_table][$route];	
+			return $related_records[$related_table][$route];
 		}
 		
 		$route        = fORMSchema::getToManyRouteName($table, $related_table, $route);
@@ -87,11 +88,11 @@ class fORMRelatedData
 		$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
 		$order_bys = self::getOrderBys($table, $related_table, $route);
 		
-		$sequence = fRecordSet::create($related_class, $where_conditions, $order_bys);	
+		$sequence = fRecordSet::create($related_class, $where_conditions, $order_bys);
 		
 		// Cache the results for subsequent calls
 		if (!isset($related_records[$related_table])) {
-			$related_records[$related_table] = array();	
+			$related_records[$related_table] = array();
 		}
 		$related_records[$related_table][$route] = $sequence;
 		
@@ -112,11 +113,11 @@ class fORMRelatedData
 	static public function getOrderBys($table, $related_table, $route)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
 		if (!isset(self::$order_bys[$table][$related_table]) || !isset(self::$order_bys[$table][$related_table][$route])) {
-			return array();		
+			return array();
 		}
 		
 		return self::$order_bys[$table][$related_table][$route];
@@ -158,11 +159,11 @@ class fORMRelatedData
 	static public function populateRecords($table, &$related_records, $related_class, $route=NULL)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
 		$related_table = fORM::tablize($related_class);
-		$pk_columns    = fORMSchema::getInstance()->getKeys($related_table, 'primary');		
+		$pk_columns    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
 		
 		$table_with_route  = $related_table;
 		$table_with_route .= ($route !== NULL) ? '{' . $route . '}' : '';
@@ -174,19 +175,19 @@ class fORMRelatedData
 		$records       = array();
 		
 		for ($i = 0; $i < $total_records; $i++) {
-			fRequest::filter($table_with_route . '::', $i);	
+			fRequest::filter($table_with_route . '::', $i);
 			
 			// Existing record are loaded out of the database before populating
 			if (fRequest::get($first_pk_column) !== NULL) {
 				if (sizeof($pk_columns) == 1) {
-					$primary_key_values = fRequest::get($first_pk_column);	
+					$primary_key_values = fRequest::get($first_pk_column);
 				} else {
 					$primary_key_values = array();
 					foreach ($pk_columns as $pk_column) {
 						$primary_key_values[$pk_column] = fRequest::get($pk_column);
-					}		
+					}
 				}
-				$record = new $related_class($primary_key_values);	
+				$record = new $related_class($primary_key_values);
 			
 			// If we have a new record, created an empty object
 			} else {
@@ -217,15 +218,15 @@ class fORMRelatedData
 	static public function setOrderBys($table, $related_table, $route, $order_bys)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
 		if (!isset(self::$order_bys[$table])) {
-			self::$order_bys[$table] = array();		
+			self::$order_bys[$table] = array();
 		}
 		
 		if (!isset(self::$order_bys[$table][$related_table])) {
-			self::$order_bys[$table][$related_table] = array();		
+			self::$order_bys[$table][$related_table] = array();
 		}
 		
 		self::$order_bys[$table][$related_table][$route] = $order_bys;
@@ -247,12 +248,12 @@ class fORMRelatedData
 	static public function setRecords($table, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
 		if (is_object($table)) {
-			$table = fORM::tablize($table);	
+			$table = fORM::tablize($table);
 		}
 		
-		$related_table = fORM::tablize($related_class);	
+		$related_table = fORM::tablize($related_class);
 		
-		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);	
+		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);
 		
 		$related_records[$related_table][$route] = $records;
 	}
@@ -265,6 +266,7 @@ class fORMRelatedData
 	 */
 	private function __construct() { }
 }
+
 
 
 /**

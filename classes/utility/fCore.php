@@ -12,46 +12,46 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
 class fCore
-{	
+{
 	/**
 	 * If global debugging is enabled
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	static private $debug = NULL;
 	
 	/**
 	 * Error destination
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	static private $error_destination = 'html';
 	
 	/**
 	 * Exception destination
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	static private $exception_destination = 'html';
 	
 	/**
 	 * Exceptation handler callback
 	 * 
-	 * @var mixed 
+	 * @var mixed
 	 */
 	static private $exception_handler_callback = NULL;
 	
 	/**
 	 * Exceptation handler callback parameters
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $exception_handler_parameters = array();
 	
 	/**
 	 * Callbacks for when exceptions are tossed
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $toss_callbacks = array();
 	
@@ -65,7 +65,7 @@ class fCore
 	 */
 	static public function addTossCallback($exception_type, $callback)
 	{
-		self::$toss_callbacks[$exception_type] = $callback;		 
+		self::$toss_callbacks[$exception_type] = $callback;
 	}
 	
 	
@@ -78,7 +78,7 @@ class fCore
 	static public function backtrace($remove_lines=0)
 	{
 		if ($remove_lines !== NULL && !is_numeric($remove_lines)) {
-			$remove_lines = 0;	
+			$remove_lines = 0;
 		}
 		
 		settype($remove_lines, 'integer');
@@ -90,7 +90,7 @@ class fCore
 		
 		while ($remove_lines > 0) {
 			array_shift($backtrace);
-			$remove_lines--;	
+			$remove_lines--;
 		}
 		
 		$backtrace = array_reverse($backtrace);
@@ -104,37 +104,37 @@ class fCore
 			if (isset($call['file'])) {
 				$bt_string .= str_replace($doc_root, '{doc_root}/', $call['file']) . '(' . $call['line'] . '): ';
 			} else {
-				$bt_string .= '[internal function]: ';	
+				$bt_string .= '[internal function]: ';
 			}
 			if (isset($call['class'])) {
-				$bt_string .= $call['class'] . $call['type'];	
+				$bt_string .= $call['class'] . $call['type'];
 			}
 			if (isset($call['class']) || isset($call['function'])) {
 				$bt_string .= $call['function'] . '(';
 					$j = 0;
 					foreach ($call['args'] as $arg) {
 						if ($j) {
-							$bt_string .= ', ';	
+							$bt_string .= ', ';
 						}
 						if (is_bool($arg)) {
-							$bt_string .= ($arg) ? 'true' : 'false';	
+							$bt_string .= ($arg) ? 'true' : 'false';
 						} elseif (is_null($arg)) {
-							$bt_string .= 'NULL';	
+							$bt_string .= 'NULL';
 						} elseif (is_array($arg)) {
-							$bt_string .= 'Array';	
+							$bt_string .= 'Array';
 						} elseif (is_object($arg)) {
-							$bt_string .= 'Object(' . get_class($arg) . ')';	
+							$bt_string .= 'Object(' . get_class($arg) . ')';
 						} elseif (is_string($arg)) {
 							if (strlen($arg) > 18) {
-								$arg = substr($arg, 0, 15) . '...';	
+								$arg = substr($arg, 0, 15) . '...';
 							}
-							$bt_string .= "'" . $arg . "'";	
+							$bt_string .= "'" . $arg . "'";
 						} else {
-							$bt_string .= (string) $arg;	
+							$bt_string .= (string) $arg;
 						}
-						$j++;		
+						$j++;
 					}
-				$bt_string .= ')';	
+				$bt_string .= ')';
 			}
 			$i++;
 		}
@@ -146,13 +146,13 @@ class fCore
 	/**
 	 * Checks an error/exception destination
 	 * 
-	 * @param  string $destination     The destination for the exception. An email or file.
+	 * @param  string $destination  The destination for the exception. An email or file.
 	 * @return string|boolean  'email', 'file' or FALSE
 	 */
 	static private function checkDestination($destination)
 	{
 		if ($destination == 'html') {
-			return 'html';	
+			return 'html';
 		}
 		
 		if (preg_match('#[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})#i', $destination)) {
@@ -169,29 +169,29 @@ class fCore
 			return FALSE;
 		}
 			
-		return 'file';	 
+		return 'file';
 	}
 	
 	
 	/**
-	 * Prints a debugging message if global or code-specific debugging is enabled 
+	 * Prints a debugging message if global or code-specific debugging is enabled
 	 * 
-	 * @param  string  $message   The debug message
-	 * @param  boolean $force     If debugging should be forced even when global debug is off
+	 * @param  string  $message  The debug message
+	 * @param  boolean $force    If debugging should be forced even when global debug is off
 	 * @return void
 	 */
 	static public function debug($message, $force)
 	{
 		if ($force || self::$debug) {
-			self::expose($message, FALSE);   
-		}   
+			self::expose($message, FALSE);
+		}
 	}
 	
 	
 	/**
 	 * Returns a string representation of any variable
 	 * 
-	 * @param  mixed $data   The variable to dump
+	 * @param  mixed $data  The variable to dump
 	 * @return string  The string representation of the value
 	 */
 	static public function dump($data)
@@ -203,7 +203,7 @@ class fCore
 			return '{null}';
 		
 		} elseif ($data === '') {
-			return '{empty_string}';	
+			return '{empty_string}';
 		
 		} elseif (is_array($data) || is_object($data)) {
 			
@@ -235,73 +235,72 @@ class fCore
 				if (preg_match('#^((?:  )*)([^ ])#', $line, $match)) {
 					$spaces = strlen($match[1]);
 					if ($spaces && $match[2] == '(') {
-						$stack += 1;	
+						$stack += 1;
 					}
 					$new_output[] = str_pad('', ($spaces)+(4*$stack)) . $line;
 					if ($spaces && $match[2] == ')') {
-						$stack -= 1;	
-					}	
+						$stack -= 1;
+					}
 				} else {
-					$new_output[] = str_pad('', ($spaces)+(4*$stack)) . $line;	
+					$new_output[] = str_pad('', ($spaces)+(4*$stack)) . $line;
 				}
 			}
 			
 			return join("\n", $new_output);
 			
 		} else {
-			return (string) $data;	
-		} 
-	} 
+			return (string) $data;
+		}
+	}
 	
 	
 	/**
 	 * Turns on special error handling. All errors that match the current error_reporting() level will be redirected to the destination.
 	 * 
-	 * @param  string $destination   The destination for the errors. An email or file.
+	 * @param  string $destination  The destination for the errors. An email or file.
 	 * @return void
 	 */
 	static public function enableErrorHandling($destination)
 	{
 		if (!self::checkDestination($destination)) {
-			return;	
+			return;
 		}
 		self::$error_destination = $destination;
-		set_error_handler(array('fCore', 'handleError'));		  
+		set_error_handler(array('fCore', 'handleError'));
 	}
 	
 	
 	/**
 	 * Turns on special exception handling. Any uncaught exception will be redirected to the destination specified, and the page will execute the $closing_code callback before exiting.
 	 * 
-	 * @param  string   $destination    The destination for the exception. An email or file.
-	 * @param  callback $closing_code   This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
-	 * @param  array    $parameters     The parameters to send to $closing_code
+	 * @param  string   $destination   The destination for the exception. An email or file.
+	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
+	 * @param  array    $parameters    The parameters to send to $closing_code
 	 * @return void
 	 */
 	static public function enableExceptionHandling($destination, $closing_code=NULL, $parameters=array())
 	{
 		if (!self::checkDestination($destination)) {
-			return;	
+			return;
 		}
 		self::$exception_destination        = $destination;
 		self::$exception_handler_callback   = $closing_code;
 		settype($parameters, 'array');
 		self::$exception_handler_parameters = $parameters;
-		set_exception_handler(array('fCore', 'handleException'));		 
+		set_exception_handler(array('fCore', 'handleException'));
 	}
 	
 	
 	/**
 	 * Prints the contents of a variable
 	 * 
-	 * @param  mixed $data   The data to show
-	 * @param  mixed $dump   If a dump of the variable should be shown
+	 * @param  mixed $data  The data to show
 	 * @return void
 	 */
 	static public function expose($data)
 	{
-		$data = self::dump($data);	
-		echo '<pre class="exposed">' . htmlentities((string) $data, ENT_COMPAT, 'UTF-8') . '</pre>';     
+		$data = self::dump($data);
+		echo '<pre class="exposed">' . htmlentities((string) $data, ENT_COMPAT, 'UTF-8') . '</pre>';
 	}
 	
 	
@@ -315,21 +314,21 @@ class fCore
 		$uname = php_uname('s');
 		
 		if (stripos($uname, 'linux') !== FALSE) {
-			return 'linux/unix';   
+			return 'linux/unix';
 		}
 		if (stripos($uname, 'bsd') !== FALSE) {
-			return 'linux/unix';   
+			return 'linux/unix';
 		}
 		if (stripos($uname, 'solaris') !== FALSE) {
-			return 'linux/unix';   
+			return 'linux/unix';
 		}
 		if (stripos($uname, 'windows') !== FALSE) {
-			return 'windows';   
+			return 'windows';
 		}
 		
 		self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
 		return 'linux/unix';
-	} 
+	}
 	
 	
 	/**
@@ -347,7 +346,7 @@ class fCore
 		}
 		
 		return $version;
-	} 
+	}
 	
 	
 	/**
@@ -361,25 +360,25 @@ class fCore
 	 * @param  integer $error_line     The line the error occured on
 	 * @param  array   $error_context  A references to all variables in scope at the occurence of the error
 	 * @return void
-	 */                                                                            
+	 */
 	static public function handleError($error_number, $error_string, $error_file=NULL, $error_line=NULL, $error_context=NULL)
 	{
 		if ((error_reporting() & $error_number) == 0) {
-			return;	
+			return;
 		}
 		
 		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
 		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
 		
 		$error_file = str_replace($doc_root, '{doc_root}/', $error_file);
-
+		
 		$backtrace = self::backtrace(1);
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
 		$error  = "Error\n-----\n" . $backtrace . "\n" . $error_string;
 		
-		self::sendMessageToDestination(self::$error_destination, $error);			 
+		self::sendMessageToDestination(self::$error_destination, $error);
 	}
 	
 	
@@ -394,35 +393,35 @@ class fCore
 	static public function handleException($exception)
 	{
 		if ($exception instanceof fPrintableException) {
-			$message = $exception->formatTrace() . "\n" . $exception->getMessage();	
+			$message = $exception->formatTrace() . "\n" . $exception->getMessage();
 		} else {
 			$message = $exception->getTraceAsString() . "\n" . $exception->getMessage();
 		}
 		$message = "Uncaught Exception\n------------------\n" . $message;
 		
 		if (self::$exception_destination != 'html' && $exception instanceof fPrintableException) {
-			$exception->printMessage();	
+			$exception->printMessage();
 		}
 				
 		self::sendMessageToDestination(self::$exception_destination, $message);
 		
 		if (self::$exception_handler_callback === NULL) {
-			return;	
+			return;
 		}
 				
 		try {
 			call_user_func_array(self::$exception_handler_callback, self::$exception_handler_parameters);
 		} catch (Exception $e) {
 			self::trigger('error', 'An exception was thrown in the setExceptionHandling() $closing_code callback');
-		}		 
+		}
 	}
 	
 	
 	/**
 	 * Handles sending a message to a destination
 	 * 
-	 * @param  string $destination     The destination for the error/exception. An email or file.
-	 * @param  string $message         The message to send to the destination
+	 * @param  string $destination  The destination for the error/exception. An email or file.
+	 * @param  string $message      The message to send to the destination
 	 * @return void
 	 */
 	static private function sendMessageToDestination($destination, $message)
@@ -436,14 +435,14 @@ class fCore
 		}
 		$context .= "\n" . '$_REQUEST' . "\n" . self::dump($_REQUEST);
 		$context .= "\n\n" . '$_FILES' . "\n" . self::dump($_FILES);
-		$context .= "\n\n" . '$_SESSION' . "\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL); 
+		$context .= "\n\n" . '$_SESSION' . "\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL);
 		
 		switch (self::checkDestination($destination)) {
 			case 'html':
 				static $shown_context = FALSE;
 				if (!$shown_context) {
 					self::expose(trim($context), FALSE);
-					$shown_context = TRUE;	
+					$shown_context = TRUE;
 				}
 				self::expose($message, FALSE);
 				break;
@@ -458,7 +457,7 @@ class fCore
 				fwrite($handle, $message . "\n");
 				fclose($handle);
 				break;
-		}		 
+		}
 	}
 	
 	
@@ -487,7 +486,7 @@ class fCore
 		foreach (self::$toss_callbacks as $class => $callback) {
 			if ($exception instanceof $class) {
 				call_user_func($callback);
-			}	
+			}
 		}
 		throw $exception;
 	}
@@ -496,15 +495,15 @@ class fCore
 	/**
 	 * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
 	 * 
-	 * @param  string $error_type   The type of error to trigger ('error', 'warning' or 'notice')
-	 * @param  string $message      The error message
+	 * @param  string $error_type  The type of error to trigger ('error', 'warning' or 'notice')
+	 * @param  string $message     The error message
 	 * @return void
 	 */
 	static public function trigger($error_type, $message)
 	{
 		$valid_error_types = array('error', 'warning', 'notice');
 		if (!in_array($error_type, $valid_error_types)) {
-			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');       
+			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');
 		}
 		
 		static $error_type_map = array(
@@ -514,7 +513,7 @@ class fCore
 		);
 		
 		trigger_error($message, $error_type_map[$error_type]);
-	} 
+	}
 	
 	
 	/**
@@ -522,8 +521,8 @@ class fCore
 	 * 
 	 * @return fCore
 	 */
-	private function __construct() { }      
-}  
+	private function __construct() { }
+}
 
 
 

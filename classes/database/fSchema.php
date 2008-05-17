@@ -21,97 +21,97 @@ class fSchema implements fISchema
 	/**
 	 * The file to cache the info to
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $cache_file = NULL;
 	
 	/**
 	 * The cached column info
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $column_info = array();
 	
 	/**
 	 * The column info to override
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $column_info_override = array();
 	
 	/**
 	 * A reference to an instance of the fDatabase class
 	 * 
-	 * @var fDatabase 
+	 * @var fDatabase
 	 */
 	private $database = NULL;
 	
 	/**
 	 * If the info has changed (and should be written to cache)
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	private $info_changed = FALSE;
 	
 	/**
 	 * The cached key info
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $keys = array();
 	
 	/**
 	 * The key info to override
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $keys_override = array();
 	
 	/**
 	 * The merged column info
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $merged_column_info = array();
 	
 	/**
 	 * The merged key info
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $merged_keys = array();
 	
 	/**
 	 * The relationships in the database
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $relationships = array();
 	
 	/**
 	 * The state of the info
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $state = 'current';
 	
 	/**
 	 * The tables in the database
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $tables = array();
-
+	
 	
 	/**
 	 * Sets the database
 	 * 
-	 * @param  fIDatabase $database  The fDatabase class
+	 * @param  fDatabase $database  The fDatabase class
 	 * @return fSchema
 	 */
 	public function __construct(fDatabase $database)
 	{
-		$this->database = $database;    
+		$this->database = $database;
 	}
 	
 	
@@ -126,7 +126,7 @@ class fSchema implements fISchema
 			$contents = serialize(array('column_info'   => $this->column_info,
 										'keys'          => $this->keys));
 			file_put_contents($this->cache_file, $contents);
-		}   
+		}
 	}
 	
 	
@@ -142,7 +142,7 @@ class fSchema implements fISchema
 		foreach ($this->merged_keys[$table]['unique'] as $key) {
 			if (array($column) == $key) {
 				return TRUE;
-			}	
+			}
 		}
 		return FALSE;
 	}
@@ -155,7 +155,7 @@ class fSchema implements fISchema
 	 * @return void
 	 */
 	private function fetchColumnInfo($table)
-	{	
+	{
 		switch ($this->database->getType()) {
 			case 'mssql':
 				$column_info = $this->fetchMssqlColumnInfo($table);
@@ -171,7 +171,7 @@ class fSchema implements fISchema
 				
 			case 'sqlite':
 				$column_info = $this->fetchSqliteColumnInfo($table);
-				break;	
+				break;
 		}
 			
 		$this->column_info[$table] = $column_info;
@@ -201,11 +201,11 @@ class fSchema implements fISchema
 			
 			case 'sqlite':
 				$keys = $this->fetchSqliteKeys();
-				break;					
+				break;
 		}
-			  
-		$this->keys = $keys; 
-		$this->info_changed = TRUE;    
+			
+		$this->keys = $keys;
+		$this->info_changed = TRUE;
 	}
 	
 	
@@ -283,15 +283,15 @@ class fSchema implements fISchema
 		
 		foreach ($result as $row) {
 			$info = array();
-			 
+			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($row['type'], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
 					break;
-				}	
+				}
 			}
 			if (!isset($info['type'])) {
-				$info['type'] = $row['type'];	
+				$info['type'] = $row['type'];
 			}
 			
 			 // Handle the special data for varchar columns
@@ -303,16 +303,16 @@ class fSchema implements fISchema
 					if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\'])+\')+)\)$#', $row['constraint'], $matches)) {
 						$valid_values = explode(' OR ', $matches[1]);
 						foreach ($valid_values as $key => $value) {
-							$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);   
+							$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);
 						}
 						$info['valid_values'] = $valid_values;
 					}
-				}                
+				}
 			}
 			
 			// Handle auto increment
 			if ($row['auto_increment']) {
-				$info['auto_increment'] = TRUE;   
+				$info['auto_increment'] = TRUE;
 			}
 			
 			// Handle default values
@@ -332,7 +332,7 @@ class fSchema implements fISchema
 			$column_info[$row['column']] = $info;
 		}
 		
-		return $column_info;	
+		return $column_info;
 	}
 	
 	
@@ -349,7 +349,7 @@ class fSchema implements fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -369,17 +369,17 @@ class fSchema implements fISchema
 	{
 		$keys = array();
 		
-		$tables   = $this->getTables(); 
+		$tables   = $this->getTables();
 		foreach ($tables as $table) {
 			$keys[$table] = array();
 			$keys[$table]['primary'] = array();
 			$keys[$table]['unique']  = array();
-			$keys[$table]['foreign'] = array();	
+			$keys[$table]['foreign'] = array();
 		}
 		
-		$sql  = "SELECT 
+		$sql  = "SELECT
 						c.table_name AS 'table',
-						kcu.constraint_name AS constraint_name, 
+						kcu.constraint_name AS constraint_name,
 						CASE c.constraint_type
 							WHEN 'PRIMARY KEY' THEN 'primary'
 							WHEN 'FOREIGN KEY' THEN 'foreign'
@@ -403,7 +403,7 @@ class fSchema implements fISchema
 						LOWER(kcu.constraint_name),
 						LOWER(kcu.column_name)";
 		
-		$result = $this->database->query($sql);            
+		$result = $this->database->query($sql);
 		
 		$last_name  = '';
 		$last_table = '';
@@ -414,7 +414,7 @@ class fSchema implements fISchema
 					if ($last_type == 'foreign' || $last_type == 'unique') {
 						$keys[$last_table][$last_type][] = $temp;
 					} else {
-						$keys[$last_table][$last_type] = $temp;    
+						$keys[$last_table][$last_type] = $temp;
 					}
 				}
 				$temp = array();
@@ -425,28 +425,28 @@ class fSchema implements fISchema
 					$temp['on_delete']      = NULL;
 					$temp['on_update']      = NULL;
 					if (!empty($row['on_delete'])) {
-						$temp['on_delete'] = $row['on_delete'];   
+						$temp['on_delete'] = $row['on_delete'];
 					}
 					if (!empty($row['on_update'])) {
-						$temp['on_update'] = $row['on_update'];   
+						$temp['on_update'] = $row['on_update'];
 					}
 				} else {
-					$temp[] = $row['column'];   
+					$temp[] = $row['column'];
 				}
 				$last_table = $row['table'];
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
 			} else {
-				$temp[] = $row['column'];    
+				$temp[] = $row['column'];
 			}
 		}
 		if (isset($temp)) {
 			if ($last_type == 'foreign') {
 				$keys[$last_table][$last_type][] = $temp;
 			} else {
-				$keys[$last_table][$last_type] = $temp;    
-			}    
-		}	
+				$keys[$last_table][$last_type] = $temp;
+			}
+		}
 		
 		return $keys;
 	}
@@ -473,7 +473,7 @@ class fSchema implements fISchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
-	private function fetchMysqlColumnInfo($table) 
+	private function fetchMysqlColumnInfo($table)
 	{
 		$data_type_mapping = array(
 			'tinyint(1)'		=> 'boolean',
@@ -505,35 +505,35 @@ class fSchema implements fISchema
 		$result     = $this->database->query('SHOW CREATE TABLE ' . $table);
 		$row        = $result->fetchRow();
 		$create_sql = $row['Create Table'];
-
+		
 		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?)( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\'])*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
-			$info = array();    
+			$info = array();
 			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($match[2], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
 					break;
-				}	
+				}
 			}
 			if (!isset($info['type'])) {
-				$info['type'] = preg_replace('#^([a-z ]+).*$#i', '\1', $match[2]);	
+				$info['type'] = preg_replace('#^([a-z ]+).*$#i', '\1', $match[2]);
 			}
 		
 			if (stripos($match[2], 'enum') === 0) {
-				$info['valid_values'] = preg_replace("/^'|'\$/", '', explode(",", $match[3]));    
+				$info['valid_values'] = preg_replace("/^'|'\$/", '', explode(",", $match[3]));
 				$match[3] = 0;
 				foreach ($info['valid_values'] as $valid_value) {
 					if (strlen($valid_value) > $match[3]) {
 						$match[3] = strlen($valid_value);
-					}	
+					}
 				}
 			}
 			
 			// Type specific information
 			if ($info['type'] == 'varchar') {
-				$info['max_length'] = $match[3];    
+				$info['max_length'] = $match[3];
 			}
 			
 			
@@ -542,10 +542,10 @@ class fSchema implements fISchema
 		
 			// Default values
 			if (!empty($match[5]) && $match[5] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);    
+				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);
 			}
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
-				$info['default'] = (boolean) $info['default'];    
+				$info['default'] = (boolean) $info['default'];
 			}
 		
 			// Auto increment fields
@@ -573,7 +573,7 @@ class fSchema implements fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -591,9 +591,9 @@ class fSchema implements fISchema
 	 */
 	private function fetchMysqlKeys()
 	{
-		$tables   = $this->getTables(); 
+		$tables   = $this->getTables();
 		$keys = array();
-
+		
 		foreach ($tables as $table) {
 			$keys[$table] = array();
 			$keys[$table]['primary'] = array();
@@ -603,34 +603,34 @@ class fSchema implements fISchema
 			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escapeString($table), 1, -1) . '`');
 			$row    = $result->fetchRow();
 			// Primary keys
-			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER); 
+			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			if (!empty($matches)) {
 				$keys[$table]['primary'] = explode('","', $matches[0][1]);
 			}
 			// Unique keys
-			preg_match_all('/UNIQUE KEY\s+"([^"]+)"\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER); 
+			preg_match_all('/UNIQUE KEY\s+"([^"]+)"\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
 				$keys[$table]['unique'][] = explode('","', $match[2]);
 			}
 			// Foreign keys
-			preg_match_all('#FOREIGN KEY \("([^"]+)"\) REFERENCES "([^"]+)" \("([^"]+)"\)(?:\sON\sDELETE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?(?:\sON\sUPDATE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?#', $row['Create Table'], $matches, PREG_SET_ORDER);    
+			preg_match_all('#FOREIGN KEY \("([^"]+)"\) REFERENCES "([^"]+)" \("([^"]+)"\)(?:\sON\sDELETE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?(?:\sON\sUPDATE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?#', $row['Create Table'], $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
 				$temp = array('column'         => $match[1],
 							  'foreign_table'  => $match[2],
 							  'foreign_column' => $match[3],
 							  'on_delete'      => NULL,
-							  'on_update'      => NULL); 
+							  'on_update'      => NULL);
 				if (isset($match[4])) {
-					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[4]));    
+					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[4]));
 				}
 				if (isset($match[5])) {
-					$temp['on_update'] = strtolower(str_replace(' ', '_', $match[5]));    
+					$temp['on_update'] = strtolower(str_replace(' ', '_', $match[5]));
 				}
 				$keys[$table]['foreign'][] = $temp;
 			}
 		}
 		
-		return $keys;	
+		return $keys;
 	}
 	
 	
@@ -709,15 +709,15 @@ class fSchema implements fISchema
 		
 		foreach ($result as $row) {
 			$info = array();
-			 
+			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($row['type'], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
 					break;
-				}	
+				}
 			}
 			if (!isset($info['type'])) {
-				$info['type'] = $row['type'];	
+				$info['type'] = $row['type'];
 			}
 			
 			 // Handle the special data for varchar fields
@@ -730,12 +730,12 @@ class fSchema implements fISchema
 						preg_match_all("/(?!').'((''|[^'])*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER);
 						$info['valid_values'] = str_replace("''", "'", $matches[1]);
 					}
-				}                
+				}
 			}
 			
 			// Handle default values and serial data types
 			if ($info['type'] == 'integer' && stripos($row['default'], 'nextval(') !== FALSE) {
-				$info['auto_increment'] = TRUE;   
+				$info['auto_increment'] = TRUE;
 			} elseif ($row['default'] !== NULL) {
 				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+$/i", '\1', $row['default']));
 			}
@@ -746,7 +746,7 @@ class fSchema implements fISchema
 			$column_info[$row['column']] = $info;
 		}
 		
-		return $column_info;	
+		return $column_info;
 	}
 	
 	
@@ -763,7 +763,7 @@ class fSchema implements fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -783,12 +783,12 @@ class fSchema implements fISchema
 	{
 		$keys = array();
 		
-		$tables   = $this->getTables(); 
+		$tables   = $this->getTables();
 		foreach ($tables as $table) {
 			$keys[$table] = array();
 			$keys[$table]['primary'] = array();
 			$keys[$table]['unique']  = array();
-			$keys[$table]['foreign'] = array();	
+			$keys[$table]['foreign'] = array();
 		}
 		
 		$sql  = "SELECT
@@ -802,14 +802,14 @@ class fSchema implements fISchema
 						 col.attname AS column,
 						 ft.relname AS foreign_table,
 						 fc.attname AS foreign_column,
-						 CASE con.confdeltype 
+						 CASE con.confdeltype
 							 WHEN 'c' THEN 'cascade'
 							 WHEN 'a' THEN 'no_action'
 							 WHEN 'r' THEN 'restrict'
 							 WHEN 'n' THEN 'set_null'
 							 WHEN 'd' THEN 'set_default'
 						 END AS on_delete,
-						 CASE con.confupdtype 
+						 CASE con.confupdtype
 							 WHEN 'c' THEN 'cascade'
 							 WHEN 'a' THEN 'no_action'
 							 WHEN 'r' THEN 'restrict'
@@ -835,7 +835,7 @@ class fSchema implements fISchema
 						 con.conname,
 						 col.attname";
 		
-		$result = $this->database->query($sql);            
+		$result = $this->database->query($sql);
 		
 		$last_name  = '';
 		$last_table = '';
@@ -846,7 +846,7 @@ class fSchema implements fISchema
 					if ($last_type == 'foreign' || $last_type == 'unique') {
 						$keys[$last_table][$last_type][] = $temp;
 					} else {
-						$keys[$last_table][$last_type] = $temp;    
+						$keys[$last_table][$last_type] = $temp;
 					}
 				}
 				$temp = array();
@@ -857,28 +857,28 @@ class fSchema implements fISchema
 					$temp['on_delete']      = NULL;
 					$temp['on_update']      = NULL;
 					if (!empty($row['on_delete'])) {
-						$temp['on_delete'] = $row['on_delete'];   
+						$temp['on_delete'] = $row['on_delete'];
 					}
 					if (!empty($row['on_update'])) {
-						$temp['on_update'] = $row['on_update'];   
+						$temp['on_update'] = $row['on_update'];
 					}
 				} else {
-					$temp[] = $row['column'];   
+					$temp[] = $row['column'];
 				}
 				$last_table = $row['table'];
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
 			} else {
-				$temp[] = $row['column'];    
+				$temp[] = $row['column'];
 			}
 		}
 		if (isset($temp)) {
 			if ($last_type == 'foreign') {
 				$keys[$last_table][$last_type][] = $temp;
 			} else {
-				$keys[$last_table][$last_type] = $temp;    
-			}    
-		}	
+				$keys[$last_table][$last_type] = $temp;
+			}
+		}
 		
 		return $keys;
 	}
@@ -934,18 +934,18 @@ class fSchema implements fISchema
 		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\((\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
-			$info = array();    
+			$info = array();
 			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($match[2], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
 					break;
-				}	
+				}
 			}
 		
 			// Type specific information
 			if (stripos($match[2], 'varchar') === 0) {
-				$info['max_length'] = $match[3];    
+				$info['max_length'] = $match[3];
 			}
 			
 			// Not null
@@ -953,10 +953,10 @@ class fSchema implements fISchema
 		
 			// Default values
 			if (isset($match[5]) && $match[5] != '' && $match[5] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);    
+				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);
 			}
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
-				$info['default'] = ($info['default'] == 'f' || $info['default'] == 0 || $info['default'] == 'false') ? FALSE : TRUE;    
+				$info['default'] = ($info['default'] == 'f' || $info['default'] == 0 || $info['default'] == 'false') ? FALSE : TRUE;
 			}
 		
 			// Check constraints
@@ -970,7 +970,7 @@ class fSchema implements fISchema
 			}
 		
 			$column_info[$match[1]] = $info;
-		}	
+		}
 		
 		return $column_info;
 	}
@@ -989,7 +989,7 @@ class fSchema implements fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -1007,9 +1007,9 @@ class fSchema implements fISchema
 	 */
 	private function fetchSqliteKeys()
 	{
-		$tables   = $this->getTables(); 
+		$tables   = $this->getTables();
 		$keys = array();
-
+		
 		foreach ($tables as $table) {
 			$keys[$table] = array();
 			$keys[$table]['primary'] = array();
@@ -1025,11 +1025,11 @@ class fSchema implements fISchema
 			
 			foreach ($matches as $match) {
 				if (!empty($match[2])) {
-					$keys[$table]['unique'][] = array($match[1]);		
+					$keys[$table]['unique'][] = array($match[1]);
 				}
 				
 				if (!empty($match[3])) {
-					$keys[$table]['primary'] = array($match[1]);		
+					$keys[$table]['primary'] = array($match[1]);
 				}
 				
 				if (!empty($match[4])) {
@@ -1037,14 +1037,14 @@ class fSchema implements fISchema
 								  'foreign_table'  => $match[5],
 								  'foreign_column' => $match[6],
 								  'on_delete'      => NULL,
-								  'on_update'      => NULL); 
+								  'on_update'      => NULL);
 					if (isset($match[7])) {
-						$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[7]));    
+						$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[7]));
 					}
 					if (isset($match[8])) {
-						$temp['on_update'] = strtolower(str_replace(' ', '_', $match[8]));    
+						$temp['on_update'] = strtolower(str_replace(' ', '_', $match[8]));
 					}
-					$keys[$table]['foreign'][] = $temp;		
+					$keys[$table]['foreign'][] = $temp;
 				}
 			}
 			
@@ -1052,7 +1052,7 @@ class fSchema implements fISchema
 			preg_match_all('#(?<=,|\()\s*PRIMARY\s+KEY\s*\(\s*((?:\s*\w+\s*,\s*)*\w+)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
-				$keys[$table]['primary'] = preg_split('#\s*,\s*#', $match[1]);		
+				$keys[$table]['primary'] = preg_split('#\s*,\s*#', $match[1]);
 			}
 			
 			// Get table level foreign key definitions
@@ -1064,23 +1064,23 @@ class fSchema implements fISchema
 							  'foreign_table'  => $match[3],
 							  'foreign_column' => $match[4],
 							  'on_delete'      => NULL,
-							  'on_update'      => NULL); 
+							  'on_update'      => NULL);
 				if (isset($match[5])) {
-					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[5]));    
+					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[5]));
 				}
 				if (isset($match[6])) {
-					$temp['on_update'] = strtolower(str_replace(' ', '_', $match[6]));    
+					$temp['on_update'] = strtolower(str_replace(' ', '_', $match[6]));
 				}
-				$keys[$table]['foreign'][] = $temp;			
-			}	
+				$keys[$table]['foreign'][] = $temp;
+			}
 			
 			// Get table level unique key definitions
 			preg_match_all('#(?<=,|\()\s*UNIQUE\s*\(\s*((?:\s*\w+\s*,\s*)*\w+)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
-				$keys[$table]['unique'][] = preg_split('#\s*,\s*#', $match[1]);		
+				$keys[$table]['unique'][] = preg_split('#\s*,\s*#', $match[1]);
 			}
-		}	
+		}
 		
 		return $keys;
 	}
@@ -1095,7 +1095,7 @@ class fSchema implements fISchema
 	private function findManyToManyRelationships($table)
 	{
 		if (!$this->isJoiningTable($table)) {
-			return;	
+			return;
 		}
 		
 		list ($key1, $key2) = $this->merged_keys[$table]['foreign'];
@@ -1104,19 +1104,19 @@ class fSchema implements fISchema
 		$temp['column']              = $key1['foreign_column'];
 		$temp['related_table']       = $key2['foreign_table'];
 		$temp['related_column']      = $key2['foreign_column'];
-		$temp['join_table']          = $table;	
-		$temp['join_column']         = $key1['column'];	
+		$temp['join_table']          = $table;
+		$temp['join_column']         = $key1['column'];
 		$temp['join_related_column'] = $key2['column'];
 		$temp['on_update']           = $key1['on_update'];
-		$temp['on_delete']           = $key1['on_delete'];  
+		$temp['on_delete']           = $key1['on_delete'];
 		$this->relationships[$key1['foreign_table']]['many-to-many'][] = $temp;
 		
 		$temp = array();
 		$temp['column']              = $key2['foreign_column'];
 		$temp['related_table']       = $key1['foreign_table'];
 		$temp['related_column']      = $key1['foreign_column'];
-		$temp['join_table']          = $table;	
-		$temp['join_column']         = $key2['column'];	
+		$temp['join_table']          = $table;
+		$temp['join_column']         = $key2['column'];
 		$temp['join_related_column'] = $key1['column'];
 		$temp['on_update']           = $key2['on_update'];
 		$temp['on_delete']           = $key2['on_delete'];
@@ -1137,10 +1137,10 @@ class fSchema implements fISchema
 			$temp['column']         = $key['foreign_column'];
 			$temp['related_table']  = $table;
 			$temp['related_column'] = $key['column'];
-			$temp['on_delete']      = $key['on_delete'];	
-			$temp['on_update']      = $key['on_update'];	
-			$this->relationships[$key['foreign_table']]['one-to-many'][] = $temp;	
-		}	
+			$temp['on_delete']      = $key['on_delete'];
+			$temp['on_update']      = $key['on_update'];
+			$this->relationships[$key['foreign_table']]['one-to-many'][] = $temp;
+		}
 	}
 	
 	
@@ -1158,8 +1158,8 @@ class fSchema implements fISchema
 			$temp['related_table']  = $key['foreign_table'];
 			$temp['related_column'] = $key['foreign_column'];
 			$type = ($this->checkForSingleColumnUniqueKey($table, $key['column'])) ? 'one-to-one' : 'many-to-one';
-			$this->relationships[$table][$type][] = $temp;	
-		}	
+			$this->relationships[$table][$type][] = $temp;
+		}
 	}
 	
 	
@@ -1171,7 +1171,7 @@ class fSchema implements fISchema
 	private function findRelationships()
 	{
 		$this->relationships = array();
-		$tables = $this->getTables(); 
+		$tables = $this->getTables();
 		
 		foreach ($tables as $table) {
 			$this->relationships[$table]['one-to-one']   = array();
@@ -1184,11 +1184,11 @@ class fSchema implements fISchema
 		foreach ($this->merged_keys as $table => $keys) {
 			$this->findManyToManyRelationships($table);
 			if ($this->isJoiningTable($table)) {
-				continue;	
+				continue;
 			}
 			$this->findStarToOneRelationships($table);
 			$this->findOneToManyRelationships($table);
-		}	
+		}
 	}
 	
 	
@@ -1208,7 +1208,7 @@ class fSchema implements fISchema
 			$this->merged_column_info = array();
 			$this->merged_keys        = array();
 			$this->relationships      = array();
-			$this->state              = 'current';    
+			$this->state              = 'current';
 			$this->info_changed       = TRUE;
 		}
 	}
@@ -1252,9 +1252,9 @@ class fSchema implements fISchema
 	 *   - char
 	 *   - text
 	 *   - integer
-	 *   - float 
+	 *   - float
 	 *   - timestamp
-	 *   - date 
+	 *   - date
 	 *   - time
 	 *   - boolean
 	 *   - blob
@@ -1277,7 +1277,7 @@ class fSchema implements fISchema
 		}
 		if ($column && isset($this->merged_column_info[$table][$column])) {
 			if ($element !== NULL) {
-				return $this->merged_column_info[$table][$column][$element];	
+				return $this->merged_column_info[$table][$column][$element];
 			}
 			return $this->merged_column_info[$table][$column];
 		}
@@ -1294,12 +1294,12 @@ class fSchema implements fISchema
 		
 		if ($column) {
 			if ($element) {
-				return $this->merged_column_info[$table][$column][$element];	
+				return $this->merged_column_info[$table][$column][$element];
 			}
 			return $this->merged_column_info[$table][$column];
 		}
 		return $this->merged_column_info[$table];
-	}	
+	}
 	
 	
 	/**
@@ -1315,7 +1315,7 @@ class fSchema implements fISchema
 	 *      'unique'  => array(
 	 *          array(
 	 *              {column name},...
-	 *          ),... 
+	 *          ),...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -1337,7 +1337,7 @@ class fSchema implements fISchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if ($key_type !== NULL && !in_array($key_type, $valid_key_types)) {
-			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');
 		}
 		
 		// Return the saved column info if possible
@@ -1346,7 +1346,7 @@ class fSchema implements fISchema
 		}
 		
 		if ($key_type && isset($this->merged_keys[$table][$key_type])) {
-			return $this->merged_keys[$table][$key_type];    
+			return $this->merged_keys[$table][$key_type];
 		}
 		
 		if (!in_array($table, $this->getTables())) {
@@ -1357,7 +1357,7 @@ class fSchema implements fISchema
 		$this->mergeKeys();
 		
 		if ($key_type) {
-			return $this->merged_keys[$table][$key_type];   
+			return $this->merged_keys[$table][$key_type];
 		}
 		return $this->merged_keys[$table];
 	}
@@ -1416,7 +1416,7 @@ class fSchema implements fISchema
 	{
 		$valid_relationship_types = array('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many');
 		if ($relationship_type !== NULL && !in_array($relationship_type, $valid_relationship_types)) {
-			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $relationship_type . ', selected. Must be one of: ' . join(', ', $valid_relationship_types) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $relationship_type . ', selected. Must be one of: ' . join(', ', $valid_relationship_types) . '.');
 		}
 		
 		// Return the saved column info if possible
@@ -1425,7 +1425,7 @@ class fSchema implements fISchema
 		}
 		
 		if ($relationship_type && isset($this->relationships[$table][$relationship_type])) {
-			return $this->relationships[$table][$relationship_type];    
+			return $this->relationships[$table][$relationship_type];
 		}
 		
 		if (!in_array($table, $this->getTables())) {
@@ -1436,7 +1436,7 @@ class fSchema implements fISchema
 		$this->mergeKeys();
 		
 		if ($relationship_type) {
-			return $this->relationships[$table][$relationship_type];   
+			return $this->relationships[$table][$relationship_type];
 		}
 		return $this->relationships[$table];
 	}
@@ -1450,7 +1450,7 @@ class fSchema implements fISchema
 	public function getTables()
 	{
 		if (!empty($this->tables)) {
-			return $this->tables;	
+			return $this->tables;
 		}
 		
 		switch ($this->database->getType()) {
@@ -1477,7 +1477,7 @@ class fSchema implements fISchema
 							ORDER BY
 								lower(tablename)";
 				break;
-								 
+								
 			case 'sqlite':
 				$sql = "SELECT
 								name
@@ -1487,16 +1487,16 @@ class fSchema implements fISchema
 								type = 'table' AND
 								name NOT LIKE 'sqlite_%'
 							ORDER BY
-								name ASC";	
+								name ASC";
 				break;
 		}
 		
 		$result = $this->database->query($sql);
-
+		
 		foreach ($result as $row) {
 			$keys = array_keys($row);
 			array_push($this->tables, $row[$keys[0]]);
-		}                  
+		}
 		return $this->tables;
 	}
 		
@@ -1513,9 +1513,9 @@ class fSchema implements fISchema
 		$foreign_key_columns = array();
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$foreign_key_columns[] = $key['column'];
-		}	
+		}
 		$diff = array_diff($primary_key_columns, $foreign_key_columns);
-		return empty($diff);	
+		return empty($diff);
 	}
 	
 	
@@ -1530,7 +1530,7 @@ class fSchema implements fISchema
 		foreach ($this->column_info_override as $table => $info) {
 			if (!isset($this->merge_column_info[$table])) {
 				$this->merged_column_info[$table] = array();
-			}   
+			}
 			$this->merged_column_info[$table] = array_merge($this->merged_column_info[$table], $info);
 		}
 		$optional_elements = array('default', 'not_null', 'valid_values', 'max_length', 'auto_increment');
@@ -1558,7 +1558,7 @@ class fSchema implements fISchema
 		foreach ($this->keys_override as $table => $info) {
 			if (!isset($this->merge_keys[$table])) {
 				$this->merged_keys[$table] = array();
-			}   
+			}
 			$this->merged_keys[$table] = array_merge($this->merged_keys[$table], $info);
 		}
 		
@@ -1575,7 +1575,7 @@ class fSchema implements fISchema
 	public function setCacheFile($file)
 	{
 		if (file_exists($file) && !is_writable($file)) {
-			fCore::toss('fEnvironmentException', 'The cache file specified, ' . $file . ', is not writable');   
+			fCore::toss('fEnvironmentException', 'The cache file specified, ' . $file . ', is not writable');
 		}
 		if (!file_exists($file) && !is_writable(dirname($file))) {
 			fCore::toss('fEnvironmentException', 'The cache file directory, ' . dirname($file) . ', is not writable');
@@ -1587,7 +1587,7 @@ class fSchema implements fISchema
 			$info = unserialize($contents);
 			$this->tables        = $info['tables'];
 			$this->column_info   = $info['column_info'];
-			$this->keys          = $info['keys'];   
+			$this->keys          = $info['keys'];
 		}
 		
 		if (!empty($this->column_info) || !empty($this->keys)) {
@@ -1608,9 +1608,9 @@ class fSchema implements fISchema
 	{
 		if (!isset($this->column_info_override[$table])) {
 			$this->column_info_override[$table] = array();
-		}                                                  
+		}
 		if (!empty($column)) {
-			$this->column_info_override[$table][$column] = $column_info; 
+			$this->column_info_override[$table][$column] = $column_info;
 		} else {
 			$this->column_info_override[$table] = $column_info;
 		}
@@ -1630,14 +1630,14 @@ class fSchema implements fISchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if (!in_array($key_type, $valid_key_types)) {
-			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');
 		}
 		
 		if (!isset($this->keys_override[$table])) {
 			$this->keys_override[$table] = array();
-		}    
+		}
 		if (!empty($key_type)) {
-			$this->keys_override[$table][$key_type] = $keys; 
+			$this->keys_override[$table][$key_type] = $keys;
 		} else {
 			$this->keys_override[$table] = $keys;
 		}

@@ -17,25 +17,25 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 class fValidation
-{		
+{
 	/**
 	 * Fields that should be formatted as email addresses
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $email_fields;
 	
 	/**
 	 * Fields that will be included in email headers and should be checked for email injection
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $email_header_fields;
 	
 	/**
 	 * The fields to be required
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $required_fields;
 	
@@ -51,13 +51,13 @@ class fValidation
 		foreach ($this->email_fields as $email_field) {
 			if (is_string($email_field)) {
 				if (fRequest::get($email_field) !== '' && fRequest::get($email_field) !== NULL && !preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', trim(fRequest::get($email_field)))) {
-					$messages[] = fInflection::humanize($email_field) . ' should be in the form name@example.com';	
+					$messages[] = fInflection::humanize($email_field) . ' should be in the form name@example.com';
 				}
 				
 			} else {
 				fCore::toss('fProgrammerException', 'Unrecognized email field structure');
-			}	
-		}	
+			}
+		}
 	}
 	
 	
@@ -72,13 +72,13 @@ class fValidation
 		foreach ($this->email_header_fields as $email_header_field) {
 			if (is_string($email_header_field)) {
 				if (preg_match('#\r|\n', fRequest::get($email_header_field))) {
-					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';	
+					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';
 				}
 				
 			} else {
 				fCore::toss('fProgrammerException', 'Unrecognized email header field structure');
-			}	
-		}	
+			}
+		}
 	}
 	
 	
@@ -108,7 +108,7 @@ class fValidation
 				
 				if (!$found) {
 					$required_field = array_map(array('fInflection', 'humanize'), $required_field);
-					$messages[] = join(' or ', $required_field) . ' needs to have a value';	
+					$messages[] = join(' or ', $required_field) . ' needs to have a value';
 				}
 				
 			// Handle conditional fields
@@ -118,13 +118,13 @@ class fValidation
 						if (fRequest::get($individual_field) === '' || fRequest::get($individual_field) === NULL) {
 							$messages[] = fInflection::humanize($individual_field) . ' needs to have a value';
 						}
-					}		
-				}	
+					}
+				}
 				
 			} else {
 				fCore::toss('fProgrammerException', 'Unrecognized required field structure');
-			}	
-		}	
+			}
+		}
 	}
 	
 	
@@ -136,7 +136,7 @@ class fValidation
 	 */
 	public function setEmailFields()
 	{
-		$this->email_fields = func_get_args();		
+		$this->email_fields = func_get_args();
 	}
 	
 	
@@ -148,7 +148,7 @@ class fValidation
 	 */
 	public function setEmailHeaderFields()
 	{
-		$this->email_header_fields = func_get_args();		
+		$this->email_header_fields = func_get_args();
 	}
 	
 	
@@ -173,7 +173,7 @@ class fValidation
 	 */
 	public function setRequiredFields()
 	{
-		$this->required_fields = func_get_args();		
+		$this->required_fields = func_get_args();
 	}
 	
 	
@@ -188,7 +188,7 @@ class fValidation
 	{
 		if (empty($this->email_header_fields) && empty($this->required_fields) && empty($this->email_fields)) {
 			fCore::toss('fProgrammerException', 'No fields have been set to be validated');
-		}		
+		}
 		
 		$messages = array();
 		
@@ -199,7 +199,7 @@ class fValidation
 		if (!empty($messages)) {
 			$errors  = '<p>The following errors were found in your submission:</p><ul><li>';
 			$errors .= join('</li><li>', $messages);
-			$errors .= '</li></ul>';	
+			$errors .= '</li></ul>';
 			
 			fCore::toss('fValidationException', $errors);
 		}

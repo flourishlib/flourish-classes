@@ -57,11 +57,11 @@ class fRecordSet implements Iterator
 	 *  - '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * </pre>
 	 * 
-	 * @param  string $class_name        The class to create the fRecordSet of
-	 * @param  array  $where_conditions  The column => value comparisons for the where clause
-	 * @param  array  $order_bys         The column => direction values to use for sorting
-	 * @param  integer $limit            The number of records to fetch
-	 * @param  integer $offset           The offset to use before limiting
+	 * @param  string  $class_name        The class to create the fRecordSet of
+	 * @param  array   $where_conditions  The column => value comparisons for the where clause
+	 * @param  array   $order_bys         The column => direction values to use for sorting
+	 * @param  integer $limit             The number of records to fetch
+	 * @param  integer $offset            The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
@@ -69,13 +69,13 @@ class fRecordSet implements Iterator
 		$table_name   = fORM::tablize($class_name);
 		
 		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
-
+		
 		if (!empty($where_conditions)) {
-			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);					
+			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);
 		}
 		
 		if (!empty($order_bys)) {
-			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);				
+			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
 		}
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
@@ -89,14 +89,14 @@ class fRecordSet implements Iterator
 			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
 			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
 			
-			$sql .= ' LIMIT ' . $limit;	
+			$sql .= ' LIMIT ' . $limit;
 			
 			if ($offset !== NULL) {
-				$sql .= ' OFFSET ' . $offset;	
+				$sql .= ' OFFSET ' . $offset;
 			}
 		}
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);			
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
 	}
 	
 	
@@ -106,7 +106,7 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  array $records  The records to create the set from, the order of the record set will be the same as the order of the array.
 	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
 	static public function createFromObjects($records)
@@ -133,19 +133,19 @@ class fRecordSet implements Iterator
 				
 				$pk_value = $record->$pk_get_method();
 				if ($j == 0 && $total_pk_fields == 1) {
-					$primary_keys[$i] = $pk_value;	
+					$primary_keys[$i] = $pk_value;
 				} elseif ($j == 0) {
-					$primary_keys[$i] = array();	
+					$primary_keys[$i] = array();
 				}
 				if ($total_pk_fields > 1) {
-					$primary_keys[$i][$pk_field] = $pk_value;	
+					$primary_keys[$i][$pk_field] = $pk_value;
 				}
 				
 				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');	
+				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');
 			}
 			
-			$sql .= ($total_pk_fields > 1) ? ') ' : '';	
+			$sql .= ($total_pk_fields > 1) ? ') ' : '';
 			$i++;
 		}
 		
@@ -154,7 +154,7 @@ class fRecordSet implements Iterator
 		$result->setReturnedRows(sizeof($records));
 		$result->setSQL($sql);
 		
-		$record_set = new fRecordSet($class_name, $result);	
+		$record_set = new fRecordSet($class_name, $result);
 		$record_set->records      = $records;
 		$record_set->primary_keys = $primary_keys;
 		
@@ -168,11 +168,11 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  string $class_name    The type of object to create
-	 * @param  array  $primary_keys  The primary keys of the objects to create
-	 * @param  array  $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
-	 * @param  integer $limit        The number of records to fetch
-	 * @param  integer $offset       The offset to use before limiting
+	 * @param  string  $class_name    The type of object to create
+	 * @param  array   $primary_keys  The primary keys of the objects to create
+	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
+	 * @param  integer $limit         The number of records to fetch
+	 * @param  integer $offset        The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
 	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array(), $limit=NULL, $offset=NULL)
@@ -191,20 +191,20 @@ class fRecordSet implements Iterator
 		$total_primary_keys = sizeof($primary_keys);
 		for ($i=0; $i < $total_primary_keys; $i++) {
 			$sql .= ($i > 0) ? 'OR' : '';
-			$sql .= ($total_pk_fields > 1) ? ' (' : '';     
+			$sql .= ($total_pk_fields > 1) ? ' (' : '';
 			
 			for ($j=0; $j < $total_pk_fields; $j++) {
 				$pkf = $primary_key_fields[$j];
 				
 				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');	
+				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
 			}
 			
 			$sql .= ($total_pk_fields > 1) ? ' (' : '';
 		}
 		
 		if (!empty($order_bys)) {
-			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);				
+			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
 		}
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
@@ -218,14 +218,14 @@ class fRecordSet implements Iterator
 			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
 			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
 			
-			$sql .= ' LIMIT ' . $limit;	
+			$sql .= ' LIMIT ' . $limit;
 			
 			if ($offset !== NULL) {
-				$sql .= ' OFFSET ' . $offset;	
+				$sql .= ' OFFSET ' . $offset;
 			}
 		}
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);	
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
 	}
 	
 	
@@ -240,65 +240,65 @@ class fRecordSet implements Iterator
 	static public function createFromSql($class_name, $sql, $grand_total_sql=NULL)
 	{
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		return new fRecordSet($class_name, $result, $non_limited_count_sql);	
+		return new fRecordSet($class_name, $result, $non_limited_count_sql);
 	}
 	
 	
 	/**
 	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	private $associate = FALSE;
 	
 	/**
 	 * The type of class to create from the primary keys provided
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $class_name;
 	
 	/**
 	 * The number of rows that would have been returned if a LIMIT clause had not been used
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $non_limited_count;
 	
 	/**
 	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $non_limited_count_sql;
 	
 	/**
 	 * The result objects for preloaded data
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $preloaded_result_objects = array();
 	
 	/**
 	 * An array of the primary keys for the records in the set, initially empty
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $primary_keys = array();
 	
 	/**
 	 * An array of the records in the set, initially empty
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $records = array();
 	
 	/**
 	 * The result object that will act as the data source
 	 * 
-	 * @var object 
+	 * @var object
 	 */
-	private $result_object;		
+	private $result_object;
 	
 	
 	/**
@@ -312,11 +312,11 @@ class fRecordSet implements Iterator
 	protected function __construct($class_name, fResult $result_object, $non_limited_count_sql=NULL)
 	{
 		if (!class_exists($class_name)) {
-			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', could not be loaded');	
+			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', could not be loaded');
 		}
 		
 		if (!is_subclass_of($class_name, 'fActiveRecord')) {
-			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', does not extend fActiveRecord. All classes used with fRecordSet must extend fActiveRecord.');	
+			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', does not extend fActiveRecord. All classes used with fRecordSet must extend fActiveRecord.');
 		}
 		
 		$this->class_name            = $class_name;
@@ -339,17 +339,17 @@ class fRecordSet implements Iterator
 		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		switch ($action) {
-			case 'sort':                                           
+			case 'sort':
 				// Trim the "by_" off of the beginning
 				$sort_method = substr($element, 3);
-				$sort_method = fInflection::camelize($sort_method, FALSE); 
-				return $this->performSort($parameters[0], $parameters[1], $sort_method);      
+				$sort_method = fInflection::camelize($sort_method, FALSE);
+				return $this->performSort($parameters[0], $parameters[1], $sort_method);
 				
 			case 'preload':
 				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
-		}     
+		}
 		
-		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');      
+		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
 	}
 	
 	
@@ -365,7 +365,7 @@ class fRecordSet implements Iterator
 		while ($this->valid()) {
 			$this->current();
 			$this->next();
-		}   
+		}
 	}
 	
 	
@@ -380,7 +380,7 @@ class fRecordSet implements Iterator
 	public function current()
 	{
 		if (!$this->valid()) {
-			fCore::toss('fProgrammerException', 'There are no remaining records');	
+			fCore::toss('fProgrammerException', 'There are no remaining records');
 		}
 		
 		if (!isset($this->records[$this->key()])) {
@@ -391,7 +391,7 @@ class fRecordSet implements Iterator
 			$keys = array();
 			foreach ($primary_keys as $primary_key) {
 				$method = 'get' . fInflection::camelize($primary_key, TRUE);
-				$keys[$primary_key] = $this->records[$this->key()]->$method();	
+				$keys[$primary_key] = $this->records[$this->key()]->$method();
 			}
 			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_shift($primary_keys)] : $keys;
 			
@@ -433,7 +433,7 @@ class fRecordSet implements Iterator
 			$this->next();
 			return $record;
 		} catch (fProgrammerException $e) {
-			return FALSE;	
+			return FALSE;
 		}
 	}
 	
@@ -445,7 +445,7 @@ class fRecordSet implements Iterator
 	 */
 	public function getClassName()
 	{
-		return $this->class_name;   
+		return $this->class_name;
 	}
 	
 	
@@ -456,7 +456,7 @@ class fRecordSet implements Iterator
 	 */
 	public function getCount()
 	{
-		return $this->result_object->getReturnedRows();	
+		return $this->result_object->getReturnedRows();
 	}
 	
 	
@@ -467,9 +467,9 @@ class fRecordSet implements Iterator
 	 */
 	public function getNonLimitedCount()
 	{
-		// A query that does not use a LIMIT clause just returns the number of returned rows 
+		// A query that does not use a LIMIT clause just returns the number of returned rows
 		if ($this->non_limited_count_sql === NULL) {
-			return $this->getCount();			
+			return $this->getCount();
 		}
 		
 		if ($this->non_limited_count !== NULL) {
@@ -490,10 +490,10 @@ class fRecordSet implements Iterator
 	{
 		if (sizeof($this->records) != $this->result_object->getReturnedRows()) {
 			$pointer = $this->result_object->getPointer();
-			$this->createAllRecords();	
+			$this->createAllRecords();
 			$this->result_object->seek($pointer);
 		}
-		return $this->records;   
+		return $this->records;
 	}
 	
 	
@@ -508,10 +508,10 @@ class fRecordSet implements Iterator
 	{
 		if (sizeof($this->primary_keys) != $this->result_object->getReturnedRows()) {
 			$pointer = $this->result_object->getPointer();
-			$this->createAllRecords();	
-			$this->result_object->seek($pointer);	
+			$this->createAllRecords();
+			$this->result_object->seek($pointer);
 		}
-		return $this->primary_keys;   
+		return $this->primary_keys;
 	}
 	
 	
@@ -520,12 +520,12 @@ class fRecordSet implements Iterator
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param string $related_table   The table we are injecting the values for
-	 * @param string $route           The route to the related table
-	 * @param fResult $result_object  The pre-loaded result object that we are extracting the sequence from
+	 * @param  string  $related_table  The table we are injecting the values for
+	 * @param  string  $route          The route to the related table
+	 * @param  fResult $result_object  The pre-loaded result object that we are extracting the sequence from
 	 * @return void
 	 */
-	private function injectSubSet($related_table, $route, $result_object) 
+	private function injectSubSet($related_table, $route, $result_object)
 	{
 		$rows = array();
 		
@@ -534,9 +534,9 @@ class fRecordSet implements Iterator
 					
 		try {
 			while (array_diff($keys, $result_object->current()) == array()) {
-				$rows[] = $result_object->fetchRow();	
-			}	
-		} catch (fPrintableException $e) { }		
+				$rows[] = $result_object->fetchRow();
+			}
+		} catch (fPrintableException $e) { }
 		
 		$table = fORM::tablize($this->class_name);
 		$relationship = fORMSchema::getRoute($table, $related_table, $route);
@@ -560,7 +560,7 @@ class fRecordSet implements Iterator
 		$set = new fRecordSet($class_name, $result);
 		
 		$method = 'inject' . fInflection::pluralize($class_name);
-		$record->$method($set);	
+		$record->$method($set);
 	}
 	
 	
@@ -588,7 +588,7 @@ class fRecordSet implements Iterator
 	{
 		return $this->result_object->key();
 	}
-
+	
 	
 	/**
 	 * Moves to the next record in the set (used for iteration)
@@ -619,7 +619,7 @@ class fRecordSet implements Iterator
 		$clauses = fSQLParsing::parseSelectSQL($sql);
 		
 		if (!empty($clauses['GROUP BY'])) {
-			fCore::toss('fProgrammerException', 'Preloading related data is not possible for queries that contain a GROUP BY clause');	
+			fCore::toss('fProgrammerException', 'Preloading related data is not possible for queries that contain a GROUP BY clause');
 		}
 		
 		$table = fORM::tablize($this->class_name);
@@ -648,9 +648,9 @@ class fRecordSet implements Iterator
 		// Limited queries require a slight bit of additional modification so that we only load the related data for the elements returned
 		if (!empty($clauses['LIMIT'])) {
 			if (!empty($clauses['WHERE'])) {
-				$new_sql .= ' AND ';	
+				$new_sql .= ' AND ';
 			} else {
-				$new_sql .= 'WHERE ';	
+				$new_sql .= 'WHERE ';
 			}
 			$new_sql .= fORMDatabase::createPrimaryKeyWhereCondition($table, $table_alias, $this->getPrimaryKeys());
 		}
@@ -665,14 +665,14 @@ class fRecordSet implements Iterator
 			}
 			
 			if ($order_bys != array()) {
-				$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);	
+				$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);
 			}
-		} 
+		}
 		
 		$new_sql = fORMDatabase::insertFromClause($this_table, $new_sql, $joins);
 		
 		if (!isset($this->preloaded_result_objects[$related_table])) {
-			$this->preloaded_result_objects[$related_table] = array();	
+			$this->preloaded_result_objects[$related_table] = array();
 		}
 		
 		$this->preloaded_result_objects[$related_table][$route] = fORMDatabase::getInstance()->translatedQuery($new_sql);
@@ -689,7 +689,7 @@ class fRecordSet implements Iterator
 	 */
 	protected function performSort($a, $b, $method)
 	{
-		return strnatcasecmp($a->$method(), $b->$method());  
+		return strnatcasecmp($a->$method(), $b->$method());
 	}
 	
 	
@@ -721,7 +721,7 @@ class fRecordSet implements Iterator
 			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
 		}
 		
-		$this->createAllRecords(); 
+		$this->createAllRecords();
 		
 		if (!method_exists($this->records[0], $method_name)) {
 			fCore::toss('fProgrammerException', 'The method specified for sorting, ' . $method_name . '(), does not exist');
@@ -730,7 +730,7 @@ class fRecordSet implements Iterator
 		// Use __call to pass the desired method name through to the sort callback
 		usort($this->records, array($this, 'sortBy' . fInflection::camelize($method_name, TRUE)));
 		if ($direction == 'desc') {
-			array_reverse($this->records);	
+			array_reverse($this->records);
 		}
 	}
 	
@@ -745,10 +745,10 @@ class fRecordSet implements Iterator
 	public function tossIfEmpty()
 	{
 		if (!$this->getCount()) {
-			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');	
+			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');
 		}
-	}	
-
+	}
+	
 	
 	/**
 	 * Returns if the set has any records left (used for iteration)
@@ -760,7 +760,7 @@ class fRecordSet implements Iterator
 	public function valid()
 	{
 		return $this->result_object->valid();
-	}	  
+	}
 }
 
 

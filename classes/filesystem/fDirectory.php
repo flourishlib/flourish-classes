@@ -14,7 +14,7 @@
  * @uses  fFilesystem
  * @uses  fProgrammerException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-21]
  */
 class fDirectory
@@ -24,7 +24,7 @@ class fDirectory
 	 * 
 	 * @internal
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	const TEMP_DIRECTORY = '__temp/';
 	
@@ -38,8 +38,8 @@ class fDirectory
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $directory_path  The path to the new directory
-	 * @param  numeric $mode           The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
+	 * @param  string  $directory_path  The path to the new directory
+	 * @param  numeric $mode            The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
 	 * @return fDirectory
 	 */
 	static public function create($directory_path, $mode=0777)
@@ -49,19 +49,19 @@ class fDirectory
 		}
 		
 		if (file_exists($directory_path)) {
-			fCore::toss('fValidationException', 'The directory specified already exists');		
+			fCore::toss('fValidationException', 'The directory specified already exists');
 		}
 		
 		$parent_directory = fFilesystem::getPathInfo($directory_path, 'dirname');
 		if (!file_exists($parent_directory)) {
-			fDirectory::create($parent_directory, $mode);	
+			fDirectory::create($parent_directory, $mode);
 		}
 		
 		if (!is_writable($parent_directory)) {
-			fCore::toss('fEnvironmentException', 'The directory path specified is inside of a directory that is not writable');		
+			fCore::toss('fEnvironmentException', 'The directory path specified is inside of a directory that is not writable');
 		}
-
-		mkdir($directory_path, $mode);	
+		
+		mkdir($directory_path, $mode);
 		
 		$directory = new fDirectory($directory_path);
 		
@@ -80,7 +80,7 @@ class fDirectory
 	static public function makeCanonical($directory)
 	{
 		if (substr($directory, -1) != '/' && substr($directory, -1) != '\\') {
-			$directory .= DIRECTORY_SEPARATOR;   
+			$directory .= DIRECTORY_SEPARATOR;
 		}
 		return $directory;
 	}
@@ -89,14 +89,14 @@ class fDirectory
 	/**
 	 * The full path to the directory
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	protected $directory;
 	
 	/**
 	 * An exception to be thrown after a deletion has happened
 	 * 
-	 * @var object 
+	 * @var object
 	 */
 	protected $exception;
 	
@@ -110,14 +110,14 @@ class fDirectory
 	public function __construct($directory)
 	{
 		if (empty($directory)) {
-			fCore::toss('fProgrammerException', 'No directory was specified');	
+			fCore::toss('fProgrammerException', 'No directory was specified');
 		}
 		
 		if (!file_exists($directory)) {
-			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', does not exist');   
+			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', does not exist');
 		}
 		if (!is_dir($directory)) {
-			fCore::toss('fEnvironmentException', 'The path specified, ' . $directory . ', is not a directory');   
+			fCore::toss('fEnvironmentException', 'The path specified, ' . $directory . ', is not a directory');
 		}
 		
 		$directory = self::makeCanonical(realpath($directory));
@@ -149,12 +149,12 @@ class fDirectory
 	 * 
 	 * @return void
 	 */
-	public function clean() 
+	public function clean()
 	{
 		$this->tossIfException();
 		
 		if (!$this->isTemp()) {
-			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');   
+			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');
 		}
 		
 		// Delete the files
@@ -170,12 +170,12 @@ class fDirectory
 		// Delete the directories
 		$dirs = $this->recursiveScan();
 		foreach ($dirs as $dir) {
-			if ($dir instanceof fDirectory) {    
+			if ($dir instanceof fDirectory) {
 				if (filemtime($dir->getPath()) < strtotime('-6 hours') && $dir->scan() == array()) {
 					$dir->delete();
 				}
 			}
-		}    
+		}
 	}
 	
 	
@@ -186,7 +186,7 @@ class fDirectory
 	 * 
 	 * @return void
 	 */
-	public function delete() 
+	public function delete()
 	{
 		$this->tossIfException();
 		
@@ -194,14 +194,14 @@ class fDirectory
 		
 		foreach ($files as $file) {
 			$file->delete();
-		} 
+		}
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			return fFilesystem::delete($this);	
-		} 
+			return fFilesystem::delete($this);
+		}
 		
-		rmdir($this->directory);  
+		rmdir($this->directory);
 		
 		$exception = new fProgrammerException('The action requested can not be performed because the directory has been deleted');
 		fFilesystem::updateExceptionMap($this->directory, $exception);
@@ -221,7 +221,7 @@ class fDirectory
 		
 		if (fCore::getOS() == 'linux/unix') {
 			$output = shell_exec('du -sb ' . escapeshellarg($this->directory));
-			list($size, $trash) = explode("\t", $output);    		
+			list($size, $trash) = explode("\t", $output);
 		}
 		
 		if (fCore::getOS() == 'windows') {
@@ -233,8 +233,8 @@ class fDirectory
 				$line = fgets($process);
 				
 				if (strpos($last_line, 'Total Files Listed:') !== FALSE) {
-					$line_segments = preg_split('#\s+#', $line, 0, PREG_SPLIT_NO_EMPTY);  
-					$size = $line_segments[2];  
+					$line_segments = preg_split('#\s+#', $line, 0, PREG_SPLIT_NO_EMPTY);
+					$size = $line_segments[2];
 					break;
 				}
 			}
@@ -242,7 +242,7 @@ class fDirectory
 		}
 		
 		if (!$format) {
-			return $size;    
+			return $size;
 		}
 		
 		return fFilesystem::formatFilesize($size, $decimal_places);
@@ -261,10 +261,10 @@ class fDirectory
 		$dirname = fFilesystem::getPathInfo($this->directory, 'dirname');
 		
 		if ($dirname == $this->directory) {
-			fCore::toss('fNotFoundException', 'The current directory does not have a parent directory');	
+			fCore::toss('fNotFoundException', 'The current directory does not have a parent directory');
 		}
 		
-		return new fDirectory();    
+		return new fDirectory();
 	}
 	
 	
@@ -279,9 +279,9 @@ class fDirectory
 		$this->tossIfException();
 		
 		if ($from_doc_root) {
-			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);    
+			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);
 		}
-		return $this->directory;    
+		return $this->directory;
 	}
 	
 	
@@ -297,15 +297,15 @@ class fDirectory
 		$this->tossIfException();
 		
 		if ($this->isTemp()) {
-			fCore::toss('fProgrammerException', 'The current directory is a temporary directory');   
+			fCore::toss('fProgrammerException', 'The current directory is a temporary directory');
 		}
 		$temp_dir = $this->directory . self::TEMP_DIRECTORY;
 		if (!file_exists($temp_dir)) {
 			$old_umask = umask(0000);
 			mkdir($temp_dir);
 			umask($old_umask);
-		} 
-		return new fDirectory($temp_dir);    
+		}
+		return new fDirectory($temp_dir);
 	}
 	
 	
@@ -320,7 +320,7 @@ class fDirectory
 	{
 		$this->tossIfException();
 		
-		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);    
+		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);
 	}
 	
 	
@@ -333,7 +333,7 @@ class fDirectory
 	{
 		$this->tossIfException();
 		
-		return is_writable($this->directory);   
+		return is_writable($this->directory);
 	}
 	
 	
@@ -342,16 +342,16 @@ class fDirectory
 	 * 
 	 * This operation will NOT be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory (and all contained files/dirs) as existing with the old paths until that point.
 	 * 
-	 * @param  string $new_dirname  The new full path to the directory
-	 * @param  boolean $overwrite   If the new dirname already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
+	 * @param  string  $new_dirname  The new full path to the directory
+	 * @param  boolean $overwrite    If the new dirname already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
 	 * @return void
 	 */
-	public function rename($new_dirname, $overwrite) 
+	public function rename($new_dirname, $overwrite)
 	{
 		$this->tossIfException();
 		
 		if (!$this->getParent()->isWritable()) {
-			fCore::toss('fProgrammerException', 'The directory, ' . $this->directory . ', can not be renamed because the directory containing it is not writable');	
+			fCore::toss('fProgrammerException', 'The directory, ' . $this->directory . ', can not be renamed because the directory containing it is not writable');
 		}
 		
 		$info = fFilesystem::getPathInfo($new_dirname);
@@ -365,16 +365,16 @@ class fDirectory
 		
 		if (file_exists($new_dirname)) {
 			if (!is_writable($new_dirname)) {
-				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', already exists, but is not writable'); 		
+				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', already exists, but is not writable');
 			}
 			if (!$overwrite) {
-				$new_dirname = fFilesystem::createUniqueName($new_dirname);	
+				$new_dirname = fFilesystem::createUniqueName($new_dirname);
 			}
 		} else {
 			$parent_dir = new fDirectory($info['dirname']);
 			if (!$parent_dir->isWritable()) {
 				fCore::toss('fProgrammerException', 'The new directory name specified, ' . $new_dirname . ', is inside of a directory that is not writable');
-			} 
+			}
 		}
 		
 		
@@ -382,7 +382,7 @@ class fDirectory
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isTransactionInProgress()) {
-			fFilesystem::rename($this->directory, $new_dirname);	
+			fFilesystem::rename($this->directory, $new_dirname);
 		}
 		
 		fFilesystem::updateFilenameMapForDirectory($this->directory, $new_dirname);
@@ -398,16 +398,16 @@ class fDirectory
 	{
 		$this->tossIfException();
 		
-		$files = array_diff(scandir($this->directory), array('.', '..')); 
+		$files = array_diff(scandir($this->directory), array('.', '..'));
 		$objects = array();
 		
 		foreach ($files as $file) {
 			if (is_dir($this->directory . $file)) {
-				$objects[] = new fDirectory($this->directory . $file);   
+				$objects[] = new fDirectory($this->directory . $file);
 			} else {
-				$objects[] = new fFile($this->directory . $file); 
+				$objects[] = new fFile($this->directory . $file);
 			}
-		}  
+		}
 		
 		return $objects;
 	}
@@ -428,9 +428,9 @@ class fDirectory
 		$total_files = sizeof($files);
 		for ($i=0; $i < $total_files; $i++) {
 			if ($files[$i] instanceof fDirectory) {
-				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());   
+				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());
 			}
-		}  
+		}
 		
 		return $objects;
 	}
@@ -446,8 +446,8 @@ class fDirectory
 		if ($this->exception) {
 			fCore::toss(get_class($this->exception), $this->exception->getMessage());
 		}
-	}    
-}  
+	}
+}
 
 
 

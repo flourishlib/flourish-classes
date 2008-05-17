@@ -19,14 +19,14 @@ class fBuffer
 	/**
 	 * If output capturing is currently active
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	static private $capturing = FALSE;
 	
 	/**
 	 * If output buffering has been started
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	static private $started = FALSE;
 	
@@ -42,9 +42,9 @@ class fBuffer
 			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');
 		}
-		ob_clean();	
+		ob_clean();
 	}
 	
 	
@@ -59,7 +59,7 @@ class fBuffer
 			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be retrieved');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be retrieved');
 		}
 		return ob_get_contents();
 	}
@@ -79,8 +79,8 @@ class fBuffer
 	/**
 	 * Erases the output buffer
 	 * 
-	 * @param string $find     The string to find
-	 * @param string $replace  The string to replace
+	 * @param  string $find     The string to find
+	 * @param  string $replace  The string to replace
 	 * @return void
 	 */
 	static public function replace($find, $replace)
@@ -89,14 +89,14 @@ class fBuffer
 			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');
 		}
 		
 		// ob_get_clean() actually turns off output buffering, so we do it the long way
 		$contents = ob_get_contents();
 		ob_clean();
 		
-		echo str_replace($find, $replace, $contents);	
+		echo str_replace($find, $replace, $contents);
 	}
 	
 	
@@ -111,9 +111,9 @@ class fBuffer
 			fCore::toss('fProgrammerException', 'Output buffering has already been started');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffering can be started');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffering can be started');
 		}
-		ob_start();	
+		ob_start();
 		self::$started = TRUE;
 	}
 	
@@ -126,9 +126,9 @@ class fBuffer
 	static public function startCapture()
 	{
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing has already been started');	
+			fCore::toss('fProgrammerException', 'Output capturing has already been started');
 		}
-		ob_start();	
+		ob_start();
 		self::$capturing = TRUE;
 	}
 	
@@ -144,9 +144,9 @@ class fBuffer
 			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');	
+			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');
 		}
-		ob_end_flush();	
+		ob_end_flush();
 		self::$started = FALSE;
 	}
 	
@@ -154,12 +154,12 @@ class fBuffer
 	/**
 	 * Stops capturing output, returning what was captured.
 	 * 
-	 * @return string   The captured output
+	 * @return string  The captured output
 	 */
 	static public function stopCapture()
 	{
 		if (!self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing has not yet been started');	
+			fCore::toss('fProgrammerException', 'Output capturing has not yet been started');
 		}
 		self::$capturing = FALSE;
 		return ob_get_clean();

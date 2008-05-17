@@ -14,20 +14,28 @@
  * @changes  1.0.0    The initial implementation [wb, 2008-01-13]
  */
 class fXML
-{	
+{
 	/**
-	 * Prepares content for display in a UTF-8 encoded XML document 
+	 * Prepares content for display in a UTF-8 encoded XML document
 	 * 
-	 * @param  string $content   The content to prepare
+	 * @param  string $content  The content to prepare
 	 * @return string  The encoded xml
 	 */
 	static public function prepare($content)
 	{
-		$content = fHTML::preparePlainText($content);
-		return fHTML::convertEntitiesToNumeric($content);         
+		$tag_characters = array(
+			'<' => '&lt;',
+			'>' => '&gt;',
+			'"' => '&quot;',
+			"'" => '&apos;'
+		);
+		
+		$content = fHTML::prepare($content);
+		$content = strtr($content, $tag_characters);
+		return fHTML::convertEntitiesToNumeric($content);
 	}
-
-
+	
+	
 	/**
 	 * Forces use as a static class
 	 * 

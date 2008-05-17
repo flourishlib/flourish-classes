@@ -36,30 +36,30 @@ abstract class fActiveRecord
 	/**
 	 * If debugging is turned on for the class
 	 * 
-	 * @var boolean 
+	 * @var boolean
 	 */
 	protected $debug = NULL;
 	
 	/**
 	 * The old values for this record
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	protected $old_values = array();
 	
 	/**
 	 * Related that are related to the current record via some relationship
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	protected $related_records = array();
 	
 	/**
 	 * The values for this record
 	 * 
-	 * @var array 
+	 * @var array
 	 */
-	protected $values = array();	
+	protected $values = array();
 	
 	
 	/**
@@ -81,33 +81,33 @@ abstract class fActiveRecord
 		// Handle loading by a result object passed via the fRecordSet class
 		if (is_object($primary_key) && $primary_key instanceof fResult) {
 			if ($this->loadFromIdentityMap($primary_key)) {
-				return;  
+				return;
 			}
 			
 			$this->loadByResult($primary_key);
-			return;	
+			return;
 		}
 		
 		// Handle loading an object from the database
 		if ($primary_key !== NULL) {
 			
 			if ($this->loadFromIdentityMap($primary_key)) {
-				return;  
+				return;
 			}
 			
 			// Check the primary keys
 			$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
-				fCore::toss('fProgrammerException', 'An invalidly formatted primary key was passed to ' . get_class($this));			
+				fCore::toss('fProgrammerException', 'An invalidly formatted primary key was passed to ' . get_class($this));
 			}
 			
 			// Assign the primary key values
 			if (sizeof($pk_columns) > 1) {
 				foreach ($pk_columns as $pk_column) {
 					$this->values[$pk_column] = $primary_key[$pk_column];
-				}	
+				}
 			} else {
-				$this->values[$pk_columns[0]] = $primary_key;	
+				$this->values[$pk_columns[0]] = $primary_key;
 			}
 			
 			$this->load();
@@ -116,9 +116,9 @@ abstract class fActiveRecord
 		} else {
 			$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
 			foreach ($column_info as $column => $info) {
-				$this->values[$column] = NULL;	
+				$this->values[$column] = NULL;
 			}
-		}	
+		}
 	}
 	
 	
@@ -149,30 +149,30 @@ abstract class fActiveRecord
 				}
 				return $this->entifyValue($subject);
 			
-			case 'get':                               
+			case 'get':
 				if (isset($parameters[0])) {
 					return $this->retrieveValue($subject, $parameters[0]);
 				}
 				return $this->retrieveValue($subject);
-
+			
 			case 'prepare':
 				if (isset($parameters[0])) {
 					return $this->formatValue($subject, $parameters[0]);
 				}
 				return $this->formatValue($subject);
-
+			
 			case 'set':
 				return $this->assignValue($subject, $parameters[0]);
-				
+			
 			// Related data methods
 			case 'create':
 				$subject = fInflection::camelize($subject, TRUE);
-			
+				
 				if (isset($parameters[0])) {
 					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
 				}
 				return fORMRelatedData::constructRecord($this, $this->values, $subject);
-
+			
 			case 'build':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
@@ -181,29 +181,29 @@ abstract class fActiveRecord
 					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
-
+			
 			case 'associate':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
-			
+				
 				if (isset($parameters[1])) {
 					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
-
+			
 			case 'inject':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
-			
+				
 				if (isset($parameters[1])) {
 					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
-				
+			
 			case 'populate':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
-			
+				
 				if (isset($parameters[0])) {
 					return fORMRelatedData::populateRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
@@ -212,7 +212,7 @@ abstract class fActiveRecord
 			// Error handler
 			default:
 				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
-		}			
+		}
 	}
 	
 	
@@ -226,12 +226,12 @@ abstract class fActiveRecord
 	protected function assignValue($column, $value)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
 		}
 		
 		// We consider an empty string to be equivalent to NULL
 		if ($value === '') {
-			$value = NULL;	
+			$value = NULL;
 		}
 		
 		$value = fORM::objectify($this, $column, $value);
@@ -243,7 +243,7 @@ abstract class fActiveRecord
 	
 	/**
 	 * Checks to see if the record exists in the database
-	 *
+	 * 
 	 * @return boolean  If the record exists in the database
 	 */
 	public function isExisting()
@@ -251,15 +251,16 @@ abstract class fActiveRecord
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
 			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column] === NULL) || $this->values[$pk_column] === NULL) {
-				return FALSE;	
+				return FALSE;
 			}
 		}
-		return TRUE;	
+		return TRUE;
 	}
 	
 	
 	/**
-	 * Allows the programmer to set features for the class. Only called once per page load for each class.
+	 * Allows the programmer to set features for the class. Only called once per
+	 * page load for each class.
 	 * 
 	 * @return void
 	 */
@@ -271,7 +272,7 @@ abstract class fActiveRecord
 	/**
 	 * Creates the SQL to insert this record
 	 *
-	 * @param  array $sql_values    The sql-formatted values for this record
+	 * @param  array $sql_values  The sql-formatted values for this record
 	 * @return string  The sql insert statement
 	 */
 	protected function constructInsertSql($sql_values)
@@ -289,42 +290,42 @@ abstract class fActiveRecord
 			$column_num++;
 		}
 		$sql .= $columns . ') VALUES (' . $values . ')';
-		return $sql;		
+		return $sql;
 	}
 	
 	
 	/**
 	 * Creates the SQL to update this record
 	 *
-	 * @param  array $sql_values    The sql-formatted values for this record
+	 * @param  array $sql_values  The sql-formatted values for this record
 	 * @return string  The sql update statement
 	 */
 	protected function constructUpdateSql($sql_values)
 	{
 		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
-		$column_num = 0;   
+		$column_num = 0;
 		foreach ($sql_values as $column => $sql_value) {
 			if ($column_num) { $sql .= ', '; }
 			$sql .= $column . ' = ' . $sql_value;
 			$column_num++;
 		}
 		$sql .= ' WHERE ' . $this->getPrimaryKeyWhereClause();
-		return $sql;		
+		return $sql;
 	}
 	
 	
 	/**
 	 * Delete a record from the database, does not destroy the object. Will
-	 * start database and filesystem transactions if not already inside them.
+	 * start database and filesystem transactions if not already inside them
 	 * 
 	 * @return void
 	 */
 	public function delete()
 	{
 		if (!$this->isExisting()) {
-			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');	
+			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');
 		}
-
+		
 		$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
 		$inside_fs_transaction = fFilesystem::isInsideTransaction();
 		
@@ -334,7 +335,7 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
 			}
 			if (!$inside_fs_transaction) {
-				fFilesystem::startTransaction();	
+				fFilesystem::startTransaction();
 			}
 			
 			
@@ -346,7 +347,7 @@ abstract class fActiveRecord
 			$records_sets_to_delete = array();
 			
 			$restriction_message = '';
-
+			
 			foreach ($relationships as $relationship) {
 				
 				// Figure out how to check for related records
@@ -376,12 +377,12 @@ abstract class fActiveRecord
 					$related_record_name = fORM::getRecordName($related_class_name);
 					$related_record_name = fInflection::pluralize($related_record_name);
 					
-					$restriction_message .= "<li>One or more " . $related_record_name . " references it</li>\n";	
-				}	
+					$restriction_message .= "<li>One or more " . $related_record_name . " references it</li>\n";
+				}
 			}
 			
 			if (!empty($restriction_message)) {
-				fCore::toss('fValidationException', '<p>This ' . fORM::getRecordName($this) . ' can not be deleted because:</p><ul>' . $restriction_message . '</ul>');	
+				fCore::toss('fValidationException', '<p>This ' . fORM::getRecordName($this) . ' can not be deleted because:</p><ul>' . $restriction_message . '</ul>');
 			}
 			
 			
@@ -395,9 +396,9 @@ abstract class fActiveRecord
 			foreach ($records_sets_to_delete as $record_set) {
 				foreach ($record_set as $record) {
 					if ($record->isExisting()) {
-						$record->delete();	
+						$record->delete();
 					}
-				}	
+				}
 			}
 			
 			
@@ -413,8 +414,8 @@ abstract class fActiveRecord
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$pk_columns  = fORMSchema::getInstance()->getKeys($table, 'primary');
 			if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
-				$this->values[$pk_columns[0]] = NULL;	
-				unset($this->old_values[$pk_columns[0]]); 
+				$this->values[$pk_columns[0]] = NULL;
+				unset($this->old_values[$pk_columns[0]]);
 			}
 			
 		} catch (fPrintableException $e) {
@@ -431,24 +432,24 @@ abstract class fActiveRecord
 				$record_name = fORM::getRecordName($this);
 				if (stripos($message, 'This ' . $record_name) === FALSE) {
 					$message = preg_replace('#(This ).*?( can not be deleted because)#is', '\1' . $record_name . '\2');
-					$message = str_replace(' references it', ' indirectly refereces it');	
+					$message = str_replace(' references it', ' indirectly refereces it');
 					fCore::toss('fValidationException', $message);
-				}	
+				}
 			}
 			
-			throw $e;	
+			throw $e;
 		}
 	}
 	
 	
 	/**
-	 * Retrieves a value from the record and prepares it for output into an html form element.
+	 * Retrieves a value from the record and prepares it for output into an HTML form element.
 	 * 
 	 * Below are the transformations performed:
 	 *   - float: takes 1 parameter to specify the number of decimal places
-	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified 
-	 *   - objects: if a __toString() method exists, the output of that will be run throught fHTML::prepareFormValue()
-	 *   - all other data types: the value will be run through fHTML::prepareFormValue()
+	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
+	 *   - objects: if a __toString() method exists, the output of that will be run throught fHTML::encode()
+	 *   - all other data types: the value will be run through fHTML::encode()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  If php date() formatting string for date values
@@ -457,7 +458,7 @@ abstract class fActiveRecord
 	protected function entifyValue($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
 		}
 		
 		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
@@ -472,7 +473,7 @@ abstract class fActiveRecord
 		}
 		
 		if ($formatting === NULL && $column_type == 'float') {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');	
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');
 		}
 		
 		// Grab the value for empty value checking
@@ -482,9 +483,9 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');	
+				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');
 			}
-			$value = $value->format($formatting); 		
+			$value = $value->format($formatting);
 		}
 		
 		// Other objects
@@ -494,16 +495,16 @@ abstract class fActiveRecord
 		
 		// If we are left with an object at this point then we don't know what to do with it
 		if (is_object($value)) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');	
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');
 		}
 		
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
-			return number_format($value, $formatting, '.', ''); 		
+			return number_format($value, $formatting, '.', '');
 		}
 		
 		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
-		return fHTML::prepareFormValue($value);
+		return fHTML::encode($value);
 	}
 	
 	
@@ -517,7 +518,7 @@ abstract class fActiveRecord
 	 *   - boolean: will return 'Yes' or 'No'
 	 *   - integer: will add thousands/millions/etc. separators
 	 *   - float: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
-	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified 
+	 *   - date, time, timestamp: format() will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
 	 *   - objects: if a __toString() method exists, the output of that will be run throught fHTML::prepare()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
@@ -527,13 +528,13 @@ abstract class fActiveRecord
 	protected function formatValue($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
 		}
 		
 		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
 		
 		$email_formatted = fORMValidation::hasFormattingRule($this, $column, 'email');
-		$link_formatted  = fORMValidation::hasFormattingRule($this, $column, 'link'); 
+		$link_formatted  = fORMValidation::hasFormattingRule($this, $column, 'link');
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
@@ -545,7 +546,7 @@ abstract class fActiveRecord
 		}
 		
 		if ($formatting === NULL && $column_type == 'float') {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');	
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');
 		}
 		
 		// Grab the value for empty value checking
@@ -555,9 +556,9 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');	
+				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');
 			}
-			return $value->format($formatting); 		
+			return $value->format($formatting);
 		}
 		
 		// Other objects
@@ -567,12 +568,12 @@ abstract class fActiveRecord
 		
 		// If we are left with an object at this point then we don't know what to do with it
 		if (is_object($value)) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');	
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');
 		}
 		
 		// If we are formatting in a situation where empty values will produce incorrect results, exit early
 		if (empty($value) && ($email_formatted || $link_formatted)) {
-			return $value;	
+			return $value;
 		}
 		
 		// Handle the email and link formatting
@@ -583,19 +584,19 @@ abstract class fActiveRecord
 		if ($link_formatted) {
 			$css_class = ($formatting) ? ' class="' . $formatting . '"' : '';
 			return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
-		}	
+		}
 		
 		// Ensure the value matches the data type specified to prevent mangling
 		if ($column_type == 'boolean' && is_bool($value)) {
-			return ($value) ? 'Yes' : 'No';	
+			return ($value) ? 'Yes' : 'No';
 		}
 		
 		if ($column_type == 'integer' && is_numeric($value)) {
-			return number_format($value, 0, '', ',');	
+			return number_format($value, 0, '', ',');
 		}
 		
 		if ($column_type == 'float' && is_numeric($value)) {
-			return number_format($value, $formatting, '.', ',');	
+			return number_format($value, $formatting, '.', ',');
 		}
 		
 		// Anything that has gotten to here is a string value, or is not the
@@ -622,16 +623,16 @@ abstract class fActiveRecord
 			if ($key_num) { $sql .= " AND "; }
 			
 			if (!empty($this->old_values[$pk_column])) {
-				$value = fORM::scalarize($this->old_values[$pk_column]);	
+				$value = fORM::scalarize($this->old_values[$pk_column]);
 			} else {
-				$value = fORM::scalarize($this->values[$pk_column]);	
+				$value = fORM::scalarize($this->values[$pk_column]);
 			}
 			
 			$sql .= $pk_column . fORMDatabase::prepareBySchema(fORM::tablize($this), $pk_column, $value, '=');
 			$key_num++;
 		}
 		
-		return $sql;	
+		return $sql;
 	}
 	
 	
@@ -654,7 +655,7 @@ abstract class fActiveRecord
 			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName(get_class($this)) . ' requested could not be found');
 		}
 		
-		$this->loadByResult($result);	
+		$this->loadByResult($result);
 	}
 	
 	
@@ -673,13 +674,13 @@ abstract class fActiveRecord
 			if ($value === NULL) {
 				$this->values[$column] = $value;
 			} elseif ($column_info[$column]['type'] == 'boolean') {
-				$this->values[$column] = fORMDatabase::getInstance()->unescapeBoolean($value);		
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeBoolean($value);
 			} elseif ($column_info[$column]['type'] == 'blob') {
 				$this->values[$column] = fORMDatabase::getInstance()->unescapeBlob($value);
 			} else {
 				$this->values[$column] = fORM::objectify($this, $column, $value);
 			}
-		}	
+		}
 		
 		// Save this object to the identity map
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
@@ -704,7 +705,7 @@ abstract class fActiveRecord
 		if ($source instanceof fResult) {
 			$row = $source->current();
 		} else {
-			$row = $source;   
+			$row = $source;
 		}
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
@@ -720,12 +721,12 @@ abstract class fActiveRecord
 			$pk_data[$pk_column] = (is_array($row)) ? $row[$pk_column] : $row;
 		}
 		
-		$object = fORM::checkIdentityMap($this, $pk_data); 
+		$object = fORM::checkIdentityMap($this, $pk_data);
 		
 		// A negative result implies this object has not been added to the indentity map yet
 		if(!$object) {
 			return FALSE;
-		} 
+		}
 		
 		// If we got a result back, it is the object we are creating
 		$this->values          = &$object->values;
@@ -749,9 +750,9 @@ abstract class fActiveRecord
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
 				$method = 'set' . fInflection::camelize($column, TRUE);
-				$this->$method(fRequest::get($column));	
+				$this->$method(fRequest::get($column));
 			}
-		}      
+		}
 		
 		// This handles associating many-to-many relationships
 		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
@@ -760,35 +761,35 @@ abstract class fActiveRecord
 			$field  = fInflection::underscorize(fORM::classize($rel['related_table']));
 			
 			if (sizeof($routes) > 1 && fRequest::check($field)) {
-				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field . ' since there is more than one.');		
+				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field . ' since there is more than one.');
 			}
 			
 			$route = NULL;
 			if (sizeof($routes) > 1) {
-				$route = $rel['join_table'];  
-				$field .= '{' . $route . '}';	
+				$route = $rel['join_table'];
+				$field .= '{' . $route . '}';
 			}
 			
 			if (fRequest::check($field)) {
 				$method = 'associate' . fInflection::camelize(fORM::classize($rel['related_table']), TRUE);
-				$this->$method(fRequest::get($field, 'array', array()), $route);	
+				$this->$method(fRequest::get($field, 'array', array()), $route);
 			}
-		}	
+		}
 	}
 	
 	
 	/**
 	 * Retrieves a value from the record.
 	 * 
-	 * @param  string $column      The name of the column to retrieve
+	 * @param  string $column  The name of the column to retrieve
 	 * @return mixed  The value for the column specified
 	 */
 	protected function retrieveValue($column)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist'); 		
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
 		}
-		return $this->values[$column];	
+		return $this->values[$column];
 	}
 	
 	
@@ -842,23 +843,23 @@ abstract class fActiveRecord
 			$this->validate();
 			
 			
-			// Storing main table 
+			// Storing main table
 			
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
 				$value = fORM::scalarize($this->values[$column]);
-				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $value);	
+				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $value);
 			}
 			
 			// Most databases don't like the auto incrementing primary key to be set to NULL
 			if ($new_autoincrementing_record && $sql_values[$pk_column] == 'NULL') {
-				unset($sql_values[$pk_column]);	
+				unset($sql_values[$pk_column]);
 			}
-			   
+			
 			if (!$this->isExisting()) {
 				$sql = $this->constructInsertSql($sql_values);
 			} else {
-				$sql = $this->constructUpdateSql($sql_values);	
+				$sql = $this->constructUpdateSql($sql_values);
 			}
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
@@ -866,30 +867,30 @@ abstract class fActiveRecord
 			// If there is an auto-incrementing primary key, grab the value from the database
 			if ($new_autoincrementing_record) {
 				$this->old_values[$pk_column] = $this->values[$pk_column];
-				$this->values[$pk_column]     = $result->getAutoIncrementedValue();	  
+				$this->values[$pk_column]     = $result->getAutoIncrementedValue();
 			}
 			
 			
 			// Storing *-to-many relationships
-			 
+			
 			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
-			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many'); 
+			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 			
 			foreach ($this->related_records as $related_table => $relationship) {
 				foreach ($relationship as $route => $record_set) {
 					if (!$record_set->isFlaggedForAssociation()) {
-						continue;	
+						continue;
 					}
 					
 					$relationship = fORMSchema::getRoute($table, $related_table, $route);
 					if (isset($relationship['join_table'])) {
 						$this->storeManyToManyAssociations($relationship, $record_set);
 					} else {
-						$this->storeOneToManyRelatedRecords($relationship, $record_set);	
+						$this->storeOneToManyRelatedRecords($relationship, $record_set);
 					}
-				}  	
+				}
 			}
-			 
+			
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
@@ -899,7 +900,7 @@ abstract class fActiveRecord
 			}
 			
 		} catch (fPrintableException $e) {
-
+			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
 			}
@@ -908,11 +909,11 @@ abstract class fActiveRecord
 			}
 			
 			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
-				$this->values[$pk_column] = $this->old_values[$pk_column];	
+				$this->values[$pk_column] = $this->old_values[$pk_column];
 				unset($this->old_values[$pk_column]);
 			}
 			
-			throw $e;	
+			throw $e;
 		}
 	}
 	
@@ -922,8 +923,8 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set  The set of records to store
+	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set    The set of records to store
 	 * @return void
 	 */
 	protected function storeOneToManyRelatedRecords($relationship, $record_set)
@@ -935,7 +936,7 @@ abstract class fActiveRecord
 		);
 		
 		$class_name = $record_set->getClassName();
-		$existing_records = fRecordSet::create($class_name, $where_conditions);		
+		$existing_records = fRecordSet::create($class_name, $where_conditions);
 		
 		$existing_primary_keys  = $existing_records->getPrimaryKeys();
 		$new_primary_keys       = $record_set->getPrimaryKeys();
@@ -944,13 +945,13 @@ abstract class fActiveRecord
 		
 		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
 			$object_to_delete = new $class_name();
-			$object_to_delete->delete(FALSE);	
+			$object_to_delete->delete(FALSE);
 		}
 		
 		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
 		foreach ($record_set as $record) {
 			$record->$set_method_name($this->$get_method_name());
-			$record->store(FALSE); 		
+			$record->store(FALSE);
 		}
 	}
 	
@@ -960,8 +961,8 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  array $relationship     The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set  The set of records to associate
+	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set    The set of records to associate
 	 * @return void
 	 */
 	protected function storeManyToManyAssociations($relationship, $record_set)
@@ -975,7 +976,7 @@ abstract class fActiveRecord
 		
 		$delete_sql  = 'DELETE FROM ' . $join_table;
 		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
-
+		
 		fORMDatabase::getInstance()->translatedQuery($delete_sql);
 		
 		// Then we add back the ones in the record set
@@ -987,7 +988,7 @@ abstract class fActiveRecord
 			
 			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
 			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
-				
+			
 			fORMDatabase::getInstance()->translatedQuery($insert_sql);
 		}
 	}
@@ -1002,9 +1003,9 @@ abstract class fActiveRecord
 	 */
 	public function validate()
 	{
-		fORMValidation::validate(fORM::tablize($this), $this->values, $this->old_values);	
+		fORMValidation::validate(fORM::tablize($this), $this->values, $this->old_values);
 	}
-}  
+}
 
 
 

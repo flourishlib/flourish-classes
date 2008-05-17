@@ -11,7 +11,7 @@
  * @uses  fCore
  * @uses  fProgrammerException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */
 class fInflection
@@ -19,7 +19,7 @@ class fInflection
 	/**
 	 * A listing of words that should be converted to all capital letters, instead of just the first letter
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $all_capitals_words = array(
 		'api',
@@ -42,7 +42,7 @@ class fInflection
 	/**
 	 * Rules for plural to singular inflection of nouns
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $plural_to_singular_rules = array(
 		'^(p)hotos$'     => '\1hoto',
@@ -69,7 +69,7 @@ class fInflection
 	/**
 	 * Rules for singular to plural inflection of nouns
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $singular_to_plural_rules = array(
 		'^(p)hoto$'    => '\1hotos',
@@ -97,12 +97,12 @@ class fInflection
 	/**
 	 * Adds a word to the list of all capital letters words, which is used by {@link fInflection::humanize()} to produce more gramatically correct results
 	 * 
-	 * @param  string $word   The word that should be in all caps when printed
+	 * @param  string $word  The word that should be in all caps when printed
 	 * @return void
 	 */
 	static public function addAllCapitalsWord($word)
 	{
-		self::$all_capitals_words[] = strtolower($word);	
+		self::$all_capitals_words[] = strtolower($word);
 	}
 	
 	
@@ -125,7 +125,7 @@ class fInflection
 	/**
 	 * Converts an underscore notation string to camelCase
 	 * 
-	 * @param  string $string   The string to convert          
+	 * @param  string  $string  The string to convert
 	 * @param  boolean $upper   If the camel case should be upper camel case
 	 * @return string  The converted string
 	 */
@@ -133,41 +133,41 @@ class fInflection
 	{
 		$string = strtolower($string);
 		if ($upper) {
-			$string = strtoupper($string[0]) . substr($string, 1);    
+			$string = strtoupper($string[0]) . substr($string, 1);
 		}
 		return preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
-	}  
+	}
 	
 	
 	/**
 	 * Makes an underscore notation string into a human-friendly string
 	 * 
-	 * @param  string $string   The string to humanize
+	 * @param  string $string  The string to humanize
 	 * @return string  The converted string
 	 */
 	static public function humanize($string)
 	{
 		return preg_replace('/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
-	} 
+	}
 	
 	
 	/**
 	 * Returns the singular or plural form of the word or based on the quantity specified
 	 * 
-	 * @param  mixed $quantity                       The quantity (integer) or an array of objects to count
-	 * @param  string $singular_form                 The string to be returned for when $quantity = 1
-	 * @param  string $plural_form                   The string to be returned for when $quantity != 1, use %d to place the quantity in the string
+	 * @param  mixed   $quantity                     The quantity (integer) or an array of objects to count
+	 * @param  string  $singular_form                The string to be returned for when $quantity = 1
+	 * @param  string  $plural_form                  The string to be returned for when $quantity != 1, use %d to place the quantity in the string
 	 * @param  boolean $use_words_for_single_digits  If the numbers 0 to 9 should be written out as words
-	 * @return string 
+	 * @return string
 	 */
 	static public function inflectOnQuantity($quantity, $singular_form, $plural_form, $use_words_for_single_digits=FALSE)
 	{
 		if (is_array($quantity)) {
 			$quantity = sizeof($quantity);
-		} 
+		}
 		
 		if ($quantity == 1) {
-			return $singular_form;	
+			return $singular_form;
 			
 		} else {
 			$output = $plural_form;
@@ -191,7 +191,7 @@ class fInflection
 					$quantity = $replacements[$quantity];
 				}
 				
-				$output = str_replace('%d', $quantity, $output);			
+				$output = str_replace('%d', $quantity, $output);
 			}
 			
 			return $output;
@@ -226,7 +226,7 @@ class fInflection
 			default:
 				$last_term = array_pop($terms);
 				return join(', ', $terms) . ', and ' . $last_term;
-				break;	
+				break;
 		}
 	}
 	
@@ -243,7 +243,7 @@ class fInflection
 		foreach (self::$singular_to_plural_rules as $from => $to) {
 			if (preg_match('#' . $from . '#i', $singular_noun)) {
 				return $beginning . preg_replace('#' . $from . '#i', $to, $singular_noun);
-			}   
+			}
 		}
 		fCore::toss('fProgrammerException', 'The noun specified could not be pluralized');
 	}
@@ -261,10 +261,10 @@ class fInflection
 		foreach (self::$plural_to_singular_rules as $from => $to) {
 			if (preg_match('#' . $from . '#i', $plural_noun)) {
 				return $beginning . preg_replace('#' . $from . '#i', $to, $plural_noun);
-			}   
+			}
 		}
 		fCore::toss('fProgrammerException', 'The noun specified could not be singularized');
-	}  
+	}
 	
 	
 	/**
@@ -277,28 +277,28 @@ class fInflection
 	{
 		// Handle strings with spaces in them
 		if (strpos($string, ' ') !== FALSE) {
-			return array(substr($string, 0, strrpos($string, ' ')+1), substr($string, strrpos($string, ' ')+1));	
+			return array(substr($string, 0, strrpos($string, ' ')+1), substr($string, strrpos($string, ' ')+1));
 		}
 		
 		// Handle underscore notation
 		if ($string == self::underscorize($string)) {
 			if (strpos($string, '_') === FALSE) { return array('', $string); }
-			return array(substr($string, 0, strrpos($string, '_')+1), substr($string, strrpos($string, '_')+1));	
+			return array(substr($string, 0, strrpos($string, '_')+1), substr($string, strrpos($string, '_')+1));
 		}
 		
 		// Handle camel case
 		if (preg_match('#(.*)((?<=[a-zA-Z]|^)(?:[0-9]+|[A-Z][a-z]*)|(?<=[0-9A-Z]|^)(?:[A-Z][a-z]*))$#', $string, $match)) {
-			return array($match[1], $match[2]);	
+			return array($match[1], $match[2]);
 		}
 		
-		return array('', $string); 
-	}  
+		return array('', $string);
+	}
 	
 	
 	/**
 	 * Converts a camelCase string to underscore notation
 	 * 
-	 * @param  string $string   The string to convert
+	 * @param  string $string  The string to convert
 	 * @return string  The converted string
 	 */
 	static public function underscorize($string)

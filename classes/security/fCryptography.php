@@ -17,7 +17,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-11-27]
  */
 class fCryptography
-{	
+{
 	/**
 	 * Checks a password against a hash
 	 * 
@@ -28,9 +28,9 @@ class fCryptography
 	static public function checkPasswordHash($password, $hash)
 	{
 		$salt = substr($hash, 29, 10);
-
+		
 		if (self::hashWithSalt($password, $salt) == $hash) {
-			return TRUE;	
+			return TRUE;
 		}
 		
 		return FALSE;
@@ -41,7 +41,7 @@ class fCryptography
 	 * Returns a random string of the type and length specified
 	 * 
 	 * @param  integer $length  The length of string to return
-	 * @param  string $type		The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
+	 * @param  string  $type    The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
 	 * @return string  A random string of the type and length specified
 	 */
 	static public function generateRandomString($length, $type='alphanumeric')
@@ -56,7 +56,7 @@ class fCryptography
 				break;
 				
 			case 'alpha':
-				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';	
+				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 				break;
 				
 			case 'numeric':
@@ -76,7 +76,7 @@ class fCryptography
 		$output = '';
 		
 		for ($i = 0; $i < $length; $i++) {
-			$output .= $alphabet[rand(0, $alphabet_length-1)];	
+			$output .= $alphabet[rand(0, $alphabet_length-1)];
 		}
 		
 		return $output;
@@ -92,7 +92,7 @@ class fCryptography
 	static public function hashPassword($password)
 	{
 		$salt = self::generateRandomString(10);
-
+		
 		return self::hashWithSalt($password, $salt);
 	}
 	
@@ -109,7 +109,7 @@ class fCryptography
 		$sha1 = sha1($salt . $source);
 		for ($i = 0; $i < 1000; $i++) {
 			$sha1 = sha1($sha1 . (($i % 2 == 0) ? $source : $salt));
-		}  
+		}
 		
 		return 'fCryptography::password_hash#' . $salt . '#' . $sha1;
 	}
@@ -127,27 +127,27 @@ class fCryptography
 	 */
 	static public function publicKeyDecrypt($ciphertext, $private_key_file, $password)
 	{
-		self::verifyPublicKeyEnvironment();	
+		self::verifyPublicKeyEnvironment();
 		
 		if (!file_exists($private_key_file)) {
-			fCore::toss('fProgrammerException', 'The path to the PEM-encoded private key specified is not valid');	
+			fCore::toss('fProgrammerException', 'The path to the PEM-encoded private key specified is not valid');
 		}
 		if (!is_readable($private_key_file)) {
-			fCore::toss('fProgrammerException', 'The PEM-encoded private key specified can not be read');	
+			fCore::toss('fProgrammerException', 'The PEM-encoded private key specified can not be read');
 		}
 		
 		$private_key = file_get_contents($private_key_file);
 		$private_key_resource = openssl_pkey_get_private($private_key, $password);
 		
 		if ($private_key_resource === FALSE) {
-			fCore::toss('fValidationException', 'The private key password specified does not appear to be valid for the private key specified');	
+			fCore::toss('fValidationException', 'The private key password specified does not appear to be valid for the private key specified');
 		}
 		
 		$elements = explode('#', $ciphertext);
 		
 		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
 		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::public') {
-			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::publicKeyEncrypt()');	
+			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::publicKeyEncrypt()');
 		}
 		
 		$encrypted_key = base64_decode($elements[1]);
@@ -162,7 +162,7 @@ class fCryptography
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
-			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
+			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');
 		}
 		
 		return $plaintext;
@@ -178,13 +178,13 @@ class fCryptography
 	 */
 	static public function publicKeyEncrypt($plaintext, $public_key_file)
 	{
-		self::verifyPublicKeyEnvironment();   
+		self::verifyPublicKeyEnvironment();
 		
 		if (!file_exists($public_key_file)) {
-			fCore::toss('fProgrammerException', 'The path to the X.509 certificate specified is not valid');	
+			fCore::toss('fProgrammerException', 'The path to the X.509 certificate specified is not valid');
 		}
 		if (!is_readable($public_key_file)) {
-		fCore::toss('fProgrammerException', 'The X.509 certificate specified can not be read');	
+		fCore::toss('fProgrammerException', 'The X.509 certificate specified can not be read');
 		}
 		
 		$public_key = file_get_contents($public_key_file);
@@ -218,7 +218,7 @@ class fCryptography
 		
 		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
 		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::symmetric') {
-			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::symmetricKeyEncrypt()');	
+			fCore::toss('fProgrammerException', 'The ciphertext provided does not appear to have been encrypted using fCryptography::symmetricKeyEncrypt()');
 		}
 		
 		$encrypted_iv  = base64_decode($elements[1]);
@@ -229,7 +229,7 @@ class fCryptography
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
-			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');	
+			fCore::toss('fValidationException', 'The ciphertext provided appears to have been tampered with or corrupted');
 		}
 		
 		// Decrypt the IV so we can feed it into the main decryption
@@ -262,7 +262,7 @@ class fCryptography
 	static public function symmetricKeyEncrypt($plaintext, $secret_key)
 	{
 		if (strlen($secret_key) < 8) {
-			fCore::toss('fProgrammerException', 'The secret key specified does not meet the minimum requirement of being at least 8 characters long');   
+			fCore::toss('fProgrammerException', 'The secret key specified does not meet the minimum requirement of being at least 8 characters long');
 		}
 		
 		self::verifySymmetricKeyEnvironment();
@@ -276,7 +276,7 @@ class fCryptography
 		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
 		
 		// Encrypt the IV for storage to prevent man in the middle attacks. This uses
-		// electronic codebook since it is suitable for encrypting the IV. 
+		// electronic codebook since it is suitable for encrypting the IV.
 		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
 		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
 		mcrypt_generic_init($iv_module, $iv_key, '12345678');
@@ -312,7 +312,7 @@ class fCryptography
 	static private function verifyPublicKeyEnvironment()
 	{
 		if (!extension_loaded('openssl')) {
-			fCore::toss('fEnvironmentException', 'The PHP openssl extension is required, however is does not appear to be loaded');    
+			fCore::toss('fEnvironmentException', 'The PHP openssl extension is required, however is does not appear to be loaded');
 		}
 	}
 	
@@ -325,14 +325,14 @@ class fCryptography
 	static private function verifySymmetricKeyEnvironment()
 	{
 		if (!extension_loaded('mcrypt')) {
-			fCore::toss('fEnvironmentException', 'The PHP mcrypt extension is required, however is does not appear to be loaded');    
+			fCore::toss('fEnvironmentException', 'The PHP mcrypt extension is required, however is does not appear to be loaded');
 		}
 		if (!extension_loaded('hash')) {
-			fCore::toss('fEnvironmentException', 'The PHP hash extension is required, however is does not appear to be loaded');    
+			fCore::toss('fEnvironmentException', 'The PHP hash extension is required, however is does not appear to be loaded');
 		}
 		if (!function_exists('mcrypt_module_open')) {
 			fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.');
-		}	
+		}
 		if (!in_array('rijndael-192', mcrypt_list_algorithms())) {
 		fCore::toss('fEnvironmentException', 'The cipher used, AES-192 (also known as rijndael-192), does not appear to be supported by the installed version of libmcrypt');
 		}
@@ -345,7 +345,7 @@ class fCryptography
 	 * @return fSecurity
 	 */
 	private function __construct() { }
-} 
+}
 
 
 

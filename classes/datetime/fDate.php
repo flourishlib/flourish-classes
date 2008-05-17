@@ -11,20 +11,20 @@
  * @uses  fCore
  * @uses  fInflection
  * @uses  fProgrammerException
- * @uses  fTimestamp 
+ * @uses  fTimestamp
  * @uses  fValidationException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-02-10]
  */
 class fDate
-{	
+{
 	/**
 	 * A timestamp of the date
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
-	private $date;   
+	private $date;
 	
 	
 	/**
@@ -32,14 +32,14 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $date      The date to represent
+	 * @param  string $date  The date to represent
 	 * @return fDate
 	 */
 	public function __construct($date)
 	{
 		$timestamp = strtotime($date);
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid date'); 		
+			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid date');
 		}
 		$this->set($timestamp);
 	}
@@ -52,7 +52,7 @@ class fDate
 	 */
 	public function __toString()
 	{
-		return $this->format('Y-m-d'); 
+		return $this->format('Y-m-d');
 	}
 	
 	
@@ -86,7 +86,7 @@ class fDate
 		
 		$restricted_formats = 'aABcegGhHiIOPrsTuUZ';
 		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-date formatting characters: ' . join(', ', str_split($restricted_formats)));	
+			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-date formatting characters: ' . join(', ', str_split($restricted_formats)));
 		}
 		
 		$date = $this->date;
@@ -124,7 +124,7 @@ class fDate
 	 *  - 6 days would be represented as 1 week, however 5 days would not
 	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
-	 * @param  fDate $other_date   The date to create the difference with, if NULL is passed will compare with current date
+	 * @param  fDate $other_date  The date to create the difference with, if NULL is passed will compare with current date
 	 * @return string  The fuzzy difference in time between the this date and the one provided
 	 */
 	public function getFuzzyDifference(fDate $other_date=NULL)
@@ -138,13 +138,13 @@ class fDate
 		$diff = $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
 		
 		if (abs($diff) < 86400) {
-			return ($relative_to_now) ? 'today' : 'same day';	
+			return ($relative_to_now) ? 'today' : 'same day';
 		}
 		
 		if ($relative_to_now) {
 			$suffix = ($diff > 0) ? ' from now' : ' ago';
 		} else {
-			$suffix = ($diff > 0) ? ' after' : ' before';	
+			$suffix = ($diff > 0) ? ' after' : ' before';
 		}
 		
 		$diff = abs($diff);
@@ -157,10 +157,10 @@ class fDate
 		);
 		
 		foreach ($break_points as $break_point => $unit_info) {
-			if ($diff > $break_point) { continue; }	
+			if ($diff > $break_point) { continue; }
 			
 			$unit_diff = round($diff/$unit_info[0]);
-			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');		
+			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
 			
 			return $unit_diff . ' ' . $units . $suffix;
 		}
@@ -170,7 +170,7 @@ class fDate
 	/**
 	 * Returns the difference between the two dates in seconds
 	 * 
-	 * @param  fDate   $other_date    The date to calculate the difference with, if NULL is passed will compare with current date
+	 * @param  fDate $other_date  The date to calculate the difference with, if NULL is passed will compare with current date
 	 * @return integer  The difference between the two dates in seconds, positive if $other_date is before this date or negative if after
 	 */
 	public function getSecondsDifference(fDate $other_date=NULL)
@@ -188,8 +188,8 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @param  integer $timestamp  The date to adjust
+	 * @param  string  $adjustment  The adjustment to make
+	 * @param  integer $timestamp   The date to adjust
 	 * @return integer  The adjusted timestamp
 	 */
 	private function makeAdjustment($adjustment, $timestamp)
@@ -197,13 +197,13 @@ class fDate
 		$timestamp = strtotime($adjustment, $timestamp);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date measurement'); 		
-		}  
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date measurement');
+		}
 		
 		if (date('H:i:s', $timestamp) != '00:00:00') {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.');	 		
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.');
 		}
-
+		
 		return $timestamp;
 	}
 	
@@ -216,7 +216,7 @@ class fDate
 	 */
 	private function set($timestamp)
 	{
-		$this->date = strtotime(date('Y-m-d 00:00:00', $timestamp));   
+		$this->date = strtotime(date('Y-m-d 00:00:00', $timestamp));
 	}
 	
 	
@@ -237,13 +237,13 @@ class fDate
 		$day   = ($day === NULL)   ? date('d', $this->date) : $day;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year'); 				
+			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year');
 		}
 		if (!is_numeric($month) || $month < 1 || $month > 12) {
-			fCore::toss('fValidationException', 'The month specified, ' . $month . ', does not appear to be a valid month'); 				
+			fCore::toss('fValidationException', 'The month specified, ' . $month . ', does not appear to be a valid month');
 		}
 		if (!is_numeric($day) || $day < 1 || $day > 31) {
-			fCore::toss('fValidationException', 'The day specified, ' . $day . ', does not appear to be a valid day'); 				
+			fCore::toss('fValidationException', 'The day specified, ' . $day . ', does not appear to be a valid day');
 		}
 		
 		settype($month, 'integer');
@@ -254,7 +254,7 @@ class fDate
 		
 		$timestamp = strtotime($year . '-' . $month . '-' . $day);
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $year . '-' . $month . '-' . $day . ', does not appear to be a valid date'); 		
+			fCore::toss('fValidationException', 'The date specified, ' . $year . '-' . $month . '-' . $day . ', does not appear to be a valid date');
 		}
 		$this->set($timestamp);
 	}
@@ -277,13 +277,13 @@ class fDate
 		$day_of_week = ($day_of_week === NULL) ? date('N', $this->date) : $day_of_week;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year'); 				
+			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year');
 		}
 		if (!is_numeric($week) || $week < 1 || $week > 53) {
-			fCore::toss('fValidationException', 'The week specified, ' . $week . ', does not appear to be a valid week'); 				
+			fCore::toss('fValidationException', 'The week specified, ' . $week . ', does not appear to be a valid week');
 		}
 		if (!is_numeric($day_of_week) || $day_of_week < 1 || $day_of_week > 7) {
-			fCore::toss('fValidationException', 'The day of week specified, ' . $day_of_week . ', does not appear to be a valid day of the week'); 				
+			fCore::toss('fValidationException', 'The day of week specified, ' . $day_of_week . ', does not appear to be a valid day of the week');
 		}
 		
 		settype($week, 'integer');
@@ -292,7 +292,7 @@ class fDate
 		
 		$timestamp = strtotime($year . '-01-01 +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The ISO date specified, ' . $year . '-W' . $week . '-' . $day_of_week . ', does not appear to be a valid ISO date'); 		
+			fCore::toss('fValidationException', 'The ISO date specified, ' . $year . '-W' . $week . '-' . $day_of_week . ', does not appear to be a valid ISO date');
 		}
 		$this->set($timestamp);
 	}

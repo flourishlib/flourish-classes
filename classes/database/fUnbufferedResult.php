@@ -20,44 +20,44 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * The current row of the result set
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $current_row = NULL;
 	
 	/**
 	 * The php extension used for database interaction
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $extension = NULL;
 	
 	/**
 	 * The position of the pointer in the result set
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $pointer;
 	
 	/**
 	 * The result resource
 	 * 
-	 * @var resource 
+	 * @var resource
 	 */
 	private $result = NULL;
 	
 	/**
 	 * The sql query
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $sql = '';
 	
 	/**
 	 * The sql from before translation
 	 * 
-	 * @var string 
+	 * @var string
 	 */
-	private $untranslated_sql = NULL;   
+	private $untranslated_sql = NULL;
 	
 	
 	/**
@@ -72,9 +72,9 @@ class fUnbufferedResult implements Iterator
 	{
 		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
-		$this->extension = $extension; 
+		$this->extension = $extension;
 	}
 	
 	
@@ -88,22 +88,22 @@ class fUnbufferedResult implements Iterator
 	public function __destruct()
 	{
 		if (!is_resource($this->result) && !is_object($this->result)) {
-			return;	
+			return;
 		}
 		
 		if ($this->extension == 'mssql') {
 			mssql_free_result($this->result);
 		} elseif ($this->extension == 'mysql') {
-			mysql_free_result($this->result);    
+			mysql_free_result($this->result);
 		} elseif ($this->extension == 'mysqli') {
-			mysqli_free_result($this->result);    
+			mysqli_free_result($this->result);
 		} elseif ($this->extension == 'pgsql') {
-			pg_free_result($this->result); 
+			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
-			sqlite_fetch_all($this->result);	
+			sqlite_fetch_all($this->result);
 		} elseif ($this->extension == 'pdo') {
 			$this->result->closeCursor();
-		}	
+		}
 	}
 	
 	
@@ -118,7 +118,7 @@ class fUnbufferedResult implements Iterator
 			$row = mssql_fetch_assoc($this->result);
 			if (empty($row)) {
 				mssql_fetch_batch($this->result);
-				$row = mssql_fetch_assoc($this->result);	
+				$row = mssql_fetch_assoc($this->result);
 			}
 			if (!empty($row)) {
 				$row = $this->fixDblibMssqlDriver($row);
@@ -126,26 +126,26 @@ class fUnbufferedResult implements Iterator
 				// This is an unfortunate fix that required for databases that don't support limit
 				// clauses with an offset. It prevents unrequested columns from being returned.
 				if (!empty($row) && $this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
-					unset($row['__flourish_limit_offset_row_num']);	
-				}	
+					unset($row['__flourish_limit_offset_row_num']);
+				}
 			}
 				
 		} elseif ($this->extension == 'mysql') {
-			$row = mysql_fetch_assoc($this->result);    
+			$row = mysql_fetch_assoc($this->result);
 		} elseif ($this->extension == 'mysqli') {
-			$row = mysqli_fetch_assoc($this->result);    
+			$row = mysqli_fetch_assoc($this->result);
 		} elseif ($this->extension == 'pgsql') {
-			$row = pg_fetch_assoc($this->result);   
+			$row = pg_fetch_assoc($this->result);
 		} elseif ($this->extension == 'sqlite') {
-			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);	
+			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
 		} elseif ($this->extension == 'pdo') {
-			$row = $this->result->fetch(PDO::FETCH_ASSOC);	
+			$row = $this->result->fetch(PDO::FETCH_ASSOC);
 		}
 		
 		$this->current_row = $row;
 	}
 	
-
+	
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
@@ -165,7 +165,7 @@ class fUnbufferedResult implements Iterator
 		if(!$this->current_row && $this->pointer == 0) {
 			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
 		} elseif (!$this->current_row) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');    
+			fCore::toss('fProgrammerException', 'There are no remaining rows');
 		}
 		
 		return $this->current_row;
@@ -183,10 +183,10 @@ class fUnbufferedResult implements Iterator
 	{
 		try {
 			$row = $this->current();
-			$this->next();	
-			return $row;   
+			$this->next();
+			return $row;
 		} catch (fProgrammerException $e) {
-			return FALSE;	
+			return FALSE;
 		}
 	}
 	
@@ -205,35 +205,35 @@ class fUnbufferedResult implements Iterator
 		
 			// If it is not a windows box we are definitely not using dblib
 			if (fCore::getOS() != 'windows') {
-				$using_dblib = FALSE;    
+				$using_dblib = FALSE;
 			
 			// Check this windows box for dblib
 			} else {
 				ob_start();
 				phpinfo(INFO_MODULES);
 				$module_info = ob_get_contents();
-				ob_end_clean();	
+				ob_end_clean();
 				
 				$using_dblib = preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">\s*FreeTDS\s*</td>#ims', $module_info, $match);
 			}
 		}
 		
 		if (!$using_dblib) {
-			return $row;	
+			return $row;
 		}
 		
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');	
+				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');
 			}
 			if (strlen($key) == 30) {
-				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');	
+				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');
 			}
 			if (strlen($value) == 256) {
-				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');	
+				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');
 			}
-		}	
+		}
 		
 		return $row;
 	}
@@ -246,7 +246,7 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function getResult()
 	{
-		return $this->result;   
+		return $this->result;
 	}
 	
 	
@@ -257,7 +257,7 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function getSQL()
 	{
-		return $this->sql;   
+		return $this->sql;
 	}
 	
 	
@@ -268,7 +268,7 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function getUntranslatedSQL()
 	{
-		return $this->untranslated_sql;   
+		return $this->untranslated_sql;
 	}
 	
 	
@@ -283,7 +283,7 @@ class fUnbufferedResult implements Iterator
 	public function key()
 	{
 		if ($this->pointer === NULL) {
-			$this->current();	
+			$this->current();
 		}
 		
 		return $this->pointer;
@@ -301,7 +301,7 @@ class fUnbufferedResult implements Iterator
 	public function next()
 	{
 		if ($this->pointer === NULL) {
-			$this->current();	
+			$this->current();
 		}
 		
 		$this->advanceCurrentRow();
@@ -319,7 +319,7 @@ class fUnbufferedResult implements Iterator
 	public function rewind()
 	{
 		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'Database results can not be iterated through multiple times');	
+			fCore::toss('fProgrammerException', 'Database results can not be iterated through multiple times');
 		}
 	}
 	
@@ -334,7 +334,7 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function setResult($result)
 	{
-		$this->result = $result; 
+		$this->result = $result;
 	}
 	
 	
@@ -363,7 +363,7 @@ class fUnbufferedResult implements Iterator
 	public function setUntranslatedSQL($untranslated_sql)
 	{
 		$this->untranslated_sql = $untranslated_sql;
-	}  
+	}
 	
 	
 	/**
@@ -376,8 +376,8 @@ class fUnbufferedResult implements Iterator
 	public function tossIfNoResults()
 	{
 		$this->current();
-	}   
-
+	}
+	
 	
 	/**
 	 * Returns if the query has any rows left (required by iterator interface)
@@ -389,7 +389,7 @@ class fUnbufferedResult implements Iterator
 	public function valid()
 	{
 		if (!$this->return_rows) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		if ($this->pointer === NULL) {

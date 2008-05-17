@@ -13,7 +13,7 @@
  * @uses  fEnvironmentException
  * @uses  fProgrammerException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-03-24]
  */
 class fFilesystem
@@ -21,28 +21,28 @@ class fFilesystem
 	/**
 	 * Maps exceptions to all instances of a file or directory, providing consistency
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $exception_map = array();
 	
 	/**
 	 * Stores file and directory names by reference, allowing all object instances to be updated at once
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $filename_map = array();
 	
 	/**
 	 * Stores the operations to perform if a rollback occurs
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $rollback_operations = NULL;
 	
 	/**
 	 * Stores the operations to perform when a commit occurs
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	static private $commit_operations = NULL;
 	
@@ -68,28 +68,28 @@ class fFilesystem
 		foreach ($commit_operations as $operation) {
 			// Commit operations only include deletes, however it could be a filename or object
 			if (isset($operation['filename'])) {
-				@unlink($operation['filename']);	
+				@unlink($operation['filename']);
 			} else {
 				$operation['object']->delete();
-			}			
+			}
 		}
 	}
 	
 	
 	/**
-	 * Takes a file size and converts it to bytes 
+	 * Takes a file size and converts it to bytes
 	 * 
 	 * @param  string $size  The size to convert to bytes
-	 * @return integer  The number of bytes represented by the size  
+	 * @return integer  The number of bytes represented by the size
 	 */
-	static public function convertToBytes($size) 
+	static public function convertToBytes($size)
 	{
 		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#', strtolower(trim($size)), $matches)) {
-			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');   
+			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');
 		}
 		
 		if ($matches[2] == '') {
-			$matches[2] = 'b';   
+			$matches[2] = 'b';
 		}
 		
 		$size_map = array('b' => 1,
@@ -108,7 +108,7 @@ class fFilesystem
 	 * @param  string $new_extension  The new extension for the filename, do not include .
 	 * @return string  The unique file name
 	 */
-	static public function createUniqueName($file, $new_extension=NULL) 
+	static public function createUniqueName($file, $new_extension=NULL)
 	{
 		$info = self::getInfo($file);
 		
@@ -123,7 +123,7 @@ class fFilesystem
 		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
 		
 		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file); 	
+		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file);
 		
 		// Look for a unique name by adding _copy# to the end of the file
 		while (file_exists($file)) {
@@ -131,8 +131,8 @@ class fFilesystem
 			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
 				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
 			} else {
-				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;    
-			}    
+				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;
+			}
 		}
 		
 		return $file;
@@ -140,16 +140,16 @@ class fFilesystem
 	
 	
 	/**
-	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb 
+	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb
 	 * 
 	 * @param  integer $bytes           The size of the file in bytes
 	 * @param  integer $decimal_places  The number of decimal places to display
-	 * @return string  
+	 * @return string
 	 */
-	static public function formatFilesize($bytes, $decimal_places=1) 
+	static public function formatFilesize($bytes, $decimal_places=1)
 	{
 		if ($bytes < 0) {
-			$bytes = 0;        
+			$bytes = 0;
 		}
 		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
 		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
@@ -159,27 +159,27 @@ class fFilesystem
 	
 	
 	/**
-	 * Returns info about a path including dirname, basename, extension and filename 
+	 * Returns info about a path including dirname, basename, extension and filename
 	 * 
-	 * @param  string $file_path   The file to rename
-	 * @param  string $element     The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
+	 * @param  string $file_path  The file to rename
+	 * @param  string $element    The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
 	 * @return array  The file's dirname, basename, extension and filename
 	 */
-	static public function getPathInfo($file, $element=NULL) 
+	static public function getPathInfo($file, $element=NULL)
 	{
 		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
 		if ($element !== NULL && !in_array($element, $valid_elements)) {
-			fCore::toss('fProgrammerException', 'Invalid element, ' . $element . ', requested. Must be one of: ' . join(', ', $valid_elements) . '.');  
+			fCore::toss('fProgrammerException', 'Invalid element, ' . $element . ', requested. Must be one of: ' . join(', ', $valid_elements) . '.');
 		}
 		
 		$path_info = pathinfo($file);
 		if (!isset($path_info['filename'])) {
-			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);   
+			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);
 		}
 		$path_info['dirname'] .= DIRECTORY_SEPARATOR;
 		
 		if ($element) {
-			return $path_info[$element];   
+			return $path_info[$element];
 		}
 		
 		return $path_info;
@@ -191,13 +191,13 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param  string    $file  The name of the file or directory
+	 * @param  string $file  The name of the file or directory
 	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
 	 */
 	static public function &hookExceptionMap($file)
 	{
 		if (!isset(self::$exception_map[$file])) {
-			self::$exception_map[$file] = NULL;   
+			self::$exception_map[$file] = NULL;
 		}
 		return self::$exception_map[$file];
 	}
@@ -208,13 +208,13 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param  string    $file  The name of the file or directory
+	 * @param  string $file  The name of the file or directory
 	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
 	 */
 	static public function &hookFilenameMap($file)
 	{
 		if (!isset(self::$filename_map[$file])) {
-			self::$filename_map[$file] = $file; 
+			self::$filename_map[$file] = $file;
 		}
 		return self::$filename_map[$file];
 	}
@@ -241,7 +241,7 @@ class fFilesystem
 	 * @return void
 	 */
 	static public function updateExceptionMap($file, Exception $exception)
-	{              
+	{
 		self::$exception_map[$file] = $exception;
 	}
 	
@@ -256,12 +256,12 @@ class fFilesystem
 	 * @return void
 	 */
 	static public function updateFilenameMap($existing_filename, $new_filename)
-	{              
+	{
 		self::$filename_map[$new_filename]  =& self::$filename_map[$existing_filename];
 		self::$exception_map[$new_filename] =& self::$exception_map[$existing_filename];
 		
 		unset(self::$filename_map[$existing_filename]);
-		unset(self::$exception_map[$existing_filename]); 
+		unset(self::$exception_map[$existing_filename]);
 		
 		self::$filename_map[$new_filename] = $new_filename;
 	}
@@ -278,13 +278,13 @@ class fFilesystem
 	 * @return void
 	 */
 	static public function updateFilenameMapForDirectory($existing_dirname, $new_dirname)
-	{              
+	{
 		// Handle the directory name
 		self::$filename_map[$new_dirname]  =& self::$filename_map[$existing_dirname];
 		self::$exception_map[$new_dirname] =& self::$exception_map[$existing_dirname];
 		
 		unset(self::$filename_map[$existing_dirname]);
-		unset(self::$exception_map[$existing_dirname]); 
+		unset(self::$exception_map[$existing_dirname]);
 		
 		self::$filename_map[$new_dirname] = $new_dirname;
 		
@@ -297,11 +297,11 @@ class fFilesystem
 				self::$exception_map[$new_filename] =& self::$exception_map[$filename];
 				
 				unset(self::$filename_map[$filename]);
-				unset(self::$exception_map[$filename]); 
+				unset(self::$exception_map[$filename]);
 				
 				self::$filename_map[$new_filename] = $new_filename;
 					
-			} 		
+			}
 		}
 	}
 	
@@ -311,7 +311,7 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param object $object  The new file or directory to get rid of on rollback
+	 * @param  object $object  The new file or directory to get rid of on rollback
 	 * @return void
 	 */
 	static public function recordCreate($object)
@@ -319,7 +319,7 @@ class fFilesystem
 		$this->rollback_operations[] = array(
 			'action' => 'delete',
 			'object' => $object
-		);		
+		);
 	}
 	
 	
@@ -328,7 +328,7 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param fFile|fDirectory $object  The filesystem object to delete
+	 * @param  fFile|fDirectory $object  The filesystem object to delete
 	 * @return void
 	 */
 	static public function recordDelete($object)
@@ -336,7 +336,7 @@ class fFilesystem
 		$this->commit_operations[] = array(
 			'action' => 'delete',
 			'object' => $object
-		);	
+		);
 	}
 	
 	
@@ -345,7 +345,7 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param fFile $file  The duplicate file to get rid of on rollback
+	 * @param  fFile $file  The duplicate file to get rid of on rollback
 	 * @return void
 	 */
 	static public function recordDuplicate(fFile $file)
@@ -353,7 +353,7 @@ class fFilesystem
 		$this->rollback_operations[] = array(
 			'action'   => 'delete',
 			'filename' => $file->getPath()
-		);		
+		);
 	}
 	
 	
@@ -362,8 +362,8 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param string $old_name  The old file or directory name
-	 * @param string $new_name  The new file or directory name
+	 * @param  string $old_name  The old file or directory name
+	 * @param  string $new_name  The new file or directory name
 	 * @return void
 	 */
 	static public function recordRename($old_name, $new_name)
@@ -372,7 +372,7 @@ class fFilesystem
 			'action'   => 'rename',
 			'old_name' => $old_name,
 			'new_name' => $new_name
-		);	
+		);
 		
 		// Create the file with no content to prevent overwriting by another process
 		file_put_contents($old_name, '');
@@ -390,7 +390,7 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param fFile $file  The file that is being written to
+	 * @param  fFile $file  The file that is being written to
 	 * @return void
 	 */
 	static public function recordWrite(fFile $file)
@@ -399,7 +399,7 @@ class fFilesystem
 			'action'   => 'write',
 			'filename' => $file->getPath(),
 			'old_data' => file_get_contents($file->getPath())
-		);	
+		);
 	}
 	
 	
@@ -417,14 +417,14 @@ class fFilesystem
 				
 				case 'delete':
 					@unlink($operation['filename']);
-					break;	
+					break;
 					
 				case 'write':
 					file_put_contents($operation['filename'], $operation['old_data']);
 					break;
 					
 				case 'rename':
-					@rename($operation['new_name'], $operation['old_name']);	
+					@rename($operation['new_name'], $operation['old_name']);
 					break;
 					
 			}
@@ -453,7 +453,7 @@ class fFilesystem
 		}
 		self::$commit_operations   = array();
 		self::$rollback_operations = array();
-	} 
+	}
 	
 	
 	/**
@@ -462,7 +462,7 @@ class fFilesystem
 	 * @return fFilesystem
 	 */
 	private function __construct() { }
-}  
+}
 
 
 

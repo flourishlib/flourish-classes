@@ -14,17 +14,17 @@
  * @uses  fTimestamp
  * @uses  fValidationException
  * 
- * @version  1.0.0 
+ * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-02-12]
  */
 class fTime
-{	
+{
 	/**
 	 * A timestamp of the time
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
-	private $time;   
+	private $time;
 	
 	
 	/**
@@ -32,16 +32,16 @@ class fTime
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $time      The time to represent
+	 * @param  string $time  The time to represent
 	 * @return fTime
 	 */
 	public function __construct($time)
 	{
 		$parsed = strtotime($time);
 		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time'); 		
+			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time');
 		}
-		$this->set($parsed); 
+		$this->set($parsed);
 	}
 	
 	
@@ -52,7 +52,7 @@ class fTime
 	 */
 	public function __toString()
 	{
-		return $this->format('H:i:s'); 
+		return $this->format('H:i:s');
 	}
 	
 	
@@ -86,7 +86,7 @@ class fTime
 		
 		$restricted_formats = 'cdDeFIjlLmMnNoOPrStTUwWyYzZ';
 		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-time formatting characters: ' . join(', ', str_split($restricted_formats)));	
+			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-time formatting characters: ' . join(', ', str_split($restricted_formats)));
 		}
 		
 		$time = $this->time;
@@ -123,7 +123,7 @@ class fTime
 	 * Values that are close to the next largest unit of measure will be rounded up:
 	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
 	 * 
-	 * @param  fTime   $other_time      The time to create the difference with, passing NULL will get the difference with the current time
+	 * @param  fTime $other_time  The time to create the difference with, passing NULL will get the difference with the current time
 	 * @return string  The fuzzy difference in time between the this time and the one provided
 	 */
 	public function getFuzzyDifference(fTime $other_time=NULL)
@@ -132,7 +132,7 @@ class fTime
 		if ($other_time === NULL) {
 			$other_time = new fTime('now');
 			$relative_to_now = TRUE;
-		}	
+		}
 		
 		$diff = $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
 		
@@ -143,7 +143,7 @@ class fTime
 		if ($relative_to_now) {
 			$suffix = ($diff > 0) ? ' from now' : ' ago';
 		} else {
-			$suffix = ($diff > 0) ? ' after' : ' before';	
+			$suffix = ($diff > 0) ? ' after' : ' before';
 		}
 		
 		$diff = abs($diff);
@@ -156,7 +156,7 @@ class fTime
 		);
 		
 		foreach ($break_points as $break_point => $unit_info) {
-			if ($diff > $break_point) { continue; }	
+			if ($diff > $break_point) { continue; }
 			
 			$unit_diff = round($diff/$unit_info[0]);
 			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
@@ -169,7 +169,7 @@ class fTime
 	/**
 	 * Returns the difference between the two times in seconds
 	 * 
-	 * @param  fTime   $other_time    The time to calculate the difference with, if NULL is passed will compare with current time
+	 * @param  fTime $other_time  The time to calculate the difference with, if NULL is passed will compare with current time
 	 * @return integer  The difference between the two times in seconds, positive if $other_time is before this time or negative if after
 	 */
 	public function getSecondsDifference(fTime $other_time=NULL)
@@ -187,8 +187,8 @@ class fTime
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @param  integer $timestamp  The time to adjust
+	 * @param  string  $adjustment  The adjustment to make
+	 * @param  integer $timestamp   The time to adjust
 	 * @return integer  The adjusted timestamp
 	 */
 	private function makeAdjustment($adjustment, $timestamp)
@@ -196,13 +196,13 @@ class fTime
 		$timestamp = strtotime($adjustment, $timestamp);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative time measurement'); 		
-		}  
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative time measurement');
+		}
 		
 		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.');	 		
+			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.');
 		}
-
+		
 		return $timestamp;
 	}
 	
@@ -215,7 +215,7 @@ class fTime
 	 */
 	private function set($timestamp)
 	{
-		$this->time = strtotime(date('1970-01-01 H:i:s', $timestamp));   
+		$this->time = strtotime(date('1970-01-01 H:i:s', $timestamp));
 	}
 	
 	
@@ -236,13 +236,13 @@ class fTime
 		$second = ($second === NULL) ? date('s', $this->time) : $second;
 		
 		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
-			fCore::toss('fValidationException', 'The hour specified, ' . $hour . ', does not appear to be a valid hour'); 				
+			fCore::toss('fValidationException', 'The hour specified, ' . $hour . ', does not appear to be a valid hour');
 		}
 		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
-			fCore::toss('fValidationException', 'The minute specified, ' . $minute . ', does not appear to be a valid minute'); 				
+			fCore::toss('fValidationException', 'The minute specified, ' . $minute . ', does not appear to be a valid minute');
 		}
 		if (!is_numeric($second) || $second < 0 || $second > 59) {
-			fCore::toss('fValidationException', 'The second specified, ' . $second . ', does not appear to be a valid second'); 				
+			fCore::toss('fValidationException', 'The second specified, ' . $second . ', does not appear to be a valid second');
 		}
 		
 		settype($minute, 'integer');
@@ -253,9 +253,9 @@ class fTime
 		
 		$parsed = strtotime($hour . ':' . $minute . ':' . $second);
 		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time'); 		
+			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time');
 		}
-		$this->set($parsed); 
+		$this->set($parsed);
 	}
 }
 

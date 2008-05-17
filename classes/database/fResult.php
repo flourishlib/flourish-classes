@@ -20,65 +20,65 @@ class fResult implements Iterator
 	/**
 	 * The number of rows affected by an insert, update, select, etc
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $affected_rows = 0;
 	
 	/**
 	 * The auto incremented value from the query
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $auto_incremented_value = NULL;
 	
 	/**
 	 * The current row of the result set
 	 * 
-	 * @var array 
+	 * @var array
 	 */
 	private $current_row = NULL;
 	
 	/**
 	 * The php extension used for database interaction
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $extension = NULL;
 	
 	/**
 	 * The position of the pointer in the result set
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $pointer;
 	
 	/**
 	 * The result resource
 	 * 
-	 * @var resource 
+	 * @var resource
 	 */
 	private $result = NULL;
 	
 	/**
 	 * The number of rows returned by a select
 	 * 
-	 * @var integer 
+	 * @var integer
 	 */
 	private $returned_rows = 0;
 	
 	/**
 	 * The sql query
 	 * 
-	 * @var string 
+	 * @var string
 	 */
 	private $sql = '';
 	
 	/**
 	 * The sql from before translation
 	 * 
-	 * @var string 
+	 * @var string
 	 */
-	private $untranslated_sql = NULL;   
+	private $untranslated_sql = NULL;
 	
 	
 	/**
@@ -93,9 +93,9 @@ class fResult implements Iterator
 	{
 		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');       
+			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
-		$this->extension = $extension; 
+		$this->extension = $extension;
 	}
 	
 	
@@ -109,25 +109,25 @@ class fResult implements Iterator
 	public function __destruct()
 	{
 		if (!is_resource($this->result) && !is_object($this->result)) {
-			return;	
+			return;
 		}
 		
 		if ($this->extension == 'mssql') {
 			mssql_free_result($this->result);
 		} elseif ($this->extension == 'mysql') {
-			mysql_free_result($this->result);    
+			mysql_free_result($this->result);
 		} elseif ($this->extension == 'mysqli') {
-			mysqli_free_result($this->result);    
+			mysqli_free_result($this->result);
 		} elseif ($this->extension == 'pgsql') {
-			pg_free_result($this->result); 
+			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			// Sqlite doesn't have a way to free a result
 		} elseif ($this->extension == 'pdo') {
 			// We have already buffered PDO results, so there is nothing to free
-		}	
+		}
 	}
 	
-
+	
 	/**
 	 * Returns if there are any remaining rows
 	 * 
@@ -142,7 +142,7 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws  fNoResultsException   
+	 * @throws  fNoResultsException
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -154,7 +154,7 @@ class fResult implements Iterator
 		}
 		
 		if (!$this->valid()) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');    
+			fCore::toss('fProgrammerException', 'There are no remaining rows');
 		}
 		
 		// Primes the result set
@@ -175,13 +175,13 @@ class fResult implements Iterator
 	public function fetchAllRows()
 	{
 		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'It is not possible to fetch all rows from a result if at least one row has already been returned');    
+			fCore::toss('fProgrammerException', 'It is not possible to fetch all rows from a result if at least one row has already been returned');
 		}
 		
 		$all_rows = array();
 		foreach ($this as $row) {
 			$all_rows[] = $row;
-		}	
+		}
 		return $all_rows;
 	}
 	
@@ -195,25 +195,25 @@ class fResult implements Iterator
 	{
 		if ($this->extension == 'mssql') {
 			$row = mssql_fetch_assoc($this->result);
-			$row = $this->fixDblibMssqlDriver($row);	
+			$row = $this->fixDblibMssqlDriver($row);
 			
 			// This is an unfortunate fix that required for databases that don't support limit
 			// clauses with an offset. It prevents unrequested columns from being returned.
 			if ($this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
-				unset($row['__flourish_limit_offset_row_num']);	
+				unset($row['__flourish_limit_offset_row_num']);
 			}
 				
 		} elseif ($this->extension == 'mysql') {
-			$row = mysql_fetch_assoc($this->result);    
+			$row = mysql_fetch_assoc($this->result);
 		} elseif ($this->extension == 'mysqli') {
-			$row = mysqli_fetch_assoc($this->result);    
+			$row = mysqli_fetch_assoc($this->result);
 		} elseif ($this->extension == 'pgsql') {
-			$row = pg_fetch_assoc($this->result);   
+			$row = pg_fetch_assoc($this->result);
 		} elseif ($this->extension == 'sqlite') {
-			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);	
+			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
 		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
-			$row = $this->result[$this->pointer];	
-		}	
+			$row = $this->result[$this->pointer];
+		}
 		
 		$this->current_row = $row;
 	}
@@ -222,7 +222,7 @@ class fResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws  fNoResultsException  
+	 * @throws  fNoResultsException
 	 * 
 	 * @return array|false  The associative array of the row or FALSE if no remaining records
 	 */
@@ -230,11 +230,11 @@ class fResult implements Iterator
 	{
 		try {
 			$row = $this->current();
-			$this->next();	
-			return $row;  
+			$this->next();
+			return $row;
 		} catch (fProgrammerException $e) {
 			return FALSE;
-		} 
+		}
 	}
 	
 	
@@ -248,7 +248,7 @@ class fResult implements Iterator
 	public function fetchScalar()
 	{
 		$row = $this->fetchRow();
-		return array_shift($row);  
+		return array_shift($row);
 	}
 	
 	
@@ -266,35 +266,35 @@ class fResult implements Iterator
 		
 			// If it is not a windows box we are definitely not using dblib
 			if (fCore::getOS() != 'windows') {
-				$using_dblib = FALSE;    
+				$using_dblib = FALSE;
 			
 			// Check this windows box for dblib
 			} else {
 				ob_start();
 				phpinfo(INFO_MODULES);
 				$module_info = ob_get_contents();
-				ob_end_clean();	
+				ob_end_clean();
 				
 				$using_dblib = preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">\s*FreeTDS\s*</td>#ims', $module_info, $match);
 			}
 		}
 		
 		if (!$using_dblib) {
-			return $row;	
+			return $row;
 		}
 		
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');	
+				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');
 			}
 			if (strlen($key) == 30) {
-				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');	
+				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');
 			}
 			if (strlen($value) == 256) {
-				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');	
+				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');
 			}
-		}	
+		}
 		
 		return $row;
 	}
@@ -307,7 +307,7 @@ class fResult implements Iterator
 	 */
 	public function getAffectedRows()
 	{
-		return $this->affected_rows;   
+		return $this->affected_rows;
 	}
 	
 	
@@ -318,7 +318,7 @@ class fResult implements Iterator
 	 */
 	public function getAutoIncrementedValue()
 	{
-		return $this->auto_incremented_value;   
+		return $this->auto_incremented_value;
 	}
 	
 	
@@ -329,7 +329,7 @@ class fResult implements Iterator
 	 */
 	public function getPointer()
 	{
-		return $this->pointer;   
+		return $this->pointer;
 	}
 	
 	
@@ -340,7 +340,7 @@ class fResult implements Iterator
 	 */
 	public function getResult()
 	{
-		return $this->result;   
+		return $this->result;
 	}
 	
 	
@@ -351,7 +351,7 @@ class fResult implements Iterator
 	 */
 	public function getReturnedRows()
 	{
-		return $this->returned_rows;   
+		return $this->returned_rows;
 	}
 	
 	
@@ -362,7 +362,7 @@ class fResult implements Iterator
 	 */
 	public function getSQL()
 	{
-		return $this->sql;   
+		return $this->sql;
 	}
 	
 	
@@ -373,7 +373,7 @@ class fResult implements Iterator
 	 */
 	public function getUntranslatedSQL()
 	{
-		return $this->untranslated_sql;   
+		return $this->untranslated_sql;
 	}
 	
 	
@@ -388,7 +388,7 @@ class fResult implements Iterator
 	public function key()
 	{
 		if ($this->pointer === NULL) {
-			$this->current();	
+			$this->current();
 		}
 		
 		return $this->pointer;
@@ -406,7 +406,7 @@ class fResult implements Iterator
 	public function next()
 	{
 		if ($this->pointer === NULL) {
-			$this->current();	
+			$this->current();
 		}
 		
 		$this->pointer++;
@@ -435,41 +435,41 @@ class fResult implements Iterator
 	
 	
 	/** 
-	 * Seeks to the specified zero-based row for the specified SQL query. 
-	 *  
-	 * @throws  fNoResultsException 
-	 *  
-	 * @param  integer $row  The row number to seek to (zero-based) 
-	 * @return void 
-	 */ 
-	public function seek($row) 
-	{ 
-		if(!$this->returned_rows) { 
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows'); 
-		} 
-		 
-		if ($row >= $this->returned_rows || $row < 0) { 
-			fCore::toss('fProgrammerException', 'The row requested does not exist');    
-		} 
-		 
-		$this->pointer = $row;   
-					  
-		if ($this->extension == 'mssql') { 
-			$success = mssql_data_seek($this->result, $row); 
-		} elseif ($this->extension == 'mysql') { 
-			$success = mysql_data_seek($this->result, $row); 
-		} elseif ($this->extension == 'mysqli') { 
-			$success = mysqli_data_seek($this->result, $row); 
-		} elseif ($this->extension == 'pgsql') { 
-			$success = pg_result_seek($this->result, $row); 
-		} elseif ($this->extension == 'sqlite') { 
-			$success = sqlite_seek($this->result, $row); 
-		} elseif ($this->extension == 'pdo' || $this->extension == 'array') { 
-			// Do nothing since pdo results are arrays 
+	 * Seeks to the specified zero-based row for the specified SQL query.
+	 * 
+	 * @throws  fNoResultsException
+	 * 
+	 * @param  integer $row  The row number to seek to (zero-based)
+	 * @return void
+	 */
+	public function seek($row)
+	{
+		if(!$this->returned_rows) {
+			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+		}
+		
+		if ($row >= $this->returned_rows || $row < 0) {
+			fCore::toss('fProgrammerException', 'The row requested does not exist');
+		}
+		
+		$this->pointer = $row;
+					
+		if ($this->extension == 'mssql') {
+			$success = mssql_data_seek($this->result, $row);
+		} elseif ($this->extension == 'mysql') {
+			$success = mysql_data_seek($this->result, $row);
+		} elseif ($this->extension == 'mysqli') {
+			$success = mysqli_data_seek($this->result, $row);
+		} elseif ($this->extension == 'pgsql') {
+			$success = pg_result_seek($this->result, $row);
+		} elseif ($this->extension == 'sqlite') {
+			$success = sqlite_seek($this->result, $row);
+		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
+			// Do nothing since pdo results are arrays
 		}
 		
 		if (!$success) {
-			fCore::toss('fSQLException', 'There was an error seeking to result ' . $row);	
+			fCore::toss('fSQLException', 'There was an error seeking to result ' . $row);
 		}
 		
 		$this->advanceCurrentRow();
@@ -486,7 +486,7 @@ class fResult implements Iterator
 	 */
 	public function setAffectedRows($affected_rows)
 	{
-		$this->affected_rows = (int) $affected_rows;   
+		$this->affected_rows = (int) $affected_rows;
 	}
 	
 	
@@ -500,7 +500,7 @@ class fResult implements Iterator
 	 */
 	public function setAutoIncrementedValue($auto_incremented_value)
 	{
-		$this->auto_incremented_value = ($auto_incremented_value == 0) ? NULL : $auto_incremented_value;   
+		$this->auto_incremented_value = ($auto_incremented_value == 0) ? NULL : $auto_incremented_value;
 	}
 	
 	
@@ -514,7 +514,7 @@ class fResult implements Iterator
 	 */
 	public function setResult($result)
 	{
-		$this->result = $result; 
+		$this->result = $result;
 	}
 	
 	
@@ -531,7 +531,7 @@ class fResult implements Iterator
 		$this->returned_rows = (int) $returned_rows;
 		if ($this->returned_rows) {
 			$this->affected_rows = 0;
-		}   
+		}
 	}
 	
 	
@@ -560,7 +560,7 @@ class fResult implements Iterator
 	public function setUntranslatedSQL($untranslated_sql)
 	{
 		$this->untranslated_sql = $untranslated_sql;
-	}  
+	}
 	
 	
 	/**
@@ -573,10 +573,10 @@ class fResult implements Iterator
 	public function tossIfNoResults()
 	{
 		if (empty($this->returned_rows) && empty($this->affected_rows)) {
-			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');    
+			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');
 		}
-	}   
-
+	}
+	
 	
 	/**
 	 * Returns if the query has any rows left (required by iterator interface)
@@ -588,7 +588,7 @@ class fResult implements Iterator
 	public function valid()
 	{
 		if (!$this->returned_rows) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		if ($this->pointer === NULL) {

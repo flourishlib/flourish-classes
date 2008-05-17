@@ -12,7 +12,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
 abstract class fPrintableException extends Exception
-{	
+{
 	/**
 	 * Gets the backtrace to currently called exception
 	 * 
@@ -26,7 +26,7 @@ abstract class fPrintableException extends Exception
 		$backtrace = explode("\n", $this->getTraceAsString());
 		$backtrace = preg_replace('/^#\d+\s+/', '', $backtrace);
 		$backtrace = str_replace($doc_root, '{doc_root}/', $backtrace);
-		$backtrace = array_diff($backtrace, array('{main}'));            
+		$backtrace = array_diff($backtrace, array('{main}'));
 		$backtrace = array_reverse($backtrace);
 		
 		return join("\n", $backtrace);
@@ -38,7 +38,7 @@ abstract class fPrintableException extends Exception
 	 * 
 	 * @return void
 	 */
-	protected function getCSSClass() 
+	protected function getCSSClass()
 	{
 		// underscorize the current exception class name, extracted from fInflection::underscorize() to reduce dependencies
 		return strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
@@ -48,7 +48,7 @@ abstract class fPrintableException extends Exception
 	/**
 	 * Prepares content for output into HTML
 	 * 
-	 * @return string  The formatted message
+	 * @return string  The prepared content
 	 */
 	protected function prepare($content)
 	{
@@ -65,15 +65,15 @@ abstract class fPrintableException extends Exception
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		$text_matches = preg_split($reg_exp, $content_with_newlines);
 		foreach($text_matches as $key => $value) {
-			$value = htmlentities($value, ENT_COMPAT, 'UTF-8');    
+			$value = htmlentities($value, ENT_COMPAT, 'UTF-8');
 			$windows_characters = array(
-				chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;', 
+				chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;',
 				chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
-				chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;', 
+				chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;',
 				chr(139) => '&lsaquo;', chr(140) => '&OElig;',  chr(145) => '&lsquo;',
-				chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;', 
+				chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;',
 				chr(149) => '&bull;',   chr(150) => '&ndash;',  chr(151) => '&mdash;',
-				chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;', 
+				chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;',
 				chr(155) => '&rsaquo;', chr(156) => '&oelig;',  chr(159) => '&Yuml;'
 			);
 			$text_matches[$key] = strtr($value, $windows_characters);
@@ -81,7 +81,7 @@ abstract class fPrintableException extends Exception
 		for ($i = 0; $i < sizeof($html_matches); $i++) {
 			$text_matches[$i] .= $html_matches[$i][0];
 		}
-		$content_with_newlines = implode($text_matches); 
+		$content_with_newlines = implode($text_matches);
 		
 		$output  = ($no_block_html) ? '<p>' : '';
 		$output .= $content_with_newlines;
@@ -107,7 +107,7 @@ abstract class fPrintableException extends Exception
 	 * 
 	 * @return void
 	 */
-	public function printMessage() 
+	public function printMessage()
 	{
 		echo '<div class="exception ' . $this->getCSSClass() . '">';
 		echo $this->prepareMessage();
@@ -116,7 +116,7 @@ abstract class fPrintableException extends Exception
 	
 	
 	/**
-	 * Prints the backtrace to currently called exception inside of a pre tag with the class being 'exception %THIS_EXCEPTION_CLASS_NAME% trace'  
+	 * Prints the backtrace to currently called exception inside of a pre tag with the class being 'exception %THIS_EXCEPTION_CLASS_NAME% trace'
 	 * 
 	 * @return void
 	 */
@@ -124,7 +124,7 @@ abstract class fPrintableException extends Exception
 	{
 		echo '<pre class="exception ' . $this->getCSSClass() . ' trace">';
 		$trace = $this->formatTrace();
-		echo '</pre>'; 
+		echo '</pre>';
 	}
 	
 	
@@ -134,11 +134,11 @@ abstract class fPrintableException extends Exception
 	 * @param  string $new_message  The new message for the exception
 	 * @return void
 	 */
-	public function setMessage($new_message) 
+	public function setMessage($new_message)
 	{
 		$this->message = $new_message;
 	}
-}  
+}
 
 
 

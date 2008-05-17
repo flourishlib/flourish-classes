@@ -15,7 +15,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2008-03-05]
  */
 class fMessaging
-{	
+{
 	/**
 	 * Creates a message that is stored in the session and retrieved by another page
 	 * 
@@ -26,7 +26,7 @@ class fMessaging
 	 */
 	static public function create($name, $message, $recipient)
 	{
-		fSession::set($name, $message, 'fMessaging::' . $recipient . '::');         
+		fSession::set($name, $message, 'fMessaging::' . $recipient . '::');
 	}
 	
 	
@@ -40,14 +40,14 @@ class fMessaging
 	static public function retrieve($name, $recipient)
 	{
 		$prefix = 'fMessaging::' . $recipient . '::';
-		$message = fSession::get($name, NULL, $prefix); 
-		fSession::clear($name, $prefix);  
-		return $message;      
+		$message = fSession::get($name, NULL, $prefix);
+		fSession::clear($name, $prefix);
+		return $message;
 	}
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content. 
+	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content.
 	 * 
 	 * @param  string $content    The content to display
 	 * @param  string $css_class  The css class to apply
@@ -57,10 +57,10 @@ class fMessaging
 	{
 		if (empty($content)) {
 			return;
-		}		
-
+		}
+		
 		if (fHTML::checkForBlockLevelHTML($content)) {
-			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';	
+			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';
 		} else {
 			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
 		}
