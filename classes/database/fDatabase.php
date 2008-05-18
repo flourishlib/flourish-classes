@@ -28,16 +28,6 @@
  * 
  * @link  http://flourishlib.com/fDatabase
  * 
- * @uses  fConnectivityException
- * @uses  fCore
- * @uses  fEnvironmentException
- * @uses  fProgrammerException
- * @uses  fResult
- * @uses  fSQLException
- * @uses  fSQLTranslation
- * @uses  fUnbufferedResult
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-09-25]
  */

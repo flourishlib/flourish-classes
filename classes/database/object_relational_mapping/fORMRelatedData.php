@@ -9,15 +9,6 @@
  * 
  * @link  http://flourishlib.com/fORMRelatedData
  * 
- * @uses  fCore
- * @uses  fInflection
- * @uses  fORM
- * @uses  fORMDatabase
- * @uses  fORMSchema
- * @uses  fProgrammerException
- * @uses  fRecordSet
- * @uses  fRequest
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-30]
  */

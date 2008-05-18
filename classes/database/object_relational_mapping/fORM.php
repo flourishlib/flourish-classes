@@ -8,10 +8,6 @@
  * 
  * @link  http://flourishlib.com/fORM
  * 
- * @uses  fCore
- * @uses  fORMSchema
- * @uses  fProgrammerException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */

@@ -8,16 +8,6 @@
  * 
  * @link  http://flourishlib.com/fUpload
  * 
- * @uses  fCore
- * @uses  fDirectory
- * @uses  fEnvironmentException
- * @uses  fFile
- * @uses  fFilesystem
- * @uses  fImage
- * @uses  fInflection
- * @uses  fProgrammerException
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

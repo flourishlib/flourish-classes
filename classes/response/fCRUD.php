@@ -11,13 +11,6 @@
  * 
  * @link  http://flourishlib.com/fCRUD
  * 
- * @uses  fHTML
- * @uses  fInflection
- * @uses  fPrintableException
- * @uses  fRequest
- * @uses  fSession
- * @uses  fURL
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

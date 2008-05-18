@@ -8,10 +8,6 @@
  * 
  * @link  http://flourishlib.com/fUnbufferedResult
  * 
- * @uses  fCore
- * @uses  fNoResultsException
- * @uses  fProgrammerException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-05-07]
  */

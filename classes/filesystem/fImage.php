@@ -8,12 +8,6 @@
  * 
  * @link  http://flourishlib.com/fImage
  * 
- * @uses  fCore
- * @uses  fEnvironmentException
- * @uses  fFilesystem
- * @uses  fProgrammerException
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-19]
  */

@@ -8,11 +8,6 @@
  * 
  * @link  http://flourishlib.com/fFilesystem
  * 
- * @uses  fCore
- * @uses  fDirectory
- * @uses  fEnvironmentException
- * @uses  fProgrammerException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-03-24]
  */

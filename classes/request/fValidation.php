@@ -8,11 +8,6 @@
  * 
  * @link  http://flourishlib.com/fValidation
  * 
- * @uses  fCore
- * @uses  fInflection
- * @uses  fRequest
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

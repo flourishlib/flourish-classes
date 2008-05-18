@@ -8,21 +8,6 @@
  * 
  * @link  http://flourishlib.com/fActiveRecord
  * 
- * @uses  fCore
- * @uses  fFilesystem
- * @uses  fHTML
- * @uses  fInflection
- * @uses  fNoResultsException
- * @uses  fNotFoundException
- * @uses  fORM
- * @uses  fORMDatabase
- * @uses  fORMRelatedData
- * @uses  fORMSchema
- * @uses  fORMValidation
- * @uses  fProgrammerException
- * @uses  fRequest
- * @uses  fResult
- * 
  * @todo  Add fFile support
  * @todo  Add fImage support
  * @todo  Add various hooks

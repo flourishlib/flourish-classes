@@ -8,11 +8,6 @@
  * 
  * @link  http://flourishlib.com/fTimestamp
  * 
- * @uses  fCore
- * @uses  fEnvironmentException
- * @uses  fInflection
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-02-12]
  */

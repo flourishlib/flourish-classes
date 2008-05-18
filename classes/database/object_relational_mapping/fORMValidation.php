@@ -8,16 +8,6 @@
  * 
  * @link  http://flourishlib.com/fORMValidation
  * 
- * @uses  fCore
- * @uses  fInflection
- * @uses  fNoResultsException
- * @uses  fORM
- * @uses  fORMDatabase
- * @uses  fORMSchema
- * @uses  fProgrammerException
- * @uses  fURL
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */

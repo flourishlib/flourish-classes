@@ -8,15 +8,6 @@
  * 
  * @link  http://flourishlib.com/fRecordSet
  * 
- * @uses  fCore
- * @uses  fEmptySetException
- * @uses  fInflection
- * @uses  fORM
- * @uses  fORMDatabase
- * @uses  fORMSchema
- * @uses  fProgrammerException
- * @uses  fSQLParsing
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */

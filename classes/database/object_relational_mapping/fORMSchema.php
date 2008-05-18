@@ -8,12 +8,6 @@
  * 
  * @link  http://flourishlib.com/fORMSchema
  * 
- * @uses  fCore
- * @uses  fISchema
- * @uses  fORMDatabase
- * @uses  fSchema
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */

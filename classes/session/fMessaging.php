@@ -8,9 +8,6 @@
  * 
  * @link  http://flourishlib.com/fMessaging
  * 
- * @uses  fHTML
- * @uses  fSession
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-03-05]
  */

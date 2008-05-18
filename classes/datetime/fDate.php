@@ -8,12 +8,6 @@
  * 
  * @link  http://flourishlib.com/fDate
  * 
- * @uses  fCore
- * @uses  fInflection
- * @uses  fProgrammerException
- * @uses  fTimestamp
- * @uses  fValidationException
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2008-02-10]
  */

@@ -8,11 +8,6 @@
  * 
  * @link  http://flourishlib.com/fAuthorization
  * 
- * @uses  fCore
- * @uses  fProgrammerException
- * @uses  fSession
- * @uses  fURL
- * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
  */
