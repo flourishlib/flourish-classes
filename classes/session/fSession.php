@@ -30,9 +30,7 @@ class fSession
 	 */
 	static public function clear($key, $prefix='fSession::')
 	{
-		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::clear()');
-		}
+		self::open();
 		unset($_SESSION[$prefix . $key]);
 	}
 	
@@ -78,9 +76,7 @@ class fSession
 	 */
 	static public function get($key, $default_value=NULL, $prefix='fSession::')
 	{
-		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::get()');
-		}
+		self::open();
 		return (isset($_SESSION[$prefix . $key])) ? $_SESSION[$prefix . $key] : $default_value;
 	}
 	
@@ -92,11 +88,10 @@ class fSession
 	 */
 	static public function ignoreSubdomain()
 	{
-		if (!self::$open) {
-			session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
-		} else {
-			fCore::toss('fProgrammerException', 'fSession::ignoreSubdomain() must be called before fSession::open()');
+		if (self::$open) {
+			fCore::toss('fProgrammerException', 'fSession::ignoreSubdomain() must be called before any of fSession::clear(), fSession::get() or fSession::set()');
 		}
+		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
 	}
 	
 	
@@ -105,7 +100,7 @@ class fSession
 	 * 
 	 * @return void
 	 */
-	static public function open()
+	static private function open()
 	{
 		if (!self::$open) {
 			session_start();
@@ -124,9 +119,7 @@ class fSession
 	 */
 	static public function set($key, $value, $prefix='fSession::')
 	{
-		if (!self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::open() must be called before fSession::set()');
-		}
+		self::open();
 		$_SESSION[$prefix . $key] = $value;
 	}
 	
@@ -139,13 +132,12 @@ class fSession
 	 */
 	static public function setLength($timespan)
 	{
-		if (!self::$open) {
-			$seconds = strtotime($timespan) - time();
-			ini_set('session.gc_maxlifetime', $seconds);
-			ini_set('session.cookie_lifetime', 0);
-		} else {
-			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before fSession::open()');
+		if (self::$open) {
+			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before any of fSession::clear(), fSession::get() or fSession::set()');
 		}
+		$seconds = strtotime($timespan) - time();
+		ini_set('session.gc_maxlifetime', $seconds);
+		ini_set('session.cookie_lifetime', 0);
 	}
 	
 	
