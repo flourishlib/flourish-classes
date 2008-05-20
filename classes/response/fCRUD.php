@@ -194,16 +194,22 @@ class fCRUD
 	/**
 	 * Gets the current column to sort by, defaults to first
 	 * 
-	 * @param  array $possible_columns  The columns that can be sorted by, defaults to first
+	 * @param  string $possible_column,...  The columns that can be sorted by, defaults to first
 	 * @return string  The column to sort by
 	 */
-	static public function getSortColumn($possible_columns)
+	static public function getSortColumn($possible_column)
 	{
+		$possible_columns = func_get_args();
+		
+		if (sizeof($possible_columns) == 1 && is_array($possible_columns[0])) {
+			$possible_columns = $possible_columns[0]; 		
+		}
+		
 		if (self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
 			self::$sort_column = self::getPreviousSortColumn();
 			self::$loaded_values['sort'] = self::$sort_column;
 		} else {
-			self::$sort_column = fRequest::getFromArray('sort', $possible_columns);
+			self::$sort_column = fRequest::getValid('sort', $possible_columns);
 			self::setPreviousSortColumn(self::$sort_column);
 		}
 		return self::$sort_column;
@@ -222,7 +228,7 @@ class fCRUD
 			self::$sort_direction = self::getPreviousSortDirection();
 			self::$loaded_values['dir'] = self::$sort_direction;
 		} else {
-			self::$sort_direction = fRequest::getFromArray('dir', array($default_direction, ($default_direction == 'asc') ? 'desc' : 'asc'));
+			self::$sort_direction = fRequest::getValid('dir', array($default_direction, ($default_direction == 'asc') ? 'desc' : 'asc'));
 			self::setPreviousSortDirection(self::$sort_direction);
 		}
 		return self::$sort_direction;

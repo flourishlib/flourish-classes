@@ -128,6 +128,15 @@ class fInflection
 	 */
 	static public function camelize($string, $upper)
 	{
+		// Check to make sure this is not already camel case
+		if (strpos($string, '_') === FALSE) {
+			if ($upper) {
+				$string = strtoupper($string[0]) . substr($string, 1);
+			}
+			return $string;	
+		}  
+		
+		// Handle underscore notation
 		$string = strtolower($string);
 		if ($upper) {
 			$string = strtoupper($string[0]) . substr($string, 1);

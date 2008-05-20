@@ -102,6 +102,10 @@ class fRecordSet implements Iterator
 	 */
 	static public function createFromObjects($records)
 	{
+		if (empty($records)) {
+			fCore::toss('fProgrammerException', 'You can not build a record set from an empty array of objects');	
+		}
+		
 		$class_name = get_class($records[0]);
 		$table_name = fORM::tablize($class_name);
 		
@@ -111,7 +115,7 @@ class fRecordSet implements Iterator
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
 		$total_pk_fields = sizeof($primary_key_fields);
 		
-		$primary_keys = array();
+		$primary_keys = array();	
 		
 		$i = 0;
 		foreach ($records as $record) {
@@ -174,6 +178,11 @@ class fRecordSet implements Iterator
 		$primary_keys = array_merge($primary_keys);
 		
 		$sql  = 'SELECT ' . $table_name . '.* FROM :from_clause WHERE ';
+		
+		// If we have an empty set, make the SQL never return anything
+		if (empty($primary_keys)) {
+			$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);
+		}
 		
 		// Build the where clause
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');

@@ -311,6 +311,8 @@ abstract class fActiveRecord
 			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');
 		}
 		
+		$table  = fORM::tablize($this);
+		
 		$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
 		$inside_fs_transaction = fFilesystem::isInsideTransaction();
 		
@@ -341,7 +343,7 @@ abstract class fActiveRecord
 				
 				$related_class   = fORM::classize($relationship['related_table']);
 				$related_objects = fInflection::pluralize($related_class);
-				$method          = 'build' . fInflection::camelize($related_objects);
+				$method          = 'build' . $related_objects;
 				
 				// Grab the related records
 				$record_set = $this->$method($route);
@@ -372,7 +374,6 @@ abstract class fActiveRecord
 			
 			
 			// Delete this record
-			$table  = fORM::tablize($this);
 			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->getPrimaryKeyWhereClause();
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
