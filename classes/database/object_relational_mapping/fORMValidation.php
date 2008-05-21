@@ -632,35 +632,26 @@ class fORMValidation
 	/**
 	 * Reorders list items in an html string based on their contents
 	 * 
-	 * @param  string $message  The string to reoder the list items in
-	 * @param  array  $matches  This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
+	 * @internal
+	 * 
+	 * @param  array $validation_messages  An array of one validation message per value
+	 * @param  array $matches              This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
 	 */
-	static private function reorderListItems($message, $matches)
+	static private function reorderMessages($validation_messages, $matches)
 	{
-		// If we can't find a list, don't bother continuing
-		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $message_parts)) {
-			return $message;
-		}
-		
-		$beginning     = $message_parts[1];
-		$list_contents = $message_parts[2];
-		$ending        = $message_parts[3];
-		
-		preg_match_all('#<li(.*?)</li>#i', $list_contents, $list_items, PREG_SET_ORDER);
-		
 		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
 		
-		foreach ($list_items as $list_item) {
+		foreach ($validation_messages as $validation_message) {
 			foreach ($matches as $num => $match_string) {
-				if (strpos($list_item[1], $match_string) !== FALSE) {
-					$ordered_items[$num][] = $list_item[0];
+				if (strpos($validation_message, $match_string) !== FALSE) {
+					$ordered_items[$num][] = $validation_message;
 					continue 2;
 				}
 			}
 			
-			$other_items[] = $list_item[0];
+			$other_items[] = $validation_message;
 		}
 		
 		$final_list = array();
@@ -669,7 +660,7 @@ class fORMValidation
 		}
 		$final_list = array_merge($final_list, $other_items);
 		
-		return $beginning . join("\n", $final_list) . $ending;
+		return $final_list;
 	}
 	
 	
@@ -695,16 +686,16 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @param  string  $table       The table to validate against
+	 * @param  string  $class       The class to validate
 	 * @param  array   $values      The values to validate
 	 * @param  array   $old_values  The old values for the record
 	 * @param  boolean $existing    If the record currently exists in the database
-	 * @return void
+	 * @return array  An array of validation messages
 	 */
-	static public function validate($table, $values, $old_values)
+	static public function validate($class, $values, $old_values)
 	{
+		$table = fORM::tablize($class);
+		
 		$validation_messages = array();
 		
 		// Convert objects into values for alidation
@@ -787,15 +778,108 @@ class fORMValidation
 			}
 		}
 		
-		if (!empty($validation_messages)) {
-			$message = '<p>The following problems were found:</p><ul><li>' . join('</li><li>', $validation_messages) . '</li></ul>';
-			
-			if (isset(self::$message_orders[$table])) {
-				$message = self::reorderListItems($message, self::$message_orders[$table]);
-			}
-			
-			fCore::toss('fValidationException', $message);
+		if (isset(self::$message_orders[$table])) {
+			$validation_messages = fORMValidation::reorderMessages($validation_messages, self::$message_orders[$table]);
 		}
+		
+		return $validation_messages;
+	}
+	
+	
+	/**
+	 * Validates related records for an fActiveRecord object
+	 *
+	 * @internal
+	 * 
+	 * @param  string  $class             The class to validate
+	 * @param  array   &$related_records  The related records to validate
+	 * @return array  An array of validation messages
+	 */
+	static public function validateRelated($class, &$related_records)
+	{
+		$table = fORM::tablize($class);
+		
+		$validation_messages = array();
+		
+		// Find the record sets to validate
+		foreach ($related_records as $related_table => $routes) {
+			foreach ($routes as $route => $record_set) {
+				if (!$record_set->isFlaggedForAssociation()) {
+					continue;
+				}
+				
+				$relationship = fORMSchema::getRoute($table, $related_table, $route);	
+																												
+				if (isset($relationship['join_table'])) {
+					$related_messages = self::validateManyToMany($table, $related_table, $route, $record_set);	
+				} else {
+					$related_messages = self::validateOneToMany($table, $related_table, $route, $record_set);
+				}
+				
+				$validation_messages = array_merge($validation_messages, $related_messages);
+			}
+		}
+		
+		return $validation_messages;	
+	}
+	
+	
+	/**
+	 * Validates one-to-many related records
+	 *
+	 * @internal
+	 * 
+	 * @param  string     $table          The table these records are related to
+	 * @param  string     $related_table  The table for this record set
+	 * @param  string     $route          The route between the table and related table
+	 * @param  fRecordSet $record_set     The related records to validate
+	 * @return array  An array of validation messages
+	 */
+	static private function validateOneToMany($table, $related_table, $route, $record_set)
+	{
+		$related_record_name = fORMRelatedData::getRelatedRecordName($table, fORM::classize($related_table), $route);
+		$record_number = 1;
+		
+		$messages = array();
+		
+		foreach ($record_set as $record) {
+			$record_messages = $record->validate(TRUE);
+			foreach ($record_messages as $record_message) {
+				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
+			}
+			$record_number++;
+		}	
+		
+		return $messages;	
+	}
+	
+	
+	/**
+	 * Validates many-to-many related records
+	 *
+	 * @internal
+	 * 
+	 * @param  string     $table          The table these records are related to
+	 * @param  string     $related_table  The table for this record set
+	 * @param  string     $route          The route between the table and related table
+	 * @param  fRecordSet $record_set     The related records to validate
+	 * @return array  An array of validation messages
+	 */
+	static private function validateManyToMany($table, $related_table, $route, $record_set)
+	{
+		$related_record_name = fORMRelatedData::getRelatedRecordName($table, fORM::classize($related_table), $route);
+		$record_number = 1;
+		
+		$messages = array();
+		
+		foreach ($record_set as $record) {
+			if (!$record->isExisting()) {
+				$messages[] = $related_record_name . ' #' . $record_number . ': Please select a ' . $related_record_name;		
+			}
+			$record_number++;
+		}	
+		
+		return $messages;	
 	}
 }
 

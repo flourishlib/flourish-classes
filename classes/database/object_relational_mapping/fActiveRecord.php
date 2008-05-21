@@ -744,22 +744,32 @@ abstract class fActiveRecord
 		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 		foreach ($relationships as $rel) {
 			$routes = fORMSchema::getRoutes($table, $rel['related_table']);
-			$field  = fInflection::underscorize(fORM::classize($rel['related_table']));
+			$field  = $rel['related_table'];
 			
 			if (sizeof($routes) > 1 && fRequest::check($field)) {
 				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field . ' since there is more than one.');
 			}
 			
 			$route = NULL;
+			$field_with_route = $field . '{' . $rel['join_table'] . '}';
+			
+			// If there is more than one route, the user has to specify the route
 			if (sizeof($routes) > 1) {
-				$route = $rel['join_table'];
-				$field .= '{' . $route . '}';
+				$field = $field_with_route;
+			}
+			
+			// If there is only one route and they specified the route instead of leaving it off, use that
+			if (sizeof($routes) == 1 && !fRequest::check($field) && fRequest::check($field_with_route)) {
+				$field = $field_with_route;	
 			}
 			
 			if (fRequest::check($field)) {
-				$method = 'associate' . fInflection::camelize(fORM::classize($rel['related_table']), TRUE);
+				$related_class = fORM::classize($rel['related_table']);
+				$method = 'associate' . fInflection::pluralize($related_class);
 				$this->$method(fRequest::get($field, 'array', array()), $route);
 			}
+			
+			
 		}
 	}
 	
@@ -985,11 +995,29 @@ abstract class fActiveRecord
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @return void
+	 * @param  boolean $return_messages  If an array of validation messages should be returned instead of an exception being thrown
+	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned
 	 */
-	public function validate()
+	public function validate($return_messages=FALSE)
 	{
-		fORMValidation::validate(fORM::tablize($this), $this->values, $this->old_values);
+		$table = fORM::tablize($this);
+		
+		// Validate the local values
+		$validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
+		
+		// Validate related records
+		$related_validation_messages = fORMValidation::validateRelated($this, $this->related_records);	
+		
+		$validation_messages = array_merge($validation_messages, $related_validation_messages);
+		
+		if ($return_messages) {
+			return $validation_messages;	
+		}
+		
+		if (!empty($validation_messages)) {
+			$message = '<p>The following problems were found:</p><ul><li>' . join('</li><li>', $validation_messages) . '</li></ul>';
+			fCore::toss('fValidationException', $message);
+		}
 	}
 }
 

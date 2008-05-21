@@ -92,6 +92,29 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Creates an empty fRecordSet
+	 * 
+	 * @throws fValidationException
+	 * @internal
+	 * 
+	 * @param  string $class_name  The type of object to create
+	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 */
+	static public function createEmpty($class_name)
+	{
+		$table_name   = fORM::tablize($class_name);
+		
+		settype($primary_keys, 'array');
+		$primary_keys = array_merge($primary_keys);
+		
+		$sql  = 'SELECT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
+		$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);
+		
+		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));
+	}
+	
+	
+	/**
 	 * Creates an fRecordSet from an array of records
 	 * 
 	 * @throws fValidationException
@@ -166,11 +189,9 @@ class fRecordSet implements Iterator
 	 * @param  string  $class_name    The type of object to create
 	 * @param  array   $primary_keys  The primary keys of the objects to create
 	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
-	 * @param  integer $limit         The number of records to fetch
-	 * @param  integer $offset        The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
 	 */
-	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array(), $limit=NULL, $offset=NULL)
+	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
 	{
 		$table_name   = fORM::tablize($class_name);
 		
@@ -179,28 +200,38 @@ class fRecordSet implements Iterator
 		
 		$sql  = 'SELECT ' . $table_name . '.* FROM :from_clause WHERE ';
 		
-		// If we have an empty set, make the SQL never return anything
-		if (empty($primary_keys)) {
-			$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);
-		}
-		
 		// Build the where clause
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
 		$total_pk_fields = sizeof($primary_key_fields);
 		
+		$empty_records = 0;
+		
 		$total_primary_keys = sizeof($primary_keys);
 		for ($i=0; $i < $total_primary_keys; $i++) {
-			$sql .= ($i > 0) ? 'OR' : '';
-			$sql .= ($total_pk_fields > 1) ? ' (' : '';
+			if ($total_pk_fields > 1) {
+				$sql .= ($i > 0) ? 'OR' : '';
 			
-			for ($j=0; $j < $total_pk_fields; $j++) {
-				$pkf = $primary_key_fields[$j];
-				
-				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
+				$sql .= ' (';
+				for ($j=0; $j < $total_pk_fields; $j++) {
+					$pkf = $primary_key_fields[$j];
+					
+					$sql .= ($j > 0) ? ' AND ' : '';
+					$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
+				}
+			} else {
+				if (empty($primary_keys[$i])) {
+					$empty_records++;
+					continue;	
+				}
+				$sql .= ($i > 0) ? 'OR' : '';
+				$pkf  = $primary_key_fields[0];
+				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i], '=');	
 			}
-			
-			$sql .= ($total_pk_fields > 1) ? ' (' : '';
+		}
+		
+		// If we don't have any real records to pull out, create an unequal where condition
+		if ($empty_records == sizeof($primary_keys)) {
+			$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);	
 		}
 		
 		if (!empty($order_bys)) {
@@ -209,23 +240,37 @@ class fRecordSet implements Iterator
 		
 		$sql = fORMDatabase::insertFromClause($table_name, $sql);
 		
-		// Add the limit clause and create a query to get the non-limited total
-		$non_limited_count_sql = NULL;
-		if ($limit !== NULL) {
-			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
-			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
+		$result = fORMDatabase::getInstance()->translatedQuery($sql);
+		
+		// If we have empty records we need to splice in some new records with results from the database
+		if ($empty_records) {
+			$fake_result = new fResult('array');
 			
-			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
-			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
-			
-			$sql .= ' LIMIT ' . $limit;
-			
-			if ($offset !== NULL) {
-				$sql .= ' OFFSET ' . $offset;
+			// Create a blank row for the empty results
+			$column_info = fORMSchema::getInstance()->getColumnInfo($table_name);
+			$blank_row = array(); 
+			foreach ($column_info as $column => $info) {
+				$blank_row[$column] = NULL;	
 			}
+			
+			$result_array = array();
+			for ($j=0; $j < $total_primary_keys; $j++) {
+				if(empty($primary_keys[$j])) {
+					$result_array[] = $blank_row;	
+				} else {
+					$result_array[] = $result->fetchRow();
+				}	
+			}
+			
+			$fake_result->setResult($result_array);
+			$fake_result->setReturnedRows(sizeof($result_array));
+			$fake_result->setSQL($sql);
+			
+			unset($result);
+			$result = $fake_result;
 		}
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
+		return new fRecordSet($class_name, $result);
 	}
 	
 	

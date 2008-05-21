@@ -125,6 +125,39 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Gets the next row from the result and assigns it to the current row
+	 * 
+	 * @return void
+	 */
+	private function advanceCurrentRow()
+	{
+		if ($this->extension == 'mssql') {
+			$row = mssql_fetch_assoc($this->result);
+			$row = $this->fixDblibMssqlDriver($row);
+			
+			// This is an unfortunate fix that required for databases that don't support limit
+			// clauses with an offset. It prevents unrequested columns from being returned.
+			if ($this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
+				unset($row['__flourish_limit_offset_row_num']);
+			}
+				
+		} elseif ($this->extension == 'mysql') {
+			$row = mysql_fetch_assoc($this->result);
+		} elseif ($this->extension == 'mysqli') {
+			$row = mysqli_fetch_assoc($this->result);
+		} elseif ($this->extension == 'pgsql') {
+			$row = pg_fetch_assoc($this->result);
+		} elseif ($this->extension == 'sqlite') {
+			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
+		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
+			$row = $this->result[$this->pointer];
+		}
+		
+		$this->current_row = $row;
+	}
+	
+	
+	/**
 	 * Returns if there are any remaining rows
 	 * 
 	 * @return boolean  If there are remaining rows in the result
@@ -179,39 +212,6 @@ class fResult implements Iterator
 			$all_rows[] = $row;
 		}
 		return $all_rows;
-	}
-	
-	
-	/**
-	 * Gets the next row from the result and assigns it to the current row
-	 * 
-	 * @return void
-	 */
-	private function advanceCurrentRow()
-	{
-		if ($this->extension == 'mssql') {
-			$row = mssql_fetch_assoc($this->result);
-			$row = $this->fixDblibMssqlDriver($row);
-			
-			// This is an unfortunate fix that required for databases that don't support limit
-			// clauses with an offset. It prevents unrequested columns from being returned.
-			if ($this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
-				unset($row['__flourish_limit_offset_row_num']);
-			}
-				
-		} elseif ($this->extension == 'mysql') {
-			$row = mysql_fetch_assoc($this->result);
-		} elseif ($this->extension == 'mysqli') {
-			$row = mysqli_fetch_assoc($this->result);
-		} elseif ($this->extension == 'pgsql') {
-			$row = pg_fetch_assoc($this->result);
-		} elseif ($this->extension == 'sqlite') {
-			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
-		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
-			$row = $this->result[$this->pointer];
-		}
-		
-		$this->current_row = $row;
 	}
 	
 	
@@ -462,6 +462,7 @@ class fResult implements Iterator
 			$success = sqlite_seek($this->result, $row);
 		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
 			// Do nothing since pdo results are arrays
+			$success = TRUE;
 		}
 		
 		if (!$success) {

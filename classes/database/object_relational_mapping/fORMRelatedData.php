@@ -21,6 +21,13 @@ class fORMRelatedData
 	 */
 	static private $order_bys = array();
 	
+	/**
+	 * Names for related records
+	 * 
+	 * @var array
+	 */
+	static private $related_record_names = array();
+	
 	
 	/**
 	 * Builds the object for the related class specified
@@ -43,7 +50,7 @@ class fORMRelatedData
 		
 		$relationship = fORMSchema::getToOneRoute($table, $related_table, $route);
 		
-		return new $class($values[$relationship['column']]);
+		return new $related_class($values[$relationship['column']]);
 	}
 	
 	
@@ -67,19 +74,23 @@ class fORMRelatedData
 		
 		$related_table = fORM::tablize($related_class);
 		
+		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);
+		
 		// If we already have the sequence, we can stop here
 		if (isset($related_records[$related_table][$route])) {
 			return $related_records[$related_table][$route];
 		}
 		
-		$route        = fORMSchema::getToManyRouteName($table, $related_table, $route);
 		$relationship = fORMSchema::getToManyRoute($table, $related_table, $route);
 		
 		// Determine how we are going to build the sequence
-		$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
-		$order_bys = self::getOrderBys($table, $related_table, $route);
-		
-		$sequence = fRecordSet::create($related_class, $where_conditions, $order_bys);
+		if ($values[$relationship['column']] === NULL) {
+			$sequence = fRecordSet::createEmpty($related_class);
+		} else {
+			$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
+			$order_bys = self::getOrderBys($table, $related_table, $route);
+			$sequence = fRecordSet::create($related_class, $where_conditions, $order_bys);
+		}
 		
 		// Cache the results for subsequent calls
 		if (!isset($related_records[$related_table])) {
@@ -116,6 +127,40 @@ class fORMRelatedData
 	
 	
 	/**
+	 * Returns the record name for a related class. The default record name is a
+	 * humanized version of the class name.
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed $table          The database table (or {@link fActiveRecord} class) to get the related class name for
+	 * @param  mixed $related_class  The related class/class name to get the record name of
+	 * @return string  The record name for the related class specified
+	 */
+	static public function getRelatedRecordName($table, $related_class, $route=NULL)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);
+		}
+		
+		if (is_object($related_class)) {
+			$related_class = get_class($related_class);	
+		}
+		
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);
+		
+		if (!isset(self::$related_record_names[$table]) ||
+			  !isset(self::$related_record_names[$table][$related_class]) ||
+			  !isset(self::$related_record_names[$table][$related_class][$route])) {
+			return fORM::getRecordName($related_class);	
+		}
+		
+		return self::$related_record_names[$table][$related_class][$route];
+	}
+	
+	
+	/**
 	 * Creates associations for many-to-many relationships
 	 * 
 	 * @internal
@@ -123,15 +168,59 @@ class fORMRelatedData
 	 * @param  mixed  $table                   The database table (or {@link fActiveRecord} class) to get the related values for
 	 * @param  array  &$related_records        The related records existing for the {@link fActiveRecord} class
 	 * @param  string $related_class           The class we are associating with the current record
-	 * @param  fRecordSet $records             The records are associating
+	 * @param  array  $primary_keys            The primary keys of the records to be associated
 	 * @param  string $route                   The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function linkRecords($table, &$related_records, $related_class, fRecordSet $records, $route=NULL)
+	static public function linkRecords($table, &$related_records, $related_class, $primary_keys, $route=NULL)
 	{
-		$cloned_records = clone $records;
-		self::setRecords($table, $related_records, $related_class, $cloned_records, $route);
-		$cloned_records->flagForAssociation();
+		// Remove blank values from the related records primary keys
+		$new_primary_keys = array();
+		foreach ($primary_keys as $primary_key) {
+			if (empty($primary_key)) {
+				continue;
+			}	
+			$new_primary_keys[] = $primary_key;
+		}
+		
+		$records = fRecordSet::createFromPrimaryKeys($related_class, $primary_keys);
+		self::setRecords($table, $related_records, $related_class, $records, $route);
+		$records->flagForAssociation();
+	}
+	
+	
+	/**
+	 * Allows overriding of default (humanize-d class name) record names or related records
+	 * 
+	 * @param  mixed  $table          The database table (or {@link fActiveRecord} class) to set the related record name for
+	 * @param  mixed  $related_class  The name of the related class, or an instance of it
+	 * @param  string $record_name    The human version of the related record
+	 * @param  string $route          The route to the related class
+	 * @return void
+	 */
+	static public function overrideRelatedRecordName($table, $related_class, $record_name, $route=NULL)
+	{
+		if (is_object($table)) {
+			$table = fORM::tablize($table);
+		}
+		
+		if (is_object($related_class)) {
+			$related_class = get_class($related_class);	
+		}
+		
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getToManyRouteName($table, $related_table, $route);
+		
+		if (!isset(self::$related_record_names[$table])) {
+			self::$related_record_names[$table] = array();	
+		}
+		
+		if (!isset(self::$related_record_names[$table][$related_class])) {
+			self::$related_record_names[$table][$related_class] = array();	
+		}
+		
+		self::$related_record_names[$table][$related_class][$route] = $record_name;
 	}
 	
 	
@@ -154,6 +243,12 @@ class fORMRelatedData
 		}
 		
 		$related_table = fORM::tablize($related_class);
+		
+		$relationship = fORMSchema::getRoute($table, $related_table, $route);
+		if (isset($relationship['join_table'])) {
+			fCore::toss('fProgrammerException', 'The class requested to populate, ' . $related_class . ', is in a many-to-many relationship and can not be populated');	
+		}
+		
 		$pk_columns    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
 		
 		$table_with_route  = $related_table;
@@ -192,8 +287,8 @@ class fORMRelatedData
 		}
 		
 		$record_set = fRecordSet::createFromObjects($records);
-		
-		self::linkRecords($table, $related_records, $related_class, $record_set, $route);
+		$record_set->flagForAssociation();
+		self::setRecords($table, $related_records, $related_class, $record_set, $route);
 	}
 	
 	
