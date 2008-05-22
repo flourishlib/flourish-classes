@@ -60,7 +60,7 @@ class fORMSchema
 	static public function getRoute($table, $related_table, $route)
 	{
 		if ($route === NULL) {
-			$route = self::getOnlyRouteName($table, $related_table);
+			$route = self::getRouteName($table, $related_table);
 		}
 		
 		$routes = self::getRoutes($table, $related_table);

@@ -104,6 +104,8 @@ abstract class fActiveRecord
 				$this->values[$column] = NULL;
 			}
 		}
+		
+		fORM::callHookCallback($this, 'post::__construct()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
 	
@@ -119,6 +121,10 @@ abstract class fActiveRecord
 	public function __call($method_name, $parameters)
 	{
 		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
+			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $parameters);	
+		}
 		
 		// This will prevent quiet failure
 		if (($action == 'set' || $action == 'associate' || $action == 'link') && sizeof($parameters) < 1) {
@@ -307,9 +313,15 @@ abstract class fActiveRecord
 	 */
 	public function delete()
 	{
+		if (fORM::checkHookCallback($this, 'replace::delete()')) {
+			return fORM::callHookCallback($this, 'replace::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		}	
+		
 		if (!$this->isExisting()) {
 			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');
 		}
+		
+		fORM::callHookCallback($this, 'pre::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
 		
 		$table  = fORM::tablize($this);
 		
@@ -325,6 +337,7 @@ abstract class fActiveRecord
 				fFilesystem::startTransaction();
 			}
 			
+			fORM::callHookCallback($this, 'post-begin::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			// Check to ensure no foreign dependencies prevent deletion
 			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
@@ -387,6 +400,7 @@ abstract class fActiveRecord
 				}
 			}
 			
+			fORM::callHookCallback($this, 'pre-commit::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
@@ -412,6 +426,8 @@ abstract class fActiveRecord
 				fFilesystem::rollbackTransaction();
 			}
 			
+			fORM::callHookCallback($this, 'post-rollback::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
 				$message     = $e->getMessage();
@@ -425,6 +441,8 @@ abstract class fActiveRecord
 			
 			throw $e;
 		}
+		
+		fORM::callHookCallback($this, 'post::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
 	
@@ -730,6 +748,12 @@ abstract class fActiveRecord
 	 */
 	public function populate()
 	{
+		if (fORM::checkHookCallback($this, 'replace::populate()')) {
+			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		}
+		
+		fORM::callHookCallback($this, 'pre::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		
 		$table = fORM::tablize($this);
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
@@ -744,14 +768,16 @@ abstract class fActiveRecord
 		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 		foreach ($relationships as $rel) {
 			$routes = fORMSchema::getRoutes($table, $rel['related_table']);
-			$field  = $rel['related_table'];
+			$field_table  = $rel['related_table'];
+			$field_column = '::' . $rel['related_column'];
+			$field = $field_table . $field_column;
 			
 			if (sizeof($routes) > 1 && fRequest::check($field)) {
-				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field . ' since there is more than one.');
+				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field_table . ' since there is more than one.');
 			}
 			
 			$route = NULL;
-			$field_with_route = $field . '{' . $rel['join_table'] . '}';
+			$field_with_route = $field_table . '{' . $rel['join_table'] . '}' . $field_column;
 			
 			// If there is more than one route, the user has to specify the route
 			if (sizeof($routes) > 1) {
@@ -768,9 +794,9 @@ abstract class fActiveRecord
 				$method = 'associate' . fInflection::pluralize($related_class);
 				$this->$method(fRequest::get($field, 'array', array()), $route);
 			}
-			
-			
 		}
+		
+		fORM::callHookCallback($this, 'post::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
 	
@@ -811,6 +837,12 @@ abstract class fActiveRecord
 	 */
 	public function store()
 	{
+		if (fORM::checkHookCallback($this, 'replace::populate()')) {
+			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		}
+		
+		fORM::callHookCallback($this, 'pre::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		
 		try {
 			$table       = fORM::tablize($this);
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
@@ -835,6 +867,8 @@ abstract class fActiveRecord
 			if (!$inside_fs_transaction) {
 				fFilesystem::startTransaction();
 			}
+			
+			fORM::callHookCallback($this, 'post-begin::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			$this->validate();
 			
@@ -887,6 +921,7 @@ abstract class fActiveRecord
 				}
 			}
 			
+			fORM::callHookCallback($this, 'pre-commit::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
@@ -904,6 +939,8 @@ abstract class fActiveRecord
 				fFilesystem::rollbackTransaction();
 			}
 			
+			fORM::callHookCallback($this, 'post-rollback::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			
 			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
 				$this->values[$pk_column] = $this->old_values[$pk_column];
 				unset($this->old_values[$pk_column]);
@@ -911,6 +948,8 @@ abstract class fActiveRecord
 			
 			throw $e;
 		}
+		
+		fORM::callHookCallback($this, 'post::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
 	
@@ -1000,15 +1039,27 @@ abstract class fActiveRecord
 	 */
 	public function validate($return_messages=FALSE)
 	{
+		if (fORM::checkHookCallback($this, 'replace::populate()')) {
+			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug, $return_messages);	
+		}
+		
+		$validation_messages = array();
+		
+		fORM::callHookCallback($this, 'pre::validate()', $this->values, $this->old_values, $this->related_records, $this->debug, $validation_messages);
+		
 		$table = fORM::tablize($this);
 		
 		// Validate the local values
-		$validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
+		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
 		
 		// Validate related records
 		$related_validation_messages = fORMValidation::validateRelated($this, $this->related_records);	
 		
-		$validation_messages = array_merge($validation_messages, $related_validation_messages);
+		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
+		
+		fORMValidation::reorderMessages($table, $validation_messages);
+		
+		fORM::callHookCallback($this, 'post::validate()', $this->values, $this->old_values, $this->related_records, $this->debug, $validation_messages);
 		
 		if ($return_messages) {
 			return $validation_messages;	

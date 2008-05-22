@@ -28,6 +28,13 @@ class fORM
 	static private $features_set = array();
 	
 	/**
+	 * Tracks callbacks registered for various fActiveRecord hooks
+	 * 
+	 * @var array
+	 */
+	static private $hook_callbacks = array();
+	
+	/**
 	 * Maps objects via their primary key
 	 * 
 	 * @var array
@@ -64,6 +71,33 @@ class fORM
 	
 	
 	/**
+	 * Calls a hook callback and returns the result. The return value should only be used by replace:: callbacks.
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed   $class              The name of the class to call the hook of
+	 * @param  string  $hook               The hook to call
+	 * @param  array   &$values            The current values of the record
+	 * @param  array   &$old_values        The old values of the record
+	 * @param  array   &$related_records   Records related to the current record
+	 * @param  boolean $debug              If debugging is turned on for this record
+	 * @param  mixed   &$first_parameter   The first parameter to send the callback
+	 * @param  mixed   &$second_parameter  The second parameter to send the callback
+	 * @return mixed  The return value from the callback. Should be NULL unless it is a replace:: callback.
+	 */
+	static public function callHookCallback($class, $hook, &$values, &$old_values, &$related_records, $debug, &$first_parameter=NULL, &$second_parameter=NULL)
+	{
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
+			return;
+		}
+		
+		return call_user_func(self::$hook_callbacks[$class][$hook], $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+	}
+	
+	
+	/**
 	 * Checks for the feature set flag on the specified class
 	 *
 	 * @internal
@@ -74,6 +108,24 @@ class fORM
 	static public function checkFeaturesSet($class)
 	{
 		return !empty(self::$features_set[self::getClassName($class)]);
+	}
+	
+	
+	/**
+	 * Checks to see if a callback has been registered for a specific hook
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $class  The name of the class to check the hook of
+	 * @param  string $hook   The hook to check
+	 * @return boolean  If the specified callback exists
+	 */
+	static public function checkHookCallback($class, $hook)
+	{
+		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
+			return FALSE;
+		}
+		return TRUE;
 	}
 	
 	
@@ -281,6 +333,62 @@ class fORM
 	static public function overrideRecordName($class, $record_name)
 	{
 		self::$record_names[self::getClassName($class)] = $record_name;
+	}
+	
+	
+	/**
+	 * Registers a callback for one of the various fActiveRecord hooks
+	 * 
+	 * The method signature should include the follow parameters:
+	 * 
+	 *  1. &$values
+	 *  2. &$old_values
+	 *  3. &$related_records
+	 *  4. $debug
+	 * 
+	 * Below is a list of other parameters passed to specific hooks:
+	 *  - 'pre::validate()' and 'post::validate()'
+	 *   - &$validation_messages: This is an ordered array of validation errors that will be returned or tossed as an fValidationException
+	 * 
+	 * @param  mixed    $class     The name of the class to hook for, or an instance of it
+	 * @param  string   $hook      The hook to register for
+	 * @param  callback $callback  The callback to register. See the method description for details about the method signature.
+	 * @return void
+	 */
+	static public function registerHookCallback($class, $hook, $callback)
+	{
+		$class = self::getClassName($class);
+		
+		$valid_hooks = array(
+			'post::__construct()',
+			'replace::delete()',
+			'pre::delete()',
+			'post-being::delete()',
+			'pre-commit::delete()',
+			'post-rollback::delete()',
+			'post::delete()',
+			'replace::populate()',
+			'pre::populate()',
+			'post::populate()',
+			'pre::store()',
+			'post-being::store()',
+			'pre-commit::store()',
+			'post-rollback::store()',
+			'post::store()',
+			'replace::validate()',
+			'pre::validate()',
+			'post::validate()'
+		);
+		
+		if (!in_array($hook, $valid_hooks) && !preg_match('#^replace::.*$#', $hook)) {
+			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', should be one of: ' . join(', ', $valid_hooks) . ' or replace::{someMethod}()');	
+		}
+		
+		if (!isset(self::$hook_callbacks[$class])) {
+			self::$hook_callbacks[$class] = array();
+		}
+		
+		self::$hook_callbacks[$class][$hook] = $callback;
 	}
 	
 	

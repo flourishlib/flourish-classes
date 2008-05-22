@@ -172,6 +172,7 @@ class fResult implements Iterator
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
 	 * @throws  fNoResultsException
+	 * @throws  fNoRemainingException
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -183,7 +184,7 @@ class fResult implements Iterator
 		}
 		
 		if (!$this->valid()) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');
+			fCore::toss('fNoRemainingException', 'There are no remaining rows');
 		}
 		
 		// Primes the result set
@@ -219,18 +220,15 @@ class fResult implements Iterator
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
 	 * @throws  fNoResultsException
+	 * @throws  fNoRemainingException
 	 * 
 	 * @return array|false  The associative array of the row or FALSE if no remaining records
 	 */
 	public function fetchRow()
 	{
-		try {
-			$row = $this->current();
-			$this->next();
-			return $row;
-		} catch (fProgrammerException $e) {
-			return FALSE;
-		}
+		$row = $this->current();
+		$this->next();
+		return $row;
 	}
 	
 	
@@ -238,6 +236,7 @@ class fResult implements Iterator
 	 * Wraps around {@link fetchRow()} and returns the first field from the row instead of the whole row.
 	 * 
 	 * @throws  fNoResultsException
+	 * @throws  fNoRemainingException
 	 * 
 	 * @return string|number  The first scalar value from {@link fetchRow()}
 	 */

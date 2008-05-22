@@ -146,6 +146,7 @@ class fUnbufferedResult implements Iterator
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
 	 * @throws  fNoResultsException
+	 * @throws  fNoRemainingException
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -161,7 +162,7 @@ class fUnbufferedResult implements Iterator
 		if(!$this->current_row && $this->pointer == 0) {
 			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
 		} elseif (!$this->current_row) {
-			fCore::toss('fProgrammerException', 'There are no remaining rows');
+			fCore::toss('fNoRemainingException', 'There are no remaining rows');
 		}
 		
 		return $this->current_row;
@@ -172,18 +173,15 @@ class fUnbufferedResult implements Iterator
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
 	 * @throws  fNoResultsException
+	 * @throws  fNoRemainingException
 	 * 
 	 * @return array|false  The associative array of the row or FALSE if no remaining rows
 	 */
 	public function fetchRow()
 	{
-		try {
-			$row = $this->current();
-			$this->next();
-			return $row;
-		} catch (fProgrammerException $e) {
-			return FALSE;
-		}
+		$row = $this->current();
+		$this->next();
+		return $row;
 	}
 	
 	

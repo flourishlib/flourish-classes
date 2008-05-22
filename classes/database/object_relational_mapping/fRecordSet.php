@@ -258,7 +258,11 @@ class fRecordSet implements Iterator
 				if(empty($primary_keys[$j])) {
 					$result_array[] = $blank_row;	
 				} else {
-					$result_array[] = $result->fetchRow();
+					try {
+						$result_array[] = $result->fetchRow();
+					} catch (fExpectedException $e) {
+						$result_array[] = $blank_row;
+					}
 				}	
 			}
 			
@@ -477,8 +481,10 @@ class fRecordSet implements Iterator
 			$record = $this->current();
 			$this->next();
 			return $record;
-		} catch (fProgrammerException $e) {
-			return FALSE;
+		} catch (fValidationException $e) {
+			throw $e;
+		} catch (fExpectedException $e) {
+			fCore::toss('fNoRemainingException', 'There are no remaining records');
 		}
 	}
 	
@@ -518,7 +524,11 @@ class fRecordSet implements Iterator
 		}
 		
 		if ($this->non_limited_count !== NULL) {
-			$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+			try {
+				$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+			} catch (fExpectedException $e) {
+				$this->non_limited_count = $this->getCount();	
+			}
 		}
 		return $this->non_limited_count;
 	}
@@ -581,7 +591,7 @@ class fRecordSet implements Iterator
 			while (array_diff($keys, $result_object->current()) == array()) {
 				$rows[] = $result_object->fetchRow();
 			}
-		} catch (fPrintableException $e) { }
+		} catch (fExpectedException $e) { }
 		
 		$table = fORM::tablize($this->class_name);
 		$relationship = fORMSchema::getRoute($table, $related_table, $route);

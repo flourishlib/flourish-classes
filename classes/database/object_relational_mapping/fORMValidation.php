@@ -12,14 +12,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
  */
 class fORMValidation
-{
-	/**
-	 * Validation callback entries
-	 * 
-	 * @var array
-	 */
-	static private $callbacks = array();
-	
+{	
 	/**
 	 * Conditional validation rules
 	 * 
@@ -64,40 +57,17 @@ class fORMValidation
 	
 	
 	/**
-	 * Adds a validation callback rule. The function/method called w
-	 *
-	 * @param  mixed  $table       The database table (or (@link fActiveRecord} class) this validation rule applies to
-	 * @param  callback $callback  The function/method to call. This function method should accept three parameters: $table, &$values, &$old_values. It should throw an fValidationException if there is an error.
-	 * @return void
-	 */
-	static public function addCallback($table, $callback)
-	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
-		
-		if (!isset(self::$callbacks[$table])) {
-			self::$callbacks[$table] = array();
-		}
-		
-		self::$callbacks[$table][] = $callback;
-	}
-	
-	
-	/**
 	 * Adds a conditional validation rule
 	 *
-	 * @param  mixed  $table                The database table (or (@link fActiveRecord} class) this validation rule applies to
+	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return void
 	 */
-	static public function addConditionalValidationRule($table, $main_column, $conditional_values, $conditional_columns)
+	static public function addConditionalValidationRule($class, $main_column, $conditional_values, $conditional_columns)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		if (!isset(self::$conditional_validation_rules[$table])) {
 			self::$conditional_validation_rules[$table] = array();
@@ -115,16 +85,14 @@ class fORMValidation
 	/**
 	 * Adds a column format rule
 	 *
-	 * @param  mixed  $table        The database table (or (@link fActiveRecord} class) this validation rule applies to
+	 * @param  mixed  $class        The class name or instance of the class this validation rule applies to
 	 * @param  string $column       The column to check the format of
 	 * @param  string $format_type  The format for the column: email, link
 	 * @return void
 	 */
-	static public function addFormattingRule($table, $column, $format_type)
+	static public function addFormattingRule($class, $column, $format_type)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		if (!isset(self::$formatting_rules[$table])) {
 			self::$formatting_rules[$table] = array();
@@ -142,15 +110,13 @@ class fORMValidation
 	/**
 	 * Add a many-to-many validation rule
 	 *
-	 * @param  mixed  $table                  The database table (or (@link fActiveRecord} class) to add the rule for
+	 * @param  mixed  $class                  The class name or instance of the class to add the rule for
 	 * @param  string $plural_related_column  The plural form of the related column
 	 * @return void
 	 */
-	static public function addManyToManyValidationRule($table, $plural_related_column)
+	static public function addManyToManyValidationRule($class, $plural_related_column)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		if (!isset(self::$many_to_many_validation_rules[$table])) {
 			self::$many_to_many_validation_rules[$table] = array();
@@ -166,15 +132,13 @@ class fORMValidation
 	/**
 	 * Adds a one-or-more validation rule
 	 *
-	 * @param  mixed $table    The database table (or (@link fActiveRecord} class) the columns exists in
+	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
-	static public function addOneOrMoreValidationRule($table, $columns)
+	static public function addOneOrMoreValidationRule($class, $columns)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		settype($columns, 'array');
 		
@@ -192,15 +156,13 @@ class fORMValidation
 	/**
 	 * Add an only-one validation rule
 	 *
-	 * @param  mixed $table    The database table (or (@link fActiveRecord} class) the column exists in
+	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
-	static public function addOnlyOneValidationRule($table, $columns)
+	static public function addOnlyOneValidationRule($class, $columns)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		settype($columns, 'array');
 		
@@ -601,16 +563,14 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $table        The database table (or (@link fActiveRecord} class) this validation rule applies to
+	 * @param  mixed  $class        The class name or an instance of the class this validation rule applies to
 	 * @param  string $column       The column to check the format of
 	 * @param  string $format_type  The format to check for: email, link
 	 * @return void
 	 */
-	static public function hasFormattingRule($table, $column, $format_type)
+	static public function hasFormattingRule($class, $column, $format_type)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		if (!isset(self::$formatting_rules[$table])) {
 			return FALSE;
@@ -634,12 +594,20 @@ class fORMValidation
 	 * 
 	 * @internal
 	 * 
-	 * @param  array $validation_messages  An array of one validation message per value
-	 * @param  array $matches              This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
+	 * @param  mixed $class                 The class name or an instance of the class to reorder messages for                 
+	 * @param  array &$validation_messages  An array of one validation message per value
 	 * @return void
 	 */
-	static private function reorderMessages($validation_messages, $matches)
+	static public function reorderMessages($class, &$validation_messages)
 	{
+		$table = fORM::tablize($class);
+		
+		if (!isset(self::$message_orders[$table])) {
+			return;
+		}
+			
+		$matches = self::$message_orders[$table];
+		
 		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
 		
@@ -658,24 +626,20 @@ class fORMValidation
 		foreach ($ordered_items as $ordered_item) {
 			$final_list = array_merge($final_list, $ordered_item);
 		}
-		$final_list = array_merge($final_list, $other_items);
-		
-		return $final_list;
+		$validation_messages = array_merge($final_list, $other_items);
 	}
 	
 	
 	/**
 	 * Allows setting the order that the list items in a validation message will be displayed
 	 *
-	 * @param  mixed $table    The database table (or (@link fActiveRecord} class) the column exists in
+	 * @param  mixed $class    The class name or an instance of the class to set the message order for
 	 * @param  array $matches  This should be an ordered array of strings. If a line contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
 	 */
-	static public function setMessageOrder($table, $matches)
+	static public function setMessageOrder($class, $matches)
 	{
-		if (is_object($table)) {
-			$table = fORM::tablize($table);
-		}
+		$table = fORM::tablize($class);
 		
 		self::$message_orders[$table] = $matches;
 	}
@@ -686,7 +650,7 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string  $class       The class to validate
+	 * @param  string  $class       The class name or instance of the class to validate
 	 * @param  array   $values      The values to validate
 	 * @param  array   $old_values  The old values for the record
 	 * @param  boolean $existing    If the record currently exists in the database
@@ -769,19 +733,6 @@ class fORMValidation
 			}
 		}
 		
-		self::$callbacks[$table] = (isset(self::$callbacks[$table])) ? self::$callbacks[$table] : array();
-		foreach (self::$callbacks[$table] as $callback) {
-			try {
-				call_user_func($callback, $table, $values, $old_values);
-			} catch (fValidationException $e) {
-				$validation_messages[] = $e->getMessage();
-			}
-		}
-		
-		if (isset(self::$message_orders[$table])) {
-			$validation_messages = fORMValidation::reorderMessages($validation_messages, self::$message_orders[$table]);
-		}
-		
 		return $validation_messages;
 	}
 	
@@ -840,11 +791,17 @@ class fORMValidation
 		$related_record_name = fORMRelatedData::getRelatedRecordName($table, fORM::classize($related_table), $route);
 		$record_number = 1;
 		
+		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		
 		$messages = array();
 		
 		foreach ($record_set as $record) {
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
+				// Ignore validation messages about the primary key since it will be added 
+				if (strpos($record_message, fORM::getColumnName($table, $primary_keys[0])) !== FALSE) {
+					continue;	
+				}
 				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
 			}
 			$record_number++;
