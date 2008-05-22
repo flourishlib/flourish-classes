@@ -122,6 +122,8 @@ class fORM
 	 */
 	static public function checkHookCallback($class, $hook)
 	{
+		$class = self::getClassName($class);
+		
 		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
 			return FALSE;
 		}
