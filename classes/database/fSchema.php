@@ -215,9 +215,10 @@ class fSchema implements fISchema
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
 	 *         'default'        => (mixed)   {the default value},
-	 *         'valid_values'   => (array)   {the valid values for a varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a varchar field},
-	 *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is an identity column}
 	 *     ),...
 	 * )
 	 * </pre>
@@ -256,17 +257,18 @@ class fSchema implements fISchema
 		
 		// Get the column info
 		$sql = "SELECT
-						c.column_name AS 'column',
-						c.data_type AS 'type',
-						c.is_nullable AS not_null,
-						c.column_default AS 'default',
+						c.column_name              AS 'column',
+						c.data_type                AS 'type',
+						c.is_nullable              AS not_null,
+						c.column_default           AS 'default',
 						c.character_maximum_length AS max_length,
+						c.numeric_scale            AS decimal_places,
 						CASE WHEN COLUMNPROPERTY(OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)), c.column_name, 'IsIdentity') = 1 AND
 								  OBJECTPROPERTY(OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)), 'IsMSShipped') = 0
 							 THEN '1'
 							 ELSE '0'
 						  END AS auto_increment,
-						cc.check_clause as 'constraint'
+						cc.check_clause            AS 'constraint'
 					FROM
 						INFORMATION_SCHEMA.COLUMNS AS c LEFT JOIN
 						INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS ccu ON c.column_name = ccu.column_name AND c.table_name = ccu.table_name AND c.table_catalog = ccu.table_catalog LEFT JOIN
@@ -289,19 +291,29 @@ class fSchema implements fISchema
 				$info['type'] = $row['type'];
 			}
 			
-			 // Handle the special data for varchar columns
-			 if ($info['type'] == 'varchar') {
+			// Handle decimal places for numeric/decimals
+			if (in_array($row['type'], array('numeric', 'decimal'))) {
+				$info['decimal_places'] = $row['decimal_places'];	
+			}
+			
+			// Handle decimal places for money/smallmoney
+			if (in_array($row['type'], array('money', 'smallmoney'))) {
+				$info['decimal_places'] = 2;	
+			}
+			
+			// Handle the special data for varchar columns
+			if ($info['type'] == 'varchar') {
 				$info['max_length'] = $row['max_length'];
-				
-				// If the column has a constraint, look for valid values
-				if (!empty($row['constraint'])) {
-					if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\'])+\')+)\)$#', $row['constraint'], $matches)) {
-						$valid_values = explode(' OR ', $matches[1]);
-						foreach ($valid_values as $key => $value) {
-							$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);
-						}
-						$info['valid_values'] = $valid_values;
+			}
+			
+			// If the column has a constraint, look for valid values
+			if (in_array($info['type'], array('char', 'varchar')) && !empty($row['constraint'])) {
+				if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\'])+\')+)\)$#', $row['constraint'], $matches)) {
+					$valid_values = explode(' OR ', $matches[1]);
+					foreach ($valid_values as $key => $value) {
+						$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);
 					}
+					$info['valid_values'] = $valid_values;
 				}
 			}
 			
@@ -458,9 +470,10 @@ class fSchema implements fISchema
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
 	 *         'default'        => (mixed)   {the default value},
-	 *         'valid_values'   => (array)   {the valid values for a varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a varchar field},
-	 *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
 	 *     ),...
 	 * )
 	 * </pre>
@@ -531,6 +544,12 @@ class fSchema implements fISchema
 				$info['max_length'] = $match[3];
 			}
 			
+			// Grab the number of decimal places
+			if (stripos($match[2], 'decimal') === 0) {
+				if (preg_match('#^\s*\d+\s*,\s*(\d+)\s*$#', $match[3], $data_type_info)) {
+					$info['decimal_places'] = $data_type_info[1];	
+				}
+			}
 			
 			// Not null
 			$info['not_null'] = (!empty($match[4])) ? TRUE : FALSE;
@@ -640,9 +659,10 @@ class fSchema implements fISchema
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
 	 *         'default'        => (mixed)   {the default value},
-	 *         'valid_values'   => (array)   {the valid values for a varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a varchar field},
-	 *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial}
 	 *     ),...
 	 * )
 	 * </pre>
@@ -677,12 +697,11 @@ class fSchema implements fISchema
 		
 		// PgSQL required this complicated SQL to get the column info
 		$sql = "SELECT
-						pg_attribute.attname                    AS column,
-						pg_type.typname                         AS type,
-						pg_attribute.atttypmod - 4              AS max_length,
-						pg_attribute.attnotnull                 AS not_null,
-						pg_attrdef.adsrc                        AS default,
-						pg_get_constraintdef(pg_constraint.oid) AS constraint
+						pg_attribute.attname                                        AS column,
+						format_type(pg_attribute.atttypid, pg_attribute.atttypmod)  AS data_type,
+						pg_attribute.attnotnull                                     AS not_null,
+						pg_attrdef.adsrc                                            AS default,
+						pg_get_constraintdef(pg_constraint.oid)                     AS constraint
 					FROM
 						pg_attribute LEFT JOIN
 						pg_class ON pg_attribute.attrelid = pg_class.oid LEFT JOIN
@@ -705,24 +724,33 @@ class fSchema implements fISchema
 		foreach ($result as $row) {
 			$info = array();
 			
+			// Get the column type
+			preg_match('#([\w ]+)\s*(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?#', $row['data_type'], $column_data_type);
+			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
-				if (stripos($row['type'], $data_type) === 0) {
+				if (stripos($column_data_type[1], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
 					break;
 				}
 			}
 			if (!isset($info['type'])) {
-				$info['type'] = $row['type'];
+				$info['type'] = $column_data_type[1];
 			}
 			
-			 // Handle the special data for varchar fields
-			 if ($info['type'] == 'varchar') {
+			// Handle the length of decimal/numeric fields
+			if ($info['type'] == 'float' && isset($column_data_type[3]) && strlen($column_data_type[3]) > 0) {
+				$info['decimal_places'] = (int) $column_data_type[3];	
+			} 
+			
+			// Handle the special data for varchar fields
+			if ($info['type'] == 'varchar') {
 				$info['max_length'] = $row['max_length'];
-				
-				// If the field has a constraint, look for valid values
-				if (!empty($row['constraint'])) {
-					if (preg_match('/CHECK[\( "]+' . $row['column'] . '[a-z\) ":]+\s+=\s+/i', $row['constraint'])) {
-						preg_match_all("/(?!').'((''|[^'])*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER);
+			}
+			
+			// Handle check constraints that are just simple lists 
+			if (in_array($info['type'], array('varchar', 'char')) && !empty($row['constraint'])) {
+				if (preg_match('/CHECK[\( "]+' . $row['column'] . '[a-z\) ":]+\s+=\s+/i', $row['constraint'])) {
+					if (preg_match_all("/(?!').'((''|[^'])*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER)) {
 						$info['valid_values'] = str_replace("''", "'", $matches[1]);
 					}
 				}
@@ -890,9 +918,10 @@ class fSchema implements fISchema
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
 	 *         'default'        => (mixed)   {the default value},
-	 *         'valid_values'   => (array)   {the valid values for a varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a varchar field},
-	 *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is autoincrement}
 	 *     ),...
 	 * )
 	 * </pre>
@@ -926,7 +955,7 @@ class fSchema implements fISchema
 		$row        = $result->fetchRow();
 		$create_sql = $row['sql'];
 		
-		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\((\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -943,24 +972,29 @@ class fSchema implements fISchema
 				$info['max_length'] = $match[3];
 			}
 			
+			// Figure out how many decimal places for a decimal
+			if ($match[2] == 'decimal' && !empty($match[4])) {
+				$info['decimal_places'] = $match[4]; 		
+			}
+			
 			// Not null
-			$info['not_null'] = (!empty($match[4]) || !empty($match[7])) ? TRUE : FALSE;
+			$info['not_null'] = (!empty($match[5]) || !empty($match[8])) ? TRUE : FALSE;
 		
 			// Default values
-			if (isset($match[5]) && $match[5] != '' && $match[5] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);
+			if (isset($match[6]) && $match[6] != '' && $match[6] != 'NULL') {
+				$info['default'] = preg_replace("/^'|'\$/", '', $match[6]);
 			}
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
 				$info['default'] = ($info['default'] == 'f' || $info['default'] == 0 || $info['default'] == 'false') ? FALSE : TRUE;
 			}
 		
 			// Check constraints
-			if (isset($match[8]) && preg_match('/CHECK\s*\(\s*' . $match[1] . '\s+IN\s+\(\s*((?:(?:[^, \']*|\'(?:\'\'|[^\'])*\')\s*,\s*)*(?:[^, \']*|\'(?:\'\'|[^\'])*\'))\s*\)/i', $match[8], $check_match)) {
+			if (isset($match[9]) && preg_match('/CHECK\s*\(\s*' . $match[1] . '\s+IN\s+\(\s*((?:(?:[^, \']*|\'(?:\'\'|[^\'])*\')\s*,\s*)*(?:[^, \']*|\'(?:\'\'|[^\'])*\'))\s*\)/i', $match[9], $check_match)) {
 				$info['valid_values'] = str_replace("''", "'", preg_replace("/^'|'\$/", '', preg_split("#\s*,\s*#", $check_match[1])));
 			}
 		
 			// Auto increment fields
-			if (!empty($match[7]) && (stripos($match[7], 'autoincrement') !== FALSE || ($this->database->getExtension() == 'sqlite' && $info['type'] == 'integer'))) {
+			if (!empty($match[8]) && (stripos($match[8], 'autoincrement') !== FALSE || ($this->database->getExtension() == 'sqlite' && $info['type'] == 'integer'))) {
 				$info['auto_increment'] = TRUE;
 			}
 		
@@ -1234,9 +1268,10 @@ class fSchema implements fISchema
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
 	 *     'default'        => (mixed)   {the default value},
-	 *     'valid_values'   => (array)   {the valid values for a varchar field},
-	 *     'max_length'     => (integer) {the maximum length in a varchar field},
-	 *     'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *     'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
+	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 * )
 	 * </pre>
 	 * 
@@ -1256,12 +1291,12 @@ class fSchema implements fISchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment')
+	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment')
 	 * @return array  The column info for the table/column/element specified (see method description for format)
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
 	{
-		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment');
+		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
 		if ($element && !in_array($element, $valid_elements)) {
 			fCore::toss('fProgrammerException', 'The element type specified, ' . $element . ', is not valid. Must be one of: ' . join(', ', $valid_elements) . '.');
 		}
@@ -1528,7 +1563,7 @@ class fSchema implements fISchema
 			}
 			$this->merged_column_info[$table] = array_merge($this->merged_column_info[$table], $info);
 		}
-		$optional_elements = array('default', 'not_null', 'valid_values', 'max_length', 'auto_increment');
+		$optional_elements = array('default', 'not_null', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
 		foreach ($this->merged_column_info as $table => $column_array) {
 			foreach ($column_array as $column => $info) {
 				foreach ($optional_elements as $element) {

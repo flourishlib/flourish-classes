@@ -476,10 +476,6 @@ abstract class fActiveRecord
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
 		}
 		
-		if ($formatting === NULL && $column_type == 'float') {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');
-		}
-		
 		// Grab the value for empty value checking
 		$method_name = 'get' . fInflection::camelize($column, TRUE);
 		$value       = $this->$method_name();
@@ -504,7 +500,21 @@ abstract class fActiveRecord
 		
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
-			return number_format($value, $formatting, '.', '');
+			// If the user passed in a formatting value, use it
+			if ($formatting !== NULL && is_numeric($formatting)) {
+				$decimal_places = (int) $formatting;
+				
+			// If the column has a pre-defined number of decimal places, use that
+			} elseif ($column_info['decimal_places'] !== NULL) {
+				$decimal_places = $column_info['decimal_places'];
+			
+			// This figures out how many decimal places are part of the current value
+			} else {
+				$value_parts    = explode('.', $value);
+				$decimal_places = (!isset($value_parts[1])) ? 0 : strlen($value_parts[1]);
+			}
+			
+			return number_format($value, $decimal_places, '.', ',');
 		}
 		
 		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
@@ -535,7 +545,8 @@ abstract class fActiveRecord
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
 		}
 		
-		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
+		$column_type = $column_info['type'];
 		
 		$email_formatted = fORMValidation::hasFormattingRule($this, $column, 'email');
 		$link_formatted  = fORMValidation::hasFormattingRule($this, $column, 'link');
@@ -545,12 +556,8 @@ abstract class fActiveRecord
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is a blob column');
 		}
 		
-		if ($formatting !== NULL && !$email_formatted && !$link_formatted && $column_type != 'float') {
+		if ($formatting !== NULL && !$email_formatted && !$link_formatted) {
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
-		}
-		
-		if ($formatting === NULL && $column_type == 'float') {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, the number of decimal places');
 		}
 		
 		// Grab the value for empty value checking
@@ -600,7 +607,21 @@ abstract class fActiveRecord
 		}
 		
 		if ($column_type == 'float' && is_numeric($value)) {
-			return number_format($value, $formatting, '.', ',');
+			// If the user passed in a formatting value, use it
+			if ($formatting !== NULL && is_numeric($formatting)) {
+				$decimal_places = (int) $formatting;
+				
+			// If the column has a pre-defined number of decimal places, use that
+			} elseif ($column_info['decimal_places'] !== NULL) {
+				$decimal_places = $column_info['decimal_places'];
+			
+			// This figures out how many decimal places are part of the current value
+			} else {
+				$value_parts    = explode('.', $value);
+				$decimal_places = (!isset($value_parts[1])) ? 0 : strlen($value_parts[1]);
+			}
+			
+			return number_format($value, $decimal_places, '.', ',');
 		}
 		
 		// Anything that has gotten to here is a string value, or is not the
@@ -681,6 +702,8 @@ abstract class fActiveRecord
 				$this->values[$column] = fORMDatabase::getInstance()->unescapeBoolean($value);
 			} elseif ($column_info[$column]['type'] == 'blob') {
 				$this->values[$column] = fORMDatabase::getInstance()->unescapeBlob($value);
+			} elseif ($column_info[$column]['type'] == 'float' && $column_info[$column]['decimal_places'] !== NULL) {
+				$this->values[$column] = number_format($value, $column_info[$column]['decimal_places'], '.', '');
 			} else {
 				$this->values[$column] = fORM::objectify($this, $column, $value);
 			}

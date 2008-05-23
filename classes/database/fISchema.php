@@ -40,9 +40,9 @@ interface fISchema
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
 	 *     'default'        => (mixed)   {the default value},
-	 *     'valid_values'   => (array)   {the valid values for a varchar field},
-	 *     'max_length'     => (integer) {the maximum length in a varchar field},
-	 *     'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
+	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
+	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 * )
 	 * </pre>
 	 * 
@@ -62,7 +62,7 @@ interface fISchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'auto_increment')
+	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment')
 	 * @return array  The column info for the table/column/element specified (see method description for format)
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL);
