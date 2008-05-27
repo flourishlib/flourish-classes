@@ -911,21 +911,6 @@ class fDatabase
 	
 	
 	/**
-	 * Enabled debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	public function setDebug($enable)
-	{
-		$this->debug = (boolean) $enable;
-		if ($this->translation) {
-			$this->translation->setDebug($this->debug);
-		}
-	}
-	
-	
-	/**
 	 * Sets the number of rows returned by the query
 	 * 
 	 * @param  fResult $result  The result object for the query
@@ -947,6 +932,21 @@ class fDatabase
 			}
 		} elseif (is_array($result->getResult())) {
 			$result->setReturnedRows(sizeof($result->getResult()));
+		}
+	}
+	
+	
+	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function showDebug($flag)
+	{
+		$this->debug = (boolean) $flag;
+		if ($this->translation) {
+			$this->translation->showDebug($this->debug);
 		}
 	}
 	
@@ -991,6 +991,7 @@ class fDatabase
 		if (!$this->translation) {
 			$this->connectToDatabase();
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
+			$this->translation->showDebug($this->debug);
 		}
 		$result = $this->query($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);

@@ -80,29 +80,6 @@ class fCRUD
 	
 	
 	/**
-	 * Prints an option tag with the provided value, using the selected value to determine if the option should be marked as selected
-	 * 
-	 * @param  string $text            The text to display in the option tag
-	 * @param  string $value           The value for the option
-	 * @param  string $selected_value  If the value is the same as this, the option will be marked as selected
-	 * @return void
-	 */
-	static public function displayOptionTag($text, $value, $selected_value)
-	{
-		$selected = FALSE;
-		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
-			$selected = TRUE;
-		}
-		
-		echo '<option value="' . fHTML::encode($value) . '"';
-		if ($selected) {
-			echo ' selected="selected"';
-		}
-		echo '>' . fHTML::prepare($text) . '</option>';
-	}
-	
-	
-	/**
 	 * Prints a class attribute for a td if that td is part of the sorted column
 	 * 
 	 * @param  string $column  The column this td is part of
@@ -233,6 +210,32 @@ class fCRUD
 		}
 		return self::$sort_direction;
 	}
+	
+	
+	/**
+	 * Prints an option tag with the provided value, using the selected value to determine if the option should be marked as selected
+	 * 
+	 * @param  string $text            The text to display in the option tag
+	 * @param  string $value           The value for the option
+	 * @param  string $selected_value  If the value is the same as this, the option will be marked as selected
+	 * @return void
+	 */
+	static public function printOption($text, $value, $selected_value=NULL)
+	{
+		$selected = FALSE;
+		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
+			$selected = TRUE;
+		}
+		
+		echo '<option value="' . fHTML::encode($value) . '"';
+		if ($selected) {
+			echo ' selected="selected"';
+		}
+		echo '>' . fHTML::prepare($text) . '</option>';
+	}
+	
+	
+	
 	
 	
 	/**

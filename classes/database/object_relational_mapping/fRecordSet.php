@@ -663,12 +663,14 @@ class fRecordSet implements Iterator
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $related_table  This should be the of a related table
+	 * @param  string $related_class  This should be the name of a related class
 	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
 	 * @return void
 	 */
-	private function performPreload($related_table, $route=NULL)
+	private function performPreload($related_class, $route=NULL)
 	{
+		$related_table = fORM::tablize($related_class);
+		
 		$sql = ($this->result_object->getUntranslatedSQL()) ? $this->result_object->getUntranslatedSQL() : $this->result_object->getSQL();
 		
 		$clauses = fSQLParsing::parseSelectSQL($sql);
@@ -679,9 +681,7 @@ class fRecordSet implements Iterator
 		
 		$table = fORM::tablize($this->class_name);
 		
-		$route         = fORMSchema::getToManyRouteName($table, $related_table, $route);
-		$relationship  = fORMSchema::getToManyRoute($table, $related_table, $route);
-		$related_table = $relationship['related_table'];
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
 		
 		// Get the existing joins and add any necessary ones
 		$joins = fSQLParsing::parseJoins($clauses['FROM'], fORMSchema::getInstance());
@@ -693,7 +693,7 @@ class fRecordSet implements Iterator
 		$related_table_alias = $joins[$join_name]['table_alias'];
 		
 		// Build the query out
-		$new_sql  = 'SELECT DISTINCT ' . $related_table_alias . '.* ';
+		$new_sql  = 'SELECT ' . $related_table_alias . '.* ';
 		$new_sql .= 'FROM :from_clause ';
 		
 		if (!empty($clauses['WHERE'])) {
@@ -711,7 +711,7 @@ class fRecordSet implements Iterator
 		}
 		
 		// We need to add the related data order bys to the existing order bys
-		$order_bys = fORMRelatedData::getOrderBys($table, $related_table, $route);
+		$order_bys = fORMRelatedData::getOrderBys($this->class_name, $related_class, $route);
 		if (!empty($clauses['ORDER BY']) || $order_bys != array()) {
 			$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
 				
@@ -724,7 +724,7 @@ class fRecordSet implements Iterator
 			}
 		}
 		
-		$new_sql = fORMDatabase::insertFromClause($this_table, $new_sql, $joins);
+		$new_sql = fORMDatabase::insertFromClause($table, $new_sql, $joins);
 		
 		if (!isset($this->preloaded_result_objects[$related_table])) {
 			$this->preloaded_result_objects[$related_table] = array();

@@ -52,21 +52,37 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are searching under
-	 * @param  string $route          The route to get info about
+	 * @param  string $table              The main table we are searching on behalf of
+	 * @param  string $related_table      The related table we are searching under
+	 * @param  string $route              The route to get info about
+	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
 	 * @return void
 	 */
-	static public function getRoute($table, $related_table, $route)
+	static public function getRoute($table, $related_table, $route, $relationship_type=NULL)
 	{
-		if ($route === NULL) {
-			$route = self::getRouteName($table, $related_table);
+		$valid_relationship_types = array(
+			NULL,
+			'*-to-many',
+			'*-to-one',
+			'many-to-many',
+			'many-to-one',
+			'one-to-many',
+			'one-to-one'
+		);
+		if (!in_array($relationship_type, $valid_relationship_types)) {
+			$valid_relationship_types[0] = '{null}';
+			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
 		}
 		
-		$routes = self::getRoutes($table, $related_table);
+		if ($route === NULL) {
+			$route = self::getRouteName($table, $related_table, $route, $relationship_type);
+		}
 		
-		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
+		$routes = self::getRoutes($table, $related_table, $relationship_type);
+		
+		if (!isset($routes[$route])) {                                                                             
+			$relationship_type .= ($relationship_type) ? ' ' : '';
+			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the ' . $relationship_type . 'relationship between ' . $table . ' and ' . $related_table . ' does not exist');
 		}
 		
 		return $routes[$route];
@@ -78,14 +94,29 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @param  string $route          The route that was preselected, will be verified if present
+	 * @param  string $table              The main table we are searching on behalf of
+	 * @param  string $related_table      The related table we are trying to find the routes for
+	 * @param  string $route              The route that was preselected, will be verified if present
+	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
 	 * @return string  The only route from the main table to the related table
 	 */
-	static public function getRouteName($table, $related_table, $route=NULL)
+	static public function getRouteName($table, $related_table, $route=NULL, $relationship_type=NULL)
 	{
-		$routes = self::getRoutes($table, $related_table);
+		$valid_relationship_types = array(
+			NULL,
+			'*-to-many',
+			'*-to-one',
+			'many-to-many',
+			'many-to-one',
+			'one-to-many',
+			'one-to-one'
+		);
+		if (!in_array($relationship_type, $valid_relationship_types)) {
+			$valid_relationship_types[0] = '{null}';
+			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
+		}
+		
+		$routes = self::getRoutes($table, $related_table, $relationship_type);
 		
 		if (!empty($route) && isset($routes[$route])) {
 			return $route;
@@ -94,10 +125,12 @@ class fORMSchema
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one route for ' . $table . ' to ' . $related_table);
+			$relationship_type .= ($relationship_type) ? ' ' : '';
+			fCore::toss('fProgrammerException', 'There is more than one route for the ' . $relationship_type . 'relationship between ' . $table . ' and ' . $related_table);
 		}
 		if (sizeof($keys) == 0) {
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table);
+			$relationship_type .= ($relationship_type) ? ' ' : '';
+			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not in a ' . $relationship_type . 'relationship with the table ' . $related_table);
 		}
 		
 		return $keys[0];
@@ -137,17 +170,41 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $table              The main table we are searching on behalf of
+	 * @param  string $related_table      The related table we are trying to find the routes for
+	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
 	 * @return void
 	 */
-	static public function getRoutes($table, $related_table)
+	static public function getRoutes($table, $related_table, $relationship_type=NULL)
 	{
-		$relationship_types = self::getInstance()->getRelationships($table);
+		$valid_relationship_types = array(
+			NULL,
+			'*-to-many',
+			'*-to-one',
+			'many-to-many',
+			'many-to-one',
+			'one-to-many',
+			'one-to-one'
+		);
+		if (!in_array($relationship_type, $valid_relationship_types)) {
+			$valid_relationship_types[0] = '{null}';
+			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
+		}
+		
+		$all_relationships = self::getInstance()->getRelationships($table);
 		
 		$routes = array();
 		
-		foreach ($relationship_types as $type => $relationships) {
+		foreach ($all_relationships as $type => $relationships) {
+			
+			// Filter the relationships by the relationship type
+			if ($relationship_type !== NULL) {
+				$match = strpos($type, str_replace('*', '', $relationship_type)) !== FALSE;
+				if (!$match) {
+					continue;	
+				}
+			}
+			
 			foreach ($relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table) {
 					if ($type == 'many-to-many') {
@@ -157,178 +214,6 @@ class fORMSchema
 					} else {
 						$routes[$relationship['column']] = $relationship;
 					}
-				}
-			}
-		}
-		
-		return $routes;
-	}
-	
-	
-	/**
-	 * Returns information about the specified to-many route
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are searching under
-	 * @param  string $route          The route to get info about
-	 * @return void
-	 */
-	static public function getToManyRoute($table, $related_table, $route)
-	{
-		$route = self::getToManyRouteName($table, $related_table, $route);
-		
-		$routes = self::getToManyRoutes($table, $related_table);
-		
-		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The to-many route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
-		}
-		
-		return $routes[$route];
-	}
-	
-	
-	/**
-	 * Returns the name of the only to-many route from the specified table to one of its related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @param  string $route          The route that was preselected, will be verified if present
-	 * @return void
-	 */
-	static public function getToManyRouteName($table, $related_table, $route=NULL)
-	{
-		$routes = self::getToManyRoutes($table, $related_table);
-		
-		if (!empty($route) && isset($routes[$route])) {
-			return $route;
-		}
-		
-		$keys = array_keys($routes);
-		
-		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one to-many route for ' . $table . ' to ' . $related_table);
-		}
-		if (sizeof($keys) == 0) {
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-many relationship');
-		}
-		
-		return $keys[0];
-	}
-	
-	
-	/**
-	 * Returns an array of all routes from a table to one of its one-to-many or many-to-many related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @return void
-	 */
-	static public function getToManyRoutes($table, $related_table)
-	{
-		$relationship_types = self::getInstance()->getRelationships($table);
-		unset($relationship_types['one-to-one']);
-		unset($relationship_types['many-to-one']);
-		
-		$routes = array();
-		
-		foreach ($relationship_types as $type => $relationships) {
-			foreach ($relationships as $relationship) {
-				if ($relationship['related_table'] == $related_table) {
-					if ($type == 'many-to-many') {
-						$routes[$relationship['join_table']] = $relationship;
-					} else {
-						$routes[$relationship['related_column']] = $relationship;
-					}
-				}
-			}
-		}
-		
-		return $routes;
-	}
-	
-	
-	/**
-	 * Returns information about the specified to-one route
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are searching under
-	 * @param  string $route          The route to get info about
-	 * @return void
-	 */
-	static public function getToOneRoute($table, $related_table, $route)
-	{
-		$route = self::getToOneRouteName($table, $related_table, $route);
-		
-		$routes = self::getToOneRoutes($table, $related_table);
-		
-		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'The to-one route specified, ' . $route . ', for the relationship between ' . $table . ' and ' . $related_table . ' does not exist');
-		}
-		
-		return $routes[$route];
-	}
-	
-	
-	/**
-	 * Returns the name of the only to-one route from the specified table to one of its related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @param  string $route          The route that was preselected, will be verified if present
-	 * @return void
-	 */
-	static public function getToOneRouteName($table, $related_table, $route=NULL)
-	{
-		$routes = self::getToOneRoutes($table, $related_table);
-		
-		if (!empty($route) && isset($routes[$route])) {
-			return $route;
-		}
-		
-		$keys = array_keys($routes);
-		
-		if (sizeof($keys) > 1) {
-			fCore::toss('fProgrammerException', 'There is more than one to-one route for ' . $table . ' to ' . $related_table);
-		}
-		if (sizeof($keys) == 0) {
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not related to the table ' . $related_table . ' by a to-one relationship');
-		}
-		
-		return $keys[0];
-	}
-	
-	
-	/**
-	 * Returns an array of all routes from a table to one of its one-to-one or many-to-one related tables
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table          The main table we are searching on behalf of
-	 * @param  string $related_table  The related table we are trying to find the routes for
-	 * @return void
-	 */
-	static public function getToOneRoutes($table, $related_table)
-	{
-		$relationship_types = self::getInstance()->getRelationships($table);
-		unset($relationship_types['one-to-many']);
-		unset($relationship_types['many-to-many']);
-		
-		$routes = array();
-		
-		foreach ($relationship_types as $type => $relationships) {
-			foreach ($relationships as $relationship) {
-				if ($relationship['related_table'] == $related_table) {
-					$routes[$relationship['column']] = $relationship;
 				}
 			}
 		}

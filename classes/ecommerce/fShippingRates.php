@@ -499,18 +499,6 @@ XMLDATA;
 	
 	
 	/**
-	 * Enabled debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	public function setDebug($enable)
-	{
-		$this->debug = (boolean) $enable;
-	}
-	
-	
-	/**
 	 * Sets the default values for any fields that have not been manually assigned
 	 * 
 	 * @return void
@@ -826,6 +814,18 @@ XMLDATA;
 	public function setWeightUnits($weight_units)
 	{
 		$this->request_info['weight_units'] = $weight_units;
+	}
+	
+	
+	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function showDebug($flag)
+	{
+		$this->debug = (boolean) $flag;
 	}
 	
 	

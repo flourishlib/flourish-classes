@@ -48,6 +48,113 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Dynamically creates getColumn(), setColumn(), prepareColumn() for columns in the table.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $method_name  The name of the method called
+	 * @param  string $parameters   The parameters passed
+	 * @return void
+	 */
+	public function __call($method_name, $parameters)
+	{
+		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
+			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $parameters);	
+		}
+		
+		// This will prevent quiet failure
+		if (($action == 'set' || $action == 'associate' || $action == 'link') && sizeof($parameters) < 1) {
+			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
+		}
+		
+		switch ($action) {
+			
+			// Value methods
+			case 'encode':
+				if (isset($parameters[0])) {
+					return $this->entify($subject, $parameters[0]);
+				}
+				return $this->entify($subject);
+			
+			case 'get':
+				if (isset($parameters[0])) {
+					return $this->retrieve($subject, $parameters[0]);
+				}
+				return $this->retrieve($subject);
+			
+			case 'prepare':
+				if (isset($parameters[0])) {
+					return $this->format($subject, $parameters[0]);
+				}
+				return $this->format($subject);
+			
+			case 'set':
+				return $this->assign($subject, $parameters[0]);
+			
+			// Related data methods
+			case 'associate':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[1])) {
+					return fORMRelatedData::associateRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelatedData::associateRecords($this, $this->related_records, $subject, $parameters[0]);
+			
+			case 'build':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
+			
+			case 'create':
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::constructRecord($this, $this->values, $subject);
+			
+			case 'inject':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[1])) {
+					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
+			
+			case 'link':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::linkRecords($this, $this->related_records, $subject);
+			
+			case 'populate':
+				$subject = fInflection::singularize($subject);
+				$subject = fInflection::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelatedData::populateRecords($this, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelatedData::populateRecords($this, $this->related_records, $subject);
+			
+			// Error handler
+			default:
+				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
+		}
+	}
+	
+	
+	/**
 	 * Creates a record
 	 * 
 	 * @throws  fNotFoundException
@@ -61,6 +168,10 @@ abstract class fActiveRecord
 		if (!fORM::checkFeaturesSet(get_class($this))) {
 			$this->configure();
 			fORM::flagFeaturesSet(get_class($this));
+		}
+		
+		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
+			return fORM::callHookCallback($this, 'replace::__construct()', $this->values, $this->old_values, $this->related_records, $this->debug, $primary_key);	
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
@@ -110,111 +221,13 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Dynamically creates getColumn(), setColumn(), prepareColumn() for columns in the table.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $method_name  The name of the method called
-	 * @param  string $parameters   The parameters passed
-	 * @return void
-	 */
-	public function __call($method_name, $parameters)
-	{
-		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
-		
-		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
-			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $parameters);	
-		}
-		
-		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate' || $action == 'link') && sizeof($parameters) < 1) {
-			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
-		}
-		
-		switch ($action) {
-			
-			// Value methods
-			case 'encode':
-				if (isset($parameters[0])) {
-					return $this->entifyValue($subject, $parameters[0]);
-				}
-				return $this->entifyValue($subject);
-			
-			case 'get':
-				if (isset($parameters[0])) {
-					return $this->retrieveValue($subject, $parameters[0]);
-				}
-				return $this->retrieveValue($subject);
-			
-			case 'prepare':
-				if (isset($parameters[0])) {
-					return $this->formatValue($subject, $parameters[0]);
-				}
-				return $this->formatValue($subject);
-			
-			case 'set':
-				return $this->assignValue($subject, $parameters[0]);
-			
-			// Related data methods
-			case 'create':
-				$subject = fInflection::camelize($subject, TRUE);
-				
-				if (isset($parameters[0])) {
-					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
-				}
-				return fORMRelatedData::constructRecord($this, $this->values, $subject);
-			
-			case 'build':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
-				
-				if (isset($parameters[0])) {
-					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
-				}
-				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
-			
-			case 'associate':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
-				
-				if (isset($parameters[1])) {
-					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
-				}
-				return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
-			
-			case 'inject':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
-				
-				if (isset($parameters[1])) {
-					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
-				}
-				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
-			
-			case 'populate':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
-				
-				if (isset($parameters[0])) {
-					return fORMRelatedData::populateRecords($this, $this->related_records, $subject, $parameters[0]);
-				}
-				return fORMRelatedData::populateRecords($this, $this->related_records, $subject);
-			
-			// Error handler
-			default:
-				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
-		}
-	}
-	
-	
-	/**
 	 * Sets a value to the record.
 	 * 
 	 * @param  string $column  The column to set the value to
 	 * @param  mixed $value    The value to set
 	 * @return void
 	 */
-	protected function assignValue($column, $value)
+	protected function assign($column, $value)
 	{
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
@@ -229,23 +242,6 @@ abstract class fActiveRecord
 		
 		$this->old_values[$column] = $this->values[$column];
 		$this->values[$column]     = $value;
-	}
-	
-	
-	/**
-	 * Checks to see if the record exists in the database
-	 * 
-	 * @return boolean  If the record exists in the database
-	 */
-	public function isExisting()
-	{
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-		foreach ($pk_columns as $pk_column) {
-			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column] === NULL) || $this->values[$pk_column] === NULL) {
-				return FALSE;
-			}
-		}
-		return TRUE;
 	}
 	
 	
@@ -286,6 +282,36 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Creates the WHERE clause for the current primary key data
+	 *
+	 * @throws fValidationException
+	 * 
+	 * @return string  The WHERE clause for the current primary key data
+	 */
+	protected function constructPrimaryKeyWhereClause()
+	{
+		$sql        = '';
+		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		$key_num    = 0;
+		
+		foreach ($pk_columns as $pk_column) {
+			if ($key_num) { $sql .= " AND "; }
+			
+			if (!empty($this->old_values[$pk_column])) {
+				$value = fORM::scalarize($this->old_values[$pk_column]);
+			} else {
+				$value = fORM::scalarize($this->values[$pk_column]);
+			}
+			
+			$sql .= $pk_column . fORMDatabase::prepareBySchema(fORM::tablize($this), $pk_column, $value, '=');
+			$key_num++;
+		}
+		
+		return $sql;
+	}
+	
+	
+	/**
 	 * Creates the SQL to update this record
 	 *
 	 * @param  array $sql_values  The sql-formatted values for this record
@@ -300,7 +326,7 @@ abstract class fActiveRecord
 			$sql .= $column . ' = ' . $sql_value;
 			$column_num++;
 		}
-		$sql .= ' WHERE ' . $this->getPrimaryKeyWhereClause();
+		$sql .= ' WHERE ' . $this->constructPrimaryKeyWhereClause();
 		return $sql;
 	}
 	
@@ -317,7 +343,7 @@ abstract class fActiveRecord
 			return fORM::callHookCallback($this, 'replace::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);	
 		}	
 		
-		if (!$this->isExisting()) {
+		if (!$this->exists()) {
 			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');
 		}
 		
@@ -387,14 +413,14 @@ abstract class fActiveRecord
 			
 			
 			// Delete this record
-			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->getPrimaryKeyWhereClause();
+			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->constructPrimaryKeyWhereClause();
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			
 			// Delete related records
 			foreach ($records_sets_to_delete as $record_set) {
 				foreach ($record_set as $record) {
-					if ($record->isExisting()) {
+					if ($record->exists()) {
 						$record->delete();
 					}
 				}
@@ -459,7 +485,7 @@ abstract class fActiveRecord
 	 * @param  string $formatting  If php date() formatting string for date values
 	 * @return mixed  The formatted value for the column specified
 	 */
-	protected function entifyValue($column, $formatting=NULL)
+	protected function entify($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
@@ -523,6 +549,27 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Checks to see if the record exists in the database
+	 * 
+	 * @return boolean  If the record exists in the database
+	 */
+	public function exists()
+	{
+		if (fORM::checkHookCallback($this, 'replace::exists()')) {
+			return fORM::callHookCallback($this, 'replace::exists()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		}
+		
+		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		foreach ($pk_columns as $pk_column) {
+			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column] === NULL) || $this->values[$pk_column] === NULL) {
+				return FALSE;
+			}
+		}
+		return TRUE;
+	}
+	
+	
+	/**
 	 * Retrieves a value from the record and prepares it for output into html.
 	 * 
 	 * Below are the transformations performed:
@@ -539,7 +586,7 @@ abstract class fActiveRecord
 	 * @param  string $formatting  If php date() formatting string for date values
 	 * @return mixed  The formatted value for the column specified
 	 */
-	protected function formatValue($column, $formatting=NULL)
+	protected function format($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
@@ -632,36 +679,6 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Creates the WHERE clause for the current primary key data
-	 *
-	 * @throws fValidationException
-	 * 
-	 * @return string  The WHERE clause for the current primary key data
-	 */
-	protected function getPrimaryKeyWhereClause()
-	{
-		$sql        = '';
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-		$key_num    = 0;
-		
-		foreach ($pk_columns as $pk_column) {
-			if ($key_num) { $sql .= " AND "; }
-			
-			if (!empty($this->old_values[$pk_column])) {
-				$value = fORM::scalarize($this->old_values[$pk_column]);
-			} else {
-				$value = fORM::scalarize($this->values[$pk_column]);
-			}
-			
-			$sql .= $pk_column . fORMDatabase::prepareBySchema(fORM::tablize($this), $pk_column, $value, '=');
-			$key_num++;
-		}
-		
-		return $sql;
-	}
-	
-	
-	/**
 	 * Loads a record from the database
 	 * 
 	 * @throws  fNotFoundException
@@ -670,8 +687,12 @@ abstract class fActiveRecord
 	 */
 	public function load()
 	{
+		if (fORM::checkHookCallback($this, 'replace::load()')) {
+			return fORM::callHookCallback($this, 'replace::load()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		}
+		
 		try {
-			$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->getPrimaryKeyWhereClause();
+			$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->constructPrimaryKeyWhereClause();
 		
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
@@ -787,38 +808,6 @@ abstract class fActiveRecord
 			}
 		}
 		
-		// This handles associating many-to-many relationships
-		$relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
-		foreach ($relationships as $rel) {
-			$routes = fORMSchema::getRoutes($table, $rel['related_table']);
-			$field_table  = $rel['related_table'];
-			$field_column = '::' . $rel['related_column'];
-			$field = $field_table . $field_column;
-			
-			if (sizeof($routes) > 1 && fRequest::check($field)) {
-				fCore::toss('fProgrammerException', 'The form submitted contains an ambiguous input field, ' . $field . '. The field name should contain the route to ' . $field_table . ' since there is more than one.');
-			}
-			
-			$route = NULL;
-			$field_with_route = $field_table . '{' . $rel['join_table'] . '}' . $field_column;
-			
-			// If there is more than one route, the user has to specify the route
-			if (sizeof($routes) > 1) {
-				$field = $field_with_route;
-			}
-			
-			// If there is only one route and they specified the route instead of leaving it off, use that
-			if (sizeof($routes) == 1 && !fRequest::check($field) && fRequest::check($field_with_route)) {
-				$field = $field_with_route;	
-			}
-			
-			if (fRequest::check($field)) {
-				$related_class = fORM::classize($rel['related_table']);
-				$method = 'associate' . fInflection::pluralize($related_class);
-				$this->$method(fRequest::get($field, 'array', array()), $route);
-			}
-		}
-		
 		fORM::callHookCallback($this, 'post::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
@@ -829,7 +818,7 @@ abstract class fActiveRecord
 	 * @param  string $column  The name of the column to retrieve
 	 * @return mixed  The value for the column specified
 	 */
-	protected function retrieveValue($column)
+	protected function retrieve($column)
 	{
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
@@ -839,14 +828,14 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Enabled debugging
+	 * Sets if debug messages should be shown
 	 * 
-	 * @param  boolean $enable  If debugging should be enabled
+	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
 	 */
-	public function setDebug($enable)
+	public function showDebug($flag)
 	{
-		$this->debug = (boolean) $enable;
+		$this->debug = (boolean) $flag;
 	}
 	
 	
@@ -860,8 +849,8 @@ abstract class fActiveRecord
 	 */
 	public function store()
 	{
-		if (fORM::checkHookCallback($this, 'replace::populate()')) {
-			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+		if (fORM::checkHookCallback($this, 'replace::store()')) {
+			return fORM::callHookCallback($this, 'replace::store()', $this->values, $this->old_values, $this->related_records, $this->debug);	
 		}
 		
 		fORM::callHookCallback($this, 'pre::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
@@ -872,7 +861,7 @@ abstract class fActiveRecord
 			
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
 			$new_autoincrementing_record = FALSE;
-			if (!$this->isExisting()) {
+			if (!$this->exists()) {
 				$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
 				
 				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
@@ -909,7 +898,7 @@ abstract class fActiveRecord
 				unset($sql_values[$pk_column]);
 			}
 			
-			if (!$this->isExisting()) {
+			if (!$this->exists()) {
 				$sql = $this->constructInsertSql($sql_values);
 			} else {
 				$sql = $this->constructUpdateSql($sql_values);

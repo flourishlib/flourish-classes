@@ -650,7 +650,7 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string  $class       The class name or instance of the class to validate
+	 * @param  mixed   $class       The class name or instance of the class to validate
 	 * @param  array   $values      The values to validate
 	 * @param  array   $old_values  The old values for the record
 	 * @param  boolean $existing    If the record currently exists in the database
@@ -742,8 +742,8 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string  $class             The class to validate
-	 * @param  array   &$related_records  The related records to validate
+	 * @param  mixed $class             The class to validate
+	 * @param  array &$related_records  The related records to validate
 	 * @return array  An array of validation messages
 	 */
 	static public function validateRelated($class, &$related_records)
@@ -830,7 +830,7 @@ class fORMValidation
 		$messages = array();
 		
 		foreach ($record_set as $record) {
-			if (!$record->isExisting()) {
+			if (!$record->exists()) {
 				$messages[] = $related_record_name . ' #' . $record_number . ': Please select a ' . $related_record_name;		
 			}
 			$record_number++;

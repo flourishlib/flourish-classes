@@ -462,14 +462,14 @@ class fCore
 	
 	
 	/**
-	 * Turns on or off global debugging
+	 * Sets if debug messages should be shown globally (for every object)
 	 * 
-	 * @param  boolean $enable  If debugging should be enabled
+	 * @param  boolean $flag  If debugging messages should be shown globally
 	 * @return void
 	 */
-	static public function setDebug($enable)
+	static public function showDebug($flag)
 	{
-		self::$debug = (boolean) $enable;
+		self::$debug = (boolean) $flag;
 	}
 	
 	

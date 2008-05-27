@@ -866,18 +866,6 @@ class fFinancialTransaction
 	
 	
 	/**
-	 * Enabled debugging
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
-	 * @return void
-	 */
-	public function setDebug($enable)
-	{
-		$this->debug = (boolean) $enable;
-	}
-	
-	
-	/**
 	 * Sets the default values for any fields that have not been manually assigned
 	 * 
 	 * @return void
@@ -1136,6 +1124,18 @@ class fFinancialTransaction
 	public function setTransactionType($transaction_type)
 	{
 		$this->transaction_info['transaction_type'] = $transaction_type;
+	}
+	
+	
+	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function showDebug($flag)
+	{
+		$this->debug = (boolean) $flag;
 	}
 	
 	

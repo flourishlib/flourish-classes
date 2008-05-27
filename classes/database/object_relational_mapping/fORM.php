@@ -83,7 +83,7 @@ class fORM
 	 * @param  boolean $debug              If debugging is turned on for this record
 	 * @param  mixed   &$first_parameter   The first parameter to send the callback
 	 * @param  mixed   &$second_parameter  The second parameter to send the callback
-	 * @return mixed  The return value from the callback. Should be NULL unless it is a replace:: callback.
+	 * @return mixed  The return value from the callback. Will be NULL unless it is a replace:: callback.
 	 */
 	static public function callHookCallback($class, $hook, &$values, &$old_values, &$related_records, $debug, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
@@ -93,7 +93,15 @@ class fORM
 			return;
 		}
 		
-		return call_user_func(self::$hook_callbacks[$class][$hook], $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+		// replace:: hooks are always singular and return a value
+		if (preg_match('#^replace::[\w_]+()$#', $hook)) {
+			return call_user_func(self::$hook_callbacks[$class][$hook], $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+		}
+		
+		// There can be more than one non-replace:: hook so we can't return a value
+		foreach (self::$hook_callbacks[$class][$hook] as $callback) {
+			call_user_func($callback, $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+		}
 	}
 	
 	
@@ -339,7 +347,9 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for one of the various fActiveRecord hooks
+	 * Registers a callback for one of the various fActiveRecord hooks. Any hook
+	 * that does not beging with replace:: can have multiple callbacks. replace::
+	 * hooks can only have one, the most recently registered.
 	 * 
 	 * The method signature should include the follow parameters:
 	 * 
@@ -349,8 +359,8 @@ class fORM
 	 *  4. $debug
 	 * 
 	 * Below is a list of other parameters passed to specific hooks:
-	 *  - 'pre::validate()' and 'post::validate()'
-	 *   - &$validation_messages: This is an ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *  - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *  - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$parameters - the parameters the method was called with  
 	 * 
 	 * @param  mixed    $class     The name of the class to hook for, or an instance of it
 	 * @param  string   $hook      The hook to register for
@@ -360,8 +370,9 @@ class fORM
 	static public function registerHookCallback($class, $hook, $callback)
 	{
 		$class = self::getClassName($class);
+		$replace_hook = preg_match('#^replace::[\w_]+()$#', $hook);
 		
-		$valid_hooks = array(
+		static $valid_hooks = array(
 			'post::__construct()',
 			'replace::delete()',
 			'pre::delete()',
@@ -372,6 +383,7 @@ class fORM
 			'replace::populate()',
 			'pre::populate()',
 			'post::populate()',
+			'replace::store()',
 			'pre::store()',
 			'post-being::store()',
 			'pre-commit::store()',
@@ -382,15 +394,45 @@ class fORM
 			'post::validate()'
 		);
 		
-		if (!in_array($hook, $valid_hooks) && !preg_match('#^replace::.*$#', $hook)) {
-			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', should be one of: ' . join(', ', $valid_hooks) . ' or replace::{someMethod}()');	
+		static $invalid_replace_hooks = array(
+			'replace::enableDebug()',
+			'replace::assign()',
+			'replace::configure()',
+			'replace::constructInsertSQL()',
+			'replace::constructPrimaryKeyWhereClause()',
+			'replace::constructUpdateSQL()',
+			'replace::entify()',
+			'replace::format()',
+			'replace::loadByResult()',
+			'replace::loadFromIdentityMap()',
+			'replace::retrieve()',
+			'replace::storeManyToManyAssociations()',
+			'replace::storeOneToManyRelatedRecords()',
+		);
+		
+		if (!in_array($hook, $valid_hooks) && !$replace_hook) {
+			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', should be one of: ' . join(', ', $valid_hooks) . ' or replace::{someMethod}().');	
+		}
+		
+		if ($replace_hook && in_array($hook, $invalid_replace_hooks)) {
+			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', is an invalid replace:: hook. Can not be one of: ' . join(', ', $invalid_replace_hooks) . '.');	
 		}
 		
 		if (!isset(self::$hook_callbacks[$class])) {
 			self::$hook_callbacks[$class] = array();
 		}
 		
-		self::$hook_callbacks[$class][$hook] = $callback;
+		// We only allow a single replace:: callback
+		if ($replace_hook) {
+			self::$hook_callbacks[$class][$hook] = $callback;
+		
+		// If it is not a replace:: callback, we can have unlimited callbacks
+		} else {
+			if (!isset(self::$hook_callbacks[$class][$hook])) {
+				self::$hook_callbacks[$class][$hook] = array();
+			}	
+			self::$hook_callbacks[$class][$hook][] = $callback;
+		}
 	}
 	
 	

@@ -248,16 +248,14 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Enabled debugging
+	 * Sets if debug messages should be shown
 	 * 
-	 * @internal
-	 * 
-	 * @param  boolean $enable  If debugging should be enabled
+	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
 	 */
-	public function setDebug($enable)
+	public function showDebug($flag)
 	{
-		$this->debug = (boolean) $enable;
+		$this->debug = (boolean) $flag;
 	}
 	
 	

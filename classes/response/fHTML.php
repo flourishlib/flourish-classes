@@ -225,7 +225,7 @@ class fHTML
 	{
 		$content = htmlentities($content, ENT_COMPAT, 'UTF-8');
 		
-		$windows_characters = array(
+		static $windows_characters = array(
 			chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;',
 			chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
 			chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;',
