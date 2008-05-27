@@ -95,12 +95,30 @@ class fORM
 		
 		// replace:: hooks are always singular and return a value
 		if (preg_match('#^replace::[\w_]+()$#', $hook)) {
-			return call_user_func(self::$hook_callbacks[$class][$hook], $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+			// This is the only way to pass by reference
+			$parameters = array(
+				&$values,
+				&$old_values,
+				&$related_records,
+				$debug,
+				&$first_parameter,
+				&$second_parameter
+			);
+			return call_user_func_array(self::$hook_callbacks[$class][$hook], $parameters);
 		}
 		
 		// There can be more than one non-replace:: hook so we can't return a value
 		foreach (self::$hook_callbacks[$class][$hook] as $callback) {
-			call_user_func($callback, $values, $old_values, $related_records, $debug, $first_parameter, $second_parameter);
+			// This is the only way to pass by reference
+			$parameters = array(
+				&$values,
+				&$old_values,
+				&$related_records,
+				$debug,
+				&$first_parameter,
+				&$second_parameter
+			);
+			call_user_func_array($callback, $parameters);
 		}
 	}
 	

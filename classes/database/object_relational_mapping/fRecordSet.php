@@ -209,7 +209,7 @@ class fRecordSet implements Iterator
 		$total_primary_keys = sizeof($primary_keys);
 		for ($i=0; $i < $total_primary_keys; $i++) {
 			if ($total_pk_fields > 1) {
-				$sql .= ($i > 0) ? 'OR' : '';
+				$sql .= ($i > 0) ? ' OR ' : '';
 			
 				$sql .= ' (';
 				for ($j=0; $j < $total_pk_fields; $j++) {
@@ -223,7 +223,7 @@ class fRecordSet implements Iterator
 					$empty_records++;
 					continue;	
 				}
-				$sql .= ($i > 0) ? 'OR' : '';
+				$sql .= ($i > 0) ? ' OR ' : '';
 				$pkf  = $primary_key_fields[0];
 				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i], '=');	
 			}

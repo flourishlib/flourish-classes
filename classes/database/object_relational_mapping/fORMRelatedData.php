@@ -43,8 +43,6 @@ class fORMRelatedData
 	 */
 	static public function associateRecords($class, &$related_records, $related_class, $primary_keys, $route=NULL)
 	{
-		$table = fORM::tablize($class);
-		
 		// Remove blank values from the related records primary keys
 		$new_primary_keys = array();
 		foreach ($primary_keys as $primary_key) {
@@ -55,7 +53,7 @@ class fORMRelatedData
 		}
 		
 		$records = fRecordSet::createFromPrimaryKeys($related_class, $primary_keys);
-		self::setRecords($table, $related_records, $related_class, $records, $route);
+		self::setRecords($class, $related_records, $related_class, $records, $route);
 		$records->flagForAssociation();
 	}
 	
@@ -323,7 +321,7 @@ class fORMRelatedData
 		}
 		
 		$record_set->flagForAssociation();
-		self::setRecords($table, $related_records, $related_class, $record_set, $route);
+		self::setRecords($class, $related_records, $related_class, $record_set, $route);
 	}
 	
 	

@@ -742,7 +742,7 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed $class             The class to validate
+	 * @param  mixed $class             The class name or instance of the class to validate
 	 * @param  array &$related_records  The related records to validate
 	 * @return array  An array of validation messages
 	 */
@@ -759,12 +759,13 @@ class fORMValidation
 					continue;
 				}
 				
-				$relationship = fORMSchema::getRoute($table, $related_table, $route);	
+				$related_class = fORM::classize($related_table); 
+				$relationship  = fORMSchema::getRoute($table, $related_table, $route);	
 																												
 				if (isset($relationship['join_table'])) {
-					$related_messages = self::validateManyToMany($table, $related_table, $route, $record_set);	
+					$related_messages = self::validateManyToMany($class, $related_class, $route, $record_set);	
 				} else {
-					$related_messages = self::validateOneToMany($table, $related_table, $route, $record_set);
+					$related_messages = self::validateOneToMany($class, $related_class, $route, $record_set);
 				}
 				
 				$validation_messages = array_merge($validation_messages, $related_messages);
@@ -780,18 +781,20 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string     $table          The table these records are related to
-	 * @param  string     $related_table  The table for this record set
+	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $related_class  The name of the class for this record set
 	 * @param  string     $route          The route between the table and related table
 	 * @param  fRecordSet $record_set     The related records to validate
 	 * @return array  An array of validation messages
 	 */
-	static private function validateOneToMany($table, $related_table, $route, $record_set)
+	static private function validateOneToMany($class, $related_class, $route, $record_set)
 	{
-		$related_record_name = fORMRelatedData::getRelatedRecordName($table, fORM::classize($related_table), $route);
-		$record_number = 1;
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		$relationship  = fORMSchema::getRoute($table, $related_table, $route);
 		
-		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$related_record_name = fORMRelatedData::getRelatedRecordName($class, $related_class, $route);
+		$record_number = 1;
 		
 		$messages = array();
 		
@@ -799,7 +802,7 @@ class fORMValidation
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
 				// Ignore validation messages about the primary key since it will be added 
-				if (strpos($record_message, fORM::getColumnName($table, $primary_keys[0])) !== FALSE) {
+				if (strpos($record_message, fORM::getColumnName($related_table, $relationship['related_column'])) !== FALSE) {
 					continue;	
 				}
 				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
@@ -816,15 +819,15 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string     $table          The table these records are related to
-	 * @param  string     $related_table  The table for this record set
+	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $related_class  The name of the class for this record set
 	 * @param  string     $route          The route between the table and related table
 	 * @param  fRecordSet $record_set     The related records to validate
 	 * @return array  An array of validation messages
 	 */
-	static private function validateManyToMany($table, $related_table, $route, $record_set)
+	static private function validateManyToMany($class, $related_class, $route, $record_set)
 	{
-		$related_record_name = fORMRelatedData::getRelatedRecordName($table, fORM::classize($related_table), $route);
+		$related_record_name = fORMRelatedData::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
 		
 		$messages = array();

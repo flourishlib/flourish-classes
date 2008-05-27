@@ -65,7 +65,7 @@ abstract class fActiveRecord
 		}
 		
 		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate' || $action == 'link') && sizeof($parameters) < 1) {
+		if (($action == 'set' || $action == 'associate' || $action == 'inject') && sizeof($parameters) < 1) {
 			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
 		}
 		
