@@ -61,7 +61,7 @@ abstract class fActiveRecord
 		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
-			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $parameters);	
+			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $method_name, $parameters);	
 		}
 		
 		// This will prevent quiet failure
@@ -99,53 +99,53 @@ abstract class fActiveRecord
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
-					return fORMRelatedData::associateRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelatedData::associateRecords($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			case 'build':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelatedData::constructRecordSet($this, $this->values, $this->related_records, $subject);
+				return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject);
 			
 			case 'create':
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelatedData::constructRecord($this, $this->values, $subject, $parameters[0]);
+					return fORMRelated::constructRecord($this, $this->values, $subject, $parameters[0]);
 				}
-				return fORMRelatedData::constructRecord($this, $this->values, $subject);
+				return fORMRelated::constructRecord($this, $this->values, $subject);
 			
 			case 'inject':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
-					return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelatedData::setRecords($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			case 'link':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelatedData::linkRecords($this, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::linkRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelatedData::linkRecords($this, $this->related_records, $subject);
+				return fORMRelated::linkRecords($this, $this->related_records, $subject);
 			
 			case 'populate':
 				$subject = fInflection::singularize($subject);
 				$subject = fInflection::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelatedData::populateRecords($this, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::populateRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelatedData::populateRecords($this, $this->related_records, $subject);
+				return fORMRelated::populateRecords($this, $this->related_records, $subject);
 			
 			// Error handler
 			default:
@@ -165,9 +165,9 @@ abstract class fActiveRecord
 	public function __construct($primary_key=NULL)
 	{
 		// If the features of this class haven't been set yet, do it
-		if (!fORM::checkFeaturesSet(get_class($this))) {
+		if (!fORM::checkFeaturesSet($this)) {
 			$this->configure();
-			fORM::flagFeaturesSet(get_class($this));
+			fORM::flagFeaturesSet($this);
 		}
 		
 		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
@@ -180,7 +180,7 @@ abstract class fActiveRecord
 				return;
 			}
 			
-			$this->loadByResult($primary_key);
+			$this->loadFromResult($primary_key);
 			return;
 		}
 		
@@ -194,7 +194,7 @@ abstract class fActiveRecord
 			// Check the primary keys
 			$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
-				fCore::toss('fProgrammerException', 'An invalidly formatted primary key was passed to ' . get_class($this));
+				fCore::toss('fProgrammerException', 'An invalidly formatted primary key was passed to this ' . fORM::getRecordName($this) . ' object');
 			}
 			
 			// Assign the primary key values
@@ -298,9 +298,9 @@ abstract class fActiveRecord
 			if ($key_num) { $sql .= " AND "; }
 			
 			if (!empty($this->old_values[$pk_column])) {
-				$value = fORM::scalarize($this->old_values[$pk_column]);
+				$value = fORM::scalarize($this, $pk_column, $this->old_values[$pk_column]);
 			} else {
-				$value = fORM::scalarize($this->values[$pk_column]);
+				$value = fORM::scalarize($this, $pk_column, $this->values[$pk_column]);
 			}
 			
 			$sql .= $pk_column . fORMDatabase::prepareBySchema(fORM::tablize($this), $pk_column, $value, '=');
@@ -392,7 +392,7 @@ abstract class fActiveRecord
 					continue;
 				}
 				
-				if ($relationship['on_delete'] == 'cascade') {
+				if ($type == 'one-to-many' && $relationship['on_delete'] == 'cascade') {
 					$records_sets_to_delete[] = $record_set;
 				}
 				
@@ -595,15 +595,12 @@ abstract class fActiveRecord
 		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
 		$column_type = $column_info['type'];
 		
-		$email_formatted = fORMValidation::hasFormattingRule($this, $column, 'email');
-		$link_formatted  = fORMValidation::hasFormattingRule($this, $column, 'link');
-		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is a blob column');
 		}
 		
-		if ($formatting !== NULL && !$email_formatted && !$link_formatted) {
+		if ($formatting !== NULL && !in_array($column_type, array('date', 'time', 'timestamp', 'float'))) {
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
 		}
 		
@@ -627,21 +624,6 @@ abstract class fActiveRecord
 		// If we are left with an object at this point then we don't know what to do with it
 		if (is_object($value)) {
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');
-		}
-		
-		// If we are formatting in a situation where empty values will produce incorrect results, exit early
-		if (empty($value) && ($email_formatted || $link_formatted)) {
-			return $value;
-		}
-		
-		// Handle the email and link formatting
-		if ($email_formatted) {
-			$css_class = ($formatting) ? ' class="' . $formatting . '"' : '';
-			return '<a href="mailto:' . $value . '"' . $css_class . '>' . $value . '</a>';
-		}
-		if ($link_formatted) {
-			$css_class = ($formatting) ? ' class="' . $formatting . '"' : '';
-			return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
 		}
 		
 		// Ensure the value matches the data type specified to prevent mangling
@@ -698,10 +680,10 @@ abstract class fActiveRecord
 			$result->tossIfNoResults();
 			
 		} catch (fExpectedException $e) {
-			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName(get_class($this)) . ' requested could not be found');
+			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName($this) . ' requested could not be found');
 		}
 		
-		$this->loadByResult($result);
+		$this->loadFromResult($result);
 	}
 	
 	
@@ -711,7 +693,7 @@ abstract class fActiveRecord
 	 * @param  fResult $result  The result object to use for loading the current object
 	 * @return void
 	 */
-	protected function loadByResult(fResult $result)
+	protected function loadFromResult(fResult $result)
 	{
 		$row = $result->current();
 		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
@@ -739,6 +721,8 @@ abstract class fActiveRecord
 		}
 		
 		fORM::saveToIdentityMap($this, $pk_data);
+		
+		fORM::callHookCallback($this, 'post::loadFromResult()', $this->values, $this->old_values, $this->related_records, $this->debug);
 	}
 	
 	
@@ -889,7 +873,7 @@ abstract class fActiveRecord
 			
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
-				$value = fORM::scalarize($this->values[$column]);
+				$value = fORM::scalarize($this, $column, $this->values[$column]);
 				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $value);
 			}
 			
@@ -962,6 +946,9 @@ abstract class fActiveRecord
 		}
 		
 		fORM::callHookCallback($this, 'post::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		
+		// If we got here we succefully stored, so update old values to make exists() work 
+		$this->old_values = $this->values;
 	}
 	
 	
@@ -1018,7 +1005,7 @@ abstract class fActiveRecord
 		$join_table        = $relationship['join_table'];
 		$join_column       = $relationship['join_column'];
 		
-		$get_method_name   = fInflection::camelize($relationship['column'], TRUE);
+		$get_method_name   = 'get' . fInflection::camelize($relationship['column'], TRUE);
 		$join_column_value = fORMDatabase::prepareBySchema($join_table, $join_column, $this->$get_method_name());
 		
 		$delete_sql  = 'DELETE FROM ' . $join_table;
@@ -1028,7 +1015,7 @@ abstract class fActiveRecord
 		
 		// Then we add back the ones in the record set
 		$join_related_column     = $relationship['join_related_column'];
-		$get_related_method_name = fInflection::camelize($relationship['related_column'], TRUE);
+		$get_related_method_name = 'get' . fInflection::camelize($relationship['related_column'], TRUE);
 		
 		foreach ($record_set as $record) {
 			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());
@@ -1069,9 +1056,9 @@ abstract class fActiveRecord
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		
-		fORMValidation::reorderMessages($table, $validation_messages);
-		
 		fORM::callHookCallback($this, 'post::validate()', $this->values, $this->old_values, $this->related_records, $this->debug, $validation_messages);
+		
+		fORMValidation::reorderMessages($table, $validation_messages);
 		
 		if ($return_messages) {
 			return $validation_messages;	

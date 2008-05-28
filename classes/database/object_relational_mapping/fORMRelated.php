@@ -1,18 +1,18 @@
 <?php
 /**
- * Handles related data tasks for (@link fActiveRecord} classes. Related data
- * only works for single-field foreign keys.
+ * Handles related record tasks for (@link fActiveRecord} classes. Functionality
+ * only works with single-field foreign keys.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fORMRelatedData
+ * @link  http://flourishlib.com/fORMRelated
  * 
  * @version  1.0.0
  * @changes  1.0.0    The initial implementation [wb, 2007-12-30]
  */
-class fORMRelatedData
+class fORMRelated
 {
 	/**
 	 * Rules that control what order related data is returned in
@@ -165,10 +165,7 @@ class fORMRelatedData
 	{
 		$table = fORM::tablize($class);
 		
-		if (is_object($related_class)) {
-			$related_class = get_class($related_class);	
-		}
-		
+		$related_class = fORM::getClassName($related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
@@ -231,10 +228,7 @@ class fORMRelatedData
 	{
 		$table = fORM::tablize($class);
 		
-		if (is_object($related_class)) {
-			$related_class = get_class($related_class);	
-		}
-		
+		$related_class = fORM::getClassName($related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
@@ -381,7 +375,7 @@ class fORMRelatedData
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @return fORMRelatedData
+	 * @return fORMRelated
 	 */
 	private function __construct() { }
 }

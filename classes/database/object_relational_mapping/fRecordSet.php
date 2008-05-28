@@ -711,7 +711,7 @@ class fRecordSet implements Iterator
 		}
 		
 		// We need to add the related data order bys to the existing order bys
-		$order_bys = fORMRelatedData::getOrderBys($this->class_name, $related_class, $route);
+		$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
 		if (!empty($clauses['ORDER BY']) || $order_bys != array()) {
 			$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
 				

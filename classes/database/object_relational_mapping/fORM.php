@@ -42,11 +42,25 @@ class fORM
 	static private $identity_map = array();
 	
 	/**
+	 * Callbacks for objectify()
+	 * 
+	 * @var array
+	 */
+	static private $objectify_callbacks = array();
+	
+	/**
 	 * Custom record names for fActiveRecord classes
 	 * 
 	 * @var array
 	 */
 	static private $record_names = array();
+	
+	/**
+	 * Callbacks for scalarize()
+	 * 
+	 * @var array
+	 */
+	static private $scalarize_callbacks = array();
 	
 	/**
 	 * Custom mappings for table <-> class
@@ -75,21 +89,21 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed   $class              The name of the class to call the hook of
-	 * @param  string  $hook               The hook to call
-	 * @param  array   &$values            The current values of the record
-	 * @param  array   &$old_values        The old values of the record
-	 * @param  array   &$related_records   Records related to the current record
-	 * @param  boolean $debug              If debugging is turned on for this record
-	 * @param  mixed   &$first_parameter   The first parameter to send the callback
-	 * @param  mixed   &$second_parameter  The second parameter to send the callback
+	 * @param  fActiveRecord $class              The instance of the class to call the hook for
+	 * @param  string        $hook               The hook to call
+	 * @param  array         &$values            The current values of the record
+	 * @param  array         &$old_values        The old values of the record
+	 * @param  array         &$related_records   Records related to the current record
+	 * @param  boolean       $debug              If debugging is turned on for this record
+	 * @param  mixed         &$first_parameter   The first parameter to send the callback
+	 * @param  mixed         &$second_parameter  The second parameter to send the callback
 	 * @return mixed  The return value from the callback. Will be NULL unless it is a replace:: callback.
 	 */
-	static public function callHookCallback($class, $hook, &$values, &$old_values, &$related_records, $debug, &$first_parameter=NULL, &$second_parameter=NULL)
+	static public function callHookCallback(fActiveRecord $class, $hook, &$values, &$old_values, &$related_records, $debug, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
-		$class = self::getClassName($class);
+		$class_name = self::getClassName($class);
 		
-		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
+		if (!isset(self::$hook_callbacks[$class_name]) || empty(self::$hook_callbacks[$class_name][$hook])) {
 			return;
 		}
 		
@@ -97,6 +111,7 @@ class fORM
 		if (preg_match('#^replace::[\w_]+()$#', $hook)) {
 			// This is the only way to pass by reference
 			$parameters = array(
+				$class,
 				&$values,
 				&$old_values,
 				&$related_records,
@@ -104,13 +119,14 @@ class fORM
 				&$first_parameter,
 				&$second_parameter
 			);
-			return call_user_func_array(self::$hook_callbacks[$class][$hook], $parameters);
+			return call_user_func_array(self::$hook_callbacks[$class_name][$hook], $parameters);
 		}
 		
 		// There can be more than one non-replace:: hook so we can't return a value
-		foreach (self::$hook_callbacks[$class][$hook] as $callback) {
+		foreach (self::$hook_callbacks[$class_name][$hook] as $callback) {
 			// This is the only way to pass by reference
 			$parameters = array(
+				$class,
 				&$values,
 				&$old_values,
 				&$related_records,
@@ -133,7 +149,9 @@ class fORM
 	 */
 	static public function checkFeaturesSet($class)
 	{
-		return !empty(self::$features_set[self::getClassName($class)]);
+		$class = self::getClassName($class);
+		
+		return !empty(self::$features_set[$class]);
 	}
 	
 	
@@ -169,13 +187,17 @@ class fORM
 	static public function checkIdentityMap($class, $primary_key_data)
 	{
 		$class = self::getClassName($class);
+		
 		if (!isset(self::$identity_map[$class])) {
 			return FALSE;
 		}
+		
 		$hash_key = self::createPrimaryKeyHash($primary_key_data);
+		
 		if (!isset(self::$identity_map[$class][$hash_key])) {
 			return FALSE;
 		}
+		
 		return self::$identity_map[$class][$hash_key];
 	}
 	
@@ -243,17 +265,20 @@ class fORM
 	 */
 	static public function flagFeaturesSet($class)
 	{
-		self::$features_set[self::getClassName($class)] = TRUE;
+		$class = self::getClassName($class);
+		self::$features_set[$class] = TRUE;
 	}
 	
 	
 	/**
 	 * Takes a class name or class and returns the class name
 	 *
+	 * @internal
+	 * 
 	 * @param  mixed $class  The class to get the name of
 	 * @return string  The class name
 	 */
-	static private function getClassName($class)
+	static public function getClassName($class)
 	{
 		if (is_object($class)) { return get_class($class); }
 		return $class;
@@ -265,19 +290,23 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $table   The table the column is located in
+	 * @param  mixed  $class   The class name or instance of the class the column is part of
 	 * @param  string $column  The database column
 	 * @return string  The column name for the column specified
 	 */
-	static public function getColumnName($table, $column)
+	static public function getColumnName($class, $column)
 	{
-		if (!isset(self::$column_names[$table])) {
-			self::$column_names[$table] = array();
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$column_names[$class])) {
+			self::$column_names[$class] = array();
 		}
-		if (!isset(self::$column_names[$table][$column])) {
-			self::$column_names[$table][$column] = fInflection::humanize($column);
+		
+		if (!isset(self::$column_names[$class][$column])) {
+			self::$column_names[$class][$column] = fInflection::humanize($column);
 		}
-		return self::$column_names[$table][$column];
+		
+		return self::$column_names[$class][$column];
 	}
 	
 	
@@ -287,15 +316,17 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed $class  The class/class name to get the record name of
+	 * @param  mixed $class  The class name or instance of the class to get the record name of
 	 * @return string  The record name for the class specified
 	 */
 	static public function getRecordName($class)
 	{
 		$class = self::getClassName($class);
+		
 		if (!isset(self::$record_names[$class])) {
 			self::$record_names[$class] = fInflection::humanize($class);
 		}
+		
 		return self::$record_names[$class];
 	}
 	
@@ -305,16 +336,20 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $table   The table the column is located in, or an instance of the fActiveRecord class
+	 * @param  mixed  $class   The class name or instance of the class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to possibly objectify
 	 * @return mixed  The scalar or object version of the value, depending on the column type and column options
 	 */
-	static public function objectify($table, $column, $value)
+	static public function objectify($class, $column, $value)
 	{
-		if (is_object($table)) {
-			$table = self::tablize($table);
+		$class = self::getClassName($class);
+		
+		if (!empty(self::$objectify_callbacks[$class][$column])) {
+			return call_user_func(self::$objectify_callbacks[$class][$column], $value);	
 		}
+		
+		$table = self::tablize($class);
 		
 		// Turn date/time values into objects
 		$column_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
@@ -334,33 +369,34 @@ class fORM
 	/**
 	 * Allows overriding of default (humanize-d column) column names
 	 * 
-	 * @param  mixed  $table        The table the column is located in, or an instance of the fActiveRecord class
+	 * @param  mixed  $class        The class name or instance of the class the column is located in
 	 * @param  string $column       The database column
 	 * @param  string $column_name  The name for the column
 	 * @return void
 	 */
-	static public function overrideColumnName($table, $column, $column_name)
+	static public function overrideColumnName($class, $column, $column_name)
 	{
-		if (is_object($table)) {
-			$table = self::tablize($table);
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$column_names[$class])) {
+			self::$column_names[$class] = array();
 		}
-		if (!isset(self::$column_names[$table])) {
-			self::$column_names[$table] = array();
-		}
-		self::$column_names[$table][$column] = $column_name;
+		
+		self::$column_names[$class][$column] = $column_name;
 	}
 	
 	
 	/**
 	 * Allows overriding of default (humanize-d class name) record names
 	 * 
-	 * @param  mixed  $class        The name of the class, or an instance of it
+	 * @param  mixed  $class        The class name or instance of the class to override the name of
 	 * @param  string $record_name  The human version of the record
 	 * @return void
 	 */
 	static public function overrideRecordName($class, $record_name)
 	{
-		self::$record_names[self::getClassName($class)] = $record_name;
+		$class = self::getClassName($class);
+		self::$record_names[$class] = $record_name;
 	}
 	
 	
@@ -371,16 +407,17 @@ class fORM
 	 * 
 	 * The method signature should include the follow parameters:
 	 * 
-	 *  1. &$values
-	 *  2. &$old_values
-	 *  3. &$related_records
-	 *  4. $debug
+	 *  1. $class
+	 *  2. &$values
+	 *  3. &$old_values
+	 *  4. &$related_records
+	 *  5. $debug
 	 * 
 	 * Below is a list of other parameters passed to specific hooks:
 	 *  - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
-	 *  - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$parameters - the parameters the method was called with  
+	 *  - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with  
 	 * 
-	 * @param  mixed    $class     The name of the class to hook for, or an instance of it
+	 * @param  mixed    $class     The class name or instance of the class to hook
 	 * @param  string   $hook      The hook to register for
 	 * @param  callback $callback  The callback to register. See the method description for details about the method signature.
 	 * @return void
@@ -394,16 +431,17 @@ class fORM
 			'post::__construct()',
 			'replace::delete()',
 			'pre::delete()',
-			'post-being::delete()',
+			'post-begin::delete()',
 			'pre-commit::delete()',
 			'post-rollback::delete()',
 			'post::delete()',
+			'post::loadFromResult()',
 			'replace::populate()',
 			'pre::populate()',
 			'post::populate()',
 			'replace::store()',
 			'pre::store()',
-			'post-being::store()',
+			'post-begin::store()',
 			'pre-commit::store()',
 			'post-rollback::store()',
 			'post::store()',
@@ -421,11 +459,11 @@ class fORM
 			'replace::constructUpdateSQL()',
 			'replace::entify()',
 			'replace::format()',
-			'replace::loadByResult()',
 			'replace::loadFromIdentityMap()',
+			'replace::loadFromResult()',
 			'replace::retrieve()',
 			'replace::storeManyToManyAssociations()',
-			'replace::storeOneToManyRelatedRecords()',
+			'replace::storeOneToManyRelatedRecords()'
 		);
 		
 		if (!in_array($hook, $valid_hooks) && !$replace_hook) {
@@ -455,6 +493,46 @@ class fORM
 	
 	
 	/**
+	 * Registers a callback for when objectify() is called on a specific column
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  string   $column    The column to register for
+	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to objectify and should return the objectified value.
+	 * @return void
+	 */
+	static public function registerObjectifyCallback($class, $column, $callback)
+	{
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$objectify_callbacks[$class])) {
+			self::$objectify_callbacks[$class] = array();
+		}
+		
+		self::$objectify_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
+	 * Registers a callback for when scalarize() is called on a specific column
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  string   $column    The column to register for
+	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to scalarize and should return the scalarized value.
+	 * @return void
+	 */
+	static public function registerScalarizeCallback($class, $column, $callback)
+	{
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$scalarize_callbacks[$class])) {
+			self::$scalarize_callbacks[$class] = array();
+		}
+		
+		self::$scalarize_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
 	 * Saves an object to the identity map
 	 * 
 	 * @internal
@@ -466,10 +544,13 @@ class fORM
 	static public function saveToIdentityMap($object, $primary_key_data)
 	{
 		$class = self::getClassName($object);
+		
 		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array();
 		}
+		
 		$hash_key = self::createPrimaryKeyHash($primary_key_data);
+		
 		self::$identity_map[$class][$hash_key] = $object;
 	}
 	
@@ -479,11 +560,19 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed $value  The value to get the scalar value of
+	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $column  The database column
+	 * @param  mixed  $value   The value to get the scalar value of
 	 * @return mixed  The scalar value of the value
 	 */
-	static public function scalarize($value)
+	static public function scalarize($class, $column, $value)
 	{
+		$class = self::getClassName($class);
+		
+		if (!empty(self::$scalarize_callbacks[$class][$column])) {
+			return call_user_func(self::$scalarize_callbacks[$class][$column], $value);	
+		}
+		
 		if (is_object($value)) {
 			return $value->__toString();
 		}
@@ -500,10 +589,12 @@ class fORM
 	static public function tablize($class)
 	{
 		$class = self::getClassName($class);
+		
 		if (!$table_name = array_search($class, self::$table_class_map)) {
 			$table_name = fInflection::underscorize(fInflection::pluralize($class));
 			self::$table_class_map[$table_name] = $class;
 		}
+		
 		return $table_name;
 	}
 	

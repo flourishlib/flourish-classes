@@ -21,20 +21,6 @@ class fORMValidation
 	static private $conditional_validation_rules = array();
 	
 	/**
-	 * Formatting rules
-	 * 
-	 * @var array
-	 */
-	static private $formatting_rules = array();
-	
-	/**
-	 * Many-to-many validation rules
-	 * 
-	 * @var array
-	 */
-	static private $many_to_many_validation_rules = array();
-	
-	/**
 	 * Ordering rules for validation messages
 	 * 
 	 * @var array
@@ -55,6 +41,13 @@ class fORMValidation
 	 */
 	static private $only_one_validation_rules = array();
 	
+	/**
+	 * Validation rules that require at least one or more *-to-many related records to be associated
+	 * 
+	 * @var array
+	 */
+	static private $related_one_or_more_validation_rules = array();
+	
 	
 	/**
 	 * Adds a conditional validation rule
@@ -67,10 +60,10 @@ class fORMValidation
 	 */
 	static public function addConditionalValidationRule($class, $main_column, $conditional_values, $conditional_columns)
 	{
-		$table = fORM::tablize($class);
+		$class = fORM::getClassName($class);
 		
-		if (!isset(self::$conditional_validation_rules[$table])) {
-			self::$conditional_validation_rules[$table] = array();
+		if (!isset(self::$conditional_validation_rules[$class])) {
+			self::$conditional_validation_rules[$class] = array();
 		}
 		
 		$rule = array();
@@ -78,54 +71,34 @@ class fORMValidation
 		$rule['conditional_values']  = $conditional_values;
 		$rule['conditional_columns'] = $conditional_columns;
 		
-		self::$conditional_validation_rules[$table][] = $rule;
+		self::$conditional_validation_rules[$class][] = $rule;
 	}
 	
 	
 	/**
-	 * Adds a column format rule
+	 * Add a many-to-many validation rule that requires at least one related record is associated with the current record
 	 *
-	 * @param  mixed  $class        The class name or instance of the class this validation rule applies to
-	 * @param  string $column       The column to check the format of
-	 * @param  string $format_type  The format for the column: email, link
+	 * @param  mixed  $class          The class name or instance of the class to add the rule for
+	 * @param  string $related_class  The name of the related class
+	 * @param  string $route          The route to the related class
 	 * @return void
 	 */
-	static public function addFormattingRule($class, $column, $format_type)
+	static public function addManyToManyValidationRule($class, $related_class, $route=NULL)
 	{
+		$class = fORM::getClassName($class);
+		
+		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
+			self::$related_one_or_more_validation_rules[$class] = array();
+		}
+		
+		if (!isset(self::$related_one_or_more_validation_rules[$class][$related_class])) {
+			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
+		}
+		
 		$table = fORM::tablize($class);
+		$route = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
 		
-		if (!isset(self::$formatting_rules[$table])) {
-			self::$formatting_rules[$table] = array();
-		}
-		
-		$valid_formats = array('email', 'link');
-		if (!in_array($format_type, $valid_formats)) {
-			fCore::toss('fProgrammerException', 'The format type specified, ' . $format_type . ', should be one of: ' . join(', ', $valid_formats));
-		}
-		
-		self::$formatting_rules[$table][$column] = $format_type;
-	}
-	
-	
-	/**
-	 * Add a many-to-many validation rule
-	 *
-	 * @param  mixed  $class                  The class name or instance of the class to add the rule for
-	 * @param  string $plural_related_column  The plural form of the related column
-	 * @return void
-	 */
-	static public function addManyToManyValidationRule($class, $plural_related_column)
-	{
-		$table = fORM::tablize($class);
-		
-		if (!isset(self::$many_to_many_validation_rules[$table])) {
-			self::$many_to_many_validation_rules[$table] = array();
-		}
-		
-		$rule = array();
-		$rule['plural_related_column'] = $plural_related_column;
-		
-		self::$many_to_many_validation_rules[$table][] = $rule;
+		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
 	}
 	
 	
@@ -138,18 +111,45 @@ class fORMValidation
 	 */
 	static public function addOneOrMoreValidationRule($class, $columns)
 	{
-		$table = fORM::tablize($class);
+		$class = fORM::getClassName($class);
 		
 		settype($columns, 'array');
 		
-		if (!isset(self::$one_or_more_validation_rules[$table])) {
-			self::$one_or_more_validation_rules[$table] = array();
+		if (!isset(self::$one_or_more_validation_rules[$class])) {
+			self::$one_or_more_validation_rules[$class] = array();
 		}
 		
 		$rule = array();
 		$rule['columns'] = $columns;
 		
-		self::$one_or_more_validation_rules[$table][] = $rule;
+		self::$one_or_more_validation_rules[$class][] = $rule;
+	}
+	
+	
+	/**
+	 * Add a one-to-many validation rule that requires at least one related record is associated with the current record
+	 *
+	 * @param  mixed  $class          The class name or instance of the class to add the rule for
+	 * @param  string $related_class  The name of the related class
+	 * @param  string $route          The route to the related class
+	 * @return void
+	 */
+	static public function addOneToManyValidationRule($class, $related_class, $route=NULL)
+	{
+		$class = fORM::getClassName($class);
+		
+		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
+			self::$related_one_or_more_validation_rules[$class] = array();
+		}
+		
+		if (!isset(self::$related_one_or_more_validation_rules[$class][$related_class])) {
+			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
+		}
+		
+		$table = fORM::tablize($class);
+		$route = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-many');
+		
+		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
 	}
 	
 	
@@ -162,18 +162,18 @@ class fORMValidation
 	 */
 	static public function addOnlyOneValidationRule($class, $columns)
 	{
-		$table = fORM::tablize($class);
+		$class = fORM::getClassName($class);
 		
 		settype($columns, 'array');
 		
-		if (!isset(self::$only_one_validation_rules[$table])) {
-			self::$only_one_validation_rules[$table] = array();
+		if (!isset(self::$only_one_validation_rules[$class])) {
+			self::$only_one_validation_rules[$class] = array();
 		}
 		
 		$rule = array();
 		$rule['columns'] = $columns;
 		
-		self::$only_one_validation_rules[$table][] = $rule;
+		self::$only_one_validation_rules[$class][] = $rule;
 	}
 	
 	
@@ -182,33 +182,35 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table        The database table the column exists in
+	 * @param  mixed  $class        The class name or instance of the class the column is part of
 	 * @param  string $column       The column to check
 	 * @param  array  &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array  &$old_values  The old values from the record
 	 * @return void
 	 */
-	static private function checkAgainstSchema($table, $column, &$values, &$old_values)
+	static private function checkAgainstSchema($class, $column, &$values, &$old_values)
 	{
+		$table = fORM::tablize($class);
+		
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
-			fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a value');
+			fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please enter a value');
 		}
 		
-		self::checkDataType($table, $column, $values[$column]);
+		self::checkDataType($class, $column, $values[$column]);
 		
 		// Make sure a valid value is chosen
 		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
-			fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please choose from one of the following: ' . join(', ', $column_info['valid_values']));
+			fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please choose from one of the following: ' . join(', ', $column_info['valid_values']));
 		}
 		// Make sure the value isn't too long
 		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && strlen($values[$column]) > $column_info['max_length']) {
-			fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a value no longer than ' . $column_info['max_length'] . ' characters');
+			fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please enter a value no longer than ' . $column_info['max_length'] . ' characters');
 		}
 		
-		self::checkUniqueConstraints($table, $column, $values, $old_values);
-		self::checkForeignKeyConstraints($table, $column, $values);
+		self::checkUniqueConstraints($class, $column, $values, $old_values);
+		self::checkForeignKeyConstraints($class, $column, $values);
 	}
 	
 	
@@ -217,14 +219,14 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table                The database table this validation rule applies to
+	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
 	 * @param  array  &$values              An associative array of all values for the record
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return void
 	 */
-	static private function checkConditionalRule($table, &$values, $main_column, $conditional_values, $conditional_columns)
+	static private function checkConditionalRule($class, &$values, $main_column, $conditional_values, $conditional_columns)
 	{
 		if (!empty($conditional_values))  {
 			settype($conditional_values, 'array');
@@ -239,7 +241,7 @@ class fORMValidation
 			$messages = array();
 			foreach ($conditional_columns as $conditional_column) {
 				if ($values[$conditional_column] === NULL) {
-					$messages[] = fORM::getColumnName($table, $conditional_column) . ': Please enter a value';
+					$messages[] = fORM::getColumnName($class, $conditional_column) . ': Please enter a value';
 				}
 			}
 			if (!empty($messages)) {
@@ -252,14 +254,16 @@ class fORMValidation
 	/**
 	 * Validates a value against the database data type
 	 *
-	 * @param  string $table   The database table the column exists in
+	 * @param  mixed  $class   The class name or instance of the class the column is part of
 	 * @param  string $column  The column to check
 	 * @param  mixed  $value   The value to check
 	 * @return void
 	 */
-	static private function checkDataType($table, $column, $value)
+	static private function checkDataType($class, $column, $value)
 	{
+		$table       = fORM::tablize($class);
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		
 		if ($value !== NULL) {
 			switch ($column_info['type']) {
 				case 'varchar':
@@ -267,20 +271,20 @@ class fORMValidation
 				case 'text':
 				case 'blob':
 					if (!is_string($value) && !is_numeric($value)) {
-						fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a string');
+						fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please enter a string');
 					}
 					break;
 				case 'integer':
 				case 'float':
 					if (!is_numeric($value)) {
-						fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a number');
+						fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please enter a number');
 					}
 					break;
 				case 'timestamp':
 				case 'date':
 				case 'time':
 					if (strtotime($value) === FALSE) {
-						fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a date or time');
+						fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': Please enter a date or time');
 					}
 					break;
 				
@@ -292,18 +296,20 @@ class fORMValidation
 	/**
 	 * Validates values against foreign key constraints
 	 *
-	 * @param  string $table    The database table
+	 * @param  mixed  $class    The class name or instance of the class to check the foreign keys for
 	 * @param  string $column   The column to check
 	 * @param  array  &$values  The values to check
 	 * @return void
 	 */
-	static private function checkForeignKeyConstraints($table, $column, &$values)
+	static private function checkForeignKeyConstraints($class, $column, &$values)
 	{
 		if ($values[$column] === NULL) {
 			return;
 		}
 		
+		$table        = fORM::tablize($class);
 		$foreign_keys = fORMSchema::getInstance()->getKeys($table, 'foreign');
+		
 		foreach ($foreign_keys AS $foreign_key) {
 			if ($foreign_key['column'] == $column) {
 				try {
@@ -316,93 +322,8 @@ class fORMValidation
 					$result = fORMDatabase::getInstance()->translatedQuery($sql);
 					$result->tossIfNoResults();
 				} catch (fNoResultsException $e) {
-					fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': The value specified is invalid');
+					fCore::toss('fValidationException', fORM::getColumnName($class, $column) . ': The value specified is invalid');
 				}
-			}
-		}
-	}
-	
-	
-	/**
-	 * Checks a value to make sure it is the right format
-	 *
-	 * @throws  fValidationException
-	 * 
-	 * @param  string $table        The table the column is located in
-	 * @param  array  &$values      An associative array of all values for the record
-	 * @param  string $column       The column to check
-	 * @param  string $format_type  The type of formatting the column should have
-	 * @return void
-	 */
-	static private function checkFormattingRule($table, &$values, $column, $format_type)
-	{
-		if ($values[$column] === NULL) {
-			return;
-		}
-		
-		if ($format_type == 'email') {
-			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
-				fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter an email address in the form name@example.com');
-			}
-		
-		} elseif ($format_type == 'link') {
-			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
-				fCore::toss('fValidationException', fORM::getColumnName($table, $column) . ': Please enter a link in the form http://www.example.com');
-			}
-			if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}#i', $values[$column])) {
-				$values[$column] = 'http://' . $values[$column];
-			} elseif (substr($values[$column], 0, 1) == '/') {
-				$values[$column] = fURL::getDomain() . $values[$column];
-			}
-		}
-	}
-	
-	
-	/**
-	 * Validates against a many-to-many validation rule
-	 *
-	 * @throws  fValidationException
-	 * 
-	 * @param  array  &$values                An associative array of all values for the record
-	 * @param  string $plural_related_column  The plural name of the related column
-	 * @return void
-	 */
-	static private function checkManyToManyRule(&$values, $plural_related_column)
-	{
-		if (!isset($values[$plural_related_column]) || empty($values[$plural_related_column])) {
-			fCore::toss('fValidationException', fInflection::humanize($plural_related_column) . ': Please select at least one');
-		}
-	}
-	
-	
-	/**
-	 * Validates against an only-one validation rule
-	 *
-	 * @throws  fValidationException
-	 * 
-	 * @param  string $table    The database table the column exists in
-	 * @param  array  &$values  An associative array of all values for the record
-	 * @param  array  $columns  The columns to check
-	 * @return void
-	 */
-	static private function checkOnlyOneRule($table, &$values, $columns)
-	{
-		settype($columns, 'array');
-		
-		$found_value = FALSE;
-		foreach ($columns as $column) {
-			if ($values[$column] !== NULL) {
-				if ($found_value) {
-					$column_names = '';
-					$column_num = 0;
-					foreach ($columns as $column) {
-						if ($column_num) { $column_names .= ', '; }
-						$column_names .= fORM::getColumnName($table, $column);
-						$column_num++;
-					}
-					fCore::toss('fValidationException', $column_names . ': Please enter a value for only one');
-				}
-				$found_value = TRUE;
 			}
 		}
 	}
@@ -413,12 +334,12 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table    The database table the columns exists in
+	 * @param  mixed  $class    The class name or instance of the class the columns are part of
 	 * @param  array  &$values  An associative array of all values for the record
 	 * @param  array  $columns  The columns to check
 	 * @return void
 	 */
-	static private function checkOneOrMoreRule($table, &$values, $columns)
+	static private function checkOneOrMoreRule($class, &$values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -434,10 +355,43 @@ class fORMValidation
 			$column_num = 0;
 			foreach ($columns as $column) {
 				if ($column_num) { $column_names .= ', '; }
-				$column_names .= fORM::getColumnName($table, $column);
+				$column_names .= fORM::getColumnName($class, $column);
 				$column_num++;
 			}
 			fCore::toss('fValidationException', $column_names . ': Please enter a value for at least one');
+		}
+	}
+	
+	
+	/**
+	 * Validates against an only-one validation rule
+	 *
+	 * @throws  fValidationException
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns are part of
+	 * @param  array  &$values  An associative array of all values for the record
+	 * @param  array  $columns  The columns to check
+	 * @return void
+	 */
+	static private function checkOnlyOneRule($class, &$values, $columns)
+	{
+		settype($columns, 'array');
+		
+		$found_value = FALSE;
+		foreach ($columns as $column) {
+			if ($values[$column] !== NULL) {
+				if ($found_value) {
+					$column_names = '';
+					$column_num = 0;
+					foreach ($columns as $column) {
+						if ($column_num) { $column_names .= ', '; }
+						$column_names .= fORM::getColumnName($class, $column);
+						$column_num++;
+					}
+					fCore::toss('fValidationException', $column_names . ': Please enter a value for only one');
+				}
+				$found_value = TRUE;
+			}
 		}
 	}
 	
@@ -447,13 +401,15 @@ class fORMValidation
 	 *
 	 * @throws  fValidationException
 	 * 
-	 * @param  string $table        The database table the column exists in
+	 * @param  mixed  $class        The class name or instance of the class to check
 	 * @param  array  &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array  &$old_values  The old values for the record
 	 * @return void
 	 */
-	static private function checkPrimaryKeys($table, &$values, &$old_values)
+	static private function checkPrimaryKeys($class, &$values, &$old_values)
 	{
+		$table = fORM::tablize($class);
+		
 		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
 		
 		$exists = TRUE;
@@ -479,13 +435,13 @@ class fORMValidation
 			foreach ($primary_keys as $primary_key) {
 				if ($key_num) { $sql .= " AND "; $columns.= ', '; }
 				$sql .= $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, (!empty($old_values[$primary_key])) ? $old_values[$primary_key] : $values[$primary_key], '=');
-				$columns .= fInflection::humanize($primary_key);
+				$columns .= fORM::getColumnName($class, $primary_key);
 				$key_num++;
 			}
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
-			fCore::toss('fValidationException', 'A ' . fORM::getRecordName(fORM::classize($table)) . ' with the same ' . $columns . ' already exists');
+			fCore::toss('fValidationException', 'A ' . fORM::getRecordName($class) . ' with the same ' . $columns . ' already exists');
 			
 		} catch (fNoResultsException $e) {
 			return;
@@ -494,18 +450,41 @@ class fORMValidation
 	
 	
 	/**
+	 * Validates against a *-to-many one or more validation rule
+	 *
+	 * @throws  fValidationException
+	 * 
+	 * @param  mixed  $class             The class name or instance of the class we are checking
+	 * @param  array  &$related_records  The related records array to check
+	 * @param  string $related_class     The name of the related class
+	 * @param  string $route             The name of the route from the class to the related class 
+	 * @return void
+	 */
+	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
+	{
+		if (!empty($related_records[$related_class][$route]) && $related_records[$related_class][$route]->isFlaggedForAssociation()) {
+			return;		
+		}
+		
+		fCore::toss('fValidationException', fORMRelated::getRelatedRecordName($class, $related_class, $route) . ': Please select at least one');
+	}
+	
+	
+	/**
 	 * Validates values against unique constraints
 	 *
 	 * @throws fValidationException
 	 * 
-	 * @param  string $table        The database table
+	 * @param  mixed  $class        The class name or instance of the class to check
 	 * @param  string $column       The column to check
 	 * @param  array  &$values      The values to check
 	 * @param  array  &$old_values  The old values for the record
 	 * @return void
 	 */
-	static private function checkUniqueConstraints($table, $column, &$values, &$old_values)
+	static private function checkUniqueConstraints($class, $column, &$values, &$old_values)
 	{
+		$table = fORM::tablize($class);
+		
 		$key_info = fORMSchema::getInstance()->getKeys($table);
 		
 		$primary_keys = $key_info['primary'];
@@ -547,7 +526,7 @@ class fORMValidation
 					$column_num = 0;
 					foreach ($unique_columns as $unique_column) {
 						if ($column_num) { $column_names .= ', '; }
-						$column_names .= fORM::getColumnName($table, $unique_column);
+						$column_names .= fORM::getColumnName($class, $unique_column);
 						$column_num++;
 					}
 					fCore::toss('fValidationException', $column_names . ': The values specified must be a unique combination, but the specified combination already exists');
@@ -559,33 +538,19 @@ class fORMValidation
 	
 	
 	/**
-	 * Checks to see if there is a column format rule
+	 * Makes sure each rule array is set to at least an empty array
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class        The class name or an instance of the class this validation rule applies to
-	 * @param  string $column       The column to check the format of
-	 * @param  string $format_type  The format to check for: email, link
+	 * @param  mixed  $class  The class name or an instance of the class to initilize the arrays for
 	 * @return void
 	 */
-	static public function hasFormattingRule($class, $column, $format_type)
+	static private function initializeRuleArrays($class)
 	{
-		$table = fORM::tablize($class);
-		
-		if (!isset(self::$formatting_rules[$table])) {
-			return FALSE;
-		}
-		
-		$valid_formats = array('email', 'link');
-		if (!in_array($format_type, $valid_formats)) {
-			fCore::toss('fProgrammerException', 'The format type specified, ' . $format_type , ', should be one of the following: ' . join(', ', $valid_formats));
-		}
-		
-		if (!isset(self::$formatting_rules[$table][$column]) || self::$formatting_rules[$table][$column] != $format_type) {
-			return FALSE;
-		}
-		
-		return TRUE;
+		self::$conditional_validation_rules[$class]         = (isset(self::$conditional_validation_rules[$class]))         ? self::$conditional_validation_rules[$class]         : array();
+		self::$one_or_more_validation_rules[$class]         = (isset(self::$one_or_more_validation_rules[$class]))         ? self::$one_or_more_validation_rules[$class]         : array();
+		self::$only_one_validation_rules[$class]            = (isset(self::$only_one_validation_rules[$class]))            ? self::$only_one_validation_rules[$class]            : array();
+		self::$related_one_or_more_validation_rules[$class] = (isset(self::$related_one_or_more_validation_rules[$class])) ? self::$related_one_or_more_validation_rules[$class] : array();
 	}
 	
 	
@@ -600,13 +565,13 @@ class fORMValidation
 	 */
 	static public function reorderMessages($class, &$validation_messages)
 	{
-		$table = fORM::tablize($class);
+		$class = fORM::getClassName($class);
 		
-		if (!isset(self::$message_orders[$table])) {
+		if (!isset(self::$message_orders[$class])) {
 			return;
 		}
 			
-		$matches = self::$message_orders[$table];
+		$matches = self::$message_orders[$class];
 		
 		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
@@ -639,9 +604,8 @@ class fORMValidation
 	 */
 	static public function setMessageOrder($class, $matches)
 	{
-		$table = fORM::tablize($class);
-		
-		self::$message_orders[$table] = $matches;
+		$class = fORM::getClassName($class);
+		self::$message_orders[$class] = $matches;
 	}
 	
 	
@@ -658,20 +622,23 @@ class fORMValidation
 	 */
 	static public function validate($class, $values, $old_values)
 	{
+		$class = fORM::getClassName($class);
 		$table = fORM::tablize($class);
+		
+		self::initializeRuleArrays($class);
 		
 		$validation_messages = array();
 		
-		// Convert objects into values for alidation
-		foreach ($values as $key => $value) {
-			$values[$key] = fORM::scalarize($value);
+		// Convert objects into values for validation
+		foreach ($values as $column => $value) {
+			$values[$column] = fORM::scalarize($class, $column, $value);
 		}
-		foreach ($old_values as $key => $value) {
-			$old_values[$key] = fORM::scalarize($value);
+		foreach ($old_values as $column => $value) {
+			$old_values[$column] = fORM::scalarize($class, $column, $value);
 		}
 		
 		try {
-			self::checkPrimaryKeys($table, $values, $old_values);
+			self::checkPrimaryKeys($class, $values, $old_values);
 		} catch (fValidationException $e) {
 			$validation_messages[] = $e->getMessage();
 		}
@@ -679,16 +646,15 @@ class fORMValidation
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			try {
-				self::checkAgainstSchema($table, $column, $values, $old_values);
+				self::checkAgainstSchema($class, $column, $values, $old_values);
 			} catch (fValidationException $e) {
 				$validation_messages[] = $e->getMessage();
 			}
 		}
 		
-		self::$conditional_validation_rules[$table] = (isset(self::$conditional_validation_rules[$table])) ? self::$conditional_validation_rules[$table] : array();
-		foreach (self::$conditional_validation_rules[$table] as $rule) {
+		foreach (self::$conditional_validation_rules[$class] as $rule) {
 			try {
-				self::checkConditionalRule($table, $values, $rule['main_column'], $rule['conditional_values'], $rule['conditional_columns']);
+				self::checkConditionalRule($class, $values, $rule['main_column'], $rule['conditional_values'], $rule['conditional_columns']);
 			} catch (fValidationException $e) {
 				$messages = explode("\n", $e->getMessage());
 				foreach ($messages as $message) {
@@ -697,39 +663,29 @@ class fORMValidation
 			}
 		}
 		
-		self::$one_or_more_validation_rules[$table] = (isset(self::$one_or_more_validation_rules[$table])) ? self::$one_or_more_validation_rules[$table] : array();
-		foreach (self::$one_or_more_validation_rules[$table] as $rule) {
+		foreach (self::$one_or_more_validation_rules[$class] as $rule) {
 			try {
-				self::checkOneOrMoreRule($table, $values, $rule['columns']);
+				self::checkOneOrMoreRule($class, $values, $rule['columns']);
 			} catch (fValidationException $e) {
 				$validation_messages[] = $e->getMessage();
 			}
 		}
 		
-		self::$only_one_validation_rules[$table] = (isset(self::$only_one_validation_rules[$table])) ? self::$only_one_validation_rules[$table] : array();
-		foreach (self::$only_one_validation_rules[$table] as $rule) {
+		foreach (self::$only_one_validation_rules[$class] as $rule) {
 			try {
-				self::checkOnlyOneRule($table, $values, $rule['columns']);
+				self::checkOnlyOneRule($class, $values, $rule['columns']);
 			} catch (fValidationException $e) {
 				$validation_messages[] = $e->getMessage();
 			}
 		}
 		
-		self::$many_to_many_validation_rules[$table] = (isset(self::$many_to_many_validation_rules[$table])) ? self::$many_to_many_validation_rules[$table] : array();
-		foreach (self::$many_to_many_validation_rules[$table] as $rule) {
-			try {
-				self::checkManyToManyRule($values, $rule['plural_related_column']);
-			} catch (fValidationException $e) {
-				$validation_messages[] = $e->getMessage();
-			}
-		}
-		
-		self::$formatting_rules[$table] = (isset(self::$formatting_rules[$table])) ? self::$formatting_rules[$table] : array();
-		foreach (self::$formatting_rules[$table] as $column => $format_type) {
-			try {
-				self::checkFormattingRule($table, $values, $column, $format_type);
-			} catch (fValidationException $e) {
-				$validation_messages[] = $e->getMessage();
+		foreach (self::$related_one_or_more_validation_rules[$class] as $related_class => $routes) {
+			foreach ($routes as $route) {
+				try {
+					self::checkRelatedOneOrMoreRule($class, $related_records, $related_class, $route);
+				} catch (fValidationException $e) {
+					$validation_messages[] = $e->getMessage();
+				}
 			}
 		}
 		
@@ -793,7 +749,7 @@ class fORMValidation
 		$related_table = fORM::tablize($related_class);
 		$relationship  = fORMSchema::getRoute($table, $related_table, $route);
 		
-		$related_record_name = fORMRelatedData::getRelatedRecordName($class, $related_class, $route);
+		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
 		
 		$messages = array();
@@ -802,7 +758,7 @@ class fORMValidation
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
 				// Ignore validation messages about the primary key since it will be added 
-				if (strpos($record_message, fORM::getColumnName($related_table, $relationship['related_column'])) !== FALSE) {
+				if (strpos($record_message, fORM::getColumnName($related_class, $relationship['related_column'])) !== FALSE) {
 					continue;	
 				}
 				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
@@ -827,7 +783,7 @@ class fORMValidation
 	 */
 	static private function validateManyToMany($class, $related_class, $route, $record_set)
 	{
-		$related_record_name = fORMRelatedData::getRelatedRecordName($class, $related_class, $route);
+		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
 		
 		$messages = array();

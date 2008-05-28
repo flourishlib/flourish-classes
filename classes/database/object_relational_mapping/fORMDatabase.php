@@ -648,7 +648,8 @@ class fORMDatabase
 	 */
 	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
-		$value = fORM::scalarize($value);
+		$class = fORM::classize($table);
+		$value = fORM::scalarize($class, $column, $value);
 		
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
 			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');
