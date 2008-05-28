@@ -141,6 +141,8 @@ class fORMRelatedData
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
+		$route = fORMSchema::getRouteName($table, $related_table, $route);
+		
 		if (!isset(self::$order_bys[$table][$related_table]) || !isset(self::$order_bys[$table][$related_table][$route])) {
 			return array();
 		}
@@ -338,6 +340,8 @@ class fORMRelatedData
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route);
 		
 		if (!isset(self::$order_bys[$table])) {
 			self::$order_bys[$table] = array();
