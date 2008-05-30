@@ -743,7 +743,7 @@ abstract class fActiveRecord
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		
 		// If we don't have a value for each primary key, we can't load
-		if (is_array($row) && array_diff($pk_columns, array_keys($row)) !== array()) {
+		if (is_array($row) && !array_diff($pk_columns, array_keys($row))) {
 			return FALSE;
 		}
 		

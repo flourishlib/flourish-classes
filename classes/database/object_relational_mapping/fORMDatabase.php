@@ -404,7 +404,7 @@ class fORMDatabase
 			$type   = substr($column, -1);
 			$column = substr($column, 0, -1);
 			settype($values, 'array');
-			if ($values === array()) { $values = array(NULL); }
+			if (!$values) { $values = array(NULL); }
 			
 			
 			// Multi-column condition
@@ -564,7 +564,7 @@ class fORMDatabase
 		$table_map     = array();
 		
 		// If we are not passing in existing joins, start with the specified table
-		if ($joins == array()) {
+		if (!$joins) {
 			$joins[] = array(
 				'join_type'   => 'none',
 				'table_name'  => $table,

@@ -52,7 +52,7 @@ class fMessaging
 	 */
 	static public function show($content, $css_class)
 	{
-		if (empty($content)) {
+		if (!$content && $content !== 0 && $content !== '0') {
 			return;
 		}
 		

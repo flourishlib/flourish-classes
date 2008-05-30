@@ -196,7 +196,7 @@ class fORMRelated
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
-		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
+		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, 'many-to-many');
 		
 		$field_table      = $relationship['related_table'];
@@ -263,8 +263,8 @@ class fORMRelated
 		
 		$related_table = fORM::tablize($related_class);
 		
-		$route_name   = fORMSchema::getRouteName($table, $related_table, $route);
-		$relationship = fORMSchema::getRoute($table, $related_table, $route);
+		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, 'one-to-many');
 		
 		$pk_columns   = fORMSchema::getInstance()->getKeys($related_table, 'primary');
 		

@@ -69,41 +69,28 @@ class fFile
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $file_path  The path to the file
-	 * @param  object $exception  An exception that was tossed during the object creation process
+	 * @param  string $file  The path to the file
 	 * @return fFile
 	 */
-	public function __construct($file_path, Exception $exception=NULL)
+	public function __construct($file)
 	{
-		if (empty($file_path)) {
-			// No file and no exception means we have nothing to work with
-			if (!$exception) {
-				fCore::toss('fValidationException', 'No filename was specified');
-			}
-			
-			// If we don't have a file, but have an exception, there may have been an issue creating the file
-			$this->exception = $exception;
-			return;
+		if (empty($file)) {
+			fCore::toss('fValidationException', 'No filename was specified');
 		}
 		
-		if (!file_exists($file_path)) {
-			fCore::toss('fValidationException', 'The file specified does not exist');
+		if (!file_exists($file)) {
+			fCore::toss('fValidationException', 'The file specified, ' . $file . ', does not exist');
 		}
-		if (!is_readable($file_path)) {
-			fCore::toss('fEnvironmentException', 'The file specified is not readable');
+		if (!is_readable($file)) {
+			fCore::toss('fEnvironmentException', 'The file specified, ' . $file . ', is not readable');
 		}
 		
 		// Store the file as an absolute path
-		$file_path = realpath($file_path);
+		$file = realpath($file);
 		
 		// Hook into the global file and exception maps
-		$this->file      =& fFilesystem::hookFilenameMap($file_path);
-		$this->exception =& fFilesystem::hookExceptionMap($file_path);
-		
-		// If we have an exception for this file, save it to the global exception map
-		if ($exception) {
-			fFilesystem::updateExceptionMap($file_path, $exception);
-		}
+		$this->file      =& fFilesystem::hookFilenameMap($file);
+		$this->exception =& fFilesystem::hookExceptionMap($file);
 	}
 	
 	

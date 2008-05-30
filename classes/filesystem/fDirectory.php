@@ -32,32 +32,32 @@ class fDirectory
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string  $directory_path  The path to the new directory
-	 * @param  numeric $mode            The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
+	 * @param  string  $directory  The path to the new directory
+	 * @param  numeric $mode       The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
 	 * @return fDirectory
 	 */
-	static public function create($directory_path, $mode=0777)
+	static public function create($directory, $mode=0777)
 	{
-		if (empty($directory_path)) {
+		if (empty($directory)) {
 			fCore::toss('fValidationException', 'No directory name was specified');
 		}
 		
-		if (file_exists($directory_path)) {
-			fCore::toss('fValidationException', 'The directory specified already exists');
+		if (file_exists($directory)) {
+			fCore::toss('fValidationException', 'The directory specified, ' . $directory . ', already exists');
 		}
 		
-		$parent_directory = fFilesystem::getPathInfo($directory_path, 'dirname');
+		$parent_directory = fFilesystem::getPathInfo($directory, 'dirname');
 		if (!file_exists($parent_directory)) {
 			fDirectory::create($parent_directory, $mode);
 		}
 		
 		if (!is_writable($parent_directory)) {
-			fCore::toss('fEnvironmentException', 'The directory path specified is inside of a directory that is not writable');
+			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', is inside of a directory that is not writable');
 		}
 		
-		mkdir($directory_path, $mode);
+		mkdir($directory, $mode);
 		
-		$directory = new fDirectory($directory_path);
+		$directory = new fDirectory($directory);
 		
 		fFilesystem::recordCreate($directory);
 		
@@ -98,28 +98,31 @@ class fDirectory
 	/**
 	 * Creates an object to represent a directory on the filesystem
 	 * 
-	 * @param  string $directory  The full path to the directory
+	 * @throws fValidationException
+	 * 
+	 * @param  string $directory  The path to the directory
 	 * @return fDirectory
 	 */
 	public function __construct($directory)
 	{
 		if (empty($directory)) {
-			fCore::toss('fProgrammerException', 'No directory was specified');
+			fCore::toss('fValidationException', 'No directory was specified');
 		}
 		
 		if (!file_exists($directory)) {
-			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', does not exist');
+			fCore::toss('fValidationException', 'The directory specified, ' . $directory . ', does not exist');
 		}
 		if (!is_dir($directory)) {
-			fCore::toss('fEnvironmentException', 'The path specified, ' . $directory . ', is not a directory');
+			fCore::toss('fValidationException', 'The directory specified, ' . $directory . ', is not a directory');
+		}
+		if (!is_readable($directory)) {
+			fCore::toss('fEnvironmentException', 'The directory specified, ' . $directory . ', is not readable');
 		}
 		
 		$directory = self::makeCanonical(realpath($directory));
 		
 		$this->directory =& fFilesystem::hookFilenameMap($directory);
 		$this->exception =& fFilesystem::hookExceptionMap($directory);
-		
-		
 	}
 	
 	
@@ -165,7 +168,7 @@ class fDirectory
 		$dirs = $this->recursiveScan();
 		foreach ($dirs as $dir) {
 			if ($dir instanceof fDirectory) {
-				if (filemtime($dir->getPath()) < strtotime('-6 hours') && $dir->scan() == array()) {
+				if (filemtime($dir->getPath()) < strtotime('-6 hours') && !$dir->scan()) {
 					$dir->delete();
 				}
 			}

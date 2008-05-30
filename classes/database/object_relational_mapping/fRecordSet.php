@@ -588,7 +588,7 @@ class fRecordSet implements Iterator
 		settype($keys, 'array');
 					
 		try {
-			while (array_diff($keys, $result_object->current()) == array()) {
+			while (!array_diff($keys, $result_object->current())) {
 				$rows[] = $result_object->fetchRow();
 			}
 		} catch (fExpectedException $e) { }

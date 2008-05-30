@@ -748,6 +748,22 @@ class fORMValidation
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		$relationship  = fORMSchema::getRoute($table, $related_table, $route);
+		$route_name    = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
+		
+		// We determine how the request info was filtered so that we can filter it for the validation phase
+		$primary_keys    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$first_pk_column = $primary_keys[0];
+		
+		$filter_table            = $related_table;
+		$filter_table_with_route = $related_table . '{' . $route_name . '}';
+		
+		$pk_field            = $filter_table . '::' . $first_pk_column;
+		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
+		
+		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
+			$pk_field     = $pk_field_with_route;
+			$filter_table = $filter_table_with_route;	
+		}
 		
 		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
@@ -755,6 +771,7 @@ class fORMValidation
 		$messages = array();
 		
 		foreach ($record_set as $record) {
+			fRequest::filter($filter_table, $record_number-1);
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
 				// Ignore validation messages about the primary key since it will be added 
@@ -764,6 +781,7 @@ class fORMValidation
 				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
 			}
 			$record_number++;
+			fRequest::unfilter();
 		}	
 		
 		return $messages;	

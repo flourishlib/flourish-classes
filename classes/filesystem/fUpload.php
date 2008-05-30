@@ -25,7 +25,7 @@ class fUpload
 	 * 
 	 * @var array
 	 */
-	static private $mime_types = '';
+	static private $mime_types = array();
 	
 	/**
 	 * The overwrite method
@@ -43,7 +43,25 @@ class fUpload
 	
 	
 	/**
-	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
+	 * Checks to see if the field specified is a valid file upload field
+	 * 
+	 * @param  string $field  The field to check
+	 * @return boolean  If the field is a valid file upload field
+	 */
+	static public function check($field)
+	{
+		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+			fCore::toss('fProgrammerException', 'Missing method="post" attribute in form tag');
+		}
+		if (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
+			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
+		}
+		return isset($_FILES) && isset($_FILES[$field]) && is_array($_FILES[$field]);
+	}
+	
+	
+	/**
+	 * Creates an fFile or fImage object based on what was uploaded
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -74,54 +92,51 @@ class fUpload
 	 */
 	static private function processFile($file_array, $field, $directory)
 	{
-		try {
-			// Do some validation of the file provided
-			if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
-				fCore::toss('fValidationException', fInflection::humanize($field) . ': Please upload a file');
-			}
-			if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
-				fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));
-			}
-			if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
-				if (self::$type != 'mime') {
-					switch (self::$type) {
-						case 'image':
-							$message = 'The file uploaded is not an image';
-							break;
-						case 'zip':
-							$message = 'The file uploaded is not a zip';
-							break;
-					}
-					fCore::toss('fValidationException', fInflection::humanize($field) . ': ' . $message);
-				} else {
-					fCore::toss('fValidationException', fInflection::humanize($field) . ': The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
-				}
-			}
-			if (self::$type == 'non_php') {
-				$file_info = fFilesystem::getPathInfo($file_array['name']);
-				if ($file_info['extension'] == 'php') {
-					fCore::toss('fValidationException', fInflection::humanize($field) . ': You are not allowed to upload a PHP file');
-				}
-			}
-			
-			$file_name = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
-			if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
-				fCore::toss('fEnvironmentException', fInflection::humanize($field) . ': There was an error moving the uploaded file');
-			}
-			
-			return self::createObject($file_name);
-			
-		} catch (Exception $e) {
-			// If no file was uploaded, check to see if a temp file was referenced
-			$temp_field = '__temp_' . $field;
-			if ($e->getMessage() == fInflection::humanize($field) . ': Please upload a file' && !empty($_REQUEST[$temp_field]) && file_exists($directory->getTemp()->getPath() . $_REQUEST[$temp_field])) {
-				$file_name = fFilesystem::createUniqueName($directory->getPath() . $_REQUEST[$temp_field]);
-				rename($directory->getTemp()->getPath() . $_REQUEST[$temp_field], $file_name);
-				return self::createObject($file_name);
-			}
-			
-			return new fFile(NULL, $e);
+		// Do some validation of the file provided
+		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
+			fCore::toss('fValidationException', 'Please upload a file');
 		}
+		if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
+			fCore::toss('fValidationException', 'The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));
+		}
+		if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
+			if (self::$type != 'mime') {
+				$messages = array(
+					'image' => 'The file uploaded is not an image',
+					'zip'   => 'The file uploaded is not a zip'
+				);
+				fCore::toss('fValidationException', $messages[$type]);
+			} else {
+				fCore::toss('fValidationException', 'The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
+			}
+		}
+		if (self::$type == 'non_php') {
+			$file_info = fFilesystem::getPathInfo($file_array['name']);
+			if ($file_info['extension'] == 'php') {
+				fCore::toss('fValidationException', 'You are not allowed to upload PHP files');
+			}
+		}
+		
+		$file_name = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
+		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
+			fCore::toss('fEnvironmentException', 'There was an error moving the uploaded file');
+		}
+		
+		return self::createObject($file_name);
+	}
+	
+	
+	/**
+	 * Resets the max file size, mime types, overwrite mode and type to default values
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$max_file_size  = 0;
+		self::$mime_types     = array();
+		self::$overwrite_mode = 'rename';
+		self::$type           = 'non_php';
 	}
 	
 	
@@ -209,24 +224,18 @@ class fUpload
 		}
 		
 		if (!$directory->isWritable()) {
-			fCore::toss('fProgrammerException', 'The directory specified is not writable');
+			fCore::toss('fProgrammerException', 'The directory specified, ' . $directory->getPath() . ', is not writable');
 		}
-		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
-			fCore::toss('fProgrammerException', 'Missing method="POST" attribute in form tag');
+		if (!self::check($field)) {
+			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field');
 		}
-		if (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
-			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
-		}
-		if (!isset($_FILES) || !isset($_FILES[$field]) || !is_array($_FILES[$field])) {
-			fCore::toss('fProgrammerException', 'The field specified does not appear to be a file upload field');
-		}
-		
-		// Remove old temp files
-		$directory->getTemp()->clean();
 		
 		if (is_array($_FILES[$field]['name'])) {
 			$output = array();
 			for ($i=0; $i<sizeof($_FILES[$field]['name']); $i++) {
+				
+				self::validate($field, $i);
+				
 				$temp = array();
 				$temp['name']     = (isset($_FILES[$field]['name'][$i]))     ? $_FILES[$field]['name'][$i]     : '';
 				$temp['type']     = (isset($_FILES[$field]['type'][$i]))     ? $_FILES[$field]['type'][$i]     : '';
@@ -239,7 +248,71 @@ class fUpload
 			return $output;
 			
 		} else {
+			self::validate($field);
 			return self::processFile($_FILES[$field], $field, $directory);
+		}
+	}
+	
+	
+	/**
+	 * Validates the uploaded file, ensuring a file was actually uploaded and that is matched the restrictions put in place
+	 * 
+	 * @throws  fValidationException
+	 * 
+	 * @param  string  $field  The field the file was uploaded through
+	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
+	 * @return void
+	 */
+	static public function validate($field, $index=NULL)
+	{
+		if (!self::check($field)) {
+			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field'); 		
+		}
+		
+		if ($index !== NULL) {
+			if (!is_array($_FILES[$field]['name'])) {
+				fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
+			}
+			if (!isset($_FILES[$field]['name'][$index])) {
+				fCore::toss('fProgrammerException', 'The index specified, ' . $index . ', is invalid for the field ' . $field);
+			}
+			$file_array = array();
+			$file_array['name']     = $_FILES[$field]['name'][$index];
+			$file_array['type']     = $_FILES[$field]['type'][$index];
+			$file_array['tmp_name'] = $_FILES[$field]['tmp_name'][$index];
+			$file_array['error']    = $_FILES[$field]['error'][$index];
+			$file_array['size']     = $_FILES[$field]['size'][$index];		
+		
+		} else {
+			$file_array = $_FILES[$field];	
+		}
+		
+		// Do some validation of the file provided
+		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
+			fCore::toss('fValidationException', 'Please upload a file');
+		}
+		
+		if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
+			fCore::toss('fValidationException', 'The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));
+		}
+		
+		if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
+			if (self::$type != 'mime') {
+				$messages = array(
+					'image' => 'The file uploaded is not an image',
+					'zip'   => 'The file uploaded is not a zip'
+				);
+				fCore::toss('fValidationException', $messages[$type]);
+			} else {
+				fCore::toss('fValidationException', 'The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
+			}
+		}
+		
+		if (self::$type == 'non_php') {
+			$file_info = fFilesystem::getPathInfo($file_array['name']);
+			if ($file_info['extension'] == 'php') {
+				fCore::toss('fValidationException', 'You are not allowed to upload PHP files');
+			}
 		}
 	}
 	

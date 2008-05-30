@@ -249,6 +249,9 @@ class fORM
 	{
 		sort($primary_key_data);
 		foreach ($primary_key_data as $primary_key => $data) {
+			if (is_object($data) && is_callable(array($data, '__toString'))) {
+				$data = $data->__toString();	
+			}
 			$primary_key_data[$primary_key] = (string) $data;
 		}
 		return md5(serialize($primary_key_data));
