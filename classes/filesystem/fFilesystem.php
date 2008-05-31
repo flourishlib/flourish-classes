@@ -43,11 +43,32 @@ class fFilesystem
 	
 	
 	/**
+	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
+	 * 
+	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
+	 * filesystem undo buffer which can return the filesystem to the state when begin() was called.
+	 * If your PHP script dies in the middle of an operation this functionality will do nothing
+	 * for you and all operations will be retained, except for deletes which only occur once the
+	 * transaction is committed.
+	 * 
+	 * @return void
+	 */
+	static public function begin()
+	{
+		if (self::$commit_operations !== NULL) {
+			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
+		}
+		self::$commit_operations   = array();
+		self::$rollback_operations = array();
+	}
+	
+	
+	/**
 	 * Commits a filesystem transaction, should only be called when a transaction is in progress
 	 * 
 	 * @return void
 	 */
-	static public function commitTransaction()
+	static public function commit()
 	{
 		if (!self::isInsideTransaction()) {
 			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
@@ -403,7 +424,7 @@ class fFilesystem
 	 * 
 	 * @return void
 	 */
-	static public function rollbackTransaction()
+	static public function rollback()
 	{
 		self::$rollback_operations = array_reverse(self::$rollback_operations);
 		
@@ -434,27 +455,6 @@ class fFilesystem
 		
 		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
-	}
-	
-	
-	/**
-	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
-	 * 
-	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
-	 * filesystem undo buffer which can return the filesystem to the state when startTransaction() was
-	 * called. If your PHP script dies in the middle of an operation this functionality will do nothing
-	 * for you and all operations will be retained, except for deletes which only occur once the
-	 * transaction is committed.
-	 * 
-	 * @return void
-	 */
-	static public function startTransaction()
-	{
-		if (self::$commit_operations !== NULL) {
-			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
-		}
-		self::$commit_operations   = array();
-		self::$rollback_operations = array();
 	}
 	
 	

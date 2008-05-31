@@ -237,10 +237,14 @@ class fImage extends fFile
 			fCore::toss('fProgrammerException', 'The image specified, ' . $image . ', does not exist');
 		}
 		
-		$info = self::getInfo($image);
+		try {
+			$info = self::getInfo($image);
 		
-		if ($info['type'] === NULL || ($info['TYPE'] == 'tif' && self::$processor == 'gd')) {
-			return FALSE;
+			if ($info['type'] === NULL || ($info['TYPE'] == 'tif' && self::$processor == 'gd')) {
+				return FALSE;
+			}
+		} catch (fValidationException $e) {
+			return FALSE;	
 		}
 		
 		return TRUE;

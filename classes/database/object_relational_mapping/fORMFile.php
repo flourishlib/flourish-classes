@@ -129,13 +129,32 @@ class fORMFile
 	
 	
 	/**
+	 * Begins a transaction, or increases the level
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function begin()
+	{
+		// If the transaction was started by something else, don't even track it
+		if (self::$transaction_level == 0 && fFilesystem::isInsideTransaction()) {
+			return; 		
+		}
+		
+		self::$transaction_level++;
+		fFilesystem::begin();
+	}
+	
+	
+	/**
 	 * Commits a transaction, or decreases the level
 	 * 
 	 * @internal
 	 * 
 	 * @return void
 	 */
-	static public function commitTransaction()
+	static public function commit()
 	{
 		// If the transaction was started by something else, don't even track it
 		if (self::$transaction_level == 0) {
@@ -145,7 +164,7 @@ class fORMFile
 		self::$transaction_level--;
 		
 		if (!self::$transaction_level) {
-			fFilesystem::commitTransaction();
+			fFilesystem::commit();
 		}
 	}
 	
@@ -177,38 +196,44 @@ class fORMFile
 			fCore::toss('fEnvironmentException', 'The file upload directory, ' . $directory->getPath() . ', is not writable');	
 		}
 		
-		$hook     = 'replace::upload' . fInflection::camelize($column, TRUE) . '()';
-		$callback = array('fORMFile', 'uploadFile');
+		$camelized_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::upload' . $camelized_column . '()';
+		$callback = array('fORMFile', 'upload');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMFile', 'validateFileUploadColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);	
-		}
+		$hook     = 'replace::set' . $camelized_column . '()';
+		$callback = array('fORMFile', 'set');
+		fORM::registerHookCallback($class, $hook, $callback);
 		
-		$hook     = 'post-begin::store()';
-		$callback = array('fORMFile', 'startTransaction');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);	
-		}
+		$hook     = 'replace::encode' . $camelized_column . '()';
+		$callback = array('fORMFile', 'encode');
+		fORM::registerHookCallback($class, $hook, $callback);
 		
-		$hook     = 'post-validate::store()';
-		$callback = array('fORMFile', 'moveFilesFromTemp');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);	
-		}
+		$hook     = 'replace::prepare' . $camelized_column . '()';
+		$callback = array('fORMFile', 'prepare');
+		fORM::registerHookCallback($class, $hook, $callback);
 		
-		$hook     = 'post-commit::store()';
-		$callback = array('fORMFile', 'commitTransaction');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);	
-		}
+		$callback = array('fORMFile', 'objectify');
+		fORM::registerObjectifyCallback($class, $column, $callback);
 		
-		$hook     = 'post-rollback::store()';
-		$callback = array('fORMFile', 'rollbackTransaction');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);	
+		$only_once_hooks = array(
+			'post-begin::delete()'    => array('fORMFile', 'begin'),
+			'pre-commit::delete()'    => array('fORMFile', 'delete'),
+			'post-commit::delete()'   => array('fORMFile', 'commit'),
+			'post-rollback::delete()' => array('fORMFile', 'rollback'),
+			'post-begin::store()'     => array('fORMFile', 'begin'),
+			'post-validate::store()'  => array('fORMFile', 'moveFromTemp'),
+			'pre-commit::store()'     => array('fORMFile', 'deleteOld'),
+			'post-commit::store()'    => array('fORMFile', 'commit'),
+			'post-rollback::store()'  => array('fORMFile', 'rollback'),
+			'post::validate()'        => array('fORMFile', 'validate')
+		);
+		
+		foreach ($only_once_hooks as $hook => $callback) {
+			if (!fORM::checkHookCallback($class, $hook, $callback)) {
+				fORM::registerHookCallback($class, $hook, $callback);	
+			}
 		}
 		
 		if (empty(self::$file_upload_columns[$class])) {
@@ -251,6 +276,78 @@ class fORMFile
 	
 	
 	/**
+	 * Deletes the files for this record
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class                 The instance of the class
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  boolean       $debug                 If debug messages should be shown
+	 * @return void
+	 */
+	static public function delete($class, &$values, &$old_values, &$related_records, $debug)
+	{
+		$class = fORM::getClassName($class);
+		
+		foreach (self::$file_upload_columns[$class] as $column => $directory) {
+			if ($values[$column] instanceof fFile) {
+				$values[$column]->delete();	
+			}
+		}
+	}
+	
+	
+	/**
+	 * Deletes old files for this record that have been replaced
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class                 The instance of the class
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  boolean       $debug                 If debug messages should be shown
+	 * @return void
+	 */
+	static public function deleteOld($class, &$values, &$old_values, &$related_records, $debug)
+	{
+		$class = fORM::getClassName($class);
+		
+		foreach (self::$file_upload_columns[$class] as $column => $directory) {
+			if (isset($old_values[$column]) && $old_values[$column] instanceof fFile) {
+				$old_values[$column]->delete();	
+			}
+		}
+	}
+	
+	
+	/**
+	 * Encodes a file for output into an HTML input tag
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return void
+	 */
+	static public function encode($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
+		
+		return fHTML::encode($filename);
+	}
+	
+	
+	/**
 	 * Moves uploaded file from the temporary directory to the permanent directory
 	 * 
 	 * @internal
@@ -262,7 +359,7 @@ class fORMFile
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return void
 	 */
-	static public function moveFilesFromTemp($class, &$values, &$old_values, &$related_records, $debug)
+	static public function moveFromTemp($class, &$values, &$old_values, &$related_records, $debug)
 	{
 		$class = fORM::getClassName($class);
 		
@@ -276,6 +373,63 @@ class fORMFile
 				$value->rename(str_replace(self::TEMP_DIRECTORY, '', $value->getPath()));	
 			}
 		}
+	}
+	
+	
+	/**
+	 * Turns a filename into an fFile or fImage object
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The class this value is for
+	 * @param  string $column  The column the value is in
+	 * @param  mixed  $value   The value
+	 * @return mixed  The fFile, fImage or raw value
+	 */
+	static public function objectify($class, $column, $value)
+	{
+		$class = fORM::getClassName($class);
+		
+		$path = self::$file_upload_columns[$class][$column]->getPath() . $value;
+		
+		try {
+			
+			if (fImage::isImageCompatible($path)) {
+				return new fImage($path);	
+			}
+			
+			return new fFile($path);
+			 
+		// If there was some error creating the file, just return the raw value
+		} catch (fExpectedException $e) {
+			return $value;	
+		}
+	}
+	
+	
+	/**
+	 * Prepares a file for output into HTML by returning the web server path to the file
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return void
+	 */
+	static public function prepare($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$doc_root    = realpath($_SERVER['DOCUMENT_ROOT']);
+		$path        = ($values[$column] instanceof fFile) ? $values[$column]->getPath() : NULL;
+		$server_path = preg_replace('#^' . preg_quote($doc_root, '#') . '#', '', $path);
+		
+		return fHTML::prepare($server_path);
 	}
 	
 	
@@ -319,7 +473,7 @@ class fORMFile
 	 * 
 	 * @return void
 	 */
-	static public function rollbackTransaction()
+	static public function rollback()
 	{
 		// If the transaction was started by something else, don't even track it
 		if (self::$transaction_level == 0) {
@@ -329,8 +483,52 @@ class fORMFile
 		self::$transaction_level--;
 		
 		if (!self::$transaction_level) {
-			fFilesystem::rollbackTransaction();
+			fFilesystem::rollback();
 		}
+	}
+	
+	
+	/**
+	 * Copies a file from the filesystem to the file upload directory and sets it as the file for the specified column 
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return void
+	 */
+	static public function set($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		$class = fORM::getClassName($class);
+		
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
+		
+		if (empty($parameters[0])) {
+			fCore::toss('fProgrammerException', 'The method ' . $method_name . '() requires exactly one parameter');	
+		}
+		
+		$file_path = $parameters[0];
+		
+		if (!file_exists($file_path) && !file_exists($doc_root . $file_path)) {
+			fCore::toss('fEnvironmentException', 'The file specified, ' . $file_path . ', does not exist');	
+		}
+		
+		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
+			$file_path = $doc_root . $file_path;	
+		}
+		
+		$file     = new fFile($file_path);
+		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
+		
+		$old_values[$column] = $values[$column];
+		$values[$column]     = $new_file;
 	}
 	
 	
@@ -355,25 +553,6 @@ class fORMFile
 	
 	
 	/**
-	 * Starts a transaction, or increases the level
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	static public function startTransaction()
-	{
-		// If the transaction was started by something else, don't even track it
-		if (self::$transaction_level == 0 && fFilesystem::isInsideTransaction()) {
-			return; 		
-		}
-		
-		self::$transaction_level++;
-		fFilesystem::startTransaction();
-	}
-	
-	
-	/**
 	 * Uploads a file
 	 * 
 	 * @internal
@@ -387,7 +566,7 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return void
 	 */
-	static public function uploadFile($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function upload($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		$class = fORM::getClassName($class);
 		
@@ -415,9 +594,15 @@ class fORMFile
 			fUpload::reset();
 			
 			// If there is an existing file and none was uploaded, substitute the existing file
-			$existing_file = fRequest::get('__flourish_existing_' . $column);
+			$existing_file = fRequest::get('existing-' . $column);
 			
 			if ($existing_file && $e->getMessage() == 'Please upload a file') {
+				
+				// If the file is not in the database yet, look in the temp directory
+				if ($existing_file != $values[$column] && file_exists($upload_dir->getPath() . self::TEMP_DIRECTORY . $existing_file)) {
+					$existing_file = self::TEMP_DIRECTORY . $existing_file;	
+				}
+				
 				$file = new fFile($upload_dir->getPath() . $existing_file);
 				
 			} else {
@@ -459,11 +644,11 @@ class fORMFile
 	 * @param  array         &$validation_messages  The existing validation messages
 	 * @return void
 	 */
-	static public function validateFileUploadColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	static public function validate($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
 		$class = fORM::getClassName($class);
 		
-		foreach (self::$file_upload_columns as $column => $directory) {
+		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
 			$search_message  = $column_name . ': Please enter a value';

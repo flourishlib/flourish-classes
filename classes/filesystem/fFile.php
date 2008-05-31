@@ -116,10 +116,14 @@ class fFile
 	 */
 	public function delete()
 	{
-		$this->tossIfException();
+		// The only kind of stored exception is if the file has already
+		// been deleted so in that case nothing needs to be done
+		if ($this->exception) {
+			return;	
+		}
 		
 		if (!$this->getDirectory()->isWritable()) {
-			fCore::toss('fProgrammerException', 'The file, ' . $this->file . ', can not be deleted because the directory containing it is not writable');
+			fCore::toss('fEnvironmentException', 'The file, ' . $this->file . ', can not be deleted because the directory containing it is not writable');
 		}
 		
 		// Allow filesystem transactions

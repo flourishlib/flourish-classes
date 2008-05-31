@@ -352,15 +352,11 @@ abstract class fActiveRecord
 		$table  = fORM::tablize($this);
 		
 		$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
-		$inside_fs_transaction = fFilesystem::isInsideTransaction();
 		
 		try {
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
-			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::startTransaction();
 			}
 			
 			fORM::callHookCallback($this, 'post-begin::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
@@ -431,9 +427,6 @@ abstract class fActiveRecord
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::commitTransaction();
-			}
 			
 			
 			// If we just deleted an object that has an auto-incrementing primary key, lets delete that value from the object since it is no longer valid
@@ -447,9 +440,6 @@ abstract class fActiveRecord
 		} catch (fPrintableException $e) {
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
-			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::rollbackTransaction();
 			}
 			
 			fORM::callHookCallback($this, 'post-rollback::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
