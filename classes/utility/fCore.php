@@ -112,6 +112,9 @@ class fCore
 			if (isset($call['class']) || isset($call['function'])) {
 				$bt_string .= $call['function'] . '(';
 					$j = 0;
+					if (!isset($call['args'])) {
+						$call['args'] = array();	
+					}
 					foreach ($call['args'] as $arg) {
 						if ($j) {
 							$bt_string .= ', ';

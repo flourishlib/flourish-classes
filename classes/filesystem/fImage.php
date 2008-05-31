@@ -222,6 +222,32 @@ class fImage extends fFile
 	
 	
 	/**
+	 * Checks to make sure the class can handle the image file specified
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $image  The image to check for incompatibility
+	 * @return boolean  If the image is compatible with the image manipulation facility on the server
+	 */
+	static public function isImageCompatible($image)
+	{
+		self::determineProcessor();
+		
+		if (!file_exists($image)) {
+			fCore::toss('fProgrammerException', 'The image specified, ' . $image . ', does not exist');
+		}
+		
+		$info = self::getInfo($image);
+		
+		if ($info['type'] === NULL || ($info['TYPE'] == 'tif' && self::$processor == 'gd')) {
+			return FALSE;
+		}
+		
+		return TRUE;
+	}
+	
+	
+	/**
 	 * Sets the directory the ImageMagick binary is installed in and tells the class to use ImageMagick even if GD is installed
 	 * 
 	 * @param  string $directory  The directory ImageMagick is installed in
@@ -256,31 +282,6 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Checks to make sure the class can handle the image file specified
-	 * 
-	 * @throws fValidationException
-	 * @internal
-	 * 
-	 * @param  string $image  The image to check for incompatibility
-	 * @return void
-	 */
-	static public function verifyImageCompatible($image)
-	{
-		self::determineProcessor();
-		
-		if (!file_exists($image)) {
-			fCore::toss('fValidationException', 'The image specified does not exist');
-		}
-		
-		$info = self::getInfo($image);
-		
-		if ($info['type'] === NULL) {
-			fCore::toss('fValidationException', 'The image specified is not a GIF, JPG, PNG or TIFF file');
-		}
-	}
-	
-	
-	/**
 	 * The modifications to perform on the image when it is saved
 	 * 
 	 * @var array
@@ -302,10 +303,16 @@ class fImage extends fFile
 		
 		try {
 			
-			self::verifyImageCompatible($file_path);
+			if (!self::isImageCompatible($file_path)) {
+				$valid_image_types = array('GIF', 'JPG', 'PNG');
+				if (self::$processor == 'imagemagick') {
+					$valid_image_types[] = 'TIF';	
+				}
+				fCore::toss('fValidationException', 'The image specified is not valid ' . fInflection::joinTerms($valid_image_types) . ' file');	
+			}
 			parent::__construct($file_path);
 				
-		} catch (fExpectedException $e) {
+		} catch (fValidationException $e) {
 			$this->file = NULL;
 			$this->exception = $e;
 		}

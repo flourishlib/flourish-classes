@@ -161,11 +161,7 @@ class fFile
 		}
 		
 		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
-			fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory->getPath() . ', is the same as the current file\'s directory');
-		}
-		
-		if ($this->getDirectory()->isTemp()) {
-			$new_directory = $new_directory->getTemp();
+			fCore::toss('fProgrammerException', 'The new directory specified, ' . $new_directory->getPath() . ", is the same as the current file's directory");
 		}
 		
 		$new_filename = $new_directory->getPath() . $this->getFilename();
@@ -278,46 +274,6 @@ class fFile
 		$this->tossIfException();
 		
 		return is_writable($this->file);
-	}
-	
-	
-	/**
-	 * Moves the file from the temp directory if it is not in the main directory already
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	public function moveFromTemp()
-	{
-		$this->tossIfException();
-		
-		$directory = $this->getDirectory();
-		if ($directory->isTemp()) {
-			$new_file = $directory->getParent() . $this->getFilename();
-			$this->rename($new_file);
-		}
-	}
-	
-	
-	/**
-	 * Moves the file to the temp directory if it is not there already
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	public function moveToTemp()
-	{
-		$this->tossIfException();
-		
-		$file_info = fFilesystem::getPathInfo($this->file);
-		$directory = $this->getDirectory();
-		if (!$directory->isTemp()) {
-			$temp_dir = $directory->getTemp();
-			$new_file = $temp_dir->getPath() . $this->getFilename();
-			$this->rename($new_file);
-		}
 	}
 	
 	

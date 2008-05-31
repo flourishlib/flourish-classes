@@ -12,17 +12,7 @@
  * @changes  1.0.0    The initial implementation [wb, 2007-12-21]
  */
 class fDirectory
-{
-	/**
-	 * The temporary directory to use for various tasks
-	 * 
-	 * @internal
-	 * 
-	 * @var string
-	 */
-	const TEMP_DIRECTORY = '__temp/';
-	
-	
+{	
 	/**
 	 * Creates a directory on the filesystem and returns an object representing
 	 * it. The directory creation is done recursively, so if any of the parent
@@ -138,45 +128,6 @@ class fDirectory
 	
 	
 	/**
-	 * Will clean out a temp directory of all files/directories. Removes all files over 6 hours old.
-	 * 
-	 * This operation is not part of the filesystem transaction model and will be executed immediately.
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	public function clean()
-	{
-		$this->tossIfException();
-		
-		if (!$this->isTemp()) {
-			fCore::toss('fProgrammerException', 'Only temporary directories can be cleaned');
-		}
-		
-		// Delete the files
-		$files = $this->recursiveScan();
-		foreach ($files as $file) {
-			if ($file instanceof fFile) {
-				if (filemtime($file->getPath()) < strtotime('-6 hours')) {
-					$file->delete();
-				}
-			}
-		}
-		
-		// Delete the directories
-		$dirs = $this->recursiveScan();
-		foreach ($dirs as $dir) {
-			if ($dir instanceof fDirectory) {
-				if (filemtime($dir->getPath()) < strtotime('-6 hours') && !$dir->scan()) {
-					$dir->delete();
-				}
-			}
-		}
-	}
-	
-	
-	/**
 	 * Will delete a directory and all files and folders inside of it
 	 * 
 	 * This operation will not be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory and all contents as existing until that point.
@@ -279,45 +230,6 @@ class fDirectory
 			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);
 		}
 		return $this->directory;
-	}
-	
-	
-	/**
-	 * Gets (and creates if necessary) a temp dir for the current directory
-	 * 
-	 * @internal
-	 * 
-	 * @return fDirectory  The object representing the temp dir
-	 */
-	public function getTemp()
-	{
-		$this->tossIfException();
-		
-		if ($this->isTemp()) {
-			fCore::toss('fProgrammerException', 'The current directory is a temporary directory');
-		}
-		$temp_dir = $this->directory . self::TEMP_DIRECTORY;
-		if (!file_exists($temp_dir)) {
-			$old_umask = umask(0000);
-			mkdir($temp_dir);
-			umask($old_umask);
-		}
-		return new fDirectory($temp_dir);
-	}
-	
-	
-	/**
-	 * Check to see if the current directory is a temporary directory
-	 * 
-	 * @internal
-	 * 
-	 * @return boolean  If the directory is a temp directory
-	 */
-	public function isTemp()
-	{
-		$this->tossIfException();
-		
-		return preg_match('#' . self::TEMP_DIRECTORY . '$#', $this->directory);
 	}
 	
 	

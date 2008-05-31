@@ -744,7 +744,7 @@ class fSchema implements fISchema
 			
 			// Handle the special data for varchar fields
 			if ($info['type'] == 'varchar') {
-				$info['max_length'] = $row['max_length'];
+				$info['max_length'] = $column_data_type[2];
 			}
 			
 			// Handle check constraints that are just simple lists 

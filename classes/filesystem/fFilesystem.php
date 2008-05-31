@@ -425,6 +425,13 @@ class fFilesystem
 			}
 		}
 		
+		// All files to be deleted should have their exceptions erased
+		foreach (self::$commit_operations as $operation) {
+			if (isset($operation['object'])) {
+				self::updateExceptionMap($operation['object']->getPath(), NULL);
+			}
+		}
+		
 		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
 	}

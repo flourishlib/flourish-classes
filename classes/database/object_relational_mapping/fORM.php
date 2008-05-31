@@ -156,22 +156,34 @@ class fORM
 	
 	
 	/**
-	 * Checks to see if a callback has been registered for a specific hook
+	 * Checks to see if any (or a specific) callback has been registered for a specific hook
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class  The name of the class to check the hook of
-	 * @param  string $hook   The hook to check
+	 * @param  mixed  $class     The name of the class to check the hook of
+	 * @param  string $hook      The hook to check
+	 * @param  array  $callback  The specific callback to check for
 	 * @return boolean  If the specified callback exists
 	 */
-	static public function checkHookCallback($class, $hook)
+	static public function checkHookCallback($class, $hook, $callback=NULL)
 	{
 		$class = self::getClassName($class);
 		
 		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
 			return FALSE;
 		}
-		return TRUE;
+		
+		if (!$callback) {
+			return TRUE;	
+		}
+		
+		foreach (self::$hook_callbacks[$class][$hook] as $_callback) {
+			if ($_callback == $callback) {
+				return TRUE;
+			}	
+		}
+		
+		return FALSE;
 	}
 	
 	
@@ -445,6 +457,7 @@ class fORM
 			'replace::store()',
 			'pre::store()',
 			'post-begin::store()',
+			'post-validate::store()',
 			'pre-commit::store()',
 			'post-rollback::store()',
 			'post::store()',

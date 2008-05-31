@@ -50,10 +50,10 @@ class fUpload
 	 */
 	static public function check($field)
 	{
-		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+		if (fRequest::check($field) && $_SERVER['REQUEST_METHOD'] != 'POST') {
 			fCore::toss('fProgrammerException', 'Missing method="post" attribute in form tag');
 		}
-		if (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE) {
+		if (fRequest::check($field) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
 			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
 		}
 		return isset($_FILES) && isset($_FILES[$field]) && is_array($_FILES[$field]);
@@ -61,68 +61,51 @@ class fUpload
 	
 	
 	/**
-	 * Creates an fFile or fImage object based on what was uploaded
+	 * Returns the number of files uploaded to a file upload array field 
 	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @param  string $file_name  The path to the file on the filesystem
-	 * @return void
+	 * @param  string  $field  The field to get the number of files for
+	 * @return integer  The number of uploaded files
 	 */
-	static private function createObject($file_name)
+	static public function count($field)
 	{
-		try {
-			fImage::verifyImageCompatible($file_name);
-			return new fImage($file_name);
-			
-		} catch (fPrintableException $e) {
-			return new fFile($file_name);
+		if (!self::check($field)) {
+			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field');
 		}
+		if (!is_array($_FILES[$field]['name'])) {
+			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
+		}
+		
+		return sizeof($_FILES[$field]['name']);
 	}
 	
 	
 	/**
-	 * Handles file upload checking, puts file data into an object. Will also pull file name from __temp_field_name field.
+	 * Returns the $_FILES array for the field specified. 
 	 * 
-	 * @throws  fValidationException
-	 * 
-	 * @param  array      $file_array  The array of information from the $_FILES array
-	 * @param  string     $field       The field the file was uploaded through
-	 * @param  fDirectory $directory   The directory the file is being uploaded into
-	 * @return void
+	 * @param  string  $field  The field to get the file array for
+	 * @param  integer $index  If the field is an array file upload field, use this to specify which array index to return
+	 * @return array  The file info array from $_FILES
 	 */
-	static private function processFile($file_array, $field, $directory)
+	static private function extractFileUploadArray($field, $index=NULL)
 	{
-		// Do some validation of the file provided
-		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
-			fCore::toss('fValidationException', 'Please upload a file');
-		}
-		if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
-			fCore::toss('fValidationException', 'The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));
-		}
-		if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
-			if (self::$type != 'mime') {
-				$messages = array(
-					'image' => 'The file uploaded is not an image',
-					'zip'   => 'The file uploaded is not a zip'
-				);
-				fCore::toss('fValidationException', $messages[$type]);
-			} else {
-				fCore::toss('fValidationException', 'The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
-			}
-		}
-		if (self::$type == 'non_php') {
-			$file_info = fFilesystem::getPathInfo($file_array['name']);
-			if ($file_info['extension'] == 'php') {
-				fCore::toss('fValidationException', 'You are not allowed to upload PHP files');
-			}
+		if ($index === NULL) {
+			return $_FILES[$field];	
 		}
 		
-		$file_name = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
-		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
-			fCore::toss('fEnvironmentException', 'There was an error moving the uploaded file');
+		if (!is_array($_FILES[$field]['name'])) {
+			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
 		}
+		if (!isset($_FILES[$field]['name'][$index])) {
+			fCore::toss('fProgrammerException', 'The index specified, ' . $index . ', is invalid for the field ' . $field);
+		}
+		$file_array = array();
+		$file_array['name']     = $_FILES[$field]['name'][$index];
+		$file_array['type']     = $_FILES[$field]['type'][$index];
+		$file_array['tmp_name'] = $_FILES[$field]['tmp_name'][$index];
+		$file_array['error']    = $_FILES[$field]['error'][$index];
+		$file_array['size']     = $_FILES[$field]['size'][$index];	
 		
-		return self::createObject($file_name);
+		return $file_array;
 	}
 	
 	
@@ -213,11 +196,12 @@ class fUpload
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @param  string            $field      The file upload field to get the file(s) from
 	 * @param  string|fDirectory $directory  The directory to upload the file to
-	 * @return fFile|array  An fFile object or an array of fFile objects
+	 * @param  string            $field      The file upload field to get the file from
+	 * @param  integer           $index      If the field was an array file upload field, upload the file corresponding to this index
+	 * @return fFile  An fFile object
 	 */
-	static public function uploadFile($field, $directory)
+	static public function upload($directory, $field, $index=NULL)
 	{
 		if (!is_object($directory)) {
 			$directory = new fDirectory($directory);
@@ -226,31 +210,22 @@ class fUpload
 		if (!$directory->isWritable()) {
 			fCore::toss('fProgrammerException', 'The directory specified, ' . $directory->getPath() . ', is not writable');
 		}
+		
 		if (!self::check($field)) {
 			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field');
 		}
 		
-		if (is_array($_FILES[$field]['name'])) {
-			$output = array();
-			for ($i=0; $i<sizeof($_FILES[$field]['name']); $i++) {
-				
-				self::validate($field, $i);
-				
-				$temp = array();
-				$temp['name']     = (isset($_FILES[$field]['name'][$i]))     ? $_FILES[$field]['name'][$i]     : '';
-				$temp['type']     = (isset($_FILES[$field]['type'][$i]))     ? $_FILES[$field]['type'][$i]     : '';
-				$temp['tmp_name'] = (isset($_FILES[$field]['tmp_name'][$i])) ? $_FILES[$field]['tmp_name'][$i] : '';
-				$temp['error']    = (isset($_FILES[$field]['error'][$i]))    ? $_FILES[$field]['error'][$i]    : '';
-				$temp['size']     = (isset($_FILES[$field]['size'][$i]))     ? $_FILES[$field]['size'][$i]     : '';
-				
-				$output[] = self::processFile($temp, $field . '_#' . ($i+1), $directory);
-			}
-			return $output;
-			
-		} else {
-			self::validate($field);
-			return self::processFile($_FILES[$field], $field, $directory);
+		$file_array = self::validate($field, $index);
+		$file_name  = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
+		
+		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
+			fCore::toss('fEnvironmentException', 'There was an error moving the uploaded file');
 		}
+		
+		if (fImage::isImageCompatible($file_name)) {
+			return new fImage($file_name);
+		}
+		return new fFile($file_name);
 	}
 	
 	
@@ -261,7 +236,7 @@ class fUpload
 	 * 
 	 * @param  string  $field  The field the file was uploaded through
 	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
-	 * @return void
+	 * @return array  The $_FILES array for the field and index specified
 	 */
 	static public function validate($field, $index=NULL)
 	{
@@ -269,23 +244,7 @@ class fUpload
 			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field'); 		
 		}
 		
-		if ($index !== NULL) {
-			if (!is_array($_FILES[$field]['name'])) {
-				fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
-			}
-			if (!isset($_FILES[$field]['name'][$index])) {
-				fCore::toss('fProgrammerException', 'The index specified, ' . $index . ', is invalid for the field ' . $field);
-			}
-			$file_array = array();
-			$file_array['name']     = $_FILES[$field]['name'][$index];
-			$file_array['type']     = $_FILES[$field]['type'][$index];
-			$file_array['tmp_name'] = $_FILES[$field]['tmp_name'][$index];
-			$file_array['error']    = $_FILES[$field]['error'][$index];
-			$file_array['size']     = $_FILES[$field]['size'][$index];		
-		
-		} else {
-			$file_array = $_FILES[$field];	
-		}
+		$file_array = self::extractFileUploadArray($field, $index);
 		
 		// Do some validation of the file provided
 		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
@@ -314,6 +273,8 @@ class fUpload
 				fCore::toss('fValidationException', 'You are not allowed to upload PHP files');
 			}
 		}
+		
+		return $file_array;
 	}
 	
 	

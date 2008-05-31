@@ -35,25 +35,11 @@ class fORMColumn
 	static private $email_columns = array();
 	
 	/**
-	 * Indicates if email validation has been hooked for the class specified
-	 * 
-	 * @var array
-	 */
-	static private $email_validation_set = array();
-	
-	/**
 	 * Columns that should be formatted as links
 	 * 
 	 * @var array
 	 */
 	static private $link_columns = array();
-	
-	/**
-	 * Indicates if link validation has been hooked for the class specified
-	 * 
-	 * @var array
-	 */
-	static private $link_validation_set = array();
 	
 	/**
 	 * Columns that should be formatted as a random string
@@ -147,11 +133,10 @@ class fORMColumn
 		$callback = array('fORMColumn', 'formatEmailColumn');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
-		if (empty(self::$email_validation_set[$class])) {
-			$hook     = 'post::validate()';
-			$callback = array('fORMColumn', 'validateEmailColumns');
+		$hook     = 'post::validate()';
+		$callback = array('fORMColumn', 'validateEmailColumns');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
 			fORM::registerHookCallback($class, $hook, $callback);
-			self::$email_validation_set[$class] = TRUE;
 		}
 		
 		if (empty(self::$email_columns[$class])) {
@@ -186,11 +171,10 @@ class fORMColumn
 		$callback = array('fORMColumn', 'formatLinkColumn');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
-		if (empty(self::$link_validation_set[$class])) {
-			$hook     = 'post::validate()';
-			$callback = array('fORMColumn', 'validateLinkColumns');
+		$hook     = 'post::validate()';
+		$callback = array('fORMColumn', 'validateLinkColumns');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
 			fORM::registerHookCallback($class, $hook, $callback);
-			self::$link_validation_set[$class] = TRUE;
 		}
 		
 		if (empty(self::$link_columns[$class])) {

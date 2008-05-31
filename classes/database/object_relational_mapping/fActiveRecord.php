@@ -855,19 +855,16 @@ abstract class fActiveRecord
 			}
 			
 			$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
-			$inside_fs_transaction = fFilesystem::isInsideTransaction();
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
-			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::startTransaction();
 			}
 			
 			fORM::callHookCallback($this, 'post-begin::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			$this->validate();
 			
+			fORM::callHookCallback($this, 'post-validate::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			// Storing main table
 			
@@ -922,17 +919,11 @@ abstract class fActiveRecord
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::commitTransaction();
-			}
 			
 		} catch (fPrintableException $e) {
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
-			}
-			if (!$inside_fs_transaction) {
-				fFilesystem::rollbackTransaction();
 			}
 			
 			fORM::callHookCallback($this, 'post-rollback::store()', $this->values, $this->old_values, $this->related_records, $this->debug);

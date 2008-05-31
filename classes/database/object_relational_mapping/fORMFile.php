@@ -14,6 +14,16 @@
 class fORMFile
 {	
 	/**
+	 * The temporary directory to use for various tasks
+	 * 
+	 * @internal
+	 * 
+	 * @var string
+	 */
+	const TEMP_DIRECTORY = '__flourish_temp/';
+	
+	
+	/**
 	 * Defines how columns can inherit uploaded files
 	 * 
 	 * @var array
@@ -25,7 +35,7 @@ class fORMFile
 	 * 
 	 * @var array
 	 */
-	static private $fupload_callbacks = array();
+	static private $fupload_method_calls = array();
 	
 	/**
 	 * Columns that can be filled by file uploads
@@ -39,18 +49,109 @@ class fORMFile
 	 * 
 	 * @var array
 	 */
-	static private $fimage_callbacks = array();
+	static private $fimage_method_calls = array();
 	
 	/**
-	 * Validation messages thrown during the upload process
+	 * Columns that can be filled by image uploads
 	 * 
 	 * @var array
 	 */
-	static private $validation_messages = array();
+	static private $image_upload_columns = array();
+	
+	/**
+	 * Keeps track of the nesting level of the filesystem transaction so we know when to start, commit, rollback, etc
+	 * 
+	 * @var integer
+	 */
+	static private $transaction_level = 0;
 	
 	
 	/**
-	 * Sets a column to be a date created column
+	 * Adds an fImage method call to the image manipulation for a column if an image file is uploaded
+	 * 
+	 * @param  mixed  $class       The class name or instance of the class
+	 * @param  string $column      The column to call the method for
+	 * @param  string $method      The fImage method to call
+	 * @param  array  $parameters  The parameters to pass to the method
+	 * @return void
+	 */
+	static public function addFImageMethodCall($class, $column, $method, $parameters=array())
+	{
+		$class = fORM::getClassName($class);
+		
+		if (!array_key_exists($column, self::$image_upload_columns[$class])) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', has not been configured as an image upload column.');	
+		}
+		
+		if (empty(self::$fimage_method_calls[$class])) {
+			self::$fimage_method_calls[$class] = array(); 		
+		}
+		if (empty(self::$fimage_method_calls[$class][$column])) {
+			self::$fimage_method_calls[$class][$column] = array(); 		
+		}
+		
+		self::$fimage_method_calls[$class][$column][] = array(
+			'method'     => $method,
+			'parameters' => $parameters
+		);
+	}
+	
+	
+	/**
+	 * Adds an fUpload method call to the fUpload initialization for a column
+	 * 
+	 * @param  mixed  $class       The class name or instance of the class
+	 * @param  string $column      The column to call the method for
+	 * @param  string $method      The fUpload method to call
+	 * @param  array  $parameters  The parameters to pass to the method
+	 * @return void
+	 */
+	static public function addFUploadMethodCall($class, $column, $method, $parameters=array())
+	{
+		$class = fORM::getClassName($class);
+		
+		if (empty(self::$file_upload_columns[$class][$column])) {
+			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', has not been configured as a file or image upload column.');	
+		}
+		
+		if (empty(self::$fupload_method_calls[$class])) {
+			self::$fupload_method_calls[$class] = array(); 		
+		}
+		if (empty(self::$fupload_method_calls[$class][$column])) {
+			self::$fupload_method_calls[$class][$column] = array(); 		
+		}
+		
+		self::$fupload_method_calls[$class][$column][] = array(
+			'callback'   => array('fUpload', $method),
+			'parameters' => $parameters
+		);
+	}
+	
+	
+	/**
+	 * Commits a transaction, or decreases the level
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function commitTransaction()
+	{
+		// If the transaction was started by something else, don't even track it
+		if (self::$transaction_level == 0) {
+			return; 		
+		}
+		
+		self::$transaction_level--;
+		
+		if (!self::$transaction_level) {
+			fFilesystem::commitTransaction();
+		}
+	}
+	
+	
+	/**
+	 * Sets a column to be a file upload column
 	 * 
 	 * @param  mixed             $class      The class name or instance of the class
 	 * @param  string            $column     The column to set as a file upload column
@@ -80,6 +181,36 @@ class fORMFile
 		$callback = array('fORMFile', 'uploadFile');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
+		$hook     = 'post::validate()';
+		$callback = array('fORMFile', 'validateFileUploadColumns');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);	
+		}
+		
+		$hook     = 'post-begin::store()';
+		$callback = array('fORMFile', 'startTransaction');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);	
+		}
+		
+		$hook     = 'post-validate::store()';
+		$callback = array('fORMFile', 'moveFilesFromTemp');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);	
+		}
+		
+		$hook     = 'post-commit::store()';
+		$callback = array('fORMFile', 'commitTransaction');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);	
+		}
+		
+		$hook     = 'post-rollback::store()';
+		$callback = array('fORMFile', 'rollbackTransaction');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);	
+		}
+		
 		if (empty(self::$file_upload_columns[$class])) {
 			self::$file_upload_columns[$class] = array();	
 		}
@@ -89,254 +220,38 @@ class fORMFile
 	
 	
 	/**
-	 * Sets a column to be a date updated column
+	 * Sets a column to be a date created column
 	 * 
-	 * @param  mixed  $class   The class name or instance of the class
-	 * @param  string $column  The column to set as a date updated column
+	 * @param  mixed             $class       The class name or instance of the class
+	 * @param  string            $column      The column to set as a file upload column
+	 * @param  fDirectory|string $directory   The directory to upload to
+	 * @param  string            $image_type  The image type to save the image as. Valid: {null}, 'gif', 'jpg', 'png'
 	 * @return void
 	 */
-	static public function configureDateUpdatedColumn($class, $column)
+	static public function configureImageUploadColumn($class, $column, $directory, $image_type=NULL)
 	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('date', 'time', 'timestamp');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a date updated column.');	
+		$valid_image_types = array(NULL, 'gif', 'jpg', 'png');
+		if (!in_array($image_type, $valid_image_types)) {
+			$valid_image_types[0] = '{null}';
+			fCore::toss('fProgrammerException', 'The image type specified, ' . $image_type . ', is not valid. Must be one of: ' . join(', ', $valid_image_types) . '.');	
 		}
 		
-		$hook     = 'post-begin::store()';
-		$callback = array('fORMColumn', 'setDateUpdated');
-		fORM::registerHookCallback($class, $hook, $callback);
-		
-		if (empty(self::$date_updated_columns[$class])) {
-			self::$date_updated_columns[$class] = array();	
-		}
-		
-		self::$date_updated_columns[$class][$column] = TRUE;
-	}
-	
-	
-	/**
-	 * Sets a column to be formatted as an email address
-	 * 
-	 * @param  mixed  $class   The class name or instance of the class to set the column format
-	 * @param  string $column  The column to format as an email address
-	 * @return void
-	 */
-	static public function configureEmailColumn($class, $column)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('varchar', 'char', 'text');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as an email column.');	
-		}
-		
-		$cameled_column = fInflection::camelize($column, TRUE);
-		
-		$hook     = 'replace::format' . $cameled_column . '()';
-		$callback = array('fORMColumn', 'formatEmailColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
-		
-		if (empty(self::$email_validation_set[$class])) {
-			$hook     = 'post::validate()';
-			$callback = array('fORMColumn', 'validateEmailColumns');
-			fORM::registerHookCallback($class, $hook, $callback);
-			self::$email_validation_set[$class] = TRUE;
-		}
-		
-		if (empty(self::$email_columns[$class])) {
-			self::$email_columns[$class] = array();	
-		}
-		
-		self::$email_columns[$class][$column] = TRUE;
-	}
-	
-	
-	/**
-	 * Sets a column to be formatted as a link
-	 * 
-	 * @param  mixed  $class   The class name or instance of the class to set the column format
-	 * @param  string $column  The column to format as an email address
-	 * @return void
-	 */
-	static public function configureLinkColumn($class, $column)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('varchar', 'char', 'text');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a link column.');	
-		}
-		
-		$cameled_column = fInflection::camelize($column, TRUE);
-		
-		$hook     = 'replace::format' . $cameled_column . '()';
-		$callback = array('fORMColumn', 'formatLinkColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
-		
-		if (empty(self::$link_validation_set[$class])) {
-			$hook     = 'post::validate()';
-			$callback = array('fORMColumn', 'validateLinkColumns');
-			fORM::registerHookCallback($class, $hook, $callback);
-			self::$link_validation_set[$class] = TRUE;
-		}
-		
-		if (empty(self::$link_columns[$class])) {
-			self::$link_columns[$class] = array();	
-		}
-		
-		self::$link_columns[$class][$column] = TRUE;
-	}
-	
-	
-	/**
-	 * Sets a column to be a random string column
-	 * 
-	 * @param  mixed   $class   The class name or instance of the class
-	 * @param  string  $column  The column to set as a random column
-	 * @param  string  $type    The type of random string, must be one of: 'alphanumeric', 'alpha', 'numeric', 'hexadecimal'
-	 * @param  integer $length  The length of the random string
-	 * @return void
-	 */
-	static public function configureRandomColumn($class, $column, $type, $length)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('varchar', 'char', 'text');
-		if (!in_array($data_type, $valid_data_types)) {                                                                                                                       
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a random string column.');	
-		}
-		
-		$valid_types = array('alphanumeric', 'alpha', 'numeric', 'hexadecimal');
-		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'The type, ' . $type . ', must be one of ' . join(', ', $valid_types) . '.');	
-		}
-		
-		if (!is_numeric($length) || $length < 1) {
-			fCore::toss('fProgrammerException', 'The length specified, ' . $length . ', needs to be an integer greater than zero.');	
-		}
-		
-		$hook     = 'pre::validate()';
-		$callback = array('fORMColumn', 'setRandomStrings');
-		fORM::registerHookCallback($class, $hook, $callback);
-		
-		if (empty(self::$random_columns[$class])) {
-			self::$random_columns[$class] = array();	
-		}
-		
-		self::$random_columns[$class][$column] = array('type' => $type, 'length' => (int) $length);
-	}
-	
-	
-	/**
-	 * Formats an email column into an HTML link
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class             The instance of the class
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  boolean       $debug             If debug messages should be shown
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted email address
-	 */
-	static public function formatEmailColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
-	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
-		
-		if (empty($values[$column])) {
-			return $values[$column];
-		}
-		
-		if (sizeof($parameters) > 1) {
-			fCore::toss('fProgrammerException', 'The method ' . $method_name . ' accepts at most one parameter');	
-		}	
-		
-		$formatting = (!empty($parameters[0])) ? $parameters[0] : NULL;
-		$css_class  = ($formatting) ? ' class="' . $formatting . '"' : '';
-		return '<a href="mailto:' . $values[$column] . '"' . $css_class . '>' . $values[$column] . '</a>';
-	}
-	
-	
-	/**
-	 * Formats a link column into an HTML link
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class             The instance of the class
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  boolean       $debug             If debug messages should be shown
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted link
-	 */
-	static public function formatLinkColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
-	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
-		
-		if (empty($values[$column])) {
-			return $values[$column];
-		}	
-		
-		if (sizeof($parameters) > 1) {
-			fCore::toss('fProgrammerException', 'The method ' . $method_name . ' accepts at most one parameter');	
-		}
-		
-		$value = $values[$column];
-		
-		// Fix domains that don't have the protocol to start
-		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#i', $value)) {
-			$value = 'http://' . $value;
-		}
-		
-		$formatting = (!empty($parameters[0])) ? $parameters[0] : NULL;
-		$css_class  = ($formatting) ? ' class="' . $formatting . '"' : '';
-		return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
-	}
-	
-	
-	/**
-	 * Sets the appropriate column values to the date the object was created (for new records)
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class             The instance of the class
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  boolean       $debug             If debug messages should be shown
-	 * @return string  The formatted link
-	 */
-	static public function setDateCreated($class, &$values, &$old_values, &$related_records, $debug)
-	{
-		if ($class->exists()) {
-			return;	
-		}
+		self::configureFileUploadColumn($class, $column, $directory);
 		
 		$class = fORM::getClassName($class);
 		
-		foreach (self::$date_created_columns[$class] as $column => $enabled) {
-			$old_values[$column] = $values[$column];
-			$values[$column] = date('Y-m-d H:i:s');		
+		if (empty(self::$image_upload_columns[$class])) {
+			self::$image_upload_columns[$class] = array();	
 		}
+		
+		self::$image_upload_columns[$class][$column] = $image_type;
+		
+		self::addFUploadMethodCall($class, $column, 'setType', array('image'));
 	}
 	
 	
 	/**
-	 * Sets the appropriate column values to the date the object was updated
+	 * Moves uploaded file from the temporary directory to the permanent directory
 	 * 
 	 * @internal
 	 * 
@@ -345,121 +260,226 @@ class fORMFile
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
-	 * @return string  The formatted link
+	 * @return void
 	 */
-	static public function setDateUpdated($class, &$values, &$old_values, &$related_records, $debug)
+	static public function moveFilesFromTemp($class, &$values, &$old_values, &$related_records, $debug)
 	{
 		$class = fORM::getClassName($class);
 		
-		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
-			$old_values[$column] = $values[$column];
-			$values[$column] = date('Y-m-d H:i:s');		
-		}
-	}
-	
-	
-	/**
-	 * Sets the appropriate column values to a random string if the object is new
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class             The instance of the class
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  boolean       $debug             If debug messages should be shown
-	 * @return string  The formatted link
-	 */
-	static public function setRandomStrings($class, &$values, &$old_values, &$related_records, $debug)
-	{
-		if ($class->exists()) {
-			return;	
-		}
-		$table = fORM::tablize($class);
-		
-		$class = fORM::getClassName($class);
-		
-		foreach (self::$random_columns[$class] as $column => $settings) {
-			$old_values[$column] = $values[$column];
+		foreach ($values as $column => $value) {
+			if (!$value instanceof fFile) {
+				continue;
+			}	
 			
-			// Check to see if this is a unique column
-			$unique_keys      = fORMSchema::getInstance()->getKeys($table, 'unique');
-			$is_unique_column = FALSE;
-			foreach ($unique_keys as $unique_key) {
-				if ($unique_key == array($column)) {
-					$is_unique_column = TRUE;
-					do {
-						$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);
-						
-						// See if this is unique
-						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = '" . fORMDatabase::getInstance()->escapeString($values[$column]) . "'";
-					
-					} while (fORMDatabase::getInstance()->query($sql)->getReturnedRows());
+			// If the file is in a temp dir, move it out
+			if (stripos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+				$value->rename(str_replace(self::TEMP_DIRECTORY, '', $value->getPath()));	
+			}
+		}
+	}
+	
+	
+	/**
+	 * Performs image manipulation on an uploaded image
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The name of the class we are manipulating the image for
+	 * @param  string $column  The column the image is assigned to
+	 * @param  fFile  $image   The image object to manipulate
+	 * @return void
+	 */
+	static public function processImage($class, $column, $image)
+	{
+		// If we don't have an image or we haven't set it up to manipulate images, just exit
+		if (!$image instanceof fImage || !array_key_exists($column, self::$fupload_method_calls[$class])) {
+			return;	
+		}
+		
+		// Manipulate the image
+		if (!empty(self::$fimage_method_calls[$class][$column])) {
+			foreach (self::$fimage_method_calls[$class][$column] as $method_call) {
+				$callback   = array($image, $method_call['method']);
+				$parameters = $method_call['parameters'];
+				call_user_func_array($callback, $parameters);
+			}	
+		}
+		
+		// Save the changes
+		$callback   = array($image, 'saveChanges');
+		$parameters = array(self::$fimage_method_calls[$class][$column]);
+		call_user_func_array($callback, $parameters);
+	}
+	
+	
+	/**
+	 * Rolls back a transaction, or decreases the level
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function rollbackTransaction()
+	{
+		// If the transaction was started by something else, don't even track it
+		if (self::$transaction_level == 0) {
+			return; 		
+		}
+		
+		self::$transaction_level--;
+		
+		if (!self::$transaction_level) {
+			fFilesystem::rollbackTransaction();
+		}
+	}
+	
+	
+	/**
+	 * Sets up the fUpload class for a specific column
+	 * 
+	 * @param  mixed  $class   The class name or an instance of the class to set up for
+	 * @param  string $column  The column to set up for 
+	 * @return void
+	 */
+	static private function setUpFUpload($class, $column)
+	{
+		fUpload::reset();
+		
+		// Set up the fUpload class
+		if (!empty(self::$fupload_method_calls[$class][$column])) {
+			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
+				call_user_func_array($method_call['callback'], $method_call['parameters']);	
+			}	
+		}
+	}
+	
+	
+	/**
+	 * Starts a transaction, or increases the level
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function startTransaction()
+	{
+		// If the transaction was started by something else, don't even track it
+		if (self::$transaction_level == 0 && fFilesystem::isInsideTransaction()) {
+			return; 		
+		}
+		
+		self::$transaction_level++;
+		fFilesystem::startTransaction();
+	}
+	
+	
+	/**
+	 * Uploads a file
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return void
+	 */
+	static public function uploadFile($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		$class = fORM::getClassName($class);
+		
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		self::setUpFUpload($class, $column);
+		
+		$upload_dir = self::$file_upload_columns[$class][$column];
+		
+		// Let's clean out the upload temp dir
+		$files = $upload_dir->scan();
+		foreach ($files as $file) {
+			if (filemtime($file->getPath()) < strtotime('-6 hours')) {
+				$file->delete();
+			}
+		}
+		
+		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
+		try {
+			$file = fUpload::upload($upload_dir . self::TEMP_DIRECTORY, $column);	
+			fUpload::reset();
+		
+		// If there was an eror, check to see if we have an existing file
+		} catch (fExpectedException $e) {
+			fUpload::reset();
+			
+			// If there is an existing file and none was uploaded, substitute the existing file
+			$existing_file = fRequest::get('__flourish_existing_' . $column);
+			
+			if ($existing_file && $e->getMessage() == 'Please upload a file') {
+				$file = new fFile($upload_dir->getPath() . $existing_file);
+				
+			} else {
+				return;	
+			}	
+		}
+		
+		// Assign the file
+		$old_values[$column] = $values[$column];
+		$values[$column]     = $file;
+		
+		// Perform the file upload inheritance
+		if (!empty(self::$column_inheritence[$class][$column])) {
+			foreach (self::$column_inheritence[$class][$column] as $other_column) {
+				$other_file = $file->duplicate(self::$file_upload_columns[$class][$column] . self::TEMP_DIRECTORY, FALSE);
+				
+				$old_values[$other_column] = $values[$other_column];
+				$values[$other_column]     = $other_file;
+				
+				self::processImage($class, $other_column, $other_file);	
+			}	
+		}
+		
+		// Process the file
+		self::processImage($class, $column, $file);
+	}
+	
+	
+	/**
+	 * Moves uploaded file from the temporary directory to the permanent directory
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class                 The instance of the class
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  boolean       $debug                 If debug messages should be shown
+	 * @param  array         &$validation_messages  The existing validation messages
+	 * @return void
+	 */
+	static public function validateFileUploadColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	{
+		$class = fORM::getClassName($class);
+		
+		foreach (self::$file_upload_columns as $column => $directory) {
+			$column_name = fORM::getColumnName($class, $column);
+			
+			$search_message  = $column_name . ': Please enter a value';
+			$replace_message = $column_name . ': Please upload a file';
+			str_replace($search_message, $replace_message, $validation_messages);
+			
+			self::setUpFUpload($class, $column);
+			
+			// Grab the error that occured
+			try {
+				fUpload::validate($column); 		
+			} catch (fValidationException $e) {
+				if ($e->getMessage() != 'Please upload a file') {
+					$validation_messages[] = $column_name . ': ' . $e->getMessage();	
 				}
 			}
-			
-			// If is is not a unique column, just generate a value
-			if (!$is_unique_column) {
-				$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);	
-			}
-		}
-	}
-	
-	
-	/**
-	 * Validates all email columns
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class                 The name of the class
-	 * @param  array         &$values               The current values
-	 * @param  array         &$old_values           The old values
-	 * @param  array         &$related_records      Any records related to this record
-	 * @param  boolean       $debug                 If debug messages should be shown
-	 * @param  array         &$validation_messages  An array of ordered validation messages
-	 * @return void
-	 */
-	static public function validateEmailColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
-	{
-		$class = fORM::getClassName($class);
-		
-		if (empty(self::$email_columns[$class])) {
-			return;
-		}	
-		
-		foreach (self::$email_columns[$class] as $column => $enabled) {
-			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
-				$validation_messages[] = fORM::getColumnName($class_name, $column) . ': Please enter an email address in the form name@example.com';
-			}	
-		}
-	}
-	
-	
-	/**
-	 * Validates all link columns
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class                 The name of the class
-	 * @param  array         &$values               The current values
-	 * @param  array         &$old_values           The old values
-	 * @param  array         &$related_records      Any records related to this record
-	 * @param  boolean       $debug                 If debug messages should be shown
-	 * @param  array         &$validation_messages  An array of ordered validation messages
-	 * @return void
-	 */
-	static public function validateLinkColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
-	{
-		$class = fORM::getClassName($class);
-		
-		if (empty(self::$link_columns[$class])) {
-			return;
-		}	
-		
-		foreach (self::$link_columns[$class] as $column => $enabled) {
-			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
-				$validation_messages[] = fORM::getColumnName($class, $column) . ': Please enter a link in the form http://www.example.com';
-			}	
 		}
 	}
 	
@@ -467,7 +487,7 @@ class fORMFile
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @return fORMColumn
+	 * @return fORMFile
 	 */
 	private function __construct() { }
 }
@@ -475,7 +495,7 @@ class fORMFile
 
 
 /**
- * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
+ * Copyright (c) 2008 William Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
