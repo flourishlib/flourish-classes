@@ -27,20 +27,20 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  array  $joins         The existing joins
+	 * @param  string $table         The table the relationship extends from
 	 * @param  string $route         The route to the related table
 	 * @param  array  $relationship  The relationship info for the route specified
 	 * @return array  The joins array with the new join added
 	 */
-	static public function addJoin($joins, $route, $relationship)
+	static public function addJoin($joins, $table, $route, $relationship)
 	{
-		$table         = $relationship['table'];
 		$related_table = $relationship['related_table'];
 		
 		if (isset($joins[$table . '_' . $related_table . '{' . $route . '}'])) {
 			return $joins;
 		}
 		
-		$table_alias = self::findTableAlias($join['table_name'], $joins);
+		$table_alias = self::findTableAlias($table, $joins);
 		
 		if (!$table_alias) {
 			fCore::toss('fProgrammerException', 'The table, ' . $table . ', has not been joined to yet, so it can not be joined from');

@@ -142,7 +142,7 @@ class fRecordSet implements Iterator
 		
 		$i = 0;
 		foreach ($records as $record) {
-			$sql .= ($i > 0) ? 'OR' : '';
+			$sql .= ($i > 0) ? ' OR ' : '';
 			$sql .= ($total_pk_fields > 1) ? ' (' : '';
 			
 			for ($j=0; $j < $total_pk_fields; $j++) {
@@ -175,7 +175,6 @@ class fRecordSet implements Iterator
 		$record_set = new fRecordSet($class_name, $result);
 		$record_set->records      = $records;
 		$record_set->primary_keys = $primary_keys;
-		
 		return $record_set;
 	}
 	
@@ -322,6 +321,13 @@ class fRecordSet implements Iterator
 	private $non_limited_count_sql;
 	
 	/**
+	 * The index of the current record
+	 * 
+	 * @var integer
+	 */
+	private $pointer = 0;
+	
+	/**
 	 * The result objects for preloaded data
 	 * 
 	 * @var array
@@ -351,6 +357,30 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Calls sortCallback with the appropriate method
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $method_name  The name of the method called
+	 * @param  string $parameters   The parameters passed
+	 * @return void
+	 */
+	public function __call($method_name, $parameters)
+	{
+		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		switch ($action) {
+			case 'preload':
+				$element = fInflection::camelize($element, TRUE);
+				$element = fInflection::singularize($element);
+				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
+		}
+		
+		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
+	}
+	
+	
+	/**
 	 * Sets the contents of the set
 	 * 
 	 * @param  string $class_name             The type of records to create
@@ -371,34 +401,6 @@ class fRecordSet implements Iterator
 		$this->class_name            = $class_name;
 		$this->result_object         = $result_object;
 		$this->non_limited_count_sql = $non_limited_count_sql;
-	}
-	
-	
-	/**
-	 * Calls sortCallback with the appropriate method
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $method_name  The name of the method called
-	 * @param  string $parameters   The parameters passed
-	 * @return void
-	 */
-	public function __call($method_name, $parameters)
-	{
-		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
-		
-		switch ($action) {
-			case 'sort':
-				// Trim the "by_" off of the beginning
-				$sort_method = substr($element, 3);
-				$sort_method = fInflection::camelize($sort_method, FALSE);
-				return $this->performSort($parameters[0], $parameters[1], $sort_method);
-				
-			case 'preload':
-				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
-		}
-		
-		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
 	}
 	
 	
@@ -432,26 +434,43 @@ class fRecordSet implements Iterator
 			fCore::toss('fProgrammerException', 'There are no remaining records');
 		}
 		
-		if (!isset($this->records[$this->key()])) {
-			$this->records[$this->key()] = new $this->class_name($this->result_object);
-			
-			// Fetch the primary keys for this object
-			$primary_keys = fORMSchema::getInstance()->getKeys(fORM::tablize($this->class_name), 'primary');
-			$keys = array();
-			foreach ($primary_keys as $primary_key) {
-				$method = 'get' . fInflection::camelize($primary_key, TRUE);
-				$keys[$primary_key] = $this->records[$this->key()]->$method();
-			}
-			$this->primary_keys[$this->key()] = (sizeof($primary_keys) == 1) ? $keys[array_shift($primary_keys)] : $keys;
-			
-			// Pass the preloaded data to the object
-			foreach ($this->preloaded_result_objects as $related_table => $result_objects) {
-				foreach ($result_objects as $route => $result_object) {
-					$this->injectSubSet($related_table, $route, $result_object);
-				}
-			}
+		if (!isset($this->records[$this->pointer])) {
+			$this->records[$this->pointer] = new $this->class_name($this->result_object);
+			$this->extractPrimaryKeys($this->pointer);
 		}
-		return $this->records[$this->key()];
+		
+		return $this->records[$this->pointer];
+	}
+	
+	
+	/**
+	 * Extracts the primary key(s) from a record or all records
+	 * 
+	 * @param  integer $record_number  The record number to extract the primary key(s) for. If not provided all records will be extracted.
+	 * @return void
+	 */
+	private function extractPrimaryKeys($record_number=NULL)
+	{
+		$table           = fORM::tablize($this->class_name);
+		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$first_pk_column = $pk_columns[0];
+		
+		if ($record_number === NULL) {
+			$records = $this->records;
+		} else {
+			$records = array($this->records[$record_number]);
+		}
+		
+		foreach ($records as $number => $record) {
+			$keys = array();
+			
+			foreach ($pk_columns as $pk_column) {
+				$method = 'get' . fInflection::camelize($pk_column, TRUE);
+				$keys[$pk_column] = $record->$method();
+			}
+			
+			$this->primary_keys[$number] = (sizeof($pk_columns) == 1) ? $keys[$first_pk_column] : $keys;
+		}	
 	}
 	
 	
@@ -544,9 +563,9 @@ class fRecordSet implements Iterator
 	public function getRecords()
 	{
 		if (sizeof($this->records) != $this->result_object->getReturnedRows()) {
-			$pointer = $this->result_object->getPointer();
+			$pointer = $this->pointer;
 			$this->createAllRecords();
-			$this->result_object->seek($pointer);
+			$this->pointer = $pointer;
 		}
 		return $this->records;
 	}
@@ -562,60 +581,11 @@ class fRecordSet implements Iterator
 	public function getPrimaryKeys()
 	{
 		if (sizeof($this->primary_keys) != $this->result_object->getReturnedRows()) {
-			$pointer = $this->result_object->getPointer();
+			$pointer = $this->pointer;
 			$this->createAllRecords();
-			$this->result_object->seek($pointer);
+			$this->pointer = $pointer;
 		}
 		return $this->primary_keys;
-	}
-	
-	
-	/**
-	 * Injects a set of related information into the current record
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string  $related_table  The table we are injecting the values for
-	 * @param  string  $route          The route to the related table
-	 * @param  fResult $result_object  The pre-loaded result object that we are extracting the sequence from
-	 * @return void
-	 */
-	private function injectSubSet($related_table, $route, $result_object)
-	{
-		$rows = array();
-		
-		$keys = $this->primary_keys[$this->key()];
-		settype($keys, 'array');
-					
-		try {
-			while (!array_diff($keys, $result_object->current())) {
-				$rows[] = $result_object->fetchRow();
-			}
-		} catch (fExpectedException $e) { }
-		
-		$table = fORM::tablize($this->class_name);
-		$relationship = fORMSchema::getRoute($table, $related_table, $route);
-		
-		$record = $this->records[$this->key()];
-		$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
-		
-		$sql = 'SELECT *
-					FROM ' . $related_table . '
-					WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
-		
-		$result = new fResult('array');
-		$result->setSQL($sql);
-		$result->setResult($rows);
-		$result->setReturnedRows(sizeof($rows));
-		$result->setAffectedRows(0);
-		$result->setAutoIncrementedValue(NULL);
-		
-		$class_name = fORM::classize($related_table);
-		
-		$set = new fRecordSet($class_name, $result);
-		
-		$method = 'inject' . fInflection::pluralize($class_name);
-		$record->$method($set);
 	}
 	
 	
@@ -641,7 +611,7 @@ class fRecordSet implements Iterator
 	 */
 	public function key()
 	{
-		return $this->result_object->key();
+		return $this->pointer;
 	}
 	
 	
@@ -654,7 +624,10 @@ class fRecordSet implements Iterator
 	 */
 	public function next()
 	{
-		$this->result_object->next();
+		if (sizeof($this->records) < $this->result_object->getReturnedRows()) {
+			$this->result_object->next();	
+		}
+		$this->pointer++;
 	}
 	
 	
@@ -681,15 +654,16 @@ class fRecordSet implements Iterator
 		
 		$table = fORM::tablize($this->class_name);
 		
+		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
 		
 		// Get the existing joins and add any necessary ones
 		$joins = fSQLParsing::parseJoins($clauses['FROM'], fORMSchema::getInstance());
-		$joins = fORMDatabase::addJoin($joins, $route, $relationship);
+		$joins = fORMDatabase::addJoin($joins, $table, $route, $relationship);
 		
 		// Find the aliases we are gonna need
 		$table_alias         = fORMDatabase::findTableAlias($table, $joins);
-		$join_name           = $table . '_' . $related_table . '[' . $route . ']';
+		$join_name           = $table . '_' . $related_table . '{' . $route . '}';
 		$related_table_alias = $joins[$join_name]['table_alias'];
 		
 		// Build the query out
@@ -710,18 +684,46 @@ class fRecordSet implements Iterator
 			$new_sql .= fORMDatabase::createPrimaryKeyWhereCondition($table, $table_alias, $this->getPrimaryKeys());
 		}
 		
-		// We need to add the related data order bys to the existing order bys
-		$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
-		if (!empty($clauses['ORDER BY']) || $order_bys != array()) {
-			$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
-				
-			if ($clauses['ORDER BY'] && $order_bys != array()) {
-				$new_sql .= ', ';
-			}
+		// If the original query did not have an order by, we need to create one
+		if (empty($clauses['ORDER BY'])) {
 			
-			if ($order_bys != array()) {
-				$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);
-			}
+			$clauses['ORDER BY'] = 'CASE ';
+			
+			$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$first_pk_column = $pk_columns[0];
+			
+			$number = 0;
+			foreach ($this->primary_keys as $primary_keys) {
+				$clauses['ORDER BY'] .= 'WHEN ';
+				
+				if (is_array($primary_keys)) {
+					$conditions = array();
+					foreach ($pk_columns as $pk_column) {
+						$conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_keys[$pk_column], '=');			 		
+					}
+					$clauses['ORDER BY'] .= join(' AND ', $conditions);
+				} else {
+					$clauses['ORDER BY'] .= $table . '.' . $first_pk_column . fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_keys, '=');
+				}	
+				
+				$clauses['ORDER BY'] .= ' THEN ' . $number . ' ';	
+				
+				$number++;
+			}	
+			
+			$clauses['ORDER BY'] .= 'END ASC';	
+		}
+			
+		$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
+		
+		$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
+			
+		if ($clauses['ORDER BY'] && $order_bys != array()) {
+			$new_sql .= ', ';
+		}
+		
+		if ($order_bys) {
+			$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);
 		}
 		
 		$new_sql = fORMDatabase::insertFromClause($table, $new_sql, $joins);
@@ -730,21 +732,47 @@ class fRecordSet implements Iterator
 			$this->preloaded_result_objects[$related_table] = array();
 		}
 		
-		$this->preloaded_result_objects[$related_table][$route] = fORMDatabase::getInstance()->translatedQuery($new_sql);
-	}
-	
-	
-	/**
-	 * Does the action of sorting records
-	 * 
-	 * @param  object $a       Record a
-	 * @param  object $b       Record b
-	 * @param  string $method  The method to sort by
-	 * @return integer  < 0 if a is less than b; 0 if a = b; > 0 if a is greater than b
-	 */
-	protected function performSort($a, $b, $method)
-	{
-		return strnatcasecmp($a->$method(), $b->$method());
+		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
+		
+		$total_records = sizeof($this->records);
+		for ($i=0; $i < $total_records; $i++) {
+			
+			$record = $this->records[$i];
+			
+			$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$keys       = array();
+			
+			foreach ($pk_columns as $pk_column) {
+				$method = 'get' . fInflection::camelize($pk_column, TRUE);
+				$keys[$pk_column] = $record->$method();
+			}
+			
+			$rows = array();
+						
+			try {
+				while (!array_diff($keys, $result->current())) {
+					$rows[] = $result->fetchRow();
+				}
+			} catch (fExpectedException $e) { }
+			
+			$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
+			
+			$sql = 'SELECT *
+						FROM ' . $related_table . '
+						WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
+			
+			$injected_result = new fResult('array');
+			$injected_result->setSQL($sql);
+			$injected_result->setResult($rows);
+			$injected_result->setReturnedRows(sizeof($rows));
+			$injected_result->setAffectedRows(0);
+			$injected_result->setAutoIncrementedValue(NULL);
+			
+			$set = new fRecordSet($related_class, $injected_result);
+			
+			$method = 'inject' . fInflection::pluralize($related_class);
+			$record->$method($set);		
+		}
 	}
 	
 	
@@ -757,7 +785,7 @@ class fRecordSet implements Iterator
 	 */
 	public function rewind()
 	{
-		$this->result_object->rewind();
+		$this->pointer = 0;
 	}
 	
 	
@@ -766,27 +794,40 @@ class fRecordSet implements Iterator
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $method_name  The method to call on each object to get the value to sort
-	 * @param  string $direction    Either 'asc' or 'desc'
+	 * @param  string $method     The method to call on each object to get the value to sort by
+	 * @param  string $direction  Either 'asc' or 'desc'
 	 * @return void
 	 */
-	public function sort($method_name, $direction)
+	public function sort($method, $direction)
 	{
 		if (!in_array($direction, array('asc', 'desc'))) {
 			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
 		}
 		
+		// We will create an anonymous function here to handle the sort
+		$lambda_params = '$a,$b';
+		$lambda_funcs  = array(
+			'asc'  => 'return strnatcasecmp($a->' . $method . '(), $b->' . $method . '());',
+			'desc' => 'return strnatcasecmp($b->' . $method . '(), $a->' . $method . '());'
+		);
+		
+		$this->sortByCallback(create_function($lambda_params, $lambda_funcs[$direction]));
+	}
+	
+	
+	/**
+	 * Sorts the set by passing the callback to {@link http://php.net/usort usort()}
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  mixed $callback  The function/method to pass to usort()
+	 * @return void
+	 */
+	public function sortByCallback($callback)
+	{
 		$this->createAllRecords();
-		
-		if (!method_exists($this->records[0], $method_name)) {
-			fCore::toss('fProgrammerException', 'The method specified for sorting, ' . $method_name . '(), does not exist');
-		}
-		
-		// Use __call to pass the desired method name through to the sort callback
-		usort($this->records, array($this, 'sortBy' . fInflection::camelize($method_name, TRUE)));
-		if ($direction == 'desc') {
-			array_reverse($this->records);
-		}
+		usort($this->records, $callback);
+		$this->extractPrimaryKeys();	
 	}
 	
 	
@@ -814,7 +855,7 @@ class fRecordSet implements Iterator
 	 */
 	public function valid()
 	{
-		return $this->result_object->valid();
+		return $this->pointer < $this->result_object->getReturnedRows();
 	}
 }
 

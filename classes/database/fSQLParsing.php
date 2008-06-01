@@ -268,7 +268,7 @@ class fSQLParsing
 	 * @param  string $sql  The sql to parse
 	 * @return array  The various clauses of the SELECT statement (see method descript for details)
 	 */
-	public function parseSelectSQL($sql)
+	static public function parseSelectSQL($sql)
 	{
 		// Split the strings out of the sql so parsing doesn't get messed up by quoted values
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);

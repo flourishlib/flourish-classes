@@ -292,9 +292,22 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
+			
+			// Remove the current file for the column
 			if ($values[$column] instanceof fFile) {
 				$values[$column]->delete();	
 			}
+			
+			// Remove the old files for the column
+			if (isset($old_values[$column])) {
+				settype($old_values[$column], 'array');
+				foreach ($old_values[$column] as $file) {
+					if ($file instanceof fFile) {
+						$file->delete();
+					}
+				}
+			}
+			
 		}
 	}
 	
@@ -316,9 +329,17 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
-			if (isset($old_values[$column]) && $old_values[$column] instanceof fFile) {
-				$old_values[$column]->delete();	
+			
+			// Remove the old files for the column
+			if (isset($old_values[$column])) {
+				settype($old_values[$column], 'array');
+				foreach ($old_values[$column] as $file) {
+					if ($file instanceof fFile) {
+						$file->delete();
+					}
+				}
 			}
+			
 		}
 	}
 	
@@ -527,8 +548,10 @@ class fORMFile
 		$file     = new fFile($file_path);
 		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
 		
-		$old_values[$column] = $values[$column];
-		$values[$column]     = $new_file;
+		settype($old_values[$column], 'array');
+		
+		$old_values[$column][] = $values[$column];
+		$values[$column]       = $new_file;
 	}
 	
 	
@@ -610,17 +633,21 @@ class fORMFile
 			}	
 		}
 		
+		settype($old_values[$column], 'array');
+		
 		// Assign the file
-		$old_values[$column] = $values[$column];
-		$values[$column]     = $file;
+		$old_values[$column][] = $values[$column];
+		$values[$column]       = $file;
 		
 		// Perform the file upload inheritance
 		if (!empty(self::$column_inheritence[$class][$column])) {
 			foreach (self::$column_inheritence[$class][$column] as $other_column) {
 				$other_file = $file->duplicate(self::$file_upload_columns[$class][$column] . self::TEMP_DIRECTORY, FALSE);
 				
-				$old_values[$other_column] = $values[$other_column];
-				$values[$other_column]     = $other_file;
+				settype($old_values[$other_column], 'array');
+				
+				$old_values[$other_column][] = $values[$other_column];
+				$values[$other_column]       = $other_file;
 				
 				self::processImage($class, $other_column, $other_file);	
 			}	
