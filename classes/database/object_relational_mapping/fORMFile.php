@@ -222,6 +222,7 @@ class fORMFile
 			'pre-commit::delete()'    => array('fORMFile', 'delete'),
 			'post-commit::delete()'   => array('fORMFile', 'commit'),
 			'post-rollback::delete()' => array('fORMFile', 'rollback'),
+			'post::populate()'        => array('fORMFile', 'populate'),
 			'post-begin::store()'     => array('fORMFile', 'begin'),
 			'post-validate::store()'  => array('fORMFile', 'moveFromTemp'),
 			'pre-commit::store()'     => array('fORMFile', 'deleteOld'),
@@ -429,6 +430,31 @@ class fORMFile
 	
 	
 	/**
+	 * Performs the upload action for file uploads during populate() of fActiveRecord
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @return void
+	 */
+	static public function populate($class, &$values, &$old_values, &$related_records, $debug)
+	{
+		$class_name = fORM::getClassName($class);
+		
+		foreach (self::$file_upload_columns[$class_name] as $column => $directory) {
+			if (fUpload::check($column)) {
+				$method = 'upload' . fInflection::camelize($column, TRUE);
+				$class->$method();
+			}
+		}
+	}
+	
+	
+	/**
 	 * Prepares a file for output into HTML by returning the web server path to the file
 	 * 
 	 * @internal
@@ -600,7 +626,8 @@ class fORMFile
 		$upload_dir = self::$file_upload_columns[$class][$column];
 		
 		// Let's clean out the upload temp dir
-		$files = $upload_dir->scan();
+		$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+		$files    = $temp_dir->scan();
 		foreach ($files as $file) {
 			if (filemtime($file->getPath()) < strtotime('-6 hours')) {
 				$file->delete();
@@ -617,7 +644,7 @@ class fORMFile
 			fUpload::reset();
 			
 			// If there is an existing file and none was uploaded, substitute the existing file
-			$existing_file = fRequest::get('existing-' . $column);
+			$existing_file = fRequest::get('__flourish_existing_' . $column);
 			
 			if ($existing_file && $e->getMessage() == 'Please upload a file') {
 				
