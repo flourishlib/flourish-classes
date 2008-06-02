@@ -49,6 +49,7 @@ class fInflection
 		'^(c)hildren$'   => '\1hild',
 		'^(p)eople$'     => '\1erson',
 		'(m)en$'         => '\1an',
+		'(phase)s'       => '\1',
 		'([csx])es$'     => '\1is',
 		'([cs]h)es$'     => '\1',
 		'(ss)es$'        => '\1',
@@ -166,8 +167,12 @@ class fInflection
 	 * @param  boolean $use_words_for_single_digits  If the numbers 0 to 9 should be written out as words
 	 * @return string
 	 */
-	static public function inflectOnQuantity($quantity, $singular_form, $plural_form, $use_words_for_single_digits=FALSE)
+	static public function inflectOnQuantity($quantity, $singular_form, $plural_form=NULL, $use_words_for_single_digits=FALSE)
 	{
+		if ($plural_form === NULL) {
+			$plural_form = self::pluralize($singular_form);	
+		}
+		
 		if (is_array($quantity)) {
 			$quantity = sizeof($quantity);
 		}

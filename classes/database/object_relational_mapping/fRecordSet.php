@@ -61,11 +61,11 @@ class fRecordSet implements Iterator
 		
 		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
 		
-		if (!empty($where_conditions)) {
+		if ($where_conditions) {
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);
 		}
 		
-		if (!empty($order_bys)) {
+		if ($order_bys) {
 			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
 		}
 		
@@ -326,13 +326,6 @@ class fRecordSet implements Iterator
 	 * @var integer
 	 */
 	private $pointer = 0;
-	
-	/**
-	 * The result objects for preloaded data
-	 * 
-	 * @var array
-	 */
-	private $preloaded_result_objects = array();
 	
 	/**
 	 * An array of the primary keys for the records in the set, initially empty
@@ -666,9 +659,17 @@ class fRecordSet implements Iterator
 		$join_name           = $table . '_' . $related_table . '{' . $route . '}';
 		$related_table_alias = $joins[$join_name]['table_alias'];
 		
+		
+		
 		// Build the query out
-		$new_sql  = 'SELECT ' . $related_table_alias . '.* ';
-		$new_sql .= 'FROM :from_clause ';
+		$new_sql  = 'SELECT ' . $related_table_alias . '.*';
+		
+		// If we are going through a join table we need the related primary key for matching
+		if (isset($relationship['join_table'])) {
+			$new_sql .= ", " . $table_alias . '.' . $relationship['column']; 		
+		}
+		
+		$new_sql .= ' FROM :from_clause ';
 		
 		if (!empty($clauses['WHERE'])) {
 			$new_sql .= 'WHERE (' . $clauses['WHERE'] . ') ';
@@ -728,10 +729,9 @@ class fRecordSet implements Iterator
 		
 		$new_sql = fORMDatabase::insertFromClause($table, $new_sql, $joins);
 		
-		if (!isset($this->preloaded_result_objects[$related_table])) {
-			$this->preloaded_result_objects[$related_table] = array();
-		}
 		
+		
+		// Run the query and inject the results into the records
 		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
 		
 		$total_records = sizeof($this->records);
@@ -751,15 +751,34 @@ class fRecordSet implements Iterator
 						
 			try {
 				while (!array_diff($keys, $result->current())) {
-					$rows[] = $result->fetchRow();
+					$row = $result->fetchRow();
+					
+					// If we are going through a join table we need to remove the related primary key that was used for matching
+					if (isset($relationship['join_table'])) {
+						unset($row[$relationship['column']]); 		
+					}
+					
+					$rows[] = $row;
 				}
 			} catch (fExpectedException $e) { }
 			
+			
 			$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
 			
-			$sql = 'SELECT *
-						FROM ' . $related_table . '
-						WHERE ' . $relationship['related_column'] . fORMDatabase::prepareBySchema($related_table, $relationship['related_column'], $record->$method(), '=');
+			$sql  = "SELECT " . $related_table . ".* FROM :from_clause";
+			
+			$where_conditions = array(
+				$table . '.' . $relationship['column'] . '=' => $record->$method()
+			);
+			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($related_table, $where_conditions);
+			
+			$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
+			if ($order_bys) {
+				$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($related_table, $order_bys);
+			}
+			
+			$sql = fORMDatabase::insertFromClause($related_table, $sql);
+			
 			
 			$injected_result = new fResult('array');
 			$injected_result->setSQL($sql);
@@ -785,6 +804,9 @@ class fRecordSet implements Iterator
 	 */
 	public function rewind()
 	{
+		if (sizeof($this->records) < $this->result_object->getReturnedRows()) {
+			$this->result_object->rewind();	
+		}
 		$this->pointer = 0;
 	}
 	

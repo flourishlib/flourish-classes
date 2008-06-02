@@ -590,7 +590,7 @@ abstract class fActiveRecord
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is a blob column');
 		}
 		
-		if ($formatting !== NULL && !in_array($column_type, array('date', 'time', 'timestamp', 'float'))) {
+		if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {
 			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
 		}
 		
@@ -641,6 +641,11 @@ abstract class fActiveRecord
 			}
 			
 			return number_format($value, $decimal_places, '.', ',');
+		}
+		
+		// Turn like-breaks into breaks for text fields and add links
+		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
+			return fHTML::createLinks(fHTML::convertNewlines(fHTML::prepare($value)));		
 		}
 		
 		// Anything that has gotten to here is a string value, or is not the
