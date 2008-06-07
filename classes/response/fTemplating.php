@@ -142,8 +142,9 @@ class fTemplating
 	
 	/**
 	 * Includes the element specified (element must be set through setElement() first). If the
-	 * element is a file path ending in .css, .js or .rss an html tag will be printed. If the
-	 * element is a file path ending in .php it will be included.
+	 * element is a file path ending in .css, .js, .rss or .xml an appropriate HTML tag will
+	 * be printed (files ending in .xml will be treated as an RSS feed). If the element is a
+	 * file path ending in .inc, .php or .php5 it will be included.
 	 * 
 	 * Paths that start with './' will be loaded relative to the current script. Paths that
 	 * start with a file or directory name will be loaded relative to the root passed in the
@@ -165,14 +166,15 @@ class fTemplating
 	 * );
 	 * </pre>
 	 * 
-	 * @param  string $element  The element to place
+	 * @param  string $element    The element to place
+	 * @param  string $file_type  Will force the element to be placed as this type of file instead of auto-detecting the file type. Valid types include: 'css', 'js', 'php' and 'rss'.
 	 * @return void
 	 */
-	public function place($element)
+	public function place($element, $file_type=NULL)
 	{
 		// Put in a buffered placeholder
 		if ($this->buffered_id) {
-			echo '%%fTemplating::' . $this->buffered_id . '::' . $element . '%%';
+			echo '%%fTemplating::' . $this->buffered_id . '::' . $element . '::' . $file_type . '%%';
 			return;
 		}
 		
@@ -180,7 +182,7 @@ class fTemplating
 			return;
 		}
 		
-		$this->placeElement($element);
+		$this->placeElement($element, $file_type);
 	}
 	
 	
@@ -207,10 +209,11 @@ class fTemplating
 	/**
 	 * Performs the action of actually placing an element
 	 * 
-	 * @param  string $element  The element that is being placed
+	 * @param  string $element    The element that is being placed
+	 * @param  string $file_type  The file type to treat all values as
 	 * @return void
 	 */
-	private function placeElement($element)
+	private function placeElement($element, $file_type)
 	{
 		$values = $this->elements[$element];
 		settype($values, 'array');
@@ -218,9 +221,9 @@ class fTemplating
 		
 		foreach ($values as $value) {
 			
-			$file_extension = $this->verifyValue($element, $value);
+			$file_type = $this->verifyValue($element, $value, $file_type);
 			
-			switch ($file_extension) {
+			switch ($file_type) {
 				case 'css':
 					$this->placeCSS($value);
 					break;
@@ -236,6 +239,9 @@ class fTemplating
 				case 'rss':
 					$this->placeRSS($value);
 					break;
+					
+				default:
+					fCore::toss('fProgrammerException', 'The file type specified, ' . $file_type . ', is not a valid file type. Must be one of: css, js, php, rss.');
 			}
 		}
 	}
@@ -296,9 +302,10 @@ class fTemplating
 	private function placeRSS($info)
 	{
 		if (!is_array($info)) {
-			$info = array('path'  => $info,
+			$info = array(
+				'path'  => $info,
 				'title' => fInflection::humanize(
-					preg_replace('#.*?([^/]+).rss$#i', '\1', $info)
+					preg_replace('#.*?([^/]+).(rss|xml)$#i', '\1', $info)
 				)
 			);
 		}
@@ -326,8 +333,8 @@ class fTemplating
 		fBuffer::erase();
 		
 		// We are gonna use a regex replacement that is eval()'ed as PHP code
-		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)%%/e';
-		$replacement = 'fBuffer::startCapture() . $this->placeElement("$1") . fBuffer::stopCapture()';
+		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)::(.*?)%%/e';
+		$replacement = 'fBuffer::startCapture() . $this->placeElement("$1", "$2") . fBuffer::stopCapture()';
 		
 		// Remove the buffered id, thus making any nested place() calls be executed immediately
 		$this->buffered_id = NULL;
@@ -365,13 +372,14 @@ class fTemplating
 	/**
 	 * Ensures the value is valid
 	 * 
-	 * @param  string $element  The element that is being placed
-	 * @param  mixed  $value    A value to be placed
-	 * @return string  The file extension of the value being placed
+	 * @param  string $element    The element that is being placed
+	 * @param  mixed  $value      A value to be placed
+	 * @param  string $file_type  The file type that this element will be displayed as - skips checking file extension
+	 * @return string  The file type of the value being placed
 	 */
-	private function verifyValue($element, $value)
+	private function verifyValue($element, $value, $file_type)
 	{
-		if (empty($value)) {
+		if (!$value) {
 			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');
 		}
 		
@@ -379,11 +387,26 @@ class fTemplating
 			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value, ' . fCore::dump($value) . ', that is missing the path key');
 		}
 		
+		if ($file_type) {
+			return $file_type;	
+		}
+		
 		$path = (is_array($value)) ? $value['path'] : $value;
 		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 		
+		// Allow some common variations on file extensions
+		$extension_map = array(
+			'inc'  => 'php',
+			'php5' => 'php',
+			'xml'  => 'rss'
+		);
+		
+		if (isset($extension_map[$extension])) {
+			$extension = $extension_map[$extension];	
+		}
+		
 		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .js, .php or .rss file');
+			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .inc, .js, .php, .php5, .rss or .xml file');
 		}
 		
 		return $extension;
