@@ -271,7 +271,7 @@ class fTemplating
 			$path = $this->root . $path;
 		
 		// Check to see if the element is relative to the current script
-		} elseif (preg_match('#^(\./|\.\\)#')) {
+		} elseif (preg_match('#^(\./|\.\\\\)#', $path)) {
 			$path = pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_DIRNAME) . substr($path, 2);
 		}
 		
