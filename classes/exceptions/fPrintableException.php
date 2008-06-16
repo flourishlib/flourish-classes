@@ -64,23 +64,15 @@ abstract class fPrintableException extends Exception
 		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		$text_matches = preg_split($reg_exp, $content_with_newlines);
+		
 		foreach($text_matches as $key => $value) {
 			$value = htmlentities($value, ENT_COMPAT, 'UTF-8');
-			$windows_characters = array(
-				chr(130) => '&lsquor;', chr(131) => '&fnof;',   chr(132) => '&ldquor;',
-				chr(133) => '&hellip;', chr(134) => '&dagger;', chr(135) => '&Dagger;',
-				chr(136) => '&#710;',   chr(137) => '&permil;', chr(138) => '&Scaron;',
-				chr(139) => '&lsaquo;', chr(140) => '&OElig;',  chr(145) => '&lsquo;',
-				chr(146) => '&rsquo;',  chr(147) => '&ldquo;',  chr(148) => '&rdquo;',
-				chr(149) => '&bull;',   chr(150) => '&ndash;',  chr(151) => '&mdash;',
-				chr(152) => '&tilde;',  chr(153) => '&trade;',  chr(154) => '&scaron;',
-				chr(155) => '&rsaquo;', chr(156) => '&oelig;',  chr(159) => '&Yuml;'
-			);
-			$text_matches[$key] = strtr($value, $windows_characters);
 		}
+		
 		for ($i = 0; $i < sizeof($html_matches); $i++) {
 			$text_matches[$i] .= $html_matches[$i][0];
 		}
+		
 		$content_with_newlines = implode($text_matches);
 		
 		$output  = ($no_block_html) ? '<p>' : '';

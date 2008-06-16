@@ -204,7 +204,7 @@ class fORMValidation
 			return fORM::getColumnName($class, $column) . ': Please choose from one of the following: ' . join(', ', $column_info['valid_values']);
 		}
 		// Make sure the value isn't too long
-		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && strlen($values[$column]) > $column_info['max_length']) {
+		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
 			return fORM::getColumnName($class, $column) . ': Please enter a value no longer than ' . $column_info['max_length'] . ' characters';
 		}
 		

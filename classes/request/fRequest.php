@@ -106,7 +106,10 @@ class fRequest
 	
 	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order). A
-	 * value that === '' and is not cast to a specific type will become NULL.
+	 * value that === '' and is not cast to a specific type will become NULL. 
+	 * All text values are interpreted as UTF-8 string and appropriately
+	 * cleaned. Please see {@link http://flourishlib.com/wiki/GeneralDocs/UTF8}
+	 * for more information.
 	 * 
 	 * @param  string $key            The key to get the value of
 	 * @param  string $cast_to        Cast the value to this data type
@@ -148,6 +151,14 @@ class fRequest
 			$value = NULL;
 		} elseif ($cast_to && $value !== NULL) {
 			settype($value, $cast_to);
+		}
+		
+		// Clean values coming in to ensure we don't have invalid UTF-8
+		if ($cast_to === NULL || $cast_to == 'string') {
+			$value = fUTF8::clean($value);	
+		}
+		if ($cast_to == 'array') {
+			$value = array_map(array('fUTF8', 'clean'), $value);	
 		}
 		
 		return $value;

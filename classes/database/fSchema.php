@@ -533,8 +533,8 @@ class fSchema implements fISchema
 				$info['valid_values'] = preg_replace("/^'|'\$/", '', explode(",", $match[3]));
 				$match[3] = 0;
 				foreach ($info['valid_values'] as $valid_value) {
-					if (strlen($valid_value) > $match[3]) {
-						$match[3] = strlen($valid_value);
+					if (strlen(utf8_decode($valid_value)) > $match[3]) {
+						$match[3] = strlen(utf8_decode($valid_value));
 					}
 				}
 			}

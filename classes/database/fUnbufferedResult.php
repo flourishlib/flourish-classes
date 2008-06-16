@@ -61,12 +61,12 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
+	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'odbc', 'pgsql', 'sqlite', 'pdo')
 	 * @return fUnbufferedResult
 	 */
 	public function __construct($extension)
 	{
-		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
+		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pgsql', 'sqlite', 'pdo', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
@@ -93,10 +93,14 @@ class fUnbufferedResult implements Iterator
 			mysql_free_result($this->result);
 		} elseif ($this->extension == 'mysqli') {
 			mysqli_free_result($this->result);
+		} elseif ($this->extension == 'odbc') {
+			odbc_free_result($this->result);
 		} elseif ($this->extension == 'pgsql') {
 			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			sqlite_fetch_all($this->result);
+		} elseif ($this->extension == 'sqlsrv') {
+			sqlsrv_free_stmt($this->result);
 		} elseif ($this->extension == 'pdo') {
 			$this->result->closeCursor();
 		}
@@ -130,10 +134,14 @@ class fUnbufferedResult implements Iterator
 			$row = mysql_fetch_assoc($this->result);
 		} elseif ($this->extension == 'mysqli') {
 			$row = mysqli_fetch_assoc($this->result);
+		} elseif ($this->extension == 'odbc') {
+			$row = odbc_fetch_array($this->result);
 		} elseif ($this->extension == 'pgsql') {
 			$row = pg_fetch_assoc($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
+		} elseif ($this->extension == 'sqlite') {
+			$row = sqlsrv_fetch_array($this->result, SQLSRV_FETCH_ASSOC);
 		} elseif ($this->extension == 'pdo') {
 			$row = $this->result->fetch(PDO::FETCH_ASSOC);
 		}

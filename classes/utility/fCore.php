@@ -128,8 +128,10 @@ class fCore
 						} elseif (is_object($arg)) {
 							$bt_string .= 'Object(' . get_class($arg) . ')';
 						} elseif (is_string($arg)) {
-							if (strlen($arg) > 18) {
-								$arg = substr($arg, 0, 15) . '...';
+							// Shorten the UTF-8 string if it is too long
+							if (strlen(utf8_decode($arg)) > 18) {
+								preg_match('#^(.{0,15})#us', $arg, $shirt_arg);
+								$arg = $short_arg[1] . '...';
 							}
 							$bt_string .= "'" . $arg . "'";
 						} else {

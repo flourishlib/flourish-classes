@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides XML-related methods
+ * Provides functionality for UTF-8 encoded XML files
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -21,16 +21,18 @@ class fXML
 	 */
 	static public function prepare($content)
 	{
-		$tag_characters = array(
-			'<' => '&lt;',
-			'>' => '&gt;',
-			'"' => '&quot;',
-			"'" => '&apos;'
-		);
-		
-		$content = fHTML::prepare($content);
-		$content = strtr($content, $tag_characters);
-		return fHTML::convertEntitiesToNumeric($content);
+		return htmlspecialchars(fHTML::decode($content));
+	}
+	
+	
+	/**
+	 * Sets the property Content-Type header for a UTF-8 xml file
+	 * 
+	 * @return void
+	 */
+	static public function setHeader()
+	{
+		header('Content-Type: text/xml, charset=utf-8');	
 	}
 	
 	

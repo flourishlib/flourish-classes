@@ -82,12 +82,12 @@ class fResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo')
+	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite')
 	 * @return fResult
 	 */
 	public function __construct($extension)
 	{
-		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo');
+		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
@@ -118,8 +118,6 @@ class fResult implements Iterator
 			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			// Sqlite doesn't have a way to free a result
-		} elseif ($this->extension == 'pdo') {
-			// We have already buffered PDO results, so there is nothing to free
 		}
 	}
 	
@@ -149,7 +147,7 @@ class fResult implements Iterator
 			$row = pg_fetch_assoc($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
-		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
+		} elseif ($this->extension == 'array') {
 			$row = $this->result[$this->pointer];
 		}
 		
@@ -459,8 +457,8 @@ class fResult implements Iterator
 			$success = pg_result_seek($this->result, $row);
 		} elseif ($this->extension == 'sqlite') {
 			$success = sqlite_seek($this->result, $row);
-		} elseif ($this->extension == 'pdo' || $this->extension == 'array') {
-			// Do nothing since pdo results are arrays
+		} elseif ($this->extension == 'array') {
+			// Do nothing since we already changed the pointer
 			$success = TRUE;
 		}
 		

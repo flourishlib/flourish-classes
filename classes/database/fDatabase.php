@@ -2,6 +2,9 @@
 /**
  * Provides a common API for different databases - will automatically use any installed extension
  * 
+ * This class is implemented to use the UTF-8 character set. Please see
+ * {@link http://flourishlib.com/wiki/GeneralDocs/UTF8} for more information.
+ * 
  * The following databases are supported:
  *   - {@link http://microsoft.com/sql/ MSSQL}
  *   - {@link http://mysql.com MySQL}
@@ -9,7 +12,12 @@
  *   - {@link http://sqlite.org SQLite}
  * 
  * The class will automatically use the first of the following extensions it finds:
+ *   - MSSQL (via ODBC)
+ *     - {@link http://php.net/pdo_odbc pdo_odbc}
+ *     - {@link http://php.net/odbc odbc}
  *   - MSSQL
+ *     - {@link http://msdn.microsoft.com/en-us/library/cc296221.aspx sqlsrv}
+ *     - {@link http://php.net/pdo_dblib pdo_dblib}
  *     - {@link http://php.net/mssql mssql} (or {@link http://php.net/sybase sybase})
  *   - MySQL
  *     - {@link http://php.net/mysql mysql}
@@ -58,7 +66,7 @@ class fDatabase
 	 * The extension to use for the database specified
 	 * 
 	 * Options include:
-	 *   - mssql, mysql, mysqli, pgsql, sqlite, pdo
+	 *   - mssql, mysql, mysqli, odbc, pgsql, sqlite, sqlsrv, pdo
 	 * 
 	 * @var string
 	 */
@@ -159,15 +167,14 @@ class fDatabase
 			}
 		}
 		
-		$this->type = $type;
-		
-		$this->determineExtension();
-		
+		$this->type     = $type;
 		$this->database = $database;
 		$this->username = $username;
 		$this->password = $password;
 		$this->host     = $host;
 		$this->port     = $port;
+		
+		$this->determineExtension();
 	}
 	
 	
@@ -187,10 +194,14 @@ class fDatabase
 			mysql_close($this->connection);
 		} elseif ($this->extension == 'mysqli') {
 			mysqli_close($this->connection);
+		} elseif ($this->extension == 'odbc') {
+			odbc_close($this->connection);
 		} elseif ($this->extension == 'pgsql') {
 			pg_close($this->connection);
 		} elseif ($this->extension == 'sqlite') {
 			sqlite_close($this->connection);
+		} elseif ($this->extension == 'sqlsrv') {
+			sqlsrv_close($this->connection);
 		} elseif ($this->extension == 'pdo') {
 			// PDO objects close their own connections when destroyed
 		}
@@ -213,13 +224,19 @@ class fDatabase
 				$message = 'MySQL error (' . mysql_error($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'mysqli') {
 				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();
+			} elseif ($this->extension == 'odbc') {
+				$message = 'MSSQL error (' . odbc_errormsg($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'pgsql') {
 				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'sqlite') {
 				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();
+			} elseif ($this->extension == 'sqlsrv') {
+				$error_info = sqlsrv_errors(SQLSRV_ERR_ALL);
+				$message = 'MSSQL error (' . $error_info[0]['message'] . ') in ' . $result->getSql();
 			} elseif ($this->extension == 'pdo') {
 				$error_info = $this->connection->errorInfo();
 				$db_type_map = array(
+					'mssql'      => 'MSSQL',
 					'mysql'      => 'MySQL',
 					'postgresql' => 'PostgreSQL',
 					'sqlite'     => 'SQLite'
@@ -244,7 +261,26 @@ class fDatabase
 		
 		// Establish a connection to the database
 		if ($this->extension == 'pdo') {
-			if ($this->type == 'mysql') {
+			if ($this->type == 'mssql') {
+				$odbc = strtolower(substr($this->database, 0, 4)) == 'dsn:';
+				if ($odbc && in_array('odbc', PDO::getAvailableDrivers())) {
+					try {
+						$this->connection = new PDO('odbc:' . substr($this->database, 4), $this->username, $this->password);
+					} catch (PDOException $e) {
+						$this->connection = FALSE;
+					}
+				}
+				if (!$odbc && in_array('mssql', PDO::getAvailableDrivers())) {
+					try {
+						$separator = (fCore::getOS() == 'windows') ? ',' : ':';
+						$port      = ($this->port) ? $separator . $this->port : '';
+						$this->connection = new PDO('mssql:host=' . $this->host . $port . ';dbname=' . $this->database, $this->username, $this->password);
+					} catch (PDOException $e) {
+						$this->connection = FALSE;
+					}
+				}
+				
+			} elseif ($this->type == 'mysql') {
 				try {
 					$this->connection = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->database . (($this->port) ? ';port=' . $this->port : ''), $this->username, $this->password);
 				} catch (PDOException $e) {
@@ -268,37 +304,51 @@ class fDatabase
 		}
 		
 		if ($this->extension == 'sqlite') {
-			$this->connection = @sqlite_open($this->database);
+			$this->connection = sqlite_open($this->database);
 		}
 		
 		if ($this->extension == 'mssql') {
-			$this->connection = @mssql_connect(($this->port) ? $this->host . ':' . $this->port : $this->host, $this->username, $this->password);
-			if ($this->connection !== FALSE && @mssql_select_db($this->database, $this->connection) === FALSE) {
+			$separator        = (fCore::getOS() == 'windows') ? ',' : ':';
+			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password);
+			if ($this->connection !== FALSE && mssql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
 			}
 		}
 		
 		if ($this->extension == 'mysql') {
-			$this->connection = @mysql_connect(($this->port) ? $this->host . ':' . $this->port : $this->host, $this->username, $this->password);
-			if ($this->connection !== FALSE && @mysql_select_db($this->database, $this->connection) === FALSE) {
+			$this->connection = mysql_connect(($this->port) ? $this->host . ':' . $this->port : $this->host, $this->username, $this->password);
+			if ($this->connection !== FALSE && mysql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
 			}
 		}
 			
 		if ($this->extension == 'msyqli') {
 			if ($this->port) {
-				$this->connection = @mysqli_connect($this->host, $this->username, $this->password, $this->database, $this->port);
+				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database, $this->port);
 			} else {
-				$this->connection = @mysqli_connect($this->host, $this->username, $this->password, $this->database);
+				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database);
 			}
+		}
+		
+		if ($this->extension == 'odbc') {
+			$this->connection = odbc_connect(substr($this->database, 4), $this->username, $this->password);
 		}
 			
 		if ($this->extension == 'pgsql') {
-			$this->connection = @pg_connect("host='" . addslashes($this->host) . "'
+			$this->connection = pg_connect("host='" . addslashes($this->host) . "'
 											dbname='" . addslashes($this->database) . "'
 											user='" . addslashes($this->username) . "'
 											password='" . addslashes($this->password) . "'" .
 											(($this->port) ? " port='" . $this->port . "'" : ''));
+		}
+		
+		if ($this->extension == 'sqlsrv') {
+			$options = array(
+				'Database' => $this->database,
+				'UID'      => $this->username,
+				'PWD'      => $this->password
+			);
+			$this->connection = sqlsrv_connect($this->host, $options);
 		}
 		
 		// Ensure the connection was established
@@ -306,9 +356,11 @@ class fDatabase
 			fCore::toss('fConnectivityException', 'Unable to connect to database');
 		}
 		
-		// Make MySQL act more strict
+		// Make MySQL act more strict and use UTF-8
 		if ($this->type == 'mysql') {
-			$this->query("set sql_mode = 'ANSI'");
+			$this->query("SET SQL_MODE = 'ANSI'");
+			$this->query("SET NAMES = 'utf8'");
+			$this->query("SET CHARACTER SET utf8");
 		}
 		
 		// Make SQLite behave like other DBs for assoc arrays
@@ -317,8 +369,13 @@ class fDatabase
 		}
 		
 		// Fix some issues with mssql
-		if ($this->extension == 'mssql') {
+		if ($this->type == 'mssql') {
 			$this->query('SET TEXTSIZE 65536');
+		}
+		
+		// Make PostgreSQL use UTF-8
+		if ($this->type == 'postgresql') {
+			$this->query("SET NAMES 'UTF8'");	
 		}
 	}
 	
@@ -332,10 +389,25 @@ class fDatabase
 	{
 		switch ($this->type) {
 			case 'mssql':
-				if (extension_loaded('mssql')) {
-					$this->extension = 'mssql';
+				$odbc = strtolower(substr($this->database, 0, 4)) == 'dsn:';
+				if ($odbc) {
+					if (class_exists('PDO', FALSE) && in_array('odbc', PDO::getAvailableDrivers())) {
+						$this->extension = 'pdo';
+					} elseif (extension_loaded('odbc')) {
+						$this->extension = 'odbc';
+					} else {
+						fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL (via ODBC) support: pdo_odbc, odbc');
+					}	
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: mssql');
+					if (extension_loaded('sqlsrv')) {
+						$this->extension = 'sqlsrv';
+					} elseif (class_exists('PDO', FALSE) && in_array('mssql', PDO::getAvailableDrivers())) {
+						$this->extension = 'pdo';
+					} elseif (extension_loaded('mssql')) {
+						$this->extension = 'mssql';
+					} else {
+						fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: sqlsrv, pdo_dblib, mssql');
+					}	
 				}
 				break;
 			
@@ -409,10 +481,10 @@ class fDatabase
 			return "'" . pg_escape_bytea($this->connection, $value) . "'";
 		} elseif ($this->extension == 'sqlite') {
 			return "X'" . bin2hex($value) . "'";
-		} elseif ($this->extension == 'pdo') {
-			return $this->connection->quote($value);
-		} elseif ($this->extension == 'mssql') {
+		} elseif ($this->type == 'mssql') {
 			return '0x' . bin2hex($value);
+		} elseif ($this->extension == 'pdo') {
+			return $this->connection->quote($value, PDO::PARAM_LOB);
 		}
 	}
 	
@@ -468,10 +540,53 @@ class fDatabase
 			return "'" . pg_escape_string($value) . "'";
 		} elseif ($this->extension == 'sqlite') {
 			return "'" . sqlite_escape_string($value) . "'";
+		
+		} elseif ($this->type == 'mssql') {
+			
+			// If there are any non-ASCII characters, we need to escape
+			if (preg_match('#[^\x00-\x7F]#')) {
+				$characters = preg_split('##u', $value);
+				$output = "'";
+				foreach ($characters as $character) {
+					if (strlen($character) > 1) {
+						$b = array_map('ord', str_split($character));
+						switch (strlen($character)) {
+							case 2:
+								$bin = substr(decbin($b[0]), 3) .
+										   substr(decbin($b[1]), 2);
+								break;
+							
+							case 3:
+								$bin = substr(decbin($b[0]), 4) .
+										   substr(decbin($b[1]), 2) .
+										   substr(decbin($b[2]), 2);
+								break;
+							
+							// If it is a 4-byte character, MSSQL can't store it
+							// so instead store a ?
+							default:
+								$output .= '?';
+								continue;
+						}
+						$output .= "'+NCHAR(" . bindec($bin) . ")+'";
+					} else {
+						$output .= $character;
+						// Escape single quotes
+						if ($character = "'") {
+							$output .= "'";	
+						}
+					}		
+				}
+				$output .= "'";
+				return $output;
+			
+			// ASCII text is normal
+			} else {
+				return "'" . str_replace("'", "''", $value) . "'";
+			}
+		
 		} elseif ($this->extension == 'pdo') {
 			return $this->connection->quote($value);
-		} elseif ($this->extension == 'mssql') {
-			return "'" . str_replace("'", "''", $value) . "'";
 		}
 	}
 	
@@ -524,10 +639,35 @@ class fDatabase
 			$result->setResult(@mysql_query($result->getSql(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
 			$result->setResult(@mysqli_query($this->connection, $result->getSql()));
+		} elseif ($this->extension == 'odbc') {
+			$rows = array();
+			$resource = @odbc_exec($this->connection, $result->getSql());
+			if (is_resource($resource)) {
+				// Allow up to 1MB of binary data
+				odbc_longreadlen($resource, 1048576);
+				odbc_binmode($resource, ODBC_BINMODE_CONVERT);
+				while ($row = odbc_fetch_array($resource)) {
+					$rows[] = $row;	
+				}
+				$result->setResult($rows);
+			} else {
+				$result->setResult($resource);	
+			}
 		} elseif ($this->extension == 'pgsql') {
 			$result->setResult(@pg_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'sqlite') {
 			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
+		} elseif ($this->extension == 'sqlsrv') {
+			$rows = array();
+			$resource = @sqlsrv_query($this->connection, $result->getSql());
+			if (is_resource($resource)) {
+				while ($row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC)) {
+					$rows[] = $row;
+				}		
+				$result->setResult($rows);
+			} else {
+				$result->setResult($resource);	
+			}
 		} elseif ($this->extension == 'pdo') {
 			$pdo_statement = $this->connection->query($result->getSql());
 			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);
@@ -539,12 +679,18 @@ class fDatabase
 			$this->checkForError($result);
 		}
 		
-		if ($this->extension != 'pdo') {
-			$this->setAffectedRows($result);
-		} else {
+		if ($this->extension == 'pdo') {
 			$this->setAffectedRows($result, $pdo_statement);
 			$pdo_statement->closeCursor();
 			unset($pdo_statement);
+		} elseif ($this->extension == 'odbc') {
+			$this->setAffectedRows($result, $resource);
+			odbc_free_result($resource);
+		} elseif ($this->extension == 'sqlsrv') {
+			$this->setAffectedRows($result, $resource);
+			sqlsrv_free_stmt($resource);
+		} else {
+			$this->setAffectedRows($result);
 		}
 		
 		$this->setReturnedRows($result);
@@ -567,10 +713,14 @@ class fDatabase
 			$result->setResult(@mysql_unbuffered_query($result->getSql(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
 			$result->setResult(@mysqli_query($this->connection, $result->getSql(), MYSQLI_USE_RESULT));
+		} elseif ($this->extension == 'odbc') {
+			$result->setResult(@odbc_exec($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'pgsql') {
 			$result->setResult(@pg_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'sqlite') {
 			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
+		} elseif ($this->extension == 'sqlsrv') {
+			$result->setResult(@sqlsrv_query($this->connection, $result->getSql()));
 		} elseif ($this->extension == 'pdo') {
 			$result->setResult($this->connection->query($result->getSql()));
 		}
@@ -683,12 +833,18 @@ class fDatabase
 		if ($this->extension == 'mssql') {
 			$insert_id_res = mssql_query("SELECT @@IDENTITY AS insert_id", $this->connection);
 			$insert_id     = mssql_result($insert_id_res, 0, 'insert_id');
+			mssql_free_result($insert_id_res);
 		
 		} elseif ($this->extension == 'mysql') {
-			$insert_id     = @mysql_insert_id($this->connection);
+			$insert_id     = mysql_insert_id($this->connection);
 		
 		} elseif ($this->extension == 'mysqli') {
-			$insert_id     = @mysqli_insert_id($this->connection);
+			$insert_id     = mysqli_insert_id($this->connection);
+		
+		} elseif ($this->extension == 'odbc') {
+			$insert_id_res = odbc_exec("SELECT @@IDENTITY AS insert_id", $this->connection);
+			$insert_id     = odbc_result($insert_id_res, 'insert_id');
+			odbc_free_result($insert_id_res);
 		
 		} elseif ($this->extension == 'pgsql') {
 			
@@ -703,6 +859,8 @@ class fDatabase
 			if (is_resource($insert_id_res)) {
 				$insert_id_row = pg_fetch_assoc($insert_id_res);
 				$insert_id = array_shift($insert_id_row);
+				pg_free_result($insert_id_res);
+				
 				if (!$this->isInsideTransaction()) {
 					pg_query($this->connection, "COMMIT");
 				}
@@ -718,9 +876,28 @@ class fDatabase
 		} elseif ($this->extension == 'sqlite') {
 			$insert_id = sqlite_last_insert_rowid($this->connection);
 		
+		} elseif ($this->extension == 'sqlsrv') {
+			$insert_id_res = sqlsrv_query($this->connection, "SELECT @@IDENTITY AS insert_id");
+			$insert_id     = sqlsrv_get_field($insert_id_res, 0);
+			sqlsrv_free_stmt($insert_id_res);
+		
 		} elseif ($this->extension == 'pdo') {
 			
 			switch ($this->type) {
+				
+				case 'mssql':
+					try {
+						$insert_id_statement = $this->connection->query("SELECT @@IDENTITY AS insert_id");
+						if (!$insert_id_statement) {
+							throw new Exception();
+						}
+						
+						$insert_id_row = $insert_id_statement->fetch(PDO::FETCH_ASSOC);
+						$insert_id = array_shift($insert_id_row);
+						
+					} catch (Exception $e) {
+						// If there was an error we don't have an insert id	
+					}
 				
 				case 'postgresql':
 					try {
@@ -731,7 +908,7 @@ class fDatabase
 							$this->connection->query("SAVEPOINT get_last_val");
 						}
 						
-						$insert_id_statement = @$this->connection->query("SELECT lastval()");
+						$insert_id_statement = $this->connection->query("SELECT lastval()");
 						if (!$insert_id_statement) {
 							throw new Exception();
 						}
@@ -798,6 +975,7 @@ class fDatabase
 			}
 		} catch (Exception $e) {
 			$db_type_map = array(
+				'mssql'      => 'MSSQL',
 				'mysql'      => 'MySQL',
 				'postgresql' => 'PostgreSQL',
 				'sqlite'     => 'SQLite'
@@ -853,7 +1031,8 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fRequest')) {
-			$result = new fResult($this->extension);
+			$extension = (in_array($this->extension, array('odbc', 'pdo', 'sqlsrv'))) ? 'array' : $this->extension;
+			$result = new fResult($extension);
 			$result->setSQL($sql);
 			
 			$this->executeQuery($result);
@@ -879,32 +1058,36 @@ class fDatabase
 	/**
 	 * Sets the number of rows affected by the query
 	 * 
-	 * @param  fResult      $result         The result object for the query
-	 * @param  PDOStatement $pdo_statement  The PDOStatement object for the PDO extension
+	 * @param  fResult $result    The result object for the query
+	 * @param  mixed   $resource  Only applicable for pdo, odbc and sqlsrv extentions, this is either the PDOStatement object or odbc or sqlsrv resource
 	 * @return void
 	 */
-	private function setAffectedRows(fResult $result, PDOStatement $pdo_statement=NULL)
+	private function setAffectedRows(fResult $result, $resource=NULL)
 	{
 		if ($this->extension == 'mssql') {
 			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
-			$result->setAffectedRows((int) @mssql_result($affected_rows_result, 0, 'rows'));
+			$result->setAffectedRows((int) mssql_result($affected_rows_result, 0, 'rows'));
 		} elseif ($this->extension == 'mysql') {
-			$result->setAffectedRows(@mysql_affected_rows($this->connection));
+			$result->setAffectedRows(mysql_affected_rows($this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setAffectedRows(@mysqli_affected_rows($this->connection));
+			$result->setAffectedRows(mysqli_affected_rows($this->connection));
+		} elseif ($this->extension == 'odbc') {
+			$result->setAffectedRows(odbc_num_rows($resource));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setAffectedRows(@pg_affected_rows($result->getResult()));
+			$result->setAffectedRows(pg_affected_rows($result->getResult()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setAffectedRows(@sqlite_changes($this->connection));
+			$result->setAffectedRows(sqlite_changes($this->connection));
+		} elseif ($this->extension == 'sqlsrv') {
+			$result->setAffectedRows(sqlsrv_rows_affected($resource));
 		} elseif ($this->extension == 'pdo') {
 			// This fixes the fact that rowCount is not reset for non INSERT/UPDATE/DELETE statements
 			try {
-				if (!$pdo_statement->fetch()) {
+				if (!$resource->fetch()) {
 					throw new PDOException();
 				}
 				$result->setAffectedRows(0);
 			} catch (PDOException $e) {
-				$result->setAffectedRows($pdo_statement->rowCount());
+				$result->setAffectedRows($resource->rowCount());
 			}
 		}
 	}
@@ -920,15 +1103,15 @@ class fDatabase
 	{
 		if (is_resource($result->getResult())) {
 			if ($this->extension == 'mssql') {
-				$result->setReturnedRows(@mssql_num_rows($result->getResult()));
+				$result->setReturnedRows(mssql_num_rows($result->getResult()));
 			} elseif ($this->extension == 'mysql') {
-				$result->setReturnedRows(@mysql_num_rows($result->getResult()));
+				$result->setReturnedRows(mysql_num_rows($result->getResult()));
 			} elseif ($this->extension == 'mysqli') {
-				$result->setReturnedRows(@mysqli_num_rows($result->getResult()));
+				$result->setReturnedRows(mysqli_num_rows($result->getResult()));
 			} elseif ($this->extension == 'pgsql') {
-				$result->setReturnedRows(@pg_num_rows($result->getResult()));
+				$result->setReturnedRows(pg_num_rows($result->getResult()));
 			} elseif ($this->extension == 'sqlite') {
-				$result->setReturnedRows(@sqlite_num_rows($result->getResult()));
+				$result->setReturnedRows(sqlite_num_rows($result->getResult()));
 			}
 		} elseif (is_array($result->getResult())) {
 			$result->setReturnedRows(sizeof($result->getResult()));
@@ -983,7 +1166,7 @@ class fDatabase
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
-	 *  @param  string $sql  One or more SQL statements
+	 * @param  string $sql  One or more SQL statements
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function translatedQuery($sql)
@@ -1077,6 +1260,8 @@ class fDatabase
 		
 		if ($this->extension == 'pgsql') {
 			return pg_unescape_bytea($this->connection, $value);
+		} if ($this->extension == 'odbc') {
+			return pack('H*', $value);
 		} else  {
 			return $value;
 		}
