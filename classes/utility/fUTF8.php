@@ -691,9 +691,8 @@ class fUTF8
 	 * Explodes a string on a delimiter. If no delimiter is provided, the string
 	 * will be exploded with each characters being an element in the array.
 	 * 
-	 * @param  string  $string       The string to explode
-	 * @param  string  $needle         The string to search for. This match will be done in a case-insensitive manner.
-	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack 
+	 * @param  string  $string     The string to explode
+	 * @param  string  $delimiter  The string to explode on. If == FALSE but not 0 or '0', will return one character per array index.
 	 * @return mixed  The specified part of the haystack, or FALSE if the needle was not found
 	 */
 	static public function explode($string, $delimiter=NULL)

@@ -65,7 +65,7 @@ class fURL
 	 */
 	static public function makeFriendly($string)
 	{
-		$string = fHTML::decode(fUTF8::unaccent($string));
+		$string = fHTML::decode(fUTF8::ascii($string));
 		$string = strtolower($string);
 		$string = preg_replace('#[^a-zA-Z0-9 -]#', ' ', $string);
 		return preg_replace('#\s+#', '_', trim($string));

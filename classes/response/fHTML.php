@@ -145,7 +145,7 @@ class fHTML
 		
 		// For each chunk of text, make sure it is converted to entities
 		foreach($text_matches as $key => $value) {
-			$text_matches[$key] = self::encode($value);
+			$text_matches[$key] = htmlspecialchars($value);
 		}
 		
 		// Merge the text and html back together
@@ -162,9 +162,9 @@ class fHTML
 	 * 
 	 * @return void
 	 */
-	static public function setHeader()
+	static public function sendHeader()
 	{
-		header('Content-Type: text/html, charset=utf-8');	
+		header('Content-Type: text/html; charset=utf-8');	
 	}
 	
 	

@@ -154,7 +154,7 @@ class fRequest
 		}
 		
 		// Clean values coming in to ensure we don't have invalid UTF-8
-		if ($cast_to === NULL || $cast_to == 'string') {
+		if (($cast_to === NULL || $cast_to == 'string') && $value !== NULL) {
 			$value = fUTF8::clean($value);	
 		}
 		if ($cast_to == 'array') {
