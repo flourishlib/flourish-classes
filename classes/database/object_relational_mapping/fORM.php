@@ -108,7 +108,7 @@ class fORM
 		}
 		
 		// replace:: hooks are always singular and return a value
-		if (preg_match('#^replace::[\w_]+()$#', $hook)) {
+		if (preg_match('#^replace::[\w_]+\(\)$#', $hook)) {
 			// This is the only way to pass by reference
 			$parameters = array(
 				$class,
@@ -440,7 +440,7 @@ class fORM
 	static public function registerHookCallback($class, $hook, $callback)
 	{
 		$class = self::getClassName($class);
-		$replace_hook = preg_match('#^replace::[\w_]+()$#', $hook);
+		$replace_hook = preg_match('#^replace::[\w_]+\(\)$#', $hook);
 		
 		static $valid_hooks = array(
 			'post::__construct()',
@@ -448,6 +448,7 @@ class fORM
 			'pre::delete()',
 			'post-begin::delete()',
 			'pre-commit::delete()',
+			'post-commit::delete()',
 			'post-rollback::delete()',
 			'post::delete()',
 			'post::loadFromResult()',
@@ -459,6 +460,7 @@ class fORM
 			'post-begin::store()',
 			'post-validate::store()',
 			'pre-commit::store()',
+			'post-commit::store()',
 			'post-rollback::store()',
 			'post::store()',
 			'replace::validate()',

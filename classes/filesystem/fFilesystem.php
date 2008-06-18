@@ -332,7 +332,7 @@ class fFilesystem
 	 */
 	static public function recordCreate($object)
 	{
-		$this->rollback_operations[] = array(
+		self::$rollback_operations[] = array(
 			'action' => 'delete',
 			'object' => $object
 		);
@@ -349,7 +349,7 @@ class fFilesystem
 	 */
 	static public function recordDelete($object)
 	{
-		$this->commit_operations[] = array(
+		self::$commit_operations[] = array(
 			'action' => 'delete',
 			'object' => $object
 		);
@@ -366,7 +366,7 @@ class fFilesystem
 	 */
 	static public function recordDuplicate(fFile $file)
 	{
-		$this->rollback_operations[] = array(
+		self::$rollback_operations[] = array(
 			'action'   => 'delete',
 			'filename' => $file->getPath()
 		);
@@ -384,7 +384,7 @@ class fFilesystem
 	 */
 	static public function recordRename($old_name, $new_name)
 	{
-		$this->rollback_operations[] = array(
+		self::$rollback_operations[] = array(
 			'action'   => 'rename',
 			'old_name' => $old_name,
 			'new_name' => $new_name
@@ -393,11 +393,10 @@ class fFilesystem
 		// Create the file with no content to prevent overwriting by another process
 		file_put_contents($old_name, '');
 		
-		$this->commit_operations[] = array(
+		self::$commit_operations[] = array(
 			'action'   => 'delete',
 			'filename' => $old_name
 		);
-		
 	}
 	
 	
@@ -411,7 +410,7 @@ class fFilesystem
 	 */
 	static public function recordWrite(fFile $file)
 	{
-		$this->rollback_operations[] = array(
+		self::$rollback_operations[] = array(
 			'action'   => 'write',
 			'filename' => $file->getPath(),
 			'old_data' => file_get_contents($file->getPath())

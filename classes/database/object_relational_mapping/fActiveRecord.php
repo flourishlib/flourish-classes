@@ -428,6 +428,7 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
 			
+			fORM::callHookCallback($this, 'post-commit::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			// If we just deleted an object that has an auto-incrementing primary key, lets delete that value from the object since it is no longer valid
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
@@ -914,6 +915,8 @@ abstract class fActiveRecord
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
+			
+			fORM::callHookCallback($this, 'post-commit::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 		} catch (fPrintableException $e) {
 			

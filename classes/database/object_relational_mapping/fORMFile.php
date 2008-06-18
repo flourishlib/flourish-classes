@@ -557,14 +557,15 @@ class fORMFile
 		
 		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
 		
-		if (empty($parameters[0])) {
+		if (!array_key_exists(0, $parameters)) {
 			fCore::toss('fProgrammerException', 'The method ' . $method_name . '() requires exactly one parameter');	
 		}
 		
 		$file_path = $parameters[0];
+		$invalid_file = !$file_path && !is_numeric($file_path);
 		
-		if (!file_exists($file_path) && !file_exists($doc_root . $file_path)) {
-			fCore::toss('fEnvironmentException', 'The file specified, ' . $file_path . ', does not exist');	
+		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
+			fCore::toss('fEnvironmentException', 'The file specified, ' . fCore::dump($file_path) . ', does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.');	
 		}
 		
 		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
@@ -626,7 +627,12 @@ class fORMFile
 		$upload_dir = self::$file_upload_columns[$class][$column];
 		
 		// Let's clean out the upload temp dir
-		$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+		try {
+			$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+		} catch (fValidationException $e) {
+			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);			
+		}
+		
 		$files    = $temp_dir->scan();
 		foreach ($files as $file) {
 			if (filemtime($file->getPath()) < strtotime('-6 hours')) {
