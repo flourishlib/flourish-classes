@@ -127,6 +127,41 @@ class fORMRelated
 	
 	
 	/**
+	 * Figures out what filter to pass to {@link fRequest::filter()} for the specified related class 
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $class          The class name or instance of the main class
+	 * @param  string $related_class  The related class being filtered for
+	 * @param  string $route          The route to the related table
+	 * @return string  The prefix to filter the request fields by
+	 */
+	static public function determineRequestFilter($class, $related_class, $route)
+	{
+		$table           = fORM::tablize($class);
+		$related_table   = fORM::tablize($related_class);
+		$relationship    = fORMSchema::getRoute($table, $related_table, $route);
+		
+		$route_name    	 = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
+		
+		$primary_keys    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$first_pk_column = $primary_keys[0];
+		
+		$filter_table            = $related_table;
+		$filter_table_with_route = $related_table . '{' . $route_name . '}';
+		
+		$pk_field            = $filter_table . '::' . $first_pk_column;
+		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
+		
+		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
+			$filter_table = $filter_table_with_route;	
+		}
+		
+		return $filter_table . '::';	
+	}
+	
+	
+	/**
 	 * Gets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
 	 *
 	 * @internal
@@ -259,33 +294,17 @@ class fORMRelated
 	 */
 	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
 	{
-		$table = fORM::tablize($class);
+		$pk_columns      = fORMSchema::getInstance()->getKeys(fORM::tablize($related_class), 'primary');
+		$first_pk_column = $pk_columns[0];
 		
-		$related_table = fORM::tablize($related_class);
-		
-		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, 'one-to-many');
-		
-		$pk_columns   = fORMSchema::getInstance()->getKeys($related_table, 'primary');
-		
-		$filter_table            = $related_table;
-		$filter_table_with_route = $related_table . '{' . $route_name . '}';
-		
-		$first_pk_column     = $pk_columns[0];
-		$pk_field            = $filter_table . '::' . $first_pk_column;
-		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
-		
-		// If there is only a single relationship, but the user specified the route, use that
-		if ($route === NULL && !fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
-			$pk_field     = $pk_field_with_route;
-			$filter_table = $filter_table_with_route;	
-		}
+		$filter          = self::determineRequestFilter($class, $related_class, $route);
+		$pk_field        = $filter . $first_pk_column;
 		
 		$total_records = sizeof(fRequest::get($pk_field, 'array', array()));
 		$records       = array();
 		
 		for ($i = 0; $i < $total_records; $i++) {
-			fRequest::filter($filter_table . '::', $i);
+			fRequest::filter($filter, $i);
 			
 			// Existing record are loaded out of the database before populating
 			if (fRequest::get($first_pk_column) !== NULL) {
@@ -369,6 +388,98 @@ class fORMRelated
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		$related_records[$related_table][$route] = $records;
+	}
+	
+	
+	/**
+	 * Stores a set of one-to-many related records in the database
+	 * 
+	 * @internal
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  mixed      $class         The class name or instance of the class to store the related records for
+	 * @param  array      &$values       The current values for the main record being stored
+	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set    The set of records to store
+	 * @return void
+	 */
+	static public function storeOneToManyRelatedRecords($class, &$values, $relationship, $record_set)
+	{
+		$class        = fORM::getClassName($class);
+		$column_value = $values[$relationship['column']];
+		
+		$where_conditions = array(
+			$relationship['related_column'] . '=' => $column_value
+		);
+		
+		$related_class    = $record_set->getClassName();
+		$existing_records = fRecordSet::create($related_class, $where_conditions);
+		
+		$existing_primary_keys  = $existing_records->getPrimaryKeys();
+		$new_primary_keys       = $record_set->getPrimaryKeys();
+		
+		$primary_keys_to_delete = array_diff($existing_primary_keys, $new_primary_keys);
+		
+		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
+			$object_to_delete = new $related_class();
+			$object_to_delete->delete(FALSE);
+		}
+		
+		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
+		
+		$record_number = 0;
+		$filter        = fORMRelated::determineRequestFilter($class, $related_class, $relationship['related_column']);
+		
+		foreach ($record_set as $record) {
+			fRequest::filter($filter, $record_number);
+			$record->$set_method_name($column_value);
+			$record->store(FALSE);
+			fRequest::unfilter();
+			$record_number++;
+		}
+	}
+	
+	
+	/**
+	 * Associates a set of many-to-many related records with the current record
+	 * 
+	 * @internal
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  array      &$values       The current values for the main record being stored
+	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set    The set of records to associate
+	 * @return void
+	 */
+	static public function storeManyToManyAssociations(&$values, $relationship, $record_set)
+	{
+		$column_value      = $values[$relationship['column']];
+		
+		// First, we remove all existing relationships between the two tables
+		$join_table        = $relationship['join_table'];
+		$join_column       = $relationship['join_column'];
+		
+		$join_column_value = fORMDatabase::prepareBySchema($join_table, $join_column, $column_value);
+		
+		$delete_sql  = 'DELETE FROM ' . $join_table;
+		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
+		
+		fORMDatabase::getInstance()->translatedQuery($delete_sql);
+		
+		// Then we add back the ones in the record set
+		$join_related_column     = $relationship['join_related_column'];
+		$get_related_method_name = 'get' . fInflection::camelize($relationship['related_column'], TRUE);
+		
+		foreach ($record_set as $record) {
+			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());
+			
+			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
+			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
+			
+			fORMDatabase::getInstance()->translatedQuery($insert_sql);
+		}
 	}
 	
 	

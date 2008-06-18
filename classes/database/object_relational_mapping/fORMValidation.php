@@ -719,37 +719,22 @@ class fORMValidation
 	 */
 	static private function validateOneToMany($class, $related_class, $route, $record_set)
 	{
-		$table         = fORM::tablize($class);
-		$related_table = fORM::tablize($related_class);
-		$relationship  = fORMSchema::getRoute($table, $related_table, $route);
-		$route_name    = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
-		
-		// We determine how the request info was filtered so that we can filter it for the validation phase
-		$primary_keys    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
-		$first_pk_column = $primary_keys[0];
-		
-		$filter_table            = $related_table;
-		$filter_table_with_route = $related_table . '{' . $route_name . '}';
-		
-		$pk_field            = $filter_table . '::' . $first_pk_column;
-		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
-		
-		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
-			$pk_field     = $pk_field_with_route;
-			$filter_table = $filter_table_with_route;	
-		}
-		
+		$table               = fORM::tablize($class);
+		$related_table       = fORM::tablize($related_class);
+		$route_name          = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-many');
+		$filter              = fORMRelated::determineRequestFilter($class, $related_class, $route);
 		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
+		
 		$record_number = 1;
 		
 		$messages = array();
 		
 		foreach ($record_set as $record) {
-			fRequest::filter($filter_table, $record_number-1);
+			fRequest::filter($filter, $record_number-1);
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
 				// Ignore validation messages about the primary key since it will be added 
-				if (strpos($record_message, fORM::getColumnName($related_class, $relationship['related_column'])) !== FALSE) {
+				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
 					continue;	
 				}
 				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	

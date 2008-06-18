@@ -903,9 +903,9 @@ abstract class fActiveRecord
 					
 					$relationship = fORMSchema::getRoute($table, $related_table, $route);
 					if (isset($relationship['join_table'])) {
-						$this->storeManyToManyAssociations($relationship, $record_set);
+						fORMRelated::storeManyToManyAssociations($this->values, $relationship, $record_set);
 					} else {
-						$this->storeOneToManyRelatedRecords($relationship, $record_set);
+						fORMRelated::storeOneToManyRelatedRecords($this, $this->values, $relationship, $record_set);
 					}
 				}
 			}
@@ -938,82 +938,6 @@ abstract class fActiveRecord
 		
 		// If we got here we succefully stored, so update old values to make exists() work 
 		$this->old_values = $this->values;
-	}
-	
-	
-	/**
-	 * Stores a set of one-to-many related records in the database
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set    The set of records to store
-	 * @return void
-	 */
-	protected function storeOneToManyRelatedRecords($relationship, $record_set)
-	{
-		$get_method_name = 'get' . fInflection::camelize($relationship['column'], TRUE);
-		
-		$where_conditions = array(
-			$relationship['related_column'] . '=' => $this->$get_method_name()
-		);
-		
-		$class_name = $record_set->getClassName();
-		$existing_records = fRecordSet::create($class_name, $where_conditions);
-		
-		$existing_primary_keys  = $existing_records->getPrimaryKeys();
-		$new_primary_keys       = $record_set->getPrimaryKeys();
-		
-		$primary_keys_to_delete = array_diff($existing_primary_keys, $new_primary_keys);
-		
-		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
-			$object_to_delete = new $class_name();
-			$object_to_delete->delete(FALSE);
-		}
-		
-		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
-		foreach ($record_set as $record) {
-			$record->$set_method_name($this->$get_method_name());
-			$record->store(FALSE);
-		}
-	}
-	
-	
-	/**
-	 * Associates a set of many-to-many related records with the current record
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set    The set of records to associate
-	 * @return void
-	 */
-	protected function storeManyToManyAssociations($relationship, $record_set)
-	{
-		// First, we remove all existing relationships between the two tables
-		$join_table        = $relationship['join_table'];
-		$join_column       = $relationship['join_column'];
-		
-		$get_method_name   = 'get' . fInflection::camelize($relationship['column'], TRUE);
-		$join_column_value = fORMDatabase::prepareBySchema($join_table, $join_column, $this->$get_method_name());
-		
-		$delete_sql  = 'DELETE FROM ' . $join_table;
-		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
-		
-		fORMDatabase::getInstance()->translatedQuery($delete_sql);
-		
-		// Then we add back the ones in the record set
-		$join_related_column     = $relationship['join_related_column'];
-		$get_related_method_name = 'get' . fInflection::camelize($relationship['related_column'], TRUE);
-		
-		foreach ($record_set as $record) {
-			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());
-			
-			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
-			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
-			
-			fORMDatabase::getInstance()->translatedQuery($insert_sql);
-		}
 	}
 	
 	

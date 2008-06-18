@@ -126,13 +126,13 @@ class fFilesystem
 	 */
 	static public function createUniqueName($file, $new_extension=NULL)
 	{
-		$info = self::getInfo($file);
+		$info = self::getPathInfo($file);
 		
 		// Change the file extension
 		if ($new_extension !== NULL) {
 			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
 			$file = $info['dirname'] . $info['filename'] . $new_extension;
-			$info = self::getInfo($file);
+			$info = self::getPathInfo($file);
 		}
 		
 		// If there is an extension, be sure to add . before it
@@ -143,7 +143,7 @@ class fFilesystem
 		
 		// Look for a unique name by adding _copy# to the end of the file
 		while (file_exists($file)) {
-			$info = self::getInfo($file);
+			$info = self::getPathInfo($file);
 			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
 				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
 			} else {

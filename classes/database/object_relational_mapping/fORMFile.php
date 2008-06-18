@@ -392,7 +392,8 @@ class fORMFile
 			
 			// If the file is in a temp dir, move it out
 			if (stripos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
-				$value->rename(str_replace(self::TEMP_DIRECTORY, '', $value->getPath()));	
+				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
+				$value->rename($new_filename, FALSE);	
 			}
 		}
 	}
@@ -713,7 +714,7 @@ class fORMFile
 			
 			$search_message  = $column_name . ': Please enter a value';
 			$replace_message = $column_name . ': Please upload a file';
-			str_replace($search_message, $replace_message, $validation_messages);
+			$validation_messages = str_replace($search_message, $replace_message, $validation_messages);
 			
 			self::setUpFUpload($class, $column);
 			

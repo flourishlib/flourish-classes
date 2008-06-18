@@ -145,7 +145,7 @@ class fDirectory
 		}
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			return fFilesystem::delete($this);
 		}
 		
@@ -167,26 +167,15 @@ class fDirectory
 	{
 		$this->tossIfException();
 		
-		if (fCore::getOS() == 'linux/unix') {
-			$output = shell_exec('du -sb ' . escapeshellarg($this->directory));
-			list($size, $trash) = explode("\t", $output);
-		}
+		$size = 0;
 		
-		if (fCore::getOS() == 'windows') {
-			$process = popen('dir /S /A:-D /-C ' . escapeshellarg($this->directory), 'r');
-			
-			$line = '';
-			while (!feof($process)) {
-				$last_line = $line;
-				$line = fgets($process);
-				
-				if (strpos($last_line, 'Total Files Listed:') !== FALSE) {
-					$line_segments = preg_split('#\s+#', $line, 0, PREG_SPLIT_NO_EMPTY);
-					$size = $line_segments[2];
-					break;
-				}
-			}
-			pclose($process);
+		$children = $this->scan();
+		foreach ($children as $child) {
+			if ($child instanceof fFile) {
+				$size += $child->getFilesize();
+			} else {
+				$size += $child->getDiskUsage();
+			}	
 		}
 		
 		if (!$format) {
@@ -290,7 +279,7 @@ class fDirectory
 		@rename($this->directory, $new_dirname);
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			fFilesystem::rename($this->directory, $new_dirname);
 		}
 		

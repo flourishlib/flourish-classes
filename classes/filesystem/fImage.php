@@ -710,7 +710,7 @@ class fImage extends fFile
 		}
 		
 		// Wrap changes to the image into the filesystem transaction
-		if ($output_file == $this->file && fFilesystem::isTransactionInProgress()) {
+		if ($output_file == $this->file && fFilesystem::isInsideTransaction()) {
 			fFilesystem::recordWrite($this);
 		}
 		

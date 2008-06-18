@@ -127,7 +127,7 @@ class fFile
 		}
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			return fFilesystem::recordDelete($this);
 		}
 		
@@ -194,7 +194,7 @@ class fFile
 		$file = new fFile($new_filename);
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			fFilesystem::recordDuplicate($file);
 		}
 		
@@ -340,7 +340,7 @@ class fFile
 		@rename($this->file, $new_filename);
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			fFilesystem::recordRename($this->file, $new_filename);
 		}
 		
@@ -378,7 +378,7 @@ class fFile
 		}
 		
 		// Allow filesystem transactions
-		if (fFilesystem::isTransactionInProgress()) {
+		if (fFilesystem::isInsideTransaction()) {
 			fFilesystem::recordWrite($this);
 		}
 		
