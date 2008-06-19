@@ -121,7 +121,7 @@ class fInflection
 	
 	
 	/**
-	 * Converts an underscore notation string to camelCase
+	 * Converts an underscore notation, humanized or camelCase string to camelCase
 	 * 
 	 * @param  string  $string  The string to convert
 	 * @param  boolean $upper   If the camel case should be upper camel case
@@ -129,6 +129,11 @@ class fInflection
 	 */
 	static public function camelize($string, $upper)
 	{
+		// Make a humanized string like underscore notation
+		if (strpos($string, ' ') !== FALSE) {
+			$string = strtolower(preg_replace('#\s+#', '_', $string;))	
+		}
+		
 		// Check to make sure this is not already camel case
 		if (strpos($string, '_') === FALSE) {
 			if ($upper) {
@@ -307,13 +312,23 @@ class fInflection
 	
 	
 	/**
-	 * Converts a camelCase string to underscore notation
+	 * Converts a camelCase, humanized or underscorized string to underscore notation
 	 * 
 	 * @param  string $string  The string to convert
 	 * @return string  The converted string
 	 */
 	static public function underscorize($string)
 	{
+		// If the string is already underscore notation then leave it
+		if (strpos($string, '_') !== FALSE) {
+			return $string;	
+		}
+		
+		// Allow humanized string to be passed in
+		if (strpos($string, ' ') !== FALSE) {
+			return strtolower(preg_replace('#\s+#', '_', $string));	
+		}
+		
 		return strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', $string));
 	}
 	

@@ -361,7 +361,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
-			return call_user_func(self::$objectify_callbacks[$class][$column], $value);	
+			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);	
 		}
 		
 		$table = self::tablize($class);
@@ -588,7 +588,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
-			return call_user_func(self::$scalarize_callbacks[$class][$column], $value);	
+			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);	
 		}
 		
 		if (is_object($value)) {

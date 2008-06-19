@@ -130,7 +130,7 @@ class fCore
 						} elseif (is_string($arg)) {
 							// Shorten the UTF-8 string if it is too long
 							if (strlen(utf8_decode($arg)) > 18) {
-								preg_match('#^(.{0,15})#us', $arg, $shirt_arg);
+								preg_match('#^(.{0,15})#us', $arg, $short_arg);
 								$arg = $short_arg[1] . '...';
 							}
 							$bt_string .= "'" . $arg . "'";
@@ -312,7 +312,7 @@ class fCore
 	/**
 	 * Returns the (generalized) operating system the code is currently running on
 	 * 
-	 * @return string  Either 'windows' or 'linux/unix' (linux, solaris, *BSD)
+	 * @return string  Either 'windows', 'solaris' or 'linux/unix' (linux, *BSD)
 	 */
 	static public function getOS()
 	{
@@ -324,8 +324,8 @@ class fCore
 		if (stripos($uname, 'bsd') !== FALSE) {
 			return 'linux/unix';
 		}
-		if (stripos($uname, 'solaris') !== FALSE) {
-			return 'linux/unix';
+		if (stripos($uname, 'solaris') !== FALSE || stripos($uname, 'sunos') !== FALSE) {
+			return 'solaris';
 		}
 		if (stripos($uname, 'windows') !== FALSE) {
 			return 'windows';

@@ -127,12 +127,6 @@ class fORMColumn
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as an email column.');	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
-		
-		$hook     = 'replace::format' . $cameled_column . '()';
-		$callback = array('fORMColumn', 'formatEmailColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
-		
 		$hook     = 'post::validate()';
 		$callback = array('fORMColumn', 'validateEmailColumns');
 		if (!fORM::checkHookCallback($class, $hook, $callback)) {
@@ -227,38 +221,6 @@ class fORMColumn
 	
 	
 	/**
-	 * Formats an email column into an HTML link
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $class             The instance of the class
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  boolean       $debug             If debug messages should be shown
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted email address
-	 */
-	static public function formatEmailColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
-	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
-		
-		if (empty($values[$column])) {
-			return $values[$column];
-		}
-		
-		if (sizeof($parameters) > 1) {
-			fCore::toss('fProgrammerException', 'The method ' . $method_name . ' accepts at most one parameter');	
-		}	
-		
-		$formatting = (!empty($parameters[0])) ? $parameters[0] : NULL;
-		$css_class  = ($formatting) ? ' class="' . $formatting . '"' : '';
-		return '<a href="mailto:' . $values[$column] . '"' . $css_class . '>' . $values[$column] . '</a>';
-	}
-	
-	
-	/**
 	 * Formats a link column into an HTML link
 	 * 
 	 * @internal
@@ -279,11 +241,6 @@ class fORMColumn
 		if (empty($values[$column])) {
 			return $values[$column];
 		}	
-		
-		if (sizeof($parameters) > 1) {
-			fCore::toss('fProgrammerException', 'The method ' . $method_name . ' accepts at most one parameter');	
-		}
-		
 		$value = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
@@ -291,9 +248,7 @@ class fORMColumn
 			$value = 'http://' . $value;
 		}
 		
-		$formatting = (!empty($parameters[0])) ? $parameters[0] : NULL;
-		$css_class  = ($formatting) ? ' class="' . $formatting . '"' : '';
-		return '<a href="' . $value . '"' . $css_class . '>' . $value . '</a>';
+		return fHTML::prepare($value);
 	}
 	
 	
