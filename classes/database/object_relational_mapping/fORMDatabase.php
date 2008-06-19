@@ -104,8 +104,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Allows attaching a class that is or extends fDatabase instead of just
-	 * using the provided implementation
+	 * Allows attaching a class that is or extends {@link fDatabase} instead of just using the provided implementation
 	 * 
 	 * @param  fDatabase $database  An object that is or extends the fDatabase class
 	 * @return void
@@ -117,8 +116,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Takes an array of rows containing primary keys for a table. If there is only
-	 * a single primary key, condense the array of rows into single-dimensional array
+	 * Turns a single field primary key list from an array into a string
 	 * 
 	 * @internal
 	 * 
@@ -509,7 +507,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Return the instance of the fDatabase class
+	 * Return the instance of the {@link fDatabase} class
 	 * 
 	 * @return fDatabase  The database instance
 	 */
@@ -523,10 +521,10 @@ class fORMDatabase
 	
 	
 	/**
-	 * Initializes a singleton instance of the fDatabase class
+	 * Initializes a singleton instance of the {@link fDatabase} class
 	 * 
 	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
-	 * @param  string  $database  Name (or file for sqlite) of database
+	 * @param  string  $database  Name of the database. If an ODBC connection 'dsn:' concatenated with the DSN, if SQLite the path to the database file.
 	 * @param  string  $username  Database username, required for all databases except SQLite
 	 * @param  string  $password  The password for the username specified
 	 * @param  string  $host      Database server host or ip, defaults to localhost for all databases except SQLite
@@ -540,7 +538,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Finds all of the table names in the sql and creates a from clause
+	 * Finds all of the table names in the SQL and creates a from clause
 	 * 
 	 * @internal
 	 * 

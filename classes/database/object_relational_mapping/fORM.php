@@ -49,7 +49,7 @@ class fORM
 	static private $objectify_callbacks = array();
 	
 	/**
-	 * Custom record names for fActiveRecord classes
+	 * Custom record names for {@link fActiveRecord} classes
 	 * 
 	 * @var array
 	 */
@@ -71,8 +71,7 @@ class fORM
 	
 	
 	/**
-	 * Allows non-standard (plural, underscore notation table name <-> singular,
-	 * upper-camel case class name) table to class mapping
+	 * Allows non-standard (plural, underscore notation table name <-> singular, upper-camel case class name) table to class mapping
 	 * 
 	 * @param  string $table_name  The name of the database table
 	 * @param  string $class_name  The name of the class
@@ -85,7 +84,9 @@ class fORM
 	
 	
 	/**
-	 * Calls a hook callback and returns the result. The return value should only be used by replace:: callbacks.
+	 * Calls a hook callback and returns the result
+	 * 
+	 * The return value should only be used by replace:: callbacks.
 	 * 
 	 * @internal
 	 * 
@@ -215,7 +216,7 @@ class fORM
 	
 	
 	/**
-	 * Takes a table name and turns it into a class name. Uses custom mapping if set.
+	 * Takes a table name and turns it into a class name - uses custom mapping if set
 	 * 
 	 * @param  string $table_name  The table name
 	 * @return string  The class name
@@ -230,8 +231,9 @@ class fORM
 	
 	
 	/**
-	 * Will dynamically create an fActiveRecord-based class for a database table.
-	 * Should be called from __autoload
+	 * Will dynamically create an {@link fActiveRecord}-based class for a database table
+	 * 
+	 * Normally this would be called from an __autoload() function
 	 * 
 	 * @param  string $class_name  The name of the class to create
 	 * @return void
@@ -326,8 +328,7 @@ class fORM
 	
 	
 	/**
-	 * Returns the record name for a class. The default record name is a
-	 * humanized version of the class name.
+	 * Returns the record name for a class. The default record name is a humanized version of the class name.
 	 * 
 	 * @internal
 	 * 
@@ -416,9 +417,10 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for one of the various fActiveRecord hooks. Any hook
-	 * that does not beging with replace:: can have multiple callbacks. replace::
-	 * hooks can only have one, the most recently registered.
+	 * Registers a callback for one of the various {@link fActiveRecord} hooks
+	 * 
+	 * Any hook that does not begin with replace:: can have multiple callbacks. 
+	 * replace:: hooks can only have one, the most recently registered.
 	 * 
 	 * The method signature should include the follow parameters:
 	 * 

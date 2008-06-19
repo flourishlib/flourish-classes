@@ -35,7 +35,7 @@ class fSchema implements fISchema
 	private $column_info_override = array();
 	
 	/**
-	 * A reference to an instance of the fDatabase class
+	 * A reference to an instance of the {@link fDatabase} class
 	 * 
 	 * @var fDatabase
 	 */
@@ -101,7 +101,7 @@ class fSchema implements fISchema
 	/**
 	 * Sets the database
 	 * 
-	 * @param  fDatabase $database  The fDatabase class
+	 * @param  fDatabase $database  The {@link fDatabase} instance
 	 * @return fSchema
 	 */
 	public function __construct(fDatabase $database)
@@ -1130,6 +1130,7 @@ class fSchema implements fISchema
 		list ($key1, $key2) = $this->merged_keys[$table]['foreign'];
 		
 		$temp = array();
+		$temp['table']               = $key1['foreign_table'];
 		$temp['column']              = $key1['foreign_column'];
 		$temp['related_table']       = $key2['foreign_table'];
 		$temp['related_column']      = $key2['foreign_column'];
@@ -1141,6 +1142,7 @@ class fSchema implements fISchema
 		$this->relationships[$key1['foreign_table']]['many-to-many'][] = $temp;
 		
 		$temp = array();
+		$temp['table']               = $key2['foreign_table'];
 		$temp['column']              = $key2['foreign_column'];
 		$temp['related_table']       = $key1['foreign_table'];
 		$temp['related_column']      = $key1['foreign_column'];
@@ -1163,6 +1165,7 @@ class fSchema implements fISchema
 	{
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$temp = array();
+			$temp['table']          = $key['foreign_table'];
 			$temp['column']         = $key['foreign_column'];
 			$temp['related_table']  = $table;
 			$temp['related_column'] = $key['column'];
@@ -1183,6 +1186,7 @@ class fSchema implements fISchema
 	{
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$temp = array();
+			$temp['table']          = $table;
 			$temp['column']         = $key['column'];
 			$temp['related_table']  = $key['foreign_table'];
 			$temp['related_column'] = $key['foreign_column'];
@@ -1402,6 +1406,7 @@ class fSchema implements fISchema
 	 * array(
 	 *     'one-to-one' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
@@ -1409,6 +1414,7 @@ class fSchema implements fISchema
 	 *     ),
 	 *     'many-to-one' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
@@ -1416,6 +1422,7 @@ class fSchema implements fISchema
 	 *     ),
 	 *     'one-to-many' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column},
@@ -1425,6 +1432,7 @@ class fSchema implements fISchema
 	 *     ),
 	 *     'many-to-many' => array(
 	 *         array(
+	 *             'table'               => (string) {the name of the table this relationship is for},
 	 *             'column'              => (string) {the column in the specified table},
 	 *             'related_table'       => (string) {the related table},
 	 *             'related_column'      => (string) {the related column},

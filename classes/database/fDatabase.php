@@ -140,7 +140,7 @@ class fDatabase
 	 * Establishes a connection to the database.
 	 * 
 	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
-	 * @param  string  $database  Name (or file for sqlite) of database
+	 * @param  string  $database  Name of the database. If an ODBC connection 'dsn:' concatenated with the DSN, if SQLite the path to the database file.
 	 * @param  string  $username  Database username, required for all databases except SQLite
 	 * @param  string  $password  The password for the username specified
 	 * @param  string  $host      Database server host or ip, defaults to localhost for all databases except SQLite

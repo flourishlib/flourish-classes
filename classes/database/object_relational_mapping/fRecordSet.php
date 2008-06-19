@@ -14,7 +14,7 @@
 class fRecordSet implements Iterator
 {
 	/**
-	 * Creates an fRecordSet by specifying the class to create plus the where conditions and order by rules
+	 * Creates an {@link fRecordSet} by specifying the class to create plus the where conditions and order by rules
 	 * 
 	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
 	 * <pre>
@@ -48,7 +48,7 @@ class fRecordSet implements Iterator
 	 *  - '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * </pre>
 	 * 
-	 * @param  string  $class_name        The class to create the fRecordSet of
+	 * @param  string  $class_name        The class to create the {@link fRecordSet} of
 	 * @param  array   $where_conditions  The column => value comparisons for the where clause
 	 * @param  array   $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit             The number of records to fetch
@@ -92,7 +92,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an empty fRecordSet
+	 * Creates an empty {@link fRecordSet}
 	 * 
 	 * @throws fValidationException
 	 * @internal
@@ -115,13 +115,13 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an fRecordSet from an array of records
+	 * Creates an {@link fRecordSet} from an array of records
 	 * 
 	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  array $records  The records to create the set from, the order of the record set will be the same as the order of the array.
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
 	static public function createFromObjects($records)
 	{
@@ -180,7 +180,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an fRecordSet from an array of primary keys
+	 * Creates an {@link fRecordSet} from an array of primary keys
 	 * 
 	 * @throws fValidationException
 	 * @internal
@@ -188,7 +188,7 @@ class fRecordSet implements Iterator
 	 * @param  string  $class_name    The type of object to create
 	 * @param  array   $primary_keys  The primary keys of the objects to create
 	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
 	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
 	{
@@ -278,12 +278,12 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an fRecordSet from an SQL statement
+	 * Creates an {@link fRecordSet} from an SQL statement
 	 * 
 	 * @param  string $class_name             The type of object to create
 	 * @param  string $sql                    The SQL to create the set from
 	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
-	 * @return fRecordSet  A set of ActiveRecords
+	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
 	static public function createFromSql($class_name, $sql, $grand_total_sql=NULL)
 	{
@@ -293,7 +293,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
+	 * A flag to indicate this should record set should be associated to the parent {@link fActiveRecord} object
 	 * 
 	 * @var boolean
 	 */
@@ -350,7 +350,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Calls sortCallback with the appropriate method
+	 * Allows for preloading of related records by dynamically creating preload{related plural class}() methods
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -376,9 +376,9 @@ class fRecordSet implements Iterator
 	/**
 	 * Sets the contents of the set
 	 * 
-	 * @param  string $class_name             The type of records to create
-	 * @param  object $result_object          The primary keys or fResult object of the records to create
-	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
+	 * @param  string  $class_name             The type of records to create
+	 * @param  fResult $result_object          The {@link fResult} object of the records to create
+	 * @param  string  $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet
 	 */
 	protected function __construct($class_name, fResult $result_object, $non_limited_count_sql=NULL)
@@ -468,7 +468,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Flags this record set for association with the fActiveRecord object that references it
+	 * Flags this record set for association with the {@link fActiveRecord} object that references it
 	 * 
 	 * @internal
 	 * 
@@ -583,7 +583,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Returns if this record set is flagged for association with the fActiveRecord object that references it
+	 * Returns if this record set is flagged for association with the {@link fActiveRecord} object that references it
 	 * 
 	 * @internal
 	 * 
@@ -854,9 +854,9 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Throws a fEmptySetException if the fRecordSet is empty
+	 * Throws a {@link fEmptySetException} if the {@link fRecordSet} is empty
 	 * 
-	 * @throws  fEmptySetException
+	 * @throws fEmptySetException
 	 * 
 	 * @return void
 	 */

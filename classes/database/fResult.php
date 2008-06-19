@@ -1,6 +1,6 @@
 <?php
 /**
- * Representation of a result from a query against the fDatabase class
+ * Representation of a result from a query against the {@link fDatabase} class
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -14,7 +14,7 @@
 class fResult implements Iterator
 {
 	/**
-	 * The number of rows affected by an insert, update, select, etc
+	 * The number of rows affected by an insert, update, delete, etc
 	 * 
 	 * @var integer
 	 */
@@ -49,9 +49,9 @@ class fResult implements Iterator
 	private $pointer;
 	
 	/**
-	 * The result resource
+	 * The result resource or array
 	 * 
-	 * @var resource
+	 * @var mixed
 	 */
 	private $result = NULL;
 	
@@ -349,9 +349,9 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Returns the sql used in the query
+	 * Returns the SQL used in the query
 	 * 
-	 * @return string  The sql used in the query
+	 * @return string  The SQL used in the query
 	 */
 	public function getSQL()
 	{
@@ -360,9 +360,9 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Returns the sql as it was before translation
+	 * Returns the SQL as it was before translation
 	 * 
-	 * @return string  The sql from before translation
+	 * @return string  The SQL from before translation
 	 */
 	public function getUntranslatedSQL()
 	{
@@ -428,7 +428,7 @@ class fResult implements Iterator
 	
 	
 	/** 
-	 * Seeks to the specified zero-based row for the specified SQL query.
+	 * Seeks to the specified zero-based row for the specified SQL query
 	 * 
 	 * @throws  fNoResultsException
 	 * 
@@ -530,11 +530,11 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Sets the sql used in the query
+	 * Sets the SQL used in the query
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $sql  The sql used in the query
+	 * @param  string $sql  The SQL used in the query
 	 * @return void
 	 */
 	public function setSQL($sql)
@@ -544,11 +544,11 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Sets the sql from before translation
+	 * Sets the SQL from before translation
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $untranslated_sql  The sql from before translation
+	 * @param  string $untranslated_sql  The SQL from before translation
 	 * @return void
 	 */
 	public function setUntranslatedSQL($untranslated_sql)
@@ -558,7 +558,7 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Throws an fNoResultException if the fResult did not return or affect any rows
+	 * Throws an {@link fNoResultException} if the {@link fResult} did not return any rows
 	 * 
 	 * @throws  fNoResultsException
 	 * 

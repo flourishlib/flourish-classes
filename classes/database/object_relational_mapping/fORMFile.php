@@ -67,7 +67,7 @@ class fORMFile
 	
 	
 	/**
-	 * Adds an fImage method call to the image manipulation for a column if an image file is uploaded
+	 * Adds an {@link fImage} method call to the image manipulation for a column if an image file is uploaded
 	 * 
 	 * @param  mixed  $class       The class name or instance of the class
 	 * @param  string $column      The column to call the method for
@@ -98,7 +98,7 @@ class fORMFile
 	
 	
 	/**
-	 * Adds an fUpload method call to the fUpload initialization for a column
+	 * Adds an {@link fUpload} method call to the {@link fUpload} initialization for a column
 	 * 
 	 * @param  mixed  $class       The class name or instance of the class
 	 * @param  string $column      The column to call the method for
@@ -400,14 +400,14 @@ class fORMFile
 	
 	
 	/**
-	 * Turns a filename into an fFile or fImage object
+	 * Turns a filename into an {@link fFile} or {@link fImage} object
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $class   The class this value is for
 	 * @param  string $column  The column the value is in
 	 * @param  mixed  $value   The value
-	 * @return mixed  The fFile, fImage or raw value
+	 * @return mixed  The {@link fFile}, {@link fImage} or raw value
 	 */
 	static public function objectify($class, $column, $value)
 	{
@@ -431,7 +431,7 @@ class fORMFile
 	
 	
 	/**
-	 * Performs the upload action for file uploads during populate() of fActiveRecord
+	 * Performs the upload action for file uploads during populate() of {@link fActiveRecord}
 	 * 
 	 * @internal
 	 * 
@@ -584,7 +584,7 @@ class fORMFile
 	
 	
 	/**
-	 * Sets up the fUpload class for a specific column
+	 * Sets up the {@link fUpload} class for a specific column
 	 * 
 	 * @param  mixed  $class   The class name or an instance of the class to set up for
 	 * @param  string $column  The column to set up for 

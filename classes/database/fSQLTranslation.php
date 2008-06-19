@@ -1,7 +1,6 @@
 <?php
 /**
- * Takes a subset of SQL from MySQL, PostgreSQL, SQLite and MSSQL and translates into the
- * various dialects allowing for cross-database code.
+ * Takes a subset of SQL from MySQL, PostgreSQL, SQLite and MSSQL and translates into the various dialects allowing for cross-database code
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -34,7 +33,14 @@ class fSQLTranslation
 	 * The extension to use for the database specified.
 	 * 
 	 * Options include:
-	 *   - mssql, mysql, mysqli, pgsql, sqlite, pdo
+	 *  - mssql
+	 *  - mysql
+	 *  - mysqli
+	 *  - odbc
+	 *  - pdo
+	 *  - pgsql
+	 *  - sqlite
+	 *  - sqlsrv
 	 * 
 	 * @var string
 	 */
@@ -49,13 +55,13 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Sets up the class and creates functions for sqlite databases
+	 * Sets up the class and creates functions for SQLite databases
 	 * 
 	 * @internal
 	 * 
 	 * @param  mixed  $connection  The connection resource or PDO object
 	 * @param  string $type        The type of the database ('mssql', 'mysql', 'postgresql', or 'sqlite')
-	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', or 'pdo')
+	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', or 'sqlsrv')
 	 * @return fSqlTranslation
 	 */
 	public function __construct($connection, $type, $extension)
@@ -64,12 +70,14 @@ class fSQLTranslation
 			fCore::toss('fProgrammerException', 'The connection specified is not a valid database connection');
 		}
 		
-		if (!in_array($type, array('mssql', 'mysql', 'postgresql', 'sqlite'))) {
-			fCore::toss('fProgrammerException', 'Invalid database type specified');
+		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss('fProgrammerException', 'The type specified, ' . $type . ', is not valid. Must be one of: ' . join(', ', $valid_types) . '.');
 		}
 		
-		if (!in_array($extension, array('mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite', 'pdo'))) {
-			fCore::toss('fProgrammerException', 'Invalid database extension specified');
+		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
+		if (!in_array($extension, $valid_extensions)) {
+			fCore::toss('fProgrammerException', 'The extension specified, ' . $extension . ', is not valid. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
 		
 		$this->connection = $connection;
@@ -83,7 +91,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Creates a trigger for sqlite that handles an on delete clause
+	 * Creates a trigger for SQLite that handles an on delete clause
 	 * 
 	 * @param  string $referencing_table   The table that contains the foreign key
 	 * @param  string $referencing_column  The column the foriegn key constraint is on
@@ -126,7 +134,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Creates a trigger for sqlite that handles an on update clause
+	 * Creates a trigger for SQLite that handles an on update clause
 	 * 
 	 * @param  string $referencing_table   The table that contains the foreign key
 	 * @param  string $referencing_column  The column the foriegn key constraint is on
@@ -169,7 +177,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Creates a trigger for sqlite that prevents inserting or updating to values the violate a foreign key constraint
+	 * Creates a trigger for SQLite that prevents inserting or updating to values the violate a foreign key constraint
 	 * 
 	 * @param  string  $referencing_table     The table that contains the foreign key
 	 * @param  string  $referencing_column    The column the foriegn key constraint is on
@@ -209,7 +217,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Adds a number of math functions to SQLite that MySQL and PostgreSQL have by default
+	 * Adds a number of math functions to SQLite that MSSQL, MySQL and PostgreSQL have by default
 	 * 
 	 * @return void
 	 */
@@ -303,7 +311,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates FlourishSQL into the dialect for the current Database
+	 * Translates FlourishSQL into the dialect for the current database
 	 * 
 	 * @internal
 	 * 
@@ -537,7 +545,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates custom date/time functions to the current Database
+	 * Translates custom date/time functions to the current database
 	 * 
 	 * @param  string $sql  The SQL to translate
 	 * @return string  The translated SQL

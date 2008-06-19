@@ -92,7 +92,7 @@ class fSQLParsing
 	
 	
 	/**
-	 * Takes the FROM clause from parseSelectSQL() and returns all of the tables and how they are joined
+	 * Takes the FROM clause from {@link parseSelectSQL()} and returns all of the tables and how they are joined
 	 * 
 	 * The output array will be an associative array having keys in the following formats. The keys
 	 * with route names are standard joins for associating related tables. The keys with 'complex' in them
@@ -116,8 +116,8 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $clause    The sql clause to parse
-	 * @param  fISchema $schema  An instance of a class implementing the fISchema interface, used to find join tables for proper join naming
+	 * @param  string $clause    The SQL clause to parse
+	 * @param  fISchema $schema  An instance of a class implementing the {@link fISchema} interface, used to find join tables for proper join naming
 	 * @return array  The tables in the from clause (see method description for format)
 	 */
 	static public function parseJoins($sql, fISchema $schema=NULL)
@@ -265,7 +265,7 @@ class fSQLParsing
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $sql  The sql to parse
+	 * @param  string $sql  The SQL to parse
 	 * @return array  The various clauses of the SELECT statement (see method descript for details)
 	 */
 	static public function parseSelectSQL($sql)
@@ -315,11 +315,11 @@ class fSQLParsing
 	
 		
 	/**
-	 * Takes the FROM clause from parseSelectSQL() and returns all of the tables and each one's alias
+	 * Takes the FROM clause from {@link parseSelectSQL()} and returns all of the tables and each one's alias
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $clause  The sql clause to parse
+	 * @param  string $clause  The SQL clause to parse
 	 * @return array  The tables in the from clause, with the table alias being the key and value being the name
 	 */
 	static public function parseTableAliases($sql)

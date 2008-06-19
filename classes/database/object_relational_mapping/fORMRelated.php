@@ -1,7 +1,8 @@
 <?php
 /**
- * Handles related record tasks for (@link fActiveRecord} classes. Functionality
- * only works with single-field foreign keys.
+ * Handles related record tasks for (@link fActiveRecord} classes
+ * 
+ * The functionality only works with single-field foreign keys.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -187,8 +188,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Returns the record name for a related class. The default record name is a
-	 * humanized version of the class name.
+	 * Returns the record name for a related class - default is a humanized version of the class name
 	 * 
 	 * @internal
 	 * 
@@ -341,7 +341,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Sets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
+	 * Sets the ordering to use when returning an {@link fRecordSet} of related objects
 	 *
 	 * @param  mixed  $class           The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class   The related class we are getting info from
@@ -398,15 +398,13 @@ class fORMRelated
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  mixed      $class         The class name or instance of the class to store the related records for
 	 * @param  array      &$values       The current values for the main record being stored
 	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
 	 * @param  fRecordSet $record_set    The set of records to store
 	 * @return void
 	 */
-	static public function storeOneToManyRelatedRecords($class, &$values, $relationship, $record_set)
+	static public function storeOneToMany(&$values, $relationship, $record_set)
 	{
-		$class        = fORM::getClassName($class);
 		$column_value = $values[$relationship['column']];
 		
 		$where_conditions = array(
@@ -429,7 +427,7 @@ class fORMRelated
 		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
 		
 		$record_number = 0;
-		$filter        = fORMRelated::determineRequestFilter($class, $related_class, $relationship['related_column']);
+		$filter        = fORMRelated::determineRequestFilter(fORM::tablize($relationship['table']), $related_class, $relationship['related_column']);
 		
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number);
@@ -453,7 +451,7 @@ class fORMRelated
 	 * @param  fRecordSet $record_set    The set of records to associate
 	 * @return void
 	 */
-	static public function storeManyToManyAssociations(&$values, $relationship, $record_set)
+	static public function storeManyToMany(&$values, $relationship, $record_set)
 	{
 		$column_value      = $values[$relationship['column']];
 		

@@ -111,6 +111,7 @@ interface fISchema
 	 * array(
 	 *     'one-to-one' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
@@ -118,6 +119,7 @@ interface fISchema
 	 *     ),
 	 *     'many-to-one' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
@@ -125,6 +127,7 @@ interface fISchema
 	 *     ),
 	 *     'one-to-many' => array(
 	 *         array(
+	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column},
@@ -134,6 +137,7 @@ interface fISchema
 	 *     ),
 	 *     'many-to-many' => array(
 	 *         array(
+	 *             'table'               => (string) {the name of the table this relationship is for},
 	 *             'column'              => (string) {the column in the specified table},
 	 *             'related_table'       => (string) {the related table},
 	 *             'related_column'      => (string) {the related column},

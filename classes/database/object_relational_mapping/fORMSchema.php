@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides fSchema class related functions for ORM code
+ * Provides {@link fSchema} class related functions for ORM code
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -22,9 +22,9 @@ class fORMSchema
 	
 	
 	/**
-	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
+	 * Allows attaching an {@link fSchema}-compatible object as the schema singleton for ORM code
 	 * 
-	 * @param  fISchema $schema  An object that implements the fISchema interface
+	 * @param  fISchema $schema  An object that implements the {@link fISchema} interface
 	 * @return void
 	 */
 	static public function attach(fISchema $schema)
@@ -34,7 +34,7 @@ class fORMSchema
 	
 	
 	/**
-	 * Return the instance of the fSchema class
+	 * Return the instance of the {@link fSchema} class
 	 * 
 	 * @return fSchema  The schema instance
 	 */

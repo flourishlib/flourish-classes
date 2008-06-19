@@ -1,6 +1,6 @@
 <?php
 /**
- * Representation of an unbuffered result from a query against the fDatabase class
+ * Representation of an unbuffered result from a query against the {@link fDatabase} class
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -42,14 +42,14 @@ class fUnbufferedResult implements Iterator
 	private $result = NULL;
 	
 	/**
-	 * The sql query
+	 * The SQL query
 	 * 
 	 * @var string
 	 */
 	private $sql = '';
 	
 	/**
-	 * The sql from before translation
+	 * The SQL from before translation
 	 * 
 	 * @var string
 	 */
@@ -61,12 +61,12 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'odbc', 'pgsql', 'sqlite', 'pdo')
+	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv')
 	 * @return fUnbufferedResult
 	 */
 	public function __construct($extension)
 	{
-		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pgsql', 'sqlite', 'pdo', 'sqlsrv');
+		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
 		}
@@ -341,11 +341,11 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Sets the sql used in the query
+	 * Sets the SQL used in the query
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $sql  The sql used in the query
+	 * @param  string $sql  The SQL used in the query
 	 * @return void
 	 */
 	public function setSQL($sql)
@@ -355,11 +355,11 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Sets the sql from before translation
+	 * Sets the SQL from before translation
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $untranslated_sql  The sql from before translation
+	 * @param  string $untranslated_sql  The SQL from before translation
 	 * @return void
 	 */
 	public function setUntranslatedSQL($untranslated_sql)
@@ -369,7 +369,7 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Throws an fNoResultException if the fResult did not return or affect any rows
+	 * Throws an {@link fNoResultException} if the {@link fUnbufferedResult} did not return any rows
 	 * 
 	 * @throws  fNoResultsException
 	 * 

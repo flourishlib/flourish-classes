@@ -161,8 +161,8 @@ class fORMColumn
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
 		
-		$hook     = 'replace::format' . $cameled_column . '()';
-		$callback = array('fORMColumn', 'formatLinkColumn');
+		$hook     = 'replace::prepare' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'prepareLinkColumn');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
 		$hook     = 'post::validate()';
@@ -221,7 +221,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Formats a link column into an HTML link
+	 * Prepares a link column so that the link will work properly in an A tag
 	 * 
 	 * @internal
 	 * 
@@ -234,7 +234,7 @@ class fORMColumn
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return string  The formatted link
 	 */
-	static public function formatLinkColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function prepareLinkColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
 		

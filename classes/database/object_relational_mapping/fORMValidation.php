@@ -605,7 +605,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates values for an fActiveRecord object
+	 * Validates values for an {@link fActiveRecord} object
 	 *
 	 * @internal
 	 * 
@@ -668,7 +668,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates related records for an fActiveRecord object
+	 * Validates related records for an {@link fActiveRecord} object
 	 *
 	 * @internal
 	 * 
