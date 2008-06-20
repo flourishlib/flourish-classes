@@ -2,6 +2,9 @@
 /**
  * Provides request-related methods
  * 
+ * This class is implemented to use the UTF-8 character encoding. Please see
+ * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8} for more information.
+ * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -36,7 +39,7 @@ class fRequest
 	
 	
 	/**
-	 * Indicated if the parameter specified is set in the $_GET or $_POST or  superglobals
+	 * Indicated if the parameter specified is set in the $_GET or $_POST superglobals
 	 * 
 	 * @param  string $key  The key to check
 	 * @return boolean  If the parameter is set
@@ -105,11 +108,12 @@ class fRequest
 	
 	
 	/**
-	 * Gets a value from the $_POST or $_GET superglobals (in that order). A
-	 * value that === '' and is not cast to a specific type will become NULL. 
+	 * Gets a value from the $_POST or $_GET superglobals (in that order)
+	 * 
+	 * A value that === '' and is not cast to a specific type will become NULL.
+	 *  
 	 * All text values are interpreted as UTF-8 string and appropriately
-	 * cleaned. Please see {@link http://flourishlib.com/wiki/GeneralDocs/UTF8}
-	 * for more information.
+	 * cleaned.
 	 * 
 	 * @param  string $key            The key to get the value of
 	 * @param  string $cast_to        Cast the value to this data type
@@ -196,7 +200,10 @@ class fRequest
 	
 	
 	/**
-	 * Overrides the value of 'action' in $_GET and $_POST based on the 'action::ACTION_NAME' value in $_GET and $_POST. Used for multiple submit buttons.
+	 * Overrides the value of 'action' in $_GET and $_POST based on the 'action::ACTION_NAME' value in $_GET and $_POST
+	 * 
+	 * This method is primarily intended to be used for hanlding multiple
+	 * submit buttons.
 	 * 
 	 * @param  string $redirect  The url to redirect to if the action is overriden. %%action%% will be replaced with the overridden action.
 	 * @return void
@@ -226,7 +233,7 @@ class fRequest
 	
 	
 	/**
-	 * Returns $_REQUEST and $_FILES to the state they were at before filter() was called
+	 * Returns $_GET, $_POST and $_FILES to the state they were at before filter() was called
 	 * 
 	 * @internal
 	 * 

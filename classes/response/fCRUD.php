@@ -128,7 +128,10 @@ class fCRUD
 	
 	
 	/**
-	 * Returns a css class name for a row. Will return even, odd, or highlighted if the two parameters are equal and added or updated is true
+	 * Returns a CSS class name for a row
+	 * 
+	 * Will return even, odd, or highlighted if the two parameters are equal
+	 * and added or updated is true
 	 * 
 	 * @param  mixed $row_value       The value from the row
 	 * @param  mixed $affected_value  The value that was just added or updated
@@ -148,7 +151,9 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current value of a search field. If a value === '' and no cast to is specified, the value will become NULL.
+	 * Gets the current value of a search field
+	 * 
+	 * If a value === '' and no cast to is specified, the value will become NULL.
 	 * 
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to

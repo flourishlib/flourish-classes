@@ -14,8 +14,9 @@
 class fDirectory
 {	
 	/**
-	 * Creates a directory on the filesystem and returns an object representing
-	 * it. The directory creation is done recursively, so if any of the parent
+	 * Creates a directory on the filesystem and returns an object representing it
+	 * 
+	 * The directory creation is done recursively, so if any of the parent
 	 * directories do not exist, they will be created.
 	 * 
 	 * This operation will be reverted by a filesystem transaction being rolled back.
@@ -130,7 +131,10 @@ class fDirectory
 	/**
 	 * Will delete a directory and all files and folders inside of it
 	 * 
-	 * This operation will not be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory and all contents as existing until that point.
+	 * This operation will not be performed until the filesystem transaction
+	 * has been committed, if a transaction is in progress. Any non-Flourish
+	 * code (PHP or system) will still see this directory and all contents as
+	 * existing until that point.
 	 * 
 	 * @return void
 	 */
@@ -157,13 +161,15 @@ class fDirectory
 	
 	
 	/**
-	 * Gets the disk usage of the directory and all files and folders contained within. May be incorrect if files over 2GB exist.
+	 * Gets the disk usage of the directory and all files and folders contained within
+	 * 
+	 * May be incorrect if files over 2GB exist.
 	 * 
 	 * @param  boolean $format          If the filesize should be formatted for human readability
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
 	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
 	 */
-	public function getDiskUsage($format=FALSE, $decimal_places=1)
+	public function getFilesize($format=FALSE, $decimal_places=1)
 	{
 		$this->tossIfException();
 		
@@ -171,11 +177,7 @@ class fDirectory
 		
 		$children = $this->scan();
 		foreach ($children as $child) {
-			if ($child instanceof fFile) {
-				$size += $child->getFilesize();
-			} else {
-				$size += $child->getDiskUsage();
-			}	
+			$size += $child->getFilesize();
 		}
 		
 		if (!$format) {
@@ -208,15 +210,18 @@ class fDirectory
 	/**
 	 * Gets the directory's current path
 	 * 
-	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
+	 * If the web path is requested, uses translations set with
+	 * {@link fFilesystem::addWebPathTranslation()}
+	 * 
+	 * @param  boolean $translate_to_web_path  If the path should be the web path
 	 * @return string  The path for the directory
 	 */
-	public function getPath($from_doc_root=FALSE)
+	public function getPath($translate_to_web_path=FALSE)
 	{
 		$this->tossIfException();
 		
-		if ($from_doc_root) {
-			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->directory);
+		if ($translate_to_web_path) {
+			return fFilesystem::translateToWebPath($this->directory);
 		}
 		return $this->directory;
 	}
@@ -238,7 +243,10 @@ class fDirectory
 	/**
 	 * Renames the current directory, overwriting any existing file/directory
 	 * 
-	 * This operation will NOT be performed until the filesystem transaction has been committed, if a transaction is in progress. Any non-Flourish code (PHP or system) will still see this directory (and all contained files/dirs) as existing with the old paths until that point.
+	 * This operation will NOT be performed until the filesystem transaction
+	 * has been committed, if a transaction is in progress. Any non-Flourish
+	 * code (PHP or system) will still see this directory (and all contained
+	 * files/dirs) as existing with the old paths until that point.
 	 * 
 	 * @param  string  $new_dirname  The new full path to the directory
 	 * @param  boolean $overwrite    If the new dirname already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change

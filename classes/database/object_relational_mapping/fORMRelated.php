@@ -394,9 +394,8 @@ class fORMRelated
 	/**
 	 * Stores a set of one-to-many related records in the database
 	 * 
-	 * @internal
-	 * 
 	 * @throws fValidationException
+	 * @internal
 	 * 
 	 * @param  array      &$values       The current values for the main record being stored
 	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
@@ -427,7 +426,7 @@ class fORMRelated
 		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
 		
 		$record_number = 0;
-		$filter        = fORMRelated::determineRequestFilter(fORM::tablize($relationship['table']), $related_class, $relationship['related_column']);
+		$filter        = fORMRelated::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
 		
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number);
@@ -442,9 +441,8 @@ class fORMRelated
 	/**
 	 * Associates a set of many-to-many related records with the current record
 	 * 
-	 * @internal
-	 * 
 	 * @throws fValidationException
+	 * @internal
 	 * 
 	 * @param  array      &$values       The current values for the main record being stored
 	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set

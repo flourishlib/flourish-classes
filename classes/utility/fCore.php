@@ -260,7 +260,10 @@ class fCore
 	
 	
 	/**
-	 * Turns on special error handling. All errors that match the current error_reporting() level will be redirected to the destination.
+	 * Turns on special error handling
+	 * 
+	 * All errors that match the current error_reporting() level will be
+	 * redirected to the destination.
 	 * 
 	 * @param  string $destination  The destination for the errors. An email or file.
 	 * @return void
@@ -276,7 +279,10 @@ class fCore
 	
 	
 	/**
-	 * Turns on special exception handling. Any uncaught exception will be redirected to the destination specified, and the page will execute the $closing_code callback before exiting.
+	 * Turns on special exception handling
+	 * 
+	 * Any uncaught exception will be redirected to the destination specified,
+	 * and the page will execute the $closing_code callback before exiting.
 	 * 
 	 * @param  string   $destination   The destination for the exception. An email or file.
 	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
@@ -337,7 +343,7 @@ class fCore
 	
 	
 	/**
-	 * Returns the version of php running, ignoring any information about the OS
+	 * Returns the version of PHP running, ignoring any information about the OS
 	 * 
 	 * @return string  The PHP version in the format major.minor.version
 	 */
@@ -498,7 +504,11 @@ class fCore
 	
 	
 	/**
-	 * Triggers a user-level error. The default error handler in PHP will show the line number of this method as the triggering code. To get a full backtrace, use (@link fCore::enableErrorHandling()).
+	 * Triggers a user-level error
+	 * 
+	 * The default error handler in PHP will show the line number of this
+	 * method as the triggering code. To get a full backtrace, use
+	 * {@link fCore::enableErrorHandling()}.
 	 * 
 	 * @param  string $error_type  The type of error to trigger ('error', 'warning' or 'notice')
 	 * @param  string $message     The error message

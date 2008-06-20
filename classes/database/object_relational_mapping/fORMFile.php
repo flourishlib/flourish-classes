@@ -246,6 +246,30 @@ class fORMFile
 	
 	
 	/**
+	 * Takes one file or image upload columns and sets it to inherit any uploaded files from another column
+	 * 
+	 * @param  mixed  $class                The class name or instance of the class
+	 * @param  string $column               The column that will inherit the uploaded file
+	 * @param  string $inherit_from_column  The column to inherit the uploaded file from
+	 * @return void
+	 */
+	static public function configureColumnInheritance($class, $column, $inherit_from_column)
+	{
+		$class = fORM::getClassName($class);
+		
+		if (empty(self::$column_inheritence[$class])) {
+			self::$column_inheritence[$class] = array();	
+		}
+		
+		if (empty(self::$column_inheritence[$class][$inherit_from_column])) {
+			self::$column_inheritence[$class][$inherit_from_column] = array();	
+		}
+		
+		self::$column_inheritence[$class][$inherit_from_column][] = $column;
+	}
+	
+	
+	/**
 	 * Sets a column to be a date created column
 	 * 
 	 * @param  mixed             $class       The class name or instance of the class
@@ -473,11 +497,14 @@ class fORMFile
 	{
 		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
 		
-		$doc_root    = realpath($_SERVER['DOCUMENT_ROOT']);
-		$path        = ($values[$column] instanceof fFile) ? $values[$column]->getPath() : NULL;
-		$server_path = preg_replace('#^' . preg_quote($doc_root, '#') . '#', '', $path);
+		if (sizeof($parameters) > 1) {
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not accept more than one parameter');	
+		}
 		
-		return fHTML::prepare($server_path);
+		$translate_to_web_path = (empty($parameters[0])) ? FALSE : TRUE;
+		$path = ($values[$column] instanceof fFile) ? $values[$column]->getPath($translate_to_web_path) : NULL;
+		
+		return fHTML::prepare($path);
 	}
 	
 	
@@ -494,7 +521,7 @@ class fORMFile
 	static public function processImage($class, $column, $image)
 	{
 		// If we don't have an image or we haven't set it up to manipulate images, just exit
-		if (!$image instanceof fImage || !array_key_exists($column, self::$fupload_method_calls[$class])) {
+		if (!$image instanceof fImage || !array_key_exists($column, self::$fimage_method_calls[$class])) {
 			return;	
 		}
 		
@@ -503,13 +530,16 @@ class fORMFile
 			foreach (self::$fimage_method_calls[$class][$column] as $method_call) {
 				$callback   = array($image, $method_call['method']);
 				$parameters = $method_call['parameters'];
+				if (!is_callable($callback)) {
+					fCore::toss('fProgrammerException', 'The fImage method specified, ' . $method_call['method'] . ', is not a valid method.');
+				}
 				call_user_func_array($callback, $parameters);
 			}	
 		}
 		
 		// Save the changes
 		$callback   = array($image, 'saveChanges');
-		$parameters = array(self::$fimage_method_calls[$class][$column]);
+		$parameters = array(self::$image_upload_columns[$class][$column]);
 		call_user_func_array($callback, $parameters);
 	}
 	
@@ -597,6 +627,9 @@ class fORMFile
 		// Set up the fUpload class
 		if (!empty(self::$fupload_method_calls[$class][$column])) {
 			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
+				if (!is_callable($method_call['callback'])) {
+					fCore::toss('fProgrammerException', 'The fUpload method specified, ' . $method_call['method'] . ', is not a valid method.');
+				}
 				call_user_func_array($method_call['callback'], $method_call['parameters']);	
 			}	
 		}
@@ -643,8 +676,10 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
-			$file = fUpload::upload($upload_dir . self::TEMP_DIRECTORY, $column);	
-			fUpload::reset();
+			if (fUpload::check($column)) {
+				$file = fUpload::upload($upload_dir . self::TEMP_DIRECTORY, $column);	
+				fUpload::reset();
+			}
 		
 		// If there was an eror, check to see if we have an existing file
 		} catch (fExpectedException $e) {
@@ -652,8 +687,14 @@ class fORMFile
 			
 			// If there is an existing file and none was uploaded, substitute the existing file
 			$existing_file = fRequest::get('__flourish_existing_' . $column);
+			$delete_file   = fRequest::get('__flourish_delete_' . $column, 'boolean');
+			$no_upload     = $e->getMessage() == 'Please upload a file';
 			
-			if ($existing_file && $e->getMessage() == 'Please upload a file') {
+			if ($existing_file && $delete_file && $no_upload) {
+				
+				$file = NULL;
+				
+			} elseif ($existing_file && $no_upload) {
 				
 				// If the file is not in the database yet, look in the temp directory
 				if ($existing_file != $values[$column] && file_exists($upload_dir->getPath() . self::TEMP_DIRECTORY . $existing_file)) {
@@ -676,19 +717,36 @@ class fORMFile
 		// Perform the file upload inheritance
 		if (!empty(self::$column_inheritence[$class][$column])) {
 			foreach (self::$column_inheritence[$class][$column] as $other_column) {
-				$other_file = $file->duplicate(self::$file_upload_columns[$class][$column] . self::TEMP_DIRECTORY, FALSE);
+				
+				if ($file) {
+					// Let's clean out the upload temp dir
+					try {
+						$other_upload_dir = self::$file_upload_columns[$class][$other_column];
+						$other_temp_dir = new fDirectory($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
+					} catch (fValidationException $e) {
+						$other_temp_dir = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);			
+					}
+					
+					$other_file = $file->duplicate($other_temp_dir, FALSE);
+				} else {
+					$other_file = $file;	
+				}
 				
 				settype($old_values[$other_column], 'array');
 				
 				$old_values[$other_column][] = $values[$other_column];
 				$values[$other_column]       = $other_file;
 				
-				self::processImage($class, $other_column, $other_file);	
+				if ($other_file) {
+					self::processImage($class, $other_column, $other_file);	
+				}
 			}	
 		}
 		
 		// Process the file
-		self::processImage($class, $column, $file);
+		if ($file) {
+			self::processImage($class, $column, $file);
+		}
 	}
 	
 	
@@ -720,7 +778,9 @@ class fORMFile
 			
 			// Grab the error that occured
 			try {
-				fUpload::validate($column); 		
+				if (fUpload::check($column)) {
+					fUpload::validate($column);
+				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != 'Please upload a file') {
 					$validation_messages[] = $column_name . ': ' . $e->getMessage();	

@@ -1,6 +1,6 @@
 <?php
 /**
- * An exception that should probably not be handled by the display code, fCore::enableExceptionHandler() is recommended
+ * An exception that should probably not be handled by the display code, {@link fCore::enableExceptionHandler()} is recommended
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>

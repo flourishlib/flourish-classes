@@ -60,9 +60,10 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Creates an image on the filesystem and returns an object representing it.
+	 * Creates an image on the filesystem and returns an object representing it
 	 * 
-	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * This operation will be reverted by a filesystem transaction being rolled
+	 * back.
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -108,61 +109,26 @@ class fImage extends fFile
 			// Look for imagemagick first since it can handle more than GD
 			try {
 				
-				$locations = array(
-					'solaris'    => array(
-						'/opt/local/bin/',
-						'/opt/bin/',
-						'/opt/csw/bin/'
-					),
-					'linux/unix' => array(
-						'/usr/local/bin/',
-						'/usr/bin/'	
-					)
-				);
-				
-				switch ($os = fCore::getOS()) {
-					case 'windows':
-						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
-						$win_output = trim(shell_exec($win_search));
-						
-						if (stripos($win_output, 'File not found') !== FALSE) {
-							throw new Exception();
-						}
-						
-						$path = 'C:\Program Files\\' . $win_output . '\\';	
-						break;
-						
-					case 'linux/unix':
-					case 'solaris':
-						$found = FALSE;
-						foreach($locations as $location) {
-							$path = $location . 'convert';
-							if (file_exists($path) && is_executable($path)) {
-								$found = TRUE;
-								break;		
-							}	
-						}
-						
-						// We have no fallback in solaris
-						if ($os == 'solaris' && !$found) {
-							throw new Exception();	
-						}
-						
-						// On most linux/unix we can try whereis
-						if ($os == 'linux/unix' && !$found) {
-							$nix_search = 'whereis -b convert';
-							$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
-							
-							if (empty($nix_output)) {
-								throw new Exception();
-							}
-						
-							$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output); 		
-						}
+				if (fCore::getOS() == 'windows') {
+					$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+					$win_output = trim(shell_exec($win_search));
 					
-					// On an unknown OS, we just skip trying to find it
-					default:
-						throw new Exception();	
+					if (stripos($win_output, 'File not found') !== FALSE) {
+						throw new Exception();
+					}
+					
+					$path = 'C:\Program Files\\' . $win_output . '\\';
+				}
+				
+				if (fCore::getOS() == 'linux/unix') {
+					$nix_search = 'whereis -b convert';
+					$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+					
+					if (empty($nix_output)) {
+						throw new Exception();
+					}
+				
+					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
 				}
 				
 				self::checkImageMagickBinary($path);
@@ -224,7 +190,7 @@ class fImage extends fFile
 	 */
 	static public function getInfo($image_path, $element=NULL)
 	{
-		$image_info = @getimagesize($image);
+		$image_info = @getimagesize($image_path);
 		if ($image_info == FALSE) {
 			fCore::toss('fValidationException', 'The file specified is not an image');
 		}
@@ -275,7 +241,7 @@ class fImage extends fFile
 		try {
 			$info = self::getInfo($image);
 		
-			if ($info['type'] === NULL || ($info['TYPE'] == 'tif' && self::$processor == 'gd')) {
+			if ($info['type'] === NULL || ($info['type'] == 'tif' && self::$processor == 'gd')) {
 				return FALSE;
 			}
 		} catch (fValidationException $e) {
@@ -347,7 +313,7 @@ class fImage extends fFile
 				if (self::$processor == 'imagemagick') {
 					$valid_image_types[] = 'TIF';	
 				}
-				fCore::toss('fValidationException', 'The image specified is not valid ' . fInflection::joinTerms($valid_image_types) . ' file');	
+				fCore::toss('fValidationException', 'The image specified is not a valid ' . fInflection::joinTerms($valid_image_types) . ' file');	
 			}
 			parent::__construct($file_path);
 				
@@ -359,7 +325,9 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Crops the biggest area possible from the center of the image that matches the ratio provided. Crop does not occur until {@link fImage::saveChanges()} is called.
+	 * Crops the biggest area possible from the center of the image that matches the ratio provided
+	 * 
+	 * Crop does not occur until {@link fImage::saveChanges()} is called.
 	 * 
 	 * @param  numeric $ratio_width   The width to crop the image to
 	 * @param  numeric $ratio_height  The height to crop the image to
@@ -370,10 +338,10 @@ class fImage extends fFile
 		$this->tossIfException();
 		
 		// Make sure the user input is valid
-		if (!is_numeric($ratio_width) || $ratio_width < 0) {
+		if ((!is_numeric($ratio_width) && $ratio_width !== NULL) || $ratio_width < 0) {
 			fCore::toss('fProgrammerException', 'The ratio width specified is not a number or is less than or equal to zero');
 		}
-		if (!is_int($ratio_height) || $ratio_height < 0) {
+		if ((!is_numeric($ratio_height) && $ratio_height !== NULL) || $ratio_height < 0) {
 			fCore::toss('fProgrammerException', 'The ratio height specified is not a number or is less than or equal to zero');
 		}
 		
@@ -419,7 +387,9 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Converts the image to grayscale. Desaturation does not occur until {@link fImage::saveChanges()} is called.
+	 * Converts the image to grayscale
+	 * 
+	 * Desaturation does not occur until {@link fImage::saveChanges()} is called.
 	 * 
 	 * @return void
 	 */
@@ -646,7 +616,10 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Sets the image to be resized proportionally to a specific sized canvas. Will only size down an image. Resize does not occur until {@link fImage::saveChanges()} is called.
+	 * Sets the image to be resized proportionally to a specific sized canvas
+	 * 
+	 * Will only size down an image. Resize does not occur until
+	 * {@link fImage::saveChanges()} is called.
 	 * 
 	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
 	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
@@ -657,10 +630,10 @@ class fImage extends fFile
 		$this->tossIfException();
 		
 		// Make sure the user input is valid
-		if (!is_int($canvas_width) || $canvas_width < 0) {
+		if ((!is_int($canvas_width) && $canvas_width !== NULL) || $canvas_width < 0) {
 			fCore::toss('fProgrammerException', 'The canvas width specified is not an integer or is less than zero');
 		}
-		if (!is_int($canvas_height) || $canvas_height < 0) {
+		if ((!is_int($canvas_height) && $canvas_height !== NULL) || $canvas_height < 0) {
 			fCore::toss('fProgrammerException', 'The canvas height specified is not an integer or is less than zero');
 		}
 		if ($canvas_width == 0 && $canvas_height == 0) {
@@ -710,8 +683,10 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Saves any changes to the image, if the file type is different than the
-	 * current one, removes the current file once the new one is created.
+	 * Saves any changes to the image
+	 * 
+	 * If the file type is different than the current one, removes the current
+	 * file once the new one is created.
 	 * 
 	 * This operation will be reverted by a filesystem transaction being rolled back.
 	 * If a transaction is in progress and the new image type causes a new file

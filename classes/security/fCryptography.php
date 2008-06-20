@@ -111,7 +111,10 @@ class fCryptography
 		
 	
 	/**
-	 * Decrypts ciphertext encrypted using public-key encryption via {@link publicKeyEncrypt()}. A public key (X.509 certificate) is required for encryption and a private key (PEM) is required for decryption.
+	 * Decrypts ciphertext encrypted using public-key encryption via {@link fCryptography::publicKeyEncrypt()}
+	 * 
+	 * A public key (X.509 certificate) is required for encryption and a
+	 * private key (PEM) is required for decryption.
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -165,7 +168,10 @@ class fCryptography
 	
 	
 	/**
-	 * Encrypts the passed data using public key encryption via OpenSSL. A public key (X.509 certificate) is required for encryption and a private key (PEM) is required for decryption.
+	 * Encrypts the passed data using public key encryption via OpenSSL
+	 * 
+	 * A public key (X.509 certificate) is required for encryption and a
+	 * private key (PEM) is required for decryption.
 	 * 
 	 * @param  string $plaintext        The content to be encrypted
 	 * @param  string $public_key_file  The path to an X.509 public key certificate
@@ -197,7 +203,10 @@ class fCryptography
 	
 	
 	/**
-	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link symmetricKeyEncrypt()}. Thus the same key is used for encrypting and decrypting data.
+	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link fCryptography::symmetricKeyEncrypt()}
+	 * 
+	 * Since this is symmetric-key cryptography, the same key is used for
+	 * encryption and decryption.
 	 * 
 	 * @throws  fValidationException
 	 * 
@@ -248,8 +257,11 @@ class fCryptography
 	
 	
 	/**
-	 * Encrypts the passed data using symmetric-key encryption. Thus the same key is used for encrypting and decrypting data.
-	 * 
+	 * Encrypts the passed data using symmetric-key encryption
+	 *
+	 * Since this is symmetric-key cryptography, the same key is used for
+	 * encryption and decryption.
+	 *  
 	 * @param  string $plaintext   The content to be encrypted
 	 * @param  string $secret_key  The secret key to use for encryption
 	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link symmetricKeyDecrypt()}

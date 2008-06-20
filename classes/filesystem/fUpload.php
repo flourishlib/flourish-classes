@@ -170,7 +170,7 @@ class fUpload
 	 */
 	static public function setType($type)
 	{
-		if (!in_array($mode, array('image', 'zip', 'non_php', 'any'))) {
+		if (!in_array($type, array('image', 'zip', 'non_php', 'any'))) {
 			fCore::toss('fProgrammerException', 'Invalid type specified');
 		}
 		self::$type = $type;
@@ -216,10 +216,17 @@ class fUpload
 		}
 		
 		$file_array = self::validate($field, $index);
-		$file_name  = fFilesystem::createUniqueName($directory->getPath() . $file_array['name']);
+		$file_name  = strtolower($file_array['name']);
+		$file_name  = preg_replace('#\s+#', '_', $file_name);
+		$file_name  = preg_replace('#[^a-z0-9_\.-]#', '', $file_name);
+		$file_name  = fFilesystem::createUniqueName($directory->getPath() . $file_name);
 		
 		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
 			fCore::toss('fEnvironmentException', 'There was an error moving the uploaded file');
+		}
+		
+		if (!@chmod($file_name, 0644)) {
+			fCore::toss('fEnvironmentException', 'Unable to change permissions on the uploaded file');
 		}
 		
 		if (fImage::isImageCompatible($file_name)) {

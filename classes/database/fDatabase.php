@@ -2,8 +2,8 @@
 /**
  * Provides a common API for different databases - will automatically use any installed extension
  * 
- * This class is implemented to use the UTF-8 character set. Please see
- * {@link http://flourishlib.com/wiki/GeneralDocs/UTF8} for more information.
+ * This class is implemented to use the UTF-8 character encoding. Please see
+ * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8} for more information.
  * 
  * The following databases are supported:
  *   - {@link http://microsoft.com/sql/ MSSQL}

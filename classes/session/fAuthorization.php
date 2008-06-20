@@ -15,6 +15,10 @@ class fAuthorization
 {
 	/**
 	 * The prefix for session variables
+	 * 
+	 * @internal
+	 * 
+	 * @var string
 	 */
 	const SESSION_PREFIX = 'fAuthorization::';
 	

@@ -372,6 +372,9 @@ class fORMColumn
 		}	
 		
 		foreach (self::$email_columns[$class] as $column => $enabled) {
+			if (!$values[$column] && !is_numeric($values[$column])) {
+				continue;	
+			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
 				$validation_messages[] = fORM::getColumnName($class_name, $column) . ': Please enter an email address in the form name@example.com';
 			}	
@@ -401,6 +404,9 @@ class fORMColumn
 		}	
 		
 		foreach (self::$link_columns[$class] as $column => $enabled) {
+			if (!$values[$column] && !is_numeric($values[$column])) {
+				continue;	
+			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
 				$validation_messages[] = fORM::getColumnName($class, $column) . ': Please enter a link in the form http://www.example.com';
 			}	

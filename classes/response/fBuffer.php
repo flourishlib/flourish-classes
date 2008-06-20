@@ -116,7 +116,9 @@ class fBuffer
 	
 	
 	/**
-	 * Starts capturing output. Output can be retrieved by calling {@link stopCapture()}.
+	 * Starts capturing output
+	 * 
+	 * Output can be retrieved by calling {@link stopCapture()}.
 	 * 
 	 * @return void
 	 */

@@ -108,9 +108,10 @@ class fFile
 	/**
 	 * Deletes the current file
 	 * 
-	 * This operation will NOT be performed until the filesystem transaction has been
-	 * committed, if a transaction is in progress. Any non-Flourish code (PHP or system)
-	 * will still see this file as existing until that point.
+	 * This operation will NOT be performed until the filesystem transaction
+	 * has been committed, if a transaction is in progress. Any non-Flourish
+	 * code (PHP or system) will still see this file as existing until that
+	 * point.
 	 * 
 	 * @return void
 	 */
@@ -139,14 +140,15 @@ class fFile
 	
 	
 	/**
-	 * Creates a new file object with a copy of this file. If no directory is specified, the file
-	 * is created with a new name in the current directory. If a new directory is specified, you must
-	 * also indicate if you wish to overwrite an existing file with the same name in the new directory
-	 * or create a unique name.
+	 * Creates a new file object with a copy of this file
 	 * 
-	 * Will also put the file into the temp dir if it is currently in a temp dir.
+	 * If no directory is specified, the file is created with a new name in
+	 * the current directory. If a new directory is specified, you must also
+	 * indicate if you wish to overwrite an existing file with the same name
+	 * in the new directory or create a unique name.
 	 * 
-	 * This operation will be reverted by a filesystem transaction being rolled back.
+	 * This operation will be reverted by a filesystem transaction being rolled
+	 * back.
 	 * 
 	 * @param  string|fDirectory $new_directory  The directory to duplicate the file into if different than the current directory
 	 * @param  boolean           $overwrite      If a new directory is specified, this indicates if a file with the same name should be overwritten.
@@ -161,7 +163,7 @@ class fFile
 		}
 		
 		if (!is_object($new_directory)) {
-			$new_directory = fDirectory($new_directory);
+			$new_directory = new fDirectory($new_directory);
 		}
 		
 		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
@@ -191,7 +193,8 @@ class fFile
 		}
 		
 		@copy($this->getPath(), $new_filename);
-		$file = new fFile($new_filename);
+		$class = get_class($this);
+		$file  = new $class($new_filename);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {
@@ -230,7 +233,9 @@ class fFile
 	
 	
 	/**
-	 * Gets the size of the file. May be incorrect for files over 2GB on certain operating systems.
+	 * Gets the size of the file
+	 * 
+	 * May be incorrect for files over 2GB on certain operating systems.
 	 * 
 	 * @param  boolean $format          If the filesize should be formatted for human readability
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
@@ -254,15 +259,18 @@ class fFile
 	/**
 	 * Gets the file's current path (directory and filename)
 	 * 
-	 * @param  boolean $from_doc_root  If the path should be returned relative to the document root
+	 * If the web path is requested, uses translations set with
+	 * {@link fFilesystem::addWebPathTranslation()}
+	 * 
+	 * @param  boolean $translate_to_web_path  If the path should be the web path
 	 * @return string  The path (directory and filename) for the file
 	 */
-	public function getPath($from_doc_root=FALSE)
+	public function getPath($translate_to_web_path=FALSE)
 	{
 		$this->tossIfException();
 		
-		if ($from_doc_root) {
-			return str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->file);
+		if ($translate_to_web_path) {
+			return fFilesystem::translateToWebPath($this->file);
 		}
 		return $this->file;
 	}
@@ -282,9 +290,12 @@ class fFile
 	
 	
 	/**
-	 * Reads the data from the file. Reads all file data into memory, use with caution on large files!
+	 * Reads the data from the file
 	 * 
-	 * This operation will read the data that has been written during the current transaction if one is in progress.
+	 * Reads all file data into memory, use with caution on large files!
+	 * 
+	 * This operation will read the data that has been written during the
+	 * current transaction if one is in progress.
 	 * 
 	 * @param  mixed $data  The data to write to the file
 	 * @return string  The contents of the file
@@ -298,9 +309,13 @@ class fFile
 	
 	
 	/**
-	 * Renames the current file, if the filename already exists and the overwrite flag is set to false, a new filename will be created
+	 * Renames the current file
 	 * 
-	 * This operation will be reverted if a filesystem transaction is in progress and is later rolled back.
+	 * If the filename already exists and the overwrite flag is set to false,
+	 * a new filename will be created.
+	 * 
+	 * This operation will be reverted if a filesystem transaction is in
+	 * progress and is later rolled back.
 	 * 
 	 * @param  string  $new_filename  The new full path to the file
 	 * @param  boolean $overwrite     If the new filename already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
@@ -362,9 +377,13 @@ class fFile
 	
 	
 	/**
-	 * Writes the provided data to the file. Requires all previous data to be stored in memory if inside a transaction, use with caution on large files!
+	 * Writes the provided data to the file
 	 * 
-	 * If a filesystem transaction is in progress and is rolled back, the previous data will be restored.
+	 * Requires all previous data to be stored in memory if inside a
+	 * transaction, use with caution on large files!
+	 * 
+	 * If a filesystem transaction is in progress and is rolled back, the
+	 * previous data will be restored.
 	 * 
 	 * @param  mixed $data  The data to write to the file
 	 * @return void

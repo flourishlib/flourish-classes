@@ -131,7 +131,7 @@ class fInflection
 	{
 		// Make a humanized string like underscore notation
 		if (strpos($string, ' ') !== FALSE) {
-			$string = strtolower(preg_replace('#\s+#', '_', $string;))	
+			$string = strtolower(preg_replace('#\s+#', '_', $string));	
 		}
 		
 		// Check to make sure this is not already camel case

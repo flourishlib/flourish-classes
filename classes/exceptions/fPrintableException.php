@@ -60,13 +60,15 @@ abstract class fPrintableException extends Exception
 		$inline_tags = $inline_tags_minus_br . '<br>';
 		$no_block_html = strip_tags($content, $inline_tags) == $content;
 		
+		$content = html_entity_decode($content, ENT_COMPAT, 'UTF-8');
+		
 		// This code ensures the output is properly encoded for display in (X)HTML, extracted from fHTML::prepare() to reduce dependencies
 		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		$text_matches = preg_split($reg_exp, $content_with_newlines);
 		
 		foreach($text_matches as $key => $value) {
-			$value = htmlentities($value, ENT_COMPAT, 'UTF-8');
+			$value = htmlspecialchars($value);
 		}
 		
 		for ($i = 0; $i < sizeof($html_matches); $i++) {

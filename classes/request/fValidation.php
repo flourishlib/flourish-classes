@@ -124,7 +124,9 @@ class fValidation
 	
 	
 	/**
-	 * Sets form fields to be required to be blank or a valid email address. Use {@link fValidation::setRequiredFields} to not allow blank values.
+	 * Sets form fields to be required to be blank or a valid email address
+	 * 
+	 * Use {@link fValidation::setRequiredFields()} to not allow blank values.
 	 * 
 	 * @param  string $field,...  Any number of fields to required valid email addresses for
 	 * @return void
@@ -136,7 +138,10 @@ class fValidation
 	
 	
 	/**
-	 * Sets form fields to be checked for email injection. Every field that is included in email headers should be passed to this method.
+	 * Sets form fields to be checked for email injection
+	 * 
+	 * Every field that is included in email headers should be passed to this
+	 * method.
 	 * 
 	 * @param  string $field,...  Any number of fields to be checked for email injection
 	 * @return void
@@ -148,12 +153,12 @@ class fValidation
 	
 	
 	/**
-	 * Sets form fields to be required, taking each parameter as a field name.
+	 * Sets form fields to be required, taking each parameter as a field name
 	 * 
 	 * To require one of multiple fields, pass an array of fields as the parameter.
 	 * 
-	 * To conditionally require fields, pass an associative array of with the key being the field that will trigger the
-	 * other fields to be required:
+	 * To conditionally require fields, pass an associative array of with the
+	 * key being the field that will trigger the other fields to be required:
 	 * <pre>
 	 * array(
 	 *     'trigger_field' => array(

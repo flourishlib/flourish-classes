@@ -100,12 +100,13 @@ class fTemplating
 	
 	
 	/**
-	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before.
+	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before
 	 * 
-	 * Please note that using buffered output will affect the order in which code is executed
-	 * since the elements are not actually place()'ed until the destructor is called. If the
-	 * non-template code depends on template code being executed sequentially before it, you
-	 * may not want to use output buffering.
+	 * Please note that using buffered output will affect the order in which
+	 * code is executed since the elements are not actually place()'ed until
+	 * the destructor is called. If the non-template code depends on template
+	 * code being executed sequentially before it, you may not want to use
+	 * output buffering.
 	 * 
 	 * @return void
 	 */
@@ -141,17 +142,20 @@ class fTemplating
 	
 	
 	/**
-	 * Includes the element specified (element must be set through setElement() first). If the
-	 * element is a file path ending in .css, .js, .rss or .xml an appropriate HTML tag will
-	 * be printed (files ending in .xml will be treated as an RSS feed). If the element is a
-	 * file path ending in .inc, .php or .php5 it will be included.
+	 * Includes the element specified (element must be set through setElement() first)
 	 * 
-	 * Paths that start with './' will be loaded relative to the current script. Paths that
-	 * start with a file or directory name will be loaded relative to the root passed in the
-	 * constructor. Paths that start with '/' will be loaded from the root of the filesystem.
+	 * If the element is a file path ending in .css, .js, .rss or .xml an
+	 * appropriate HTML tag will be printed (files ending in .xml will be
+	 * treated as an RSS feed). If the element is a file path ending in .inc,
+	 * .php or .php5 it will be included.
 	 * 
-	 * You can pass the media attribute of a CSS file or the title attribute of an RSS feed by
-	 * adding an associative array with the following formats:
+	 * Paths that start with './' will be loaded relative to the current script.
+	 * Paths that start with a file or directory name will be loaded relative
+	 * to the root passed in the constructor. Paths that start with '/' will
+	 * be loaded from the root of the filesystem.
+	 * 
+	 * You can pass the media attribute of a CSS file or the title attribute
+	 * of an RSS feed by adding an associative array with the following formats:
 	 * 
 	 * <pre>
 	 * array(
@@ -187,12 +191,12 @@ class fTemplating
 	
 	
 	/**
-	 * Prints a CSS link html tag to the output
+	 * Prints a CSS link HTML tag to the output
 	 * 
 	 * @param  mixed $info  The path or array containing the 'path' to the css file. Array can also contain a key 'media'.
 	 * @return void
 	 */
-	private function placeCSS($info)
+	protected function placeCSS($info)
 	{
 		if (!is_array($info)) {
 			$info = array('path'  => $info);
@@ -213,7 +217,7 @@ class fTemplating
 	 * @param  string $file_type  The file type to treat all values as
 	 * @return void
 	 */
-	private function placeElement($element, $file_type)
+	protected function placeElement($element, $file_type)
 	{
 		$values = $this->elements[$element];
 		settype($values, 'array');
@@ -221,9 +225,9 @@ class fTemplating
 		
 		foreach ($values as $value) {
 			
-			$file_type = $this->verifyValue($element, $value, $file_type);
+			$type = $this->verifyValue($element, $value, $file_type);
 			
-			switch ($file_type) {
+			switch ($type) {
 				case 'css':
 					$this->placeCSS($value);
 					break;
@@ -241,19 +245,19 @@ class fTemplating
 					break;
 					
 				default:
-					fCore::toss('fProgrammerException', 'The file type specified, ' . $file_type . ', is not a valid file type. Must be one of: css, js, php, rss.');
+					fCore::toss('fProgrammerException', 'The file type specified, ' . fCore::dump($type) . ', is not a valid file type. Must be one of: css, js, php, rss.');
 			}
 		}
 	}
 	
 	
 	/**
-	 * Prints a javascript html tag to the output
+	 * Prints a javascript HTML tag to the output
 	 * 
 	 * @param  mixed $info  The path or array containing the 'path' to the javascript file
 	 * @return void
 	 */
-	private function placeJS($info)
+	protected function placeJS($info)
 	{
 		if (!is_array($info)) {
 			$info = array('path'  => $info);
@@ -264,13 +268,13 @@ class fTemplating
 	
 	
 	/**
-	 * Includes a PHP file, exporting all of the elements to variables in the scope of the include
+	 * Includes a PHP file
 	 * 
 	 * @param  string $element  The element being placed
 	 * @param  string $path     The path to the PHP file
 	 * @return void
 	 */
-	private function placePHP($element, $path)
+	protected function placePHP($element, $path)
 	{
 		// Check to see if the element is a relative path
 		if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
@@ -294,12 +298,12 @@ class fTemplating
 	
 	
 	/**
-	 * Prints an RSS link html tag to the output
+	 * Prints an RSS link HTML tag to the output
 	 * 
 	 * @param  mixed $info  The path or array containing the 'path' to the RSS xml file. May also contain a 'title' key for the title of the RSS feed.
 	 * @return void
 	 */
-	private function placeRSS($info)
+	protected function placeRSS($info)
 	{
 		if (!is_array($info)) {
 			$info = array(
@@ -377,7 +381,7 @@ class fTemplating
 	 * @param  string $file_type  The file type that this element will be displayed as - skips checking file extension
 	 * @return string  The file type of the value being placed
 	 */
-	private function verifyValue($element, $value, $file_type)
+	protected function verifyValue($element, $value, $file_type=NULL)
 	{
 		if (!$value) {
 			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');

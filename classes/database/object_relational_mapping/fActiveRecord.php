@@ -709,7 +709,7 @@ abstract class fActiveRecord
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support formatting because it is a blob column');
+			fCore::toss('fProgrammerException', 'The column ' . $column . ' can not be prepared because it is a blob column');
 		}
 		
 		if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {

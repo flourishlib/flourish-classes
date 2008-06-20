@@ -12,7 +12,14 @@
  * @changes  1.0.0    The initial implementation [wb, 2008-03-24]
  */
 class fFilesystem
-{
+{	
+	/**
+	 * Stores the operations to perform when a commit occurs
+	 * 
+	 * @var array
+	 */
+	static private $commit_operations = NULL;
+	
 	/**
 	 * Maps exceptions to all instances of a file or directory, providing consistency
 	 * 
@@ -35,21 +42,45 @@ class fFilesystem
 	static private $rollback_operations = NULL;
 	
 	/**
-	 * Stores the operations to perform when a commit occurs
+	 * Stores a list of search => replace strings for web path translations
 	 * 
 	 * @var array
 	 */
-	static private $commit_operations = NULL;
+	static private $web_path_translations = array();
+	
+	
+	/**
+	 * Adds a directory to the web path translation list
+	 * 
+	 * The web path conversion list is a list of directory paths that will be
+	 * converted (from the beginning of filesystem paths) when preparing a path
+	 * for output into HTML.
+	 * 
+	 * By default the DOCUMENT_ROOT will be converted to a blank string, in
+	 * essence stripping it from filesystem paths.
+	 * 
+	 * @param  string $search_path   The path to look for
+	 * @param  string $replace_path  The path to replace with 
+	 * @return void
+	 */
+	static public function addWebPathTranslation()
+	{
+		// Ensure we have the correct kind of slash for the OS being used
+		$search_path  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $search_path);
+		$replace_path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $replace_path);
+		self::$web_path_translations[$search_path] = $replace_path;
+	}
 	
 	
 	/**
 	 * Starts a filesystem pseudo-transaction, should only be called when no transaction is in progress.
 	 * 
-	 * Flourish filesystem transactions are NOT full ACID-compliant transactions, but rather more of an
-	 * filesystem undo buffer which can return the filesystem to the state when begin() was called.
-	 * If your PHP script dies in the middle of an operation this functionality will do nothing
-	 * for you and all operations will be retained, except for deletes which only occur once the
-	 * transaction is committed.
+	 * Flourish filesystem transactions are NOT full ACID-compliant
+	 * transactions, but rather more of an filesystem undo buffer which can
+	 * return the filesystem to the state when begin() was called. If your PHP
+	 * script dies in the middle of an operation this functionality will do
+	 * nothing for you and all operations will be retained, except for deletes
+	 * which only occur once the transaction is committed.
 	 * 
 	 * @return void
 	 */
@@ -203,7 +234,10 @@ class fFilesystem
 	
 	
 	/**
-	 * Hooks a file into the exception map entry for that filename. Since the value is returned by reference, all objects that represent this file always see the same exception.
+	 * Hooks a file/directory into the exception map entry for that filename
+	 * 
+	 * Since the value is returned by reference, all objects that represent
+	 * this file/directory always see the same exception.
 	 * 
 	 * @internal
 	 * 
@@ -220,7 +254,10 @@ class fFilesystem
 	
 	
 	/**
-	 * Hooks a file/directory name to the filename map, allowing all objects representing this file to be updated when it is renamed
+	 * Hooks a file/directory name to the filename map
+	 * 
+	 * Since the value is returned by reference, all objects that represent
+	 * this file/directory will always be update on a rename.
 	 * 
 	 * @internal
 	 * 
@@ -284,8 +321,9 @@ class fFilesystem
 	
 	
 	/**
-	 * Updates the filename map recursively, causing all objects representing a directory to be
-	 * updated. Also updated all files and directories in the specified directory to the new paths.
+	 * Updates the filename map recursively, causing all objects representing a directory to be updated
+	 * 
+	 * Also updated all files and directories in the specified directory to the new paths.
 	 * 
 	 * @internal
 	 * 
@@ -340,7 +378,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Keeps track of file and directory names to delete once a transaction is committed. This way no files are lost during a rollback.
+	 * Keeps track of file and directory names to delete when a transaction is committed
 	 * 
 	 * @internal
 	 * 
@@ -454,6 +492,24 @@ class fFilesystem
 		
 		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
+	}
+	
+	
+	/**
+	 * Takes a filesystem path and translates it to a web path using the rules added
+	 * 
+	 * @param  string $path  The path to translate
+	 * @return string  The filesystem path translated to a web path
+	 */
+	static public function translateToWebPath($path)
+	{
+		$translations = array(realpath($_SERVER['DOCUMENT_ROOT'])) + self::$web_path_translations;
+		
+		foreach ($translations as $search => $replace) {
+			$path = preg_replace('#^' . preg_quote($search, '#') . '#', $replace, $path);	
+		}
+		
+		return $path;
 	}
 	
 	

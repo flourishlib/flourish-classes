@@ -2,6 +2,9 @@
 /**
  * Provides HTML-related methods
  * 
+ * This class is implemented to use the UTF-8 character encoding. Please see
+ * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8} for more information.
+ * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -129,7 +132,7 @@ class fHTML
 	
 	
 	/**
-	 * Prepares content for display in HTML, allows HTML tags. Converts all special characters that are not part of html tags or existing entites to entities
+	 * Prepares content for display in UTF-8 encoded HTML - allows HTML tags
 	 * 
 	 * @param  string $content  The content to prepare
 	 * @return string  The encoded html
@@ -158,7 +161,7 @@ class fHTML
 	
 	
 	/**
-	 * Sets the property Content-Type header for a UTF-8 html (or pseudo-xhtml) file.
+	 * Sets the proper Content-Type header for a UTF-8 HTML (or pseudo-XHTML) page
 	 * 
 	 * @return void
 	 */

@@ -44,22 +44,23 @@ class fMessaging
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified. Will not print if no content.
+	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified - will not print if no content
 	 * 
 	 * @param  string $content    The content to display
 	 * @param  string $css_class  The css class to apply
 	 * @return void
 	 */
-	static public function show($content, $css_class)
+	static public function show($content, $css_class='')
 	{
-		if (!$content && $content !== 0 && $content !== '0') {
+		if (!$content && !is_numeric($content)) {
 			return;
 		}
 		
+		$class = ($class) ? ' class="' . $css_class . '"' : '';
 		if (fHTML::checkForBlockLevelHTML($content)) {
-			echo '<div class="' . $css_class . '">' . fHTML::prepare($content) . '</div>';
+			echo '<div' . $class . '>' . fHTML::prepare($content) . '</div>';
 		} else {
-			echo '<p class="' . $css_class . '">' . fHTML::prepare($content) . '</p>';
+			echo '<p' . $class . '>' . fHTML::prepare($content) . '</p>';
 		}
 	}
 	

@@ -2,6 +2,10 @@
 /**
  * Provides string functions for UTF-8 strings
  * 
+ * This class is implemented to provide a UTF-8 version of almost every built-in
+ * PHP string function. For more information about UTF-8, please visit
+ * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8}.
+ * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -134,8 +138,7 @@ class fUTF8
 	);
 	
 	/**
-	 * All lowercase UTF-8 characters not properly handled by mb_strtoupper()
-	 * mapped to uppercase characters
+	 * All lowercase UTF-8 characters not properly handled by mb_strtoupper() mapped to uppercase characters
 	 * 
 	 * @var array
 	 */
@@ -155,8 +158,7 @@ class fUTF8
 	);
 	
 	/**
-	 * All uppercase UTF-8 characters not properly handled by mb_strtolower()
-	 * mapped to lowercase characters
+	 * All uppercase UTF-8 characters not properly handled by mb_strtolower() mapped to lowercase characters
 	 * 
 	 * @var array
 	 */
@@ -300,8 +302,7 @@ class fUTF8
 	);
 	
 	/**
-	 * A mapping of all ASCII-based latin characters, puntuation, symbols and
-	 * number forms to ASCII.
+	 * A mapping of all ASCII-based latin characters, puntuation, symbols and number forms to ASCII.
 	 * 
 	 * Includes elements form the following unicode blocks:
 	 * 
@@ -493,9 +494,9 @@ class fUTF8
 	
 	
 	/**
-	 * Maps UTF-8 ASCII-based latin characters, puntuation, symbols and number
-	 * forms to ASCII. Any characters or symbols that can not be translated
-	 * will be removed.
+	 * Maps UTF-8 ASCII-based latin characters, puntuation, symbols and number forms to ASCII
+	 * 
+	 * Any characters or symbols that can not be translated will be removed.
 	 * 
 	 * This function is most useful for situation that only allows ASCII, such
 	 * as in URLs.
@@ -599,8 +600,7 @@ class fUTF8
 	
 	
 	/**
-	 * Compares strings, with the resulting order having latin characters that
-	 * are based on ASCII letters placed after the relative ASCII characters.
+	 * Compares strings, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
 	 * 
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
@@ -628,8 +628,7 @@ class fUTF8
 	
 	
 	/**
-	 * Converts an offset in characters to an offset in bytes to that we can use
-	 * the built-in functions for some operations.
+	 * Converts an offset in characters to an offset in bytes to that we can use the built-in functions for some operations
 	 * 
 	 * @param  string  $string  The string to base the offset on
 	 * @param  integer $offset  The character offset to conver to bytes
@@ -688,8 +687,10 @@ class fUTF8
 	
 	
 	/**
-	 * Explodes a string on a delimiter. If no delimiter is provided, the string
-	 * will be exploded with each characters being an element in the array.
+	 * Explodes a string on a delimiter
+	 * 
+	 * If no delimiter is provided, the string will be exploded with each
+	 * characters being an element in the array.
 	 * 
 	 * @param  string  $string     The string to explode
 	 * @param  string  $delimiter  The string to explode on. If == FALSE but not 0 or '0', will return one character per array index.
@@ -708,9 +709,7 @@ class fUTF8
 	
 	
 	/**
-	 * Compares strings in a case-insensitive manner, with the resulting order
-	 * having characters that are based on ASCII letters placed after the
-	 * relative ASCII characters.
+	 * Compares strings in a case-insensitive manner, with the resulting order having characters that are based on ASCII letters placed after the relative ASCII characters
 	 * 
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
@@ -731,9 +730,7 @@ class fUTF8
 	
 	
 	/**
-	 * Compares strings using a natural order algorithm in a case-insensitive
-	 * manner, with the resulting order having latin characters that are based
-	 * on ASCII letters placed after the relative ASCII characters.
+	 * Compares strings using a natural order algorithm in a case-insensitive manner, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
 	 * 
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
@@ -754,8 +751,7 @@ class fUTF8
 	
 	
 	/**
-	 * Finds the first position (in characters) of the search value in the
-	 * string. Case is ignored when doing performing a match.
+	 * Finds the first position (in characters) of the search value in the string - case is ignored when doing performing a match
 	 * 
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for. This match will be done in a case-insensitive manner.
@@ -785,8 +781,7 @@ class fUTF8
 	
 	
 	/**
-	 * Replaces matching parts of the string, with matches being done in a a
-	 * case-insensitive manner.
+	 * Replaces matching parts of the string, with matches being done in a a case-insensitive manner
 	 * 
 	 * If $search and $replace are both arrays and $replace is shorter, the
 	 * extra $search string will be replaced with an empty string. If $search
@@ -812,8 +807,7 @@ class fUTF8
 	
 	
 	/**
-	 * Finds the last position (in characters) of the search value in the
-	 * string. Case is ignored when doing performing a match.
+	 * Finds the last position (in characters) of the search value in the string - case is ignored when doing performing a match
 	 * 
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for. This match will be done in a case-insensitive manner.
@@ -843,9 +837,9 @@ class fUTF8
 	
 	
 	/**
-	 * Matches a string needle in the string haystack, returning a substring
-	 * from the beginning of the needle to the end of the haystack. Can
-	 * optionally return the part of the haystack before the needle. Matching
+	 * Matches a string needle in the string haystack, returning a substring from the beginning of the needle to the end of the haystack
+	 * 
+	 * Can optionally return the part of the haystack before the needle. Matching
 	 * is done in a case-insensitive manner.
 	 * 
 	 * @param  string  $haystack       The string to search in
@@ -929,9 +923,7 @@ class fUTF8
 	
 	
 	/**
-	 * Compares strings using a natural order algorithm, with the resulting
-	 * order having latin characters that are based on ASCII letters placed
-	 * after the relative ASCII characters.
+	 * Compares strings using a natural order algorithm, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
 	 * 
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
@@ -1128,7 +1120,7 @@ class fUTF8
 	
 	
 	/**
-	 * Replaces matching parts of the string.
+	 * Replaces matching parts of the string
 	 * 
 	 * If $search and $replace are both arrays and $replace is shorter, the
 	 * extra $search string will be replaced with an empty string. If $search
@@ -1195,8 +1187,7 @@ class fUTF8
 	
 	
 	/**
-	 * Finds the last position (in characters) of the search value in the
-	 * string.
+	 * Finds the last position (in characters) of the search value in the string
 	 * 
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for.
@@ -1225,9 +1216,9 @@ class fUTF8
 	
 	
 	/**
-	 * Matches a string needle in the string haystack, returning a substring
-	 * from the beginning of the needle to the end of the haystack. Can
-	 * optionally return the part of the haystack before the needle.
+	 * Matches a string needle in the string haystack, returning a substring from the beginning of the needle to the end of the haystack
+	 * 
+	 * Can optionally return the part of the haystack before the needle.
 	 * 
 	 * @param  string  $haystack       The string to search in
 	 * @param  string  $needle         The string to search for
@@ -1339,8 +1330,9 @@ class fUTF8
 	
 	
 	/**
-	 * Converts the first character of every word to uppercase. Words are
-	 * considered to start at the beginning of the string, or after any
+	 * Converts the first character of every word to uppercase
+	 * 
+	 * Words are considered to start at the beginning of the string, or after any
 	 * whitespace character. 
 	 * 
 	 * @param  string $string  The string to process
