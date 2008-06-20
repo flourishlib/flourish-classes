@@ -503,7 +503,7 @@ class fFilesystem
 	 */
 	static public function translateToWebPath($path)
 	{
-		$translations = array(realpath($_SERVER['DOCUMENT_ROOT'])) + self::$web_path_translations;
+		$translations = array(realpath($_SERVER['DOCUMENT_ROOT']) => '') + self::$web_path_translations;
 		
 		foreach ($translations as $search => $replace) {
 			$path = preg_replace('#^' . preg_quote($search, '#') . '#', $replace, $path);	
