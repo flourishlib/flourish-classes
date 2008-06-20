@@ -502,7 +502,13 @@ class fORMFile
 		}
 		
 		$translate_to_web_path = (empty($parameters[0])) ? FALSE : TRUE;
-		$path = ($values[$column] instanceof fFile) ? $values[$column]->getPath($translate_to_web_path) : NULL;
+		$value                 = $values[$column];
+		
+		if ($value instanceof fFile) {
+			$path = ($translate_to_web_path) ? $value->getPath(TRUE) : $value->getFilename();
+		} else {
+			$path = NULL;	
+		}
 		
 		return fHTML::prepare($path);
 	}
