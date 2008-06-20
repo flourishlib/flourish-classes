@@ -310,6 +310,10 @@ class fFilesystem
 	 */
 	static public function updateFilenameMap($existing_filename, $new_filename)
 	{
+		if ($existing_filename == $new_filename) {
+			return;
+		}
+		
 		self::$filename_map[$new_filename]  =& self::$filename_map[$existing_filename];
 		self::$exception_map[$new_filename] =& self::$exception_map[$existing_filename];
 		
@@ -333,6 +337,10 @@ class fFilesystem
 	 */
 	static public function updateFilenameMapForDirectory($existing_dirname, $new_dirname)
 	{
+		if ($existing_dirname == $new_dirname) {
+			return;
+		}
+		
 		// Handle the directory name
 		self::$filename_map[$new_dirname]  =& self::$filename_map[$existing_dirname];
 		self::$exception_map[$new_dirname] =& self::$exception_map[$existing_dirname];

@@ -673,12 +673,14 @@ class fORMFile
 			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);			
 		}
 		
-		$files    = $temp_dir->scan();
-		foreach ($files as $file) {
-			if (filemtime($file->getPath()) < strtotime('-6 hours')) {
-				$file->delete();
+		$temp_files = $temp_dir->scan();
+		foreach ($temp_files as $temp_file) {
+			if (filemtime($temp_file->getPath()) < strtotime('-6 hours')) {
+				unlink($temp_file->getPath());
 			}
 		}
+		
+		settype($old_values[$column], 'array');
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
@@ -697,7 +699,6 @@ class fORMFile
 			$no_upload     = $e->getMessage() == 'Please upload a file';
 			
 			if ($existing_file && $delete_file && $no_upload) {
-				
 				$file = NULL;
 				
 			} elseif ($existing_file && $no_upload) {
@@ -709,12 +710,18 @@ class fORMFile
 				
 				$file = new fFile($upload_dir->getPath() . $existing_file);
 				
+				$current_file = $values[$column];
+				if ($current_file && $file->getPath() != $current_file->getPath()) {
+					$old_values[$column][] = $current_file;
+					$values[$column]       = $file;
+				}
+				
+				return;
+				
 			} else {
 				return;	
 			}	
 		}
-		
-		settype($old_values[$column], 'array');
 		
 		// Assign the file
 		$old_values[$column][] = $values[$column];
@@ -731,6 +738,13 @@ class fORMFile
 						$other_temp_dir = new fDirectory($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
 					} catch (fValidationException $e) {
 						$other_temp_dir = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);			
+					}
+					
+					$temp_files = $other_temp_dir->scan();
+					foreach ($temp_files as $temp_file) {
+						if (filemtime($temp_file->getPath()) < strtotime('-6 hours')) {
+							unlink($temp_file->getPath());
+						}
 					}
 					
 					$other_file = $file->duplicate($other_temp_dir, FALSE);

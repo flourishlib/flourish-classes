@@ -42,26 +42,24 @@ class fInflection
 	 * @var array
 	 */
 	static private $plural_to_singular_rules = array(
-		'^(p)hotos$'     => '\1hoto',
-		'^(l)ogos$'      => '\1ogo',
-		'^(n)ews$'       => '\1ews',
-		'^(q)uizzes$'    => '\1uiz',
-		'^(c)hildren$'   => '\1hild',
-		'^(p)eople$'     => '\1erson',
-		'(m)en$'         => '\1an',
-		'(phase)s'       => '\1',
-		'([csx])es$'     => '\1is',
-		'([cs]h)es$'     => '\1',
-		'(ss)es$'        => '\1',
-		'([aeo]l)ves$'   => '\1f',
-		'([^d]ea)ves$'   => '\1f',
-		'(ar)ves$'       => '\1f',
-		'([nlw]i)ves$'   => '\1fe',
-		'([aeiou]y)s$'   => '\1',
-		'([^aeiou])ies$' => '\1y',
-		'(x)es$'         => '\1',
-		'(s)es$'         => '\1',
-		'(.)s$'          => '\1'
+		'([ml])ice'                    => '\1ouse',
+		'(media|info(rmation)?|news)$' => '\1',
+		'quizzes$'                     => 'quiz',
+		'children$'                    => 'child',
+		'people$'                      => 'person',
+		'men$'                         => 'man',
+		'((?!sh).)oes$'                => '\1o',
+		'([ieu]s|[ieuo]x)es$'          => '\1',
+		'([cs]h)es$'                   => '\1',
+		'(ss)es$'                      => '\1',
+		'([aeo]l)ves$'                 => '\1f',
+		'([^d]ea)ves$'                 => '\1f',
+		'(ar)ves$'                     => '\1f',
+		'([nlw]i)ves$'                 => '\1fe',
+		'([aeiou]y)s$'                 => '\1',
+		'([^aeiou])ies$'               => '\1y',
+		'(la)ses$'                     => '\1s',
+		'(.)s$'                        => '\1'
 	);
 	
 	/**
@@ -70,25 +68,25 @@ class fInflection
 	 * @var array
 	 */
 	static private $singular_to_plural_rules = array(
-		'^(p)hoto$'    => '\1hotos',
-		'^(l)ogo$'     => '\1ogos',
-		'^(n)ews$'     => '\1ews',
-		'^(q)uiz$'     => '\1uizzes',
-		'^(c)hild$'    => '\1hildren',
-		'^(p)erson$'   => '\1eople',
-		'(m)an$'       => '\1en',
-		'([csx])is$'   => '\1es',
-		'([cs]h)$'     => '\1es',
-		'(ss)$'        => '\1es',
-		'([aeo]l)f$'   => '\1ves',
-		'([^d]ea)f$'   => '\1ves',
-		'(ar)f$'       => '\1ves',
-		'([nlw]i)fe$'  => '\1ves',
-		'([aeiou]y)$'  => '\1s',
-		'([^aeiou])y$' => '\1ies',
-		'(x)$'         => '\1es',
-		'(s)$'         => '\1es',
-		'(.)$'         => '\1s'
+		'([ml])ouse$'                  => '\1ice',
+		'(media|info(rmation)?|news)$' => '\1',
+		'(phot|log)o$'                 => '\1os',
+		'^(q)uiz$'                     => 'quizzes',
+		'child$'                       => 'children',
+		'person$'                      => 'people',
+		'man$'                         => 'men',
+		'([ieu]s|[ieuo]x)$'            => '\1es',
+		'([cs]h)$'                     => '\1es',
+		'(ss)$'                        => '\1es',
+		'([aeo]l)f$'                   => '\1ves',
+		'([^d]ea)f$'                   => '\1ves',
+		'(ar)f$'                       => '\1ves',
+		'([nlw]i)fe$'                  => '\1ves',
+		'([aeiou]y)$'                  => '\1s',
+		'([^aeiou])y$'                 => '\1ies',
+		'([^o])o$'                     => '\1oes',
+		's$'                           => 'ses',
+		'(.)$'                         => '\1s'
 	);
 	
 	

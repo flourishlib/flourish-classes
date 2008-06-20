@@ -56,7 +56,7 @@ class fMessaging
 			return;
 		}
 		
-		$class = ($class) ? ' class="' . $css_class . '"' : '';
+		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
 		if (fHTML::checkForBlockLevelHTML($content)) {
 			echo '<div' . $class . '>' . fHTML::prepare($content) . '</div>';
 		} else {

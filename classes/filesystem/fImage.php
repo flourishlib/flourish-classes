@@ -109,26 +109,57 @@ class fImage extends fFile
 			// Look for imagemagick first since it can handle more than GD
 			try {
 				
-				if (fCore::getOS() == 'windows') {
-					$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
-					$win_output = trim(shell_exec($win_search));
-					
-					if (stripos($win_output, 'File not found') !== FALSE) {
-						throw new Exception();
-					}
-					
-					$path = 'C:\Program Files\\' . $win_output . '\\';
-				}
+				$locations = array( 
+					'solaris'    => array(
+						'/opt/local/bin/',
+						'/opt/bin/',
+						'/opt/csw/bin/'
+					), 
+					'linux/unix' => array(
+						'/usr/local/bin/',
+						'/usr/bin/'
+					)
+				);
 				
-				if (fCore::getOS() == 'linux/unix') {
-					$nix_search = 'whereis -b convert';
-					$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
-					
-					if (empty($nix_output)) {
-						throw new Exception();
+				switch ($os = fCore::getOS()) { 
+					case 'windows': 
+						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+						$win_output = trim(shell_exec($win_search)); 
+						 
+						if (stripos($win_output, 'File not found') !== FALSE) {
+							throw new Exception(); 
+						} 
+						 
+						$path = 'C:\Program Files\\' . $win_output . '\\';
+						break;
+						
+					case 'linux/unix':
+					case 'solaris':
+						$found = FALSE;
+						foreach($locations as $location) {
+							$path = $location . 'convert';
+							if (file_exists($path) && is_executable($path)) {
+								$found = TRUE;
+								break;
+							}
+						}
+						
+						// We have no fallback in solaris
+						if ($os == 'solaris' && !$found) {
+							throw new Exception();
+						}
+						
+						// On most linux/unix we can try whereis
+						if ($os == 'linux/unix' && !$found) {
+							$nix_search = 'whereis -b convert';
+							$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+							
+							if (empty($nix_output)) {
+								throw new Exception();
+							}
+						
+							$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
 					}
-				
-					$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
 				}
 				
 				self::checkImageMagickBinary($path);
