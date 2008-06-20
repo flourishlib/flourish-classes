@@ -63,7 +63,7 @@ class fFilesystem
 	 * @param  string $replace_path  The path to replace with 
 	 * @return void
 	 */
-	static public function addWebPathTranslation()
+	static public function addWebPathTranslation($search_path, $replace_path)
 	{
 		// Ensure we have the correct kind of slash for the OS being used
 		$search_path  = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $search_path);
