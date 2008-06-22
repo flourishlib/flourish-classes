@@ -417,6 +417,7 @@ class fORMFile
 			// If the file is in a temp dir, move it out
 			if (stripos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
 				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
+				$new_filename = fFilesystem::createUniqueName($new_filename);
 				$value->rename($new_filename, FALSE);	
 			}
 		}

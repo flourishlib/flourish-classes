@@ -274,7 +274,7 @@ class fORMColumn
 		
 		foreach (self::$date_created_columns[$class] as $column => $enabled) {
 			$old_values[$column] = $values[$column];
-			$values[$column] = fORM::objectify($clas, $column, date('Y-m-d H:i:s'));		
+			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
 		}
 	}
 	
@@ -297,7 +297,7 @@ class fORMColumn
 		
 		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
 			$old_values[$column] = $values[$column];
-			$values[$column] = fORM::objectify($clas, $column, date('Y-m-d H:i:s'));		
+			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
 		}
 	}
 	

@@ -994,7 +994,7 @@ class fSchema implements fISchema
 			}
 		
 			// Auto increment fields
-			if (!empty($match[8]) && (stripos($match[8], 'autoincrement') !== FALSE || ($this->database->getExtension() == 'sqlite' && $info['type'] == 'integer'))) {
+			if (!empty($match[8]) && (stripos($match[8], 'autoincrement') !== FALSE || $info['type'] == 'integer')) {
 				$info['auto_increment'] = TRUE;
 			}
 		
