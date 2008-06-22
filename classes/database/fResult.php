@@ -87,6 +87,11 @@ class fResult implements Iterator
 	 */
 	public function __construct($extension)
 	{
+		// Certain extensions don't offer a buffered query, so it is emulated using an array
+		if (in_array($extension, array('odbc', 'pdo', 'sqlsrv'))) {
+			$extension = 'array';	
+		}
+		
 		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');

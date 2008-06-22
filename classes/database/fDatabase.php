@@ -1031,8 +1031,7 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fResult')) {
-			$extension = (in_array($this->extension, array('odbc', 'pdo', 'sqlsrv'))) ? 'array' : $this->extension;
-			$result = new fResult($extension);
+			$result = new fResult($this->extension);
 			$result->setSQL($sql);
 			
 			$this->executeQuery($result);
