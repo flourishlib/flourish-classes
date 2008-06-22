@@ -528,7 +528,7 @@ class fORMFile
 	static public function processImage($class, $column, $image)
 	{
 		// If we don't have an image or we haven't set it up to manipulate images, just exit
-		if (!$image instanceof fImage || !array_key_exists($column, self::$fimage_method_calls[$class])) {
+		if (!$image instanceof fImage || !empty(self::$fimage_method_calls[$class][$column])) {
 			return;	
 		}
 		
