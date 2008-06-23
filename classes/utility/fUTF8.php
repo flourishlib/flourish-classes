@@ -4,7 +4,7 @@
  * 
  * This class is implemented to provide a UTF-8 version of almost every built-in
  * PHP string function. For more information about UTF-8, please visit
- * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8}.
+ * {@link http://flourishlib.com/docs/UTF-8}.
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>

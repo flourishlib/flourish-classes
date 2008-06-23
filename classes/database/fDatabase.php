@@ -3,7 +3,7 @@
  * Provides a common API for different databases - will automatically use any installed extension
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8} for more information.
+ * {@link http://flourishlib.com/docs/UTF-8} for more information.
  * 
  * The following databases are supported:
  *   - {@link http://microsoft.com/sql/ MSSQL}
@@ -464,13 +464,19 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes blobs to prevent breaking queries, includes surrounding quotes when appropriate
+	 * Escapes a blob for use in SQL, includes surround quotes when appropriate
 	 * 
-	 * @param  string $value  The value to escape
+	 * A NULL value will be returned as 'NULL'
+	 * 
+	 * @param  string $value  The blob to escape
 	 * @return string  The escaped blob
 	 */
 	public function escapeBlob($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		$this->connectToDatabase();
 		
 		if ($this->extension == 'mysql') {
@@ -490,13 +496,19 @@ class fDatabase
 	
 	
 	/**
-	 * Translates a boolean to a value the database will understand
+	 * Escapes a boolean for use in SQL, includes surround quotes when appropriate
 	 * 
-	 * @param  string $value  The boolean to escape
+	 * A NULL value will be returned as 'NULL'
+	 * 
+	 * @param  boolean $value  The boolean to escape
 	 * @return string  The database equivalent of the boolean passed
 	 */
 	public function escapeBoolean($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		if (in_array($this->type, array('postgresql', 'mysql'))) {
 			return ($value) ? 'TRUE' : 'FALSE';
 		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
@@ -506,15 +518,21 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes a date for insertion into the database
+	 * Escapes a date for use in SQL, includes surrounding quotes
+	 * 
+	 * A NULL value will be returned as 'NULL'
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape
+	 * @param  string $value  The date to escape
 	 * @return string  The escaped date
 	 */
 	public function escapeDate($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		if (!strtotime($value)) {
 			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid date');
 		}
@@ -523,13 +541,55 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes strings to prevent SQL injection attacks, includes surrounding quotes in return value
+	 * Escapes a float for use in SQL
 	 * 
-	 * @param  string $value  The value to escape
+	 * A NULL value will be returned as 'NULL'
+	 * 
+	 * @param  float $value  The float to escape
+	 * @return string  The escaped float
+	 */
+	public function escapeFloat($value)
+	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
+		return (float) $value;
+	}
+	
+	
+	/**
+	 * Escapes an integer for use in SQL
+	 * 
+	 * A NULL value will be returned as 'NULL'
+	 * 
+	 * @param  integer $value  The integer to escape
+	 * @return string  The escaped integer
+	 */
+	public function escapeInteger($value)
+	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
+		return (int) $value;
+	}
+	
+	
+	/**
+	 * Escapes a string for use in SQL, includes surrounding quotes
+	 * 
+	 * A NULL value will be returned as 'NULL'
+	 * 
+	 * @param  string $value  The string to escape
 	 * @return string  The escaped string
 	 */
 	public function escapeString($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		$this->connectToDatabase();
 		
 		if ($this->extension == 'mysql') {
@@ -592,15 +652,21 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes a time for insertion into the database
+	 * Escapes a time for use in SQL, includes surrounding quotes
+	 * 
+	 * A NULL value will be returned as 'NULL'
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape
+	 * @param  string $value  The time to escape
 	 * @return string  The escaped time
 	 */
 	public function escapeTime($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		if (!strtotime($value)) {
 			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid time');
 		}
@@ -609,15 +675,21 @@ class fDatabase
 	
 	
 	/**
-	 * Escapes a timestamp for insertion into the database
+	 * Escapes a timestamp for use in SQL, includes surrounding quotes
+	 * 
+	 * A NULL value will be returned as 'NULL'
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $value  The value to escape
+	 * @param  string $value  The timestamp to escape
 	 * @return string  The escaped timestamp
 	 */
 	public function escapeTimestamp($value)
 	{
+		if ($value === NULL) {
+			return 'NULL';	
+		}
+		
 		if (!strtotime($value)) {
 			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid timestamp');
 		}
@@ -1248,10 +1320,10 @@ class fDatabase
 	
 	
 	/**
-	 * Unescapes blobs coming out of the database
+	 * Unescapes a blob coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return binary  The binary data from the blob
+	 * @return binary  The binary data
 	 */
 	public function unescapeBlob($value)
 	{
@@ -1268,10 +1340,10 @@ class fDatabase
 	
 	
 	/**
-	 * Interprets a boolean coming out of the database
+	 * Unescapes a boolean coming out of the database
 	 * 
-	 * @param  string $value  The value to interpret
-	 * @return boolean  The boolean equivalent of the value passed
+	 * @param  string $value  The value to unescape
+	 * @return boolean  The boolean
 	 */
 	public function unescapeBoolean($value)
 	{
@@ -1280,10 +1352,10 @@ class fDatabase
 	
 	
 	/**
-	 * Unescapes dates coming out of the database
+	 * Unescapes a date coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The date
+	 * @return string  The date in YYYY-MM-DD format
 	 */
 	public function unescapeDate($value)
 	{
@@ -1292,10 +1364,34 @@ class fDatabase
 	
 	
 	/**
-	 * Unescapes strings coming out of the database, included for completeness
+	 * Unescapes a float coming out of the database (included for completeness)
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The unescaped string
+	 * @return float  The float
+	 */
+	public function unescapeInteger($value)
+	{
+		return (float) $value;
+	}
+	
+	
+	/**
+	 * Unescapes an integer coming out of the database (included for completeness)
+	 * 
+	 * @param  string $value  The value to unescape
+	 * @return integer  The integer
+	 */
+	public function unescapeInteger($value)
+	{
+		return (integer) $value;
+	}
+	
+	
+	/**
+	 * Unescapes a string coming out of the database (included for completeness)
+	 * 
+	 * @param  string $value  The value to unescape
+	 * @return string  The string
 	 */
 	public function unescapeString($value)
 	{
@@ -1304,10 +1400,10 @@ class fDatabase
 	
 	
 	/**
-	 * Unescapes times coming out of the database
+	 * Unescapes a time coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The time
+	 * @return string  The time in HH:MM:SS format
 	 */
 	public function unescapeTime($value)
 	{
@@ -1316,10 +1412,10 @@ class fDatabase
 	
 	
 	/**
-	 * Unescapes timestamps coming out of the database
+	 * Unescapes a timestamp coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The timestamp
+	 * @return string  The timestamp in YYYY-MM-DD HH:MM:SS format
 	 */
 	public function unescapeTimestamp($value)
 	{

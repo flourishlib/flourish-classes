@@ -3,7 +3,7 @@
  * Provides request-related methods
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/wiki/GeneralDocs/UTF-8} for more information.
+ * {@link http://flourishlib.com/docs/UTF-8} for more information.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
