@@ -1369,7 +1369,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return float  The float
 	 */
-	public function unescapeInteger($value)
+	public function unescapeFloat($value)
 	{
 		return (float) $value;
 	}
