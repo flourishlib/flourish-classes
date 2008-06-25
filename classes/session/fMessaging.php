@@ -52,7 +52,7 @@ class fMessaging
 	 */
 	static public function show($content, $css_class='')
 	{
-		if (!$content && !is_numeric($content)) {
+		if (!fCore::stringlike($content)) {
 			return;
 		}
 		

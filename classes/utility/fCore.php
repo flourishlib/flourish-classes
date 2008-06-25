@@ -485,6 +485,26 @@ class fCore
 	
 	
 	/**
+	 * Returns TRUE for non-empty strings, numbers and objects and for empty numbers and string-like numbers (such as 0, 0.0, '0')
+	 * 
+	 * @param  mixed $value  The value to check
+	 * @return boolean  If the value is string-like
+	 */
+	static public function stringlike($value)
+	{
+		if (!$value && !is_numeric($value)) {
+			return FALSE;
+		} 	
+		
+		if (is_resource($value) || is_array($value) || $value === TRUE) {
+			return FALSE;
+		}
+		
+		return TRUE;	
+	}
+	
+	
+	/**
 	 * Throws the exception type specified (if the class exists), otherwise throws a normal exception
 	 * 
 	 * @param  string $exception_type  The type of exception to throw

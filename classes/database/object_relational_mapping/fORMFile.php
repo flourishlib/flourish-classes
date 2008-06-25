@@ -599,8 +599,8 @@ class fORMFile
 			fCore::toss('fProgrammerException', 'The method ' . $method_name . '() requires exactly one parameter');	
 		}
 		
-		$file_path = $parameters[0];
-		$invalid_file = !$file_path && !is_numeric($file_path);
+		$file_path    = $parameters[0];
+		$invalid_file = !fCore::stringlike($file_path);
 		
 		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
 			fCore::toss('fEnvironmentException', 'The file specified, ' . fCore::dump($file_path) . ', does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.');	
