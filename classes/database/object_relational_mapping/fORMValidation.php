@@ -180,14 +180,15 @@ class fORMValidation
 	/**
 	 * Validates a value against the database schema
 	 *
-	 * @param  mixed  $class        The class name or instance of the class the column is part of
-	 * @param  string $column       The column to check
-	 * @param  array  &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
-	 * @param  array  &$old_values  The old values from the record
+	 * @param  fActiveRecord  $object       The instance of the class the column is part of
+	 * @param  string         $column       The column to check
+	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
+	 * @param  array          &$old_values  The old values from the record
 	 * @return string  A validation error message for the column specified
 	 */
-	static private function checkAgainstSchema($class, $column, &$values, &$old_values)
+	static private function checkAgainstSchema($object, $column, &$values, &$old_values)
 	{
+		$class = fORM::getClassName($object);
 		$table = fORM::tablize($class);
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
@@ -208,7 +209,7 @@ class fORMValidation
 			return fORM::getColumnName($class, $column) . ': Please enter a value no longer than ' . $column_info['max_length'] . ' characters';
 		}
 		
-		$message = self::checkUniqueConstraints($class, $column, $values, $old_values);
+		$message = self::checkUniqueConstraints($object, $column, $values, $old_values);
 		if ($message) { return $message; }
 		$message = self::checkForeignKeyConstraints($class, $column, $values);
 		if ($message) { return $message; }
@@ -402,43 +403,32 @@ class fORMValidation
 	/**
 	 * Makes sure a record with the same primary keys is not already in the database
 	 *
-	 * @param  mixed  $class        The class name or instance of the class to check
-	 * @param  array  &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
-	 * @param  array  &$old_values  The old values for the record
+	 * @param  fActiveRecord  $object       The instance of the class to check
+	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
+	 * @param  array          &$old_values  The old values for the record
 	 * @return string  A validation error message 
 	 */
-	static private function checkPrimaryKeys($class, &$values, &$old_values)
+	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
+		$class = fORM::getClassName($object);
 		$table = fORM::tablize($class);
 		
-		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
-		
-		$exists = TRUE;
-		$key_set = FALSE;
-		foreach ($primary_keys as $primary_key) {
-			if ((array_key_exists($primary_key, $old_values) && $old_values[$primary_key] === NULL) || $values[$primary_key] === NULL) {
-				$exists = FALSE;
-			}
-			if ($values[$primary_key] !== NULL) {
-				$key_set = TRUE;
-			}
-		}
-		
 		// We don't need to check if the record is existing
-		if ($exists || !$key_set) {
+		if ($object->exists()) {
 			return;
 		}
 		
+		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$columns      = array();
+		foreach ($primary_keys as $primary_key) {
+			$columns[] = fORM::getColumnName($class, $primary_key);	
+		}
+		$columns = fInflection::joinTerms($columns);
+		
 		try {
-			$sql = "SELECT * FROM " . $table . " WHERE ";
-			$key_num = 0;
-			$columns = '';
-			foreach ($primary_keys as $primary_key) {
-				if ($key_num) { $sql .= " AND "; $columns.= ', '; }
-				$sql .= $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, (!empty($old_values[$primary_key])) ? $old_values[$primary_key] : $values[$primary_key], '=');
-				$columns .= fORM::getColumnName($class, $primary_key);
-				$key_num++;
-			}
+			$sql    = "SELECT " . $table . ".* FROM " . $table . " WHERE ";
+			$sql   .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
+			
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
@@ -470,27 +460,21 @@ class fORMValidation
 	/**
 	 * Validates values against unique constraints
 	 *
-	 * @param  mixed  $class        The class name or instance of the class to check
-	 * @param  string $column       The column to check
-	 * @param  array  &$values      The values to check
-	 * @param  array  &$old_values  The old values for the record
+	 * @param  fActiveRecord  $object       The instance of the class to check
+	 * @param  string         $column       The column to check
+	 * @param  array          &$values      The values to check
+	 * @param  array          &$old_values  The old values for the record
 	 * @return string  A validation error message for the unique constraints
 	 */
-	static private function checkUniqueConstraints($class, $column, &$values, &$old_values)
+	static private function checkUniqueConstraints($object, $column, &$values, &$old_values)
 	{
+		$class = fORM::getClassName($object);
 		$table = fORM::tablize($class);
 		
 		$key_info = fORMSchema::getInstance()->getKeys($table);
 		
 		$primary_keys = $key_info['primary'];
 		$unique_keys  = $key_info['unique'];
-		
-		$exists = TRUE;
-		foreach ($primary_keys as $primary_key) {
-			if ((array_key_exists($primary_key, $old_values) && $old_values[$primary_key] === NULL) || $values[$primary_key] === NULL) {
-				$exists = FALSE;
-			}
-		}
 		
 		foreach ($unique_keys AS $unique_columns) {
 			if (in_array($column, $unique_columns)) {
@@ -502,12 +486,13 @@ class fORMValidation
 					$column_num++;
 				}
 				
-				if ($exists) {
+				if ($object->exists()) {
 					$sql .= ' AND (';
 					$first = TRUE;
 					foreach ($primary_keys as $primary_key) {
-						$sql .= ($first && !$first = FALSE) ? '' : ' AND '; 
-						$sql .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $values[$primary_key], '<>');	
+						$sql  .= ($first && !$first = FALSE) ? '' : ' AND ';
+						$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key]; 
+						$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '<>');	
 					}
 					$sql .= ')';
 				}
@@ -609,16 +594,15 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed   $class       The class name or instance of the class to validate
-	 * @param  array   $values      The values to validate
-	 * @param  array   $old_values  The old values for the record
-	 * @param  boolean $existing    If the record currently exists in the database
+	 * @param  fActiveRecord  $object      The instance of the class to validate
+	 * @param  array          $values      The values to validate
+	 * @param  array          $old_values  The old values for the record
 	 * @return array  An array of validation messages
 	 */
-	static public function validate($class, $values, $old_values)
+	static public function validate($object, $values, $old_values)
 	{
-		$class = fORM::getClassName($class);
-		$table = fORM::tablize($class);
+		$class = fORM::getClassName($object);
+		$table = fORM::tablize($class_name);
 		
 		self::initializeRuleArrays($class);
 		
@@ -632,12 +616,12 @@ class fORMValidation
 			$old_values[$column] = fORM::scalarize($class, $column, $value);
 		}
 		
-		$message = self::checkPrimaryKeys($class, $values, $old_values);
+		$message = self::checkPrimaryKeys($object, $values, $old_values);
 		if ($message) { $validation_messages[] = $message; }
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
-			$message = self::checkAgainstSchema($class, $column, $values, $old_values);
+			$message = self::checkAgainstSchema($object, $column, $values, $old_values);
 			if ($message) { $validation_messages[] = $message; }
 		}
 		

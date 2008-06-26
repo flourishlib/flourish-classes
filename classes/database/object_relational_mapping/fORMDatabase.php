@@ -321,6 +321,55 @@ class fORMDatabase
 	/**
 	 * Creates a where clause condition for primary keys of the table specified
 	 * 
+	 * This method requires the $primary_keys parameter to be one of:
+	 * 
+	 *  - A scalar value for a single-column primary key
+	 *  - An array of values for a single-column primary key
+	 *  - An associative array of values for a multi-column primary key (column => value)
+	 *  - An array of associative arrays of values for a multi-column primary key (key => array(column => value)
+	 * 
+	 * If you are looking to build a primary key where clause from the $values
+	 * and $old_values arrays, please see {@link createPrimaryKeyWhereClause()}
+	 * 
+	 * @throws fValidationException
+	 * @internal
+	 * 
+	 * @param  string $table         The table to build the where clause for
+	 * @param  string $table_alias   The alias for the table
+	 * @param  array  &$values       The values array for the {@link fActiveRecord} object
+	 * @param  array  &$old_values   The values array for the {@link fActiveRecord} object
+	 * @return string  The WHERE clause that will specify the {@link fActiveRecord} as it currently exists in the database
+	 */
+	static public function createPrimaryKeyWhereClause($table, $table_alias, &$values, &$old_values)
+	{
+		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		
+		$sql = '';
+		foreach ($primary_keys as $primary_key) {
+			if ($sql) { $sql .= " AND "; }
+			
+			$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
+			
+			$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '=');
+		}
+		
+		return $sql;			
+	}
+	
+	
+	/**
+	 * Creates a where clause condition for primary keys of the table specified
+	 * 
+	 * This method requires the $primary_keys parameter to be one of:
+	 * 
+	 *  - A scalar value for a single-column primary key
+	 *  - An array of values for a single-column primary key
+	 *  - An associative array of values for a multi-column primary key (column => value)
+	 *  - An array of associative arrays of values for a multi-column primary key (key => array(column => value)
+	 * 
+	 * If you are looking to build a primary key where clause from the $values
+	 * and $old_values arrays, please see {@link createPrimaryKeyWhereClause()}
+	 * 
 	 * @throws fValidationException
 	 * @internal
 	 * 

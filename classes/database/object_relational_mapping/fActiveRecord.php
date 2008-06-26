@@ -269,7 +269,7 @@ abstract class fActiveRecord
 			if ($key_num) { $sql .= " AND "; }
 			
 			if (!empty($this->old_values[$pk_column])) {
-				$value = fORM::scalarize($this, $pk_column, $this->old_values[$pk_column]);
+				$value = fORM::scalarize($this, $pk_column, $this->old_values[$pk_column][0]);
 			} else {
 				$value = fORM::scalarize($this, $pk_column, $this->values[$pk_column]);
 			}
@@ -524,7 +524,7 @@ abstract class fActiveRecord
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
-			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column] === NULL) || $this->values[$pk_column] === NULL) {
+			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column][0] === NULL) || $this->values[$pk_column] === NULL) {
 				return FALSE;
 			}
 		}
@@ -797,8 +797,12 @@ abstract class fActiveRecord
 		
 		$value = fORM::objectify($this, $column, $value);
 		
-		$this->old_values[$column] = $this->values[$column];
-		$this->values[$column]     = $value;
+		if (!isset($this->old_values[$column])) {
+			$this->old_values[$column] = array();	
+		}
+		
+		$this->old_values[$column][] = $this->values[$column];
+		$this->values[$column]       = $value;
 	}
 	
 	
@@ -880,8 +884,7 @@ abstract class fActiveRecord
 			
 			// If there is an auto-incrementing primary key, grab the value from the database
 			if ($new_autoincrementing_record) {
-				$this->old_values[$pk_column] = $this->values[$pk_column];
-				$this->values[$pk_column]     = $result->getAutoIncrementedValue();
+				$this->set($pk_column, $result->getAutoIncrementedValue());
 			}
 			
 			
@@ -922,7 +925,7 @@ abstract class fActiveRecord
 			fORM::callHookCallback($this, 'post-rollback::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 			
 			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
-				$this->values[$pk_column] = $this->old_values[$pk_column];
+				$this->values[$pk_column] = $this->old_values[$pk_column][0];
 				unset($this->old_values[$pk_column]);
 			}
 			
@@ -932,7 +935,12 @@ abstract class fActiveRecord
 		fORM::callHookCallback($this, 'post::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
 		
 		// If we got here we succefully stored, so update old values to make exists() work 
-		$this->old_values = $this->values;
+		foreach ($this->values as $column => $value) {
+			if (!isset($this->old_values[$column])) {
+				$this->old_values[$column] = array();	
+			}
+			$this->old_values[$column][] = $value;
+		}
 	}
 	
 	

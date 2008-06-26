@@ -325,7 +325,6 @@ class fORMFile
 			
 			// Remove the old files for the column
 			if (isset($old_values[$column])) {
-				settype($old_values[$column], 'array');
 				foreach ($old_values[$column] as $file) {
 					if ($file instanceof fFile) {
 						$file->delete();
@@ -357,7 +356,6 @@ class fORMFile
 			
 			// Remove the old files for the column
 			if (isset($old_values[$column])) {
-				settype($old_values[$column], 'array');
 				foreach ($old_values[$column] as $file) {
 					if ($file instanceof fFile) {
 						$file->delete();
@@ -613,7 +611,9 @@ class fORMFile
 		$file     = new fFile($file_path);
 		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
 		
-		settype($old_values[$column], 'array');
+		if (!isset($old_values[$column])) {
+			$old_values[$column] = array();	
+		}
 		
 		$old_values[$column][] = $values[$column];
 		$values[$column]       = $new_file;
@@ -681,8 +681,6 @@ class fORMFile
 			}
 		}
 		
-		settype($old_values[$column], 'array');
-		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
 			if (fUpload::check($column)) {
@@ -713,6 +711,10 @@ class fORMFile
 				
 				$current_file = $values[$column];
 				if ($current_file && $file->getPath() != $current_file->getPath()) {
+					if (!isset($old_values[$column])) {
+						$old_values[$column] = array();	
+					}
+					
 					$old_values[$column][] = $current_file;
 					$values[$column]       = $file;
 				}
@@ -725,6 +727,10 @@ class fORMFile
 		}
 		
 		// Assign the file
+		if (!isset($old_values[$column])) {
+			$old_values[$column] = array();	
+		}
+		
 		$old_values[$column][] = $values[$column];
 		$values[$column]       = $file;
 		
@@ -736,9 +742,9 @@ class fORMFile
 					// Let's clean out the upload temp dir
 					try {
 						$other_upload_dir = self::$file_upload_columns[$class][$other_column];
-						$other_temp_dir = new fDirectory($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
+						$other_temp_dir   = new fDirectory($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
 					} catch (fValidationException $e) {
-						$other_temp_dir = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);			
+						$other_temp_dir   = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);			
 					}
 					
 					$temp_files = $other_temp_dir->scan();
@@ -753,7 +759,9 @@ class fORMFile
 					$other_file = $file;	
 				}
 				
-				settype($old_values[$other_column], 'array');
+				if (!isset($old_values[$other_column])) {
+					$old_values[$other_column] = array();	
+				}
 				
 				$old_values[$other_column][] = $values[$other_column];
 				$values[$other_column]       = $other_file;
