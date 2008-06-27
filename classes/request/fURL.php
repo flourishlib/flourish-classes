@@ -82,7 +82,7 @@ class fURL
 	{
 		if (strpos($url, '/') === 0) {
 			$url = self::getDomain() . $url;
-		} elseif (!preg_match('#^https?://#i')) {
+		} elseif (!preg_match('#^https?://#i', $url)) {
 			$url = self::getDomain() . self::get() . $url;
 		}
 		header('Location: ' . $url);
