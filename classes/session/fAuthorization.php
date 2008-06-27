@@ -37,6 +37,26 @@ class fAuthorization
 	 */
 	static private $login_page = NULL;
 	
+	/**
+	 * Named IP ranges
+	 * 
+	 * @var array
+	 */
+	static private $named_ip_ranges = array();
+	
+	
+	/**
+	 * Adds a named IP address or range, or array of addresses and/or ranges. This allows {@link checkIP()} to be called with a name instead of the actual IPs.
+	 * 
+	 * @param  string $name       The name to give the IP address(es)/range(s)
+	 * @param  mixed  $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. Please see the {@link checkIP()} method description for details on the allowable formats.
+	 * @return void
+	 */
+	static public function addNamedIPRange($name, $ip_ranges)
+	{
+		self::$named_ip_ranges[$name] = $ip_ranges;			 
+	}
+	
 	
 	/**
 	 * Checks to see if the logged in user meets the requirements of the ACL specified
@@ -95,6 +115,68 @@ class fAuthorization
 		}
 		
 		return FALSE;
+	}
+	
+	
+	/**
+	 * Checks to see if the user is from the IP or IP range specified
+	 * 
+	 * The $ip_ranges parameter can be either a single string, or an array of
+	 * strings, each of which should be in one of the following formats:
+	 * 
+	 *  - A single IP address:
+	 *   - 192.168.1.1
+	 *   - 208.77.188.166
+	 *  - A CIDR range
+	 *   - 192.168.1.0/24
+	 *   - 208.77.188.160/28
+	 *  - An IP/subnet mask combination
+	 *   - 192.168.1.0/255.255.255.0
+	 *   - 208.77.188.160/255.255.255.240
+	 * 
+	 * @param  mixed $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. See method description for details.
+	 * @return boolean  If the user is coming from (one of) the IP(s) or range(s) specified
+	 */
+	static public function checkIP($ip_ranges)
+	{
+		// Check to see if a named IP range was specified
+		if (isset(self::$named_ip_ranges[$ip_ranges])) {
+			$ip_ranges = self::$named_ip_ranges[$ip_ranges];
+		}	
+		
+		// Get the remote IP and remove any IPv6 to IPv4 mapping
+		$user_ip      = str_replace('::ffff:', '', $_SERVER['REMOTE_ADDR']);
+		$user_ip_long = ip2long($user_ip);
+		
+		settype($ip_ranges, 'array');
+		
+		foreach ($ip_ranges as $ip_range) {
+			
+			if (strpos($ip_range, '/') === FALSE) {
+				$ip_range .= '/32';
+			}
+			
+			list($range_ip, $range_mask) = explode('/', $ip_range);
+			
+			if (strlen($range_mask) < 3) {
+				$mask_long = pow(2, 32) - pow(2, 32 - $range_mask);		
+			} else {
+				$mask_long = ip2long($range_mask);	
+			}
+			
+			$range_ip_long = ip2long($range_ip);
+			
+			if (($range_ip_long & $mask_long) != $range_ip_long) {
+				$proper_range_ip = long2ip($range_ip_long & $mask_long);
+				fCore::toss('fProgrammerException', 'The range base IP address specified, ' . $range_ip . ', is invalid for the CIDR range or subnet mask provided (/' . $range_mask . '). The proper IP is ' . $proper_range_ip . '.');	
+			}
+			
+			if (($user_ip_long & $mask_long) == $range_ip_long) {
+				return TRUE;	
+			}
+		}
+		
+		return FALSE;			 
 	}
 	
 	
