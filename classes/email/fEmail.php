@@ -24,9 +24,9 @@ class fEmail
 	 * 
 	 * The matches will be:
 	 * 
-	 *  - [0]: The whole email address
-	 *  - [1]: The name before the @
-	 *  - [2]: The domain/ip after the @
+	 *   - [0]: The whole email address
+	 *   - [1]: The name before the @
+	 *   - [2]: The domain/ip after the @
 	 * 
 	 * @internal
 	 * 
@@ -39,11 +39,11 @@ class fEmail
 	 * 
 	 * The matches will be:
 	 * 
-	 *  - [0]: The whole name and email address
-	 *  - [1]: The name
-	 *  - [2]: The whole email address
-	 *  - [3]: The email username before the @
-	 *  - [4]: The email domain/ip after the @
+	 *   - [0]: The whole name and email address
+	 *   - [1]: The name
+	 *   - [2]: The whole email address
+	 *   - [3]: The email username before the @
+	 *   - [4]: The email domain/ip after the @
 	 * 
 	 * @internal
 	 * 

@@ -563,7 +563,7 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Throws an {@link fNoResultException} if the {@link fResult} did not return any rows
+	 * Throws an {@link fNoResultException} if the query did not return any rows
 	 * 
 	 * @throws  fNoResultsException
 	 * 

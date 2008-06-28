@@ -123,7 +123,6 @@ class fAuthorization
 	 * 
 	 * The $ip_ranges parameter can be either a single string, or an array of
 	 * strings, each of which should be in one of the following formats:
-	 * 
 	 *   - A single IP address:
 	 *     - 192.168.1.1
 	 *     - 208.77.188.166

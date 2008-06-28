@@ -369,7 +369,7 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Throws an {@link fNoResultException} if the {@link fUnbufferedResult} did not return any rows
+	 * Throws an {@link fNoResultException} if the query did not return any rows
 	 * 
 	 * @throws  fNoResultsException
 	 * 

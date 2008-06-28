@@ -53,7 +53,7 @@ class fRecordSet implements Iterator
 	 * @param  array   $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit             The number of records to fetch
 	 * @param  integer $offset            The offset to use before limiting
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
@@ -98,7 +98,7 @@ class fRecordSet implements Iterator
 	 * @internal
 	 * 
 	 * @param  string $class_name  The type of object to create
-	 * @return fRecordSet  A set of {@link fActiveRecord fActiveRecord objects}
+	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
 	static public function createEmpty($class_name)
 	{

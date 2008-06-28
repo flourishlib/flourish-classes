@@ -454,7 +454,7 @@ class fORMFile
 	
 	
 	/**
-	 * Performs the upload action for file uploads during populate() of {@link fActiveRecord}
+	 * Performs the upload action for file uploads during {@link fActiveRecord::populate()}
 	 * 
 	 * @internal
 	 * 

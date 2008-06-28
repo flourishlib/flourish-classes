@@ -77,7 +77,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fDate::getSecondsDifference()}, {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
+	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
 	 * 
 	 * @param  string $timespan  The timespan to calculate the number of seconds in
 	 * @return integer  The number of seconds in the timestamp specified
