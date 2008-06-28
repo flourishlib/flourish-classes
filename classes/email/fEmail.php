@@ -2,6 +2,9 @@
 /**
  * Allows creating and sending a single email containing plaintext, HTML, attachments and S/MIME encryption
  * 
+ * Please note that this class uses the {@link http://php.net/function.mail mail()}
+ * function, and thus would have poor performance if used for mass mailing.
+ * 
  * This class is implemented to use the UTF-8 character encoding. Please see
  * {@link http://flourishlib.com/docs/UTF-8} for more information.
  * 
@@ -38,14 +41,15 @@ class fEmail
 	 * 
 	 *  - [0]: The whole name and email address
 	 *  - [1]: The name
-	 *  - [2]: The email username before the @
-	 *  - [3]: The email domain/ip after the @
+	 *  - [2]: The whole email address
+	 *  - [3]: The email username before the @
+	 *  - [4]: The email domain/ip after the @
 	 * 
 	 * @internal
 	 * 
 	 * @var string
 	 */
-	const NAME_EMAIL_REGEX = '#^[ \t]*((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*)(?:\.?[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*))*)[ \t]*<[ \t]*((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")(?:\.(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"))*)@((?:[a-z0-9\\-]+\.)+[a-z]{2,}|(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5]))[ \t]*>[ \t]*$#i';
+	const NAME_EMAIL_REGEX = '#^[ \t]*((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*)(?:\.?[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*))*)[ \t]*<[ \t]*(((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")(?:\.(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"))*)@((?:[a-z0-9\\-]+\.)+[a-z]{2,}|(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])))[ \t]*>[ \t]*$#i';
 	
 	
 	/**
@@ -265,7 +269,7 @@ class fEmail
 			$header .= ': ';
 		}
 		
-		$first = FALSE;
+		$first = TRUE;
 		$line = 0;
 		foreach ($emails as $email) {
 			if ($first) { $first = FALSE; } else { $header .= ', '; }
@@ -370,17 +374,18 @@ class fEmail
 		
 		// A quick a dirty hex encoding
 		$content = rawurlencode($content);
+		$content = str_replace('=', '%3D', $content);
 		$content = str_replace('%', '=', $content);
 		
 		// Decode characters that don't have to be coded
 		$decodings = array(
-			'=20' => ' ', '=21' => '!', '=22' => '"', '=23' => '#',
-			'=24' => '$', '=25' => '%', '=26' => '&', '=27' => "'",
-			'=28' => '(', '=29' => ')', '=2A' => '*', '=2B' => '+',
-			'=2C' => ',', '=2D' => '-', '=2E' => '.', '=2F' => '/',
-			'=3A' => ':', '=3C' => ';', '=3D' => '<', '=3E' => '>',
+			'=20' => ' ', '=21' => '!', '=22' => '"',  '=23' => '#',
+			'=24' => '$', '=25' => '%', '=26' => '&',  '=27' => "'",
+			'=28' => '(', '=29' => ')', '=2A' => '*',  '=2B' => '+',
+			'=2C' => ',', '=2D' => '-', '=2E' => '.',  '=2F' => '/',
+			'=3A' => ':', '=3B' => ';', '=3C' => '<',  '=3E' => '>',
 			'=40' => '@', '=5B' => '[', '=5C' => '\\', '=5D' => ']',
-			'=5E' => '^', '=60' => '`', '=7B' => '{', '=7C' => '|',
+			'=5E' => '^', '=60' => '`', '=7B' => '{',  '=7C' => '|',
 			'=7D' => '}', '=7E' => '~', ' '   => '_'
 		);
 		
@@ -402,7 +407,7 @@ class fEmail
 		for ($i=0; $i<$length; $i++) {
 			
 			// Get info about the next character
-			$char_length = ($encoded_content == '=') ? 3 : 1;
+			$char_length = ($content[$i] == '=') ? 3 : 1;
 			$char        = $content[$i];
 			if ($char_length == 3) {
 				$char .= $content[$i+1] . $content[$i+2]; 
@@ -424,6 +429,10 @@ class fEmail
 			$i += $char_length-1;	
 		}
 		
+		if (substr($output, -2) != $suffix) {
+			$output .= $suffix;
+		}
+		
 		return $output;	
 	}
 	
@@ -443,6 +452,7 @@ class fEmail
 		
 		// A quick a dirty hex encoding
 		$content = rawurlencode($content);
+		$content = str_replace('=', '%3D', $content);
 		$content = str_replace('%', '=', $content);
 		
 		// Decode characters that don't have to be coded
@@ -451,7 +461,7 @@ class fEmail
 			'=24' => '$', '=25' => '%', '=26' => '&', '=27' => "'",
 			'=28' => '(', '=29' => ')', '=2A' => '*', '=2B' => '+',
 			'=2C' => ',', '=2D' => '-', '=2E' => '.', '=2F' => '/',
-			'=3A' => ':', '=3C' => ';', '=3D' => '<', '=3E' => '>',
+			'=3A' => ':', '=3B' => ';', '=3C' => '<', '=3E' => '>',
 			'=3F' => '?', '=40' => '@', '=5B' => '[', '=5C' => '\\',
 			'=5D' => ']', '=5E' => '^', '=5F' => '_', '=60' => '`',
 			'=7B' => '{', '=7C' => '|', '=7D' => '}', '=7E' => '~'
@@ -468,7 +478,7 @@ class fEmail
 		for ($i=0; $i<$length; $i++) {
 			
 			// Get info about the next character
-			$char_length = ($encoded_content == '=') ? 3 : 1;
+			$char_length = ($content[$i] == '=') ? 3 : 1;
 			$char        = $content[$i];
 			if ($char_length == 3) {
 				$char .= $content[$i+1] . $content[$i+2]; 
@@ -537,11 +547,14 @@ class fEmail
 			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";	
 		}
 		if ($this->bounce_to_email) {
-			$headers .= "Bounce-To: " . trim($this->bounce_to_email) . "\r\n";	
+			// QMail might allow setting this? Most other MTAs do not.
+			$headers .= "Return-Path: " . trim($this->bounce_to_email) . "\r\n";
+			// Postfix may use this to send bounces
+			$headers .= "Errors-To: " . trim($this->bounce_to_email) . "\r\n";	
 		}
 		
 		if ($this->html_body || $this->attachments) {
-			$headers .= "MIME-Version: 1.0\r\n";	
+			$headers .= "MIME-Version: 1.0\r\n";	  
 		}
 		
 		$subject = str_replace(array("\r", "\n"), '', $this->subject);
@@ -551,8 +564,16 @@ class fEmail
 		
 		// Build the multi-part/alternative section for the plaintext/HTML combo
 		if ($this->html_body) {
+			
 			$boundary = $this->createBoundary();
-			$body .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n\r\n";
+			
+			// Depending on the other content, these headers may be inline or in the real headers
+			if ($this->attachments) {
+				$body .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n\r\n";
+			} else {
+				$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n\r\n";
+			}
+			
 			$body .= "This message has been formatted using MIME. It does not appear that your email client supports MIME.";
 			$body .= '--' . $boundary . "\r\n";
 			$body .= "Content-type: text/plain; charset=utf-8\r\n";
@@ -566,16 +587,26 @@ class fEmail
 		
 		// If there is no HTML, just encode the body
 		} else {
-			$body .= "Content-type: text/plain\r\n";
-			$body .= "Content-transfer-encoding: quoted-printable\r\n\r\n";
+			
+			// Depending on the other content, these headers may be inline or in the real headers
+			if (!$this->attachments) {
+				$headers .= "Content-type: text/plain\r\n";
+				$headers .= "Content-transfer-encoding: quoted-printable\r\n";
+			} else {
+				$body .= "Content-type: text/plain\r\n";
+				$body .= "Content-transfer-encoding: quoted-printable\r\n\r\n";
+			}
+			
 			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";	
 		}
 		
 		// If we have attachments, we need to wrap a multipart/mixed around the current body
 		if ($this->attachments) {
+			
 			$boundary = $this->createBoundary();
 			
-			$multipart  = 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n";
+			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n";
+			
 			$multipart .= "This message has been formatted using MIME. It does not appear that your email client supports MIME.";
 			$multipart .= '--' . $boundary . "\r\n";
 			$multipart .= $body . "\r\n";
@@ -593,13 +624,42 @@ class fEmail
 		} else {
 			$message = $body;	
 		}
+
+		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
+		$parameters = NULL;
+		if (fCore::getOS() != 'windows' && $this->bounce_to_email && !ini_get('safe_mode')) {
+			preg_match(self::NAME_EMAIL_REGEX, $this->bounce_to_email, $matches);
+			$parameters = '-f ' . $matches[2];		
+		}
 		
-		mail($to, $subject, $body, $headers);
+		// Windows takes the Return-Path email from the sendmail_from ini setting
+		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
+			$old_sendmail_from = ini_get('sendmail_from');
+			preg_match(self::NAME_EMAIL_REGEX, $this->bounce_to_email, $matches);
+			ini_set('sendmail_from', $matches[2]);	
+		}
+		
+		// Apparently SMTP server strip a leading . from lines
+		if (fCore::getOS() == 'windows') {
+			$message = str_replace("\r\n.", "\r\n..", $message);	
+		}
+		
+		$error = !mail($to, $subject, $message, $headers, $parameters);
+		
+		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
+			ini_set('sendmail_from', $old_sendmail_from);	
+		}
+		
+		if ($error) {
+			fCore::toss('fConnectivityException', 'An error occured while trying to send the email entitled: ' . fCore::dump($this->subject));
+		}
 	}
 	
 	
 	/**
-	 * Adds the Bounce-To: email address to the email
+	 * Adds the email address the email will be bounced to
+	 * 
+	 * This email address will be set to the Return-Path and Errors-To headers.
 	 * 
 	 * @param  string $email  The email address to bounce to
 	 * @param  string $name   The bounce-to email user's name
