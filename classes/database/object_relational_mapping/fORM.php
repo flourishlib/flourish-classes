@@ -372,7 +372,7 @@ class fORM
 		
 		if ($value !== NULL && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			try {
-				\
+				
 				// Explicit calls to the constructors are used for dependency detection
 				switch ($column_type) {
 					case 'date':      $value = new fDate($value);      break;
