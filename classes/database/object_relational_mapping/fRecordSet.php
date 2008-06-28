@@ -15,6 +15,20 @@
 class fRecordSet implements Iterator
 {
 	/**
+	 * Ensures that an {@link fActiveRecord} class has been configured, allowing custom mapping options to be set in {@link fActiveRecord::configure()}
+	 *  
+	 * @param  string  $class_name  The class to ensure the configuration of
+	 * @return void
+	 */
+	static public function configure($class_name)
+	{
+		if (!fORM::isConfigured($class_name)) {
+			new $class_name();
+		}
+	}
+	
+	
+	/**
 	 * Creates an {@link fRecordSet} by specifying the class to create plus the where conditions and order by rules
 	 * 
 	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
@@ -58,9 +72,11 @@ class fRecordSet implements Iterator
 	 */
 	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
-		$table_name   = fORM::tablize($class_name);
+		self::configure($class_name);
 		
-		$sql  = "SELECT " . $table_name . ".* FROM :from_clause";
+		$table_name = fORM::tablize($class_name);
+		
+		$sql = "SELECT " . $table_name . ".* FROM :from_clause";
 		
 		if ($where_conditions) {
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);
@@ -103,7 +119,9 @@ class fRecordSet implements Iterator
 	 */
 	static public function createEmpty($class_name)
 	{
-		$table_name   = fORM::tablize($class_name);
+		self::configure($class_name);
+		
+		$table_name = fORM::tablize($class_name);
 		
 		settype($primary_keys, 'array');
 		$primary_keys = array_merge($primary_keys);
@@ -131,6 +149,7 @@ class fRecordSet implements Iterator
 		}
 		
 		$class_name = get_class($records[0]);
+		self::configure($class_name);
 		$table_name = fORM::tablize($class_name);
 		
 		$sql  = 'SELECT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
@@ -193,7 +212,9 @@ class fRecordSet implements Iterator
 	 */
 	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
 	{
-		$table_name   = fORM::tablize($class_name);
+		self::configure($class_name);
+		
+		$table_name = fORM::tablize($class_name);
 		
 		settype($primary_keys, 'array');
 		$primary_keys = array_merge($primary_keys);
@@ -288,6 +309,8 @@ class fRecordSet implements Iterator
 	 */
 	static public function createFromSql($class_name, $sql, $grand_total_sql=NULL)
 	{
+		self::configure($class_name);
+		
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
 		return new fRecordSet($class_name, $result, $non_limited_count_sql);
 	}

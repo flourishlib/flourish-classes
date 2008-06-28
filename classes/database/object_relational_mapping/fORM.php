@@ -22,11 +22,11 @@ class fORM
 	static private $column_names = array();
 	
 	/**
-	 * An array of flags indicating if the features have been set for a class
+	 * An array of flags indicating a class has been configured
 	 * 
 	 * @var array
 	 */
-	static private $features_set = array();
+	static private $configured = array();
 	
 	/**
 	 * Tracks callbacks registered for various fActiveRecord hooks
@@ -138,22 +138,6 @@ class fORM
 			);
 			call_user_func_array($callback, $parameters);
 		}
-	}
-	
-	
-	/**
-	 * Checks for the feature set flag on the specified class
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed $class  The class/class name to check
-	 * @return void
-	 */
-	static public function checkFeaturesSet($class)
-	{
-		$class = self::getClassName($class);
-		
-		return !empty(self::$features_set[$class]);
 	}
 	
 	
@@ -274,17 +258,17 @@ class fORM
 	
 	
 	/**
-	 * Sets a flag indicating features have been set for a class
+	 * Sets a flag indicating a class has been configured
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed $class  The class/class name the features have been set for
+	 * @param  mixed $class  The class name or an instance of the class to flag
 	 * @return void
 	 */
-	static public function flagFeaturesSet($class)
+	static public function flagConfigured($class)
 	{
 		$class = self::getClassName($class);
-		self::$features_set[$class] = TRUE;
+		self::$configured[$class] = TRUE;
 	}
 	
 	
@@ -345,6 +329,21 @@ class fORM
 		}
 		
 		return self::$record_names[$class];
+	}
+	
+	
+	/**
+	 * Checks to see if the class has been configured yet
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed $class  The class name or an instance of the class to check
+	 * @return boolean
+	 */
+	static public function isConfigured($class)
+	{
+		$class = self::getClassName($class);
+		return !empty(self::$configured[$class]);
 	}
 	
 	

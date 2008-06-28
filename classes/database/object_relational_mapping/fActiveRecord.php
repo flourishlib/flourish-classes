@@ -161,9 +161,9 @@ abstract class fActiveRecord
 	public function __construct($primary_key=NULL)
 	{
 		// If the features of this class haven't been set yet, do it
-		if (!fORM::checkFeaturesSet($this)) {
+		if (!fORM::isConfigured($this)) {
 			$this->configure();
-			fORM::flagFeaturesSet($this);
+			fORM::flagConfigured($this);
 		}
 		
 		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
