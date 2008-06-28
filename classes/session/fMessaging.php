@@ -6,10 +6,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fMessaging
+ * @package    Flourish
+ * @link       http://flourishlib.com/fMessaging
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2008-03-05]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2008-03-05]
  */
 class fMessaging
 {

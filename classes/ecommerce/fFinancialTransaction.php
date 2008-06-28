@@ -6,10 +6,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fFinancialTransaction
+ * @package    Flourish
+ * @link       http://flourishlib.com/fFinancialTransaction
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-08-20]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2007-08-20]
  */
 class fFinancialTransaction
 {

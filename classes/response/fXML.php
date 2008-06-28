@@ -9,10 +9,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fXML
+ * @package    Flourish
+ * @link       http://flourishlib.com/fXML
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2008-01-13]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2008-01-13]
  */
 class fXML
 {

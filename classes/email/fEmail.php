@@ -12,10 +12,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fEmail
+ * @package    Flourish
+ * @link       http://flourishlib.com/fEmail
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2008-06-23]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2008-06-23]
  */
 class fEmail
 {

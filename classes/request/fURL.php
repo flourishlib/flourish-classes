@@ -1,15 +1,16 @@
 <?php
 /**
- * Provides url-related methods
+ * Provides URL related functionality
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fURL
+ * @package    Flourish
+ * @link       http://flourishlib.com/fURL
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
  */
 class fURL
 {

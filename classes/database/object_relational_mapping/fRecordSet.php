@@ -6,10 +6,11 @@
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fRecordSet
+ * @package    Flourish
+ * @link       http://flourishlib.com/fRecordSet
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
  */
 class fRecordSet implements Iterator
 {

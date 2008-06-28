@@ -1,17 +1,18 @@
 <?php
 /**
- * Gets database schema information
+ * Provides database schema information
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
- * @link  http://flourishlib.com/fISchema
+ * @package    Flourish
+ * @link       http://flourishlib.com/fISchema
  * 
  * @internal
  * 
- * @version  1.0.0
- * @changes  1.0.0    The initial definition [wb, 2008-01-15]
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial definition [wb, 2008-01-15]
  */
 interface fISchema
 {
