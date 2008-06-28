@@ -369,12 +369,19 @@ class fORM
 		
 		// Turn date/time values into objects
 		$column_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		
 		if ($value !== NULL && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			try {
-				$class = 'f' . fInflection::camelize($column_type, TRUE);
-				$value = new $class($value);
+				\
+				// Explicit calls to the constructors are used for dependency detection
+				switch ($column_type) {
+					case 'date':      $value = new fDate($value);      break;
+					case 'time':      $value = new fTime($value);      break;
+					case 'timestamp': $value = new fTimestamp($value); break;
+				}
+				
 			} catch (fValidationException $e) {
-				// Validation exception result in the raw value being saved
+				// Validation exception results in the raw value being saved
 			}
 		}
 		
