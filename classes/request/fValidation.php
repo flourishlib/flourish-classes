@@ -18,21 +18,21 @@ class fValidation
 	 * 
 	 * @var array
 	 */
-	private $email_fields;
+	private $email_fields = array();
 	
 	/**
 	 * Fields that will be included in email headers and should be checked for email injection
 	 * 
 	 * @var array
 	 */
-	private $email_header_fields;
+	private $email_header_fields = array();
 	
 	/**
 	 * The fields to be required
 	 * 
 	 * @var array
 	 */
-	private $required_fields;
+	private $required_fields = array();
 	
 	
 	/**
@@ -66,7 +66,7 @@ class fValidation
 	{
 		foreach ($this->email_header_fields as $email_header_field) {
 			if (is_string($email_header_field)) {
-				if (preg_match('#\r|\n', fRequest::get($email_header_field))) {
+				if (preg_match('#\r|\n#', fRequest::get($email_header_field))) {
 					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';
 				}
 				
