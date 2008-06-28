@@ -124,15 +124,15 @@ class fAuthorization
 	 * The $ip_ranges parameter can be either a single string, or an array of
 	 * strings, each of which should be in one of the following formats:
 	 * 
-	 *  - A single IP address:
-	 *   - 192.168.1.1
-	 *   - 208.77.188.166
-	 *  - A CIDR range
-	 *   - 192.168.1.0/24
-	 *   - 208.77.188.160/28
-	 *  - An IP/subnet mask combination
-	 *   - 192.168.1.0/255.255.255.0
-	 *   - 208.77.188.160/255.255.255.240
+	 *   - A single IP address:
+	 *     - 192.168.1.1
+	 *     - 208.77.188.166
+	 *   - A CIDR range
+	 *     - 192.168.1.0/24
+	 *     - 208.77.188.160/28
+	 *   - An IP/subnet mask combination
+	 *     - 192.168.1.0/255.255.255.0
+	 *     - 208.77.188.160/255.255.255.240
 	 * 
 	 * @param  mixed $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. See method description for details.
 	 * @return boolean  If the user is coming from (one of) the IP(s) or range(s) specified
