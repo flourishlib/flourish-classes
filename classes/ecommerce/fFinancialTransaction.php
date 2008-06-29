@@ -535,6 +535,18 @@ class fFinancialTransaction
 	
 	
 	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function enableDebugging($flag)
+	{
+		$this->debug = (boolean) $flag;
+	}
+	
+	
+	/**
 	 * If test mode is enabled, modifies the transaction info accordingly
 	 * 
 	 * @return void
@@ -1125,18 +1137,6 @@ class fFinancialTransaction
 	public function setTransactionType($transaction_type)
 	{
 		$this->transaction_info['transaction_type'] = $transaction_type;
-	}
-	
-	
-	/**
-	 * Sets if debug messages should be shown
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown
-	 * @return void
-	 */
-	public function showDebug($flag)
-	{
-		$this->debug = (boolean) $flag;
 	}
 	
 	

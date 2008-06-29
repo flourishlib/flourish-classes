@@ -58,19 +58,6 @@ class fCore
 	
 	
 	/**
-	 * Adds a callback for when certain types of exceptions are tossed
-	 * 
-	 * @param  string   $exception_type  The type of exception to call the callback on
-	 * @param  callback $callback        This callback
-	 * @return void
-	 */
-	static public function addTossCallback($exception_type, $callback)
-	{
-		self::$toss_callbacks[$exception_type] = $callback;
-	}
-	
-	
-	/**
 	 * Creates a nicely formatted backtrace
 	 * 
 	 * @param  integer $remove_lines  The number of trailing lines to remove from the backtrace
@@ -261,6 +248,18 @@ class fCore
 	
 	
 	/**
+	 * Sets if debug messages should be shown globally (for every object)
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	static public function enableDebugging($flag)
+	{
+		self::$debug = (boolean) $flag;
+	}
+	
+	
+	/**
 	 * Turns on special error handling
 	 * 
 	 * All errors that match the current error_reporting() level will be
@@ -430,6 +429,27 @@ class fCore
 	
 	
 	/**
+	 * Adds a callback for when certain types of exceptions are tossed
+	 * 
+	 * The callback will be called when any exception of the class, or any
+	 * child class, specified is tossed. A single parameter will be passed
+	 * to the callback, which will be the exception object.
+	 * 
+	 * @param  string   $exception_type  The type of exception to call the callback on
+	 * @param  callback $callback        The callback
+	 * @return void
+	 */
+	static public function registerTossCallback($exception_type, $callback)
+	{
+		if (!isset(self::$toss_callbacks[$exception_type])) {
+			self::$toss_callbacks[$exception_type] = array();	
+		}
+		
+		self::$toss_callbacks[$exception_type][] = $callback;
+	}
+	
+	
+	/**
 	 * Handles sending a message to a destination
 	 * 
 	 * @param  string $destination  The destination for the error/exception. An email or file.
@@ -474,18 +494,6 @@ class fCore
 	
 	
 	/**
-	 * Sets if debug messages should be shown globally (for every object)
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown globally
-	 * @return void
-	 */
-	static public function showDebug($flag)
-	{
-		self::$debug = (boolean) $flag;
-	}
-	
-	
-	/**
 	 * Returns TRUE for non-empty strings, numbers and objects and for empty numbers and string-like numbers (such as 0, 0.0, '0')
 	 * 
 	 * @param  mixed $value  The value to check
@@ -506,18 +514,20 @@ class fCore
 	
 	
 	/**
-	 * Throws the exception type specified (if the class exists), otherwise throws a normal exception
+	 * Throws the exception class specified (if the class exists), otherwise throws a normal exception
 	 * 
-	 * @param  string $exception_type  The type of exception to throw
-	 * @param  string $message         The exception message
+	 * @param  string $exception_class  The class of exception to throw
+	 * @param  string $message          The exception message
 	 * @return void
 	 */
-	static public function toss($exception_type, $message)
+	static public function toss($exception_class, $message)
 	{
-		$exception = new $exception_type($message);
-		foreach (self::$toss_callbacks as $class => $callback) {
-			if ($exception instanceof $class) {
-				call_user_func($callback);
+		$exception = new $exception_class($message);
+		foreach (self::$toss_callbacks as $class => $callbacks) {
+			foreach ($callbacks as $callback) {
+				if ($exception instanceof $class) {
+					call_user_func($callback, $exception);
+				}
 			}
 		}
 		throw $exception;

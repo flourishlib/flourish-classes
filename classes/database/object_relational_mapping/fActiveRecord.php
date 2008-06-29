@@ -234,7 +234,7 @@ abstract class fActiveRecord
 	 * @param  array $sql_values  The SQL-formatted values for this record
 	 * @return string  The SQL insert statement
 	 */
-	protected function constructInsertSql($sql_values)
+	protected function constructInsertSQL($sql_values)
 	{
 		$sql = 'INSERT INTO ' . fORM::tablize($this) . ' (';
 		
@@ -254,51 +254,25 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Creates the WHERE clause for the current primary key data
-	 *
-	 * @throws fValidationException
-	 * 
-	 * @return string  The WHERE clause for the current primary key data
-	 */
-	protected function constructPrimaryKeyWhereClause()
-	{
-		$sql        = '';
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
-		$key_num    = 0;
-		
-		foreach ($pk_columns as $pk_column) {
-			if ($key_num) { $sql .= " AND "; }
-			
-			if (!empty($this->old_values[$pk_column])) {
-				$value = fORM::scalarize($this, $pk_column, $this->old_values[$pk_column][0]);
-			} else {
-				$value = fORM::scalarize($this, $pk_column, $this->values[$pk_column]);
-			}
-			
-			$sql .= $pk_column . fORMDatabase::prepareBySchema(fORM::tablize($this), $pk_column, $value, '=');
-			$key_num++;
-		}
-		
-		return $sql;
-	}
-	
-	
-	/**
 	 * Creates the SQL to update this record
 	 *
 	 * @param  array $sql_values  The SQL-formatted values for this record
 	 * @return string  The SQL update statement
 	 */
-	protected function constructUpdateSql($sql_values)
+	protected function constructUpdateSQL($sql_values)
 	{
-		$sql = 'UPDATE ' . fORM::tablize($this) . ' SET ';
+		$table = fORM::tablize($this);
+		
+		$sql = 'UPDATE ' . $table . ' SET ';
 		$column_num = 0;
 		foreach ($sql_values as $column => $sql_value) {
 			if ($column_num) { $sql .= ', '; }
 			$sql .= $column . ' = ' . $sql_value;
 			$column_num++;
 		}
-		$sql .= ' WHERE ' . $this->constructPrimaryKeyWhereClause();
+		
+		$sql .= ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
+		
 		return $sql;
 	}
 	
@@ -382,7 +356,7 @@ abstract class fActiveRecord
 			
 			
 			// Delete this record
-			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . $this->constructPrimaryKeyWhereClause();
+			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			
@@ -433,6 +407,18 @@ abstract class fActiveRecord
 		}
 		
 		fORM::callHookCallback($this, 'post::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+	}
+	
+	
+	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function enableDebugging($flag)
+	{
+		$this->debug = (boolean) $flag;
 	}
 	
 	
@@ -562,7 +548,8 @@ abstract class fActiveRecord
 		}
 		
 		try {
-			$sql = 'SELECT * FROM ' . fORM::tablize($this) . ' WHERE ' . $this->constructPrimaryKeyWhereClause();
+			$table = fORM::tablize($this);
+			$sql = 'SELECT * FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
 		
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
@@ -808,18 +795,6 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Sets if debug messages should be shown
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown
-	 * @return void
-	 */
-	public function showDebug($flag)
-	{
-		$this->debug = (boolean) $flag;
-	}
-	
-	
-	/**
 	 * Stores a record in the database. Will start database and filesystem
 	 * transactions if not already inside them.
 	 * 
@@ -876,9 +851,9 @@ abstract class fActiveRecord
 			}
 			
 			if (!$this->exists()) {
-				$sql = $this->constructInsertSql($sql_values);
+				$sql = $this->constructInsertSQL($sql_values);
 			} else {
-				$sql = $this->constructUpdateSql($sql_values);
+				$sql = $this->constructUpdateSQL($sql_values);
 			}
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			

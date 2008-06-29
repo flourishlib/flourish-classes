@@ -262,7 +262,7 @@ class fSQLTranslation
 	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
 	 */
-	public function showDebug($flag)
+	public function enableDebugging($flag)
 	{
 		$this->debug = (boolean) $flag;
 	}

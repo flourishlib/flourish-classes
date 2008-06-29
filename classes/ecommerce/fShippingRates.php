@@ -339,6 +339,18 @@ class fShippingRates
 	
 	
 	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function enableDebugging($flag)
+	{
+		$this->debug = (boolean) $flag;
+	}
+	
+	
+	/**
 	 * Fetches the rates from the shipping company, will thrown an exception if something goes wrong
 	 * 
 	 * @throws  fValidationException
@@ -815,18 +827,6 @@ XMLDATA;
 	public function setWeightUnits($weight_units)
 	{
 		$this->request_info['weight_units'] = $weight_units;
-	}
-	
-	
-	/**
-	 * Sets if debug messages should be shown
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown
-	 * @return void
-	 */
-	public function showDebug($flag)
-	{
-		$this->debug = (boolean) $flag;
 	}
 	
 	

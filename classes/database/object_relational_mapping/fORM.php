@@ -478,7 +478,7 @@ class fORM
 		);
 		
 		static $invalid_replace_hooks = array(
-			'replace::enableDebug()',
+			'replace::enableDebugging()',
 			'replace::assign()',
 			'replace::configure()',
 			'replace::constructInsertSQL()',

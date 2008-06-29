@@ -29,7 +29,8 @@ interface fISchema
 	 *         'default'        => (mixed)   {the default value},
 	 *         'valid_values'   => (array)   {the valid values for a varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a varchar field},
-	 *         'auto_increment' => (boolean) {if the integer column is auto increment or serial}
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 *     ),...
 	 * )
 	 * </pre>
@@ -41,6 +42,7 @@ interface fISchema
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
 	 *     'default'        => (mixed)   {the default value},
+	 *     'valid_values'   => (array)   {the valid values for a varchar field},
 	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}

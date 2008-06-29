@@ -35,6 +35,22 @@ class fORMSchema
 	
 	
 	/**
+	 * Turns on schema caching, using fUnexpectedException flushing
+	 *
+	 * @param  string  $cache_file  The file to use for caching
+	 * @return void
+	 */
+	static public function enableSmartCaching($cache_file)
+	{
+		if (!self::getInstance() instanceof fSchema) {
+			fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');       
+		}
+		self::getInstance()->setCacheFile($cache_file);
+		fCore::registerTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo'));
+	}
+	
+	
+	/**
 	 * Return the instance of the {@link fSchema} class
 	 * 
 	 * @return fSchema  The schema instance

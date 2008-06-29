@@ -466,6 +466,21 @@ class fDatabase
 	
 	
 	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function enableDebugging($flag)
+	{
+		$this->debug = (boolean) $flag;
+		if ($this->translation) {
+			$this->translation->enableDebugging($this->debug);
+		}
+	}
+	
+	
+	/**
 	 * Escapes a blob for use in SQL, includes surround quotes when appropriate
 	 * 
 	 * A NULL value will be returned as 'NULL'
@@ -1193,21 +1208,6 @@ class fDatabase
 	
 	
 	/**
-	 * Sets if debug messages should be shown
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown
-	 * @return void
-	 */
-	public function showDebug($flag)
-	{
-		$this->debug = (boolean) $flag;
-		if ($this->translation) {
-			$this->translation->showDebug($this->debug);
-		}
-	}
-	
-	
-	/**
 	 * Keeps track to see if a transaction is being started or stopped
 	 * 
 	 * @param  string $sql  The SQL to check for a transaction query
@@ -1247,7 +1247,7 @@ class fDatabase
 		if (!$this->translation) {
 			$this->connectToDatabase();
 			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
-			$this->translation->showDebug($this->debug);
+			$this->translation->enableDebugging($this->debug);
 		}
 		$result = $this->query($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
