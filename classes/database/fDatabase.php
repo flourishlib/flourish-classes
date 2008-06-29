@@ -284,6 +284,7 @@ class fDatabase
 			} elseif ($this->type == 'mysql') {
 				try {
 					$this->connection = new PDO('mysql:host=' . $this->host . ';dbname=' . $this->database . (($this->port) ? ';port=' . $this->port : ''), $this->username, $this->password);
+					$this->connection->setAttribute(PDO::MYSQL_ATTR_DIRECT_QUERY, 1);
 				} catch (PDOException $e) {
 					$this->connection = FALSE;
 				}
@@ -360,7 +361,7 @@ class fDatabase
 		// Make MySQL act more strict and use UTF-8
 		if ($this->type == 'mysql') {
 			$this->query("SET SQL_MODE = 'ANSI'");
-			$this->query("SET NAMES = 'utf8'");
+			$this->query("SET NAMES 'utf8'");
 			$this->query("SET CHARACTER SET utf8");
 		}
 		
