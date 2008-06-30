@@ -15,6 +15,16 @@
 class fCore
 {
 	/**
+	 * Callbacks for when messages are composed
+	 * 
+	 * @var array
+	 */
+	static private $compose_callbacks = array(
+		'pre'  => array(),
+		'post' => array()
+	);
+	
+	/**
 	 * If global debugging is enabled
 	 * 
 	 * @var boolean
@@ -167,6 +177,34 @@ class fCore
 	
 	
 	/**
+	 * Performs an {@link http://php.net/sprintf sprintf()} on a string and provides a hook for modifications such as internationalization
+	 * 
+	 * @param  string  $message        A message to compose
+	 * @param  mixed   $component,...  A string or number to insert into the message
+	 * @return void
+	 */
+	static public function compose($message, $component)
+	{
+		if (self::$compose_callbacks) {
+			foreach (self::$compose_callbacks['pre'] as $callback) {
+				$message = call_user_func($callback, $message);	
+			}
+		}
+		
+		$components = array_slice(func_get_args(), 1);
+		$message    = vsprintf($message, $components);	
+		
+		if (self::$compose_callbacks) {
+			foreach (self::$compose_callbacks['post'] as $callback) {
+				$message = call_user_func($callback, $message);	
+			}
+		}
+		
+		return $message;
+	}
+	
+	
+	/**
 	 * Prints a debugging message if global or code-specific debugging is enabled
 	 * 
 	 * @param  string  $message  The debug message
@@ -310,8 +348,7 @@ class fCore
 	 */
 	static public function expose($data)
 	{
-		$data = self::dump($data);
-		echo '<pre class="exposed">' . htmlentities((string) $data, ENT_COMPAT, 'UTF-8') . '</pre>';
+		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data)) . '</pre>';
 	}
 	
 	
@@ -337,7 +374,13 @@ class fCore
 			return 'windows';
 		}
 		
-		self::trigger('warning', "Unable to reliably determine the server OS. Defaulting to 'linux/unix'");
+		self::trigger(
+			'warning',
+			self::compose(
+				"Unable to reliably determine the server OS. Defaulting to 'linux/unix'."
+			)
+		);
+		
 		return 'linux/unix';
 	}
 	
@@ -387,7 +430,7 @@ class fCore
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
-		$error  = "Error\n-----\n" . $backtrace . "\n" . $error_string;
+		$error   = self::compose('Error') . "\n-----\n" . $backtrace . "\n" . $error_string;
 		
 		self::sendMessageToDestination(self::$error_destination, $error);
 	}
@@ -408,7 +451,7 @@ class fCore
 		} else {
 			$message = $exception->getTraceAsString() . "\n" . $exception->getMessage();
 		}
-		$message = "Uncaught Exception\n------------------\n" . $message;
+		$message = self::compose("Uncaught Exception") . "\n------------------\n" . $message;
 		
 		if (self::$exception_destination != 'html' && $exception instanceof fPrintableException) {
 			$exception->printMessage();
@@ -423,8 +466,51 @@ class fCore
 		try {
 			call_user_func_array(self::$exception_handler_callback, self::$exception_handler_parameters);
 		} catch (Exception $e) {
-			self::trigger('error', 'An exception was thrown in the setExceptionHandling() $closing_code callback');
+			self::trigger(
+				'error',
+				self::compose(
+					'An exception was thrown in the %s closing code callback',
+					'setExceptionHandling()'
+				)
+			);
 		}
+	}
+	
+	
+	/**
+	 * Adds a callback for when a message is created using {@link compose()}
+	 * 
+	 * The primary purpose of these callbacks is for internationalization of
+	 * error messaging in Flourish. The callback should accept a single
+	 * parameter, the message being composed and should return the message
+	 * with any modifications.
+	 * 
+	 * The timing parameter controls if the callback happens before or after
+	 * the actual composition takes place, which is simply a call to
+	 * {@link http://php.net/sprintf sprintf()}. Thus the message passed 'pre'
+	 * will always be exactly the same, while the message 'post' will include
+	 * the interpolated variables. Because of this, most of the time the 'pre'
+	 * timing should be chosen. 
+	 * 
+	 * @param  string   $timing    When the callback should be executed, 'pre' or 'post' performing the actual composition
+	 * @param  callback $callback  The callback
+	 * @return void
+	 */
+	static public function registerComposeCallback($timing, $callback)
+	{
+		$valid_timings = array('pre', 'post');
+		if (!in_array($timing, $valid_timings)) {
+			self::toss(
+				'fProgrammerException',
+				self::compose(
+					'The timing specified, %s, is not a valid timing. Must be one of: %s.',
+					self::dump($timing),
+					join(', ', $valid_timings)
+				)	
+			);	
+		}
+		
+		self::$compose_callbacks[$timing][] = $callback;
 	}
 	
 	
@@ -458,12 +544,16 @@ class fCore
 	 */
 	static private function sendMessageToDestination($destination, $message)
 	{
-		$subject = '[' . $_SERVER['SERVER_NAME'] . '] An error/exception occured at ' . date('Y-m-d H:i:s');
+		$subject = self::compose(
+			'[%s] An error/exception occured at %s',
+			$_SERVER['SERVER_NAME'],
+			date('Y-m-d H:i:s')
+		);
 		
 		// Add variable information
-		$context  = "\n\nContext\n-------";
+		$context  = "\n\n" . self::compose('Context') . "\n-------";
 		if ($destination != 'html') {
-			$content .= "\n" . '$_SERVER[\'REQUEST_URI\']' . "\n" . self::dump($_SERVER['REQUEST_URI']) . "\n";
+			$content .= "\n\$_SERVER['REQUEST_URI']\n" . self::dump($_SERVER['REQUEST_URI']) . "\n";
 		}
 		$context .= "\n" . '$_REQUEST' . "\n" . self::dump($_REQUEST);
 		$context .= "\n\n" . '$_FILES' . "\n" . self::dump($_FILES);
@@ -539,7 +629,7 @@ class fCore
 	 * 
 	 * The default error handler in PHP will show the line number of this
 	 * method as the triggering code. To get a full backtrace, use
-	 * {@link fCore::enableErrorHandling()}.
+	 * {@link enableErrorHandling()}.
 	 * 
 	 * @param  string $error_type  The type of error to trigger ('error', 'warning' or 'notice')
 	 * @param  string $message     The error message
@@ -549,7 +639,14 @@ class fCore
 	{
 		$valid_error_types = array('error', 'warning', 'notice');
 		if (!in_array($error_type, $valid_error_types)) {
-			fCore::toss('fProgrammerException', "Invalid error type, " . $error_type . ", specified. Must be one of: " . join(', ', $valid_error_types) . '.');
+			self::toss(
+				'fProgrammerException',
+				self::compose(
+					'Invalid error type, %s, specified. Must be one of: %s.',
+					self::dump($error_type),
+					join(', ', $valid_error_types)
+				)
+			);
 		}
 		
 		static $error_type_map = array(
