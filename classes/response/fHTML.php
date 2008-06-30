@@ -173,6 +173,28 @@ class fHTML
 	
 	
 	/**
+	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified - will not print if no content
+	 * 
+	 * @param  string $content    The content to display
+	 * @param  string $css_class  The css class to apply
+	 * @return void
+	 */
+	static public function show($content, $css_class='')
+	{
+		if (!fCore::stringlike($content)) {
+			return;
+		}
+		
+		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
+		if (self::checkForBlockLevelHTML($content)) {
+			echo '<div' . $class . '>' . self::prepare($content) . '</div>';
+		} else {
+			echo '<p' . $class . '>' . self::prepare($content) . '</p>';
+		}
+	}
+	
+	
+	/**
 	 * Forces use as a static class
 	 * 
 	 * @return fHTML

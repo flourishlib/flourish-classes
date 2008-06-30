@@ -45,24 +45,18 @@ class fMessaging
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified - will not print if no content
+	 * Retrieves a message, removes it from the session and prints it with the CSS class specified - will not print if no content
 	 * 
-	 * @param  string $content    The content to display
-	 * @param  string $css_class  The css class to apply
+	 * The message will be printed in a paragraph tag if it does not contain
+	 * any block level HTML. Otherwise it will be printed in a div tag.
+	 * 
+	 * @param  string $name       The name of the message to retrieve
+	 * @param  string $recipient  The intended recipient
 	 * @return void
 	 */
-	static public function show($content, $css_class='')
+	static public function show($name, $recipient, $css_class='')
 	{
-		if (!fCore::stringlike($content)) {
-			return;
-		}
-		
-		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
-		if (fHTML::checkForBlockLevelHTML($content)) {
-			echo '<div' . $class . '>' . fHTML::prepare($content) . '</div>';
-		} else {
-			echo '<p' . $class . '>' . fHTML::prepare($content) . '</p>';
-		}
+		fHTML::show(self::retrieve($name, $recipient), $css_class);
 	}
 	
 	
