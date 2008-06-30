@@ -183,7 +183,7 @@ class fCore
 	 * @param  mixed   $component,...  A string or number to insert into the message
 	 * @return void
 	 */
-	static public function compose($message, $component)
+	static public function compose($message)
 	{
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['pre'] as $callback) {

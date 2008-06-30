@@ -603,7 +603,7 @@ class fORMValidation
 	static public function validate($object, $values, $old_values)
 	{
 		$class = fORM::getClassName($object);
-		$table = fORM::tablize($class_name);
+		$table = fORM::tablize($class);
 		
 		self::initializeRuleArrays($class);
 		
