@@ -274,6 +274,9 @@ class fORMColumn
 		$class = fORM::getClassName($class);
 		
 		foreach (self::$date_created_columns[$class] as $column => $enabled) {
+			if (!isset($old_values[$column])) {
+				$old_values[$column] = array();	
+			}
 			$old_values[$column] = $values[$column];
 			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
 		}
@@ -297,7 +300,10 @@ class fORMColumn
 		$class = fORM::getClassName($class);
 		
 		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
-			$old_values[$column] = $values[$column];
+			if (!isset($old_values[$column])) {
+				$old_values[$column] = array();	
+			}
+			$old_values[$column][] = $values[$column];
 			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
 		}
 	}
@@ -325,6 +331,9 @@ class fORMColumn
 		$class = fORM::getClassName($class);
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
+			if (!isset($old_values[$column])) {
+				$old_values[$column] = array();	
+			}
 			$old_values[$column] = $values[$column];
 			
 			// Check to see if this is a unique column

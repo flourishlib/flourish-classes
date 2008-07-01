@@ -123,7 +123,7 @@ class fORMOrdering
 	{
 		$value_empty      = !$values[$ordering_column];
 		$old_value_empty  = (isset($old_values[$ordering_column])) ? !$old_values[$ordering_column][0] : FALSE;
-		$no_old_value_set = isset($old_values[$ordering_column]);
+		$no_old_value_set = !isset($old_values[$ordering_column]);
 		
 		// If the value appears to be new, the record must be new to the order
 		if ($old_value_empty || ($value_empty && $no_old_value_set)) {
