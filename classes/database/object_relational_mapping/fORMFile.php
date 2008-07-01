@@ -199,6 +199,10 @@ class fORMFile
 		
 		$camelized_column = fInflection::camelize($column, TRUE);
 		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMFile', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'replace::upload' . $camelized_column . '()';
 		$callback = array('fORMFile', 'upload');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -389,6 +393,43 @@ class fORMFile
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
 		
 		return fHTML::encode($filename);
+	}
+	
+	
+	/**
+	 * Returns the metadata about a column including features added by this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return mixed  The metadata array or element specified
+	 */
+	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$class_name = fORM::getClassName($class);
+		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
+		
+		if (!empty(self::$image_upload_columns[$class_name][$column])) {
+			$info['feature'] = 'image';	
+			
+		} elseif (!empty(self::$file_upload_columns[$class_name][$column])) {
+			$info['feature'] = 'file';	
+		}
+		
+		if ($element) {
+			return (isset($info[$element])) ? $info[$element] : NULL;	
+		}
+		
+		return $info;
 	}
 	
 	

@@ -44,7 +44,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Dynamically creates get{Column}(), set{Column}(), prepare{Column}() and encode{Column}() methods for columns of this record
+	 * Dynamically creates get{Column}(), set{Column}(), prepare{Column}(), encode{Column}() and inspect{Column}() methods for columns of this record
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -94,6 +94,12 @@ abstract class fActiveRecord
 					return $this->get($subject, $parameters[0]);
 				}
 				return $this->get($subject);
+			
+			case 'inspect':
+				if (isset($parameters[0])) {
+					return $this->inspect($subject, $parameters[0]);
+				}
+				return $this->inspect($subject);
 			
 			case 'prepare':
 				if (isset($parameters[0])) {
@@ -688,6 +694,35 @@ abstract class fActiveRecord
 			);
 		}
 		return $this->values[$column];
+	}
+	
+	
+	/**
+	 * Retrieves information about a column
+	 * 
+	 * @param  string $column   The name of the column to inspect
+	 * @param  string $element  The metadata element to retrieve
+	 * @return mixed  The metadata array for the column, or the metadata element specified
+	 */
+	protected function inspect($column, $element=NULL)
+	{
+		if (!array_key_exists($column, $this->values)) {
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not exist',
+					fCore::dump($column)
+				)
+			);
+		}
+		
+		$info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
+		
+		if ($element) {
+			return (isset($info[$element])) ? $info[$element] : NULL;	
+		}
+		
+		return $info;
 	}
 	
 	

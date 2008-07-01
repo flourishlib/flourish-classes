@@ -56,6 +56,12 @@ class fORMOrdering
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.');	
 		}
 		
+		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMOrdering', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'post::validate()';
 		$callback = array('fORMOrdering', 'validate');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -107,6 +113,56 @@ class fORMOrdering
 		}		
 		
 		return join(' AND ', $conditions);
+	}
+	
+	
+	/**
+	 * Returns the metadata about a column including features added by this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return mixed  The metadata array or element specified
+	 */
+	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$class_name = fORM::getClassName($class);
+		$table      = fORM::tablize($class);
+		
+		$info       = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
+		
+		$column        = self::$ordering_columns[$class_name]['column'];
+		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		
+		// Retrieve the current max ordering index from the database
+		$sql = "SELECT max(" . $column . ") FROM " . $table;
+		if ($other_columns) {
+			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
+		}
+		$max_index = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		
+		// If this is a new record, or in a new set, we need one more space in the ordering index
+		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
+			$max_index += 1;	
+		}
+		
+		$info['max_ordering_index'] = $max_index;
+		$info['feature']            = 'ordering';
+				
+		if ($element) {
+			return (isset($info[$element])) ? $info[$element] : NULL;	
+		}
+		
+		return $info;
 	}
 	
 	
@@ -346,7 +402,7 @@ class fORMOrdering
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-			$validation_messages[] = $column_name . ": The enter an integer";
+			$validation_messages[] = $column_name . ": Please enter an integer";
 		
 		} elseif ($current_value < 1) {
 			$validation_messages[] = $column_name . ": The value can not be less than 1";

@@ -438,8 +438,9 @@ class fORM
 	 *  5. $debug
 	 * 
 	 * Below is a list of other parameters passed to specific hooks:
-	 *  - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
-	 *  - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with  
+	 *   - 'replace::validate()': $return messages - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
+	 *   - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *   - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with  
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to hook
 	 * @param  string   $hook      The hook to register for
@@ -460,6 +461,7 @@ class fORM
 			'post-commit::delete()',
 			'post-rollback::delete()',
 			'post::delete()',
+			'post::inspect()',
 			'post::loadFromResult()',
 			'replace::populate()',
 			'pre::populate()',

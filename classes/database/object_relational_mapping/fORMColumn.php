@@ -68,6 +68,12 @@ class fORMColumn
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a date created column.');	
 		}
 		
+		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'post-begin::store()';
 		$callback = array('fORMColumn', 'setDateCreated');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -98,6 +104,12 @@ class fORMColumn
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a date updated column.');	
 		}
 		
+		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'post-begin::store()';
 		$callback = array('fORMColumn', 'setDateUpdated');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -127,6 +139,12 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as an email column.');	
 		}
+		
+		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
 		
 		$hook     = 'post::validate()';
 		$callback = array('fORMColumn', 'validateEmailColumns');
@@ -161,6 +179,10 @@ class fORMColumn
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
 		
 		$hook     = 'replace::prepare' . $cameled_column . '()';
 		$callback = array('fORMColumn', 'prepareLinkColumn');
@@ -209,6 +231,12 @@ class fORMColumn
 			fCore::toss('fProgrammerException', 'The length specified, ' . $length . ', needs to be an integer greater than zero.');	
 		}
 		
+		$cameled_column = fInflection::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'pre::validate()';
 		$callback = array('fORMColumn', 'setRandomStrings');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -218,6 +246,56 @@ class fORMColumn
 		}
 		
 		self::$random_columns[$class][$column] = array('type' => $type, 'length' => (int) $length);
+	}
+	
+	
+	/**
+	 * Returns the metadata about a column including features added by this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return mixed  The metadata array or element specified
+	 */
+	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		
+		$class_name = fORM::getClassName($class);
+		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
+		
+		if (!empty(self::$date_created_columns[$class_name][$column])) {
+			$info['feature'] = 'date created';	
+		}
+		
+		if (!empty(self::$date_updated_columns[$class_name][$column])) {
+			$info['feature'] = 'date updated';	
+		}
+		
+		if (!empty(self::$email_columns[$class_name][$column])) {
+			$info['feature'] = 'email';	
+		}
+		
+		if (!empty(self::$link_columns[$class_name][$column])) {
+			$info['feature'] = 'link';	
+		}
+		
+		if (!empty(self::$random_columns[$class_name][$column])) {
+			$info['feature'] = 'random';	
+		}
+		
+		if ($element) {
+			return (isset($info[$element])) ? $info[$element] : NULL;	
+		}
+		
+		return $info;
 	}
 	
 	
