@@ -57,12 +57,27 @@ abstract class fActiveRecord
 		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
-			return fORM::callHookCallback($this, 'replace::' . $method_name . '()', $this->values, $this->old_values, $this->related_records, $this->debug, $method_name, $parameters);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::' . $method_name . '()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug,
+				$method_name,
+				$parameters
+			);	
 		}
 		
 		// This will prevent quiet failure
 		if (($action == 'set' || $action == 'associate' || $action == 'inject') && sizeof($parameters) < 1) {
-			fCore::toss('fProgrammerException', 'The method, ' . $method_name . '(), requires at least one parameter');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The method, %s, requires at least one parameter',
+					$method_name . '()'
+				)
+			);
 		}
 		
 		switch ($action) {
@@ -145,7 +160,10 @@ abstract class fActiveRecord
 			
 			// Error handler
 			default:
-				fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
+				fCore::toss(
+					'fProgrammerException',
+					fCore::compose('Unknown method, %s, called', $method_name . '()')
+				);
 		}
 	}
 	
@@ -167,7 +185,15 @@ abstract class fActiveRecord
 		}
 		
 		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
-			return fORM::callHookCallback($this, 'replace::__construct()', $this->values, $this->old_values, $this->related_records, $this->debug, $primary_key);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::__construct()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug,
+				$primary_key
+			);	
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
@@ -190,7 +216,13 @@ abstract class fActiveRecord
 			// Check the primary keys
 			$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
-				fCore::toss('fProgrammerException', 'An invalidly formatted primary key was passed to this ' . fORM::getRecordName($this) . ' object');
+				fCore::toss(
+					'fProgrammerException',
+					fCore::compose(
+						'An invalidly formatted primary key was passed to this %s object',
+						fORM::getRecordName($this)
+					)
+				);
 			}
 			
 			// Assign the primary key values
@@ -212,7 +244,14 @@ abstract class fActiveRecord
 			}
 		}
 		
-		fORM::callHookCallback($this, 'post::__construct()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'post::__construct()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 	}
 	
 	
@@ -287,14 +326,33 @@ abstract class fActiveRecord
 	public function delete()
 	{
 		if (fORM::checkHookCallback($this, 'replace::delete()')) {
-			return fORM::callHookCallback($this, 'replace::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::delete()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);	
 		}	
 		
 		if (!$this->exists()) {
-			fCore::toss('fProgrammerException', 'The object does not yet exist in the database, and thus can not be deleted');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'This %s object does not yet exist in the database, and thus can not be deleted',
+					fORM::getRecordName($this)
+				)
+			);
 		}
 		
-		fORM::callHookCallback($this, 'pre::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this, 'pre::delete()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 		
 		$table  = fORM::tablize($this);
 		
@@ -306,7 +364,14 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
 			}
 			
-			fORM::callHookCallback($this, 'post-begin::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-begin::delete()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			// Check to ensure no foreign dependencies prevent deletion
 			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
@@ -315,7 +380,7 @@ abstract class fActiveRecord
 			$relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
 			$records_sets_to_delete = array();
 			
-			$restriction_message = '';
+			$restriction_messages = array();
 			
 			foreach ($relationships as $relationship) {
 				
@@ -346,12 +411,19 @@ abstract class fActiveRecord
 					$related_record_name = fORM::getRecordName($related_class_name);
 					$related_record_name = fInflection::pluralize($related_record_name);
 					
-					$restriction_message .= "<li>One or more " . $related_record_name . " references it</li>\n";
+					$restriction_message[] = fCore::compose("One or more %s references it", $related_record_name);
 				}
 			}
 			
-			if (!empty($restriction_message)) {
-				fCore::toss('fValidationException', '<p>This ' . fORM::getRecordName($this) . ' can not be deleted because:</p><ul>' . $restriction_message . '</ul>');
+			if (!$restriction_messages) {
+				fCore::toss(
+					'fValidationException',
+					sprintf(
+						"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
+						fCore::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
+						join("</li>\n<li>", $restriction_messages)
+					)
+				);
 			}
 			
 			
@@ -369,15 +441,30 @@ abstract class fActiveRecord
 				}
 			}
 			
-			fORM::callHookCallback($this, 'pre-commit::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'pre-commit::delete()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
 			
-			fORM::callHookCallback($this, 'post-commit::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-commit::delete()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
-			// If we just deleted an object that has an auto-incrementing primary key, lets delete that value from the object since it is no longer valid
+			// If we just deleted an object that has an auto-incrementing primary key,
+			// lets delete that value from the object since it is no longer valid
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$pk_columns  = fORMSchema::getInstance()->getKeys($table, 'primary');
 			if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
@@ -390,15 +477,35 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
 			}
 			
-			fORM::callHookCallback($this, 'post-rollback::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-rollback::delete()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
-				$message     = $e->getMessage();
-				$record_name = fORM::getRecordName($this);
-				if (stripos($message, 'This ' . $record_name) === FALSE) {
-					$message = preg_replace('#(This ).*?( can not be deleted because)#is', '\1' . $record_name . '\2');
-					$message = str_replace(' references it', ' indirectly refereces it');
+				$message = $e->getMessage();
+				$search  = fCore::compose('This %s can not be deleted because:', fORM::getRecordName($this));
+				if (stripos($message, $search) === FALSE) {
+					$regex       = fCore::compose('This %s can not be deleted because:', '__');
+					$regex_parts = explode('__', $regex);
+					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
+					
+					$message = preg_replace($regex, '\1' . fORM::getRecordName($this) . '\2', $message);
+					
+					$find          = fCore::compose("One or more %s references it", '__');
+					$find_parts    = explode('__', $find);
+					$find_regex    = '#' . preg_quote($find_parts[0], '#') . '(.*?)' . preg_quote($find_parts[1], '#') . '#';
+					
+					$replace       = fCore::compose("One or more %s indirectly references it", '__');
+					$replace_parts = explode('__', $replace);
+					$replace_regex = $replace_parts[0] . '\1' . $replace_parts[1];
+					
+					$message = preg_replace($find_regex, $replace_regex, $regex);
 					fCore::toss('fValidationException', $message);
 				}
 			}
@@ -406,7 +513,14 @@ abstract class fActiveRecord
 			throw $e;
 		}
 		
-		fORM::callHookCallback($this, 'post::delete()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'post::delete()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 	}
 	
 	
@@ -438,18 +552,36 @@ abstract class fActiveRecord
 	protected function encode($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not exist',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support forming because it is a blob column');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not support forming because it is a blob column',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text', 'boolean', 'integer'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not support any formatting options',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		// Grab the value for empty value checking
@@ -459,7 +591,13 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');
+				fCore::toss(
+					'fProgrammerException',
+					fCore::compose(
+						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
+						fCore::dump($column)
+					)
+				);
 			}
 			$value = $value->format($formatting);
 		}
@@ -471,7 +609,13 @@ abstract class fActiveRecord
 		
 		// If we are left with an object at this point then we don't know what to do with it
 		if (is_object($value)) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		// Make sure we don't mangle a non-float value
@@ -506,7 +650,14 @@ abstract class fActiveRecord
 	public function exists()
 	{
 		if (fORM::checkHookCallback($this, 'replace::exists()')) {
-			return fORM::callHookCallback($this, 'replace::exists()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::exists()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);	
 		}
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
@@ -528,7 +679,13 @@ abstract class fActiveRecord
 	protected function get($column)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not exist',
+					fCore::dump($column)
+				)
+			);
 		}
 		return $this->values[$column];
 	}
@@ -544,7 +701,14 @@ abstract class fActiveRecord
 	public function load()
 	{
 		if (fORM::checkHookCallback($this, 'replace::load()')) {
-			return fORM::callHookCallback($this, 'replace::load()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::load()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);	
 		}
 		
 		try {
@@ -555,7 +719,13 @@ abstract class fActiveRecord
 			$result->tossIfNoResults();
 			
 		} catch (fExpectedException $e) {
-			fCore::toss('fNotFoundException', 'The ' . fORM::getRecordName($this) . ' requested could not be found');
+			fCore::toss(
+				'fNotFoundException',
+				fCore::compose(
+					'The %s requested could not be found',
+					fORM::getRecordName($this)
+				)
+			);
 		}
 		
 		$this->loadFromResult($result);
@@ -597,7 +767,14 @@ abstract class fActiveRecord
 		
 		fORM::saveToIdentityMap($this, $pk_data);
 		
-		fORM::callHookCallback($this, 'post::loadFromResult()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'post::loadFromResult()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 	}
 	
 	
@@ -652,10 +829,24 @@ abstract class fActiveRecord
 	public function populate()
 	{
 		if (fORM::checkHookCallback($this, 'replace::populate()')) {
-			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::populate()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);	
 		}
 		
-		fORM::callHookCallback($this, 'pre::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'pre::populate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 		
 		$table = fORM::tablize($this);
 		
@@ -667,7 +858,14 @@ abstract class fActiveRecord
 			}
 		}
 		
-		fORM::callHookCallback($this, 'post::populate()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'post::populate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 	}
 	
 	
@@ -689,7 +887,13 @@ abstract class fActiveRecord
 	protected function prepare($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not exist',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
@@ -697,11 +901,23 @@ abstract class fActiveRecord
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' can not be prepared because it is a blob column');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, can not be prepared because it is a blob column',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not support any formatting options');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not support any formatting options',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		// Grab the value for empty value checking
@@ -711,7 +927,13 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss('fProgrammerException', 'The column ' . $column . ' requires one formatting parameter, a valid date() formatting string');
+				fCore::toss(
+					'fProgrammerException',
+					fCore::compose(
+						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
+						fCore::dump($column)
+					)
+				);
 			}
 			return $value->format($formatting);
 		}
@@ -723,7 +945,13 @@ abstract class fActiveRecord
 		
 		// If we are left with an object at this point then we don't know what to do with it
 		if (is_object($value)) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' contains an object that does not have a __toString() method - unsure how to get object value');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		// Ensure the value matches the data type specified to prevent mangling
@@ -775,7 +1003,13 @@ abstract class fActiveRecord
 	protected function set($column, $value)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not exist',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		// We consider an empty string to be equivalent to NULL
@@ -805,10 +1039,24 @@ abstract class fActiveRecord
 	public function store()
 	{
 		if (fORM::checkHookCallback($this, 'replace::store()')) {
-			return fORM::callHookCallback($this, 'replace::store()', $this->values, $this->old_values, $this->related_records, $this->debug);	
+			return fORM::callHookCallback(
+				$this,
+				'replace::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);	
 		}
 		
-		fORM::callHookCallback($this, 'pre::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'pre::store()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 		
 		try {
 			$table       = fORM::tablize($this);
@@ -831,11 +1079,25 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('BEGIN');
 			}
 			
-			fORM::callHookCallback($this, 'post-begin::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-begin::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			$this->validate();
 			
-			fORM::callHookCallback($this, 'post-validate::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-validate::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			// Storing main table
 			
@@ -884,13 +1146,27 @@ abstract class fActiveRecord
 				}
 			}
 			
-			fORM::callHookCallback($this, 'pre-commit::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'pre-commit::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::getInstance()->translatedQuery('COMMIT');
 			}
 			
-			fORM::callHookCallback($this, 'post-commit::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-commit::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 		} catch (fPrintableException $e) {
 			
@@ -898,7 +1174,14 @@ abstract class fActiveRecord
 				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
 			}
 			
-			fORM::callHookCallback($this, 'post-rollback::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+			fORM::callHookCallback(
+				$this,
+				'post-rollback::store()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug
+			);
 			
 			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
 				$this->values[$pk_column] = $this->old_values[$pk_column][0];
@@ -908,14 +1191,18 @@ abstract class fActiveRecord
 			throw $e;
 		}
 		
-		fORM::callHookCallback($this, 'post::store()', $this->values, $this->old_values, $this->related_records, $this->debug);
+		fORM::callHookCallback(
+			$this,
+			'post::store()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug
+		);
 		
 		// If we got here we succefully stored, so update old values to make exists() work 
 		foreach ($this->values as $column => $value) {
-			if (!isset($this->old_values[$column])) {
-				$this->old_values[$column] = array();	
-			}
-			$this->old_values[$column][] = $value;
+			$this->old_values[$column] = array($value);
 		}
 	}
 	
@@ -930,13 +1217,29 @@ abstract class fActiveRecord
 	 */
 	public function validate($return_messages=FALSE)
 	{
-		if (fORM::checkHookCallback($this, 'replace::populate()')) {
-			return fORM::callHookCallback($this, 'replace::populate()', $this->values, $this->old_values, $this->related_records, $this->debug, $return_messages);	
+		if (fORM::checkHookCallback($this, 'replace::validate()')) {
+			return fORM::callHookCallback(
+				$this,
+				'replace::validate()',
+				$this->values,
+				$this->old_values,
+				$this->related_records,
+				$this->debug,
+				$return_messages
+			);	
 		}
 		
 		$validation_messages = array();
 		
-		fORM::callHookCallback($this, 'pre::validate()', $this->values, $this->old_values, $this->related_records, $this->debug, $validation_messages);
+		fORM::callHookCallback(
+			$this,
+			'pre::validate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug,
+			$validation_messages
+		);
 		
 		$table = fORM::tablize($this);
 		
@@ -948,7 +1251,15 @@ abstract class fActiveRecord
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		
-		fORM::callHookCallback($this, 'post::validate()', $this->values, $this->old_values, $this->related_records, $this->debug, $validation_messages);
+		fORM::callHookCallback(
+			$this,
+			'post::validate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->debug,
+			$validation_messages
+		);
 		
 		fORMValidation::reorderMessages($table, $validation_messages);
 		
@@ -957,8 +1268,14 @@ abstract class fActiveRecord
 		}
 		
 		if (!empty($validation_messages)) {
-			$message = '<p>The following problems were found:</p><ul><li>' . join('</li><li>', $validation_messages) . '</li></ul>';
-			fCore::toss('fValidationException', $message);
+			fCore::toss(
+				'fValidationException',
+				sprintf(
+					"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
+					fCore::compose("The following problems we found:"),
+					join("</li>\n<li>", $validation_messages)
+				)
+			);
 		}
 	}
 }
