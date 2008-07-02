@@ -65,7 +65,15 @@ class fORMColumn
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a date created column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as a date created column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -101,7 +109,15 @@ class fORMColumn
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a date updated column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as a date updated column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -137,7 +153,15 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as an email column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as an email column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -175,7 +199,15 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a link column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as a link column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -219,16 +251,37 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {                                                                                                                       
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a random string column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as a random string column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
 		}
 		
 		$valid_types = array('alphanumeric', 'alpha', 'numeric', 'hexadecimal');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'The type, ' . $type . ', must be one of ' . join(', ', $valid_types) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The type specified, %s, is an invalid type. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);	
 		}
 		
 		if (!is_numeric($length) || $length < 1) {
-			fCore::toss('fProgrammerException', 'The length specified, ' . $length . ', needs to be an integer greater than zero.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The length specified, %s, needs to be an integer greater than zero.',
+					$length
+				)
+			);	
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -464,7 +517,10 @@ class fORMColumn
 				continue;	
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
-				$validation_messages[] = fORM::getColumnName($class_name, $column) . ': Please enter an email address in the form name@example.com';
+				$validation_messages[] = fCore::compose(
+					'%s: Please enter an email address in the form name@example.com',
+					fORM::getColumnName($class_name, $column)
+				);
 			}	
 		}
 	}
@@ -496,7 +552,10 @@ class fORMColumn
 				continue;	
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
-				$validation_messages[] = fORM::getColumnName($class, $column) . ': Please enter a link in the form http://www.example.com';
+				$validation_messages[] = fCore::compose(
+					'%s: Please enter a link in the form http://www.example.com',
+					fORM::getColumnName($class, $column)
+				);
 			}	
 		}
 	}

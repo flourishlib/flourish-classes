@@ -44,7 +44,13 @@ class fORMDatabase
 		$table_alias = self::findTableAlias($table, $joins);
 		
 		if (!$table_alias) {
-			fCore::toss('fProgrammerException', 'The table, ' . $table . ', has not been joined to yet, so it can not be joined from');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compsoe(
+					'The table %s has not been joined to yet, so it can not be joined from',
+					fCore::dump($table)
+				)
+			);
 		}
 		
 		$aliases = array();
@@ -203,7 +209,15 @@ class fORMDatabase
 		$routes = fORMSchema::getRoutes($table, $related_table);
 						
 		if (!isset($routes[$route])) {
-			fCore::toss('fProgrammerException', 'An invalid route, ' . $route . ', was specified for the relationship ' . $table . ' to ' . $related_table);
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'An invalid route, %s, was specified for the relationship from %s to %s',
+					fCore::dump($route),
+					fCore::dump($table),
+					fCore::dump($related_table)
+				)
+			);
 		}
 		
 		if (isset($joins[$table . '_' . $related_table . '{' . $route . '}'])) {
@@ -300,7 +314,13 @@ class fORMDatabase
 		foreach ($order_bys as $column => $direction) {
 			$direction = strtoupper($direction);
 			if (!in_array($direction, array('ASC', 'DESC'))) {
-				fCore::toss('fProgrammerException', 'Invalid direction, ' . $direction . ', specified');
+				fCore::toss(
+					'fProgrammerException',
+					fCore::compose(
+						'An invalid direction, %s, was specified',
+						fCore::dump($direction)
+					)
+				);
 			}
 			
 			if (preg_match('#^(?:\w+(?:\{\w+\})?=>)?(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $matches)) {
@@ -458,7 +478,13 @@ class fORMDatabase
 			// Multi-column condition
 			if (strpos($column, '|') !== FALSE) {
 				if ($type != '~') {
-					fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+					fCore::toss(
+						'fProgrammerException',
+						fCore::compose(
+							'An invalid matching type, %s, was specified',
+							fCore::dump($type)
+						)
+					);
 				}
 				$columns = self::addTableToValues($table, explode('|', $column));
 				
@@ -504,7 +530,13 @@ class fORMDatabase
 							$sql[] = '(' . join(' OR ', $condition) . ')';
 							break;
 						default:
-							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+							fCore::toss(
+								'fProgrammerException',
+								fCore::compose(
+									'An invalid matching type, %s, was specified',
+									fCore::dump($type)
+								)
+							);
 							break;
 					}
 					
@@ -525,7 +557,13 @@ class fORMDatabase
 							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');
 							break;
 						default:
-							fCore::toss('fProgrammerException', 'Invalid matching type, ' . $type . ', specified');
+							fCore::toss(
+								'fProgrammerException',
+								fCore::compose(
+									'An invalid matching type, %s, was specified',
+									fCore::dump($type)
+								)
+							);
 							break;
 					}
 				}
@@ -564,7 +602,14 @@ class fORMDatabase
 	static public function getInstance()
 	{
 		if (!self::$database_object) {
-			fCore::toss('fProgrammerException', 'The method initialize() needs to be called before getInstance()');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The method %s needs to be called before %s',
+					'initialize()',
+					'getInstance()'
+				)
+			);
 		}
 		return self::$database_object;
 	}
@@ -600,7 +645,14 @@ class fORMDatabase
 	static public function insertFromClause($table, $sql, $joins=array())
 	{
 		if (strpos($sql, ':from_clause') === FALSE) {
-			fCore::toss('fProgrammerException', "No :from_clause placeholder was found in:\n" . $sql);
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					"No %s placeholder was found in:\n%s",
+					'getInstance()',
+					$sql
+				)
+			);
 		}
 		
 		// Separate the SQL from quoted values
@@ -699,8 +751,16 @@ class fORMDatabase
 		$class = fORM::classize($table);
 		$value = fORM::scalarize($class, $column, $value);
 		
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
-			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');
+		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($comparison_operator),
+					join(', ', $valid_comparison_operators)
+				)
+			);
 		}
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
@@ -731,11 +791,10 @@ class fORMDatabase
 			$prepared = $co . self::getInstance()->escapeBlob($value);
 		} elseif ($column_info['type'] == 'boolean') {
 			$prepared = $co . self::getInstance()->escapeBoolean($value);
-		} else {
-			if (!is_numeric($value)) {
-				fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid ' . $column_info['type']);
-			}
-			$prepared = $co . $value;
+		} elseif ($column_info['type'] == 'integer') {
+			$prepared = $co . self::getInstance()->escapeInteger($value);
+		} elseif ($column_info['type'] == 'float') {
+			$prepared = $co . self::getInstance()->escapeFloat($value);
 		}
 		
 		return $prepared;
@@ -753,8 +812,16 @@ class fORMDatabase
 	 */
 	static public function prepareByType($value, $comparison_operator=NULL)
 	{
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN'))) {
-			fCore::toss('fProgrammerException', 'Invalid comparison operator specified');
+		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($comparison_operator),
+					join(', ', $valid_comparison_operators)
+				)
+			);
 		}
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';

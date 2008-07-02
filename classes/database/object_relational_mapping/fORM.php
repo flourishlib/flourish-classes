@@ -234,7 +234,14 @@ class fORM
 			eval('class ' . $class_name . ' extends fActiveRecord { };');
 			return;
 		}
-		fCore::toss('fProgrammerException', 'The class specified does not correspond to a database table');
+		
+		fCore::toss(
+			'fProgrammerException',
+			fCore::compose(
+				'The class specified, %s, does not correspond to a database table',
+				fCore::dump($class_name)
+			)
+		);
 	}
 	
 	
@@ -496,11 +503,27 @@ class fORM
 		);
 		
 		if (!in_array($hook, $valid_hooks) && !$replace_hook) {
-			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', should be one of: ' . join(', ', $valid_hooks) . ' or replace::{someMethod}().');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The hook specified, %s, should be one of: %s or %s.',
+					fCore::expose($hook),
+					join(', ', $valid_hooks),
+					'replace::{methodName}()'
+				)
+			);	
 		}
 		
 		if ($replace_hook && in_array($hook, $invalid_replace_hooks)) {
-			fCore::toss('fProgrammerException', 'The hook specified, ' . $hook . ', is an invalid replace:: hook. Can not be one of: ' . join(', ', $invalid_replace_hooks) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The hook specified, %s, is an invalid %s hook. Can not be one of: %s.',
+					fCore::dump($hook),
+					'replace::',
+					join(', ', $invalid_replace_hooks)
+				)
+			);	
 		}
 		
 		if (!isset(self::$hook_callbacks[$class])) {

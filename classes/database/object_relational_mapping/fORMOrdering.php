@@ -40,7 +40,14 @@ class fORMOrdering
 		$unique_keys = fORMSchema::getInstance()->getKeys($table, 'unique');
 		
 		if ($data_type != 'integer') {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. It must be an integer column to be set as an ordering column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. It must be an integer column to be set as an ordering column.',
+					fCore::dump($column),
+					$data_type
+				)
+			);	
 		}
 		
 		$found = FALSE;
@@ -53,7 +60,13 @@ class fORMOrdering
 		}
 		
 		if (!$found) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.',
+					fCore::dump($column)
+				)
+			);	
 		}
 		
 		$cameled_column = fInflection::camelize($column, TRUE);
@@ -68,6 +81,10 @@ class fORMOrdering
 		
 		$hook     = 'post-validate::store()';
 		$callback = array('fORMOrdering', 'reorder');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
+		$hook     = 'pre-commit::delete()';
+		$callback = array('fORMOrdering', 'delete');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
 		// Ensure we only ever have one ordering column by overwriting
@@ -113,6 +130,40 @@ class fORMOrdering
 		}		
 		
 		return join(' AND ', $conditions);
+	}
+	
+	
+	/**
+	 * Re-orders other recrods in the set when the record specified is deleted
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
+	 * @return string  The formatted link
+	 */
+	static public function delete($class, &$values, &$old_values, &$related_records, $debug)
+	{              
+		$class_name = fORM::getClassName($class);
+		$table      = fORM::tablize($class);
+		
+		$column        = self::$ordering_columns[$class_name]['column'];
+		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		
+		$current_value = $values[$column];
+		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
+		
+		// Close the gap for all records after this one in the set
+		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' - 1 ';
+		$sql .= 'WHERE ' . $column . ' > ' . (($old_value) ? $old_value : $current_value);
+		if ($other_columns) {
+			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
+		}
+		
+		fORMDatabase::getInstance()->translatedQuery($sql);
 	}
 	
 	
@@ -402,13 +453,13 @@ class fORMOrdering
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-			$validation_messages[] = $column_name . ": Please enter an integer";
+			$validation_messages[] = fCore::compose('%s: Please enter an integer', $column_name);
 		
 		} elseif ($current_value < 1) {
-			$validation_messages[] = $column_name . ": The value can not be less than 1";
+			$validation_messages[] = fCore::compose('%s: The value can not be less than 1', $column_name);
 			
 		} elseif ($current_value > $new_max_value) {
-			$validation_messages[] = $column_name . ": The value can not be greater than " . $new_max_value;
+			$validation_messages[] = fCore::compose('%s: The value can not be greater than %s', $column_name, $new_max_value);
 		}
 	}
 	

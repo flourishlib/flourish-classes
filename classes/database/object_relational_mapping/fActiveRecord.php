@@ -421,7 +421,7 @@ abstract class fActiveRecord
 				}
 			}
 			
-			if (!$restriction_messages) {
+			if ($restriction_messages) {
 				fCore::toss(
 					'fValidationException',
 					sprintf(

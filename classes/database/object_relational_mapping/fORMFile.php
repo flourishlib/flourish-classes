@@ -81,7 +81,13 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		if (!array_key_exists($column, self::$image_upload_columns[$class])) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', has not been configured as an image upload column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, has not been configured as an image upload column.',
+					fCore::dump($column)
+				)
+			);	
 		}
 		
 		if (empty(self::$fimage_method_calls[$class])) {
@@ -112,7 +118,13 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		if (empty(self::$file_upload_columns[$class][$column])) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', has not been configured as a file or image upload column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, has not been configured as a file or image upload column.',
+					fCore::dump($column)
+				)
+			);
 		}
 		
 		if (empty(self::$fupload_method_calls[$class])) {
@@ -186,7 +198,15 @@ class fORMFile
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss('fProgrammerException', 'The column specified, ' . $column . ', is a ' . $data_type . ' column. Must be one of ' . join(', ', $valid_data_types) . ' to be set as a file upload column.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, is a %s column. Must be one of %s to be set as a file upload column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
 		}
 		
 		if (!is_object($directory)) {
@@ -194,7 +214,13 @@ class fORMFile
 		}
 		
 		if (!$directory->isWritable()) {
-			fCore::toss('fEnvironmentException', 'The file upload directory, ' . $directory->getPath() . ', is not writable');	
+			fCore::toss(
+				'fEnvironmentException',
+				fCore::compose(
+					'The file upload directory, %s, is not writable',
+					$directory->getPath()
+				)
+			);	
 		}
 		
 		$camelized_column = fInflection::camelize($column, TRUE);
@@ -288,7 +314,14 @@ class fORMFile
 		$valid_image_types = array(NULL, 'gif', 'jpg', 'png');
 		if (!in_array($image_type, $valid_image_types)) {
 			$valid_image_types[0] = '{null}';
-			fCore::toss('fProgrammerException', 'The image type specified, ' . $image_type . ', is not valid. Must be one of: ' . join(', ', $valid_image_types) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The image type specified, %s, is not valid. Must be one of: %s.',
+					fCore::dump($image_type),
+					join(', ', $valid_image_types)
+				)
+			);	
 		}
 		
 		self::configureFileUploadColumn($class, $column, $directory);
@@ -539,7 +572,13 @@ class fORMFile
 		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
 		
 		if (sizeof($parameters) > 1) {
-			fCore::toss('fProgrammerException', 'The column ' . $column . ' does not accept more than one parameter');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The column specified, %s, does not accept more than one parameter',
+					fCore::dump($column)
+				)
+			);	
 		}
 		
 		$translate_to_web_path = (empty($parameters[0])) ? FALSE : TRUE;
@@ -578,7 +617,13 @@ class fORMFile
 				$callback   = array($image, $method_call['method']);
 				$parameters = $method_call['parameters'];
 				if (!is_callable($callback)) {
-					fCore::toss('fProgrammerException', 'The fImage method specified, ' . $method_call['method'] . ', is not a valid method.');
+					fCore::toss(
+						'fProgrammerException',
+						fCore::compose(
+							'The fImage method specified, %s, is not a valid method.',
+							fCore::dump($method_call['method']) . '()'
+						)
+					);
 				}
 				call_user_func_array($callback, $parameters);
 			}	
@@ -636,14 +681,26 @@ class fORMFile
 		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
 		
 		if (!array_key_exists(0, $parameters)) {
-			fCore::toss('fProgrammerException', 'The method ' . $method_name . '() requires exactly one parameter');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The method %s requires exactly one parameter',
+					fCore::dump($method_name) . '()'
+				)
+			);	
 		}
 		
 		$file_path    = $parameters[0];
 		$invalid_file = !fCore::stringlike($file_path);
 		
 		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
-			fCore::toss('fEnvironmentException', 'The file specified, ' . fCore::dump($file_path) . ', does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.');	
+			fCore::toss(
+				'fEnvironmentException',
+				fCore::compose(
+					'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
+					fCore::dump($file_path)
+				)
+			);	
 		}
 		
 		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
@@ -677,7 +734,13 @@ class fORMFile
 		if (!empty(self::$fupload_method_calls[$class][$column])) {
 			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
 				if (!is_callable($method_call['callback'])) {
-					fCore::toss('fProgrammerException', 'The fUpload method specified, ' . $method_call['method'] . ', is not a valid method.');
+					fCore::toss(
+						'fProgrammerException', 
+						fCore::compose(
+							'The fUpload method specified, %s, is not a valid method.',
+							fCore::dump($method_call['method']) . '()'
+						)
+					);
 				}
 				call_user_func_array($method_call['callback'], $method_call['parameters']);	
 			}	
@@ -737,7 +800,7 @@ class fORMFile
 			// If there is an existing file and none was uploaded, substitute the existing file
 			$existing_file = fRequest::get('__flourish_existing_' . $column);
 			$delete_file   = fRequest::get('__flourish_delete_' . $column, 'boolean');
-			$no_upload     = $e->getMessage() == 'Please upload a file';
+			$no_upload     = $e->getMessage() == fCore::compose('Please upload a file');
 			
 			if ($existing_file && $delete_file && $no_upload) {
 				$file = NULL;
@@ -841,8 +904,8 @@ class fORMFile
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
-			$search_message  = $column_name . ': Please enter a value';
-			$replace_message = $column_name . ': Please upload a file';
+			$search_message  = fCore::compose('%s: Please enter a value', $column_name);
+			$replace_message = fCore::compose('%s: Please upload a file', $column_name);;
 			$validation_messages = str_replace($search_message, $replace_message, $validation_messages);
 			
 			self::setUpFUpload($class, $column);
@@ -853,7 +916,7 @@ class fORMFile
 					fUpload::validate($column);
 				}
 			} catch (fValidationException $e) {
-				if ($e->getMessage() != 'Please upload a file') {
+				if ($e->getMessage() != fCore::compose('Please upload a file')) {
 					$validation_messages[] = $column_name . ': ' . $e->getMessage();	
 				}
 			}

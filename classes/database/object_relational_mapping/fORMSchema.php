@@ -43,7 +43,10 @@ class fORMSchema
 	static public function enableSmartCaching($cache_file)
 	{
 		if (!self::getInstance() instanceof fSchema) {
-			fCore::toss('fProgrammerException', 'Smart caching is only available (and most likely only applicable) if you are using the fSchema object');       
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose('Smart caching is only available (and most likely only applicable) if you are using the fSchema object')
+			);       
 		}
 		self::getInstance()->setCacheFile($cache_file);
 		fCore::registerTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo'));
@@ -88,7 +91,14 @@ class fORMSchema
 		);
 		if (!in_array($relationship_type, $valid_relationship_types)) {
 			$valid_relationship_types[0] = '{null}';
-			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($relationship_type),
+					join(', ', $valid_relationship_types)
+				)
+			);	
 		}
 		
 		if ($route === NULL) {
@@ -99,7 +109,16 @@ class fORMSchema
 		
 		if (!isset($routes[$route])) {                                                                             
 			$relationship_type .= ($relationship_type) ? ' ' : '';
-			fCore::toss('fProgrammerException', 'The route specified, ' . $route . ', for the ' . $relationship_type . 'relationship between ' . $table . ' and ' . $related_table . ' does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The route specified, %s, for the %srelationship between %s and %s does not exist',
+					fCore::dump($route),
+					$relationship_type,
+					fCore::dump($table),
+					fCore::dump($related_table)
+				)
+			);
 		}
 		
 		return $routes[$route];
@@ -130,7 +149,14 @@ class fORMSchema
 		);
 		if (!in_array($relationship_type, $valid_relationship_types)) {
 			$valid_relationship_types[0] = '{null}';
-			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($relationship_type),
+					join(', ', $valid_relationship_types)
+				)
+			);	
 		}
 		
 		$routes = self::getRoutes($table, $related_table, $relationship_type);
@@ -143,11 +169,27 @@ class fORMSchema
 		
 		if (sizeof($keys) > 1) {
 			$relationship_type .= ($relationship_type) ? ' ' : '';
-			fCore::toss('fProgrammerException', 'There is more than one route for the ' . $relationship_type . 'relationship between ' . $table . ' and ' . $related_table);
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'There is more than one route for the %srelationship between %s and %s',
+					$relationship_type,
+					fCore::dump($table),
+					fCore::dump($related_table)
+				)
+			);
 		}
 		if (sizeof($keys) == 0) {
 			$relationship_type .= ($relationship_type) ? ' ' : '';
-			fCore::toss('fProgrammerException', 'The table ' . $table . ' is not in a ' . $relationship_type . 'relationship with the table ' . $related_table);
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The table %s is not in a %srelationship with the table %s',
+					fCore::dump($table),
+					$relationship_type,
+					fCore::dump($related_table)
+				)
+			);
 		}
 		
 		return $keys[0];
@@ -167,7 +209,14 @@ class fORMSchema
 	{
 		$valid_types = array('one-to-one', 'one-to-many', 'many-to-one', 'many-to-many');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
 		}
 		
 		if (isset($relationship['join_table']) || $type == 'many-to-many') {
@@ -205,7 +254,14 @@ class fORMSchema
 		);
 		if (!in_array($relationship_type, $valid_relationship_types)) {
 			$valid_relationship_types[0] = '{null}';
-			fCore::toss('fProgrammerException', 'The relationship type specified, ' . $relationship_type . ', is invalid. Must be one of: ' . join(', ', $valid_relationship_types) . '.');	
+			fCore::toss(
+				'fProgrammerException',
+				fCore::compose(
+					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($relationship_type),
+					join(', ', $valid_relationship_types)
+				)
+			);	
 		}
 		
 		$all_relationships = self::getInstance()->getRelationships($table);
