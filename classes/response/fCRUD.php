@@ -63,7 +63,7 @@ class fCRUD
 	static public function createSortableColumn($column, $column_name=NULL)
 	{
 		if ($column_name === NULL) {
-			$column_name = fInflection::humanize($column);
+			$column_name = fGrammar::humanize($column);
 		}
 		
 		if (self::$sort_column == $column) {
@@ -156,6 +156,9 @@ class fCRUD
 	 * 
 	 * If a value === '' and no cast to is specified, the value will become NULL.
 	 * 
+	 * If a query string of '?reset' is passed, all previous search values will
+	 * be erased.
+	 * 
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to
 	 * @param  string $default  The default value
@@ -163,6 +166,11 @@ class fCRUD
 	 */
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
+		// Reset values if requested
+		if (substr(fURL::getWithQueryString(), -6) == '?reset') {
+			self::setPreviousSearchValue($column, NULL);	
+		}
+		
 		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
 			self::$search_values[$column] = self::getPreviousSearchValue($column);
 			self::$loaded_values[$column] = self::$search_values[$column];

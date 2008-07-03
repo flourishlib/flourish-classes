@@ -67,7 +67,7 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as a date created column.',
 					fCore::dump($column),
 					$data_type,
@@ -76,9 +76,9 @@ class fORMColumn
 			);	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -111,7 +111,7 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as a date updated column.',
 					fCore::dump($column),
 					$data_type,
@@ -120,9 +120,9 @@ class fORMColumn
 			);
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -155,7 +155,7 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as an email column.',
 					fCore::dump($column),
 					$data_type,
@@ -164,9 +164,9 @@ class fORMColumn
 			);	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -201,7 +201,7 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as a link column.',
 					fCore::dump($column),
 					$data_type,
@@ -210,13 +210,13 @@ class fORMColumn
 			);	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
-		$hook     = 'replace::prepare' . $cameled_column . '()';
+		$hook     = 'replace::prepare' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'prepareLinkColumn');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -253,7 +253,7 @@ class fORMColumn
 		if (!in_array($data_type, $valid_data_types)) {                                                                                                                       
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as a random string column.',
 					fCore::dump($column),
 					$data_type,
@@ -266,7 +266,7 @@ class fORMColumn
 		if (!in_array($type, $valid_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The type specified, %s, is an invalid type. Must be one of: %s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
@@ -277,16 +277,16 @@ class fORMColumn
 		if (!is_numeric($length) || $length < 1) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The length specified, %s, needs to be an integer greater than zero.',
 					$length
 				)
 			);	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -318,7 +318,7 @@ class fORMColumn
 	 */
 	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$class_name = fORM::getClassName($class);
 		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -368,7 +368,7 @@ class fORMColumn
 	 */
 	static public function prepareLinkColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		if (empty($values[$column])) {
 			return $values[$column];
@@ -517,7 +517,7 @@ class fORMColumn
 				continue;	
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
-				$validation_messages[] = fCore::compose(
+				$validation_messages[] = fGrammar::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fORM::getColumnName($class_name, $column)
 				);
@@ -552,7 +552,7 @@ class fORMColumn
 				continue;	
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
-				$validation_messages[] = fCore::compose(
+				$validation_messages[] = fGrammar::compose(
 					'%s: Please enter a link in the form http://www.example.com',
 					fORM::getColumnName($class, $column)
 				);

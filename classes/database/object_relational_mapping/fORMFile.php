@@ -83,7 +83,7 @@ class fORMFile
 		if (!array_key_exists($column, self::$image_upload_columns[$class])) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, has not been configured as an image upload column.',
 					fCore::dump($column)
 				)
@@ -120,7 +120,7 @@ class fORMFile
 		if (empty(self::$file_upload_columns[$class][$column])) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, has not been configured as a file or image upload column.',
 					fCore::dump($column)
 				)
@@ -200,7 +200,7 @@ class fORMFile
 		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. Must be one of %s to be set as a file upload column.',
 					fCore::dump($column),
 					$data_type,
@@ -216,16 +216,16 @@ class fORMFile
 		if (!$directory->isWritable()) {
 			fCore::toss(
 				'fEnvironmentException',
-				fCore::compose(
+				fGrammar::compose(
 					'The file upload directory, %s, is not writable',
 					$directory->getPath()
 				)
 			);	
 		}
 		
-		$camelized_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMFile', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -316,7 +316,7 @@ class fORMFile
 			$valid_image_types[0] = '{null}';
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The image type specified, %s, is not valid. Must be one of: %s.',
 					fCore::dump($image_type),
 					join(', ', $valid_image_types)
@@ -421,7 +421,7 @@ class fORMFile
 	 */
 	static public function encode($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
 		
@@ -445,7 +445,7 @@ class fORMFile
 	 */
 	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$class_name = fORM::getClassName($class);
 		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -546,7 +546,7 @@ class fORMFile
 		
 		foreach (self::$file_upload_columns[$class_name] as $column => $directory) {
 			if (fUpload::check($column)) {
-				$method = 'upload' . fInflection::camelize($column, TRUE);
+				$method = 'upload' . fGrammar::camelize($column, TRUE);
 				$class->$method();
 			}
 		}
@@ -569,12 +569,12 @@ class fORMFile
 	 */
 	static public function prepare($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		if (sizeof($parameters) > 1) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not accept more than one parameter',
 					fCore::dump($column)
 				)
@@ -619,7 +619,7 @@ class fORMFile
 				if (!is_callable($callback)) {
 					fCore::toss(
 						'fProgrammerException',
-						fCore::compose(
+						fGrammar::compose(
 							'The fImage method specified, %s, is not a valid method.',
 							fCore::dump($method_call['method']) . '()'
 						)
@@ -676,14 +676,14 @@ class fORMFile
 	{
 		$class = fORM::getClassName($class);
 		
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
 		
 		if (!array_key_exists(0, $parameters)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The method %s requires exactly one parameter',
 					fCore::dump($method_name) . '()'
 				)
@@ -696,7 +696,7 @@ class fORMFile
 		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
 			fCore::toss(
 				'fEnvironmentException',
-				fCore::compose(
+				fGrammar::compose(
 					'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
 					fCore::dump($file_path)
 				)
@@ -736,7 +736,7 @@ class fORMFile
 				if (!is_callable($method_call['callback'])) {
 					fCore::toss(
 						'fProgrammerException', 
-						fCore::compose(
+						fGrammar::compose(
 							'The fUpload method specified, %s, is not a valid method.',
 							fCore::dump($method_call['method']) . '()'
 						)
@@ -766,7 +766,7 @@ class fORMFile
 	{
 		$class = fORM::getClassName($class);
 		
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		self::setUpFUpload($class, $column);
 		
@@ -788,10 +788,8 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
-			if (fUpload::check($column)) {
-				$file = fUpload::upload($upload_dir . self::TEMP_DIRECTORY, $column);	
-				fUpload::reset();
-			}
+			$file = fUpload::upload($upload_dir->getPath() . self::TEMP_DIRECTORY, $column);	
+			fUpload::reset();
 		
 		// If there was an eror, check to see if we have an existing file
 		} catch (fExpectedException $e) {
@@ -800,12 +798,13 @@ class fORMFile
 			// If there is an existing file and none was uploaded, substitute the existing file
 			$existing_file = fRequest::get('__flourish_existing_' . $column);
 			$delete_file   = fRequest::get('__flourish_delete_' . $column, 'boolean');
-			$no_upload     = $e->getMessage() == fCore::compose('Please upload a file');
+			$no_upload     = $e->getMessage() == fGrammar::compose('Please upload a file');
 			
 			if ($existing_file && $delete_file && $no_upload) {
 				$file = NULL;
+				return;
 				
-			} elseif ($existing_file && $no_upload) {
+			} elseif ($existing_file) {
 				
 				// If the file is not in the database yet, look in the temp directory
 				if ($existing_file != $values[$column] && file_exists($upload_dir->getPath() . self::TEMP_DIRECTORY . $existing_file)) {
@@ -823,12 +822,12 @@ class fORMFile
 					$old_values[$column][] = $current_file;
 					$values[$column]       = $file;
 				}
-				
-				return;
-				
-			} else {
-				return;	
-			}	
+			}
+			
+			if (!$no_upload) {
+				throw $e;	
+			}
+			return;
 		}
 		
 		// Assign the file
@@ -904,8 +903,8 @@ class fORMFile
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
-			$search_message  = fCore::compose('%s: Please enter a value', $column_name);
-			$replace_message = fCore::compose('%s: Please upload a file', $column_name);;
+			$search_message  = fGrammar::compose('%s: Please enter a value', $column_name);
+			$replace_message = fGrammar::compose('%s: Please upload a file', $column_name);;
 			$validation_messages = str_replace($search_message, $replace_message, $validation_messages);
 			
 			self::setUpFUpload($class, $column);
@@ -916,7 +915,7 @@ class fORMFile
 					fUpload::validate($column);
 				}
 			} catch (fValidationException $e) {
-				if ($e->getMessage() != fCore::compose('Please upload a file')) {
+				if ($e->getMessage() != fGrammar::compose('Please upload a file')) {
 					$validation_messages[] = $column_name . ': ' . $e->getMessage();	
 				}
 			}

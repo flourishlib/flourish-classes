@@ -42,7 +42,7 @@ class fORMOrdering
 		if ($data_type != 'integer') {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, is a %s column. It must be an integer column to be set as an ordering column.',
 					fCore::dump($column),
 					$data_type
@@ -62,16 +62,16 @@ class fORMOrdering
 		if (!$found) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.',
 					fCore::dump($column)
 				)
 			);	
 		}
 		
-		$cameled_column = fInflection::camelize($column, TRUE);
+		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $cameled_column . '()';
+		$hook     = 'replace::inspect' . $camelized_column . '()';
 		$callback = array('fORMOrdering', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
@@ -183,7 +183,7 @@ class fORMOrdering
 	 */
 	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$class_name = fORM::getClassName($class);
 		$table      = fORM::tablize($class);
@@ -453,13 +453,13 @@ class fORMOrdering
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-			$validation_messages[] = fCore::compose('%s: Please enter an integer', $column_name);
+			$validation_messages[] = fGrammar::compose('%s: Please enter an integer', $column_name);
 		
 		} elseif ($current_value < 1) {
-			$validation_messages[] = fCore::compose('%s: The value can not be less than 1', $column_name);
+			$validation_messages[] = fGrammar::compose('%s: The value can not be less than 1', $column_name);
 			
 		} elseif ($current_value > $new_max_value) {
-			$validation_messages[] = fCore::compose('%s: The value can not be greater than %s', $column_name, $new_max_value);
+			$validation_messages[] = fGrammar::compose('%s: The value can not be greater than %s', $column_name, $new_max_value);
 		}
 	}
 	

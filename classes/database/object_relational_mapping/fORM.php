@@ -209,7 +209,7 @@ class fORM
 	static public function classize($table_name)
 	{
 		if (!isset(self::$table_class_map[$table_name])) {
-			self::$table_class_map[$table_name] = fInflection::camelize(fInflection::singularize($table_name), TRUE);
+			self::$table_class_map[$table_name] = fGrammar::camelize(fGrammar::singularize($table_name), TRUE);
 		}
 		return self::$table_class_map[$table_name];
 	}
@@ -237,7 +237,7 @@ class fORM
 		
 		fCore::toss(
 			'fProgrammerException',
-			fCore::compose(
+			fGrammar::compose(
 				'The class specified, %s, does not correspond to a database table',
 				fCore::dump($class_name)
 			)
@@ -312,7 +312,7 @@ class fORM
 		}
 		
 		if (!isset(self::$column_names[$class][$column])) {
-			self::$column_names[$class][$column] = fInflection::humanize($column);
+			self::$column_names[$class][$column] = fGrammar::humanize($column);
 		}
 		
 		return self::$column_names[$class][$column];
@@ -332,7 +332,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!isset(self::$record_names[$class])) {
-			self::$record_names[$class] = fInflection::humanize($class);
+			self::$record_names[$class] = fGrammar::humanize($class);
 		}
 		
 		return self::$record_names[$class];
@@ -505,7 +505,7 @@ class fORM
 		if (!in_array($hook, $valid_hooks) && !$replace_hook) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The hook specified, %s, should be one of: %s or %s.',
 					fCore::expose($hook),
 					join(', ', $valid_hooks),
@@ -517,7 +517,7 @@ class fORM
 		if ($replace_hook && in_array($hook, $invalid_replace_hooks)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The hook specified, %s, is an invalid %s hook. Can not be one of: %s.',
 					fCore::dump($hook),
 					'replace::',
@@ -643,7 +643,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!$table_name = array_search($class, self::$table_class_map)) {
-			$table_name = fInflection::underscorize(fInflection::pluralize($class));
+			$table_name = fGrammar::underscorize(fGrammar::pluralize($class));
 			self::$table_class_map[$table_name] = $class;
 		}
 		

@@ -21,7 +21,7 @@ abstract class fUnexpectedException extends fPrintableException
 	 */
 	public function printMessage()
 	{
-		// underscorize the current exception class name, extracted from fInflection::underscorize() to reduce dependencies
+		// underscorize the current exception class name, extracted from fGrammar::underscorize() to reduce dependencies
 		$exception_class = strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
 		$css_class       = 'exception ' . $exception_class;
 		

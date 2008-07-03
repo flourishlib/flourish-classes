@@ -424,7 +424,7 @@ class fORMRelated
 			$object_to_delete->delete(FALSE);
 		}
 		
-		$set_method_name = 'set' . fInflection::camelize($relationship['related_column'], TRUE);
+		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
 		
 		$record_number = 0;
 		$filter        = fORMRelated::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
@@ -467,7 +467,7 @@ class fORMRelated
 		
 		// Then we add back the ones in the record set
 		$join_related_column     = $relationship['join_related_column'];
-		$get_related_method_name = 'get' . fInflection::camelize($relationship['related_column'], TRUE);
+		$get_related_method_name = 'get' . fGrammar::camelize($relationship['related_column'], TRUE);
 		
 		foreach ($record_set as $record) {
 			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());

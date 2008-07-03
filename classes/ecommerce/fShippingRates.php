@@ -850,7 +850,7 @@ XMLDATA;
 		foreach ($field_info as $field => $info) {
 			// Handle simple required fields
 			if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a value\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a value\n";
 			
 			// Handle conditional required fields
 			} elseif (is_array($info['required'])) {
@@ -858,7 +858,7 @@ XMLDATA;
 				$conditional_field  = $keys[0];
 				$conditional_values = $info['required'][$conditional_field];
 				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
-					$message .= fInflection::humanize($field) . ": Please enter a value\n";
+					$message .= fGrammar::humanize($field) . ": Please enter a value\n";
 				}
 			}
 		}
@@ -871,15 +871,15 @@ XMLDATA;
 			}
 			
 			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
-				$message .= fInflection::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
+				$message .= fGrammar::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
 				continue;
 			}
 			if ($info['type'] == 'string' && !is_string($this->request_info[$field]) && !is_numeric($this->request_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a string\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a string\n";
 				continue;
 			}
 			if (isset($info['max_length']) && strlen($this->request_info[$field]) > $info['max_length']) {
-				$message .= fInflection::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
 				continue;
 			}
 		}

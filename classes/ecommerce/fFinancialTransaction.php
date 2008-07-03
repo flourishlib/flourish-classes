@@ -1242,34 +1242,34 @@ class fFinancialTransaction
 		
 		foreach ($field_info as $field => $info) {
 			if ($info['required'] && !isset($this->transaction_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a value\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a value\n";
 			}
 		}
 		
 		foreach ($this->transaction_info as $field => $value) {
 			$info =& $field_info[$field];
 			if (isset($info['valid_values']) && !in_array($this->transaction_info[$field], $info['valid_values'])) {
-				$message .= fInflection::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
+				$message .= fGrammar::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
 				continue;
 			}
 			if ($info['type'] == 'string' && !is_string($this->transaction_info[$field]) && !is_numeric($this->transaction_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a string\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a string\n";
 				continue;
 			}
 			if (isset($info['max_length']) && strlen($this->transaction_info[$field]) > $info['max_length']) {
-				$message .= fInflection::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
 				continue;
 			}
 			if ($info['type'] == 'date' && !$this->standardizeDate($this->transaction_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a month/year\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a month/year\n";
 				continue;
 			}
 			if ($info['type'] == 'money' && !$this->standardizeMoney($this->transaction_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a monetary value\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a monetary value\n";
 				continue;
 			}
 			if ($info['type'] == 'boolean' && !is_bool($this->transaction_info[$field])) {
-				$message .= fInflection::humanize($field) . ": Please enter a boolean value\n";
+				$message .= fGrammar::humanize($field) . ": Please enter a boolean value\n";
 				continue;
 			}
 		}

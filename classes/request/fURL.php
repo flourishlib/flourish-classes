@@ -21,7 +21,7 @@ class fURL
 	 */
 	static public function get()
 	{
-		return str_replace('?' . $_SERVER['QUERY_STRING'], '', $_SERVER['REQUEST_URI']);
+		return preg_replace('#\?.*$#', '', $_SERVER['REQUEST_URI']);
 	}
 	
 	
@@ -37,18 +37,18 @@ class fURL
 	
 	
 	/**
-	 * Returns the current query string
+	 * Returns the current query string, does not include parameters added by a rewrite
 	 * 
 	 * @return string  The query string
 	 */
 	static public function getQueryString()
 	{
-		return $_SERVER['QUERY_STRING'];
+		return preg_replace('#^.*\?#', '', $_SERVER['REQUEST_URI']);
 	}
 	
 	
 	/**
-	 * Returns the current url including query string, but without domain name
+	 * Returns the current url including query string, but without domain name - does not include query string parameters from a rewrite
 	 * 
 	 * @return string  The url with query string
 	 */

@@ -309,7 +309,7 @@ class fTemplating
 		if (!is_array($info)) {
 			$info = array(
 				'path'  => $info,
-				'title' => fInflection::humanize(
+				'title' => fGrammar::humanize(
 					preg_replace('#.*?([^/]+).(rss|xml)$#i', '\1', $info)
 				)
 			);

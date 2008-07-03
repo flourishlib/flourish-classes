@@ -211,7 +211,7 @@ class fORMDatabase
 		if (!isset($routes[$route])) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'An invalid route, %s, was specified for the relationship from %s to %s',
 					fCore::dump($route),
 					fCore::dump($table),
@@ -316,7 +316,7 @@ class fORMDatabase
 			if (!in_array($direction, array('ASC', 'DESC'))) {
 				fCore::toss(
 					'fProgrammerException',
-					fCore::compose(
+					fGrammar::compose(
 						'An invalid direction, %s, was specified',
 						fCore::dump($direction)
 					)
@@ -480,7 +480,7 @@ class fORMDatabase
 				if ($type != '~') {
 					fCore::toss(
 						'fProgrammerException',
-						fCore::compose(
+						fGrammar::compose(
 							'An invalid matching type, %s, was specified',
 							fCore::dump($type)
 						)
@@ -532,7 +532,7 @@ class fORMDatabase
 						default:
 							fCore::toss(
 								'fProgrammerException',
-								fCore::compose(
+								fGrammar::compose(
 									'An invalid matching type, %s, was specified',
 									fCore::dump($type)
 								)
@@ -559,7 +559,7 @@ class fORMDatabase
 						default:
 							fCore::toss(
 								'fProgrammerException',
-								fCore::compose(
+								fGrammar::compose(
 									'An invalid matching type, %s, was specified',
 									fCore::dump($type)
 								)
@@ -604,7 +604,7 @@ class fORMDatabase
 		if (!self::$database_object) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The method %s needs to be called before %s',
 					'initialize()',
 					'getInstance()'
@@ -647,7 +647,7 @@ class fORMDatabase
 		if (strpos($sql, ':from_clause') === FALSE) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					"No %s placeholder was found in:\n%s",
 					'getInstance()',
 					$sql
@@ -755,7 +755,7 @@ class fORMDatabase
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
 					fCore::dump($comparison_operator),
 					join(', ', $valid_comparison_operators)
@@ -816,7 +816,7 @@ class fORMDatabase
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
 					fCore::dump($comparison_operator),
 					join(', ', $valid_comparison_operators)

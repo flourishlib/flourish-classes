@@ -154,7 +154,7 @@ class fTime
 			if ($diff > $break_point) { continue; }
 			
 			$unit_diff = round($diff/$unit_info[0]);
-			$units     = fInflection::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
+			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
 			
 			return $unit_diff . ' ' . $units . $suffix;
 		}

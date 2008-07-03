@@ -41,7 +41,7 @@ abstract class fPrintableException extends Exception
 	 */
 	protected function getCSSClass()
 	{
-		// underscorize the current exception class name, extracted from fInflection::underscorize() to reduce dependencies
+		// underscorize the current exception class name, extracted from fGrammar::underscorize() to reduce dependencies
 		return strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
 	}
 	

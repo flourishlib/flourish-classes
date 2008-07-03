@@ -54,7 +54,7 @@ abstract class fActiveRecord
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list ($action, $subject) = explode('_', fInflection::underscorize($method_name), 2);
+		list ($action, $subject) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
 			return fORM::callHookCallback(
@@ -73,7 +73,7 @@ abstract class fActiveRecord
 		if (($action == 'set' || $action == 'associate' || $action == 'inject') && sizeof($parameters) < 1) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The method, %s, requires at least one parameter',
 					$method_name . '()'
 				)
@@ -112,8 +112,8 @@ abstract class fActiveRecord
 			
 			// Related data methods
 			case 'associate':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
 					return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
@@ -121,8 +121,8 @@ abstract class fActiveRecord
 				return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			case 'build':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
 					return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
@@ -130,7 +130,7 @@ abstract class fActiveRecord
 				return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject);
 			
 			case 'create':
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
 					return fORMRelated::constructRecord($this, $this->values, $subject, $parameters[0]);
@@ -138,8 +138,8 @@ abstract class fActiveRecord
 				return fORMRelated::constructRecord($this, $this->values, $subject);
 			
 			case 'inject':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
 					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
@@ -147,8 +147,8 @@ abstract class fActiveRecord
 				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			case 'link':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
 					return fORMRelated::linkRecords($this, $this->related_records, $subject, $parameters[0]);
@@ -156,8 +156,8 @@ abstract class fActiveRecord
 				return fORMRelated::linkRecords($this, $this->related_records, $subject);
 			
 			case 'populate':
-				$subject = fInflection::singularize($subject);
-				$subject = fInflection::camelize($subject, TRUE);
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
 					return fORMRelated::populateRecords($this, $this->related_records, $subject, $parameters[0]);
@@ -168,7 +168,7 @@ abstract class fActiveRecord
 			default:
 				fCore::toss(
 					'fProgrammerException',
-					fCore::compose('Unknown method, %s, called', $method_name . '()')
+					fGrammar::compose('Unknown method, %s, called', $method_name . '()')
 				);
 		}
 	}
@@ -224,7 +224,7 @@ abstract class fActiveRecord
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
 				fCore::toss(
 					'fProgrammerException',
-					fCore::compose(
+					fGrammar::compose(
 						'An invalidly formatted primary key was passed to this %s object',
 						fORM::getRecordName($this)
 					)
@@ -345,7 +345,7 @@ abstract class fActiveRecord
 		if (!$this->exists()) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'This %s object does not yet exist in the database, and thus can not be deleted',
 					fORM::getRecordName($this)
 				)
@@ -395,7 +395,7 @@ abstract class fActiveRecord
 				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
 				
 				$related_class   = fORM::classize($relationship['related_table']);
-				$related_objects = fInflection::pluralize($related_class);
+				$related_objects = fGrammar::pluralize($related_class);
 				$method          = 'build' . $related_objects;
 				
 				// Grab the related records
@@ -415,9 +415,9 @@ abstract class fActiveRecord
 					// Otherwise we have a restriction
 					$related_class_name  = fORM::classize($relationship['foreign_table']);
 					$related_record_name = fORM::getRecordName($related_class_name);
-					$related_record_name = fInflection::pluralize($related_record_name);
+					$related_record_name = fGrammar::pluralize($related_record_name);
 					
-					$restriction_message[] = fCore::compose("One or more %s references it", $related_record_name);
+					$restriction_message[] = fGrammar::compose("One or more %s references it", $related_record_name);
 				}
 			}
 			
@@ -426,7 +426,7 @@ abstract class fActiveRecord
 					'fValidationException',
 					sprintf(
 						"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
-						fCore::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
+						fGrammar::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
 						join("</li>\n<li>", $restriction_messages)
 					)
 				);
@@ -495,19 +495,19 @@ abstract class fActiveRecord
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
 				$message = $e->getMessage();
-				$search  = fCore::compose('This %s can not be deleted because:', fORM::getRecordName($this));
+				$search  = fGrammar::compose('This %s can not be deleted because:', fORM::getRecordName($this));
 				if (stripos($message, $search) === FALSE) {
-					$regex       = fCore::compose('This %s can not be deleted because:', '__');
+					$regex       = fGrammar::compose('This %s can not be deleted because:', '__');
 					$regex_parts = explode('__', $regex);
 					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
 					
 					$message = preg_replace($regex, '\1' . fORM::getRecordName($this) . '\2', $message);
 					
-					$find          = fCore::compose("One or more %s references it", '__');
+					$find          = fGrammar::compose("One or more %s references it", '__');
 					$find_parts    = explode('__', $find);
 					$find_regex    = '#' . preg_quote($find_parts[0], '#') . '(.*?)' . preg_quote($find_parts[1], '#') . '#';
 					
-					$replace       = fCore::compose("One or more %s indirectly references it", '__');
+					$replace       = fGrammar::compose("One or more %s indirectly references it", '__');
 					$replace_parts = explode('__', $replace);
 					$replace_regex = $replace_parts[0] . '\1' . $replace_parts[1];
 					
@@ -560,7 +560,7 @@ abstract class fActiveRecord
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not exist',
 					fCore::dump($column)
 				)
@@ -573,7 +573,7 @@ abstract class fActiveRecord
 		if (in_array($column_type, array('blob'))) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not support forming because it is a blob column',
 					fCore::dump($column)
 				)
@@ -583,7 +583,7 @@ abstract class fActiveRecord
 		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text', 'boolean', 'integer'))) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not support any formatting options',
 					fCore::dump($column)
 				)
@@ -591,7 +591,7 @@ abstract class fActiveRecord
 		}
 		
 		// Grab the value for empty value checking
-		$method_name = 'get' . fInflection::camelize($column, TRUE);
+		$method_name = 'get' . fGrammar::camelize($column, TRUE);
 		$value       = $this->$method_name();
 		
 		// Date/time objects
@@ -599,7 +599,7 @@ abstract class fActiveRecord
 			if ($formatting === NULL) {
 				fCore::toss(
 					'fProgrammerException',
-					fCore::compose(
+					fGrammar::compose(
 						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
 						fCore::dump($column)
 					)
@@ -617,7 +617,7 @@ abstract class fActiveRecord
 		if (is_object($value)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
 					fCore::dump($column)
 				)
@@ -687,7 +687,7 @@ abstract class fActiveRecord
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not exist',
 					fCore::dump($column)
 				)
@@ -709,7 +709,7 @@ abstract class fActiveRecord
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not exist',
 					fCore::dump($column)
 				)
@@ -756,7 +756,7 @@ abstract class fActiveRecord
 		} catch (fExpectedException $e) {
 			fCore::toss(
 				'fNotFoundException',
-				fCore::compose(
+				fGrammar::compose(
 					'The %s requested could not be found',
 					fORM::getRecordName($this)
 				)
@@ -888,7 +888,7 @@ abstract class fActiveRecord
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
-				$method = 'set' . fInflection::camelize($column, TRUE);
+				$method = 'set' . fGrammar::camelize($column, TRUE);
 				$this->$method(fRequest::get($column));
 			}
 		}
@@ -924,7 +924,7 @@ abstract class fActiveRecord
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not exist',
 					fCore::dump($column)
 				)
@@ -938,7 +938,7 @@ abstract class fActiveRecord
 		if (in_array($column_type, array('blob'))) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, can not be prepared because it is a blob column',
 					fCore::dump($column)
 				)
@@ -948,7 +948,7 @@ abstract class fActiveRecord
 		if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not support any formatting options',
 					fCore::dump($column)
 				)
@@ -956,7 +956,7 @@ abstract class fActiveRecord
 		}
 		
 		// Grab the value for empty value checking
-		$method_name = 'get' . fInflection::camelize($column, TRUE);
+		$method_name = 'get' . fGrammar::camelize($column, TRUE);
 		$value       = $this->$method_name();
 		
 		// Date/time objects
@@ -964,7 +964,7 @@ abstract class fActiveRecord
 			if ($formatting === NULL) {
 				fCore::toss(
 					'fProgrammerException',
-					fCore::compose(
+					fGrammar::compose(
 						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
 						fCore::dump($column)
 					)
@@ -982,7 +982,7 @@ abstract class fActiveRecord
 		if (is_object($value)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
 					fCore::dump($column)
 				)
@@ -1040,7 +1040,7 @@ abstract class fActiveRecord
 		if (!array_key_exists($column, $this->values)) {
 			fCore::toss(
 				'fProgrammerException',
-				fCore::compose(
+				fGrammar::compose(
 					'The column specified, %s, does not exist',
 					fCore::dump($column)
 				)
@@ -1307,7 +1307,7 @@ abstract class fActiveRecord
 				'fValidationException',
 				sprintf(
 					"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
-					fCore::compose("The following problems we found:"),
+					fGrammar::compose("The following problems we found:"),
 					join("</li>\n<li>", $validation_messages)
 				)
 			);

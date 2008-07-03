@@ -195,7 +195,10 @@ class fORMValidation
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
-			return fORM::getColumnName($class, $column) . ': Please enter a value';
+			return fGrammar::compose(
+				'%s: Please enter a value',
+				fORM::getColumnName($class, $column)
+			);
 		}
 		
 		$message = self::checkDataType($class, $column, $values[$column]);
@@ -203,11 +206,19 @@ class fORMValidation
 		
 		// Make sure a valid value is chosen
 		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
-			return fORM::getColumnName($class, $column) . ': Please choose from one of the following: ' . join(', ', $column_info['valid_values']);
+			return fGrammar::compose(
+				'%s: Please choose from one of the following: %s',
+				fORM::getColumnName($class, $column),
+				join(', ', $column_info['valid_values'])
+			);
 		}
 		// Make sure the value isn't too long
 		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
-			return fORM::getColumnName($class, $column) . ': Please enter a value no longer than ' . $column_info['max_length'] . ' characters';
+			return fGrammar::compose(
+				'%s: Please enter a value no longer than %s characters',
+				fORM::getColumnName($class, $column),
+				$column_info['max_length']
+			);
 		}
 		
 		$message = self::checkUniqueConstraints($object, $column, $values, $old_values);
@@ -242,7 +253,10 @@ class fORMValidation
 			$messages = array();
 			foreach ($conditional_columns as $conditional_column) {
 				if ($values[$conditional_column] === NULL) {
-					$messages[] = fORM::getColumnName($class, $conditional_column) . ': Please enter a value';
+					$messages[] = fGrammar::compose(
+						'%s: Please enter a value',
+						fORM::getColumnName($class, $conditional_column)
+					);
 				}
 			}
 			if (!empty($messages)) {
@@ -272,28 +286,43 @@ class fORMValidation
 				case 'text':
 				case 'blob':
 					if (!is_string($value) && !is_numeric($value)) {
-						return fORM::getColumnName($class, $column) . ': Please enter a string';
+						return fGrammar::compose(
+							'%s: Please enter a string',
+							fORM::getColumnName($class, $column)
+						);
 					}
 					break;
 				case 'integer':
 				case 'float':
 					if (!is_numeric($value)) {
-						return fORM::getColumnName($class, $column) . ': Please enter a number';
+						return fGrammar::compose(
+							'%s: Please enter a number',
+							fORM::getColumnName($class, $column)
+						);
 					}
 					break;
 				case 'timestamp':
 					if (strtotime($value) === FALSE) {
-						return fORM::getColumnName($class, $column) . ': Please enter a date/time';
+						return fGrammar::compose(
+							'%s: Please enter a date/time',
+							fORM::getColumnName($class, $column)
+						);
 					}
 					break;
 				case 'date':
 					if (strtotime($value) === FALSE) {
-						return fORM::getColumnName($class, $column) . ': Please enter a date';
+						return fGrammar::compose(
+							'%s: Please enter a date',
+							fORM::getColumnName($class, $column)
+						);
 					}
 					break;
 				case 'time':
 					if (strtotime($value) === FALSE) {
-						return fORM::getColumnName($class, $column) . ': Please enter a time';
+						return fGrammar::compose(
+							'%s: Please enter a time',
+							fORM::getColumnName($class, $column)
+						);
 					}
 					break;
 				
@@ -331,7 +360,10 @@ class fORMValidation
 					$result = fORMDatabase::getInstance()->translatedQuery($sql);
 					$result->tossIfNoResults();
 				} catch (fNoResultsException $e) {
-					return fORM::getColumnName($class, $column) . ': The value specified is invalid';
+					return fGrammar::compose(
+						'%s: The value specified is invalid',
+						fORM::getColumnName($class, $column)	
+					);
 				}
 			}
 		}
@@ -358,14 +390,14 @@ class fORMValidation
 		}
 		
 		if (!$found_value) {
-			$column_names = '';
-			$column_num = 0;
+			$column_names = array();
 			foreach ($columns as $column) {
-				if ($column_num) { $column_names .= ', '; }
-				$column_names .= fORM::getColumnName($class, $column);
-				$column_num++;
+				$column_names[] = fORM::getColumnName($class, $column);
 			}
-			return $column_names . ': Please enter a value for at least one';
+			return fGrammar::compose(
+				'%s: Please enter a value for at least one',
+				join(', ', $column_names)	
+			);
 		}
 	}
 	
@@ -386,14 +418,14 @@ class fORMValidation
 		foreach ($columns as $column) {
 			if ($values[$column] !== NULL) {
 				if ($found_value) {
-					$column_names = '';
-					$column_num = 0;
+					$column_names = array();
 					foreach ($columns as $column) {
-						if ($column_num) { $column_names .= ', '; }
-						$column_names .= fORM::getColumnName($class, $column);
-						$column_num++;
+						$column_names[] = fORM::getColumnName($class, $column);
 					}
-					return $column_names . ': Please enter a value for only one';
+					return fGrammar::compose(
+						'%s: Please enter a value for only one',
+						join(', ', $column_names)
+					);
 				}
 				$found_value = TRUE;
 			}
@@ -424,7 +456,6 @@ class fORMValidation
 		foreach ($primary_keys as $primary_key) {
 			$columns[] = fORM::getColumnName($class, $primary_key);	
 		}
-		$columns = fInflection::joinTerms($columns);
 		
 		try {
 			$sql    = "SELECT " . $table . ".* FROM " . $table . " WHERE ";
@@ -433,7 +464,11 @@ class fORMValidation
 			$result = fORMDatabase::getInstance()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
-			return 'A ' . fORM::getRecordName($class) . ' with the same ' . $columns . ' already exists';
+			return fGrammar::compose(
+				'A %s with the same %s already exists',
+				fORM::getRecordName($class),
+				fGrammar::joinArray($columns, 'and')
+			);
 			
 		} catch (fNoResultsException $e) { }
 	}
@@ -454,7 +489,10 @@ class fORMValidation
 			return;		
 		}
 		
-		return fORMRelated::getRelatedRecordName($class, $related_class, $route) . ': Please select at least one';
+		return fGrammar::compose(
+			'%s: Please select at least one',
+			fORMRelated::getRelatedRecordName($class, $related_class, $route)
+		);
 	}
 	
 	
@@ -503,14 +541,14 @@ class fORMValidation
 					$result->tossIfNoResults();
 				
 					// If an exception was not throw, we have existing values
-					$column_names = '';
-					$column_num = 0;
+					$column_names = array();
 					foreach ($unique_columns as $unique_column) {
-						if ($column_num) { $column_names .= ', '; }
-						$column_names .= fORM::getColumnName($class, $unique_column);
-						$column_num++;
+						$column_names[] = fORM::getColumnName($class, $unique_column);
 					}
-					return $column_names . ': The values specified must be a unique combination, but the specified combination already exists';
+					return fGrammar::compose(
+						'%s: The values specified must be a unique combination, but the specified combination already exists',
+						join(', ', $column_names)
+					);
 				
 				} catch (fNoResultsException $e) { }
 			}
@@ -722,7 +760,12 @@ class fORMValidation
 				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
 					continue;	
 				}
-				$messages[] = $related_record_name . ' #' . $record_number . ' ' . $record_message;	
+				$messages[] = fGrammar::compose(
+					'%s #%s $s',
+					$related_record_name,
+					$record_number,
+					$record_message
+				);	
 			}
 			$record_number++;
 			fRequest::unfilter();
@@ -752,7 +795,12 @@ class fORMValidation
 		
 		foreach ($record_set as $record) {
 			if (!$record->exists()) {
-				$messages[] = $related_record_name . ' #' . $record_number . ': Please select a ' . $related_record_name;		
+				$messages[] = fGrammar::compose(
+					'%s #%s: Please select a %s',
+					$related_record_name,
+					$record_number,
+					$related_record_name
+				);		
 			}
 			$record_number++;
 		}	

@@ -47,7 +47,7 @@ class fValidation
 		foreach ($this->email_fields as $email_field) {
 			if (is_string($email_field)) {
 				if (fRequest::get($email_field) !== '' && fRequest::get($email_field) !== NULL && !preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', trim(fRequest::get($email_field)))) {
-					$messages[] = fInflection::humanize($email_field) . ' should be in the form name@example.com';
+					$messages[] = fGrammar::humanize($email_field) . ' should be in the form name@example.com';
 				}
 				
 			} else {
@@ -68,7 +68,7 @@ class fValidation
 		foreach ($this->email_header_fields as $email_header_field) {
 			if (is_string($email_header_field)) {
 				if (preg_match('#\r|\n#', fRequest::get($email_header_field))) {
-					$messages[] = fInflection::humanize($email_header_field) . ' can not contain line breaks';
+					$messages[] = fGrammar::humanize($email_header_field) . ' can not contain line breaks';
 				}
 				
 			} else {
@@ -90,7 +90,7 @@ class fValidation
 			// Handle single fields
 			if (is_numeric($key) && is_string($required_field)) {
 				if (fRequest::get($required_field) === '' || fRequest::get($required_field) === NULL) {
-					$messages[] = fInflection::humanize($required_field) . ' needs to have a value';
+					$messages[] = fGrammar::humanize($required_field) . ' needs to have a value';
 				}
 				
 			// Handle one of multiple fields
@@ -112,7 +112,7 @@ class fValidation
 				if (fRequest::get($key) !== '' && fRequest::get($key) !== NULL) {
 					foreach ($required_field as $individual_field) {
 						if (fRequest::get($individual_field) === '' || fRequest::get($individual_field) === NULL) {
-							$messages[] = fInflection::humanize($individual_field) . ' needs to have a value';
+							$messages[] = fGrammar::humanize($individual_field) . ' needs to have a value';
 						}
 					}
 				}

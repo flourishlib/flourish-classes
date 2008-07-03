@@ -167,7 +167,7 @@ class fRecordSet implements Iterator
 			
 			for ($j=0; $j < $total_pk_fields; $j++) {
 				$pk_field      = $primary_key_fields[$j];
-				$pk_get_method = 'get' . fInflection::camelize($pk_field, TRUE);
+				$pk_get_method = 'get' . fGrammar::camelize($pk_field, TRUE);
 				
 				$pk_value = $record->$pk_get_method();
 				if ($j == 0 && $total_pk_fields == 1) {
@@ -384,12 +384,12 @@ class fRecordSet implements Iterator
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list($action, $element) = explode('_', fInflection::underscorize($method_name), 2);
+		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		switch ($action) {
 			case 'preload':
-				$element = fInflection::camelize($element, TRUE);
-				$element = fInflection::singularize($element);
+				$element = fGrammar::camelize($element, TRUE);
+				$element = fGrammar::singularize($element);
 				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
 		}
 		
@@ -482,7 +482,7 @@ class fRecordSet implements Iterator
 			$keys = array();
 			
 			foreach ($pk_columns as $pk_column) {
-				$method = 'get' . fInflection::camelize($pk_column, TRUE);
+				$method = 'get' . fGrammar::camelize($pk_column, TRUE);
 				$keys[$pk_column] = $record->$method();
 			}
 			
@@ -767,7 +767,7 @@ class fRecordSet implements Iterator
 			$keys       = array();
 			
 			foreach ($pk_columns as $pk_column) {
-				$method = 'get' . fInflection::camelize($pk_column, TRUE);
+				$method = 'get' . fGrammar::camelize($pk_column, TRUE);
 				$keys[$pk_column] = $record->$method();
 			}
 			
@@ -787,7 +787,7 @@ class fRecordSet implements Iterator
 			} catch (fExpectedException $e) { }
 			
 			
-			$method = 'get' . fInflection::camelize($relationship['column'], TRUE);
+			$method = 'get' . fGrammar::camelize($relationship['column'], TRUE);
 			
 			$sql  = "SELECT " . $related_table . ".* FROM :from_clause";
 			
@@ -813,7 +813,7 @@ class fRecordSet implements Iterator
 			
 			$set = new fRecordSet($related_class, $injected_result);
 			
-			$method = 'inject' . fInflection::pluralize($related_class);
+			$method = 'inject' . fGrammar::pluralize($related_class);
 			$record->$method($set);		
 		}
 	}
@@ -887,7 +887,7 @@ class fRecordSet implements Iterator
 	public function tossIfEmpty()
 	{
 		if (!$this->getCount()) {
-			fCore::toss('fEmptySetException', 'No ' . fInflection::humanize(fInflection::pluralize($this->class_name)) . ' could be found');
+			fCore::toss('fEmptySetException', 'No ' . fGrammar::humanize(fGrammar::pluralize($this->class_name)) . ' could be found');
 		}
 	}
 	

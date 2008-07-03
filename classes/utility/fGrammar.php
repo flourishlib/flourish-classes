@@ -1,18 +1,18 @@
 <?php
 /**
- * Provides english words pluralization, singularization, camelCase, undercore_notation, etc
+ * Provides english words pluralization, singularization, camelCase, undercore_notation, plus a few other grammar functions
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
- * @link       http://flourishlib.com/fInflection
+ * @link       http://flourishlib.com/fGrammar
  * 
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
  */
-class fInflection
+class fGrammar
 {
 	/**
 	 * A listing of words that should be converted to all capital letters, instead of just the first letter
@@ -35,6 +35,16 @@ class fInflection
 		'url',
 		'xhtml',
 		'xml'
+	);
+	
+	/**
+	 * Callbacks for when messages are composed
+	 * 
+	 * @var array
+	 */
+	static private $compose_callbacks = array(
+		'pre'  => array(),
+		'post' => array()
 	);
 	
 	/**
@@ -92,7 +102,7 @@ class fInflection
 	
 	
 	/**
-	 * Adds a word to the list of all capital letters words, which is used by {@link fInflection::humanize()} to produce more gramatically correct results
+	 * Adds a word to the list of all capital letters words, which is used by {@link humanize()} to produce more gramatically correct results
 	 * 
 	 * @param  string $word  The word that should be in all caps when printed
 	 * @return void
@@ -112,10 +122,14 @@ class fInflection
 	 */
 	static public function addSingularPluralRule($singular, $plural)
 	{
-		self::$singular_to_plural_rules = array_merge(array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
-													  self::$singular_to_plural_rules);
-		self::$plural_to_singular_rules = array_merge(array('^(' . $plural[0] . ')' . substr($plural, 1) . '$' => '\1' . substr($singular, 1)),
-													  self::$plural_to_singular_rules);
+		self::$singular_to_plural_rules = array_merge(
+			array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
+			self::$singular_to_plural_rules
+		);
+		self::$plural_to_singular_rules = array_merge(
+			array('^(' . $plural[0] . ')' . substr($plural, 1) . '$' => '\1' . substr($singular, 1)),
+			self::$plural_to_singular_rules
+		);
 	}
 	
 	
@@ -151,6 +165,34 @@ class fInflection
 	
 	
 	/**
+	 * Performs an {@link http://php.net/sprintf sprintf()} on a string and provides a hook for modifications such as internationalization
+	 * 
+	 * @param  string  $message        A message to compose
+	 * @param  mixed   $component,...  A string or number to insert into the message
+	 * @return void
+	 */
+	static public function compose($message)
+	{
+		if (self::$compose_callbacks) {
+			foreach (self::$compose_callbacks['pre'] as $callback) {
+				$message = call_user_func($callback, $message);	
+			}
+		}
+		
+		$components = array_slice(func_get_args(), 1);
+		$message    = vsprintf($message, $components);	
+		
+		if (self::$compose_callbacks) {
+			foreach (self::$compose_callbacks['post'] as $callback) {
+				$message = call_user_func($callback, $message);	
+			}
+		}
+		
+		return $message;
+	}
+	
+	
+	/**
 	 * Makes an underscore notation string into a human-friendly string
 	 * 
 	 * @param  string $string  The string to humanize
@@ -158,7 +200,11 @@ class fInflection
 	 */
 	static public function humanize($string)
 	{
-		return preg_replace('/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e', 'strtoupper("\1")', str_replace('_', ' ', $string));
+		return preg_replace(
+			'/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e',
+			'strtoupper("\1")',
+			str_replace('_', ' ', $string)
+		);
 	}
 	
 	
@@ -217,30 +263,42 @@ class fInflection
 	/**
 	 * Returns the passed terms joined together using rule 2 from Strunk & White's 'The Elements of Style'
 	 * 
-	 * @param  array $terms  An array of terms to be join together
+	 * @param  array  $strings  An array of strings to be joined together
+	 * @param  string $type     The type of join to perform, 'and' or 'or'
 	 * @return string  The terms joined together
 	 */
-	static public function joinTerms($terms)
+	static public function joinArray($strings, $type)
 	{
-		settype($terms, 'array');
-		$terms = array_values($terms);
+		$valid_types = array('and', 'or');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss(
+				self::compose(
+					'The type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);	
+		}
 		
-		switch (sizeof($terms)) {
+		settype($strings, 'array');
+		$strings = array_values($strings);
+		
+		switch (sizeof($strings)) {
 			case 0:
 				return '';
 				break;
 			
 			case 1:
-				return $terms[0];
+				return $strings[0];
 				break;
 			
 			case 2:
-				return $terms[0] . ' and ' . $terms[1];
+				return $strings[0] . ' ' . $type . ' ' . $strings[1];
 				break;
 				
 			default:
-				$last_term = array_pop($terms);
-				return join(', ', $terms) . ', and ' . $last_term;
+				$last_string = array_pop($strings);
+				return join(', ', $strings) . ' ' . $type . ' ' . $last_string;
 				break;
 		}
 	}
@@ -261,6 +319,43 @@ class fInflection
 			}
 		}
 		fCore::toss('fProgrammerException', 'The noun specified could not be pluralized');
+	}
+	
+	
+	/**
+	 * Adds a callback for when a message is created using {@link compose()}
+	 * 
+	 * The primary purpose of these callbacks is for internationalization of
+	 * error messaging in Flourish. The callback should accept a single
+	 * parameter, the message being composed and should return the message
+	 * with any modifications.
+	 * 
+	 * The timing parameter controls if the callback happens before or after
+	 * the actual composition takes place, which is simply a call to
+	 * {@link http://php.net/sprintf sprintf()}. Thus the message passed 'pre'
+	 * will always be exactly the same, while the message 'post' will include
+	 * the interpolated variables. Because of this, most of the time the 'pre'
+	 * timing should be chosen. 
+	 * 
+	 * @param  string   $timing    When the callback should be executed, 'pre' or 'post' performing the actual composition
+	 * @param  callback $callback  The callback
+	 * @return void
+	 */
+	static public function registerComposeCallback($timing, $callback)
+	{
+		$valid_timings = array('pre', 'post');
+		if (!in_array($timing, $valid_timings)) {
+			fCore::toss(
+				'fProgrammerException',
+				self::compose(
+					'The timing specified, %s, is not a valid timing. Must be one of: %s.',
+					fCore::dump($timing),
+					join(', ', $valid_timings)
+				)	
+			);	
+		}
+		
+		self::$compose_callbacks[$timing][] = $callback;
 	}
 	
 	
@@ -335,7 +430,7 @@ class fInflection
 	/**
 	 * Forces use as a static class
 	 * 
-	 * @return fInflection
+	 * @return fGrammar
 	 */
 	private function __construct() { }
 }

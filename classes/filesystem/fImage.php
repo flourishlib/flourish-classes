@@ -345,7 +345,7 @@ class fImage extends fFile
 				if (self::$processor == 'imagemagick') {
 					$valid_image_types[] = 'TIF';	
 				}
-				fCore::toss('fValidationException', 'The image specified is not a valid ' . fInflection::joinTerms($valid_image_types) . ' file');	
+				fCore::toss('fValidationException', 'The image specified is not a valid ' . fGrammar::joinArray($valid_image_types, 'or') . ' file');	
 			}
 			parent::__construct($file_path);
 				
