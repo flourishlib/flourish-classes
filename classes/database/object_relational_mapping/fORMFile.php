@@ -824,9 +824,6 @@ class fORMFile
 				}
 			}
 			
-			if (!$no_upload) {
-				throw $e;	
-			}
 			return;
 		}
 		
