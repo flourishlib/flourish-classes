@@ -137,10 +137,10 @@ class fImage extends fFile
 					case 'linux/unix':
 					case 'solaris':
 						$found = FALSE;
-						foreach($locations as $location) {
-							$path = $location . 'convert';
-							if (file_exists($path) && is_executable($path)) {
+						foreach($locations[$os] as $location) {
+							if (file_exists($location . 'convert') && is_executable($location . 'convert')) {
 								$found = TRUE;
+								$path  = $location;
 								break;
 							}
 						}
@@ -153,7 +153,7 @@ class fImage extends fFile
 						// On most linux/unix we can try whereis
 						if ($os == 'linux/unix' && !$found) {
 							$nix_search = 'whereis -b convert';
-							$nix_output = trim(str_replace('convert: ', '', shell_exec($nix_search)));
+							$nix_output = trim(str_replace('convert:', '', shell_exec($nix_search)));
 							
 							if (empty($nix_output)) {
 								throw new Exception();

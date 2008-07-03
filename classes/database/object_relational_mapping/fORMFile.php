@@ -607,7 +607,7 @@ class fORMFile
 	static public function processImage($class, $column, $image)
 	{
 		// If we don't have an image or we haven't set it up to manipulate images, just exit
-		if (!$image instanceof fImage || !empty(self::$fimage_method_calls[$class][$column])) {
+		if (!$image instanceof fImage || empty(self::$fimage_method_calls[$class][$column])) {
 			return;	
 		}
 		
@@ -788,7 +788,7 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
-			$file = fUpload::upload($upload_dir->getPath() . self::TEMP_DIRECTORY, $column);	
+			$file = fUpload::upload($temp_dir, $column);	
 			fUpload::reset();
 		
 		// If there was an eror, check to see if we have an existing file
