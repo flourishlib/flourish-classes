@@ -70,7 +70,7 @@ abstract class fActiveRecord
 		}
 		
 		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate' || $action == 'inject') && sizeof($parameters) < 1) {
+		if (($action == 'set' || $action == 'associate') && sizeof($parameters) < 1) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
@@ -136,15 +136,6 @@ abstract class fActiveRecord
 					return fORMRelated::constructRecord($this, $this->values, $subject, $parameters[0]);
 				}
 				return fORMRelated::constructRecord($this, $this->values, $subject);
-			
-			case 'inject':
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				
-				if (isset($parameters[1])) {
-					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
-				}
-				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			case 'link':
 				$subject = fGrammar::singularize($subject);

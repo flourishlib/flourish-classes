@@ -487,19 +487,16 @@ class fORM
 		);
 		
 		static $invalid_replace_hooks = array(
-			'replace::enableDebugging()',
-			'replace::assign()',
 			'replace::configure()',
 			'replace::constructInsertSQL()',
-			'replace::constructPrimaryKeyWhereClause()',
 			'replace::constructUpdateSQL()',
-			'replace::entify()',
-			'replace::format()',
+			'replace::enableDebugging()',
+			'replace::encode()',
+			'replace::get()',
 			'replace::loadFromIdentityMap()',
 			'replace::loadFromResult()',
-			'replace::retrieve()',
-			'replace::storeManyToManyAssociations()',
-			'replace::storeOneToManyRelatedRecords()'
+			'replace::prepare()',
+			'replace::set()'
 		);
 		
 		if (!in_array($hook, $valid_hooks) && !$replace_hook) {

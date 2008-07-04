@@ -372,8 +372,6 @@ class fORMRelated
 	/**
 	 * Sets the related records for many-to-many relationships
 	 * 
-	 * @internal
-	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
 	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
 	 * @param  string $related_class     The class we are associating with the current record
@@ -381,7 +379,7 @@ class fORMRelated
 	 * @param  string $route             The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function setRecords($class, &$related_records, $related_class, fRecordSet $records, $route=NULL)
+	static private function setRecords($class, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);

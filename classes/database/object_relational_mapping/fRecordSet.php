@@ -374,30 +374,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Allows for preloading of related records by dynamically creating preload{related plural class}() methods
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $method_name  The name of the method called
-	 * @param  string $parameters   The parameters passed
-	 * @return void
-	 */
-	public function __call($method_name, $parameters)
-	{
-		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2);
-		
-		switch ($action) {
-			case 'preload':
-				$element = fGrammar::camelize($element, TRUE);
-				$element = fGrammar::singularize($element);
-				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL);
-		}
-		
-		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
-	}
-	
-	
-	/**
 	 * Sets the contents of the set
 	 * 
 	 * @param  string  $class_name             The type of records to create
@@ -418,6 +394,40 @@ class fRecordSet implements Iterator
 		$this->class_name            = $class_name;
 		$this->result_object         = $result_object;
 		$this->non_limited_count_sql = $non_limited_count_sql;
+	}
+	
+	
+	/**
+	 * Returns the number of records in the set
+	 * 
+	 * @return integer  The number of records in the set
+	 */
+	public function count()
+	{
+		return $this->result_object->getReturnedRows();
+	}
+	
+	
+	/**
+	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
+	 * 
+	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
+	 */
+	public function countWithoutLimit()
+	{
+		// A query that does not use a LIMIT clause just returns the number of returned rows
+		if ($this->non_limited_count_sql === NULL) {
+			return $this->count();
+		}
+		
+		if ($this->non_limited_count !== NULL) {
+			try {
+				$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+			} catch (fExpectedException $e) {
+				$this->non_limited_count = $this->count();	
+			}
+		}
+		return $this->non_limited_count;
 	}
 	
 	
@@ -537,40 +547,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Returns the number of records in the set
-	 * 
-	 * @return integer  The number of records in the set
-	 */
-	public function getCount()
-	{
-		return $this->result_object->getReturnedRows();
-	}
-	
-	
-	/**
-	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
-	 * 
-	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
-	 */
-	public function getNonLimitedCount()
-	{
-		// A query that does not use a LIMIT clause just returns the number of returned rows
-		if ($this->non_limited_count_sql === NULL) {
-			return $this->getCount();
-		}
-		
-		if ($this->non_limited_count !== NULL) {
-			try {
-				$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
-			} catch (fExpectedException $e) {
-				$this->non_limited_count = $this->getCount();	
-			}
-		}
-		return $this->non_limited_count;
-	}
-	
-	
-	/**
 	 * Returns all of the records in the set
 	 * 
 	 * @throws fValidationException
@@ -645,177 +621,6 @@ class fRecordSet implements Iterator
 			$this->result_object->next();	
 		}
 		$this->pointer++;
-	}
-	
-	
-	/**
-	 * Preloads a result object for related data
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $related_class  This should be the name of a related class
-	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
-	 * @return void
-	 */
-	private function performPreload($related_class, $route=NULL)
-	{
-		$related_table = fORM::tablize($related_class);
-		
-		$sql = ($this->result_object->getUntranslatedSQL()) ? $this->result_object->getUntranslatedSQL() : $this->result_object->getSQL();
-		
-		$clauses = fSQLParsing::parseSelectSQL($sql);
-		
-		if (!empty($clauses['GROUP BY'])) {
-			fCore::toss('fProgrammerException', 'Preloading related data is not possible for queries that contain a GROUP BY clause');
-		}
-		
-		$table = fORM::tablize($this->class_name);
-		
-		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
-		
-		// Get the existing joins and add any necessary ones
-		$joins = fSQLParsing::parseJoins($clauses['FROM'], fORMSchema::getInstance());
-		$joins = fORMDatabase::addJoin($joins, $table, $route, $relationship);
-		
-		// Find the aliases we are gonna need
-		$table_alias         = fORMDatabase::findTableAlias($table, $joins);
-		$join_name           = $table . '_' . $related_table . '{' . $route . '}';
-		$related_table_alias = $joins[$join_name]['table_alias'];
-		
-		
-		
-		// Build the query out
-		$new_sql  = 'SELECT ' . $related_table_alias . '.*';
-		
-		// If we are going through a join table we need the related primary key for matching
-		if (isset($relationship['join_table'])) {
-			$new_sql .= ", " . $table_alias . '.' . $relationship['column']; 		
-		}
-		
-		$new_sql .= ' FROM :from_clause ';
-		
-		if (!empty($clauses['WHERE'])) {
-			$new_sql .= 'WHERE (' . $clauses['WHERE'] . ') ';
-		}
-		
-		// Limited queries require a slight bit of additional modification so that we only load the related data for the elements returned
-		if (!empty($clauses['LIMIT'])) {
-			if (!empty($clauses['WHERE'])) {
-				$new_sql .= ' AND ';
-			} else {
-				$new_sql .= 'WHERE ';
-			}
-			$new_sql .= fORMDatabase::createPrimaryKeyWhereCondition($table, $table_alias, $this->getPrimaryKeys());
-		}
-		
-		// If the original query did not have an order by, we need to create one
-		if (empty($clauses['ORDER BY'])) {
-			
-			$clauses['ORDER BY'] = 'CASE ';
-			
-			$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
-			$first_pk_column = $pk_columns[0];
-			
-			$number = 0;
-			foreach ($this->primary_keys as $primary_keys) {
-				$clauses['ORDER BY'] .= 'WHEN ';
-				
-				if (is_array($primary_keys)) {
-					$conditions = array();
-					foreach ($pk_columns as $pk_column) {
-						$conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_keys[$pk_column], '=');			 		
-					}
-					$clauses['ORDER BY'] .= join(' AND ', $conditions);
-				} else {
-					$clauses['ORDER BY'] .= $table . '.' . $first_pk_column . fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_keys, '=');
-				}	
-				
-				$clauses['ORDER BY'] .= ' THEN ' . $number . ' ';	
-				
-				$number++;
-			}	
-			
-			$clauses['ORDER BY'] .= 'END ASC';	
-		}
-			
-		$new_sql .= 'ORDER BY ' . $clauses['ORDER BY'];
-		
-		$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
-			
-		if ($clauses['ORDER BY'] && $order_bys != array()) {
-			$new_sql .= ', ';
-		}
-		
-		if ($order_bys) {
-			$new_sql .= fORMDatabase::createOrderByClause($related_table, $order_bys);
-		}
-		
-		$new_sql = fORMDatabase::insertFromClause($table, $new_sql, $joins);
-		
-		
-		
-		// Run the query and inject the results into the records
-		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
-		
-		$total_records = sizeof($this->records);
-		for ($i=0; $i < $total_records; $i++) {
-			
-			$record = $this->records[$i];
-			
-			$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
-			$keys       = array();
-			
-			foreach ($pk_columns as $pk_column) {
-				$method = 'get' . fGrammar::camelize($pk_column, TRUE);
-				$keys[$pk_column] = $record->$method();
-			}
-			
-			$rows = array();
-						
-			try {
-				while (!array_diff($keys, $result->current())) {
-					$row = $result->fetchRow();
-					
-					// If we are going through a join table we need to remove the related primary key that was used for matching
-					if (isset($relationship['join_table'])) {
-						unset($row[$relationship['column']]); 		
-					}
-					
-					$rows[] = $row;
-				}
-			} catch (fExpectedException $e) { }
-			
-			
-			$method = 'get' . fGrammar::camelize($relationship['column'], TRUE);
-			
-			$sql  = "SELECT " . $related_table . ".* FROM :from_clause";
-			
-			$where_conditions = array(
-				$table . '.' . $relationship['column'] . '=' => $record->$method()
-			);
-			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($related_table, $where_conditions);
-			
-			$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route);
-			if ($order_bys) {
-				$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($related_table, $order_bys);
-			}
-			
-			$sql = fORMDatabase::insertFromClause($related_table, $sql);
-			
-			
-			$injected_result = new fResult('array');
-			$injected_result->setSQL($sql);
-			$injected_result->setResult($rows);
-			$injected_result->setReturnedRows(sizeof($rows));
-			$injected_result->setAffectedRows(0);
-			$injected_result->setAutoIncrementedValue(NULL);
-			
-			$set = new fRecordSet($related_class, $injected_result);
-			
-			$method = 'inject' . fGrammar::pluralize($related_class);
-			$record->$method($set);		
-		}
 	}
 	
 	
