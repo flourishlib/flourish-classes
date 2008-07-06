@@ -86,6 +86,12 @@ class fURL
 		} elseif (!preg_match('#^https?://#i', $url)) {
 			$url = self::getDomain() . self::get() . $url;
 		}
+		
+		// Strip the ? if there are no query string parameters
+		if (substr($url, -1) == '?') {
+			$url = substr($url, 0, -1);	
+		}
+		
 		header('Location: ' . $url);
 		exit($url);
 	}
@@ -101,9 +107,13 @@ class fURL
 	{
 		$keys = func_get_args();
 		for ($i=0; $i < sizeof($keys); $i++) {
-			$keys[$i] = '#\b' . $keys[$i] . '=[^&]*&?#';
+			$keys[$i] = '#\b' . $keys[$i] . '=?[^&]*&?(?=$|\w)#';
 		}
-		return '?' . substr(preg_replace($keys, '', $qs), 1);
+		$new_qs = preg_replace($keys, '', fURL::getQueryString());
+		if (substr($new_qs, -1) == '&') {
+			$new_qs = substr($new_qs, 0, -1);
+		}
+		return '?' . $new_qs;
 	}
 	
 	

@@ -168,8 +168,9 @@ class fCRUD
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
 		// Reset values if requested
-		if (substr(fURL::getWithQueryString(), -6) == '?reset') {
-			self::setPreviousSearchValue($column, NULL);	
+		if (self::wasResetRequested()) {
+			self::setPreviousSearchValue($column, NULL);
+			return;	
 		}
 		
 		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
@@ -191,6 +192,12 @@ class fCRUD
 	 */
 	static public function getSortColumn($possible_column)
 	{
+		// Reset value if requested
+		if (self::wasResetRequested()) {
+			self::setPreviousSortColumn(NULL);
+			return;	
+		}
+		
 		$possible_columns = func_get_args();
 		
 		if (sizeof($possible_columns) == 1 && is_array($possible_columns[0])) {
@@ -216,6 +223,12 @@ class fCRUD
 	 */
 	static public function getSortDirection($default_direction)
 	{
+		// Reset value if requested
+		if (self::wasResetRequested()) {
+			self::setPreviousSortDirection(NULL);
+			return;	
+		}
+		
 		if (self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
 			self::$sort_direction = self::getPreviousSortDirection();
 			self::$loaded_values['dir'] = self::$sort_direction;
@@ -260,6 +273,11 @@ class fCRUD
 	 */
 	static public function redirectWithLoadedValues()
 	{
+		// If values were reset, redirect to the plain URL
+		if (self::wasResetRequested()) {
+			fURL::redirect(fURL::get() . fURL::removeFromQueryString('reset'));
+		}
+		
 		$query_string = fURL::replaceInQueryString(array_keys(self::$loaded_values), array_values(self::$loaded_values));
 		$url = fURL::get() . $query_string;
 		
@@ -387,6 +405,13 @@ class fCRUD
 	static private function setPreviousSortDirection($sort_direction)
 	{
 		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, 'fCRUD::');
+	}
+	
+	
+	static private function wasResetRequested()
+	{
+		$tail = substr(fURL::getWithQueryString(), -6);
+		return $tail == '?reset' || $tail == '&reset';	
 	}
 	
 	
