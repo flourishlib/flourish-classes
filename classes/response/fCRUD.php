@@ -81,16 +81,17 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a class attribute for a td if that td is part of the sorted column
+	 * Return the string 'sorted' if $column is the column that is currently being sorted by, otherwise returns ''
 	 * 
-	 * @param  string $column  The column this td is part of
+	 * @param  string $column  The column to check
 	 * @return void
 	 */
-	static public function highlightSortedColumn($column)
+	static public function getColumnClass($column)
 	{
 		if (self::$sort_column == $column) {
-			echo ' class="sorted"';
+			return 'sorted';
 		}
+		return '';
 	}
 	
 	
