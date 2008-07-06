@@ -149,7 +149,12 @@ class fSQLParsing
 		
 		// Error out if we can't figure out the join structure
 		if (!preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#is', $temp_sql)) {
-			fCore::toss('fProgrammerException', 'Unable to parse FROM clause, does not appears to be in comma style or join style');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Unable to parse FROM clause, does not appears to be in comma style or join style'
+				)
+			);
 		}
 		
 		$matches = preg_split('#\s+((?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*?JOIN)\s+#i', $temp_sql, 0, PREG_SPLIT_DELIM_CAPTURE);

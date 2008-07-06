@@ -327,8 +327,16 @@ class fShippingRates
 	 */
 	public function __construct($shipping_company, $api_login, $api_password, $api_key)
 	{
-		if (!in_array($shipping_company, array('ups'))) {
-			fCore::toss('fProgrammerException', 'Invalid shipping company specified');
+		$valid_shipping_companies = array('ups');
+		if (!in_array($shipping_company, $valid_shipping_companies)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The shipping company specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($shipping_company),
+					join(', ', $valid_shipping_companies)
+				)
+			);
 		}
 		
 		$this->shipping_company = $shipping_company;
@@ -376,7 +384,13 @@ class fShippingRates
 	 */
 	private function postUpsRequest()
 	{
-		fCore::debug("Data being sent to API:\n" . fCore::dump($this->request_info), $this->debug);
+		fCore::debug(
+			fGrammar::compose(
+				'Data being sent to API:%s',
+				"\n" . fCore::dump($this->request_info)
+			),
+			$this->debug
+		);
 		
 		$post_data = <<<XMLDATA
 <?xml version="1.0" ?>
@@ -475,7 +489,12 @@ XMLDATA;
 		$xml = new SimpleXMLElement($result);
 		
 		if ($xml->Response->ResponseStatusCode != '1') {
-			fCore::toss('fUnexpectedException', 'There was an error retrieving the rates from the UPS API');
+			fCore::toss(
+				'fUnexpectedException',
+				fGrammar::compose(
+					'There was an error retrieving the rates from the API'
+				)
+			);
 		}
 		
 		$service_names = array(
@@ -497,8 +516,8 @@ XMLDATA;
 		
 		$currency_symbol = array(
 			'USD' => '$',
-			'EUR' => '&euro;',
-			'GBP' => '&pound;'
+			'EUR' => '€',
+			'GBP' => '£'
 		);
 		
 		foreach ($xml->RatedShipment as $option) {
@@ -843,14 +862,17 @@ XMLDATA;
 			$field_info =& $this->ups_field_info;
 		}
 		
-		$message = '';
+		$messages = array();
 		
 		$this->setDefaultValues();
 		
 		foreach ($field_info as $field => $info) {
 			// Handle simple required fields
 			if ($info['required'] === TRUE && !isset($this->request_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a value\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a value',
+					fGrammar::humanize($field)
+				);
 			
 			// Handle conditional required fields
 			} elseif (is_array($info['required'])) {
@@ -858,7 +880,10 @@ XMLDATA;
 				$conditional_field  = $keys[0];
 				$conditional_values = $info['required'][$conditional_field];
 				if (isset($this->request_info[$conditional_field]) && in_array($this->request_info[$conditional_field], $conditional_values) && !isset($this->request_info[$field])) {
-					$message .= fGrammar::humanize($field) . ": Please enter a value\n";
+					$messages[] = fGrammar::compose(
+						'%s: Please enter a value',
+						fGrammar::humanize($field)
+					);
 				}
 			}
 		}
@@ -871,21 +896,32 @@ XMLDATA;
 			}
 			
 			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
-				$message .= fGrammar::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please choose from one of the following: %s',
+					fGrammar::humanize($field),
+					join(', ', $info['valid_values'])
+				);
 				continue;
 			}
 			if ($info['type'] == 'string' && !is_string($this->request_info[$field]) && !is_numeric($this->request_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a string\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a string',
+					fGrammar::humanize($field)
+				);
 				continue;
 			}
 			if (isset($info['max_length']) && strlen($this->request_info[$field]) > $info['max_length']) {
-				$message .= fGrammar::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a value no longer than %s characters',
+					fGrammar::humanize($field),
+					$info['max_length']
+				);
 				continue;
 			}
 		}
 		
-		if ($message) {
-			fCore::toss('fValidationException', $message);
+		if ($messages) {
+			fCore::toss('fValidationException', join("\n", $messages));
 		}
 		
 		

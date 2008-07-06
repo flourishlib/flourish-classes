@@ -34,7 +34,13 @@ class fDate
 	{
 		$timestamp = strtotime($date);
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $date . ', does not appear to be a valid date');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The date specified, %s, does not appear to be a valid date',
+					fCore::dump($date)
+				)
+			);
 		}
 		$this->set($timestamp);
 	}
@@ -81,7 +87,14 @@ class fDate
 		
 		$restricted_formats = 'aABcegGhHiIOPrsTuUZ';
 		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-date formatting characters: ' . join(', ', str_split($restricted_formats)));
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The formatting string, %s, contains one of the following non-date formatting characters: %s',
+					fCore::dump($format),
+					join(', ', str_split($restricted_formats))
+				)
+			);
 		}
 		
 		$date = $this->date;
@@ -133,32 +146,55 @@ class fDate
 		$diff = $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
 		
 		if (abs($diff) < 86400) {
-			return ($relative_to_now) ? 'today' : 'same day';
+			if ($relative_to_now) {
+				return fGrammar::compose('today');
+			}
+			return fGrammar::compose('same day');
+		}
+		
+		static $break_points = array();
+		if (!$break_points) {
+			$break_points = array(
+				/* 5 days      */
+				432000     => array(86400,    fGrammar::compose('day'),   fGrammar::compose('days')),
+				/* 3 weeks     */
+				1814400    => array(604800,   fGrammar::compose('week'),  fGrammar::compose('weeks')),
+				/* 9 months    */
+				23328000   => array(2592000,  fGrammar::compose('month'), fGrammar::compose('months')),
+				/* largest int */
+				2147483647 => array(31536000, fGrammar::compose('year'),  fGrammar::compose('years'))
+			);
+		}
+		
+		foreach ($break_points as $break_point => $unit_info) {
+			if (abs($diff) > $break_point) { continue; }
+			
+			$unit_diff = round(abs($diff)/$unit_info[0]);
+			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[2]);
+			break;
 		}
 		
 		if ($relative_to_now) {
-			$suffix = ($diff > 0) ? ' from now' : ' ago';
-		} else {
-			$suffix = ($diff > 0) ? ' after' : ' before';
+			if ($diff > 0) {
+				return fGrammar::compose(
+					'%s %s from now',
+					$unit_diff,
+					$units
+				);
+			}
+			
+			return fGrammar::compose(
+				'%s %s ago',
+				$unit_diff,
+				$units
+			);
 		}
 		
-		$diff = abs($diff);
-		
-		$break_points = array(
-			432000     /* 5 days      */ => array(86400,    'day'),
-			1814400    /* 3 weeks     */ => array(604800,   'week'),
-			23328000   /* 9 months    */ => array(2592000,  'month'),
-			2147483647 /* largest int */ => array(31536000, 'year')
-		);
-		
-		foreach ($break_points as $break_point => $unit_info) {
-			if ($diff > $break_point) { continue; }
-			
-			$unit_diff = round($diff/$unit_info[0]);
-			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
-			
-			return $unit_diff . ' ' . $units . $suffix;
+		if ($diff > 0) {
+			return fGrammar::compose('%s %s after', $unit_diff, $units);
 		}
+		
+		return fGrammar::compose('%s %s before', $unit_diff, $units);
 	}
 	
 	
@@ -192,11 +228,23 @@ class fDate
 		$timestamp = strtotime($adjustment, $timestamp);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative date measurement');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, does not appear to be a valid relative date measurement',
+					fCore::dump($adjustment)
+				)
+			);
 		}
 		
 		if (date('H:i:s', $timestamp) != '00:00:00') {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.',
+					fCore::dump($adjustment)
+				)
+			);
 		}
 		
 		return $timestamp;
@@ -232,13 +280,31 @@ class fDate
 		$day   = ($day === NULL)   ? date('d', $this->date) : $day;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The year specified, %s, does not appear to be a valid year',
+					fCore::dump($year)
+				)
+			);
 		}
 		if (!is_numeric($month) || $month < 1 || $month > 12) {
-			fCore::toss('fValidationException', 'The month specified, ' . $month . ', does not appear to be a valid month');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The month specified, %s, does not appear to be a valid month',
+					fCore::dump($month)
+				)
+			);
 		}
 		if (!is_numeric($day) || $day < 1 || $day > 31) {
-			fCore::toss('fValidationException', 'The day specified, ' . $day . ', does not appear to be a valid day');
+			fCore::toss(
+				'fValidationException', 
+				fGrammar::compose(
+					'The day specified, %s, does not appear to be a valid day',
+					fCore::dump($day)
+				)
+			);
 		}
 		
 		settype($month, 'integer');
@@ -249,7 +315,15 @@ class fDate
 		
 		$timestamp = strtotime($year . '-' . $month . '-' . $day);
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The date specified, ' . $year . '-' . $month . '-' . $day . ', does not appear to be a valid date');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The date specified, %s-%s-%s, does not appear to be a valid date',
+					fCore::dump($year),
+					fCore::dump($month),
+					fCore::dump($day)
+				)
+			);
 		}
 		$this->set($timestamp);
 	}
@@ -272,13 +346,31 @@ class fDate
 		$day_of_week = ($day_of_week === NULL) ? date('N', $this->date) : $day_of_week;
 		
 		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss('fValidationException', 'The year specified, ' . $year . ', does not appear to be a valid year');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The year specified, %s, does not appear to be a valid year',
+					fCore::dump($year)
+				)
+			);
 		}
 		if (!is_numeric($week) || $week < 1 || $week > 53) {
-			fCore::toss('fValidationException', 'The week specified, ' . $week . ', does not appear to be a valid week');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The week specified, %s, does not appear to be a valid week',
+					fCore::dump($week)
+				)
+			);
 		}
 		if (!is_numeric($day_of_week) || $day_of_week < 1 || $day_of_week > 7) {
-			fCore::toss('fValidationException', 'The day of week specified, ' . $day_of_week . ', does not appear to be a valid day of the week');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The day of week specified, %s, does not appear to be a valid day of the week',
+					fCore::dump($day_of_week)
+				)
+			);
 		}
 		
 		settype($week, 'integer');
@@ -287,7 +379,15 @@ class fDate
 		
 		$timestamp = strtotime($year . '-01-01 +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The ISO date specified, ' . $year . '-W' . $week . '-' . $day_of_week . ', does not appear to be a valid ISO date');
+			fCore::toss(
+				'fValidationException', 
+				fGrammar::compose(
+					'The ISO date specified, %s-W%s-%s, does not appear to be a valid ISO date',
+					fCore::dump($year),
+					fCore::dump($week),
+					fCore::dump($day_of_week)
+				)
+			);
 		}
 		$this->set($timestamp);
 	}

@@ -145,7 +145,12 @@ class fRecordSet implements Iterator
 	static public function createFromObjects($records)
 	{
 		if (empty($records)) {
-			fCore::toss('fProgrammerException', 'You can not build a record set from an empty array of objects');	
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'You can not build a record set from an empty array of records'
+				)
+			);	
 		}
 		
 		$class_name = get_class($records[0]);
@@ -384,11 +389,26 @@ class fRecordSet implements Iterator
 	protected function __construct($class_name, fResult $result_object, $non_limited_count_sql=NULL)
 	{
 		if (!class_exists($class_name)) {
-			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', could not be loaded');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The class specified, %s, could not be loaded',
+					fCore::dump($class_name)
+				)
+			);
 		}
 		
 		if (!is_subclass_of($class_name, 'fActiveRecord')) {
-			fCore::toss('fProgrammerException', 'The class specified, ' . $class_name . ', does not extend fActiveRecord. All classes used with fRecordSet must extend fActiveRecord.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The class specified, %s, does not extend %s. All classes used with %s must extend %s.',
+					fCore::dump($class_name),
+					'fActiveRecord',
+					'fRecordSet',
+					'fActiveRecord'
+				)
+			);
 		}
 		
 		$this->class_name            = $class_name;
@@ -458,7 +478,10 @@ class fRecordSet implements Iterator
 	public function current()
 	{
 		if (!$this->valid()) {
-			fCore::toss('fProgrammerException', 'There are no remaining records');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('There are no remaining records')
+			);
 		}
 		
 		if (!isset($this->records[$this->pointer])) {
@@ -530,7 +553,10 @@ class fRecordSet implements Iterator
 		} catch (fValidationException $e) {
 			throw $e;
 		} catch (fExpectedException $e) {
-			fCore::toss('fNoRemainingException', 'There are no remaining records');
+			fCore::toss(
+				'fNoRemainingException',
+				fGrammar::compose('There are no remaining records')
+			);
 		}
 	}
 	
@@ -652,7 +678,15 @@ class fRecordSet implements Iterator
 	public function sort($method, $direction)
 	{
 		if (!in_array($direction, array('asc', 'desc'))) {
-			fCore::toss('fProgrammerException', 'Sort direction ' . $direction . ' should be either asc or desc');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The sort direction specified, %s, is invalid. Must be one of: %s or %s.',
+					fCore::dump($direction),
+					'asc',
+					'desc'
+				)
+			);
 		}
 		
 		// We will create an anonymous function here to handle the sort
@@ -692,7 +726,13 @@ class fRecordSet implements Iterator
 	public function tossIfEmpty()
 	{
 		if (!$this->getCount()) {
-			fCore::toss('fEmptySetException', 'No ' . fGrammar::humanize(fGrammar::pluralize($this->class_name)) . ' could be found');
+			fCore::toss(
+				'fEmptySetException',
+				fGrammar::compose(
+					'No %s could be found',
+					fGrammar::pluralize(fORM::getRecordName($this->class_name))
+				)
+			);
 		}
 	}
 	

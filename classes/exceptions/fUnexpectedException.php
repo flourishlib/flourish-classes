@@ -25,9 +25,11 @@ abstract class fUnexpectedException extends fPrintableException
 		$exception_class = strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', preg_replace('#^f#', '', get_class($this))));
 		$css_class       = 'exception ' . $exception_class;
 		
-		echo '<div class="' . $css_class . '">';
-		echo '<p>It appears an error has occured &mdash; we apologize for the inconvenience. The problem may be resolved if you try again.</p>';
-		echo '</div>';
+		echo '<div class="' . $css_class . '"><p>';
+		echo fGrammar::compose(
+			'It appears an error has occured — we apologize for the inconvenience. The problem may be resolved if you try again.'
+		);
+		echo '</p></div>';
 	}
 }
 

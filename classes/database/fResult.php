@@ -95,7 +95,14 @@ class fResult implements Iterator
 		
 		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The database extension specified, %s, in invalid. Must be one of: %s.',
+					fCore::dump($extension),
+					join(', ', $valid_extensions)
+				)
+			);
 		}
 		$this->extension = $extension;
 	}
@@ -184,11 +191,17 @@ class fResult implements Iterator
 	public function current()
 	{
 		if(!$this->returned_rows) {
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+			fCore::toss(
+				'fNoResultsException',
+				fGrammar::compose('The query did not return any rows')
+			);
 		}
 		
 		if (!$this->valid()) {
-			fCore::toss('fNoRemainingException', 'There are no remaining rows');
+			fCore::toss(
+				'fNoRemainingException',
+				fGrammar::compose('There are no remaining rows')
+			);
 		}
 		
 		// Primes the result set
@@ -208,9 +221,7 @@ class fResult implements Iterator
 	 */
 	public function fetchAllRows()
 	{
-		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'It is not possible to fetch all rows from a result if at least one row has already been returned');
-		}
+		$this->seek(0);
 		
 		$all_rows = array();
 		foreach ($this as $row) {
@@ -274,7 +285,7 @@ class fResult implements Iterator
 				$module_info = ob_get_contents();
 				ob_end_clean();
 				
-				$using_dblib = preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">\s*FreeTDS\s*</td>#ims', $module_info, $match);
+				$using_dblib = preg_match('#FreeTDS#ims', $module_info, $match);
 			}
 		}
 		
@@ -285,13 +296,31 @@ class fResult implements Iterator
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
+						'http://bugs.php.net/bug.php?id=26315'
+					)
+				);
 			}
 			if (strlen($key) == 30) {
-				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A column name exactly 30 characters in length was detected coming out of the database - this column name may be truncated, see %s for more information.',
+						'http://bugs.php.net/bug.php?id=23990'
+					)
+				);
 			}
 			if (strlen($value) == 256) {
-				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A value exactly 255 characters in length was detected coming out of the database - this value may be truncated, see %s for more information.',
+						'http://bugs.php.net/bug.php?id=37757'
+					)
+				);
 			}
 		}
 		
@@ -444,11 +473,17 @@ class fResult implements Iterator
 	public function seek($row)
 	{
 		if(!$this->returned_rows) {
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+			fCore::toss(
+				'fNoResultsException',
+				fGrammar::compose('The query did not return any rows')
+			);
 		}
 		
 		if ($row >= $this->returned_rows || $row < 0) {
-			fCore::toss('fProgrammerException', 'The row requested does not exist');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('The row requested does not exist')
+			);
 		}
 		
 		$this->pointer = $row;
@@ -469,7 +504,13 @@ class fResult implements Iterator
 		}
 		
 		if (!$success) {
-			fCore::toss('fSQLException', 'There was an error seeking to result ' . $row);
+			fCore::toss(
+				'fSQLException',
+				fGrammar::compose(
+					'There was an error seeking to row %s',
+					$row
+				)
+			);
 		}
 		
 		$this->advanceCurrentRow();
@@ -572,8 +613,11 @@ class fResult implements Iterator
 	 */
 	public function tossIfNoResults()
 	{
-		if (empty($this->returned_rows) && empty($this->affected_rows)) {
-			fCore::toss('fNoResultsException', 'No rows were return or affected by the query');
+		if (!$this->returned_rows && !$this->affected_rows) {
+			fCore::toss(
+				'fNoResultsException',
+				fGrammar::compose('No rows were returned or affected by the query')
+			);
 		}
 	}
 	

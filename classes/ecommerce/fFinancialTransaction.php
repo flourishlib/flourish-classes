@@ -509,8 +509,16 @@ class fFinancialTransaction
 	 */
 	public function __construct($gateway, $account_number, $transaction_key)
 	{
-		if (!in_array($gateway, array('authorize_net', 'secure_pay'))) {
-			fCore::toss('fProgrammerException', 'Invalid gateway specified');
+		$valid_gateways = array('authorize_net', 'secure_pay');
+		if (!in_array($gateway, $valid_gateways)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The payment gateway specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($gateway),
+					join(', ', $valid_gateways)
+				)
+			);
 		}
 		
 		$this->gateway = $gateway;
@@ -599,7 +607,13 @@ class fFinancialTransaction
 			$result  = @trim(urldecode(file_get_contents($server, FALSE, $context)));
 		}
 		
-		fCore::debug("Data received from gateway:\n" . $result, $this->debug);
+		fCore::debug(
+			fGrammar::compose(
+				'Data received from gateway:%s',
+				"\n" . $result
+			),
+			$this->debug
+		);
 		
 		return $result;
 	}
@@ -620,7 +634,12 @@ class fFinancialTransaction
 		$result_array = explode(',', $result);
 		
 		if ($result_array[0] == '2') {
-			fCore::toss('fValidationException', 'The transaction was declined by the financial institution');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The transaction was declined by the financial institution'
+				)
+			);
 		}
 		
 		if ($result_array[0] == '3') {
@@ -628,20 +647,23 @@ class fFinancialTransaction
 				case '6':
 				case '7':
 				case '8':
-					$message = 'The credit card information entered is invalid';
+					$message = fGrammar::compose('The credit card information entered is invalid');
 					break;
 				case '9':
 				case '10':
-					$message = 'The bank account information entered is invalid';
+					$message = fGrammar::compose('The bank account information entered is invalid');
 					break;
 				case '17':
-					$message = 'The type of credit card entered is not currently accepted';
+					$message = fGrammar::compose('The type of credit card entered is not currently accepted');
 					break;
 				case '18':
-					$message = 'Electronic checks are not currently accepted';
+					$message = fGrammar::compose('Electronic checks are not currently accepted');
 					break;
 				default:
-					fCore::toss('fConnectivityException', 'There was an error processing the transaction');
+					fCore::toss(
+						'fConnectivityException',
+						fGrammar::compose('There was an error processing the transaction')
+					);
 			}
 			fCore::toss('fValidationException', $message);
 		}
@@ -1236,46 +1258,69 @@ class fFinancialTransaction
 			$field_info =& $this->secure_pay_field_info;
 		}
 		
-		$message = '';
+		$messages = array();
 		
 		$this->setDefaultValues();
 		
 		foreach ($field_info as $field => $info) {
 			if ($info['required'] && !isset($this->transaction_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a value\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a value',
+					fGrammar::humanize($field)
+				);
 			}
 		}
 		
 		foreach ($this->transaction_info as $field => $value) {
 			$info =& $field_info[$field];
 			if (isset($info['valid_values']) && !in_array($this->transaction_info[$field], $info['valid_values'])) {
-				$message .= fGrammar::humanize($field) . ": Please choose from one of the following: " . join(', ', $info['valid_values']) . "\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please choose from one of the following: %s',
+					fGrammar::humanize($field),
+					join(', ', $info['valid_values'])
+				);
 				continue;
 			}
 			if ($info['type'] == 'string' && !is_string($this->transaction_info[$field]) && !is_numeric($this->transaction_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a string\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a string',
+					fGrammar::humanize($field)
+				);
 				continue;
 			}
 			if (isset($info['max_length']) && strlen($this->transaction_info[$field]) > $info['max_length']) {
-				$message .= fGrammar::humanize($field) . ": Please enter a value no longer than " . $info['max_length'] . " characters\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a value no longer than %s characters',
+					fGrammar::humanize($field),
+					$info['max_length']
+				);
 				continue;
 			}
 			if ($info['type'] == 'date' && !$this->standardizeDate($this->transaction_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a month/year\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a month/year',
+					fGrammar::humanize($field)
+				);
 				continue;
 			}
 			if ($info['type'] == 'money' && !$this->standardizeMoney($this->transaction_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a monetary value\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a monetary value',
+					fGrammar::humanize($field)
+				);
 				continue;
 			}
 			if ($info['type'] == 'boolean' && !is_bool($this->transaction_info[$field])) {
-				$message .= fGrammar::humanize($field) . ": Please enter a boolean value\n";
+				$messages[] = fGrammar::compose(
+					'%s: Please enter a boolean value',
+					fGrammar::humanize($field)
+				);
 				continue;
 			}
 		}
 		
-		if ($message) {
-			fCore::toss('fValidationException', $message);
+		if ($messages) {
+			fCore::toss('fValidationException', join("\n", $messages));
 		}
 	}
 }

@@ -152,16 +152,29 @@ class fDatabase
 	{
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'Invalid database type, ' . $type . ', specified. Must be one of: ' . join(', ', $valid_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The database type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
 		}
 		
 		if (empty($database)) {
-			fCore::toss('fProgrammerException', 'No database was specified');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('No database was specified')
+			);
 		}
 		
 		if ($type != 'sqlite') {
 			if (empty($username)) {
-				fCore::toss('fProgrammerException', 'No username was specified');
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose('No username was specified')
+				);
 			}
 			if ($host === NULL) {
 				$host = 'localhost';
@@ -219,33 +232,43 @@ class fDatabase
 	private function checkForError($result, $sqlite_error_message=NULL)
 	{
 		if ($result->getResult() === FALSE) {
+			
 			if ($this->extension == 'mssql') {
-				$message = 'MSSQL error (' . mssql_get_last_message() . ') in ' . $result->getSql();
+				$message = mssql_get_last_message();
 			} elseif ($this->extension == 'mysql') {
-				$message = 'MySQL error (' . mysql_error($this->connection) . ') in ' . $result->getSql();
+				$message = mysql_error($this->connection);
 			} elseif ($this->extension == 'mysqli') {
-				$message = 'MySQL error (' . mysqli_error($this->connection) . ') in ' . $result->getSql();
+				$message = mysqli_error($this->connection);
 			} elseif ($this->extension == 'odbc') {
-				$message = 'MSSQL error (' . odbc_errormsg($this->connection) . ') in ' . $result->getSql();
+				$message = odbc_errormsg($this->connection);
 			} elseif ($this->extension == 'pgsql') {
-				$message = 'PostgreSQL error (' . pg_last_error($this->connection) . ') in ' . $result->getSql();
+				$message = pg_last_error($this->connection);
 			} elseif ($this->extension == 'sqlite') {
-				$message = 'SQLite error (' . $sqlite_error_message . ') in ' . $result->getSql();
+				$message = $sqlite_error_message;
 			} elseif ($this->extension == 'sqlsrv') {
 				$error_info = sqlsrv_errors(SQLSRV_ERR_ALL);
-				$message = 'MSSQL error (' . $error_info[0]['message'] . ') in ' . $result->getSql();
+				$message = $error_info[0]['message'];
 			} elseif ($this->extension == 'pdo') {
 				$error_info = $this->connection->errorInfo();
-				$db_type_map = array(
-					'mssql'      => 'MSSQL',
-					'mysql'      => 'MySQL',
-					'postgresql' => 'PostgreSQL',
-					'sqlite'     => 'SQLite'
-				);
-				
-				$message = $db_type_map[$this->type] . ' error (' . $error_info[2] . ') in ' . $result->getSql();
+				$message = $error_info[2];
 			}
-			fCore::toss('fSQLException', $message);
+			
+			$db_type_map = array(
+				'mssql'      => 'MSSQL',
+				'mysql'      => 'MySQL',
+				'postgresql' => 'PostgreSQL',
+				'sqlite'     => 'SQLite'
+			);
+			
+			fCore::toss(
+				'fSQLException',
+				fGrammar::compose(
+					'%s error (%s) in %s',
+					$db_type_map[$this->type],
+					$message,
+					$result->getSQL()
+				)
+			);
 		}
 	}
 	
@@ -355,7 +378,12 @@ class fDatabase
 		
 		// Ensure the connection was established
 		if ($this->connection === FALSE) {
-			fCore::toss('fConnectivityException', 'Unable to connect to database');
+			fCore::toss(
+				'fConnectivityException',
+				fGrammar::compose(
+					'Unable to connect to database'
+				)
+			);
 		}
 		
 		// Make MySQL act more strict and use UTF-8
@@ -390,77 +418,142 @@ class fDatabase
 	private function determineExtension()
 	{
 		switch ($this->type) {
+			
 			case 'mssql':
+			
 				$odbc = strtolower(substr($this->database, 0, 4)) == 'dsn:';
+				
 				if ($odbc) {
 					if (class_exists('PDO', FALSE) && in_array('odbc', PDO::getAvailableDrivers())) {
 						$this->extension = 'pdo';
+						
 					} elseif (extension_loaded('odbc')) {
 						$this->extension = 'odbc';
+						
 					} else {
-						fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL (via ODBC) support: pdo_odbc, odbc');
+						$type = 'MSSQL (ODBC)';
+						$exts = 'pdo_odbc, odbc';
 					}	
+					
 				} else {
 					if (extension_loaded('sqlsrv')) {
 						$this->extension = 'sqlsrv';
+						
 					} elseif (class_exists('PDO', FALSE) && in_array('mssql', PDO::getAvailableDrivers())) {
 						$this->extension = 'pdo';
+						
 					} elseif (extension_loaded('mssql')) {
 						$this->extension = 'mssql';
+						
 					} else {
-						fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MSSQL support: sqlsrv, pdo_dblib, mssql');
+						$type = 'MSSQL';
+						$exts = 'sqlsrv, pdo_dblib, mssql';
 					}	
 				}
 				break;
 			
+			
 			case 'mysql':
+			
 				if (class_exists('PDO', FALSE) && in_array('mysql', PDO::getAvailableDrivers())) {
 					$this->extension = 'pdo';
+					
 				} elseif (extension_loaded('mysqli')) {
 					$this->extension = 'mysqli';
+					
 				} elseif (extension_loaded('mysql')) {
 					$this->extension = 'mysql';
+					
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for MySQL support: mysql, mysqli, pdo_mysql');
+					$type = 'MySQL';
+					$exts = 'mysql, mysqli, pdo_mysql';
 				}
 				break;
+				
 				
 			case 'postgresql':
+			
 				if (class_exists('PDO', FALSE) && in_array('pgsql', PDO::getAvailableDrivers())) {
 					$this->extension = 'pdo';
+					
 				} elseif (extension_loaded('pgsql')) {
 					$this->extension = 'pgsql';
+					
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for PostgreSQL support: pgsql, pdo_pgsql');
+					$type = 'PostgreSQL';
+					$exts = 'pgsql, pdo_pgsql';
 				}
 				break;
 				
+				
 			case 'sqlite':
+			
 				$sqlite_version = 0;
+				
 				if (file_exists($this->database)) {
+					
 					$database_handle  = fopen($this->database, 'r');
 					$database_version = fread($database_handle, 64);
 					fclose($database_handle);
+					
 					if (strpos($database_version, 'SQLite format 3') !== FALSE) {
 						$sqlite_version = 3;
 					} elseif (strpos($database_version, '** This file contains an SQLite 2.1 database **') !== FALSE) {
 						$sqlite_version = 2;
 					} else {
-						fCore::toss('fConnectivityException', 'The database specified does not appear to be a valid SQLite v2.1 or v3 database');
+						fCore::toss(
+							'fConnectivityException',
+							fGrammar::compose(
+								'The database specified does not appear to be a valid %s or %s database',
+								'SQLite v2.1',
+								'v3'
+							)
+						);
 					}
 				}
+				
 				if ((!$sqlite_version || $sqlite_version == 3) && class_exists('PDO', FALSE) && in_array('sqlite', PDO::getAvailableDrivers())) {
 					$this->extension = 'pdo';
+					
 				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || !in_array('sqlite', PDO::getAvailableDrivers()))) {
-					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v3 database and the pdo_sqlite extension is not installed');
+					fCore::toss(
+						'fEnvironmentException',
+						fGrammar::compose(
+							'The database specified is an %s database and the %s extension is not installed',
+							'SQLite v3',
+							'pdo_sqlite'	
+						)
+					);
+					
 				} elseif ($sqlite_version == 2 && extension_loaded('sqlite')) {
 					$this->extension = 'sqlite';
+					
 				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
-					fCore::toss('fEnvironmentException', 'The database specified is an SQLite v2.1 database and the sqlite extension is not installed');
+					fCore::toss(
+						'fEnvironmentException',
+						fGrammar::compose(
+							'The database specified is an %s database and the %s extension is not installed',
+							'SQLite v2.1',
+							'sqlite'
+						)
+					);
+					
 				} else {
-					fCore::toss('fEnvironmentException', 'The server does not have any of the following extensions for SQLite support: pdo_sqlite, sqlite');
+					$type = 'SQLite';
+					$exts = 'pdo_sqlite, sqlite';
 				}
 				break;
+		}
+		
+		if (!$this->extension) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The server does not have any of the following extensions for %s support: %s',
+					$type,
+					$exts
+				)
+			);				
 		}
 	}
 	
@@ -551,7 +644,13 @@ class fDatabase
 		}
 		
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid date');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The value provided, %s, is not a valid date',
+					fCore::dump($value)
+				)
+			);
 		}
 		return "'" . date('Y-m-d', strtotime($value)) . "'";
 	}
@@ -685,7 +784,13 @@ class fDatabase
 		}
 		
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid time');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The value provided, %s, is not a valid time',
+					fCore::dump($value)
+				)
+			);
 		}
 		return "'" . date('H:i:s', strtotime($value)) . "'";
 	}
@@ -708,7 +813,13 @@ class fDatabase
 		}
 		
 		if (!strtotime($value)) {
-			fCore::toss('fValidationException', 'The value provided, ' . $value . ', is not a valid timestamp');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The value provided, %s, is not a valid timestamp',
+					fCore::dump($value)
+				)
+			);
 		}
 		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
 	}
@@ -723,14 +834,14 @@ class fDatabase
 	private function executeQuery(fResult $result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSql(), $this->connection));
+			$result->setResult(@mssql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_query($result->getSql(), $this->connection));
+			$result->setResult(@mysql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSql()));
+			$result->setResult(@mysqli_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'odbc') {
 			$rows = array();
-			$resource = @odbc_exec($this->connection, $result->getSql());
+			$resource = @odbc_exec($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				// Allow up to 1MB of binary data
 				odbc_longreadlen($resource, 1048576);
@@ -743,12 +854,12 @@ class fDatabase
 				$result->setResult($resource);	
 			}
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSql()));
+			$result->setResult(@pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(@sqlite_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
 			$rows = array();
-			$resource = @sqlsrv_query($this->connection, $result->getSql());
+			$resource = @sqlsrv_query($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				while ($row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC)) {
 					$rows[] = $row;
@@ -758,7 +869,7 @@ class fDatabase
 				$result->setResult($resource);	
 			}
 		} elseif ($this->extension == 'pdo') {
-			$pdo_statement = $this->connection->query($result->getSql());
+			$pdo_statement = $this->connection->query($result->getSQL());
 			$result->setResult((is_object($pdo_statement)) ? $pdo_statement->fetchAll(PDO::FETCH_ASSOC) : $pdo_statement);
 		}
 		
@@ -797,21 +908,21 @@ class fDatabase
 	private function executeUnbufferedQuery(fUnbufferedResult $result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSql(), $this->connection, 20));
+			$result->setResult(@mssql_query($result->getSQL(), $this->connection, 20));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_unbuffered_query($result->getSql(), $this->connection));
+			$result->setResult(@mysql_unbuffered_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSql(), MYSQLI_USE_RESULT));
+			$result->setResult(@mysqli_query($this->connection, $result->getSQL(), MYSQLI_USE_RESULT));
 		} elseif ($this->extension == 'odbc') {
-			$result->setResult(@odbc_exec($this->connection, $result->getSql()));
+			$result->setResult(@odbc_exec($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSql()));
+			$result->setResult(@pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSql(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
-			$result->setResult(@sqlsrv_query($this->connection, $result->getSql()));
+			$result->setResult(@sqlsrv_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pdo') {
-			$result->setResult($this->connection->query($result->getSql()));
+			$result->setResult($this->connection->query($result->getSQL()));
 		}
 		
 		if ($this->extension == 'sqlite') {
@@ -1070,7 +1181,15 @@ class fDatabase
 				'sqlite'     => 'SQLite'
 			);
 			
-			fCore::toss('fSQLException', $db_type_map[$this->type] . ' error (' . $e->getMessage() . ') in ' . $sql);
+			fCore::toss(
+				'fSQLException',
+				fGrammar::compose(
+					'%s error (%s) in %s',
+					$db_type_map[$this->type],
+					$e->getMessage(),
+					$sql
+				)
+			);
 		}
 		
 		if ($success) {
@@ -1107,7 +1226,10 @@ class fDatabase
 		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
-			fCore::toss('fProgrammerException', 'No SQL statement passed');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('No SQL statement passed')
+			);
 		}
 		
 		// Split multiple queries
@@ -1129,7 +1251,14 @@ class fDatabase
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
-		fCore::debug('Query time was ' . $query_time . " seconds for:\n" . $result->getSql(), $this->debug);
+		fCore::debug(
+			fGrammar::compose(
+				"Query time was %s seconds for:%s",
+				$query_time,
+				"\n" . $result->getSQL()
+			),
+			$this->debug
+		);
 		
 		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
@@ -1217,19 +1346,28 @@ class fDatabase
 	{
 		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
 			if ($this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'A transaction is already in progress');
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose('A transaction is already in progress')
+				);
 			}
 			$this->inside_transaction = TRUE;
 			
 		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'There is no transaction in progress');
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose('There is no transaction in progress')
+				);
 			}
 			$this->inside_transaction = FALSE;
 			
 		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss('fProgrammerException', 'There is no transaction in progress');
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose('There is no transaction in progress')
+				);
 			}
 			$this->inside_transaction = FALSE;
 		}
@@ -1271,7 +1409,10 @@ class fDatabase
 		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
-			fCore::toss('fProgrammerException', 'No SQL statement passed');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('No SQL statement passed')
+			);
 		}
 		
 		if ($this->unbuffered_result) {
@@ -1291,7 +1432,14 @@ class fDatabase
 		// Write some debugging info
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
-		fCore::debug('Query time was ' . $query_time . " seconds for (unbuffered):\n" . $result->getSql(), $this->debug);
+		fCore::debug(
+			fGrammar::compose(
+				"Query time was %s seconds for (unbuffered):%s",
+				$query_time,
+				"\n" . $result->getSQL()
+			),
+			$this->debug
+		);
 		
 		$this->unbuffered_result = $result;
 		

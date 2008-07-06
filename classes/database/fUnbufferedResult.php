@@ -69,7 +69,14 @@ class fUnbufferedResult implements Iterator
 	{
 		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'Invalid database extension, ' . $extension . ', selected. Must be one of: ' . join(', ', $valid_extensions) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The database extension specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($extension),
+					join(', ', $valid_extensions)
+				)
+			);
 		}
 		$this->extension = $extension;
 	}
@@ -169,9 +176,16 @@ class fUnbufferedResult implements Iterator
 		}
 		
 		if(!$this->current_row && $this->pointer == 0) {
-			fCore::toss('fNoResultsException', 'The query specified did not return any rows');
+			fCore::toss(
+				'fNoResultsException',
+				fGrammar::compose('The query did not return any rows')
+			);
+			
 		} elseif (!$this->current_row) {
-			fCore::toss('fNoRemainingException', 'There are no remaining rows');
+			fCore::toss(
+				'fNoRemainingException',
+				fGrammar::compose('There are no remaining rows')
+			);
 		}
 		
 		return $this->current_row;
@@ -217,7 +231,7 @@ class fUnbufferedResult implements Iterator
 				$module_info = ob_get_contents();
 				ob_end_clean();
 				
-				$using_dblib = preg_match('#<a name="module_mssql">mssql</a>.*?Library version </td><td class="v">\s*FreeTDS\s*</td>#ims', $module_info, $match);
+				$using_dblib = preg_match('#FreeTDS#ims', $module_info, $match);
 			}
 		}
 		
@@ -228,13 +242,31 @@ class fUnbufferedResult implements Iterator
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				fCore::trigger('notice', 'The fResult class changed a single space coming out of the database into an empty string, see <a href="http://bugs.php.net/bug.php?id=26315">http://bugs.php.net/bug.php?id=26315</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
+						'http://bugs.php.net/bug.php?id=26315'
+					)
+				);
 			}
 			if (strlen($key) == 30) {
-				fCore::trigger('notice', 'The fResult class detected a column name exactly 30 characters in length coming out of the database. This column name may be truncated, see <a href="http://bugs.php.net/bug.php?id=23990">http://bugs.php.net/bug.php?id=23990</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A column name exactly 30 characters in length was detected coming out of the database - this column name may be truncated, see %s for more information.',
+						'http://bugs.php.net/bug.php?id=23990'
+					)
+				);
 			}
 			if (strlen($value) == 256) {
-				fCore::trigger('notice', 'The fResult class detected a value exactly 255 characters in length coming out of the database. This value may be truncated, see <a href="http://bugs.php.net/bug.php?id=37757">http://bugs.php.net/bug.php?id=37757</a>');
+				fCore::trigger(
+					'notice',
+					fGrammar::compose(
+						'A value exactly 255 characters in length was detected coming out of the database - this value may be truncated, see %s for more information.',
+						'http://bugs.php.net/bug.php?id=37757'
+					)
+				);
 			}
 		}
 		
@@ -322,7 +354,12 @@ class fUnbufferedResult implements Iterator
 	public function rewind()
 	{
 		if (!empty($this->pointer)) {
-			fCore::toss('fProgrammerException', 'Database results can not be iterated through multiple times');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Unbuffered database results can not be iterated through multiple times'
+				)
+			);
 		}
 	}
 	

@@ -34,7 +34,13 @@ class fTime
 	{
 		$parsed = strtotime($time);
 		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The time specified, %s, does not appear to be a valid time',
+					fCore::dump($time)
+				)
+			);
 		}
 		$this->set($parsed);
 	}
@@ -81,7 +87,14 @@ class fTime
 		
 		$restricted_formats = 'cdDeFIjlLmMnNoOPrStTUwWyYzZ';
 		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss('fProgrammerException', 'The formatting string, ' . $format . ', contains one of the following non-time formatting characters: ' . join(', ', str_split($restricted_formats)));
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The formatting string, %s, contains one of the following non-time formatting characters: %s',
+					fCore::dump($format),
+					join(', ', str_split($restricted_formats))
+				)
+			);
 		}
 		
 		$time = $this->time;
@@ -132,32 +145,48 @@ class fTime
 		$diff = $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
 		
 		if (abs($diff) < 10) {
-			return ($relative_to_now) ? 'right now' : 'at the same time';
+			if ($relative_to_now) {
+				return fGrammar::compose('right now');	
+			}
+			return fGrammar::compose('at the same time');
+		}
+		
+		static $break_points = array();
+		if (!$break_points) {
+			$break_points = array(
+				/* 45 seconds  */
+				45     => array(1,     fGrammar::compose('second'), fGrammar::compose('seconds')),
+				/* 45 minutes  */
+				2700   => array(60,    fGrammar::compose('minute'), fGrammar::compose('minutes')),
+				/* 18 hours    */
+				64800  => array(3600,  fGrammar::compose('hour'),   fGrammar::compose('hours')),
+				/* 5 days      */
+				432000 => array(86400, fGrammar::compose('day'),    fGrammar::compose('days'))
+			);
+		}
+		
+		foreach ($break_points as $break_point => $unit_info) {
+			if (abs($diff) > $break_point) { continue; }
+			
+			$unit_diff = round(abs($diff)/$unit_info[0]);
+			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[2]);
+			break;
 		}
 		
 		if ($relative_to_now) {
-			$suffix = ($diff > 0) ? ' from now' : ' ago';
-		} else {
-			$suffix = ($diff > 0) ? ' after' : ' before';
+			if ($diff > 0) {
+				return fGrammar::compose('%s %s from now', $unit_diff, $units);
+			}
+			
+			return fGrammar::compose('%s %s ago', $unit_diff, $units);	
 		}
 		
-		$diff = abs($diff);
 		
-		$break_points = array(
-			45         /* 45 seconds  */ => array(1,     'second'),
-			2700       /* 45 minutes  */ => array(60,    'minute'),
-			64800      /* 18 hours    */ => array(3600,  'hour'),
-			432000     /* 5 days      */ => array(86400, 'day')
-		);
-		
-		foreach ($break_points as $break_point => $unit_info) {
-			if ($diff > $break_point) { continue; }
-			
-			$unit_diff = round($diff/$unit_info[0]);
-			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
-			
-			return $unit_diff . ' ' . $units . $suffix;
+		if ($diff > 0) {
+			return fGrammar::compose('%s %s after', $unit_diff, $units);
 		}
+		
+		return fGrammar::compose('%s %s before', $unit_diff, $units);
 	}
 	
 	
@@ -191,11 +220,23 @@ class fTime
 		$timestamp = strtotime($adjustment, $timestamp);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', does not appear to be a valid relative time measurement');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, does not appear to be a valid relative time measurement',
+					fCore::dump($adjustment)
+				)
+			);
 		}
 		
 		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
-			fCore::toss('fValidationException', 'The adjustment specified, ' . $adjustment . ', appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.',
+					fCore::dump($adjustment)
+				)
+			);
 		}
 		
 		return $timestamp;
@@ -231,13 +272,31 @@ class fTime
 		$second = ($second === NULL) ? date('s', $this->time) : $second;
 		
 		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
-			fCore::toss('fValidationException', 'The hour specified, ' . $hour . ', does not appear to be a valid hour');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The hour specified, %s, does not appear to be a valid hour',
+					fCore::dump($hour)
+				)
+			);
 		}
 		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
-			fCore::toss('fValidationException', 'The minute specified, ' . $minute . ', does not appear to be a valid minute');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The minute specified, %s, does not appear to be a valid minute',
+					fCore::dump($minute)
+				)
+			);
 		}
 		if (!is_numeric($second) || $second < 0 || $second > 59) {
-			fCore::toss('fValidationException', 'The second specified, ' . $second . ', does not appear to be a valid second');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The second specified, %s, does not appear to be a valid second',
+					fCore::dump($second)
+				)
+			);
 		}
 		
 		settype($minute, 'integer');
@@ -248,7 +307,15 @@ class fTime
 		
 		$parsed = strtotime($hour . ':' . $minute . ':' . $second);
 		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss('fValidationException', 'The time specified, ' . $time . ', does not appear to be a valid time');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The time specified, %s:%s:%s, does not appear to be a valid time'.
+					fCore::dump($hour),
+					fCore::dump($minute),
+					fCore::dump($second)
+				)
+			);
 		}
 		$this->set($parsed);
 	}

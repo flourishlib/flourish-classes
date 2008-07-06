@@ -68,17 +68,37 @@ class fSQLTranslation
 	public function __construct($connection, $type, $extension)
 	{
 		if (!is_resource($connection) && !is_object($connection)) {
-			fCore::toss('fProgrammerException', 'The connection specified is not a valid database connection');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The connection specified, %s, is not a valid database connection',
+					fCore::dump($connection)
+				)
+			);
 		}
 		
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss('fProgrammerException', 'The type specified, ' . $type . ', is not valid. Must be one of: ' . join(', ', $valid_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The database type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
 		}
 		
 		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss('fProgrammerException', 'The extension specified, ' . $extension . ', is not valid. Must be one of: ' . join(', ', $valid_extensions) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The extension specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($extension),
+					join(', ', $valid_extensions)
+				)
+			);
 		}
 		
 		$this->connection = $connection;
@@ -342,8 +362,20 @@ class fSQLTranslation
 		$new_sql = $this->translateCreateTableStatements($new_sql);
 		
 		if ($sql != $new_sql) {
-			fCore::debug("Original SQL:\n" . $sql, $this->debug);
-			fCore::debug("Translated SQL:\n" . $new_sql, $this->debug);
+			fCore::debug(
+				fGrammar::compose(
+					"Original SQL:%s",
+					"\n" .$sql
+				),
+				$this->debug
+			);
+			fCore::debug(
+				fGrammar::compose(
+					"Translated SQL:%s",
+					"\n" . $new_sql
+				),
+				$this->debug
+			);
 		}
 		
 		return $new_sql;

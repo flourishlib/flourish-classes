@@ -1304,7 +1304,14 @@ class fSchema implements fISchema
 	{
 		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
 		if ($element && !in_array($element, $valid_elements)) {
-			fCore::toss('fProgrammerException', 'The element type specified, ' . $element . ', is not valid. Must be one of: ' . join(', ', $valid_elements) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The element specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($element),
+					join(', ', $valid_elements)
+				)
+			);
 		}
 		
 		// Return the saved column info if possible
@@ -1322,10 +1329,23 @@ class fSchema implements fISchema
 		$this->mergeColumnInfo();
 		
 		if (!isset($this->merged_column_info[$table])) {
-			fCore::toss('fProgrammerException', 'The table, ' . $table . ', does not exist in the database');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The table specified, %s, does not exist in the database',
+					fCore::dump($element)
+				)
+			);
 		}
 		if ($column && !isset($this->merged_column_info[$table][$column])) {
-			fCore::toss('fProgrammerException', 'The column, ' . $column . ', does not exist in the table ' . $table);
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The column specified, %s, does not exist in the table %s',
+					fCore::dump($column),
+					fCore::dump($table)
+				)
+			);
 		}
 		
 		if ($column) {
@@ -1373,7 +1393,14 @@ class fSchema implements fISchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if ($key_type !== NULL && !in_array($key_type, $valid_key_types)) {
-			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The key type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($key_type),
+					join(', ', $valid_key_types)
+				)
+			);
 		}
 		
 		// Return the saved column info if possible
@@ -1386,7 +1413,13 @@ class fSchema implements fISchema
 		}
 		
 		if (!in_array($table, $this->getTables())) {
-			fCore::toss('fProgrammerException', 'The table, ' . $table . ', does not exist in the database');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The table specified, %s, does not exist in the database',
+					fCore::dump($table)
+				)
+			);
 		}
 		
 		$this->fetchKeys();
@@ -1456,7 +1489,14 @@ class fSchema implements fISchema
 	{
 		$valid_relationship_types = array('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many');
 		if ($relationship_type !== NULL && !in_array($relationship_type, $valid_relationship_types)) {
-			fCore::toss('fProgrammerException', 'Invalid relationship type, ' . $relationship_type . ', selected. Must be one of: ' . join(', ', $valid_relationship_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($relationship_type),
+					join(', ', $valid_relationship_types)
+				)
+			);
 		}
 		
 		// Return the saved column info if possible
@@ -1469,7 +1509,13 @@ class fSchema implements fISchema
 		}
 		
 		if (!in_array($table, $this->getTables())) {
-			fCore::toss('fProgrammerException', 'The table, ' . $table . ', does not exist in the database');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The table specified, %s, does not exist in the database',
+					fCore::dump($table)
+				)
+			);
 		}
 		
 		$this->fetchKeys();
@@ -1614,12 +1660,29 @@ class fSchema implements fISchema
 	 */
 	public function setCacheFile($file)
 	{
+		$file = realpath($file);
+		
 		if (file_exists($file) && !is_writable($file)) {
-			fCore::toss('fEnvironmentException', 'The cache file specified, ' . $file . ', is not writable');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The cache file specified, %s, is not writable',
+					fCore::dump($file)
+				)
+			);
 		}
+		
 		if (!file_exists($file) && !is_writable(dirname($file))) {
-			fCore::toss('fEnvironmentException', 'The cache file directory, ' . dirname($file) . ', is not writable');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The cache file specified, %s, does not exist and the cache file directory, %s, is not writable',
+					fCore::dump($file),
+					fCore::dump(dirname($file) . DIRECTORY_SEPARATOR)
+				)
+			);
 		}
+		
 		$this->cache_file = $file;
 		
 		$contents = file_get_contents($this->cache_file);
@@ -1670,7 +1733,14 @@ class fSchema implements fISchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if (!in_array($key_type, $valid_key_types)) {
-			fCore::toss('fProgrammerException', 'Invalid key type, ' . $key_type . ', selected. Must be one of: ' . join(', ', $valid_key_types) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The key type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($key_type),
+					join(', ', $valid_key_types)
+				)
+			);
 		}
 		
 		if (!isset($this->keys_override[$table])) {
