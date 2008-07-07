@@ -82,11 +82,22 @@ class fRecordSet implements Iterator
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);
 		}
 		
+		$sql .= ' :group_by_clause ';
+		
 		if ($order_bys) {
-			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
+			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
+		
+		// If no ordering is specified, order by the primary key
+		} else {
+			$primary_keys = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+			$expressions = array();
+			foreach ($primary_keys as $primary_key) {
+				$expressions[] = $table_name . '.' . $primary_key . ' ASC';	
+			}
+			$sql .= 'ORDER BY ' . join(', ', $expressions);	
 		}
 		
-		$sql = fORMDatabase::insertFromClause($table_name, $sql);
+		$sql = fORMDatabase::insertFromAndGroupByClauses($table_name, $sql);
 		
 		// Add the limit clause and create a query to get the non-limited total
 		$non_limited_count_sql = NULL;
@@ -260,11 +271,13 @@ class fRecordSet implements Iterator
 			$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);	
 		}
 		
+		$sql .= ' :group_by_clause ';
+		
 		if (!empty($order_bys)) {
-			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
+			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
 		}
 		
-		$sql = fORMDatabase::insertFromClause($table_name, $sql);
+		$sql = fORMDatabase::insertFromAndGroupByClauses($table_name, $sql);
 		
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
 		

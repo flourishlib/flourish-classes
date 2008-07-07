@@ -564,7 +564,7 @@ class fORMDatabase
 	 * @param  array $joins   Optional: The existing joins that have been parsed
 	 * @return string  The from SQL clause
 	 */
-	static public function insertFromClause($table, $sql, $joins=array())
+	static public function insertFromAndGroupByClauses($table, $sql, $joins=array())
 	{
 		if (strpos($sql, ':from_clause') === FALSE) {
 			fCore::toss(
@@ -634,7 +634,38 @@ class fORMDatabase
 			}
 		}
 		
-		$from_clause = self::createFromClauseFromJoins($joins);
+		// Determine if we joined a *-to-many relationship
+		$joined_to_many = FALSE;
+		foreach ($joins as $name => $join) {
+			if (is_numeric($name)) {
+				continue;	
+			}
+			$main_table   = preg_replace('#_' . $join['table_name'] . '{\w+}$#i', '', $name);
+			$second_table = $join['table_name'];
+			$route        = preg_replace('#^[^{]+{(\w+)}$#', '\1', $name);
+			$routes       = fORMSchema::getRoutes($main_table, $second_table, '*-to-many');
+			if (isset($routes[$route])) {
+				$joined_to_many = TRUE;
+				break;
+			}	
+		}
+		$found_order_by = FALSE;
+		
+		$from_clause     = self::createFromClauseFromJoins($joins);
+		
+		// If we are joining on a *-to-many relationship we need to group by the
+		// columns in the main table to prevent duplicate entries
+		if ($joined_to_many) {
+			$column_info     = fORMSchema::getInstance()->getColumnInfo($table);
+			$group_by_clause = ' GROUP BY ';
+			$columns         = array();
+			foreach ($column_info as $column => $info) {
+				$columns[] = $table . '.' . $column;
+			}
+			$group_by_clause .= join(', ', $columns) . ' ';
+		} else {
+			$group_by_clause = '';	
+		}
 		
 		// Put the SQL back together
 		$new_sql = '';
@@ -646,7 +677,23 @@ class fORMDatabase
 				foreach ($table_map as $arrow_table => $alias) {
 					$temp_sql = str_replace($arrow_table, $alias, $temp_sql);
 				}
-				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
+				
+				// In the ORDER BY clause we need to wrap columns in
+				if ($found_order_by && $joined_to_many) {
+					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $temp_sql);	
+				}
+				
+				if (preg_match('#order\s+by#i', $temp_sql)) {
+					$order_by_found = TRUE;	
+					
+					$parts = preg_split('#(order\s+by)#i', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE);
+					$parts[2] = $temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $parts[2]);
+					
+					$temp_sql = join('', $parts);
+				}
+				
+				$temp_sql = str_replace(':from_clause',     $from_clause,     $temp_sql);
+				$temp_sql = str_replace(' :group_by_clause ', $group_by_clause, $temp_sql);
 			}
 			
 			$new_sql .= $temp_sql;
