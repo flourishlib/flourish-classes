@@ -200,6 +200,16 @@ class fGrammar
 	 */
 	static public function humanize($string)
 	{
+		// If there is a space, it is already humanized
+		if (strpos($string, ' ') !== FALSE) {
+			return $string;	
+		}
+		
+		// If we don't have an underscore we probably have camelCase
+		if (strpos($string, '_') === FALSE) {
+			$string = self::underscorize($string);	
+		}
+		
 		return preg_replace(
 			'/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e',
 			'strtoupper("\1")',
