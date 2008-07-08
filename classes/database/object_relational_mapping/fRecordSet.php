@@ -392,6 +392,30 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Allows for preloading of related records by dynamically creating preload{related plural class}() methods 
+	 *  
+	 * @throws fValidationException 
+	 *  
+	 * @param  string $method_name  The name of the method called 
+	 * @param  string $parameters   The parameters passed 
+	 * @return void 
+	 */ 
+	public function __call($method_name, $parameters) 
+	{ 
+		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2); 
+		 
+		switch ($action) { 
+			case 'preload': 
+				$element = fGrammar::camelize($element, TRUE); 
+				$element = fGrammar::singularize($element); 
+				return $this->performPreload($element, ($parameters != array()) ? $parameters[0] : NULL); 
+		} 
+		 
+		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called'); 
+	} 
+	 
+	 
+	/** 
 	 * Sets the contents of the set
 	 * 
 	 * @param  string  $class_name             The type of records to create
@@ -521,7 +545,7 @@ class fRecordSet implements Iterator
 		if ($record_number === NULL) {
 			$records = $this->records;
 		} else {
-			$records = array($this->records[$record_number]);
+			$records = array($record_number => $this->records[$record_number]);
 		}
 		
 		foreach ($records as $number => $record) {
@@ -660,6 +684,182 @@ class fRecordSet implements Iterator
 			$this->result_object->next();	
 		}
 		$this->pointer++;
+	}
+	
+	
+	/** 
+	 * Preloads a result object for related data 
+	 *  
+	 * @throws fValidationException 
+	 *  
+	 * @param  string $related_class  This should be the name of a related class 
+	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown. 
+	 * @return void 
+	 */ 
+	private function performPreload($related_class, $route=NULL) 
+	{ 
+		$related_table = fORM::tablize($related_class); 
+		$table         = fORM::tablize($this->class_name); 
+		 
+		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many'); 
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');  
+		
+		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary'); 
+		$first_pk_column = $pk_columns[0];
+		
+		$primary_keys = $this->getPrimaryKeys();
+		 
+		// Build the query out 
+		$new_sql  = 'SELECT ' . $related_table . '.*';
+		
+		// If we are going through a join table we need the related primary key for matching 
+		if (isset($relationship['join_table'])) { 
+			$new_sql .= ", " . $table . '.' . $relationship['column'];         
+		} 
+		
+		$new_sql .= ' FROM :from_clause '; 
+		 
+		// Build the where clause
+		$where_sql = '';
+		 
+		// We have a multi-field primary key, making things kinda ugly 
+		if (sizeof($pk_columns) > 1) { 
+			
+			$conditions = array(); 
+			 
+			foreach ($primary_keys as $primary_key) { 
+				$sub_conditions = array();
+				foreach ($pk_columns as $pk_column) {
+					$sub_conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_key[$pk_column], '='); 
+				} 
+				$conditions[] = join(' AND ', $sub_conditions);
+			} 
+			$where_sql .= '(' . join(') OR (', $conditions) . ')'; 
+		 
+		// We have a single primary key field, making things nice and easy 
+		} else { 
+			 
+			$values = array(); 
+			foreach ($primary_keys as $primary_key) { 
+				$values[] = fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_key); 
+			} 
+			$where_sql .= $table . '.' . $first_pk_column . ' IN (' . join(', ', $values) . ')'; 
+		} 		
+		
+		// Build the order by
+		$order_by_sql = '';
+		
+		$number = 0; 
+		foreach ($primary_keys as $primary_key) { 
+			$order_by_sql .= 'WHEN '; 
+			 
+			if (is_array($primary_key)) { 
+				$conditions = array(); 
+				foreach ($pk_columns as $pk_column) { 
+					$conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_key[$pk_column], '=');                   
+				} 
+				$order_by_sql .= join(' AND ', $conditions); 
+			} else { 
+				$order_by_sql .= $table . '.' . $first_pk_column . fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_key, '='); 
+			}    
+			 
+			$order_by_sql .= ' THEN ' . $number . ' ';   
+			 
+			$number++; 
+		}
+		
+		if ($order_by_sql) {
+			$order_by_sql = 'CASE ' . $order_by_sql . 'END ASC';	
+		}
+		 
+		$related_order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route); 
+			 
+		if ($order_by_sql && $related_order_bys) { 
+			$order_by_sql .= ', '; 
+		} 
+		 
+		if ($related_order_bys) { 
+			$order_by_sql .= fORMDatabase::createOrderByClause($related_table, $related_order_bys); 
+		} 
+		
+		
+		$new_sql .= ' WHERE ' . $where_sql;
+		$new_sql .= ' :group_by_clause ';
+		$new_sql .= ' ORDER BY ' . $order_by_sql;
+		 
+		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql); 
+		 
+		 
+		 
+		// Run the query and inject the results into the records 
+		$result = fORMDatabase::getInstance()->translatedQuery($new_sql); 
+		 
+		$total_records = sizeof($this->records); 
+		for ($i=0; $i < $total_records; $i++) { 
+			 
+			$record = $this->records[$i]; 
+			$keys   = array(); 
+			 
+			// If we are going through a join table, keep track of the record by the value in the join table
+			if (isset($relationship['join_table'])) { 
+				try {
+					$current_row = $result->current();
+					$keys[$relationship['column']] = $current_row[$relationship['column']];
+				} catch (fExpectedException $e) { } 
+			
+			// If it is a straight join, keep track of the value by the related column value
+			} else {
+				$method = 'get' . fGrammar::camelize($relationship['related_column'], TRUE); 
+				$keys[$relationship['related_column']] = $record->$method();
+			}
+			 
+			$rows = array(); 
+						 
+			try { 
+				while (!array_diff($keys, $result->current())) { 
+					$row = $result->fetchRow(); 
+					 
+					// If we are going through a join table we need to remove the related primary key that was used for matching 
+					if (isset($relationship['join_table'])) { 
+						unset($row[$relationship['column']]);        
+					} 
+					 
+					$rows[] = $row; 
+				} 
+			} catch (fExpectedException $e) { } 
+			 
+			 
+			$method = 'get' . fGrammar::camelize($relationship['column'], TRUE); 
+			 
+			$sql  = "SELECT " . $related_table . ".* FROM :from_clause"; 
+			 
+			$where_conditions = array( 
+				$table . '.' . $relationship['column'] . '=' => $record->$method() 
+			); 
+			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($related_table, $where_conditions); 
+			
+			$sql .= ' :group_by_clause ';
+			 
+			$order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route); 
+			if ($order_bys) { 
+				$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($related_table, $order_bys); 
+			} 
+			 
+			$sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $sql); 
+			 
+			 
+			$injected_result = new fResult('array'); 
+			$injected_result->setSQL($sql); 
+			$injected_result->setResult($rows); 
+			$injected_result->setReturnedRows(sizeof($rows)); 
+			$injected_result->setAffectedRows(0); 
+			$injected_result->setAutoIncrementedValue(NULL); 
+			 
+			$set = new fRecordSet($related_class, $injected_result); 
+			 
+			$method = 'inject' . fGrammar::pluralize($related_class); 
+			$record->$method($set);      
+		}
 	}
 	
 	

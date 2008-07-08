@@ -664,7 +664,7 @@ class fORMDatabase
 			}
 			$group_by_clause .= join(', ', $columns) . ' ';
 		} else {
-			$group_by_clause = '';	
+			$group_by_clause = ' ';	
 		}
 		
 		// Put the SQL back together
@@ -683,7 +683,7 @@ class fORMDatabase
 					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $temp_sql);	
 				}
 				
-				if (preg_match('#order\s+by#i', $temp_sql)) {
+				if ($joined_to_many && preg_match('#order\s+by#i', $temp_sql)) {
 					$order_by_found = TRUE;	
 					
 					$parts = preg_split('#(order\s+by)#i', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE);
