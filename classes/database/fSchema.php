@@ -154,19 +154,19 @@ class fSchema implements fISchema
 	{
 		switch ($this->database->getType()) {
 			case 'mssql':
-				$column_info = $this->fetchMssqlColumnInfo($table);
+				$column_info = $this->fetchMSSQLColumnInfo($table);
 				break;
 			
 			case 'mysql':
-				$column_info = $this->fetchMysqlColumnInfo($table);
+				$column_info = $this->fetchMySQLColumnInfo($table);
 				break;
 				
 			case 'postgresql':
-				$column_info = $this->fetchPostgresqlColumnInfo($table);
+				$column_info = $this->fetchPostgreSQLColumnInfo($table);
 				break;
 				
 			case 'sqlite':
-				$column_info = $this->fetchSqliteColumnInfo($table);
+				$column_info = $this->fetchSQLiteColumnInfo($table);
 				break;
 		}
 			
@@ -184,19 +184,19 @@ class fSchema implements fISchema
 	{
 		switch ($this->database->getType()) {
 			case 'mssql':
-				$keys = $this->fetchMssqlKeys();
+				$keys = $this->fetchMSSQLKeys();
 				break;
 				
 			case 'mysql':
-				$keys = $this->fetchMysqlKeys();
+				$keys = $this->fetchMySQLKeys();
 				break;
 				
 			case 'postgresql':
-				$keys = $this->fetchPostgresqlKeys();
+				$keys = $this->fetchPostgreSQLKeys();
 				break;
 			
 			case 'sqlite':
-				$keys = $this->fetchSqliteKeys();
+				$keys = $this->fetchSQLiteKeys();
 				break;
 		}
 			
@@ -227,7 +227,7 @@ class fSchema implements fISchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
-	private function fetchMssqlColumnInfo($table)
+	private function fetchMSSQLColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -373,7 +373,7 @@ class fSchema implements fISchema
 	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
-	private function fetchMssqlKeys()
+	private function fetchMSSQLKeys()
 	{
 		$keys = array();
 		
@@ -482,7 +482,7 @@ class fSchema implements fISchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
-	private function fetchMysqlColumnInfo($table)
+	private function fetchMySQLColumnInfo($table)
 	{
 		$data_type_mapping = array(
 			'tinyint(1)'		=> 'boolean',
@@ -604,7 +604,7 @@ class fSchema implements fISchema
 	 * 
 	 * @return array  The keys arrays for every table in the database (see method description for details)
 	 */
-	private function fetchMysqlKeys()
+	private function fetchMySQLKeys()
 	{
 		$tables   = $this->getTables();
 		$keys = array();
@@ -671,7 +671,7 @@ class fSchema implements fISchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
-	private function fetchPostgresqlColumnInfo($table)
+	private function fetchPostgreSQLColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -803,7 +803,7 @@ class fSchema implements fISchema
 	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
-	private function fetchPostgresqlKeys()
+	private function fetchPostgreSQLKeys()
 	{
 		$keys = array();
 		
@@ -930,7 +930,7 @@ class fSchema implements fISchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified (see method description for details)
 	 */
-	private function fetchSqliteColumnInfo($table)
+	private function fetchSQLiteColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -1035,7 +1035,7 @@ class fSchema implements fISchema
 	 * 
 	 * @return array  The key info arrays for every table in the database (see method description for details)
 	 */
-	private function fetchSqliteKeys()
+	private function fetchSQLiteKeys()
 	{
 		$tables   = $this->getTables();
 		$keys = array();

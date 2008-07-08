@@ -63,7 +63,7 @@ class fSQLTranslation
 	 * @param  mixed  $connection  The connection resource or PDO object
 	 * @param  string $type        The type of the database ('mssql', 'mysql', 'postgresql', or 'sqlite')
 	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', or 'sqlsrv')
-	 * @return fSqlTranslation
+	 * @return fSQLTranslation
 	 */
 	public function __construct($connection, $type, $extension)
 	{
@@ -106,7 +106,7 @@ class fSQLTranslation
 		$this->extension  = $extension;
 		
 		if ($this->type == 'sqlite') {
-			$this->createSqliteFunctions();
+			$this->createSQLiteFunctions();
 		}
 	}
 	
@@ -121,7 +121,7 @@ class fSQLTranslation
 	 * @param  string $delete_clause       What is to be done on a delete
 	 * @return string  The trigger
 	 */
-	private function createSqliteForeignKeyTriggerOnDelete($referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
+	private function createSQLiteForeignKeyTriggerOnDelete($referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
 	{
 		switch (strtolower($delete_clause)) {
 			case 'no action':
@@ -164,7 +164,7 @@ class fSQLTranslation
 	 * @param  string $update_clause       What is to be done on an update
 	 * @return string  The trigger
 	 */
-	private function createSqliteForeignKeyTriggerOnUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
+	private function createSQLiteForeignKeyTriggerOnUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
 	{
 		switch (strtolower($update_clause)) {
 			case 'no action':
@@ -207,7 +207,7 @@ class fSQLTranslation
 	 * @param  boolean $referencing_not_null  If the referencing columns is set to not null
 	 * @return string  The trigger
 	 */
-	private function createSqliteForeignKeyTriggerValidInsertUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
+	private function createSQLiteForeignKeyTriggerValidInsertUpdate($referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
 	{
 		// Verify key on inserts
 		$sql  = "\nCREATE TRIGGER fki_ver_" . $referencing_table . "_" . $referencing_column . "
@@ -242,7 +242,7 @@ class fSQLTranslation
 	 * 
 	 * @return void
 	 */
-	private function createSqliteFunctions()
+	private function createSQLiteFunctions()
 	{
 		$function = array();
 		$functions[] = array('acos',     'acos',                                         1);
@@ -252,16 +252,16 @@ class fSQLTranslation
 		$functions[] = array('ceil',     'ceil',                                         1);
 		$functions[] = array('ceiling',  'ceil',                                         1);
 		$functions[] = array('cos',      'cos',                                          1);
-		$functions[] = array('cot',      array('fSqlTranslation', 'sqliteCotangent'),    1);
+		$functions[] = array('cot',      array('fSQLTranslation', 'sqliteCotangent'),    1);
 		$functions[] = array('degrees',  'rad2deg',                                      1);
 		$functions[] = array('exp',      'exp',                                          1);
 		$functions[] = array('floor',    'floor',                                        1);
 		$functions[] = array('ln',       'log',                                          1);
-		$functions[] = array('log',      array('fSqlTranslation', 'sqliteLogBaseFirst'), 2);
+		$functions[] = array('log',      array('fSQLTranslation', 'sqliteLogBaseFirst'), 2);
 		$functions[] = array('pi',       'pi',                                           1);
 		$functions[] = array('power',    'pow',                                          1);
 		$functions[] = array('radians',  'deg2rad',                                      1);
-		$functions[] = array('sign',     array('fSqlTranslation', 'sqliteSign'),         1);
+		$functions[] = array('sign',     array('fSQLTranslation', 'sqliteSign'),         1);
 		$functions[] = array('sqrt',     'sqrt',                                         1);
 		$functions[] = array('sin',      'sin',                                          1);
 		$functions[] = array('tan',      'tan',                                          1);
@@ -540,11 +540,11 @@ class fSQLTranslation
 				
 				// Handle column level foreign key inserts/updates
 				if ($match[1]) {
-					$sql .= $this->createSqliteForeignKeyTriggerValidInsertUpdate($referencing_table, $match[1], $match[4], $match[5], in_array($match[1], $not_null_columns));
+					$sql .= $this->createSQLiteForeignKeyTriggerValidInsertUpdate($referencing_table, $match[1], $match[4], $match[5], in_array($match[1], $not_null_columns));
 				
 				// Handle table level foreign key inserts/update
 				} elseif ($match[9]) {
-					$sql .= $this->createSqliteForeignKeyTriggerValidInsertUpdate($referencing_table, $match[9], $match[10], $match[11], in_array($match[9], $not_null_columns));
+					$sql .= $this->createSQLiteForeignKeyTriggerValidInsertUpdate($referencing_table, $match[9], $match[10], $match[11], in_array($match[9], $not_null_columns));
 				}
 				
 				// If none of these fields is matched, we don't have on delete or on update clauses
@@ -555,20 +555,20 @@ class fSQLTranslation
 				// Handle column level foreign key delete/update clauses
 				if (!empty($match[3])) {
 					if ($match[6]) {
-						$sql .= $this->createSqliteForeignKeyTriggerOnDelete($referencing_table, $match[1], $match[4], $match[5], $match[6]);
+						$sql .= $this->createSQLiteForeignKeyTriggerOnDelete($referencing_table, $match[1], $match[4], $match[5], $match[6]);
 					}
 					if ($match[7]) {
-						$sql .= $this->createSqliteForeignKeyTriggerOnUpdate($referencing_table, $match[1], $match[4], $match[5], $match[7]);
+						$sql .= $this->createSQLiteForeignKeyTriggerOnUpdate($referencing_table, $match[1], $match[4], $match[5], $match[7]);
 					}
 					continue;
 				}
 				
 				// Handle table level foreign key delete/update clauses
 				if ($match[12]) {
-					$sql .= $this->createSqliteForeignKeyTriggerOnDelete($referencing_table, $match[9], $match[10], $match[11], $match[12]);
+					$sql .= $this->createSQLiteForeignKeyTriggerOnDelete($referencing_table, $match[9], $match[10], $match[11], $match[12]);
 				}
 				if ($match[13]) {
-					$sql .= $this->createSqliteForeignKeyTriggerOnUpdate($referencing_table, $match[9], $match[10], $match[11], $match[13]);
+					$sql .= $this->createSQLiteForeignKeyTriggerOnUpdate($referencing_table, $match[9], $match[10], $match[11], $match[13]);
 				}
 			}
 		}

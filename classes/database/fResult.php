@@ -130,7 +130,7 @@ class fResult implements Iterator
 		} elseif ($this->extension == 'pgsql') {
 			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
-			// Sqlite doesn't have a way to free a result
+			// SQLite doesn't have a way to free a result
 		}
 	}
 	
