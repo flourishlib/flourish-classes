@@ -325,7 +325,7 @@ class fRecordSet implements Iterator
 	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function createFromSQL($class_name, $sql, $grand_total_sql=NULL)
+	static public function createFromSQL($class_name, $sql, $non_limited_count_sql=NULL)
 	{
 		self::configure($class_name);
 		
