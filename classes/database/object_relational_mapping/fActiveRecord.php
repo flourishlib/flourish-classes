@@ -402,7 +402,7 @@ abstract class fActiveRecord
 				$record_set = $this->$method($route);
 				
 				// If there are none, we can just move on
-				if (!$record_set->getCount()) {
+				if (!$record_set->count()) {
 					continue;
 				}
 				

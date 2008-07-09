@@ -640,6 +640,12 @@ class fORMDatabase
 			if (is_numeric($name)) {
 				continue;	
 			}
+			
+			if (substr($name, -5) == '_join') {
+				$joined_to_many = TRUE;
+				break;	
+			}
+			
 			$main_table   = preg_replace('#_' . $join['table_name'] . '{\w+}$#i', '', $name);
 			$second_table = $join['table_name'];
 			$route        = preg_replace('#^[^{]+{(\w+)}$#', '\1', $name);

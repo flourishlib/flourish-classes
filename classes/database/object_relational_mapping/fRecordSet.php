@@ -788,7 +788,11 @@ class fRecordSet implements Iterator
 		$new_sql .= ' ORDER BY ' . $order_by_sql;
 		 
 		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql); 
-		 
+		
+		// Add the joining column to the group by
+		if (strpos($new_sql, 'GROUP BY') !== FALSE) {
+			$new_sql = str_replace(' ORDER BY', ', ' . $table . '.' . $relationship['column'] . ' ORDER BY', $new_sql);
+		} 
 		 
 		 
 		// Run the query and inject the results into the records 
@@ -938,7 +942,7 @@ class fRecordSet implements Iterator
 	 */
 	public function tossIfEmpty()
 	{
-		if (!$this->getCount()) {
+		if (!$this->count()) {
 			fCore::toss(
 				'fEmptySetException',
 				fGrammar::compose(
