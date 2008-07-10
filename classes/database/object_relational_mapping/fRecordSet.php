@@ -886,6 +886,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Sorts the set by the return value of a method from the class created
 	 * 
+	 * This methods uses {@link fUTF8::inatcmp()} to perform comparisons.
+	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string $method     The method to call on each object to get the value to sort by
@@ -909,8 +911,8 @@ class fRecordSet implements Iterator
 		// We will create an anonymous function here to handle the sort
 		$lambda_params = '$a,$b';
 		$lambda_funcs  = array(
-			'asc'  => 'return strnatcasecmp($a->' . $method . '(), $b->' . $method . '());',
-			'desc' => 'return strnatcasecmp($b->' . $method . '(), $a->' . $method . '());'
+			'asc'  => 'return fUTF8::inatcmp($a->' . $method . '(), $b->' . $method . '());',
+			'desc' => 'return fUTF8::inatcmp($b->' . $method . '(), $a->' . $method . '());'
 		);
 		
 		$this->sortByCallback(create_function($lambda_params, $lambda_funcs[$direction]));
