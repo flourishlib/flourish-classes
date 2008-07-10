@@ -103,7 +103,7 @@ class fTime
 			$time = $this->makeAdjustment($adjustment, $time);
 		}
 		
-		return date($format, $time);
+		return self::callFormatCallback(date($format, $time));
 	}
 	
 	

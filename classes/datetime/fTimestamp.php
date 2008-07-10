@@ -21,6 +21,30 @@ class fTimestamp
 	 */
 	static private $formats = array();
 	
+	/**
+	 * A callback to process all formatting strings through
+	 * 
+	 * @var callback
+	 */
+	static private $format_callback = NULL;
+	
+	
+	/**
+	 * If a format callback is defined, call it
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $formatted_string  The formatted date/time/timestamp string to be (possibly) modified
+	 * @return void
+	 */
+	static public function callFormatCallback($formatted_string)
+	{
+		if (self::$format_callback) {
+			return call_user_func(self::$format_callback, $formatted_string);	
+		}
+		return $formatted_string;
+	}
+	
 	
 	/**
 	 * Checks to make sure the current version of PHP is high enough to support timezone features
@@ -92,6 +116,18 @@ class fTimestamp
 	static public function getSeconds($timespan)
 	{
 		return strtotime($timespan) - time();
+	}
+	
+	
+	/**
+	 * Allows setting a callback to translate or modify any return values from {@link format()}, {@link fDate::format()} and {@link fTime::format()}
+	 * 
+	 * @param  callback $callback  The callback to pass all formatted dates/times/timestamps through. Should accept a single string and return a single string.
+	 * @return void
+	 */
+	static public function registerFormatCallback($callback)
+	{
+		self::$format_callback = $callback;
 	}
 	
 	
@@ -276,7 +312,7 @@ class fTimestamp
 		
 		date_default_timezone_set($default_tz);
 		
-		return $formatted;
+		return self::callFormatCallback($formatted);
 	}
 	
 	
