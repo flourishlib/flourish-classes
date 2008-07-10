@@ -312,6 +312,15 @@ class fShippingRates
 																   '11', // Suggested retail rates (suggested what Staples, etc may charge?)
 																   '19', // Letter center (aka drop box?)
 																   '20'  // Air service center (Staffed locations that only deal with air?)
+																   )),
+		'customer_classification'     => array(
+											 'required'     => array('pickup_type' => array('11')),
+											 'default'      => NULL,
+											 'type'         => 'string',
+											 'valid_values' => array(
+																   '01', // Wholesale
+																   '03', // Occassional
+																   '04'  // Retail
 																   ))
 		);
 	
@@ -359,11 +368,11 @@ class fShippingRates
 	
 	
 	/**
-	 * Fetches the rates from the shipping company, will thrown an exception if something goes wrong
+	 * Fetches the rates from the shipping company
 	 * 
 	 * @throws  fValidationException
 	 * 
-	 * @return string  The transaction id returned by the gateway
+	 * @return array  An array of (string) {service name} => (string) {price with currency symbol} 
 	 */
 	public function fetch()
 	{
@@ -402,12 +411,15 @@ class fShippingRates
 <?xml version="1.0" ?>
 <RatingServiceSelectionRequest>
 	<Request>
-		 <RequestAction>Rate</RequestAction>
-		 <RequestOption>Shop</RequestOption>
+		<RequestAction>Rate</RequestAction>
+		<RequestOption>Shop</RequestOption>
 	</Request>
 	<PickupType>
-		 <Code>{$this->request_info['pickup_type']}</Code>
+		<Code>{$this->request_info['pickup_type']}</Code>
 	</PickupType>
+	<CustomerClassification>
+		<Code>{$this->request_info['customer_classification']}</Code>
+	</CustomerClassification>
 	<Shipment>
 		 <Shipper>
 			  <Address>
@@ -546,6 +558,18 @@ XMLDATA;
 				$this->request_info[$field] = $info['default'];
 			}
 		}
+	}
+	
+	
+	/**
+	 * Set the customer classification
+	 * 
+	 * @param  string $customer_classification  The units that the dimensions are measured in
+	 * @return void
+	 */
+	public function setCustomerClassification($customer_classification)
+	{
+		$this->request_info['customer_classification'] = $customer_classification;
 	}
 	
 	
