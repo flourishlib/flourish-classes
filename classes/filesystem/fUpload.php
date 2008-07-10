@@ -52,10 +52,20 @@ class fUpload
 	static public function check($field)
 	{
 		if (fRequest::check($field) && $_SERVER['REQUEST_METHOD'] != 'POST') {
-			fCore::toss('fProgrammerException', 'Missing method="post" attribute in form tag');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Missing method="post" attribute in form tag'
+				)
+			);
 		}
 		if (fRequest::check($field) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
-			fCore::toss('fProgrammerException', 'Missing enctype="multipart/form-data" attribute in form tag');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Missing enctype="multipart/form-data" attribute in form tag'
+				)
+			);
 		}
 		return isset($_FILES) && isset($_FILES[$field]) && is_array($_FILES[$field]);
 	}
@@ -70,10 +80,22 @@ class fUpload
 	static public function count($field)
 	{
 		if (!self::check($field)) {
-			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The field specified, %s, does not appear to be a file upload field',
+					fCore::dump($field)
+				)
+			);
 		}
 		if (!is_array($_FILES[$field]['name'])) {
-			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The field specified, %s, does not appear to be an array file upload field',
+					fCore::dump($field)
+				)
+			);	
 		}
 		
 		return sizeof($_FILES[$field]['name']);
@@ -94,10 +116,22 @@ class fUpload
 		}
 		
 		if (!is_array($_FILES[$field]['name'])) {
-			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be an array file upload field');	
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The field specified, %s, does not appear to be an array file upload field',
+					fCore::dump($field)
+				)
+			);	
 		}
 		if (!isset($_FILES[$field]['name'][$index])) {
-			fCore::toss('fProgrammerException', 'The index specified, ' . $index . ', is invalid for the field ' . $field);
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('The index specified, %s, is invalid for the field %s',
+					fCore::dump($index),
+					fCore::dump($field)
+				)
+			);
 		}
 		$file_array = array();
 		$file_array['name']     = $_FILES[$field]['name'][$index];
@@ -156,8 +190,16 @@ class fUpload
 	 */
 	static public function setOverwriteMode($mode)
 	{
-		if (!in_array($mode, array('rename', 'overwrite'))) {
-			fCore::toss('fProgrammerException', 'Invalid mode specified');
+		$valid_modes = array('rename', 'overwrite');
+		if (!in_array($mode, $valid_modes)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The mode specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($mode),
+					join(', ', $valid_modes)
+				)
+			);
 		}
 		self::$overwrite_mode = $mode;
 	}
@@ -171,8 +213,16 @@ class fUpload
 	 */
 	static public function setType($type)
 	{
-		if (!in_array($type, array('image', 'zip', 'non_php', 'any'))) {
-			fCore::toss('fProgrammerException', 'Invalid type specified');
+		$valid_types = array('image', 'zip', 'non_php', 'any');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The type specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
 		}
 		self::$type = $type;
 		switch ($type) {
@@ -209,11 +259,23 @@ class fUpload
 		}
 		
 		if (!$directory->isWritable()) {
-			fCore::toss('fProgrammerException', 'The directory specified, ' . $directory->getPath() . ', is not writable');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The directory specified, %s, is not writable',
+					fCore::dump($directory->getPath())
+				)
+			);
 		}
 		
 		if (!self::check($field)) {
-			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The field specified, %s, does not appear to be a file upload field',
+					fCore::dump($field)
+				)
+			);
 		}
 		
 		$file_array = self::validate($field, $index);
@@ -223,11 +285,17 @@ class fUpload
 		$file_name  = fFilesystem::createUniqueName($directory->getPath() . $file_name);
 		
 		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
-			fCore::toss('fEnvironmentException', 'There was an error moving the uploaded file');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose('There was an error moving the uploaded file')
+			);
 		}
 		
 		if (!@chmod($file_name, 0644)) {
-			fCore::toss('fEnvironmentException', 'Unable to change permissions on the uploaded file');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose('Unable to change permissions on the uploaded file')
+			);
 		}
 		
 		if (fImage::isImageCompatible($file_name)) {
@@ -249,36 +317,58 @@ class fUpload
 	static public function validate($field, $index=NULL)
 	{
 		if (!self::check($field)) {
-			fCore::toss('fProgrammerException', 'The field specified, ' . $field . ', does not appear to be a file upload field'); 		
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The field specified, %s, does not appear to be a file upload field',
+					fCore::dump($field)
+				)
+			); 		
 		}
 		
 		$file_array = self::extractFileUploadArray($field, $index);
 		
 		// Do some validation of the file provided
 		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
-			fCore::toss('fValidationException', 'Please upload a file');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose('Please upload a file')
+			);
 		}
 		
 		if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
-			fCore::toss('fValidationException', 'The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size));
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size))
+			);
 		}
 		
 		if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
 			if (self::$type != 'mime') {
 				$messages = array(
-					'image' => 'The file uploaded is not an image',
-					'zip'   => 'The file uploaded is not a zip'
+					'image' => fGrammar::compose('The file uploaded is not an image'),
+					'zip'   => fGrammar::compose('The file uploaded is not a zip')
 				);
 				fCore::toss('fValidationException', $messages[$type]);
 			} else {
-				fCore::toss('fValidationException', 'The file uploaded is not one of the following mime types: ' . join(', ', self::$mime_types));
+				fCore::toss(
+					'fValidationException',
+					fGrammar::compose(
+						'The file uploaded is an invalid type. It is a %s file, but must be one of %s.',
+						fCore::dump($file_array['type']),
+						join(', ', self::$mime_types)
+					)
+				);
 			}
 		}
 		
 		if (self::$type == 'non_php') {
 			$file_info = fFilesystem::getPathInfo($file_array['name']);
 			if ($file_info['extension'] == 'php') {
-				fCore::toss('fValidationException', 'You are not allowed to upload PHP files');
+				fCore::toss(
+					'fValidationException',
+					fGrammar::compose('The file uploaded is a PHP file, but those are not permitted')
+				);
 			}
 		}
 		

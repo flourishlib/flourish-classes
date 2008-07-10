@@ -243,7 +243,14 @@ class fRequest
 	static public function unfilter()
 	{
 		if (self::$_files === NULL || self::$_get === NULL || self::$_post === NULL) {
-			fCore::toss('fProgrammerException', 'fRequest::unfilter() can only be called after fRequest::filter()');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%s can only be called after %s',
+					__CLASS__ . '::unfilter()',
+					__CLASS__ . '::filter()'
+				)
+			);
 		}
 		$_FILES   = self::$_files;
 		$_GET     = self::$_get;

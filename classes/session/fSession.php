@@ -90,7 +90,16 @@ class fSession
 	static public function ignoreSubdomain()
 	{
 		if (self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::ignoreSubdomain() must be called before any of fSession::clear(), fSession::get() or fSession::set()');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%s must be called before any of %s, %s or %s',
+					__CLASS__ . '::ignoreSubdomain()',
+					__CLASS__ . '::clear()',
+					__CLASS__ . '::get()',
+					__CLASS__ . '::set()'
+				)
+			);
 		}
 		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
 	}
@@ -134,7 +143,16 @@ class fSession
 	static public function setLength($timespan)
 	{
 		if (self::$open) {
-			fCore::toss('fProgrammerException', 'fSession::setLength() must be called before any of fSession::clear(), fSession::get() or fSession::set()');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%s must be called before any of %s, %s or %s',
+					__CLASS__ . '::setLength()',
+					__CLASS__ . '::clear()',
+					__CLASS__ . '::get()',
+					__CLASS__ . '::set()'
+				)	
+			);
 		}
 		$seconds = strtotime($timespan) - time();
 		ini_set('session.gc_maxlifetime', $seconds);

@@ -592,10 +592,20 @@ class fEmail
 		// Set up the neccessary S/MIME resources
 		if ($this->smime_sign) {
 			$senders_smime_cert  = file_get_contents($this->senders_smime_cert_file);
-			$senders_private_key = array(
+			$senders_private_key = openssl_pkey_get_private(
 				file_get_contents($this->senders_smime_pk_file),
 				$this->senders_smime_pk_password
 			);	
+			
+			if ($senders_private_key === FALSE) {
+				fCore::toss(
+					'fValidationException',
+					fGrammar::compose(
+						"The sender's S/MIME private key password specified does not appear to be valid for the private key",
+						fCore::dump($primary_key_file)
+					)
+				);
+			}
 		}
 		
 		if ($this->smime_encrypt) {
@@ -630,6 +640,10 @@ class fEmail
 		
 		unlink($plaintext_file);
 		unlink($ciphertext_file);
+		
+		if ($this->smime_sign) {
+			openssl_pkey_free($senders_private_key);	
+		}
 								  
 		return array($new_headers, $new_body);
 	}

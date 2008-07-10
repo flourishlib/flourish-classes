@@ -23,8 +23,8 @@ class fMessaging
 	 * @return void
 	 */
 	static public function create($name, $message, $recipient)
-	{
-		fSession::set($name, $message, 'fMessaging::' . $recipient . '::');
+	{                                         
+		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
 	}
 	
 	
@@ -37,7 +37,7 @@ class fMessaging
 	 */
 	static public function retrieve($name, $recipient)
 	{
-		$prefix = 'fMessaging::' . $recipient . '::';
+		$prefix  = __CLASS__ . '::' . $recipient . '::';
 		$message = fSession::get($name, NULL, $prefix);
 		fSession::clear($name, $prefix);
 		return $message;

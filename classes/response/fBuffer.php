@@ -37,10 +37,20 @@ class fBuffer
 	static public function erase()
 	{
 		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The output buffer can not be erased since output buffering has not been started'
+				)
+			);
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be erased');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing is currently active and it must be stopped before the buffer can be erased'
+				)
+			);
 		}
 		ob_clean();
 	}
@@ -54,10 +64,18 @@ class fBuffer
 	static public function get()
 	{
 		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('The output buffer can not be retrieved because it has not been started')
+			);
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffer can be retrieved');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing is currently active and it must be stopped before the buffer can be retrieved'
+				)
+			);
 		}
 		return ob_get_contents();
 	}
@@ -84,10 +102,20 @@ class fBuffer
 	static public function replace($find, $replace)
 	{
 		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'A replacement can not be made since output buffering has not been started'
+				)
+			);
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before you can replace contents in the buffer');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing is currently active and it must be stopped before a replacement can be made'
+				)
+			);
 		}
 		
 		// ob_get_clean() actually turns off output buffering, so we do it the long way
@@ -106,10 +134,20 @@ class fBuffer
 	static public function start()
 	{
 		if (self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering has already been started');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output buffering has already been started'
+				)
+			);
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before the buffering can be started');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing is currently active and it must be stopped before the buffering can be started'
+				)
+			);
 		}
 		ob_start();
 		self::$started = TRUE;
@@ -126,7 +164,12 @@ class fBuffer
 	static public function startCapture()
 	{
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing has already been started');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing has already been started'
+				)
+			);
 		}
 		ob_start();
 		self::$capturing = TRUE;
@@ -141,10 +184,20 @@ class fBuffer
 	static public function stop()
 	{
 		if (!self::$started) {
-			fCore::toss('fProgrammerException', 'Output buffering is not currently active');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output buffering can not be stopped since it has not been started'
+				)
+			);
 		}
 		if (self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing is currently active, it must be stopped before buffering can be stopped');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing is currently active and it must be stopped before buffering can be stopped'
+				)
+			);
 		}
 		ob_end_flush();
 		self::$started = FALSE;
@@ -159,7 +212,12 @@ class fBuffer
 	static public function stopCapture()
 	{
 		if (!self::$capturing) {
-			fCore::toss('fProgrammerException', 'Output capturing has not yet been started');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Output capturing can not be stopped since it has not been started'
+				)
+			);
 		}
 		self::$capturing = FALSE;
 		return ob_get_clean();

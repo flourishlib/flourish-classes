@@ -49,11 +49,23 @@ class fTemplating
 		}
 		
 		if (!file_exists($root)) {
-			fCore::toss('fProgrammerException', 'The root specified does not exist on the filesystem');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The root specified, %s, does not exist on the filesystem',
+					fCore::dump($root)
+				)
+			);
 		}
 		
 		if (!is_readable($root)) {
-			fCore::toss('fProgrammerException', 'The root specified can not be read from');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The root specified, %s, is not readable',
+					fCore::dump($root)
+				)
+			);
 		}
 		
 		if (substr($root, -1) != '/' && substr($root, -1) != '\\') {
@@ -94,7 +106,14 @@ class fTemplating
 			$this->elements[$element] = array();
 		}
 		if (!is_array($this->elements[$element])) {
-			fCore::toss('fProgrammerException', 'add() was called for an element, ' . $element . ', which is not an array');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%s was called for an element, %s, which is not an array',
+					'add()',
+					fCore::dump($element)
+				)
+			);
 		}
 		$this->elements[$element][] = $value;
 	}
@@ -116,7 +135,10 @@ class fTemplating
 		static $id_sequence = 1;
 		
 		if ($this->buffered_id) {
-			fCore::toss('fProgrammerException', 'Buffering has already been started');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose('Buffering has already been started')
+			);
 		}
 		
 		if (!fBuffer::isStarted()) {
@@ -246,7 +268,14 @@ class fTemplating
 					break;
 					
 				default:
-					fCore::toss('fProgrammerException', 'The file type specified, ' . fCore::dump($type) . ', is not a valid file type. Must be one of: css, js, php, rss.');
+					fCore::toss(
+						'fProgrammerException',
+						fGrammar::compose(
+							'The file type specified, %s, is invalid. Must be one of: %s.',
+							fCore::dump($type),
+							'css, js, php, rss'
+						)
+					);
 			}
 		}
 	}
@@ -287,11 +316,25 @@ class fTemplating
 		}
 		
 		if (!file_exists($path)) {
-			fCore::toss('fProgrammerException', 'The path specified for ' . $element . ', ' . $path . ', does not exist on the filesystem');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The path specified for %s, %s, does not exist on the filesystem',
+					fCore::dump($element),
+					fCore::dump($path)
+				)
+			);
 		}
 		
 		if (!is_readable($path)) {
-			fCore::toss('fProgrammerException', 'The path specified for ' . $element . ', ' . $path . ', can not be read from');
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The path specified for %s, %s, is not readable',
+					fCore::dump($element),
+					fCore::dump($path)
+				)
+			);
 		}
 				
 		include($path);
@@ -316,7 +359,13 @@ class fTemplating
 		}
 		
 		if (!isset($info['title'])) {
-			fCore::toss('fProgrammerException', 'The value ' . fCore::dump($info) . ' is missing the title key');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The RSS value %s is missing the title key',
+					fCore::dump($info)
+				)
+			);
 		}
 		
 		echo '<link rel="alternate" type="application/rss+xml" href="' . $info['path'] . '" title="' . $info['title'] . '" />' . "\n";
@@ -384,12 +433,25 @@ class fTemplating
 	 */
 	protected function verifyValue($element, $value, $file_type=NULL)
 	{
-		if (!$value) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value that is empty');
+		if (!$value && !is_numeric($value)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The element specified, %s, has a value that is empty',
+					fCore::dump($value)
+				)
+			);
 		}
 		
 		if (is_array($value) && !isset($value['path'])) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value, ' . fCore::dump($value) . ', that is missing the path key');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The element specified, %s, has a value, %s, that is missing the path key',
+					fCore::dump($element),
+					fCore::dump($value)
+				)
+			);
 		}
 		
 		if ($file_type) {
@@ -411,7 +473,15 @@ class fTemplating
 		}
 		
 		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
-			fCore::toss('fProgrammerException', 'The element specified, ' . $element . ', has a value whose path, ' . $path . ', does not appear to be a .css, .inc, .js, .php, .php5, .rss or .xml file');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The element specified, %s, has a value whose path, %s, does not end with a recognized file extension: %s.',
+					fCore::dump($element),
+					fCore::dump($path),
+					'.css, .inc, .js, .php, .php5, .rss, .xml'	
+				)
+			);
 		}
 		
 		return $extension;

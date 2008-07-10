@@ -6,6 +6,9 @@
  * PHP string function. For more information about UTF-8, please visit
  * {@link http://flourishlib.com/docs/UTF-8}.
  * 
+ * This class is designed to function without requiring the rest of Flourish,
+ * however it will use fCore to toss exceptions if fCore has been loaded.
+ * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -580,8 +583,18 @@ class fUTF8
 		
 		$ord = ord($first);
 		if ($digits > 21 || $ord == 0xC0 || $ord == 0xC1 || $ord > 0xF4) {
-			trigger_error('The code point specified is invalid. NULL returned instead of a UTF-8 character.', E_USER_WARNING);	
-			return NULL;	
+			if (class_exists('fCore', FALSE)) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The code point specified, %s, is invalid.',
+						fCore::dump($unicode_code_point)
+					)
+				);	
+			} else {
+				trigger_error('The code point specified is invalid. NULL returned instead of a UTF-8 character.', E_USER_WARNING);	
+				return NULL;	
+			}
 		}
 		
 		return $first . $second . $third . $fourth;
@@ -1013,7 +1026,16 @@ class fUTF8
 		}
 		
 		if ($invalid) {
-			trigger_error('The UTF-8 character specified is invalid. NULL returned instead of a unicode code point.', E_USER_WARNING);	
+			if (class_exists('fCore', FALSE)) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The UTF-8 character specified is invalid.'
+					)
+				);	
+			} else {
+				trigger_error('The UTF-8 character specified is invalid. NULL returned instead of a unicode code point.', E_USER_WARNING);	
+			}
 			return NULL; 		
 		}
 		
@@ -1035,8 +1057,19 @@ class fUTF8
 	{
 		$valid_pad_types = array('right', 'left', 'both');
 		if (!in_array($pad_type, $valid_pad_types)) {
-			trigger_error('The pad type specified, ' . $pad_type . ', is not valid. Must be one of: ' . join(', ', $valid_pad_types) . '. Defaulting to right.', E_USER_WARNING);	
-			$pad_type = 'right';
+			if (class_exists('fCore', FALSE)) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The pad type specified, %s, is not valid. Must be one of: %s.',
+						fCore::dump($pad_type),
+						join(', ', $valid_pad_types)	
+					)
+				);	
+			} else {
+				trigger_error('The pad type specified, ' . $pad_type . ', is not valid. Must be one of: ' . join(', ', $valid_pad_types) . '. Defaulting to right.', E_USER_WARNING);	
+				$pad_type = 'right';
+			}
 		}
 		
 		// We get better performance falling back for ASCII strings

@@ -88,7 +88,12 @@ class fFilesystem
 	static public function begin()
 	{
 		if (self::$commit_operations !== NULL) {
-			fCore::toss('fProgrammerException', 'There is already a filesystem transaction in progress');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'There is already a filesystem transaction in progress'
+				)
+			);
 		}
 		self::$commit_operations   = array();
 		self::$rollback_operations = array();
@@ -103,7 +108,12 @@ class fFilesystem
 	static public function commit()
 	{
 		if (!self::isInsideTransaction()) {
-			fCore::toss('fProgrammerException', 'There is no filesystem transaction in progress to commit');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'There is no filesystem transaction in progress to commit'
+				)
+			);
 		}
 		
 		$commit_operations = self::$commit_operations;
@@ -133,7 +143,13 @@ class fFilesystem
 	static public function convertToBytes($size)
 	{
 		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#', strtolower(trim($size)), $matches)) {
-			fCore::toss('fProgrammerException', 'The size specified does not appears to be a valid size');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The size specified, %s, does not appears to be a valid size',
+					fCore::dump($size)
+				)
+			);
 		}
 		
 		if ($matches[2] == '') {
@@ -217,7 +233,14 @@ class fFilesystem
 	{
 		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
 		if ($element !== NULL && !in_array($element, $valid_elements)) {
-			fCore::toss('fProgrammerException', 'Invalid element, ' . $element . ', requested. Must be one of: ' . join(', ', $valid_elements) . '.');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The element specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($element),
+					join(', ', $valid_elements)
+				)
+			);
 		}
 		
 		$path_info = pathinfo($file);

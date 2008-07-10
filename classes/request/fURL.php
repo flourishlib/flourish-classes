@@ -98,48 +98,66 @@ class fURL
 	
 	
 	/**
-	 * Removes one or more key/fields from the query string, pass as many key names as you want
+	 * Removes one or more parameters from the query string
 	 * 
-	 * @param  string $key,...  A key/field to remove from the query string
+	 * This method uses the query string from the original URL and will not
+	 * contain any parameters that are rewritten by the web server (such as
+	 * Apache's mod_rewrite).
+	 * 
+	 * @param  string $parameter,...  A parameter to remove from the query string
 	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
 	 */
 	static public function removeFromQueryString()
 	{
-		$keys = func_get_args();
-		for ($i=0; $i < sizeof($keys); $i++) {
-			$keys[$i] = '#\b' . $keys[$i] . '=?[^&]*&?(?=$|\w)#';
+		$parameters = func_get_args();
+		
+		$qs_array = parse_str(self::getQueryString());
+		if (get_magic_quotes_gpc()) {
+			$qs_array = array_map('stripslashes', $qs_array);
 		}
-		$new_qs = preg_replace($keys, '', fURL::getQueryString());
-		if (substr($new_qs, -1) == '&') {
-			$new_qs = substr($new_qs, 0, -1);
+		
+		foreach ($parameters as $parameter) {
+			unset($qs_array[$parameter]);	
 		}
-		return '?' . $new_qs;
+		
+		return '?' . http_build_query($qs_array, '', '&');
 	}
 	
 	
 	/**
 	 * Replaces a value in the querystring
 	 * 
-	 * @param  string|array  $key             The get key/field
-	 * @param  string|array  $value           The value to set the key to
-	 * @return string  The full query string with the key replaced, first char is '?'
+	 * This method uses the query string from the original URL and will not
+	 * contain any parameters that are rewritten by the web server (such as
+	 * Apache's mod_rewrite).
+	 * 
+	 * @param  string|array  $parameter  The query string parameter
+	 * @param  string|array  $value      The value to set the parameter to
+	 * @return string  The full query string with the parameter replaced, first char is '?'
 	 */
-	static public function replaceInQueryString($key, $value)
+	static public function replaceInQueryString($parameter, $value)
 	{
-		$qs_array = $_GET;
+		$qs_array = parse_str(self::getQueryString());
 		if (get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);
 		}
 		
-		settype($key, 'array');
+		settype($parameter, 'array');
 		settype($value, 'array');
 		
-		if (sizeof($key) != sizeof($value)) {
-			fCore::toss('fProgrammerException', 'There are a different number of parameters and values');
+		if (sizeof($parameter) != sizeof($value)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					"There are a different number of parameters and values.\nParameters:\n%s\nValues\n%s",
+					fCore::dump($parameter),
+					fCore::dump($value)
+				)
+			);
 		}
 		
-		for ($i=0; $i<sizeof($key); $i++) {
-			$qs_array[$key[$i]] = $value[$i];
+		for ($i=0; $i<sizeof($parameter); $i++) {
+			$qs_array[$parameter[$i]] = $value[$i];
 		}
 		
 		return '?' . http_build_query($qs_array, '', '&');

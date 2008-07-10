@@ -339,7 +339,8 @@ class fCore
 		self::trigger(
 			'warning',
 			fGrammar::compose(
-				"Unable to reliably determine the server OS. Defaulting to 'linux/unix'."
+				'Unable to reliably determine the server OS. Defaulting to %s.',
+				"'linux/unix'"
 			)
 		);
 		

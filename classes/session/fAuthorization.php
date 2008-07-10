@@ -168,7 +168,15 @@ class fAuthorization
 			
 			if (($range_ip_long & $mask_long) != $range_ip_long) {
 				$proper_range_ip = long2ip($range_ip_long & $mask_long);
-				fCore::toss('fProgrammerException', 'The range base IP address specified, ' . $range_ip . ', is invalid for the CIDR range or subnet mask provided (/' . $range_mask . '). The proper IP is ' . $proper_range_ip . '.');	
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The range base IP address specified, %s, is invalid for the CIDR range or subnet mask provided (%s). The proper IP is %s.',
+						$range_ip,
+						'/' . $range_mask,
+						$proper_range_ip
+					)
+				);	
 			}
 			
 			if (($user_ip_long & $mask_long) == $range_ip_long) {
@@ -406,10 +414,23 @@ class fAuthorization
 	static private function validateAuthLevel($level=NULL)
 	{
 		if (self::$levels === NULL) {
-			fCore::toss('fProgrammerException', 'No authorization levels have been set, please call fAuthorization::setAuthLevels()');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'No authorization levels have been set, please call %s',
+					__CLASS__ . '::setAuthLevels()'
+				)
+			);
 		}
 		if ($level !== NULL && !isset(self::$levels[$level])) {
-			fCore::toss('fProgrammerException', 'The authorization level specified, ' . $level . ', is not a valid authorization level');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The authorization level specified, %s, is invalid. Must be one of: %s.',
+					fCore::dump($level),
+					join(', ', array_keys(self::$levels))
+				)
+			);
 		}
 	}
 	
@@ -422,7 +443,13 @@ class fAuthorization
 	static private function validateLoginPage()
 	{
 		if (self::$login_page === NULL) {
-			fCore::toss('fProgrammerException', 'No login page has been set, please call fAuthorization::setLoginPage()');
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'No login page has been set, please call %s',
+					__CLASS__ . '::setLoginPage()'
+				)
+			);
 		}
 	}
 	

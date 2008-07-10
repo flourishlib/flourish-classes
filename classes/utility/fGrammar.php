@@ -48,6 +48,20 @@ class fGrammar
 	);
 	
 	/**
+	 * The callback to replace {@link humanize()} with
+	 * 
+	 * @var callback
+	 */
+	static private $humanize_replacement = NULL;
+	
+	/**
+	 * The callback to replace {@link joinArray()} with
+	 * 
+	 * @var callback
+	 */
+	static private $join_array_replacement = NULL;
+	
+	/**
 	 * Rules for plural to singular inflection of nouns
 	 * 
 	 * @var array
@@ -134,7 +148,7 @@ class fGrammar
 	
 	
 	/**
-	 * Converts an underscore notation, humanized or camelCase string to camelCase
+	 * Converts an underscore notation, human-friendly or camelCase string to camelCase
 	 * 
 	 * @param  string  $string  The string to convert
 	 * @param  boolean $upper   If the camel case should be upper camel case
@@ -193,13 +207,17 @@ class fGrammar
 	
 	
 	/**
-	 * Makes an underscore notation string into a human-friendly string
+	 * Makes an underscore notation, camelCase, or human-friendly string into a human-friendly string
 	 * 
 	 * @param  string $string  The string to humanize
 	 * @return string  The converted string
 	 */
 	static public function humanize($string)
 	{
+		if (self::$humanize_replacement) {
+			return call_user_func(self::$humanize_replacement, $string);	
+		}
+		
 		// If there is a space, it is already humanized
 		if (strpos($string, ' ') !== FALSE) {
 			return $string;	
@@ -247,18 +265,21 @@ class fGrammar
 			if (strpos($output, '%d') !== FALSE) {
 				
 				if ($use_words_for_single_digits && $quantity < 10) {
-					$replacements = array(
-						0 => 'zero',
-						1 => 'one',
-						2 => 'two',
-						3 => 'three',
-						4 => 'four',
-						5 => 'five',
-						6 => 'six',
-						7 => 'seven',
-						8 => 'eight',
-						9 => 'nine'
-					);
+					static $replacements = array();
+					if (!$replacements) {
+						$replacements = array(
+							0 => self::compose('zero'),
+							1 => self::compose('one'),
+							2 => self::compose('two'),
+							3 => self::compose('three'),
+							4 => self::compose('four'),
+							5 => self::compose('five'),
+							6 => self::compose('six'),
+							7 => self::compose('seven'),
+							8 => self::compose('eight'),
+							9 => self::compose('nine')
+						);
+					}
 					$quantity = $replacements[$quantity];
 				}
 				
@@ -288,6 +309,10 @@ class fGrammar
 					join(', ', $valid_types)
 				)
 			);	
+		}
+		
+		if (self::$join_array_replacement) {
+			return call_user_func(self::$join_array_replacement, $strings, $type);	
 		}
 		
 		settype($strings, 'array');
@@ -328,7 +353,10 @@ class fGrammar
 				return $beginning . preg_replace('#' . $from . '#i', $to, $singular_noun);
 			}
 		}
-		fCore::toss('fProgrammerException', 'The noun specified could not be pluralized');
+		fCore::toss(
+			'fProgrammerException',
+			self::compose('The noun specified could not be pluralized')
+		);
 	}
 	
 	
@@ -370,6 +398,36 @@ class fGrammar
 	
 	
 	/**
+	 * Allows replacing the {@link humanize()} function with a user defined function
+	 * 
+	 * This would be most useful for changing {@link humanize()} to work with other
+	 * languages, or to enhance it in some way.
+	 * 
+	 * @param  callback $callback  The function to replace {@link humanize()} with. This function should accept the same parameters and return the same type as {@link humanize()}
+	 * @return void
+	 */
+	static public function replaceHumanize($callback)
+	{
+		self::$humanize_replacement = $callback;	
+	}
+	
+	
+	/**
+	 * Allows replacing the {@link joinArray()} function with a user defined function
+	 * 
+	 * This would be most useful for changing {@link joinArray()} to work with
+	 * languages other than English.
+	 * 
+	 * @param  callback $callback  The function to replace {@link joinArray()} with. This function should accept the same parameters and return the same type as {@link joinArray()}.
+	 * @return void
+	 */
+	static public function replaceJoinArray($callback)
+	{
+		self::$join_array_replacement = $callback;	
+	}
+	
+	
+	/**
 	 * Returns the singular version of the plural noun
 	 * 
 	 * @param  string $plural_noun  The plural noun to singularize
@@ -383,7 +441,10 @@ class fGrammar
 				return $beginning . preg_replace('#' . $from . '#i', $to, $plural_noun);
 			}
 		}
-		fCore::toss('fProgrammerException', 'The noun specified could not be singularized');
+		fCore::toss(
+			'fProgrammerException',
+			self::compose('The noun specified could not be singularized')
+		);
 	}
 	
 	
@@ -416,7 +477,7 @@ class fGrammar
 	
 	
 	/**
-	 * Converts a camelCase, humanized or underscorized string to underscore notation
+	 * Converts a camelCase, human-friendly or underscorized string to underscore notation
 	 * 
 	 * @param  string $string  The string to convert
 	 * @return string  The converted string
