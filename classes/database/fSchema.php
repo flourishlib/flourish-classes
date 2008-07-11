@@ -762,6 +762,9 @@ class fSchema implements fISchema
 				$info['auto_increment'] = TRUE;
 			} elseif ($row['default'] !== NULL) {
 				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+$/i", '\1', $row['default']));
+				if ($info['type'] == 'boolean') {
+					$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;	
+				}
 			}
 			
 			// Not null values

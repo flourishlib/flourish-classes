@@ -884,7 +884,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Sorts the set by the return value of a method from the class created
+	 * Sorts the set by the return value of a method from the class created and rewind the interator
 	 * 
 	 * This methods uses {@link fUTF8::inatcmp()} to perform comparisons.
 	 * 
@@ -920,7 +920,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Sorts the set by passing the callback to {@link http://php.net/usort usort()}
+	 * Sorts the set by passing the callback to {@link http://php.net/usort usort()} and rewinds the interator
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -932,6 +932,7 @@ class fRecordSet implements Iterator
 		$this->createAllRecords();
 		usort($this->records, $callback);
 		$this->extractPrimaryKeys();	
+		$this->rewind();
 	}
 	
 	

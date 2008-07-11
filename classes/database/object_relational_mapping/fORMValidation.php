@@ -516,6 +516,7 @@ class fORMValidation
 		$unique_keys  = $key_info['unique'];
 		
 		foreach ($unique_keys AS $unique_columns) {
+			settype($unique_columns, 'array');
 			if (in_array($column, $unique_columns)) {
 				$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
 				$column_num = 0;
