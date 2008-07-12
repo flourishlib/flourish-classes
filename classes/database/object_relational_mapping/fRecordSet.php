@@ -820,7 +820,7 @@ class fRecordSet implements Iterator
 			$rows = array(); 
 						 
 			try { 
-				while (!array_diff($keys, $result->current())) { 
+				while (!array_diff_assoc($keys, $result->current())) { 
 					$row = $result->fetchRow(); 
 					 
 					// If we are going through a join table we need to remove the related primary key that was used for matching 
