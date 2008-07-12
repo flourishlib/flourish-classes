@@ -544,13 +544,14 @@ class fUTF8
 	/**
 	 * Converts a unicode value into a UTF-8 character
 	 * 
-	 * @param  mixed $unicode_code_point  The character to create, either the U+hex, hex or decimal code point
+	 * @param  mixed $unicode_code_point  The character to create, either the U+hex, decimal code point
 	 * @return string  The UTF-8 character, or NULL if an invalid character
 	 */
 	static public function chr($unicode_code_point)
 	{
 		if (is_string($unicode_code_point) && substr($unicode_code_point, 0, 2) == 'U+') {
-			$unicode_code_point = substr($unicode_code_point, 2);	
+			$unicode_code_point = substr($unicode_code_point, 2);
+			$unicode_code_point = hexdec($unicode_code_point);	
 		}
 		
 		$bin = decbin($unicode_code_point);
@@ -564,18 +565,18 @@ class fUTF8
 			
 		// Two byte characters
 		} elseif ($digits <= 11) {
-			$first  = chr(bindec('110' . substr($bin, 0, -6)));
+			$first  = chr(bindec('110' . str_pad(substr($bin, 0, -6), 5, '0', STR_PAD_LEFT)));
 			$second = chr(bindec('10' . substr($bin, -6)));
 			
 		// Three byte characters
 		} elseif ($digits <= 16) {
-			$first  = chr(bindec('1110' . substr($bin, 0, -12)));
+			$first  = chr(bindec('1110' . str_pad(substr($bin, 0, -12), 4, '0', STR_PAD_LEFT)));
 			$second = chr(bindec('10' . substr($bin, -12, -6)));
 			$third  = chr(bindec('10' . substr($bin, -6)));
 			
 		// Four byte characters
 		} elseif ($digits <= 21) {
-			$first  = chr(bindec('11110' . substr($bin, 0, -18)));
+			$first  = chr(bindec('11110' . str_pad(substr($bin, 0, -18), 3, '0', STR_PAD_LEFT)));
 			$second = chr(bindec('10' . substr($bin, -18, -12)));
 			$third  = chr(bindec('10' . substr($bin, -12, -6)));
 			$fourth = chr(bindec('10' . substr($bin, -6)));
