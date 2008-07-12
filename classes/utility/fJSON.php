@@ -1,0 +1,635 @@
+<?php
+/**
+ * Provides encoding and decoding for JSON
+ * 
+ * @copyright  Copyright (c) 2008 William Bond
+ * @author     William Bond [wb] <will@flourishlib.com>
+ * @license    http://flourishlib.com/license
+ * 
+ * @package    Flourish
+ * @link       http://flourishlib.com/fJSON
+ * 
+ * @version    1.0.0b
+ * @changes    1.0.0b  The initial implementation [wb, 2008-07-12]
+ */
+class fJSON
+{
+	/** 
+	 * An abstract representation of [ 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_ARRAY_OPEN  = 0;
+	
+	/** 
+	 * An abstract representation of , in a JSON array
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_ARRAY_COMMA = 1;
+	
+	/** 
+	 * An abstract representation of ] 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_ARRAY_CLOSE = 2;
+	
+	/** 
+	 * An abstract representation of { 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_OBJ_OPEN    = 3;
+	
+	/** 
+	 * An abstract representation of a JSON object key 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_KEY         = 4;
+	
+	/** 
+	 * An abstract representation of : 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_COLON       = 5;
+	
+	/** 
+	 * An abstract representation of , in a JSON object 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_OBJ_COMMA   = 6;
+	
+	/** 
+	 * An abstract representation of } 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_OBJ_CLOSE   = 7;
+	
+	/** 
+	 * An abstract representation of an integer 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_INTEGER     = 8;
+	
+	/** 
+	 * An abstract representation of a floating value 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_FLOAT       = 9;
+	
+	/** 
+	 * An abstract representation of a boolean true  
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_TRUE        = 10;
+	
+	/** 
+	 * An abstract representation of a boolean false
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_FALSE       = 11;
+	
+	/** 
+	 * An abstract representation of null 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_NULL        = 12;
+	
+	/** 
+	 * An abstract representation of a string 
+	 * 
+	 * @internal
+	 *  
+	 * @var integer 
+	 */
+	const J_STRING      = 13;
+	
+	
+	/** 
+	 * An array of special characters in JSON strings 
+	 *  
+	 * @var array 
+	 */
+	static private $control_character_map = array(
+		'"'  => '\"', '\\' => '\\\\', '/'  => '\/', "\b" => '\b',
+		"\f" => '\f', "\n" => '\n',   "\r" => '\r', "\t" => '\t'
+	);
+	
+	/** 
+	 * An array of what values are allowed after other values
+	 * 
+	 * @internal
+	 *  
+	 * @var array 
+	 */
+	static private $next_values = array(
+		self::J_ARRAY_OPEN => array(
+			self::J_ARRAY_OPEN  => TRUE,
+			self::J_OBJ_OPEN    => TRUE,
+			self::J_INTEGER     => TRUE,
+			self::J_FLOAT       => TRUE,
+			self::J_TRUE        => TRUE,
+			self::J_FALSE       => TRUE,
+			self::J_NULL        => TRUE,
+			self::J_STRING      => TRUE
+		),
+		self::J_ARRAY_COMMA => array(
+			self::J_ARRAY_OPEN  => TRUE,
+			self::J_OBJ_OPEN    => TRUE,
+			self::J_INTEGER     => TRUE,
+			self::J_FLOAT       => TRUE,
+			self::J_TRUE        => TRUE,
+			self::J_FALSE       => TRUE,
+			self::J_NULL        => TRUE,
+			self::J_STRING      => TRUE
+		),
+		self::J_ARRAY_CLOSE => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_OBJ_OPEN => array(
+			self::J_KEY         => TRUE	
+		),
+		self::J_KEY => array(
+			self::J_COLON       => TRUE
+		),
+		self::J_OBJ_COMMA => array(
+			self::J_KEY         => TRUE
+		),
+		self::J_COLON => array(
+			self::J_ARRAY_OPEN  => TRUE,
+			self::J_OBJ_OPEN    => TRUE,
+			self::J_INTEGER     => TRUE,
+			self::J_FLOAT       => TRUE,
+			self::J_TRUE        => TRUE,
+			self::J_FALSE       => TRUE,
+			self::J_NULL        => TRUE,
+			self::J_STRING      => TRUE
+		),
+		self::J_OBJ_CLOSE => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_INTEGER => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_FLOAT => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_TRUE => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_FALSE => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_NULL => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		),
+		self::J_STRING => array(
+			self::J_ARRAY_CLOSE => TRUE,
+			self::J_OBJ_CLOSE   => TRUE,
+			self::J_ARRAY_COMMA => TRUE,
+			self::J_OBJ_COMMA   => TRUE
+		)
+	);	
+	
+	
+	/** 
+	 * Decodes a JSON string into native PHP data types
+	 * 
+	 * This function is very strict about the format of JSON. If the string is
+	 * not a valid JSON string, an exception will be thrown.
+	 *  
+	 * @throws fValidationException 
+	 *  
+	 * @param  string  $json   This should be the name of a related class 
+	 * @param  boolean $assoc  If this is TRUE, JSON objects will be represented as an assocative array instead of a stdClass object
+	 * @return array|stdClass  A PHP equivalent of the JSON string 
+	 */
+	static public function decode($json, $assoc=FALSE)
+	{
+		preg_match_all('~\[|																			                      # Array begin
+						 \]|																			                      # Array end
+						 {|																				                      # Object begin
+						 }|																				                      # Object end
+						 -?(?:0|[1-9]\d*)(?:\.\d+(?:[eE][+\-]?\d+)?|(?:[eE][+\-]?\d+))|	                                      # Float
+						 \d+|																			                      # Integer
+						 true|																			                      # True
+						 false|																			                      # False
+						 null|																			                      # Null
+						 ,|																				                      # Member separator for arrays and objects
+						 :|																				                      # Value separator for objects
+						 "(?:(?!\\\\u)[^\\"\n\b\f\r\t]+|\\\\|\/|\\\\"|\\\\b|\\\\f|\\\\n|\\\\r|\\\\t|\\\\u[0-9a-fA-F]{4})*"|	  # String
+						 \s+																			                      # Whitespace
+						 ~x', $json, $matches);
+		
+		$matched_length = 0;
+		$stack          = array();
+		$last           = NULL;
+		$last_key       = NULL;
+		$output         = NULL;
+		$container      = NULL;
+		
+		foreach ($matches[0] as $match) {
+			if ($matched_length == 0 && $match != '[' && $match != '{') {
+				break;
+			}
+
+			if ($matched_length == 0) {
+				if ($match == '[') {
+					$output  = array();
+					$last    = self::J_ARRAY_OPEN;
+				} else {
+					$output  = ($assoc) ? array() : new stdClass();	
+					$last    = self::J_OBJ_OPEN;
+				}
+				$stack[]   =  array($last, &$output);
+				$container =& $output;
+				
+				$matched_length = 1;			
+			
+				continue;	
+			}
+			
+			$matched_length += strlen($match);			
+			
+			// Whitespace can be skipped over
+			if (ctype_space($match)) {
+				continue;
+			}
+			
+			$type = self::getElementType($stack, $last, $match);
+			
+			// An invalid sequence will cause parsing to stop
+			if (!isset(self::$next_values[$last][$type])) {
+				break;
+			}
+			
+			// Decode the data values
+			if ($type == self::J_INTEGER) {
+				$match = (integer) $match;	
+			}
+			if ($type == self::J_FLOAT) {
+				$match = (float) $match;	
+			}
+			if ($type == self::J_FALSE) {
+				$match = FALSE;	
+			}
+			if ($type == self::J_TRUE) {
+				$match = TRUE;	
+			}
+			if ($type == self::J_NULL) {
+				$match = NULL;	
+			}
+			if ($type == self::J_STRING || $type == self::J_KEY) {
+				$match = substr($match, 1, -1);
+				$match = strtr($match, array_flip(self::$control_character_map));
+				$match = preg_replace('#\\\\u([0-9a-f]{4})#e', 'fUTF8::chr("U+\1")', $match);	
+			}	
+			
+			// If the element is not a value, record some info and continue
+			if ($type == self::J_COLON ||
+				  $type == self::J_OBJ_COMMA ||
+				  $type == self::J_ARRAY_COMMA ||
+				  $type == self::J_KEY) {
+				$last = $type;
+				if ($type == self::J_KEY) {
+					$last_key = $match;	
+				}
+				continue;	
+			}
+			
+			// This flag is used to indicate if an array or object is being added and thus
+			// if the container reference needs to be changed to the current match
+			$ref_match = FALSE;
+			
+			// Closing an object or array
+			if ($type == self::J_OBJ_CLOSE || $type == self::J_ARRAY_CLOSE) {
+				if (sizeof($stack) == 1) {
+					break;
+				}	
+				array_pop($stack);
+				$new_container = end($stack);
+				$container =& $new_container[1];
+				continue;
+			}
+			
+			// Opening a new object or array requires some references to keep
+			// track of what the current container is
+			if ($type == self::J_OBJ_OPEN) {
+				$match = ($assoc) ? array() : new stdClass();
+				$ref_match = TRUE;
+			}
+			if ($type == self::J_ARRAY_OPEN) {
+				$match = array();
+				$ref_match = TRUE;	
+			}
+			
+			if ($ref_match) {
+				$stack[] = array($type, $match);
+				$stack_end = end($stack);	
+			}
+			
+			
+			// Here we assign the value. This code is kind of crazy because
+			// we have to keep track of the current container by references
+			// so we can traverse back down the stack as we move out of
+			// nested arrays and objects
+			if ($last == self::J_COLON && !$assoc) {
+				if ($ref_match) {
+					$container->$last_key =& $stack_end[1];
+					$container =& $stack_end[1];
+				} else {
+					$container->$last_key = $match;	
+				}
+				
+			} elseif ($last == self::J_COLON) {
+				if ($ref_match) {
+					$container[$last_key] =& $stack_end[1];
+					$container =& $stack_end[1];
+				} else {
+					$container[$last_key] = $match;		
+				}
+				
+			} else {
+				if ($ref_match) {
+					$container[] =& $stack_end[1];
+					$container =& $stack_end[1];
+				} else {
+					$container[] = $match;
+				}	
+			}
+			
+			if ($last == self::J_COLON) {
+				$last_key = NULL;
+			}
+			$last     = $type; 
+
+		}
+		
+		if ($matched_length != strlen($json)) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The JSON string provided (%s) is not valid',
+					fCore::dump($json)
+				)
+			);
+		}	
+		
+		return $output;
+	}
+	
+	
+	/** 
+	 * Encodes a PHP value into a JSON string
+	 * 
+	 * @param  mixed  $value   The PHP value to encode
+	 * @return string  The JSON string that is equivalent to the PHP value
+	 */
+	static public function encode($value)
+	{
+		if (is_int($value)) {
+			return (string) $value;
+		}
+		
+		if (is_float($value)) {
+			//if (self::$fix) {
+			//	// Make sure a float always has a decimal place
+			//	if ((string) $value === (string) (int) $value) {
+			//		return $value . '.0';
+			//	}
+			//}
+			return (string) $value;	
+		}	 	
+		
+		if (is_bool($value)) {
+			return ($value) ? 'true' : 'false';
+		}	
+		
+		if (is_null($value)) {
+			return 'null';	
+		}
+		
+		if (is_resource($value)) {
+			return 'null';	
+		}
+		
+		if (is_string($value)) {
+			//if (self::$fix) {
+			//	$value = fUTF8::clean($value);	
+			//} else {
+				// strip any bad characters
+				$value = iconv('utf-8', 'utf-8', $value);	
+			//}
+			
+			$char_array = fUTF8::explode($value);
+			
+			$output = '"';
+			foreach ($char_array as $char) {
+				if (isset(self::$control_character_map[$char])) {
+					$output .= self::$control_character_map[$char];
+				
+				} elseif (strlen($char) < 2) {
+					$output .= $char;
+				
+				} else {
+					$output .= '\u' . substr(fUTF8::ord($char), 2);
+				}	 		
+			}
+			$output .= '"';
+			
+			return $output;
+		}
+		
+		// Detect if an array is associative, which would mean it needs to be encoded as an object
+		$is_assoc_array = FALSE;
+		if (is_array($value) && $value) {
+			$merged_array = array_merge($value);
+			end($merged_array);
+			if (sizeof($merged_array)-1 != key($merged_array)) {
+				$is_assoc_array = TRUE;	
+			}
+		}
+		
+		if (is_object($value) || $is_assoc_array) {
+			$output  = '{';
+			$members = array();
+			
+			foreach ($value as $key => $val) {
+				$members[] = self::encode((string) $key) . ':' . self::encode($val);	
+			}
+			
+			$output .= join(',', $members);
+			$output .= '}';	
+			return $output;
+		}
+		
+		if (is_array($value)) {
+			$output  = '[';
+			$members = array();
+			
+			foreach ($value as $key => $val) {
+				$members[] = self::encode($val);
+			}
+			
+			$output .= join(',', $members);
+			$output .= ']';
+			return $output;	 		
+		}
+	}
+	
+	
+	/** 
+	 * Determines the type of a parser JSON element
+	 *  
+	 * @param  array   &$stack   The stack of arrays/objects being parsed
+	 * @param  integer $last     The type of the last element parsed
+	 * @param  string  $element  The element being detected
+	 * @return integer  The element type
+	 */
+	static private function getElementType(&$stack, $last, $element)
+	{
+		if ($element == '[') {
+			return self::J_ARRAY_OPEN;
+		}	
+		
+		if ($element == ']') {
+			return self::J_ARRAY_CLOSE;	
+		}
+		
+		if ($element == '{') {
+			return self::J_OBJ_OPEN;	
+		}
+		
+		if ($element == '}') {
+			return self::J_OBJ_CLOSE;	
+		}
+		
+		if (ctype_digit($element)) {
+			return self::J_INTEGER;
+		}	
+		
+		if (is_numeric($element)) {
+			return self::J_FLOAT;	
+		}
+		
+		if ($element == 'true') {
+			return self::J_TRUE;	
+		}
+		
+		if ($element == 'false') {
+			return self::J_FALSE;	
+		}
+		
+		if ($element == 'null') {
+			return self::J_NULL;	
+		}
+		
+		$last_stack = end($stack);
+		if ($element == ',' && $last_stack[0] == self::J_ARRAY_OPEN) {
+			return self::J_ARRAY_COMMA;
+		}
+		
+		if ($element == ',') {
+			return self::J_OBJ_COMMA;	
+		}
+		
+		if ($element == ':') {
+			return self::J_COLON;	
+		}
+		
+		if ($last == self::J_OBJ_OPEN || $last == self::J_OBJ_COMMA) {
+			return self::J_KEY;	
+		}
+		
+		return self::J_STRING;
+	}
+	
+	
+	/**
+	 * Forces use as a static class
+	 * 
+	 * @return fJSON
+	 */
+	private function __construct() { }
+}
+
+
+
+/**
+ * Copyright (c) 2008 William Bond <will@flourishlib.com>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
