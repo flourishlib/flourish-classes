@@ -111,7 +111,7 @@ class fURL
 	{
 		$parameters = func_get_args();
 		
-		$qs_array = parse_str(self::getQueryString());
+		parse_str(self::getQueryString(), $qs_array);
 		if (get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);
 		}
@@ -137,7 +137,7 @@ class fURL
 	 */
 	static public function replaceInQueryString($parameter, $value)
 	{
-		$qs_array = parse_str(self::getQueryString());
+		parse_str(self::getQueryString(), $qs_array);
 		if (get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);
 		}
@@ -158,7 +158,7 @@ class fURL
 		
 		for ($i=0; $i<sizeof($parameter); $i++) {
 			$qs_array[$parameter[$i]] = $value[$i];
-		}
+		}   
 		
 		return '?' . http_build_query($qs_array, '', '&');
 	}
