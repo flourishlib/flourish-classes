@@ -2,6 +2,11 @@
 /**
  * Provides encoding and decoding for JSON
  * 
+ * This class is a compatibility class for the json_* functions on servers with
+ * PHP < v5.2 or with the json_* functions left out. It also will handle JSON
+ * values that are not contained in an array or object - like the json_* 
+ * functions from PHP v5.2 on.
+ * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -147,8 +152,8 @@ class fJSON
 	 * @var array 
 	 */
 	static private $control_character_map = array(
-		'"'  => '\"', '\\' => '\\\\', '/'  => '\/', "\b" => '\b',
-		"\f" => '\f', "\n" => '\n',   "\r" => '\r', "\t" => '\t'
+		'"'   => '\"', '\\' => '\\\\', '/'  => '\/', "\x8" => '\b',
+		"\xC" => '\f', "\n" => '\n',   "\r" => '\r', "\t"  => '\t'
 	);
 	
 	/** 
@@ -161,6 +166,7 @@ class fJSON
 	static private $next_values = array(
 		self::J_ARRAY_OPEN => array(
 			self::J_ARRAY_OPEN  => TRUE,
+			self::J_ARRAY_CLOSE => TRUE,
 			self::J_OBJ_OPEN    => TRUE,
 			self::J_INTEGER     => TRUE,
 			self::J_FLOAT       => TRUE,
@@ -186,6 +192,7 @@ class fJSON
 			self::J_OBJ_COMMA   => TRUE
 		),
 		self::J_OBJ_OPEN => array(
+			self::J_OBJ_CLOSE   => TRUE,
 			self::J_KEY         => TRUE	
 		),
 		self::J_KEY => array(
@@ -255,27 +262,51 @@ class fJSON
 	 * This function is very strict about the format of JSON. If the string is
 	 * not a valid JSON string, an exception will be thrown.
 	 *  
-	 * @throws fValidationException 
-	 *  
 	 * @param  string  $json   This should be the name of a related class 
 	 * @param  boolean $assoc  If this is TRUE, JSON objects will be represented as an assocative array instead of a stdClass object
 	 * @return array|stdClass  A PHP equivalent of the JSON string 
 	 */
 	static public function decode($json, $assoc=FALSE)
 	{
-		preg_match_all('~\[|																			                      # Array begin
-						 \]|																			                      # Array end
-						 {|																				                      # Object begin
-						 }|																				                      # Object end
-						 -?(?:0|[1-9]\d*)(?:\.\d+(?:[eE][+\-]?\d+)?|(?:[eE][+\-]?\d+))|	                                      # Float
-						 \d+|																			                      # Integer
-						 true|																			                      # True
-						 false|																			                      # False
-						 null|																			                      # Null
-						 ,|																				                      # Member separator for arrays and objects
-						 :|																				                      # Value separator for objects
-						 "(?:(?!\\\\u)[^\\"\n\b\f\r\t]+|\\\\|\/|\\\\"|\\\\b|\\\\f|\\\\n|\\\\r|\\\\t|\\\\u[0-9a-fA-F]{4})*"|	  # String
-						 \s+																			                      # Whitespace
+		if (!is_string($json) && !is_numeric($json)) {
+			return NULL;	
+		}
+		
+		$json = trim($json);
+		
+		if ($json === '') {
+			return NULL;	
+		}
+		
+		// If the json is an array or object, we can rely on the php function
+		if (function_exists('json_decode') && ($json[0] == '[' || $json[0] == '{')) {
+			return json_decode($json, $assoc);	
+		}
+		
+		preg_match_all('~\[|									 # Array begin
+						 \]|									 # Array end
+						 {|										 # Object begin
+						 }|										 # Object end
+						 -?(?:0|[1-9]\d*)                        # Float
+							 (?:\.\d*(?:[eE][+\-]?\d+)?|
+							 (?:[eE][+\-]?\d+))|	            
+						 -?(?:0|[1-9]\d*)|						 # Integer
+						 true|									 # True
+						 false|								     # False
+						 null|									 # Null
+						 ,|										 # Member separator for arrays and objects
+						 :|										 # Value separator for objects
+						 "(?:(?:(?!\\\\u)[^\\\\"\n\b\f\r\t]+)|   # String
+							 \\\\\\\\|
+							 \\\\/|
+							 \\\\"|
+							 \\\\b|
+							 \\\\f|
+							 \\\\n|
+							 \\\\r|
+							 \\\\t|
+							 \\\\u[0-9a-fA-F]{4})*"|
+						 \s+									 # Whitespace
 						 ~x', $json, $matches);
 		
 		$matched_length = 0;
@@ -285,11 +316,21 @@ class fJSON
 		$output         = NULL;
 		$container      = NULL;
 		
+		if (sizeof($matches) == 1 && strlen($matches[0][0]) == strlen($json)) {
+			$match = $matches[0][0];
+			$stack = array();
+			$type  = self::getElementType($stack, self::J_ARRAY_OPEN, $match);
+			$element = self::scalarize($type, $match);
+			if ($match !== $element) {
+				return $element;
+			}			
+		}
+		
+		if ($json[0] != '[' && $json[0] != '{') {
+			return $json;	
+		}
+		
 		foreach ($matches[0] as $match) {
-			if ($matched_length == 0 && $match != '[' && $match != '{') {
-				break;
-			}
-
 			if ($matched_length == 0) {
 				if ($match == '[') {
 					$output  = array();
@@ -306,7 +347,7 @@ class fJSON
 				continue;	
 			}
 			
-			$matched_length += strlen($match);			
+			$matched_length += strlen($match);	
 			
 			// Whitespace can be skipped over
 			if (ctype_space($match)) {
@@ -321,26 +362,7 @@ class fJSON
 			}
 			
 			// Decode the data values
-			if ($type == self::J_INTEGER) {
-				$match = (integer) $match;	
-			}
-			if ($type == self::J_FLOAT) {
-				$match = (float) $match;	
-			}
-			if ($type == self::J_FALSE) {
-				$match = FALSE;	
-			}
-			if ($type == self::J_TRUE) {
-				$match = TRUE;	
-			}
-			if ($type == self::J_NULL) {
-				$match = NULL;	
-			}
-			if ($type == self::J_STRING || $type == self::J_KEY) {
-				$match = substr($match, 1, -1);
-				$match = strtr($match, array_flip(self::$control_character_map));
-				$match = preg_replace('#\\\\u([0-9a-f]{4})#e', 'fUTF8::chr("U+\1")', $match);	
-			}	
+			$match = self::scalarize($type, $match);	
 			
 			// If the element is not a value, record some info and continue
 			if ($type == self::J_COLON ||
@@ -360,12 +382,13 @@ class fJSON
 			
 			// Closing an object or array
 			if ($type == self::J_OBJ_CLOSE || $type == self::J_ARRAY_CLOSE) {
-				if (sizeof($stack) == 1) {
-					break;
-				}	
 				array_pop($stack);
+				if (sizeof($stack) == 0) {
+					break;
+				}
 				$new_container = end($stack);
 				$container =& $new_container[1];
+				$last = $type;
 				continue;
 			}
 			
@@ -391,6 +414,9 @@ class fJSON
 			// so we can traverse back down the stack as we move out of
 			// nested arrays and objects
 			if ($last == self::J_COLON && !$assoc) {
+				if ($last_key == '') {
+					$last_key = '_empty_';	
+				}
 				if ($ref_match) {
 					$container->$last_key =& $stack_end[1];
 					$container =& $stack_end[1];
@@ -418,18 +444,12 @@ class fJSON
 			if ($last == self::J_COLON) {
 				$last_key = NULL;
 			}
-			$last     = $type; 
+			$last = $type; 
 
 		}
 		
-		if ($matched_length != strlen($json)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The JSON string provided (%s) is not valid',
-					fCore::dump($json)
-				)
-			);
+		if ($matched_length != strlen($json) || sizeof($stack) > 0) {
+			return NULL;
 		}	
 		
 		return $output;
@@ -444,6 +464,10 @@ class fJSON
 	 */
 	static public function encode($value)
 	{
+		if (function_exists('json_encode')) {
+			return @json_encode($value);	
+		}
+		
 		if (is_int($value)) {
 			return (string) $value;
 		}
@@ -489,7 +513,7 @@ class fJSON
 					$output .= $char;
 				
 				} else {
-					$output .= '\u' . substr(fUTF8::ord($char), 2);
+					$output .= '\u' . substr(strtolower(fUTF8::ord($char)), 2);
 				}	 		
 			}
 			$output .= '"';
@@ -500,10 +524,13 @@ class fJSON
 		// Detect if an array is associative, which would mean it needs to be encoded as an object
 		$is_assoc_array = FALSE;
 		if (is_array($value) && $value) {
-			$merged_array = array_merge($value);
-			end($merged_array);
-			if (sizeof($merged_array)-1 != key($merged_array)) {
-				$is_assoc_array = TRUE;	
+			$looking_for = 0;
+			foreach ($value as $key => $val) {
+				if (!is_numeric($key) || $key != $looking_for) {
+					$is_assoc_array = TRUE;	
+					break;
+				}
+				$looking_for++;
 			}
 		}
 		
@@ -599,6 +626,40 @@ class fJSON
 		}
 		
 		return self::J_STRING;
+	}
+	
+	
+	/** 
+	 * Decodes a scalar value
+	 *  
+	 * @param  integer $type     The type of the element
+	 * @param  string  $element  The element to be converted to a scalar
+	 * @return mixed  The scalar value or the original string of the element
+	 */
+	static private function scalarize($type, $element)
+	{
+		if ($type == self::J_INTEGER) {
+			$element = (integer) $element;	
+		}
+		if ($type == self::J_FLOAT) {
+			$element = (float) $element;	
+		}
+		if ($type == self::J_FALSE) {
+			$element = FALSE;	
+		}
+		if ($type == self::J_TRUE) {
+			$element = TRUE;	
+		}
+		if ($type == self::J_NULL) {
+			$element = NULL;	
+		}
+		if ($type == self::J_STRING || $type == self::J_KEY) {
+			$element = substr($element, 1, -1);
+			$element = strtr($element, array_flip(self::$control_character_map));
+			$element = preg_replace('#\\\\u([0-9a-fA-F]{4})#e', 'fUTF8::chr("U+\1")', $element);	
+		}	
+		
+		return $element;
 	}
 	
 	
