@@ -37,43 +37,31 @@ class fImage extends fFile
 	 */
 	static private function checkImageMagickBinary($path)
 	{
-		if (!file_exists($path . 'convert.exe') && !file_exists($path . 'convert')) {
+		// Make sure we can execute the convert binary
+		if (self::isSafeModeExecDirRestricted($path)) {
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The ImageMagick convert binary could not be found in the directory %s',
-					fCore::dump($path)
-				)
-			);
-		}
-		if (!is_executable($path . 'convert.exe') && !is_executable($path . 'convert')) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The ImageMagick convert binary located in the directory %s is not executable',
-					fCore::dump($path)
+					'Safe mode is turned on and the ImageMagick convert binary is not in the directory defined by the safe_mode_exec_dir ini setting or safe_mode_exec_dir is not set - safe_mode_exec_dir is currently %s.',
+					fCore::dump(ini_get('safe_mode_exec_dir'))
 				)
 			);
 		}
 		
-		// Make sure we can execute the convert binary
-		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
-			$exec_dirs = explode(';', ini_get('safe_mode_exec_dir'));
-			$found = FALSE;
-			foreach ($exec_dirs as $exec_dir) {
-				if (stripos($path, $exec_dir) === 0) {
-					$found = TRUE;
-				}
-			}
-			if (!$found) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'Safe mode is turned on and the ImageMagick convert binary is not in one of the paths defined by the safe_mode_exec_dir ini setting. Current safe_mode_exec_dir paths: %s.',
-						fCore::dump(ini_get('safe_mode_exec_dir'))
-					)
-				);
-			}
+		if (self::isOpenBaseDirRestricted($path)) {
+			exec($path . 'convert -version', $executable);	
+		} else {
+			$executable = is_executable($location . 'convert');
+		}
+		
+		if (!$executable) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The ImageMagick convert binary located in the directory %s does not exist or is not executable',
+					fCore::dump($path)
+				)
+			);
 		}
 	}
 	
@@ -158,9 +146,10 @@ class fImage extends fFile
 				switch ($os = fCore::getOS()) { 
 					case 'windows': 
 						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
-						$win_output = trim(shell_exec($win_search)); 
+						exec($win_search, $win_output);
+						$win_output = trim(join("\n", $win_output)); 
 						 
-						if (stripos($win_output, 'File not found') !== FALSE) {
+						if (!$win_output || stripos($win_output, 'File not found') !== FALSE) {
 							throw new Exception(); 
 						} 
 						 
@@ -171,7 +160,17 @@ class fImage extends fFile
 					case 'solaris':
 						$found = FALSE;
 						foreach($locations[$os] as $location) {
-							if (file_exists($location . 'convert') && is_executable($location . 'convert')) {
+							if (self::isSafeModeExecDirRestricted($location)) {
+								continue;
+							}	
+							if (self::isOpenBaseDirRestricted($location)) {
+								exec($location . 'convert -version', $output);
+								if ($output) {
+									$found = TRUE;
+									$path  = $location;
+									break;
+								}	
+							} elseif (is_executable($location . 'convert')) {
 								$found = TRUE;
 								$path  = $location;
 								break;
@@ -186,14 +185,19 @@ class fImage extends fFile
 						// On most linux/unix we can try whereis
 						if ($os == 'linux/unix' && !$found) {
 							$nix_search = 'whereis -b convert';
-							$nix_output = trim(str_replace('convert:', '', shell_exec($nix_search)));
+							exec($nix_search, $nix_output);
+							$nix_output = trim(str_replace('convert:', '', join("\n", $nix_output)));
 							
 							if (empty($nix_output)) {
 								throw new Exception();
 							}
 						
 							$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
-					}
+						}
+						break;
+					
+					default:
+						$path = NULL; 
 				}
 				
 				self::checkImageMagickBinary($path);
@@ -334,6 +338,51 @@ class fImage extends fFile
 		}
 		
 		return TRUE;
+	}
+	
+	
+	/**
+	 * Checks if the path specified is restricted by open basedir
+	 * 
+	 * @param  string $path  The path to check
+	 * @return boolean  If the path is restricted by open_basedir
+	 */
+	static private function isOpenBaseDirRestricted($path)
+	{
+		if (ini_get('open_basedir')) {
+			$open_basedirs = explode((fCore::getOS() == 'windows') ? ';' : ':', ini_get('open_basedir'));
+			$found = FALSE;
+			
+			foreach ($open_basedirs as $open_basedir) {
+				if (strpos($path, $open_basedir) === 0) {
+					$found = TRUE;
+				}	
+			}
+			
+			if (!$found) {
+				return TRUE;	
+			}
+		}
+		
+		return FALSE;
+	}
+	
+	
+	/**
+	 * Checks if the path specified is restricted by the safe mode exec dir restriction
+	 * 
+	 * @param  string $path  The path to check
+	 * @return boolean  If the path is restricted by safe_mode_exec_dir
+	 */
+	static private function isSafeModeExecDirRestricted($path)
+	{
+		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
+			$exec_dir = ini_get('safe_mode_exec_dir');
+			if (!$exec_dir || stripos($path, $exec_dir) === FALSE) {
+				return TRUE;
+			}
+		}
+		return FALSE;	
 	}
 	
 	
@@ -721,7 +770,7 @@ class fImage extends fFile
 		
 		$command_line .= ' ' . escapeshellarg($output_file);
 		
-		shell_exec($command_line);
+		exec($command_line);
 	}
 	
 	
