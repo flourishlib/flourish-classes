@@ -784,7 +784,7 @@ class fUTF8
 			self::checkMbString();	
 		}
 		
-		if (self::$mbstring_available) {
+		if (self::$mbstring_available && function_exists('mb_stripos')) {
 			return mb_stripos($haystack, $needle, $offset, 'UTF-8');	
 		}
 		
@@ -840,7 +840,7 @@ class fUTF8
 			self::checkMbString();	
 		}
 		
-		if (self::$mbstring_available) {
+		if (self::$mbstring_available && function_exists('mb_strripos')) {
 			return mb_strripos($haystack, $needle, $offset, 'UTF-8');	
 		}
 		
@@ -873,7 +873,7 @@ class fUTF8
 			self::checkMbString();	
 		}
 		
-		if (self::$mbstring_available) {
+		if (self::$mbstring_available && function_exists('mb_stristr')) {
 			return mb_stristr($haystack, $needle, $before_needle, 'UTF-8');	
 		}
 		
@@ -1266,7 +1266,7 @@ class fUTF8
 			self::checkMbString();	
 		}
 		
-		if (self::$mbstring_available) {
+		if (self::$mbstring_available && function_exists('mb_strstr')) {
 			return mb_strstr($haystack, $needle, $before_needle, 'UTF-8');	
 		}
 		
