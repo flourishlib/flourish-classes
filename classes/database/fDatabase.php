@@ -1253,7 +1253,7 @@ class fDatabase
 		$this->query_time += $query_time;
 		fCore::debug(
 			fGrammar::compose(
-				"Query time was %s seconds for:%s",
+				'Query time was %s seconds for:%s',
 				$query_time,
 				"\n" . $result->getSQL()
 			),
@@ -1434,7 +1434,7 @@ class fDatabase
 		$this->query_time += $query_time;
 		fCore::debug(
 			fGrammar::compose(
-				"Query time was %s seconds for (unbuffered):%s",
+				'Query time was %s seconds for (unbuffered):%s',
 				$query_time,
 				"\n" . $result->getSQL()
 			),
