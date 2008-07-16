@@ -1276,8 +1276,6 @@ abstract class fActiveRecord
 			$validation_messages
 		);
 		
-		$table = fORM::tablize($this);
-		
 		// Validate the local values
 		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
 		
@@ -1296,7 +1294,7 @@ abstract class fActiveRecord
 			$validation_messages
 		);
 		
-		fORMValidation::reorderMessages($table, $validation_messages);
+		fORMValidation::reorderMessages($this, $validation_messages);
 		
 		if ($return_messages) {
 			return $validation_messages;	
