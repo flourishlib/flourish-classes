@@ -51,7 +51,7 @@ class fImage extends fFile
 		if (self::isOpenBaseDirRestricted($path)) {
 			exec($path . 'convert -version', $executable);	
 		} else {
-			$executable = is_executable($location . 'convert');
+			$executable = is_executable($path . 'convert');
 		}
 		
 		if (!$executable) {

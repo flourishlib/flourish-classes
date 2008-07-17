@@ -156,7 +156,10 @@ class fORMFile
 		}
 		
 		self::$transaction_level++;
-		fFilesystem::begin();
+		
+		if (!fFilesystem::isInsideTransaction()) {
+			fFilesystem::begin();
+		}
 	}
 	
 	

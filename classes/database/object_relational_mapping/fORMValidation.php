@@ -546,10 +546,17 @@ class fORMValidation
 					foreach ($unique_columns as $unique_column) {
 						$column_names[] = fORM::getColumnName($class, $unique_column);
 					}
-					return fGrammar::compose(
-						'%s: The values specified must be a unique combination, but the specified combination already exists',
-						join(', ', $column_names)
-					);
+					if (sizeof($column_names) == 1) {
+						return fGrammar::compose(
+							'%s: The value specified must be unique, however it already exists',
+							join('', $column_names)
+						);
+					} else {
+						return fGrammar::compose(
+							'%s: The values specified must be a unique combination, however the specified combination already exists',
+							join(', ', $column_names)
+						);
+					}
 				
 				} catch (fNoResultsException $e) { }
 			}

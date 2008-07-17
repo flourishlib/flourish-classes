@@ -156,9 +156,29 @@ class fORMOrdering
 		$current_value = $values[$column];
 		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
 		
+		// Figure out the range we are dealing with
+		$sql = "SELECT max(" . $column . ") FROM " . $table;
+		if ($other_columns) {
+			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
+		}
+		
+		$current_max_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		
+		$shift_down = $current_max_value + 10;
+		$shift_up   = $current_max_value + 9;
+		
 		// Close the gap for all records after this one in the set
-		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' - 1 ';
+		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' - ' . $shift_down . ' ';
 		$sql .= 'WHERE ' . $column . ' > ' . (($old_value) ? $old_value : $current_value);
+		if ($other_columns) {
+			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
+		}
+		
+		fORMDatabase::getInstance()->translatedQuery($sql);
+		
+		// Close the gap for all records after this one in the set
+		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' + ' . $shift_up . ' ';
+		$sql .= 'WHERE ' . $column . ' < 0';
 		if ($other_columns) {
 			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 		}
