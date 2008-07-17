@@ -519,7 +519,7 @@ class fORMColumn
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
 				$validation_messages[] = fGrammar::compose(
 					'%s: Please enter an email address in the form name@example.com',
-					fORM::getColumnName($class_name, $column)
+					fORM::getColumnName($class, $column)
 				);
 			}	
 		}
