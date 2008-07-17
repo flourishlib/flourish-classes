@@ -802,7 +802,6 @@ class fORMFile
 			
 			if ($existing_file && $delete_file && $no_upload) {
 				$file = NULL;
-				return;
 				
 			} elseif ($existing_file) {
 				
@@ -822,9 +821,11 @@ class fORMFile
 					$old_values[$column][] = $current_file;
 					$values[$column]       = $file;
 				}
+				return;
+				
+			} else {
+				return;
 			}
-			
-			return;
 		}
 		
 		// Assign the file
