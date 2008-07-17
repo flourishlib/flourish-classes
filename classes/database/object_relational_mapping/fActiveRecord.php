@@ -1305,7 +1305,7 @@ abstract class fActiveRecord
 				'fValidationException',
 				sprintf(
 					"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
-					fGrammar::compose("The following problems we found:"),
+					fGrammar::compose("The following problems were found:"),
 					join("</li>\n<li>", $validation_messages)
 				)
 			);
