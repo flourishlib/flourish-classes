@@ -428,10 +428,6 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function valid()
 	{
-		if (!$this->return_rows) {
-			return FALSE;
-		}
-		
 		if ($this->pointer === NULL) {
 			$this->advanceCurrentRow();
 			$this->pointer = 0;
