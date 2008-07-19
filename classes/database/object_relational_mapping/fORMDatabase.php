@@ -312,6 +312,16 @@ class fORMDatabase
 		$sql = array();
 		
 		foreach ($order_bys as $column => $direction) {
+			if (!fCore::stringlike($column)) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'An invalid sort column, %s, was specified',
+						fCore::dump($column)
+					)
+				); 		
+			}
+			
 			$direction = strtoupper($direction);
 			if (!in_array($direction, array('ASC', 'DESC'))) {
 				fCore::toss(
