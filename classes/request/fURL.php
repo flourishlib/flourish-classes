@@ -43,7 +43,7 @@ class fURL
 	 */
 	static public function getQueryString()
 	{
-		return preg_replace('#^.*\?#', '', $_SERVER['REQUEST_URI']);
+		return preg_replace('#^[^?]*\??#', '', $_SERVER['REQUEST_URI']);
 	}
 	
 	
