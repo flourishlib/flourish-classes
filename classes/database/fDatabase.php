@@ -81,6 +81,13 @@ class fDatabase
 	private $host;
 	
 	/**
+	 * If a transaction is in progress
+	 * 
+	 * @var boolean
+	 */
+	private $inside_transaction;
+	
+	/**
 	 * The password for the user specified
 	 * 
 	 * @var string
@@ -102,11 +109,11 @@ class fDatabase
 	private $query_time;
 	
 	/**
-	 * If a transaction is in progress
+	 * The millisecond threshold for triggering a warning about SQL performance
 	 * 
-	 * @var boolean
+	 * @var integer
 	 */
-	private $inside_transaction;
+	private $slow_query_threshold;
 	
 	/**
 	 * The fSQLTranslation object for this database
@@ -570,6 +577,21 @@ class fDatabase
 		if ($this->translation) {
 			$this->translation->enableDebugging($this->debug);
 		}
+	}
+	
+	
+	/**
+	 * Sets a flag to trigger a PHP warning message whenever a query takes longer than the millisecond threshold specified
+	 * 
+	 * It is recommended to use the error handling features of
+	 * {@link fCore::enableErrorHandling()} to log or email these warnings.
+	 * 
+	 * @param  integer $threshold  The limit of how long an SQL query can take before a warning is triggered
+	 * @return void
+	 */
+	public function enableSlowQueryWarnings($threshold)
+	{
+		$this->slow_query_threshold = (int) $threshold;
 	}
 	
 	
@@ -1260,6 +1282,18 @@ class fDatabase
 			$this->debug
 		);
 		
+		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
+			fCore::trigger(
+				'warning',
+				fGrammar::compose(
+					'The following query took %s milliseconds, which is above the slow query threshold of %s:%s',
+					$query_time,
+					$this->slow_query_threshold,
+					"\n" . $result->getSQL()
+				)
+			);	
+		}
+		
 		// Handle multiple SQL queries
 		if (!empty($sql_queries)) {
 			$result = array($result);
@@ -1440,6 +1474,18 @@ class fDatabase
 			),
 			$this->debug
 		);
+		
+		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
+			fCore::trigger(
+				'warning',
+				fGrammar::compose(
+					'The following query took %s milliseconds, which is above the slow query threshold of %s:%s',
+					$query_time,
+					$this->slow_query_threshold,
+					"\n" . $result->getSQL()
+				)
+			);	
+		}
 		
 		$this->unbuffered_result = $result;
 		
