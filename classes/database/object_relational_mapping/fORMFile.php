@@ -346,16 +346,16 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The instance of the class
-	 * @param  array         &$values               The current values
-	 * @param  array         &$old_values           The old values
-	 * @param  array         &$related_records      Any records related to this record
-	 * @param  boolean       $debug                 If debug messages should be shown
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return void
 	 */
-	static public function delete($class, &$values, &$old_values, &$related_records, $debug)
+	static public function delete($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			
@@ -382,16 +382,16 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The instance of the class
-	 * @param  array         &$values               The current values
-	 * @param  array         &$old_values           The old values
-	 * @param  array         &$related_records      Any records related to this record
-	 * @param  boolean       $debug                 If debug messages should be shown
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return void
 	 */
-	static public function deleteOld($class, &$values, &$old_values, &$related_records, $debug)
+	static public function deleteOld($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			
@@ -413,7 +413,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -422,11 +422,14 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return void
 	 */
-	static public function encode($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function encode($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
+		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . $filename) !== FALSE) {
+			$filename = self::TEMP_DIRECTORY . $filename; 		
+		}
 		
 		return fHTML::encode($filename);
 	}
@@ -437,7 +440,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -446,18 +449,18 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return mixed  The metadata array or element specified
 	 */
-	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function inspect($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		$class_name = fORM::getClassName($class);
-		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
-		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
+		$class   = fORM::getClassName($object);
+		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
-		if (!empty(self::$image_upload_columns[$class_name][$column])) {
+		if (!empty(self::$image_upload_columns[$class][$column])) {
 			$info['feature'] = 'image';	
 			
-		} elseif (!empty(self::$file_upload_columns[$class_name][$column])) {
+		} elseif (!empty(self::$file_upload_columns[$class][$column])) {
 			$info['feature'] = 'file';	
 		}
 		
@@ -474,17 +477,15 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return void
 	 */
-	static public function moveFromTemp($class, &$values, &$old_values, &$related_records, $debug)
+	static public function moveFromTemp($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($class);
-		
 		foreach ($values as $column => $value) {
 			if (!$value instanceof fFile) {
 				continue;
@@ -512,7 +513,9 @@ class fORMFile
 	 */
 	static public function objectify($class, $column, $value)
 	{
-		$class = fORM::getClassName($class);
+		if (!fCore::stringlike($value)) {
+			return $value;	
+		}
 		
 		$path = self::$file_upload_columns[$class][$column]->getPath() . $value;
 		
@@ -536,21 +539,21 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return void
 	 */
-	static public function populate($class, &$values, &$old_values, &$related_records, $debug)
+	static public function populate($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class_name = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
-		foreach (self::$file_upload_columns[$class_name] as $column => $directory) {
+		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			if (fUpload::check($column)) {
 				$method = 'upload' . fGrammar::camelize($column, TRUE);
-				$class->$method();
+				$object->$method();
 			}
 		}
 	}
@@ -561,7 +564,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -570,7 +573,7 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return void
 	 */
-	static public function prepare($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function prepare($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -666,7 +669,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -675,9 +678,9 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return void
 	 */
-	static public function set($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function set($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -725,7 +728,7 @@ class fORMFile
 	/**
 	 * Sets up the {@link fUpload} class for a specific column
 	 * 
-	 * @param  mixed  $class   The class name or an instance of the class to set up for
+	 * @param  string $class   The class to set up for
 	 * @param  string $column  The column to set up for 
 	 * @return void
 	 */
@@ -756,7 +759,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -765,9 +768,9 @@ class fORMFile
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return void
 	 */
-	static public function upload($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function upload($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -807,11 +810,6 @@ class fORMFile
 				$file = NULL;
 				
 			} elseif ($existing_file) {
-				
-				// If the file is not in the database yet, look in the temp directory
-				if ($existing_file != $values[$column] && file_exists($upload_dir->getPath() . self::TEMP_DIRECTORY . $existing_file)) {
-					$existing_file = self::TEMP_DIRECTORY . $existing_file;	
-				}
 				
 				$file = new fFile($upload_dir->getPath() . $existing_file);
 				
@@ -889,7 +887,7 @@ class fORMFile
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The instance of the class
+	 * @param  fActiveRecord $object                The fActiveRecord instance
 	 * @param  array         &$values               The current values
 	 * @param  array         &$old_values           The old values
 	 * @param  array         &$related_records      Any records related to this record
@@ -897,9 +895,9 @@ class fORMFile
 	 * @param  array         &$validation_messages  The existing validation messages
 	 * @return void
 	 */
-	static public function validate($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	static public function validate($object, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClassName($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);

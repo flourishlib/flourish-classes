@@ -244,6 +244,11 @@ class fFilesystem
 		}
 		
 		$path_info = pathinfo($file);
+		
+		if (!isset($path_info['extension'])) {
+			$path_info['extension'] = NULL;	
+		}
+		
 		if (!isset($path_info['filename'])) {
 			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);
 		}
