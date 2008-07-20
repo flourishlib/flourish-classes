@@ -814,7 +814,7 @@ class fORMFile
 				$file = new fFile($upload_dir->getPath() . $existing_file);
 				
 				$current_file = $values[$column];
-				if ($current_file && $file->getPath() != $current_file->getPath()) {
+				if (!$current_file || ($current_file && $file->getPath() != $current_file->getPath())) {
 					if (!isset($old_values[$column])) {
 						$old_values[$column] = array();	
 					}
