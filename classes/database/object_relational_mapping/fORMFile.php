@@ -355,7 +355,7 @@ class fORMFile
 	 */
 	static public function delete($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			
@@ -391,7 +391,7 @@ class fORMFile
 	 */
 	static public function deleteOld($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			
@@ -453,7 +453,7 @@ class fORMFile
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		$class   = fORM::getClassName($object);
+		$class   = get_class($object);
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
@@ -548,7 +548,7 @@ class fORMFile
 	 */
 	static public function populate($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			if (fUpload::check($column)) {
@@ -680,7 +680,7 @@ class fORMFile
 	 */
 	static public function set($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -770,7 +770,7 @@ class fORMFile
 	 */
 	static public function upload($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -897,7 +897,7 @@ class fORMFile
 	 */
 	static public function validate($object, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
-		$class = fORM::getClassName($object);
+		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);

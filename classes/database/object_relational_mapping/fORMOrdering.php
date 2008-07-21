@@ -138,20 +138,20 @@ class fORMOrdering
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return string  The formatted link
 	 */
-	static public function delete($class, &$values, &$old_values, &$related_records, $debug)
+	static public function delete($object, &$values, &$old_values, &$related_records, $debug)
 	{              
-		$class_name = fORM::getClassName($class);
-		$table      = fORM::tablize($class);
+		$class = get_class($object);
+		$table = fORM::tablize($class);
 		
-		$column        = self::$ordering_columns[$class_name]['column'];
-		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		$column        = self::$ordering_columns[$class]['column'];
+		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
 		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
@@ -192,7 +192,7 @@ class fORMOrdering
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -201,18 +201,18 @@ class fORMOrdering
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return mixed  The metadata array or element specified
 	 */
-	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function inspect($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		$class_name = fORM::getClassName($class);
-		$table      = fORM::tablize($class);
+		$class = get_class($object);
+		$table = fORM::tablize($class);
 		
 		$info       = fORMSchema::getInstance()->getColumnInfo($table, $column);
 		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
-		$column        = self::$ordering_columns[$class_name]['column'];
-		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		$column        = self::$ordering_columns[$class]['column'];
+		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		// Retrieve the current max ordering index from the database
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -282,20 +282,20 @@ class fORMOrdering
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return string  The formatted link
 	 */
-	static public function reorder($class, &$values, &$old_values, &$related_records, $debug)
+	static public function reorder($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class_name = fORM::getClassName($class);
-		$table      = fORM::tablize($class);
+		$class = get_class($object);
+		$table = fORM::tablize($class);
 		
-		$column        = self::$ordering_columns[$class_name]['column'];
-		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		$column        = self::$ordering_columns[$class]['column'];
+		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
 		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
@@ -330,14 +330,14 @@ class fORMOrdering
 		}
 		
 		// If we are entering a new record at the end of the set we don't need to shuffle anything either
-		if (!$class->exists() && $new_set && $current_value == $new_max_value) {
+		if (!$object->exists() && $new_set && $current_value == $new_max_value) {
 			return;	
 		}	
 		
 		
 		// If the object already exists in the database, grab the ordering value
 		// right now in case some other object reordered it since it was loaded
-		if ($class->exists()) {
+		if ($object->exists()) {
 			$sql  = "SELECT " . $column . " FROM " . $table . " WHERE ";
 			$sql .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
 			$db_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();	
@@ -394,7 +394,7 @@ class fORMOrdering
 		
 		
 		// If there was an old set, we need to close the gap
-		if ($class->exists() && $new_set) {
+		if ($object->exists() && $new_set) {
 			$sql  = "SELECT max(" . $column . ") FROM " . $table . " WHERE ";			
 			$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 			
@@ -425,7 +425,7 @@ class fORMOrdering
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The name of the class
+	 * @param  fActiveRecord $object                The fActiveRecord instance
 	 * @param  array         &$values               The current values
 	 * @param  array         &$old_values           The old values
 	 * @param  array         &$related_records      Any records related to this record
@@ -433,13 +433,13 @@ class fORMOrdering
 	 * @param  array         &$validation_messages  An array of ordered validation messages
 	 * @return void
 	 */
-	static public function validate($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	static public function validate($object, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
-		$class_name = fORM::getClassName($class);
-		$table      = fORM::tablize($class);
+		$class = fORM::getClassName($object);
+		$table = fORM::tablize($class);
 		
-		$column        = self::$ordering_columns[$class_name]['column'];
-		$other_columns = self::$ordering_columns[$class_name]['other_columns'];
+		$column        = self::$ordering_columns[$class]['column'];
+		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
 		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;

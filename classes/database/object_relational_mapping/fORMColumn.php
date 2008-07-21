@@ -307,7 +307,7 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -316,31 +316,31 @@ class fORMColumn
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return mixed  The metadata array or element specified
 	 */
-	static public function inspect($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function inspect($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		$class_name = fORM::getClassName($class);
-		$info       = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
-		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
+		$class   = get_class($object);
+		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
-		if (!empty(self::$date_created_columns[$class_name][$column])) {
+		if (!empty(self::$date_created_columns[$class][$column])) {
 			$info['feature'] = 'date created';	
 		}
 		
-		if (!empty(self::$date_updated_columns[$class_name][$column])) {
+		if (!empty(self::$date_updated_columns[$class][$column])) {
 			$info['feature'] = 'date updated';	
 		}
 		
-		if (!empty(self::$email_columns[$class_name][$column])) {
+		if (!empty(self::$email_columns[$class][$column])) {
 			$info['feature'] = 'email';	
 		}
 		
-		if (!empty(self::$link_columns[$class_name][$column])) {
+		if (!empty(self::$link_columns[$class][$column])) {
 			$info['feature'] = 'link';	
 		}
 		
-		if (!empty(self::$random_columns[$class_name][$column])) {
+		if (!empty(self::$random_columns[$class][$column])) {
 			$info['feature'] = 'random';	
 		}
 		
@@ -357,7 +357,7 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
@@ -366,7 +366,7 @@ class fORMColumn
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return string  The formatted link
 	 */
-	static public function prepareLinkColumn($class, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
+	static public function prepareLinkColumn($object, &$values, &$old_values, &$related_records, $debug, &$method_name, &$parameters)
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
@@ -389,20 +389,20 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return string  The formatted link
 	 */
-	static public function setDateCreated($class, &$values, &$old_values, &$related_records, $debug)
+	static public function setDateCreated($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		if ($class->exists()) {
+		if ($object->exists()) {
 			return;	
 		}
 		
-		$class = fORM::getClassName($class);
+		$class = get_class($object);
 		
 		foreach (self::$date_created_columns[$class] as $column => $enabled) {
 			if (!isset($old_values[$column])) {
@@ -419,16 +419,16 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return string  The formatted link
 	 */
-	static public function setDateUpdated($class, &$values, &$old_values, &$related_records, $debug)
+	static public function setDateUpdated($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		$class = fORM::getClassName($class);
+		$class = get_class($object);
 		
 		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
 			if (!isset($old_values[$column])) {
@@ -445,21 +445,21 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class             The instance of the class
+	 * @param  fActiveRecord $object            The fActiveRecord instance
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  boolean       $debug             If debug messages should be shown
 	 * @return string  The formatted link
 	 */
-	static public function setRandomStrings($class, &$values, &$old_values, &$related_records, $debug)
+	static public function setRandomStrings($object, &$values, &$old_values, &$related_records, $debug)
 	{
-		if ($class->exists()) {
+		if ($object->exists()) {
 			return;	
 		}
-		$table = fORM::tablize($class);
 		
-		$class = fORM::getClassName($class);
+		$class = get_class($object);
+		$table = fORM::tablize($class);
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
 			if (!isset($old_values[$column])) {
@@ -496,7 +496,7 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The name of the class
+	 * @param  fActiveRecord $object                The fActiveRecord instance
 	 * @param  array         &$values               The current values
 	 * @param  array         &$old_values           The old values
 	 * @param  array         &$related_records      Any records related to this record
@@ -504,9 +504,9 @@ class fORMColumn
 	 * @param  array         &$validation_messages  An array of ordered validation messages
 	 * @return void
 	 */
-	static public function validateEmailColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	static public function validateEmailColumns($object, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
-		$class = fORM::getClassName($class);
+		$class = get_class($object);
 		
 		if (empty(self::$email_columns[$class])) {
 			return;
@@ -531,7 +531,7 @@ class fORMColumn
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class                 The name of the class
+	 * @param  fActiveRecord $object                The fActiveRecord instance
 	 * @param  array         &$values               The current values
 	 * @param  array         &$old_values           The old values
 	 * @param  array         &$related_records      Any records related to this record
@@ -539,9 +539,9 @@ class fORMColumn
 	 * @param  array         &$validation_messages  An array of ordered validation messages
 	 * @return void
 	 */
-	static public function validateLinkColumns($class, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
+	static public function validateLinkColumns($object, &$values, &$old_values, &$related_records, $debug, &$validation_messages)
 	{
-		$class = fORM::getClassName($class);
+		$class = get_class($object);
 		
 		if (empty(self::$link_columns[$class])) {
 			return;
