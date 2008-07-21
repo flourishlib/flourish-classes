@@ -96,12 +96,11 @@ class fORM
 	 * @param  array         &$values            The current values of the record
 	 * @param  array         &$old_values        The old values of the record
 	 * @param  array         &$related_records   Records related to the current record
-	 * @param  boolean       $debug              If debugging is turned on for this record
 	 * @param  mixed         &$first_parameter   The first parameter to send the callback
 	 * @param  mixed         &$second_parameter  The second parameter to send the callback
 	 * @return mixed  The return value from the callback. Will be NULL unless it is a replace:: callback.
 	 */
-	static public function callHookCallback(fActiveRecord $class, $hook, &$values, &$old_values, &$related_records, $debug, &$first_parameter=NULL, &$second_parameter=NULL)
+	static public function callHookCallback(fActiveRecord $class, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
 		$class_name = self::getClassName($class);
 		
@@ -117,7 +116,6 @@ class fORM
 				&$values,
 				&$old_values,
 				&$related_records,
-				$debug,
 				&$first_parameter,
 				&$second_parameter
 			);
@@ -132,7 +130,6 @@ class fORM
 				&$values,
 				&$old_values,
 				&$related_records,
-				$debug,
 				&$first_parameter,
 				&$second_parameter
 			);
@@ -442,7 +439,6 @@ class fORM
 	 *  2. &$values
 	 *  3. &$old_values
 	 *  4. &$related_records
-	 *  5. $debug
 	 * 
 	 * Below is a list of other parameters passed to specific hooks:
 	 *   - 'replace::validate()': $return messages - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
@@ -490,7 +486,6 @@ class fORM
 			'replace::configure()',
 			'replace::constructInsertSQL()',
 			'replace::constructUpdateSQL()',
-			'replace::enableDebugging()',
 			'replace::encode()',
 			'replace::get()',
 			'replace::loadFromIdentityMap()',

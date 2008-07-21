@@ -15,13 +15,6 @@
 abstract class fActiveRecord
 {
 	/**
-	 * If debugging is turned on for the class
-	 * 
-	 * @var boolean
-	 */
-	protected $debug = NULL;
-	
-	/**
 	 * The old values for this record
 	 * 
 	 * @var array
@@ -197,7 +190,6 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records,
-				$this->debug,
 				$primary_key
 			);	
 		}
@@ -255,8 +247,7 @@ abstract class fActiveRecord
 			'post::__construct()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 	}
 	
@@ -337,8 +328,7 @@ abstract class fActiveRecord
 				'replace::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);	
 		}	
 		
@@ -356,8 +346,7 @@ abstract class fActiveRecord
 			$this, 'pre::delete()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 		
 		$table  = fORM::tablize($this);
@@ -375,8 +364,7 @@ abstract class fActiveRecord
 				'post-begin::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			// Check to ensure no foreign dependencies prevent deletion
@@ -452,8 +440,7 @@ abstract class fActiveRecord
 				'pre-commit::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			if (!$inside_db_transaction) {
@@ -465,8 +452,7 @@ abstract class fActiveRecord
 				'post-commit::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			// If we just deleted an object that has an auto-incrementing primary key,
@@ -488,8 +474,7 @@ abstract class fActiveRecord
 				'post-rollback::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			// Check to see if the validation exception came from a related record, and fix the message
@@ -524,21 +509,8 @@ abstract class fActiveRecord
 			'post::delete()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
-	}
-	
-	
-	/**
-	 * Sets if debug messages should be shown
-	 * 
-	 * @param  boolean $flag  If debugging messages should be shown
-	 * @return void
-	 */
-	public function enableDebugging($flag)
-	{
-		$this->debug = (boolean) $flag;
 	}
 	
 	
@@ -661,8 +633,7 @@ abstract class fActiveRecord
 				'replace::exists()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);	
 		}
 		
@@ -741,8 +712,7 @@ abstract class fActiveRecord
 				'replace::load()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);	
 		}
 		
@@ -807,8 +777,7 @@ abstract class fActiveRecord
 			'post::loadFromResult()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 	}
 	
@@ -851,7 +820,6 @@ abstract class fActiveRecord
 		$this->values          = &$object->values;
 		$this->old_values      = &$object->old_values;
 		$this->related_records = &$object->related_records;
-		$this->debug           = &$object->debug;
 		return TRUE;
 	}
 	
@@ -869,8 +837,7 @@ abstract class fActiveRecord
 				'replace::populate()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);	
 		}
 		
@@ -879,8 +846,7 @@ abstract class fActiveRecord
 			'pre::populate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 		
 		$table = fORM::tablize($this);
@@ -898,8 +864,7 @@ abstract class fActiveRecord
 			'post::populate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 	}
 	
@@ -1079,8 +1044,7 @@ abstract class fActiveRecord
 				'replace::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);	
 		}
 		
@@ -1089,8 +1053,7 @@ abstract class fActiveRecord
 			'pre::store()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 		
 		try {
@@ -1119,8 +1082,7 @@ abstract class fActiveRecord
 				'post-begin::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			$this->validate();
@@ -1130,8 +1092,7 @@ abstract class fActiveRecord
 				'post-validate::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			// Storing main table
@@ -1186,8 +1147,7 @@ abstract class fActiveRecord
 				'pre-commit::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			if (!$inside_db_transaction) {
@@ -1199,8 +1159,7 @@ abstract class fActiveRecord
 				'post-commit::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 		} catch (fPrintableException $e) {
@@ -1214,8 +1173,7 @@ abstract class fActiveRecord
 				'post-rollback::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug
+				$this->related_records
 			);
 			
 			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
@@ -1231,8 +1189,7 @@ abstract class fActiveRecord
 			'post::store()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug
+			$this->related_records
 		);
 		
 		// If we got here we succefully stored, so update old values to make exists() work 
@@ -1258,8 +1215,7 @@ abstract class fActiveRecord
 				'replace::validate()',
 				$this->values,
 				$this->old_values,
-				$this->related_records,
-				$this->debug,
+				$this->related_records
 				$return_messages
 			);	
 		}
@@ -1271,8 +1227,7 @@ abstract class fActiveRecord
 			'pre::validate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug,
+			$this->related_records
 			$validation_messages
 		);
 		
@@ -1289,8 +1244,7 @@ abstract class fActiveRecord
 			'post::validate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records,
-			$this->debug,
+			$this->related_records
 			$validation_messages
 		);
 		
