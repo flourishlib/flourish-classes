@@ -1215,7 +1215,7 @@ abstract class fActiveRecord
 				'replace::validate()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
 				$return_messages
 			);	
 		}
@@ -1227,7 +1227,7 @@ abstract class fActiveRecord
 			'pre::validate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
 			$validation_messages
 		);
 		
@@ -1244,7 +1244,7 @@ abstract class fActiveRecord
 			'post::validate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
 			$validation_messages
 		);
 		
