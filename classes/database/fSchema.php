@@ -430,8 +430,8 @@ class fSchema implements fISchema
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
 					$temp['foreign_column'] = $row['foreign_column'];
-					$temp['on_delete']      = NULL;
-					$temp['on_update']      = NULL;
+					$temp['on_delete']      = 'no_action';
+					$temp['on_update']      = 'no_action';
 					if (!empty($row['on_delete'])) {
 						$temp['on_delete'] = $row['on_delete'];
 					}
@@ -633,8 +633,8 @@ class fSchema implements fISchema
 				$temp = array('column'         => $match[1],
 							  'foreign_table'  => $match[2],
 							  'foreign_column' => $match[3],
-							  'on_delete'      => NULL,
-							  'on_update'      => NULL);
+							  'on_delete'      => 'no_action',
+							  'on_update'      => 'no_action');
 				if (isset($match[4])) {
 					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[4]));
 				}
@@ -881,8 +881,8 @@ class fSchema implements fISchema
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
 					$temp['foreign_column'] = $row['foreign_column'];
-					$temp['on_delete']      = NULL;
-					$temp['on_update']      = NULL;
+					$temp['on_delete']      = 'no_action';
+					$temp['on_update']      = 'no_action';
 					if (!empty($row['on_delete'])) {
 						$temp['on_delete'] = $row['on_delete'];
 					}
@@ -1069,8 +1069,8 @@ class fSchema implements fISchema
 					$temp = array('column'         => $match[1],
 								  'foreign_table'  => $match[5],
 								  'foreign_column' => $match[6],
-								  'on_delete'      => NULL,
-								  'on_update'      => NULL);
+								  'on_delete'      => 'no_action',
+								  'on_update'      => 'no_action');
 					if (isset($match[7])) {
 						$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[7]));
 					}
@@ -1096,8 +1096,8 @@ class fSchema implements fISchema
 				$temp = array('column'         => $match[1],
 							  'foreign_table'  => $match[3],
 							  'foreign_column' => $match[4],
-							  'on_delete'      => NULL,
-							  'on_update'      => NULL);
+							  'on_delete'      => 'no_action',
+							  'on_update'      => 'no_action');
 				if (isset($match[5])) {
 					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[5]));
 				}

@@ -419,11 +419,11 @@ abstract class fActiveRecord
 				if ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
 					
 					// Otherwise we have a restriction
-					$related_class_name  = fORM::classize($relationship['foreign_table']);
+					$related_class_name  = fORM::classize($relationship['related_table']);
 					$related_record_name = fORM::getRecordName($related_class_name);
 					$related_record_name = fGrammar::pluralize($related_record_name);
 					
-					$restriction_message[] = fGrammar::compose("One or more %s references it", $related_record_name);
+					$restriction_messages[] = fGrammar::compose("One or more %s references it", $related_record_name);
 				}
 			}
 			
