@@ -494,7 +494,13 @@ class fGrammar
 			return strtolower(preg_replace('#\s+#', '_', $string));	
 		}
 		
-		return strtolower(preg_replace('/(?:([a-z0-9A-Z])([A-Z])|([a-zA-Z])([0-9]))/', '\1\3_\2\4', $string));
+		do {
+			$old_string = $string;
+			$string = preg_replace('/([a-zA-Z])([0-9])/', '\1_\2', $string);
+			$string = preg_replace('/([a-z0-9A-Z])([A-Z])/', '\1_\2', $string);
+		} while ($old_string != $string);
+		
+		return strtolower($string);
 	}
 	
 	
