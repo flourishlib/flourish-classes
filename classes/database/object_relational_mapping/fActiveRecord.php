@@ -63,7 +63,7 @@ abstract class fActiveRecord
 		}
 		
 		// This will prevent quiet failure
-		if (($action == 'set' || $action == 'associate' || $action == 'inject') && sizeof($parameters) < 1) {
+		if (in_array($action, array('set', 'associate', 'inject', 'tally')) && sizeof($parameters) < 1) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
@@ -122,6 +122,15 @@ abstract class fActiveRecord
 				}
 				return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject);
 			
+			case 'count':
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelated::countRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelated::countRecords($this, $this->values, $this->related_records, $subject);
+			
 			case 'create':
 				$subject = fGrammar::camelize($subject, TRUE);
 				
@@ -156,6 +165,15 @@ abstract class fActiveRecord
 					return fORMRelated::populateRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::populateRecords($this, $this->related_records, $subject);
+			
+			case 'tally':
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
+				
+				if (isset($parameters[1])) {
+					return fORMRelated::tallyRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelated::tallyRecords($this, $this->related_records, $subject, $parameters[0]);
 			
 			// Error handler
 			default:

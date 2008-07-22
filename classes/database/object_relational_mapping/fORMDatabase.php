@@ -708,8 +708,8 @@ class fORMDatabase
 					$temp_sql = join('', $parts);
 				}
 				
-				$temp_sql = str_replace(':from_clause',     $from_clause,     $temp_sql);
-				$temp_sql = str_replace(' :group_by_clause ', $group_by_clause, $temp_sql);
+				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
+				$temp_sql = preg_replace('#\s:group_by_clause\s#', $group_by_clause, $temp_sql);
 			}
 			
 			$new_sql .= $temp_sql;

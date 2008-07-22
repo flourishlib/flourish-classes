@@ -103,8 +103,8 @@ class fORMRelated
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		// If we already have the sequence, we can stop here
-		if (isset($related_records[$related_table][$route])) {
-			return $related_records[$related_table][$route];
+		if (isset($related_records[$related_table][$route]['record_set'])) {
+			return $related_records[$related_table][$route]['record_set'];
 		}
 		
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
@@ -118,13 +118,63 @@ class fORMRelated
 			$record_set       = fRecordSet::create($related_class, $where_conditions, $order_bys);
 		}
 		
-		// Cache the results for subsequent calls
-		if (!isset($related_records[$related_table])) {
-			$related_records[$related_table] = array();
-		}
-		$related_records[$related_table][$route] = $record_set;
+		self::setRecords($class, $related_records, $related_class, $record_set, $route);
 		
 		return $record_set;
+	}
+	
+	
+	/**
+	 * Counts the number of related one-to-many or many-to-many records
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  array  &$values           The values for the {@link fActiveRecord} class
+	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  string $related_class     The class that is related to the current record
+	 * @param  string $route             The route to follow for the class specified
+	 * @return integer  The number of related records
+	 */
+	static public function countRecords($class, &$values, &$related_records, $related_class, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		// If we already have the sequence, we can stop here
+		if (isset($related_records[$related_table][$route]['count'])) {
+			return $related_records[$related_table][$route]['count'];
+		}
+		
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
+		
+		// Determine how we are going to build the sequence
+		if ($values[$relationship['column']] === NULL) {
+			$count = 0;
+		} else {
+			$column = $table . '.' . $relationship['column'];
+			$value  = fORMDatabase::prepareBySchema($table, $relationship['column'], $values[$relationship['column']], '=');
+			
+			$primary_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+			$primary_keys = fORMDatabase::addTableToValues($related_table, $primary_keys);
+			$primary_keys = join(', ', $primary_keys);
+			
+			$sql  = "SELECT count(" . $primary_keys . ") AS __flourish_count ";
+			$sql .= "FROM :from_clause ";
+			$sql .= "WHERE " . $column . $value;
+			$sql .= ' :group_by_clause ';
+			$sql .= 'ORDER BY ' . $column . ' ASC';
+			
+			$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
+			
+			$count = fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		}
+		
+		self::tallyRecords($class, $related_records, $related_class, $count, $route);
+		
+		return $count;
 	}
 	
 	
@@ -275,7 +325,7 @@ class fORMRelated
 		
 		if (!isset(self::$related_record_names[$table][$related_class])) {
 			self::$related_record_names[$table][$related_class] = array();	
-		}
+		}   
 		
 		self::$related_record_names[$table][$related_class][$route] = $record_name;
 	}
@@ -388,7 +438,15 @@ class fORMRelated
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
-		$related_records[$related_table][$route] = $records;
+		if (!isset($related_records[$related_table])) {
+			$related_records[$related_table] = array();	
+		}
+		if (!isset($related_records[$related_table][$route])) {
+			$related_records[$related_table][$route] = array();	
+		}
+		
+		$related_records[$related_table][$route]['record_set'] = $records;
+		$related_records[$related_table][$route]['count'] = $records->count();
 	}
 	
 	
@@ -477,6 +535,37 @@ class fORMRelated
 			
 			fORMDatabase::getInstance()->translatedQuery($insert_sql);
 		}
+	}
+	
+	
+	/**
+	 * Records the number of related one-to-many or many-to-many records
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed   $class             The class name or instance of the class to get the related values for
+	 * @param  array   &$values           The values for the {@link fActiveRecord} class
+	 * @param  array   &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  string  $related_class     The class that is related to the current record
+	 * @param  integer $count             The number of records
+	 * @param  string  $route             The route to follow for the class specified
+	 * @return void
+	 */
+	static public function tallyRecords($class, &$related_records, $related_class, $count, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		// Cache the results for subsequent calls
+		if (!isset($related_records[$related_table])) {
+			$related_records[$related_table] = array();
+		}
+		if (!isset($related_records[$related_table][$route])) {
+			$related_records[$related_table][$route] = array();
+		}
+		$related_records[$related_table][$route]['count'] = $count;	
 	}
 	
 	
