@@ -132,16 +132,17 @@ class fCRUD
 	/**
 	 * Returns a CSS class name for a row
 	 * 
-	 * Will return even, odd, or highlighted if the two parameters are equal
-	 * and added or updated is true
+	 * Will return 'even', 'odd', or 'highlighted' if the two parameters are
+	 * equal and not null. The first returned class will be concatenated with
+	 * ' first'.
 	 * 
 	 * @param  mixed $row_value       The value from the row
 	 * @param  mixed $affected_value  The value that was just added or updated
 	 * @return string  The css class
 	 */
-	static public function getRowClass($row_value, $affected_value)
+	static public function getRowClass($row_value=NULL, $affected_value=NULL)
 	{
-		if ($row_value == $affected_value) {
+		if ($row_value !== NULL && $row_value == $affected_value) {
 			 self::$row_number++;
 			 return 'highlighted';
 		}
