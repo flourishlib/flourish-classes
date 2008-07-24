@@ -56,7 +56,6 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records,
-				$this->debug,
 				$method_name,
 				$parameters
 			);	
