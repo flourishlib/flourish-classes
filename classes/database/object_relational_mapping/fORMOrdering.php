@@ -370,7 +370,7 @@ class fORMOrdering
 			} 		
 			fORMDatabase::getInstance()->translatedQuery($sql);
 			
-			if ($class->exists()) {
+			if ($object->exists()) {
 				// Put the actual record we are changing in limbo to be updated when the actual update happens
 				$sql  = "UPDATE " . $table . " SET " . $column . " = 0";
 				$sql .= " WHERE " . $column . " = " . $db_value;
