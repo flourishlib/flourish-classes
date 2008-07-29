@@ -33,7 +33,7 @@ class fTemplating
 	 * 
 	 * @var string
 	 */
-	private $root;
+	protected $root;
 	
 	
 	/**
