@@ -123,7 +123,7 @@ class fSQLParsing
 	 */
 	static public function parseJoins($sql, fISchema $schema=NULL)
 	{
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql, $matches);
 		
 		$temp_sql = '';
 		$strings = array();
@@ -277,7 +277,7 @@ class fSQLParsing
 	static public function parseSelectSQL($sql)
 	{
 		// Split the strings out of the sql so parsing doesn't get messed up by quoted values
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql, $matches);
 		
 		$possible_clauses = array('SELECT', 'FROM', 'WHERE', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT');
 		$found_clauses    = array();

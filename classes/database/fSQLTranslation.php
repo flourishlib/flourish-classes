@@ -318,16 +318,22 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Callback for custom SQLite function; changes the sign of a number
+	 * Callback for custom SQLite function; returns the sign of the number
 	 * 
 	 * @internal
 	 * 
 	 * @param  numeric $x  The number to change the sign of
-	 * @return numeric  $x with a changed sign
+	 * @return numeric  -1 if a negative sign, 0 if 0, 1 if positive sign
 	 */
 	public static function sqliteSign($x)
 	{
-		return -1 * $x;
+		if ($x == 0) {
+			return 0;	
+		}
+		if ($x > 0) {
+			return 1;	
+		}
+		return -1;
 	}
 	
 	
@@ -342,7 +348,7 @@ class fSQLTranslation
 	public function translate($sql)
 	{
 		// Separate the SQL from quoted values
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql, $matches);
 		
 		$new_sql = '';
 		foreach ($matches[0] as $match) {
@@ -476,10 +482,10 @@ class fSQLTranslation
 			static $regex_mssql = array(
 				// These wrap multiple mssql functions to accomplish another function
 				'#\blog\(\s*((?>[^()\',]+|\'[^\']*\'|\((?1)(?:,(?1))?\)|\(\))+)\s*,\s*((?>[^()\',]+|\'[^\']*\'|\((?2)(?:,(?2))?\)|\(\))+)\s*\)#i' => '(LOG(\1)/LOG(\2))',
-				'#\btrim\(\s*((?>[^()\',]+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+)\s*\)#i' => 'RTRIM(LTRIM(\1))',
+				'#\btrim\(\s*((?>[^()\',]+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+)\s*\)#i' => 'RTRIM(LTRIM(\1))',
 				
 				// This fixes limit syntax
-				'#select(\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*)\s+limit\s+(\d+)#i' => 'SELECT TOP \2\1'
+				'#select(\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+\s*)\s+limit\s+(\d+)#i' => 'SELECT TOP \2\1'
 			);
 		
 			$sql = preg_replace(array_keys($regex_mssql), array_values($regex_mssql), $sql);
@@ -499,7 +505,7 @@ class fSQLTranslation
 	{
 		// Make sure MySQL uses InnoDB tables
 		if ($this->type == 'mysql' && stripos($sql, 'CREATE TABLE') !== FALSE) {
-			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\(\d+\))?(?:(\s+NOT\s+NULL)|(\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY)|(\s+CHECK\s*\(\w+\s+IN\s+(\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\))\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\(\d+\))?(?:(\s+NOT\s+NULL)|(\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY)|(\s+CHECK\s*\(\w+\s+IN\s+(\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\))\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
 				if (!empty($match[6])) {
@@ -515,7 +521,7 @@ class fSQLTranslation
 			
 			$referencing_table = $table_matches[1];
 			
-			preg_match_all('#(?:(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\'])*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?)?\s*(?:,|\s*(?=\)))|(?<=,|\()\s*FOREIGN\s+KEY\s*(?:(\w+)|\((\w+)\))\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?\s*(?:,|\s*(?=\))))#mi', $sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?:(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?)?\s*(?:,|\s*(?=\)))|(?<=,|\()\s*FOREIGN\s+KEY\s*(?:(\w+)|\((\w+)\))\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?\s*(?:,|\s*(?=\))))#mi', $sql, $matches, PREG_SET_ORDER);
 			
 			// Make sure we have a semicolon so we can add triggers
 			$sql = trim($sql);
@@ -655,7 +661,7 @@ class fSQLTranslation
 	 */
 	private function translateLimitOffsetToRowNumber($sql)
 	{
-		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\])*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#((select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+\s*))\s+limit\s+(\d+)\s+offset\s+(\d+))#i', $sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$clauses = fSQLParsing::parseSelectSQL($match[1]);

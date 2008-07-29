@@ -309,7 +309,7 @@ class fSchema implements fISchema
 			
 			// If the column has a constraint, look for valid values
 			if (in_array($info['type'], array('char', 'varchar')) && !empty($row['constraint'])) {
-				if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\'])+\')+)\)$#', $row['constraint'], $matches)) {
+				if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\']+)+\')+)\)$#', $row['constraint'], $matches)) {
 					$valid_values = explode(' OR ', $matches[1]);
 					foreach ($valid_values as $key => $value) {
 						$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);
@@ -515,7 +515,7 @@ class fSchema implements fISchema
 		$row        = $result->fetchRow();
 		$create_sql = $row['Create Table'];
 		
-		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?)( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\'])*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?)( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -751,7 +751,7 @@ class fSchema implements fISchema
 			// Handle check constraints that are just simple lists 
 			if (in_array($info['type'], array('varchar', 'char')) && !empty($row['constraint'])) {
 				if (preg_match('/CHECK[\( "]+' . $row['column'] . '[a-z\) ":]+\s+=\s+/i', $row['constraint'])) {
-					if (preg_match_all("/(?!').'((''|[^'])*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER)) {
+					if (preg_match_all("/(?!').'((''|[^']+)*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER)) {
 						$info['valid_values'] = str_replace("''", "'", $matches[1]);
 					}
 				}
@@ -959,7 +959,7 @@ class fSchema implements fISchema
 		$row        = $result->fetchRow();
 		$create_sql = $row['sql'];
 		
-		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -993,7 +993,7 @@ class fSchema implements fISchema
 			}
 		
 			// Check constraints
-			if (isset($match[9]) && preg_match('/CHECK\s*\(\s*' . $match[1] . '\s+IN\s+\(\s*((?:(?:[^, \']*|\'(?:\'\'|[^\'])*\')\s*,\s*)*(?:[^, \']*|\'(?:\'\'|[^\'])*\'))\s*\)/i', $match[9], $check_match)) {
+			if (isset($match[9]) && preg_match('/CHECK\s*\(\s*' . $match[1] . '\s+IN\s+\(\s*((?:(?:[^, \']*|\'(?:\'\'|[^\']+)*\')\s*,\s*)*(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))\s*\)/i', $match[9], $check_match)) {
 				$info['valid_values'] = str_replace("''", "'", preg_replace("/^'|'\$/", '', preg_split("#\s*,\s*#", $check_match[1])));
 			}
 		
@@ -1054,7 +1054,7 @@ class fSchema implements fISchema
 			$create_sql = $row['sql'];
 			
 			// Get column level key definitions
-			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(?:\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\'])*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\'])*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\'])*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))|(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(?:\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))|(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
 				if (!empty($match[2])) {
