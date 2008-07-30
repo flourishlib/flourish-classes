@@ -498,7 +498,7 @@ class fORM
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The hook specified, %s, should be one of: %s or %s.',
+					'The hook specified, %1$s, should be one of: %2$s or %3$s.',
 					fCore::expose($hook),
 					join(', ', $valid_hooks),
 					'replace::{methodName}()'
@@ -510,7 +510,7 @@ class fORM
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The hook specified, %s, is an invalid %s hook. Can not be one of: %s.',
+					'The hook specified, %1$s, is an invalid %2$s hook. Can not be one of: %3$s.',
 					fCore::dump($hook),
 					'replace::',
 					join(', ', $invalid_replace_hooks)

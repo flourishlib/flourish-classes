@@ -94,7 +94,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
@@ -112,7 +112,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The route specified, %s, for the %srelationship between %s and %s does not exist',
+					'The route specified, %1$s, for the %2$srelationship between %3$s and %4$s does not exist',
 					fCore::dump($route),
 					$relationship_type,
 					fCore::dump($table),
@@ -152,7 +152,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
@@ -172,7 +172,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'There is more than one route for the %srelationship between %s and %s',
+					'There is more than one route for the %1$srelationship between %2$s and %3$s',
 					$relationship_type,
 					fCore::dump($table),
 					fCore::dump($related_table)
@@ -184,7 +184,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The table %s is not in a %srelationship with the table %s',
+					'The table %1$s is not in a %2$srelationship with the table %3$s',
 					fCore::dump($table),
 					$relationship_type,
 					fCore::dump($related_table)
@@ -212,7 +212,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
@@ -257,7 +257,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)

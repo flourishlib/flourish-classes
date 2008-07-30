@@ -392,14 +392,14 @@ class fTimestamp
 		if ($relative_to_now) {
 			if ($diff > 0) {
 				return fGrammar::compose(
-					'%s %s from now',
+					'%1$s %2$s from now',
 					$unit_diff,
 					$units
 				);
 			}
 		
 			return fGrammar::compose(
-				'%s %s ago',
+				'%1$s %2$s ago',
 				$unit_diff,
 				$units
 			);	
@@ -407,14 +407,14 @@ class fTimestamp
 		
 		if ($diff > 0) {
 			return fGrammar::compose(
-				'%s %s after',
+				'%1$s %2$s after',
 				$unit_diff,
 				$units
 			);
 		}
 		
 		return fGrammar::compose(
-			'%s %s before',
+			'%1$s %2$s before',
 			$unit_diff,
 			$units
 		);
@@ -547,7 +547,7 @@ class fTimestamp
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
-					'The date specified, %s-%s-%s, does not appear to be a valid date',
+					'The date specified, %1$s-%2$s-%3$s, does not appear to be a valid date',
 					fCore::dump($year),
 					fCore::dump($month),
 					fCore::dump($day)
@@ -613,7 +613,7 @@ class fTimestamp
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
-					'The ISO date specified, %s-W%s-%s, does not appear to be a valid ISO date',
+					'The ISO date specified, %1$s-W%2$s-%3$s, does not appear to be a valid ISO date',
 					fCore::dump($year),
 					fCore::dump($week),
 					fCore::dump($day_of_week)
@@ -681,7 +681,7 @@ class fTimestamp
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
-					'The time specified, %s:%s:%s, does not appear to be a valid time',
+					'The time specified, %1$s:%2$s:%3$s, does not appear to be a valid time',
 					fCore::dump($hour),
 					fCore::dump($minute),
 					fCore::dump($second)

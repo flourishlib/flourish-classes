@@ -171,7 +171,7 @@ class fAuthorization
 				fCore::toss(
 					'fProgrammerException',
 					fGrammar::compose(
-						'The range base IP address specified, %s, is invalid for the CIDR range or subnet mask provided (%s). The proper IP is %s.',
+						'The range base IP address specified, %1$s, is invalid for the CIDR range or subnet mask provided (%2$s). The proper IP is %3$s.',
 						$range_ip,
 						'/' . $range_mask,
 						$proper_range_ip
@@ -426,7 +426,7 @@ class fAuthorization
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The authorization level specified, %s, is invalid. Must be one of: %s.',
+					'The authorization level specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($level),
 					join(', ', array_keys(self::$levels))
 				)

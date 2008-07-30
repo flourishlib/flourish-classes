@@ -261,7 +261,7 @@ class fValidation
 			fCore::toss(
 				'fValidationException',
 				sprintf(
-					"<p>%s</p>\n<ul>\n<li>%s</li>\n</ul>",
+					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
 					fGrammar::compose("The following problems we found:"),
 					join("</li>\n<li>", $messages)
 				)	

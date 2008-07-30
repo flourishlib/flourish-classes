@@ -246,7 +246,7 @@ class fRequest
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'%s can only be called after %s',
+					'%1$s can only be called after %2$s',
 					__CLASS__ . '::unfilter()',
 					__CLASS__ . '::filter()'
 				)

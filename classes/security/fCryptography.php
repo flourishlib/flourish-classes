@@ -46,7 +46,7 @@ class fCryptography
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The length specified, %s, is less than the minimum of %s',
+					'The length specified, %1$s, is less than the minimum of %2$s',
 					$length,
 					1
 				)
@@ -74,7 +74,7 @@ class fCryptography
 				fCore::toss(
 					'fProgrammerException',
 					fGrammar::compose(
-						'The type specified, %s, is invalid. Must be one of: %s.',
+						'The type specified, %1$s, is invalid. Must be one of: %2$s.',
 						fCore::dump($type)
 					)
 				);
@@ -430,7 +430,7 @@ class fCryptography
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The cipher used, %s (also known as %s), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.',
+					'The cipher used, %1$s (also known as %2$s), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.',
 					'AES-192',
 					'rijndael-192'
 				)
@@ -440,7 +440,7 @@ class fCryptography
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The cipher used, %s (also known as %s), does not appear to be supported by the installed version of libmcrypt',
+					'The cipher used, %1$s (also known as %2$s), does not appear to be supported by the installed version of libmcrypt',
 					'AES-192',
 					'rijndael-192'
 				)

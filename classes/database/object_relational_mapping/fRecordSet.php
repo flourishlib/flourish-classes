@@ -444,7 +444,7 @@ class fRecordSet implements Iterator
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The class specified, %s, does not extend %s. All classes used with %s must extend %s.',
+					'The class specified, %1$s, does not extend %2$s. All classes used with %3$s must extend %4$s.',
 					fCore::dump($class_name),
 					'fActiveRecord',
 					'fRecordSet',
@@ -1001,7 +1001,7 @@ class fRecordSet implements Iterator
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The sort direction specified, %s, is invalid. Must be one of: %s or %s.',
+					'The sort direction specified, %1$s, is invalid. Must be one of: %2$s or %3$s.',
 					fCore::dump($direction),
 					'asc',
 					'desc'

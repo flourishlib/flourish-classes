@@ -500,7 +500,7 @@ class fCore
 	static public function sendMessagesOnShutdown()
 	{
 		$subject = fGrammar::compose(
-			'[%s] One or more errors or exceptions occured at %s',
+			'[%1$s] One or more errors or exceptions occured at %2$s',
 			$_SERVER['SERVER_NAME'],
 			date('Y-m-d H:i:s')
 		);
@@ -630,7 +630,7 @@ class fCore
 			self::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'Invalid error type, %s, specified. Must be one of: %s.',
+					'Invalid error type, %1$s, specified. Must be one of: %2$s.',
 					self::dump($error_type),
 					join(', ', $valid_error_types)
 				)

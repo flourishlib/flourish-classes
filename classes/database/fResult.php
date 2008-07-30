@@ -98,7 +98,7 @@ class fResult implements Iterator
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The database extension specified, %s, in invalid. Must be one of: %s.',
+					'The database extension specified, %1$s, in invalid. Must be one of: %2$s.',
 					fCore::dump($extension),
 					join(', ', $valid_extensions)
 				)

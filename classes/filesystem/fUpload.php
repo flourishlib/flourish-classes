@@ -127,7 +127,7 @@ class fUpload
 		if (!isset($_FILES[$field]['name'][$index])) {
 			fCore::toss(
 				'fProgrammerException',
-				fGrammar::compose('The index specified, %s, is invalid for the field %s',
+				fGrammar::compose('The index specified, %1$s, is invalid for the field %2$s',
 					fCore::dump($index),
 					fCore::dump($field)
 				)
@@ -195,7 +195,7 @@ class fUpload
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The mode specified, %s, is invalid. Must be one of: %s.',
+					'The mode specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($mode),
 					join(', ', $valid_modes)
 				)
@@ -218,7 +218,7 @@ class fUpload
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The type specified, %s, is invalid. Must be one of: %s.',
+					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
@@ -354,7 +354,7 @@ class fUpload
 				fCore::toss(
 					'fValidationException',
 					fGrammar::compose(
-						'The file uploaded is an invalid type. It is a %s file, but must be one of %s.',
+						'The file uploaded is an invalid type. It is a %1$s file, but must be one of %2$s.',
 						fCore::dump($file_array['type']),
 						join(', ', self::$mime_types)
 					)

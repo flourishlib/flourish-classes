@@ -304,7 +304,7 @@ class fGrammar
 		if (!in_array($type, $valid_types)) {
 			fCore::toss(
 				self::compose(
-					'The type specified, %s, is invalid. Must be one of: %s.',
+					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
@@ -386,7 +386,7 @@ class fGrammar
 			fCore::toss(
 				'fProgrammerException',
 				self::compose(
-					'The timing specified, %s, is not a valid timing. Must be one of: %s.',
+					'The timing specified, %1$s, is not a valid timing. Must be one of: %2$s.',
 					fCore::dump($timing),
 					join(', ', $valid_timings)
 				)	

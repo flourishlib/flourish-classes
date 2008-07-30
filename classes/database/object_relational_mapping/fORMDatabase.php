@@ -212,7 +212,7 @@ class fORMDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'An invalid route, %s, was specified for the relationship from %s to %s',
+					'An invalid route, %1$s, was specified for the relationship from %2$s to %3$s',
 					fCore::dump($route),
 					fCore::dump($table),
 					fCore::dump($related_table)
@@ -537,7 +537,7 @@ class fORMDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The method %s needs to be called before %s',
+					'The method %1$s needs to be called before %2$s',
 					'initialize()',
 					'getInstance()'
 				)
@@ -580,9 +580,9 @@ class fORMDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					"No %s placeholder was found in:\n%s",
+					"No %1\$s placeholder was found in:%2\$s",
 					'getInstance()',
-					$sql
+					"\n" . $sql
 				)
 			);
 		}
@@ -741,7 +741,7 @@ class fORMDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
+					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($comparison_operator),
 					join(', ', $valid_comparison_operators)
 				)
@@ -802,7 +802,7 @@ class fORMDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The comparison operator specified, %s, is invalid. Must be one of: %s.',
+					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($comparison_operator),
 					join(', ', $valid_comparison_operators)
 				)

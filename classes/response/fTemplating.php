@@ -109,7 +109,7 @@ class fTemplating
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'%s was called for an element, %s, which is not an array',
+					'%1$s was called for an element, %2$s, which is not an array',
 					'add()',
 					fCore::dump($element)
 				)
@@ -271,7 +271,7 @@ class fTemplating
 					fCore::toss(
 						'fProgrammerException',
 						fGrammar::compose(
-							'The file type specified, %s, is invalid. Must be one of: %s.',
+							'The file type specified, %1$s, is invalid. Must be one of: %2$s.',
 							fCore::dump($type),
 							'css, js, php, rss'
 						)
@@ -319,7 +319,7 @@ class fTemplating
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The path specified for %s, %s, does not exist on the filesystem',
+					'The path specified for %1$s, %2$s, does not exist on the filesystem',
 					fCore::dump($element),
 					fCore::dump($path)
 				)
@@ -330,7 +330,7 @@ class fTemplating
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The path specified for %s, %s, is not readable',
+					'The path specified for %1$s, %2$s, is not readable',
 					fCore::dump($element),
 					fCore::dump($path)
 				)
@@ -447,7 +447,7 @@ class fTemplating
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s, has a value, %s, that is missing the path key',
+					'The element specified, %1$s, has a value, %2$s, that is missing the path key',
 					fCore::dump($element),
 					fCore::dump($value)
 				)
@@ -476,7 +476,7 @@ class fTemplating
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s, has a value whose path, %s, does not end with a recognized file extension: %s.',
+					'The element specified, %1$s, has a value whose path, %2$s, does not end with a recognized file extension: %3$s.',
 					fCore::dump($element),
 					fCore::dump($path),
 					'.css, .inc, .js, .php, .php5, .rss, .xml'	

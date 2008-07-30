@@ -204,7 +204,7 @@ class fORMFile
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as a file upload column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a file upload column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -320,7 +320,7 @@ class fORMFile
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The image type specified, %s, is not valid. Must be one of: %s.',
+					'The image type specified, %1$s, is not valid. Must be one of: %2$s.',
 					fCore::dump($image_type),
 					join(', ', $valid_image_types)
 				)

@@ -207,7 +207,7 @@ class fORMValidation
 		// Make sure a valid value is chosen
 		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
 			return fGrammar::compose(
-				'%s: Please choose from one of the following: %s',
+				'%1$s: Please choose from one of the following: %2$s',
 				fORM::getColumnName($class, $column),
 				join(', ', $column_info['valid_values'])
 			);
@@ -215,7 +215,7 @@ class fORMValidation
 		// Make sure the value isn't too long
 		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
 			return fGrammar::compose(
-				'%s: Please enter a value no longer than %s characters',
+				'%1$s: Please enter a value no longer than %2$s characters',
 				fORM::getColumnName($class, $column),
 				$column_info['max_length']
 			);
@@ -465,7 +465,7 @@ class fORMValidation
 			$result->tossIfNoResults();
 			
 			return fGrammar::compose(
-				'A %s with the same %s already exists',
+				'A %1$s with the same %2$s already exists',
 				fORM::getRecordName($class),
 				fGrammar::joinArray($columns, 'and')
 			);
@@ -769,7 +769,7 @@ class fORMValidation
 					continue;	
 				}
 				$messages[] = fGrammar::compose(
-					'%s #%s $s',
+					'%1$s #%2$s $3$s',
 					$related_record_name,
 					$record_number,
 					$record_message
@@ -804,7 +804,7 @@ class fORMValidation
 		foreach ($record_set as $record) {
 			if (!$record->exists()) {
 				$messages[] = fGrammar::compose(
-					'%s #%s: Please select a %s',
+					'%1$s #%2$s: Please select a %3$s',
 					$related_record_name,
 					$record_number,
 					$related_record_name

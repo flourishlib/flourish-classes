@@ -1062,7 +1062,7 @@ class fUTF8
 				fCore::toss(
 					'fProgrammerException',
 					fGrammar::compose(
-						'The pad type specified, %s, is not valid. Must be one of: %s.',
+						'The pad type specified, %1$s, is not valid. Must be one of: %2$s.',
 						fCore::dump($pad_type),
 						join(', ', $valid_pad_types)	
 					)

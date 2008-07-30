@@ -236,7 +236,7 @@ class fFilesystem
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s, is invalid. Must be one of: %s.',
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($element),
 					join(', ', $valid_elements)
 				)

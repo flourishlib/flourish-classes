@@ -90,7 +90,7 @@ class fTime
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The formatting string, %s, contains one of the following non-time formatting characters: %s',
+					'The formatting string, %1$s, contains one of the following non-time formatting characters: %2$s',
 					fCore::dump($format),
 					join(', ', str_split($restricted_formats))
 				)
@@ -175,18 +175,18 @@ class fTime
 		
 		if ($relative_to_now) {
 			if ($diff > 0) {
-				return fGrammar::compose('%s %s from now', $unit_diff, $units);
+				return fGrammar::compose('%1$s %2$s from now', $unit_diff, $units);
 			}
 			
-			return fGrammar::compose('%s %s ago', $unit_diff, $units);	
+			return fGrammar::compose('%1$s %2$s ago', $unit_diff, $units);	
 		}
 		
 		
 		if ($diff > 0) {
-			return fGrammar::compose('%s %s after', $unit_diff, $units);
+			return fGrammar::compose('%1$s %2$s after', $unit_diff, $units);
 		}
 		
-		return fGrammar::compose('%s %s before', $unit_diff, $units);
+		return fGrammar::compose('%1$s %2$s before', $unit_diff, $units);
 	}
 	
 	
@@ -310,7 +310,7 @@ class fTime
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
-					'The time specified, %s:%s:%s, does not appear to be a valid time'.
+					'The time specified, %1$s:%2$s:%3$s, does not appear to be a valid time'.
 					fCore::dump($hour),
 					fCore::dump($minute),
 					fCore::dump($second)

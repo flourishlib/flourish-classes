@@ -162,7 +162,7 @@ class fDatabase
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The database type specified, %s, is invalid. Must be one of: %s.',
+					'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
@@ -270,7 +270,7 @@ class fDatabase
 			fCore::toss(
 				'fSQLException',
 				fGrammar::compose(
-					'%s error (%s) in %s',
+					'%1$s error (%2$s) in %3$s',
 					$db_type_map[$this->type],
 					$message,
 					$result->getSQL()
@@ -511,7 +511,7 @@ class fDatabase
 						fCore::toss(
 							'fConnectivityException',
 							fGrammar::compose(
-								'The database specified does not appear to be a valid %s or %s database',
+								'The database specified does not appear to be a valid %1$s or %2$s database',
 								'SQLite v2.1',
 								'v3'
 							)
@@ -526,7 +526,7 @@ class fDatabase
 					fCore::toss(
 						'fEnvironmentException',
 						fGrammar::compose(
-							'The database specified is an %s database and the %s extension is not installed',
+							'The database specified is an %2$s database and the %2$s extension is not installed',
 							'SQLite v3',
 							'pdo_sqlite'	
 						)
@@ -539,7 +539,7 @@ class fDatabase
 					fCore::toss(
 						'fEnvironmentException',
 						fGrammar::compose(
-							'The database specified is an %s database and the %s extension is not installed',
+							'The database specified is an %1$s database and the %2$s extension is not installed',
 							'SQLite v2.1',
 							'sqlite'
 						)
@@ -556,7 +556,7 @@ class fDatabase
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The server does not have any of the following extensions for %s support: %s',
+					'The server does not have any of the following extensions for %2$s support: %2$s',
 					$type,
 					$exts
 				)
@@ -1206,7 +1206,7 @@ class fDatabase
 			fCore::toss(
 				'fSQLException',
 				fGrammar::compose(
-					'%s error (%s) in %s',
+					'%1$s error (%2$s) in %3$s',
 					$db_type_map[$this->type],
 					$e->getMessage(),
 					$sql
@@ -1275,7 +1275,7 @@ class fDatabase
 		$this->query_time += $query_time;
 		fCore::debug(
 			fGrammar::compose(
-				'Query time was %s seconds for:%s',
+				'Query time was %1$s seconds for:%2$s',
 				$query_time,
 				"\n" . $result->getSQL()
 			),
@@ -1286,7 +1286,7 @@ class fDatabase
 			fCore::trigger(
 				'warning',
 				fGrammar::compose(
-					'The following query took %s milliseconds, which is above the slow query threshold of %s:%s',
+					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()
@@ -1468,7 +1468,7 @@ class fDatabase
 		$this->query_time += $query_time;
 		fCore::debug(
 			fGrammar::compose(
-				'Query time was %s seconds for (unbuffered):%s',
+				'Query time was %1$s seconds for (unbuffered):%2$s',
 				$query_time,
 				"\n" . $result->getSQL()
 			),
@@ -1479,7 +1479,7 @@ class fDatabase
 			fCore::trigger(
 				'warning',
 				fGrammar::compose(
-					'The following query took %s milliseconds, which is above the slow query threshold of %s:%s',
+					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()

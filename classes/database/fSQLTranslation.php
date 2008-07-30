@@ -82,7 +82,7 @@ class fSQLTranslation
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The database type specified, %s, is invalid. Must be one of: %s.',
+					'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
@@ -94,7 +94,7 @@ class fSQLTranslation
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The extension specified, %s, is invalid. Must be one of: %s.',
+					'The extension specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($extension),
 					join(', ', $valid_extensions)
 				)

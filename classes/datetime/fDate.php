@@ -90,7 +90,7 @@ class fDate
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The formatting string, %s, contains one of the following non-date formatting characters: %s',
+					'The formatting string, %1$s, contains one of the following non-date formatting characters: %2$s',
 					fCore::dump($format),
 					join(', ', str_split($restricted_formats))
 				)
@@ -177,24 +177,24 @@ class fDate
 		if ($relative_to_now) {
 			if ($diff > 0) {
 				return fGrammar::compose(
-					'%s %s from now',
+					'%1$s %2$s from now',
 					$unit_diff,
 					$units
 				);
 			}
 			
 			return fGrammar::compose(
-				'%s %s ago',
+				'%1$s %2$s ago',
 				$unit_diff,
 				$units
 			);
 		}
 		
 		if ($diff > 0) {
-			return fGrammar::compose('%s %s after', $unit_diff, $units);
+			return fGrammar::compose('%1$s %2$s after', $unit_diff, $units);
 		}
 		
-		return fGrammar::compose('%s %s before', $unit_diff, $units);
+		return fGrammar::compose('%1$s %2$s before', $unit_diff, $units);
 	}
 	
 	
@@ -318,7 +318,7 @@ class fDate
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
-					'The date specified, %s-%s-%s, does not appear to be a valid date',
+					'The date specified, %1$s-%2$s-%3$s, does not appear to be a valid date',
 					fCore::dump($year),
 					fCore::dump($month),
 					fCore::dump($day)
@@ -382,7 +382,7 @@ class fDate
 			fCore::toss(
 				'fValidationException', 
 				fGrammar::compose(
-					'The ISO date specified, %s-W%s-%s, does not appear to be a valid ISO date',
+					'The ISO date specified, %1$s-W%2$s-%3$s, does not appear to be a valid ISO date',
 					fCore::dump($year),
 					fCore::dump($week),
 					fCore::dump($day_of_week)

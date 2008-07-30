@@ -1310,7 +1310,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s, is invalid. Must be one of: %s.',
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($element),
 					join(', ', $valid_elements)
 				)
@@ -1344,7 +1344,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, does not exist in the table %s',
+					'The column specified, %1$s, does not exist in the table %2$s',
 					fCore::dump($column),
 					fCore::dump($table)
 				)
@@ -1399,7 +1399,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The key type specified, %s, is invalid. Must be one of: %s.',
+					'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($key_type),
 					join(', ', $valid_key_types)
 				)
@@ -1495,7 +1495,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The relationship type specified, %s, is invalid. Must be one of: %s.',
+					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
@@ -1679,7 +1679,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fEnvironmentException',
 				fGrammar::compose(
-					'The cache file specified, %s, does not exist and the cache file directory, %s, is not writable',
+					'The cache file specified, %1$s, does not exist and the cache file directory, %2$s, is not writable',
 					fCore::dump($file),
 					fCore::dump(dirname($file) . DIRECTORY_SEPARATOR)
 				)
@@ -1739,7 +1739,7 @@ class fSchema implements fISchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The key type specified, %s, is invalid. Must be one of: %s.',
+					'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($key_type),
 					join(', ', $valid_key_types)
 				)

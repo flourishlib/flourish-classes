@@ -43,7 +43,7 @@ class fORMOrdering
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. It must be an integer column to be set as an ordering column.',
+					'The column specified, %1$s, is a %2$s column. It must be an integer column to be set as an ordering column.',
 					fCore::dump($column),
 					$data_type
 				)
@@ -475,7 +475,7 @@ class fORMOrdering
 			$validation_messages[] = fGrammar::compose('%s: The value can not be less than 1', $column_name);
 			
 		} elseif ($current_value > $new_max_value) {
-			$validation_messages[] = fGrammar::compose('%s: The value can not be greater than %s', $column_name, $new_max_value);
+			$validation_messages[] = fGrammar::compose('%1$s: The value can not be greater than %2$s', $column_name, $new_max_value);
 		}
 	}
 	

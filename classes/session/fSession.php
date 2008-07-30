@@ -93,7 +93,7 @@ class fSession
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'%s must be called before any of %s, %s or %s',
+					'%1$s must be called before any of %2$s, %3$s or %4$s',
 					__CLASS__ . '::ignoreSubdomain()',
 					__CLASS__ . '::clear()',
 					__CLASS__ . '::get()',
@@ -146,7 +146,7 @@ class fSession
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'%s must be called before any of %s, %s or %s',
+					'%1$s must be called before any of %2$s, %3$s or %4$s',
 					__CLASS__ . '::setLength()',
 					__CLASS__ . '::clear()',
 					__CLASS__ . '::get()',

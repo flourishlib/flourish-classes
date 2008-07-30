@@ -226,7 +226,7 @@ class fFile
 				fCore::toss(
 					'fEnvironmentException',
 					fGrammar::compose(
-						'The new directory specified, %s, already contains a file with the name %s, but it is not writable',
+						'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
 						fCore::dump($new_directory),
 						fCore::dump($this->getFilename())
 					)

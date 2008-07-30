@@ -68,7 +68,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as a date created column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date created column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -112,7 +112,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as a date updated column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date updated column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -156,7 +156,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as an email column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as an email column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -202,7 +202,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as a link column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a link column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -254,7 +254,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The column specified, %s, is a %s column. Must be one of %s to be set as a random string column.',
+					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a random string column.',
 					fCore::dump($column),
 					$data_type,
 					join(', ', $valid_data_types)
@@ -267,7 +267,7 @@ class fORMColumn
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The type specified, %s, is an invalid type. Must be one of: %s.',
+					'The type specified, %1$s, is an invalid type. Must be one of: %2$s.',
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)

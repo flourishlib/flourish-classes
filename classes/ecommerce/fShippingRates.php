@@ -341,7 +341,7 @@ class fShippingRates
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The shipping company specified, %s, is invalid. Must be one of: %s.',
+					'The shipping company specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($shipping_company),
 					join(', ', $valid_shipping_companies)
 				)
@@ -921,7 +921,7 @@ XMLDATA;
 			
 			if (isset($info['valid_values']) && !in_array($this->request_info[$field], $info['valid_values'])) {
 				$messages[] = fGrammar::compose(
-					'%s: Please choose from one of the following: %s',
+					'%1$s: Please choose from one of the following: %2$s',
 					fGrammar::humanize($field),
 					join(', ', $info['valid_values'])
 				);
@@ -936,7 +936,7 @@ XMLDATA;
 			}
 			if (isset($info['max_length']) && strlen($this->request_info[$field]) > $info['max_length']) {
 				$messages[] = fGrammar::compose(
-					'%s: Please enter a value no longer than %s characters',
+					'%1$s: Please enter a value no longer than %2$s characters',
 					fGrammar::humanize($field),
 					$info['max_length']
 				);

@@ -275,7 +275,7 @@ class fImage extends fFile
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s, is invalid. Must be one of: %s.',
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($element),
 					join(', ', $valid_elements)	
 				)
@@ -456,7 +456,7 @@ class fImage extends fFile
 				fCore::toss(
 					'fValidationException',
 					fGrammar::compose(
-						'The image specified, %s, is not a valid %s file',
+						'The image specified, %1$s, is not a valid %2$s file',
 						fCore::dump($file_path),
 						fGrammar::joinArray($valid_image_types, 'or')
 					)
@@ -901,7 +901,7 @@ class fImage extends fFile
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The new image type specified, %s, is invalid. Must be one of: %s.',
+					'The new image type specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($new_image_type),
 					join(', ', $valid_image_types)
 				)

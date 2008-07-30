@@ -1130,7 +1130,7 @@ class fEmail
 			foreach ($this->$field as $email) {
 				if ($email && !preg_match(self::NAME_EMAIL_REGEX, $email) && !preg_match(self::EMAIL_REGEX, $email)) {
 					$validation_messages[] = fGrammar::compose(
-						'The %s %s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
+						'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 						$name,
 						fCore::dump($email)
 					);
@@ -1149,7 +1149,7 @@ class fEmail
 		foreach ($single_address_field_list as $field => $name) {
 			if ($this->$field && !preg_match(self::NAME_EMAIL_REGEX, $this->$field) && !preg_match(self::EMAIL_REGEX, $this->$field)) {
 				$validation_messages[] = fGrammar::compose(
-					'The %s %s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
+					'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 					$name,
 					fCore::dump($this->$field)
 				);
