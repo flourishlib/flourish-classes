@@ -820,7 +820,7 @@ class fRecordSet implements Iterator
 		
 		$counts = array();
 		foreach ($result as $row) {
-			$counts[$row['__flourish_column']] = $row['__flourish_count'];	
+			$counts[$row['__flourish_column']] = (int) $row['__flourish_count'];	
 		}
 		
 		unset($result);

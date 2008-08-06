@@ -169,7 +169,9 @@ class fORMRelated
 			
 			$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
 			
-			$count = fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			
+			$count = ($result->getReturnedRows()) ? (int) $result->fetchScalar() : 0;
 		}
 		
 		self::tallyRecords($class, $related_records, $related_class, $count, $route);
