@@ -485,7 +485,7 @@ class fORMValidation
 	 */
 	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
 	{
-		if (!empty($related_records[$related_class][$route]) && $related_records[$related_class][$route]->isFlaggedForAssociation()) {
+		if (!empty($related_records[$related_class][$route]['record_set']) && $related_records[$related_class][$route]['record_set']->isFlaggedForAssociation()) {
 			return;		
 		}
 		
@@ -715,8 +715,9 @@ class fORMValidation
 		
 		// Find the record sets to validate
 		foreach ($related_records as $related_table => $routes) {
-			foreach ($routes as $route => $record_set) {
-				if (!$record_set->isFlaggedForAssociation()) {
+			foreach ($routes as $route => $info) {
+				$record_set = $info['record_set'];
+				if (!$record_set || !$record_set->isFlaggedForAssociation()) {
 					continue;
 				}
 				

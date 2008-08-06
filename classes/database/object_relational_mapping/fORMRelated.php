@@ -448,7 +448,7 @@ class fORMRelated
 		}
 		
 		$related_records[$related_table][$route]['record_set'] = $records;
-		$related_records[$related_table][$route]['count'] = $records->count();
+		$related_records[$related_table][$route]['count']      = $records->count();
 	}
 	
 	
@@ -567,7 +567,12 @@ class fORMRelated
 		if (!isset($related_records[$related_table][$route])) {
 			$related_records[$related_table][$route] = array();
 		}
+		
+		if (!isset($related_records[$related_table][$route]['record_set'])) {
+			$related_records[$related_table][$route]['record_set'] = NULL;	
+		}
 		$related_records[$related_table][$route]['count'] = $count;	
+		
 	}
 	
 	

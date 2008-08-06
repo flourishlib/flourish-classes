@@ -1145,8 +1145,9 @@ abstract class fActiveRecord
 			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
 			
 			foreach ($this->related_records as $related_table => $relationship) {
-				foreach ($relationship as $route => $record_set) {
-					if (!$record_set->isFlaggedForAssociation()) {
+				foreach ($relationship as $route => $info) {
+					$record_set = $info['record_set'];
+					if (!$record_set || !$record_set->isFlaggedForAssociation()) {
 						continue;
 					}
 					
