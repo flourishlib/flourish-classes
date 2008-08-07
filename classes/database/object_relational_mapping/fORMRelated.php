@@ -492,7 +492,7 @@ class fORMRelated
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number);
 			$record->$set_method_name($column_value);
-			$record->store(FALSE);
+			$record->store();
 			fRequest::unfilter();
 			$record_number++;
 		}

@@ -770,7 +770,7 @@ class fORMValidation
 					continue;	
 				}
 				$messages[] = fGrammar::compose(
-					'%1$s #%2$s $3$s',
+					'%1$s #%2$s %3$s',
 					$related_record_name,
 					$record_number,
 					$record_message
