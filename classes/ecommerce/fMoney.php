@@ -42,6 +42,13 @@ class fMoney
 	 */
 	static private $format_callback = NULL;
 	
+	/**
+	 * A callback to remove money formatting and return a decimal number
+	 * 
+	 * @var callback
+	 */
+	static private $unformat_callback = NULL;
+	
 	
 	/**
 	 * Allows adding a new currency, or modifying an existing one
@@ -118,6 +125,18 @@ class fMoney
 	
 	
 	/**
+	 * Allows setting a callback to clean any formatted values so they can be passed to {@link fNumber}
+	 * 
+	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and return a string suitable to passing to the fNumber constructor.
+	 * @return void
+	 */
+	static public function registerUnformatCallback($callback)
+	{
+		self::$unformat_callback = $callback;
+	}
+	
+	
+	/**
 	 * Sets the default currency to use when creating fMoney objects
 	 * 
 	 * @param string  $iso_code  The ISO code (three letters, e.g. 'USD') for the new default currency
@@ -190,6 +209,14 @@ class fMoney
 		
 		// We use an extra digit of precision with the fNumber object so we can round properly
 		$precision    = self::getCurrencyInfo($this->currency, 'precision') + 1;
+		
+		// Unformat any money value
+		if (self::$unformat_callback !== NULL) {
+			$amount = call_user_func(self::$unformat_callback, $amount);
+		} else {
+			$amount = str_replace(array('$', ','), '', $amount);
+		}
+		
 		$this->amount = new fNumber($amount, $precision);
 	}
 	
