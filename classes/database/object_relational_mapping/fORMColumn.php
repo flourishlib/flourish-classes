@@ -273,6 +273,10 @@ class fORMColumn
 		$callback = array('fORMColumn', 'inspect');
 		fORM::registerHookCallback($class, $hook, $callback);
 		
+		$hook     = 'replace::encode' . $camelized_column . '()';
+		$callback = array('fORMColumn', 'encodeMoneyColumn');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
 		$hook     = 'replace::prepare' . $camelized_column . '()';
 		$callback = array('fORMColumn', 'prepareMoneyColumn');
 		fORM::registerHookCallback($class, $hook, $callback);
@@ -283,7 +287,7 @@ class fORMColumn
 			fORM::registerHookCallback($class, $hook, $callback);
 		}
 		
-		$callback = array('fORMColumn', 'objectify');
+		$callback = array('fORMColumn', 'objectifyMoney');
 		fORM::registerObjectifyCallback($class, $column, $callback);
 		
 		if (empty(self::$money_columns[$class])) {
@@ -363,6 +367,33 @@ class fORMColumn
 	
 	
 	/**
+	 * Encodes a money column by calling {@link fMoney::__toString()}
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return string  The formatted link
+	 */
+	static public function encodeMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		
+		$value = $values[$column];
+		
+		if ($value instanceof fMoney) {
+			$value = $value->__toString();
+		}
+		
+		return fHTML::prepare($value);
+	}
+	
+	
+	/**
 	 * Returns the metadata about a column including features added by this class
 	 * 
 	 * @internal
@@ -425,7 +456,7 @@ class fORMColumn
 	 * @param  mixed  $value   The value
 	 * @return mixed  The {@link fMoney} object or raw value
 	 */
-	static public function objectify($class, $column, $value)
+	static public function objectifyMoney($class, $column, $value)
 	{
 		if (!fCore::stringlike($value)) {
 			return $value;	
@@ -459,9 +490,6 @@ class fORMColumn
 	{
 		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		if (empty($values[$column])) {
-			return $values[$column];
-		}	
 		$value = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
