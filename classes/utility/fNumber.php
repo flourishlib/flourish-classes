@@ -52,7 +52,7 @@ class fNumber
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The from base specified, %s$1, is not valid base between %s$2 and %s$3',
+					'The from base specified, %1$s, is not valid base between %2$s and %3$s',
 					fCore::dump($from_base),
 					'2',
 					'16'
@@ -64,7 +64,7 @@ class fNumber
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The to base specified, %s$1, is not valid base between %s$2 and %s$3',
+					'The to base specified, %1$s, is not valid base between %2$s and %3$s',
 					fCore::dump($from_base),
 					'2',
 					'16'
@@ -726,7 +726,7 @@ class fNumber
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The scale specified, %s$1, is outside the valid scale for pi (%s$2 to %s$3)',
+					'The scale specified, %1$s, is outside the valid scale for pi (%2$s to %3$s)',
 					fCore::dump($scale),
 					'0',
 					'500'

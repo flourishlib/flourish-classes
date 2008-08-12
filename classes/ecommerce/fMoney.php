@@ -79,7 +79,7 @@ class fMoney
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The currency specified, %s$1, is not a valid currency. Must be one of: %s$2.',
+					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
 					fCore::dump($iso_code),
 					join(', ', array_keys(self::$currencies))
 				)
@@ -94,7 +94,7 @@ class fMoney
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The element specified, %s$1, is not valid. Must be one of: %s$2.',
+					'The element specified, %1$s, is not valid. Must be one of: %2$s.',
 					fCore::dump($element),
 					join(', ', array_keys(self::$currencies[$iso_code]))
 				)
@@ -129,7 +129,7 @@ class fMoney
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The currency specified, %s$1, is not a valid currency. Must be one of: %s$2.',
+					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
 					fCore::dump($iso_code),
 					join(', ', array_keys(self::$currencies))
 				)
@@ -170,7 +170,7 @@ class fMoney
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The currency specified, %s$1, is not a valid currency. Must be one of: %s$2.',
+					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
 					fCore::dump($abbreviation),
 					join(', ', array_keys(self::$currencies))
 				)
@@ -222,10 +222,13 @@ class fMoney
 	/**
 	 * Splits the current value into multiple parts ensuring that the sum of the results is exactly equal to this amount
 	 * 
+	 * This method takes two or more parameters. The parameters should each be
+	 * fractions that when added together equal 1.
+	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fNumber|string $ratio1      The ratio of the first amount to this amount
-	 * @param  fNumber|string $ratio2,...  The ratio of the second amount to this amount
+	 * @param  fNumber|string $ratio1  The ratio of the first amount to this amount
+	 * @param  fNumber|string $ratio2  The ratio of the second amount to this amount
 	 * @return array  fMoney objects each with the appropriate ratio of the current amount
 	 */
 	public function allocate($ratio1, $ratio2)
@@ -302,7 +305,7 @@ class fMoney
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The currency specified, %s$1, is not a valid currency. Must be one of: %s$2.',
+					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
 					fCore::dump($new_currency),
 					join(', ', array_keys(self::$currencies))
 				)
