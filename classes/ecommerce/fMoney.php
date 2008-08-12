@@ -214,7 +214,14 @@ class fMoney
 		if (self::$unformat_callback !== NULL) {
 			$amount = call_user_func(self::$unformat_callback, $amount);
 		} else {
-			$amount = str_replace(array('$', ','), '', $amount);
+			$amount = str_replace(
+				array(
+					self::getCurrencyInfo($this->currency, 'symbol'),
+					','
+				),
+				'',
+				$amount
+			);
 		}
 		
 		$this->amount = new fNumber($amount, $precision);
