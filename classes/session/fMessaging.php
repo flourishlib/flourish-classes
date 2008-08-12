@@ -52,10 +52,12 @@ class fMessaging
 	 * 
 	 * @param  string $name       The name of the message to retrieve
 	 * @param  string $recipient  The intended recipient
+	 * @param  string $css_class  The CSS class to use when displaying the message - if NULL is passed or the parameter is ommitted, $name will be used instead
 	 * @return void
 	 */
-	static public function show($name, $recipient, $css_class='')
+	static public function show($name, $recipient, $css_class=NULL)
 	{
+		$css_class = ($css_class === NULL) ? $name : $css_class;
 		fHTML::show(self::retrieve($name, $recipient), $css_class);
 	}
 	
