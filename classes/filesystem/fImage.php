@@ -257,7 +257,7 @@ class fImage extends fFile
 	 * @param  string $element     The element to retrieve ('type', 'width', 'height')
 	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
 	 */
-	static public function getInfo($image_path, $element=NULL)
+	static protected function getInfo($image_path, $element=NULL)
 	{
 		$image_info = @getimagesize($image_path);
 		if ($image_info == FALSE) {
@@ -585,6 +585,39 @@ class fImage extends fFile
 		}
 		
 		return $output;
+	}
+	
+	
+	/**
+	 * Returns the height of the image
+	 * 
+	 * @return integer  The height of the image in pixels
+	 */
+	public function getHeight()
+	{
+		return self::getInfo($this->file, 'height');
+	}
+	
+	
+	/**
+	 * Returns the type of the image
+	 * 
+	 * @return string  The type of the image - 'jpg', 'gif', 'png' or 'tif'
+	 */
+	public function getType()
+	{
+		return self::getInfo($this->file, 'type');
+	}
+	
+	
+	/**
+	 * Returns the width of the image
+	 * 
+	 * @return integer  The width of the image in pixels
+	 */
+	public function getWidth()
+	{
+		return self::getInfo($this->file, 'width');
 	}
 	
 	
