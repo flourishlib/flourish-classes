@@ -401,35 +401,92 @@ class fORMDatabase
 	{
 		$sql = array();
 		foreach ($conditions as $column => $values) {
-			$type   = substr($column, -1);
-			$column = substr($column, 0, -1);
+			
+			if (substr($column, -2) == '<=' || substr($column, -2) == '>=') {
+				$type   = substr($column, -2);
+				$column = substr($column, 0, -2);	
+			} else {
+				$type   = substr($column, -1);	
+				$column = substr($column, 0, -1);
+			}
+			
 			settype($values, 'array');
 			if (!$values) { $values = array(NULL); }
 			
 			
 			// Multi-column condition
 			if (strpos($column, '|') !== FALSE) {
-				if ($type != '~') {
-					fCore::toss(
-						'fProgrammerException',
-						fGrammar::compose(
-							'An invalid matching type, %s, was specified',
-							fCore::dump($type)
-						)
-					);
-				}
-				$columns = self::addTableToValues($table, explode('|', $column));
+				$columns = explode('|', $column);
+				$types   = array();
 				
-				$condition = array();
-				foreach ($values as $value) {
-					$sub_condition = array();
-					foreach ($columns as $column) {
-						$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');
+				foreach ($columns as &$_column) {
+					if (substr($_column, -2) == '<=' || substr($_column, -2) == '>=') {
+						$types[] = substr($_column, -2);
+						$_column = substr($_column, 0, -2);	
+					} elseif (!ctype_alnum(substr($_column, -1))) {
+						$types[] = substr($_column, -1);	
+						$_column = substr($_column, 0, -1);
+					} 		
+				}
+				$types[] = $type;
+				
+				$columns = self::addTableToValues($table, $columns);
+				
+				// Handle fuzzy searches
+				if (sizeof($types) == 1) {
+					if ($type != '~') {
+						fCore::toss(
+							'fProgrammerException',
+							fGrammar::compose(
+								'An invalid matching type, %s, was specified',
+								fCore::dump($type)
+							)
+						);
 					}
-					$condition[] = '(' . join(' OR ', $sub_condition) . ')';
-				}
-				$sql[] = ' (' . join(' AND ', $condition) . ') ';
 				
+					$condition = array();
+					foreach ($values as $value) {
+						$sub_condition = array();
+						foreach ($columns as $column) {
+							$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');
+						}
+						$condition[] = '(' . join(' OR ', $sub_condition) . ')';
+					}
+					$sql[] = ' (' . join(' AND ', $condition) . ') ';
+				
+				
+				// Handle OR combos
+				} else {
+					if (sizeof($columns) != sizeof($values)) {
+						fCore::toss(
+							'fProgrammerException',
+							fGrammar::compose(
+								'When creating an %1$s where clause there must be an equal number of columns and values, however there are not',
+								'OR',
+								sizeof($columns),
+								sizeof($values)
+							)
+						); 		
+					}	
+					
+					if (sizeof($columns) != sizeof($types)) {
+						fCore::toss(
+							'fProgrammerException',
+							fGrammar::compose(
+								'When creating an %s where clause there must be a comparison operator for each column, however one or more is missing',
+								'OR'
+							)
+						); 		
+					}
+					
+					$conditions = array();
+					$iterations = sizeof($columns);
+					for ($i=0; $i<$iterations; $i++) {
+						$conditions[] = $columns[$i] . self::prepareByType($values[$i], $types[$i]);
+					}
+					$sql[] = ' (' . join(' OR ', $conditions) . ') ';
+				}
+
 				
 			// Single column condition
 			} else {
@@ -476,8 +533,13 @@ class fORMDatabase
 				} else {
 					switch ($type) {
 						case '=':
-							$sql[] = $column . self::prepareByType($values[0], '=');
+						case '<':
+						case '<=':
+						case '>':
+						case '>=':
+							$sql[] = $column . self::prepareByType($values[0], $type);
 							break;
+							
 						case '!':
 							if ($values[0] !== NULL) {
 								$sql[] = '(' . $column . self::prepareByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
@@ -485,9 +547,11 @@ class fORMDatabase
 								$sql[] = $column . self::prepareByType($values[0], '<>');
 							}
 							break;
+							
 						case '~':
 							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');
 							break;
+							
 						default:
 							fCore::toss(
 								'fProgrammerException',
@@ -811,8 +875,10 @@ class fORMDatabase
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
 		
-		if (is_int($value) || is_float($value)) {
-			$prepared = $co . $value;
+		if (is_int($value)) {
+			$prepared = $co . self::getInstance()->escapeInteger($value);
+		} elseif (is_float($value)) {
+			$prepared = $co . self::getInstance()->escapeFloat($value);
 		} elseif (is_bool($value)) {
 			$prepared = $co . self::getInstance()->escapeBoolean($value);
 		} elseif (is_null($value)) {
