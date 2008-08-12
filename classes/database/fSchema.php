@@ -1603,8 +1603,8 @@ class fSchema implements fISchema
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$foreign_key_columns[] = $key['column'];
 		}
-		$diff = array_diff($primary_key_columns, $foreign_key_columns);
-		return empty($diff);
+		$diff = array_diff($foreign_key_columns, $primary_key_columns);
+		return sizeof($primary_key_columns) == 2 && empty($diff);
 	}
 	
 	
