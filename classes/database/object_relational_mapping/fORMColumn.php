@@ -43,6 +43,13 @@ class fORMColumn
 	static private $link_columns = array();
 	
 	/**
+	 * Columns that should be formatted as money
+	 * 
+	 * @var array
+	 */
+	static private $money_columns = array();
+	
+	/**
 	 * Columns that should be formatted as a random string
 	 * 
 	 * @var array
@@ -188,7 +195,7 @@ class fORMColumn
 	 * Sets a column to be formatted as a link
 	 * 
 	 * @param  mixed  $class   The class name or instance of the class to set the column format
-	 * @param  string $column  The column to format as an email address
+	 * @param  string $column  The column to format as a link
 	 * @return void
 	 */
 	static public function configureLinkColumn($class, $column)
@@ -231,6 +238,59 @@ class fORMColumn
 		}
 		
 		self::$link_columns[$class][$column] = TRUE;
+	}
+	
+	
+	/**
+	 * Sets a column to be formatted as an fMoney object
+	 * 
+	 * @param  mixed  $class   The class name or instance of the class to set the column format
+	 * @param  string $column  The column to format as an fMoney object
+	 * @return void
+	 */
+	static public function configureMoneyColumn($class, $column)
+	{
+		$class     = fORM::getClassName($class);
+		$table     = fORM::tablize($class);
+		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		
+		$valid_data_types = array('float');
+		if (!in_array($data_type, $valid_data_types)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a money column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);	
+		}
+		
+		$camelized_column = fGrammar::camelize($column, TRUE);
+		
+		$hook     = 'replace::inspect' . $camelized_column . '()';
+		$callback = array('fORMColumn', 'inspect');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
+		$hook     = 'replace::prepare' . $camelized_column . '()';
+		$callback = array('fORMColumn', 'prepareMoneyColumn');
+		fORM::registerHookCallback($class, $hook, $callback);
+		
+		$hook     = 'post::validate()';
+		$callback = array('fORMColumn', 'validateMoneyColumns');
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);
+		}
+		
+		$callback = array('fORMColumn', 'objectify');
+		fORM::registerObjectifyCallback($class, $column, $callback);
+		
+		if (empty(self::$money_columns[$class])) {
+			self::$money_columns[$class] = array();	
+		}
+		
+		self::$money_columns[$class][$column] = TRUE;
 	}
 	
 	
@@ -343,11 +403,42 @@ class fORMColumn
 			$info['feature'] = 'random';	
 		}
 		
+		if (!empty(self::$money_columns[$class][$column])) {
+			$info['feature'] = 'money';	
+		}
+		
 		if ($element) {
 			return (isset($info[$element])) ? $info[$element] : NULL;	
 		}
 		
 		return $info;
+	}
+	
+	
+	/**
+	 * Turns a monetary value into an {@link fMoney} object
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The class this value is for
+	 * @param  string $column  The column the value is in
+	 * @param  mixed  $value   The value
+	 * @return mixed  The {@link fMoney} object or raw value
+	 */
+	static public function objectify($class, $column, $value)
+	{
+		if (!fCore::stringlike($value)) {
+			return $value;	
+		}
+		
+		try {
+			
+			return new fMoney($value);
+			 
+		// If there was some error creating the file, just return the raw value
+		} catch (fExpectedException $e) {
+			return $value;	
+		}
 	}
 	
 	
@@ -376,6 +467,36 @@ class fORMColumn
 		// Fix domains that don't have the protocol to start
 		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#i', $value)) {
 			$value = 'http://' . $value;
+		}
+		
+		return fHTML::prepare($value);
+	}
+	
+	
+	/**
+	 * Prepares a money column by calling {@link fMoney::format()}
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return string  The formatted link
+	 */
+	static public function prepareMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		
+		if (empty($values[$column])) {
+			return $values[$column];
+		}	
+		$value = $values[$column];
+		
+		if ($value instanceof fMoney) {
+			$value = $value->format();
 		}
 		
 		return fHTML::prepare($value);
@@ -550,6 +671,38 @@ class fORMColumn
 					fORM::getColumnName($class, $column)
 				);
 			}	
+		}
+	}
+	
+	
+	/**
+	 * Validates all money columns
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object                The fActiveRecord instance
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  array         &$validation_messages  An array of ordered validation messages
+	 * @return void
+	 */
+	static public function validateMoneyColumns($object, &$values, &$old_values, &$related_records, &$validation_messages)
+	{
+		$class = get_class($object);
+		
+		if (empty(self::$money_columns[$class])) {
+			return;
+		}	
+		
+		foreach (self::$money_columns[$class] as $column => $enabled) {
+			if ($values[$column] instanceof fMoney) {
+				continue;	
+			}
+			$validation_messages[] = fGrammar::compose(
+				'%s: Please enter a valid monetary value',
+				fORM::getColumnName($class, $column)
+			);
 		}
 	}
 	
