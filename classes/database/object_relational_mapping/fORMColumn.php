@@ -621,7 +621,7 @@ class fORMColumn
 						$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);
 						
 						// See if this is unique
-						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = '" . fORMDatabase::getInstance()->escapeString($values[$column]) . "'";
+						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::getInstance()->escapeString($values[$column]);
 					
 					} while (fORMDatabase::getInstance()->query($sql)->getReturnedRows());
 				}
