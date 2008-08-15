@@ -1604,7 +1604,7 @@ class fSchema implements fISchema
 			$foreign_key_columns[] = $key['column'];
 		}
 		$diff = array_diff($foreign_key_columns, $primary_key_columns);
-		return sizeof($primary_key_columns) == 2 && empty($diff);
+		return sizeof($primary_key_columns) == 2 && sizeof($foreign_key_columns) == 2 && !$diff;
 	}
 	
 	
