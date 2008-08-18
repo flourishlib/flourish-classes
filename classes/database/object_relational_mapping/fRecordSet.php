@@ -836,7 +836,8 @@ class fRecordSet implements Iterator
 		
 		for ($i=0; $i < $total_records; $i++) { 
 			$record = $this->records[$i]; 
-			$record->$tally_method($counts[$record->$get_method()], $route); 
+			$count  = (isset($counts[$record->$get_method()])) ? $counts[$record->$get_method()] : 0;
+			$record->$tally_method($count, $route); 
 		}
 	}
 	
