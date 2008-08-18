@@ -52,6 +52,7 @@ class fORMOrdering
 		
 		$found = FALSE;
 		foreach ($unique_keys as $unique_key) {
+			settype($unique_key, 'array');
 			if (array_search($column, $unique_key) !== FALSE) {
 				$other_columns = array_diff($unique_key, array($column));
 				$found = TRUE;
