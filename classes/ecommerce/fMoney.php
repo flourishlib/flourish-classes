@@ -397,9 +397,9 @@ class fMoney
 		
 		$int_sections = array();
 		for ($i = strlen($integer)-3; $i > 0; $i -= 3) {
-			$int_sections[] = substr($integer, $i, 3);	
+			array_push($int_sections, substr($integer, $i, 3));	
 		}
-		$int_sections[] = substr($integer, 0, $i+3);
+		array_push($int_sections, substr($integer, 0, $i+3));
 		
 		$symbol   = self::getCurrencyInfo($this->currency, 'symbol');
 		$integer  = join(',', $int_sections);
