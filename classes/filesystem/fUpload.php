@@ -349,7 +349,7 @@ class fUpload
 					'image' => fGrammar::compose('The file uploaded is not an image'),
 					'zip'   => fGrammar::compose('The file uploaded is not a zip')
 				);
-				fCore::toss('fValidationException', $messages[$type]);
+				fCore::toss('fValidationException', $messages[self::$type]);
 			} else {
 				fCore::toss(
 					'fValidationException',
