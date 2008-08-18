@@ -603,14 +603,24 @@ class fUTF8
 	
 	
 	/**
-	 * Removes any invalid UTF-8 characters from a string
+	 * Removes any invalid UTF-8 characters from a string or array of strings
 	 * 
-	 * @param  string $string  The string to clean
+	 * @param  array|string $value  The string or array of strings to clean
 	 * @return string  The cleaned string
 	 */
-	static public function clean($string)
+	static public function clean($value)
 	{
-		return iconv('UTF-8', 'UTF-8//IGNORE', $string);
+		if (!is_array($value)) {
+			return iconv('UTF-8', 'UTF-8//IGNORE', (string) $value);
+		}
+		
+		$keys = array_keys($value);
+		$num_keys = sizeof($keys);
+		for ($i=0; $i<$num_keys; $i++) {
+			$value[$keys[$i]] = self::clean($value[$keys[$i]]);
+		}
+		
+		return $value;
 	}
 	
 	
