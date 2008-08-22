@@ -160,9 +160,9 @@ class fValidation
 				}
 				
 				if (!$found) {
-					$required_field = array_map(array('fInflection', 'humanize'), $required_field);
+					$required_field = array_map(array('fGrammar', 'humanize'), $required_field);
 					$messages[] = fGrammar::compose(
-						'%s: needs to have a value',
+						'%s: Please enter at least one',
 						join(', ', $required_field)
 					);
 				}
