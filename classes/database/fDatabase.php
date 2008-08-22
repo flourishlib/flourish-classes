@@ -354,7 +354,7 @@ class fDatabase
 			}
 		}
 			
-		if ($this->extension == 'msyqli') {
+		if ($this->extension == 'mysqli') {
 			if ($this->port) {
 				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database, $this->port);
 			} else {
@@ -1352,7 +1352,7 @@ class fDatabase
 	 */
 	private function setReturnedRows(fResult $result)
 	{
-		if (is_resource($result->getResult())) {
+		if (is_resource($result->getResult()) || is_object($result->getResult())) {
 			if ($this->extension == 'mssql') {
 				$result->setReturnedRows(mssql_num_rows($result->getResult()));
 			} elseif ($this->extension == 'mysql') {
