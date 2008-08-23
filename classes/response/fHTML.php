@@ -70,7 +70,7 @@ class fHTML
 		$www_url_replacement = '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"';
 		
 		// Handle email addresses
-		$email_regex       = '#\b([a-z0-9\\.\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
+		$email_regex       = '#\b([a-z0-9\\.+\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
 		$email_replacement = '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"';
 		
 		$searches = array(
