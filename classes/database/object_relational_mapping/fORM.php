@@ -57,6 +57,13 @@ class fORM
 	static private $record_names = array();
 	
 	/**
+	 * Callbacks for reflect()
+	 * 
+	 * @var array
+	 */
+	static private $reflect_callbacks = array();
+	
+	/**
 	 * Callbacks for scalarize()
 	 * 
 	 * @var array
@@ -91,7 +98,7 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $class              The instance of the class to call the hook for
+	 * @param  fActiveRecord $object             The instance of the class to call the hook for
 	 * @param  string        $hook               The hook to call
 	 * @param  array         &$values            The current values of the record
 	 * @param  array         &$old_values        The old values of the record
@@ -100,11 +107,11 @@ class fORM
 	 * @param  mixed         &$second_parameter  The second parameter to send the callback
 	 * @return mixed  The return value from the callback. Will be NULL unless it is a replace:: callback.
 	 */
-	static public function callHookCallback(fActiveRecord $class, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
+	static public function callHookCallback(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
-		$class_name = self::getClassName($class);
+		$class = self::getClassName($object);
 		
-		if (!isset(self::$hook_callbacks[$class_name]) || empty(self::$hook_callbacks[$class_name][$hook])) {
+		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
 			return;
 		}
 		
@@ -112,21 +119,21 @@ class fORM
 		if (preg_match('#^replace::[\w_]+\(\)$#', $hook)) {
 			// This is the only way to pass by reference
 			$parameters = array(
-				$class,
+				$object,
 				&$values,
 				&$old_values,
 				&$related_records,
 				&$first_parameter,
 				&$second_parameter
 			);
-			return call_user_func_array(self::$hook_callbacks[$class_name][$hook], $parameters);
+			return call_user_func_array(self::$hook_callbacks[$class][$hook], $parameters);
 		}
 		
 		// There can be more than one non-replace:: hook so we can't return a value
-		foreach (self::$hook_callbacks[$class_name][$hook] as $callback) {
+		foreach (self::$hook_callbacks[$class][$hook] as $callback) {
 			// This is the only way to pass by reference
 			$parameters = array(
-				$class,
+				$object,
 				&$values,
 				&$old_values,
 				&$related_records,
@@ -139,11 +146,43 @@ class fORM
 	
 	
 	/**
+	 * Calls a hook callback and returns the result
+	 * 
+	 * The return value should only be used by replace:: callbacks.
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object                The instance of the class to call the hook for
+	 * @param  array         &$signatures           The associative array of {method_name} => {signature}
+	 * @param  boolean       $include_doc_comments  If the doc comments should be included in the signature
+	 * @return void
+	 */
+	static public function callReflectCallbacks(fActiveRecord $object, &$signatures, $include_doc_comments)
+	{
+		$class = self::getClassName($object);
+		
+		if (!isset(self::$reflect_callbacks[$class])) {
+			return;
+		}
+		
+		foreach (self::$reflect_callbacks[$class] as $callback) {
+			// This is the only way to pass by reference
+			$parameters = array(
+				$class,
+				&$signatures,
+				$include_doc_comments
+			);
+			call_user_func_array($callback, $parameters);
+		}
+	}
+	
+	
+	/**
 	 * Checks to see if any (or a specific) callback has been registered for a specific hook
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class     The name of the class to check the hook of
+	 * @param  mixed  $class     The name of the class, or an instance of it
 	 * @param  string $hook      The hook to check
 	 * @param  array  $callback  The specific callback to check for
 	 * @return boolean  If the specified callback exists
@@ -499,7 +538,7 @@ class fORM
 				'fProgrammerException',
 				fGrammar::compose(
 					'The hook specified, %1$s, should be one of: %2$s or %3$s.',
-					fCore::expose($hook),
+					fCore::dump($hook),
 					join(', ', $valid_hooks),
 					'replace::{methodName}()'
 				)
@@ -553,6 +592,36 @@ class fORM
 		}
 		
 		self::$objectify_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
+	 * Registers a callback to modify the results of {@link fActiveRecord::reflect()}
+	 * 
+	 * Callbacks registered here can override default method signatures and add
+	 * method signatures, however any methods that are defined in the actual class
+	 * will override these signatures.
+	 * 
+	 * The callback should accept three parameters:
+	 *  - $class: the class name
+	 *  - &$signatures: an associative array of {method_name} => {signature}
+	 *  - $include_doc_comments: a boolean indicating if the signature should include the doc comment for the method, or just the signature
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  callback $callback  The callback to register. Callback should accept a three parameters - see method description for details.
+	 * @return void
+	 */
+	static public function registerReflectCallback($class, $callback)
+	{
+		$class = self::getClassName($class);
+		
+		if (!isset(self::$reflect_callbacks[$class])) {
+			self::$reflect_callbacks[$class] = array();
+		} elseif (in_array($callback, self::$reflect_callbacks[$class])) {
+			return;	
+		}
+		
+		self::$reflect_callbacks[$class][] = $callback;
 	}
 	
 	

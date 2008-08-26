@@ -394,6 +394,134 @@ class fORMRelated
 	
 	
 	/**
+	 * Adds information about methods provided by this class to {@link fActiveRecord}
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed   $class                 The class name or instance of the class this ordering rule applies to
+	 * @param  array   &$signatures           The associative array of {method_name} => {signature}     
+	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
+	 * @return void
+	 */
+	static public function reflect($class, &$signatures, $include_doc_comments)
+	{
+		$table = fORM::tablize($class);
+		
+		$one_to_one_relationships   = fORMSchema::getInstance()->getRelationships($table, 'one-to-one');
+		$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
+		$many_to_one_relationships  = fORMSchema::getInstance()->getRelationships($table, 'many-to-one');
+		$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
+		
+		$to_one_relationships  = array_merge($one_to_one_relationships, $many_to_one_relationships);
+		$to_many_relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
+		
+		$to_one_created = array();
+		
+		foreach ($to_one_relationships as $relationship) {
+			$related_class = fORM::classize($relationship['related_table']);
+			
+			if (isset($to_one_created[$related_class])) {
+				continue;	
+			}
+			
+			$routes = fORMSchema::getRoutes($table, $relationship['related_table'], '*-to-one');
+			$route_names = array();
+			
+			foreach ($routes as $route) {
+				$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-one', $route);	
+			}
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Creates the related " . $related_class . "\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+				}
+				$signature .= " * @return " . $related_class . "  The related object\n";
+				$signature .= " */\n";
+			}
+			$create_method = 'create' . $related_class;
+			$signature .= 'public function ' . $create_method . '(';
+			if (sizeof($route_names) > 1) {
+				$signature .= '$route';	
+			}
+			$signature .= ')';
+			
+			$signatures[$create_method] = $signature;
+			
+			$to_one_created[$related_class] = TRUE;
+		}
+		
+		$to_many_created = array();
+		
+		foreach ($to_many_relationships as $relationship) {
+			$related_class = fORM::classize($relationship['related_table']);
+			
+			if (isset($to_many_created[$related_class])) {
+				continue;	
+			}
+			
+			$routes = fORMSchema::getRoutes($table, $relationship['related_table'], '*-to-many');
+			$route_names = array();
+			
+			foreach ($routes as $route) {
+				if (isset($relationship['join_table'])) {
+					$route_names[] = fORMSchema::getRouteNameFromRelationship('many-to-many', $route);
+				} else {
+					$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-many', $route);	
+				}
+			}
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Builds an fRecordSet of the related " . $related_class . " objects\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+				}
+				$signature .= " * @return fRecordSet  A record set of the related " . $related_class . " objects\n";
+				$signature .= " */\n";
+			}
+			$build_method = 'build' . fGrammar::pluralize($related_class);
+			$signature .= 'public function ' . $build_method . '(';
+			if (sizeof($route_names) > 1) {
+				$signature .= '$route';	
+			}
+			$signature .= ')';
+			
+			$signatures[$build_method] = $signature;
+			
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Counts the number of related " . $related_class . " objects\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+				}
+				$signature .= " * @return integer  The number related " . $related_class . " objects\n";
+				$signature .= " */\n";
+			}
+			$count_method = 'count' . fGrammar::pluralize($related_class);
+			$signature .= 'public function ' . $count_method . '(';
+			if (sizeof($route_names) > 1) {
+				$signature .= '$route';	
+			}
+			$signature .= ')';
+			
+			$signatures[$count_method] = $signature;
+			
+			
+			$to_many_created[$related_class] = TRUE;
+		}
+	}
+	
+	
+	/**
 	 * Sets the ordering to use when returning an {@link fRecordSet} of related objects
 	 *
 	 * @param  mixed  $class           The class name or instance of the class this ordering rule applies to

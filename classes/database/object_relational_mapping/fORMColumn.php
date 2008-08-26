@@ -85,13 +85,17 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
-		$hook     = 'post-begin::store()';
-		$callback = array('fORMColumn', 'setDateCreated');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'post-begin::store()',
+			array('fORMColumn', 'setDateCreated')
+		);
 		
 		if (empty(self::$date_created_columns[$class])) {
 			self::$date_created_columns[$class] = array();	
@@ -129,13 +133,17 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
-		$hook     = 'post-begin::store()';
-		$callback = array('fORMColumn', 'setDateUpdated');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'post-begin::store()',
+			array('fORMColumn', 'setDateUpdated')
+		);
 		
 		if (empty(self::$date_updated_columns[$class])) {
 			self::$date_updated_columns[$class] = array();	
@@ -173,9 +181,11 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
 		$hook     = 'post::validate()';
 		$callback = array('fORMColumn', 'validateEmailColumns');
@@ -219,19 +229,28 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
-		$hook     = 'replace::prepare' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'prepareLinkColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::prepare' . $camelized_column . '()',
+			array('fORMColumn', 'prepareLinkColumn')
+		);
 		
 		$hook     = 'post::validate()';
 		$callback = array('fORMColumn', 'validateLinkColumns');
 		if (!fORM::checkHookCallback($class, $hook, $callback)) {
 			fORM::registerHookCallback($class, $hook, $callback);
 		}
+		
+		fORM::registerReflectCallback(
+			$class,
+			array('fORMColumn', 'reflect')
+		);
 		
 		if (empty(self::$link_columns[$class])) {
 			self::$link_columns[$class] = array();	
@@ -269,17 +288,23 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
-		$hook     = 'replace::encode' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'encodeMoneyColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::encode' . $camelized_column . '()',
+			array('fORMColumn', 'encodeMoneyColumn')
+		);
 		
-		$hook     = 'replace::prepare' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'prepareMoneyColumn');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::prepare' . $camelized_column . '()',
+			array('fORMColumn', 'prepareMoneyColumn')
+		);
 		
 		$hook     = 'post::validate()';
 		$callback = array('fORMColumn', 'validateMoneyColumns');
@@ -287,8 +312,16 @@ class fORMColumn
 			fORM::registerHookCallback($class, $hook, $callback);
 		}
 		
-		$callback = array('fORMColumn', 'objectifyMoney');
-		fORM::registerObjectifyCallback($class, $column, $callback);
+		fORM::registerReflectCallback(
+			$class,
+			array('fORMColumn', 'reflect')
+		);
+		
+		fORM::registerObjectifyCallback(
+			$class,
+			$column,
+			array('fORMColumn', 'objectifyMoney')
+		);
 		
 		if (empty(self::$money_columns[$class])) {
 			self::$money_columns[$class] = array();	
@@ -299,7 +332,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Sets a column to be a random string column
+	 * Sets a column to be a random string column - a random string will be generated when the record is saved
 	 * 
 	 * @param  mixed   $class   The class name or instance of the class
 	 * @param  string  $column  The column to set as a random column
@@ -350,13 +383,17 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMColumn', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
 		
 		$hook     = 'pre::validate()';
 		$callback = array('fORMColumn', 'setRandomStrings');
-		fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, $hook, $callback)) {
+			fORM::registerHookCallback($class, $hook, $callback);
+		}
 		
 		if (empty(self::$random_columns[$class])) {
 			self::$random_columns[$class] = array();	
@@ -528,6 +565,78 @@ class fORMColumn
 		}
 		
 		return fHTML::prepare($value);
+	}
+	
+	
+	/**
+	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  string  $class                 The class to reflect
+	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
+	 * @return void
+	 */
+	static public function reflect($class, &$signatures, $include_doc_comments)
+	{
+		
+		if (isset(self::$link_columns[$class])) {
+			foreach(self::$link_columns[$class] as $column => $enabled) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
+					$signature .= " * \n";
+					$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
+					$signature .= " * \n";
+					$signature .= " * @return string  The HTML-ready value\n";
+					$signature .= " */\n";	
+				}
+				$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
+				$signature .= 'public function prepare' . $prepare_method . '()';	
+				
+				$signatures[$prepare_method] = $signature;
+			}	
+		}
+		
+		if (isset(self::$money_columns[$class])) {
+			foreach(self::$money_columns[$class] as $column => $enabled) {
+				$camelized_column = fGrammar::camelize($column, TRUE);
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Encodes the value of " . $column . " for output into an HTML form\n";
+					$signature .= " * \n";
+					$signature .= " * If the value is an fMoney object, the ->__toString() method will be called\n";
+					$signature .= " * resulting in the value minus the currency symbol and thousands separators\n";
+					$signature .= " * \n";
+					$signature .= " * @return string  The HTML form-ready value\n";
+					$signature .= " */\n";	
+				}
+				$encode_method = 'encode' . $camelized_column;
+				$signature .= 'public function ' . $encode_method . '()';	
+				
+				$signatures[$encode_method] = $signature;
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
+					$signature .= " * \n";
+					$signature .= " * If the value is an fMoney object, the ->format() method will be called\n";
+					$signature .= " * resulting in the value including the currency symbol and thousands separators\n";
+					$signature .= " * \n";
+					$signature .= " * @return string  The HTML-ready value\n";
+					$signature .= " */\n";	
+				}
+				$prepare_method = 'prepare' . $camelized_column;
+				$signature .= 'public function ' . $prepare_method . '()';	
+				
+				$signatures[$prepare_method] = $signature;
+			}	
+		}
 	}
 	
 	

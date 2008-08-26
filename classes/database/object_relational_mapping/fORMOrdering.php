@@ -53,7 +53,7 @@ class fORMOrdering
 		$found = FALSE;
 		foreach ($unique_keys as $unique_key) {
 			settype($unique_key, 'array');
-			if (array_search($column, $unique_key) !== FALSE) {
+			if (in_array($column, $unique_key)) {
 				$other_columns = array_diff($unique_key, array($column));
 				$found = TRUE;
 				break;
@@ -72,21 +72,34 @@ class fORMOrdering
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMOrdering', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMOrdering', 'inspect')
+		);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMOrdering', 'validate');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'post::validate()',
+			array('fORMOrdering', 'validate')
+		);
 		
-		$hook     = 'post-validate::store()';
-		$callback = array('fORMOrdering', 'reorder');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'post-validate::store()',
+			array('fORMOrdering', 'reorder')
+		);
 		
-		$hook     = 'pre-commit::delete()';
-		$callback = array('fORMOrdering', 'delete');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'pre-commit::delete()',
+			array('fORMOrdering', 'delete')
+		);
+		
+		fORM::registerReflectCallback(
+			$class,
+			array('fORMOrdering', 'reflect')
+		);
 		
 		// Ensure we only ever have one ordering column by overwriting
 		self::$ordering_columns[$class]['column']        = $column;	
@@ -273,6 +286,42 @@ class fORMOrdering
 		// If none of the multi-column values changed, the record must be part
 		// of the same set it was
 		return FALSE;		
+	}
+	
+	
+	/**
+	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  string  $class                 The class to reflect
+	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
+	 * @return void
+	 */
+	static public function reflect($class, &$signatures, $include_doc_comments)
+	{
+		if (!isset(self::$ordering_columns[$class])) {
+			return;	
+		}
+		
+		foreach(self::$ordering_columns[$class] as $column => $enabled) {
+			$camelized_column = fGrammar::camelize($column, TRUE);
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Returns metadata about " . $column . "\n";
+				$signature .= " * \n";
+				$signature .= " * @param  string \$element  The element to return. Must be one of: 'type', 'not_null', 'default', 'feature', 'max_ordering_value'.\n";
+				$signature .= " * @return mixed  The metadata array or a single element\n";
+				$signature .= " */\n";	
+			}
+			$inspect_method = 'inspect' . $camelized_column;
+			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
+			
+			$signatures[$inspect_method] = $signature;
+		}	
 	}
 	
 	

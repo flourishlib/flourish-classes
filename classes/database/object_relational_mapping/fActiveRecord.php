@@ -615,13 +615,15 @@ abstract class fActiveRecord
 		
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
+			$column_decimal_places = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'decimal_places');
+			
 			// If the user passed in a formatting value, use it
 			if ($formatting !== NULL && is_numeric($formatting)) {
 				$decimal_places = (int) $formatting;
 				
 			// If the column has a pre-defined number of decimal places, use that
-			} elseif ($column_info['decimal_places'] !== NULL) {
-				$decimal_places = $column_info['decimal_places'];
+			} elseif ($column_decimal_places !== NULL) {
+				$decimal_places = $column_decimal_places;
 			
 			// This figures out how many decimal places are part of the current value
 			} else {
@@ -706,8 +708,33 @@ abstract class fActiveRecord
 		
 		$info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
 		
+		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
+			unset($info['valid_values']);	
+			unset($info['max_length']);
+		}                                   
+		
+		if ($info['type'] != 'float') {
+			unset($info['decimal_places']);
+		}
+		
+		if ($info['type'] != 'integer') {
+			unset($info['auto_increment']);
+		}
+		
+		$info['feature'] = NULL;
+		
 		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;	
+			if (!isset($info[$element])) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+						fCore::dump($element),
+						join(', ', array_keys($info))
+					)
+				);	
+			}
+			return $info[$element];	
 		}
 		
 		return $info;
@@ -1007,6 +1034,249 @@ abstract class fActiveRecord
 		// proper data type for the column, so we just make sure it is marked
 		// up properly for display in HTML
 		return fHTML::prepare($value);
+	}
+	
+	
+	/**
+	 * Returns an array of method information for the class
+	 * 
+	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
+	 * @return string  A preformatted block of text with the method signatures and optionally the doc comment
+	 */
+	public function reflect($include_doc_comments=FALSE)
+	{
+		$signatures = array();
+		
+		$columns_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+		foreach ($columns_info as $column => $column_info) {
+			$camelized_column = fGrammar::camelize($column, TRUE);
+			
+			// Get and set methods
+			$signature = '';
+			if ($include_doc_comments) {
+				$fixed_type = $column_info['type'];
+				if ($fixed_type == 'blob') {
+					$fixed_type = 'string';	
+				}
+				if ($fixed_type == 'date') {
+					$fixed_type = 'fDate';	
+				}
+				if ($fixed_type == 'timestamp') {
+					$fixed_type = 'fTimestamp';	
+				}
+				if ($fixed_type == 'time') {
+					$fixed_type = 'fTime';	
+				}
+				
+				$signature .= "/**\n";
+				$signature .= " * Gets the current value of " . $column . "\n";
+				$signature .= " * \n";
+				$signature .= " * @return " . $fixed_type . "  The current value\n";
+				$signature .= " */\n";
+			}
+			$get_method = 'get' . $camelized_column;
+			$signature .= 'public function ' . $get_method . '()';
+			
+			$signatures[$get_method] = $signature;
+			
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$fixed_type = $column_info['type'];
+				if ($fixed_type == 'blob') {
+					$fixed_type = 'string';	
+				}
+				if ($fixed_type == 'date') {
+					$fixed_type = 'fDate|string';	
+				}
+				if ($fixed_type == 'timestamp') {
+					$fixed_type = 'fTimestamp|string';	
+				}
+				if ($fixed_type == 'time') {
+					$fixed_type = 'fTime|string';	
+				}
+				
+				$signature .= "/**\n";
+				$signature .= " * Sets the value for " . $column . "\n";
+				$signature .= " * \n";
+				$signature .= " * @param  " . $fixed_type . " \$" . $column . "  The new value\n";
+				$signature .= " * @return void\n";
+				$signature .= " */\n";
+			}
+			$set_method = 'set' . $camelized_column;
+			$signature .= 'public function ' . $set_method . '($' . $column . ')';
+			
+			$signatures[$set_method] = $signature;
+			
+			
+			// The encode method
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Encodes the value of " . $column . " for output into an HTML form\n";
+				$signature .= " * \n";
+				
+				if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
+					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
+				}
+				if (in_array($column_info['type'], array('float'))) {
+					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";		
+				}
+				
+				$signature .= " * @return string  The HTML form-ready value\n";
+				$signature .= " */\n";
+			}
+			$encode_method = 'encode' . $camelized_column;
+			$signature .= 'public function ' . $encode_method . '(';
+			if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
+				$signature .= '$date_formatting_string';		
+			}
+			if (in_array($column_info['type'], array('float'))) {
+				$signature .= '$decimal_places=NULL';		
+			}
+			$signature .= ')';
+			
+			$signatures[$encode_method] = $signature;
+			
+			
+			// The prepare method
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
+				$signature .= " * \n";
+				
+				if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
+					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
+				}
+				if (in_array($column_info['type'], array('float'))) {
+					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";		
+				}
+				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
+					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";;		
+				}
+				
+				$signature .= " * @return string  The HTML-ready value\n";
+				$signature .= " */\n";	
+			}
+			$prepare_method = 'prepare' . $camelized_column;
+			$signature .= 'public function ' . $prepare_method . '(';
+			if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
+				$signature .= '$date_formatting_string';		
+			}
+			if (in_array($column_info['type'], array('float'))) {
+				$signature .= '$decimal_places=NULL';		
+			}
+			if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
+				$signature .= '$create_links_and_line_breaks=FALSE';		
+			}
+			$signature .= ')';
+			
+			$signatures[$prepare_method] = $signature;
+			
+			
+			// The inspect method
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Returns metadata about " . $column . "\n";
+				$signature .= " * \n";
+				$elements = array('type', 'not_null', 'default');
+				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
+					$elements[] = 'valid_values';	
+					$elements[] = 'max_length';
+				}
+				if ($column_info['type'] == 'float') {
+					$elements[] = 'decimal_places';
+				}
+				if ($column_info['type'] == 'integer') {
+					$elements[] = 'auto_increment';
+				}
+				$signature .= " * @param  string \$element  The element to return. Must be one of: '" . join("', '", $elements) . "'.\n";
+				$signature .= " * @return mixed  The metadata array or a single element\n";
+				$signature .= " */\n";	
+			}
+			$inspect_method = 'inspect' . $camelized_column;
+			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
+			
+			$signatures[$inspect_method] = $signature;
+		}
+		
+		fORMRelated::reflect($this, $signatures, $include_doc_comments);
+		
+		fORM::callReflectCallbacks($this, $signatures, $include_doc_comments);
+		
+		$reflection = new ReflectionClass(get_class($this));
+		$methods    = $reflection->getMethods();
+		
+		foreach ($methods as $method) {
+			$signature = '';
+			
+			if (!$method->isPublic() || $method->getName() == '__call') {
+				continue;	
+			}
+			
+			if ($method->isFinal()) {
+				$signature .= 'final ';
+			}	
+			
+			if ($method->isAbstract()) {
+				$signature .= 'abstract ';
+			}
+			
+			if ($method->isStatic()) {
+				$signature .= 'static ';
+			}
+			
+			$signature .= 'public function ';
+			
+			if ($method->returnsReference()) {
+				$signature .= '&';	
+			}
+			
+			$signature .= $method->getName();
+			$signature .= '(';
+			
+			$parameters = $method->getParameters();
+			foreach ($parameters as $parameter) {
+				if (substr($signature, -1) == '(') { 
+					$signature .= '';
+				} else {
+					$signature .= ', ';
+				}	
+				
+				$signature .= '$' . $parameter->getName();	
+				
+				if ($parameter->isDefaultValueAvailable()) {
+					$val = var_export($parameter->getDefaultValue(), TRUE);	
+					if ($val == 'true') {
+						$val = 'TRUE';	
+					}
+					if ($val == 'false') {
+						$val = 'FALSE';	
+					}
+					if (is_array($parameter->getDefaultValue())) {
+						$val = preg_replace('#array\s+\(\s+#', 'array(', $val);
+						$val = preg_replace('#,(\r)?\n  #', ', ', $val);
+						$val = preg_replace('#,(\r)?\n\)#', ')', $val);	
+					}
+					$signature .= '=' . $val; 		
+				}
+			}
+			
+			$signature .= ')';
+			
+			if ($include_doc_comments) {
+				$comment = $method->getDocComment();
+				$comment = preg_replace('#^\t+#m', '', $comment);
+				$signature = $comment . "\n" . $signature;
+			}
+			$signatures[$method->getName()] = $signature;
+		}
+		
+		ksort($signatures);
+		
+		return join("\n\n", $signatures);
 	}
 	
 	

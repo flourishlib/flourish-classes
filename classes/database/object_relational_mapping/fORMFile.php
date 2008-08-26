@@ -228,28 +228,46 @@ class fORMFile
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		$hook     = 'replace::inspect' . $camelized_column . '()';
-		$callback = array('fORMFile', 'inspect');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMFile', 'inspect')
+		);
 		
-		$hook     = 'replace::upload' . $camelized_column . '()';
-		$callback = array('fORMFile', 'upload');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::upload' . $camelized_column . '()',
+			array('fORMFile', 'upload')
+		);
 		
-		$hook     = 'replace::set' . $camelized_column . '()';
-		$callback = array('fORMFile', 'set');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::set' . $camelized_column . '()',
+			array('fORMFile', 'set')
+		);
 		
-		$hook     = 'replace::encode' . $camelized_column . '()';
-		$callback = array('fORMFile', 'encode');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::encode' . $camelized_column . '()',
+			array('fORMFile', 'encode')
+		);
 		
-		$hook     = 'replace::prepare' . $camelized_column . '()';
-		$callback = array('fORMFile', 'prepare');
-		fORM::registerHookCallback($class, $hook, $callback);
+		fORM::registerHookCallback(
+			$class,
+			'replace::prepare' . $camelized_column . '()',
+			array('fORMFile', 'prepare')
+		);
 		
-		$callback = array('fORMFile', 'objectify');
-		fORM::registerObjectifyCallback($class, $column, $callback);
+		fORM::registerReflectCallback(
+			$class,
+			array('fORMFile', 'reflect')
+		);
+		
+		fORM::registerObjectifyCallback(
+			$class,
+			$column,
+			array('fORMFile', 'objectify')
+		);
 		
 		$only_once_hooks = array(
 			'post-begin::delete()'    => array('fORMFile', 'begin'),
@@ -460,6 +478,8 @@ class fORMFile
 			$info['feature'] = 'file';	
 		}
 		
+		$info['directory'] = self::$file_upload_columns[$class][$column]->getPath();
+		
 		if ($element) {
 			return (isset($info[$element])) ? $info[$element] : NULL;	
 		}
@@ -636,6 +656,132 @@ class fORMFile
 	
 	
 	/**
+	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  string  $class                 The class to reflect
+	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
+	 * @return void
+	 */
+	static public function reflect($class, &$signatures, $include_doc_comments)
+	{
+		$image_columns = (isset(self::$image_upload_columns[$class])) ? array_keys(self::$image_upload_columns[$class]) : array();
+		$file_columns  = (isset(self::$file_upload_columns[$class]))  ? array_keys(self::$file_upload_columns[$class])  : array();
+		
+		foreach(self::$link_columns[$class] as $column => $enabled) {
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
+				$signature .= " * \n";
+				$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
+				$signature .= " * \n";
+				$signature .= " * @return string  The HTML-ready value\n";
+				$signature .= " */\n";	
+			}
+			$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
+			$signature .= 'public function prepare' . $prepare_method . '()';	
+			
+			$signatures[$prepare_method] = $signature;
+		}	
+		
+		foreach($file_columns as $column) {
+			$camelized_column = fGrammar::camelize($column, TRUE);
+			
+			$noun = 'file';
+			if (in_array($column, $image_columns)) {
+				$noun = 'image';	
+			}
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Encodes the filename of " . $column . " for output into an HTML form\n";
+				$signature .= " * \n";
+				$signature .= " * Only the filename will be returned, any directory will be stripped.\n";
+				$signature .= " * \n";
+				$signature .= " * @return string  The HTML form-ready value\n";
+				$signature .= " */\n";	
+			}
+			$encode_method = 'encode' . $camelized_column;
+			$signature .= 'public function ' . $encode_method . '()';	
+			
+			$signatures[$encode_method] = $signature;
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Prepares the filename of " . $column . " for output into HTML\n";
+				$signature .= " * \n";
+				$signature .= " * By default only the filename will be returned and any directory will be stripped.\n";
+				$signature .= " * The \$include_web_path parameter changes this behaviour.\n";
+				$signature .= " * \n";
+				$signature .= " * @param  boolean \$include_web_path  If the full web path to the " . $noun . " should be included\n";
+				$signature .= " * @return string  The HTML-ready value\n";
+				$signature .= " */\n";	
+			}
+			$prepare_method = 'prepare' . $camelized_column;
+			$signature .= 'public function ' . $prepare_method . '($include_web_path=FALSE)';	
+			
+			$signatures[$prepare_method] = $signature;
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Takes a file uploaded through an HTML form for " . $column . " and moves it into the specified directory\n";
+				$signature .= " * \n";
+				$signature .= " * Any columns that were designated as inheriting from this column will get a copy\n";
+				$signature .= " * of the uploaded file.\n";
+				$signature .= " * \n";
+				if ($noun == 'image') {
+					$signature .= " * Any fImage calls that were added to the column will be processed on the uploaded image.\n";
+					$signature .= " * \n";
+				}
+				$signature .= " * @return void\n";
+				$signature .= " */\n";	
+			}
+			$upload_method = 'upload' . $camelized_column;
+			$signature .= 'public function ' . $upload_method . '()';	
+			
+			$signatures[$upload_method] = $signature;
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Takes a file that exists on the filesystem and copies it into the specified directory for " . $column . "\n";
+				$signature .= " * \n";
+				if ($noun == 'image') {
+					$signature .= " * Any fImage calls that were added to the column will be processed on the copied image.\n";
+					$signature .= " * \n";
+				}
+				$signature .= " * @return void\n";
+				$signature .= " */\n";	
+			}
+			$set_method = 'set' . $camelized_column;
+			$signature .= 'public function ' . $set_method . '()';	
+			
+			$signatures[$set_method] = $signature;
+			
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Returns metadata about " . $column . "\n";
+				$signature .= " * \n";
+				$signature .= " * @param  string \$element  The element to return. Must be one of: 'type', 'not_null', 'default', 'valid_values', 'max_length', 'feature', 'directory'.\n";
+				$signature .= " * @return mixed  The metadata array or a single element\n";
+				$signature .= " */\n";	
+			}
+			$inspect_method = 'inspect' . $camelized_column;
+			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
+			
+			$signatures[$inspect_method] = $signature;
+		}	
+	}
+	
+	
+	/**
 	 * Rolls back a transaction, or decreases the level
 	 * 
 	 * @internal
@@ -658,7 +804,9 @@ class fORMFile
 	
 	
 	/**
-	 * Copies a file from the filesystem to the file upload directory and sets it as the file for the specified column 
+	 * Copies a file from the filesystem to the file upload directory and sets it as the file for the specified column
+	 * 
+	 * This method will perform the fImage calls defined for the column. 
 	 * 
 	 * @internal
 	 * 
@@ -714,6 +862,8 @@ class fORMFile
 		
 		$old_values[$column][] = $values[$column];
 		$values[$column]       = $new_file;
+		
+		self::processImage($class, $column, $new_file);
 	}
 	
 	
