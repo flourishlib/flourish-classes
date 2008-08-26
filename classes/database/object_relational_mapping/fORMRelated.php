@@ -92,13 +92,16 @@ class fORMRelated
 		
 		} else {
 			// When joining to the same table, we have to use a different column
-			if ($related_class == fORM::getClassName($class)) {
-				$column = $relationship['related_column'];
+			$same_class = $related_class == fORM::getClassName($class);
+			if ($same_class && isset($relationship['join_table'])) {
+				$column = $table . '{' . $relationship['join_table'] . '}.' . $relationship['column'];
+			} elseif ($same_class) {
+				$column = $table . '.' . $relationship['related_column'];
 			} else {
-				$column = $relationship['column'];	
+				$column = $table . '.' . $relationship['column'];	
 			}
 			
-			$where_conditions = array($table . '.' . $column . '=' => $values[$relationship['column']]);
+			$where_conditions = array($column . '=' => $values[$relationship['column']]);
 			$order_bys        = self::getOrderBys($class, $related_class, $route);
 			$record_set       = fRecordSet::build($related_class, $where_conditions, $order_bys);
 		}

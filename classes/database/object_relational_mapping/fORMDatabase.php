@@ -234,9 +234,6 @@ class fORMDatabase
 				'on_clause_fields' => array()
 			);
 			
-			$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
-			$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_column'];
-			
 			$join2 = array(
 				'join_type' => 'INNER JOIN',
 				'table_name' => $related_table,
@@ -245,8 +242,17 @@ class fORMDatabase
 				'on_clause_fields' => array()
 			);
 			
-			$join2['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_related_column'];
-			$join2['on_clause_fields'][] = $join2['table_alias'] . '.' . $routes[$route]['related_column'];
+			if ($table != $related_table) {
+				$join['on_clause_fields'][]  = $table_alias . '.' . $routes[$route]['column'];
+				$join['on_clause_fields'][]  = $join['table_alias'] . '.' . $routes[$route]['join_column'];
+				$join2['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_related_column'];
+				$join2['on_clause_fields'][] = $join2['table_alias'] . '.' . $routes[$route]['related_column'];
+			} else {
+				$join['on_clause_fields'][]  = $table_alias . '.' . $routes[$route]['column'];
+				$join['on_clause_fields'][]  = $join['table_alias'] . '.' . $routes[$route]['join_related_column'];
+				$join2['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['join_column'];
+				$join2['on_clause_fields'][] = $join2['table_alias'] . '.' . $routes[$route]['related_column'];
+			}
 			
 			$joins[$table . '_' . $related_table . '{' . $route . '}_join'] = $join;
 			$joins[$table . '_' . $related_table . '{' . $route . '}'] = $join2;
@@ -668,6 +674,8 @@ class fORMDatabase
 			);
 		}
 		
+		$used_aliases[] = $table_alias;
+		
 		foreach ($matches[0] as $match) {
 			if ($match[0] != "'") {
 				preg_match_all('#\b((?:(\w+)(?:\{(\w+)\})?=>)?(\w+)(?:\{(\w+)\})?)\.\w+\b#m', $match, $table_matches, PREG_SET_ORDER);
@@ -695,7 +703,7 @@ class fORMDatabase
 						$table_map[$table_match[1]] = $joins[$join_name]['table_alias'];
 					
 					// This is a related table
-					} elseif ($table_match[4] != $table) {
+					} elseif (($table_match[4] != $table || fORMSchema::getRoutes($table, $table_match[4])) && $table_match[1] != $table) {
 					
 						$related_table = $table_match[4];
 						$route = fORMSchema::getRouteName($table, $related_table, $table_match[5]);
