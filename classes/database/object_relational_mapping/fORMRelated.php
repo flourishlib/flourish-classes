@@ -61,30 +61,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Builds the object for the related class specified
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed  $class          The class name or instance of the class to get the related values for
-	 * @param  array  $values         The values existing in the {@link fActiveRecord} class
-	 * @param  string $related_class  The related class name
-	 * @param  string $route          The route to the related class
-	 * @return fActiveRecord  An instace of the class specified
-	 */
-	static public function constructRecord($class, $values, $related_class, $route=NULL)
-	{
-		$table = fORM::tablize($class);
-		
-		$related_table = fORM::tablize($related_class);
-		
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-one');
-		
-		return new $related_class($values[$relationship['column']]);
-	}
-	
-	
-	/**
-	 * Builds a sequence of related records along a one-to-many or many-to-many relationship
+	 * Builds a set of related records along a one-to-many or many-to-many relationship
 	 * 
 	 * @internal
 	 * 
@@ -95,7 +72,7 @@ class fORMRelated
 	 * @param  string $route             The route to follow for the class specified
 	 * @return array  An array of the related column values
 	 */
-	static public function constructRecordSet($class, &$values, &$related_records, $related_class, $route=NULL)
+	static public function buildRecords($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
@@ -185,6 +162,29 @@ class fORMRelated
 		self::tallyRecords($class, $related_records, $related_class, $count, $route);
 		
 		return $count;
+	}
+	
+	
+	/**
+	 * Builds the object for the related class specified
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class          The class name or instance of the class to get the related values for
+	 * @param  array  $values         The values existing in the {@link fActiveRecord} class
+	 * @param  string $related_class  The related class name
+	 * @param  string $route          The route to the related class
+	 * @return fActiveRecord  An instace of the class specified
+	 */
+	static public function createRecord($class, $values, $related_class, $route=NULL)
+	{
+		$table = fORM::tablize($class);
+		
+		$related_table = fORM::tablize($related_class);
+		
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-one');
+		
+		return new $related_class($values[$relationship['column']]);
 	}
 	
 	

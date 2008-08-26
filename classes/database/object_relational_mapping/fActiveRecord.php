@@ -117,9 +117,9 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::buildRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::constructRecordSet($this, $this->values, $this->related_records, $subject);
+				return fORMRelated::buildRecords($this, $this->values, $this->related_records, $subject);
 			
 			case 'count':
 				$subject = fGrammar::singularize($subject);
@@ -134,9 +134,9 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::constructRecord($this, $this->values, $subject, $parameters[0]);
+					return fORMRelated::createRecord($this, $this->values, $subject, $parameters[0]);
 				}
-				return fORMRelated::constructRecord($this, $this->values, $subject);
+				return fORMRelated::createRecord($this, $this->values, $subject);
 			 
 			case 'inject': 
 				$subject = fGrammar::singularize($subject); 
