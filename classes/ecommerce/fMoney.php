@@ -220,7 +220,7 @@ class fMoney
 					','
 				),
 				'',
-				$amount
+				($amount instanceof fNumber) ? $amount->__toString() : $amount
 			);
 		}
 		
