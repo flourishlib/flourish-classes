@@ -199,7 +199,15 @@ class fBuffer
 				)
 			);
 		}
-		ob_end_flush();
+		
+		// Only flush if there is content to push out, otherwise
+		// we might prevent headers from being sent
+		if (ob_get_contents()) {
+			ob_end_flush();
+		} else {
+			ob_end_clean();	
+		}
+		
 		self::$started = FALSE;
 	}
 	

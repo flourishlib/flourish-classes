@@ -152,6 +152,31 @@ class fTemplating
 	
 	
 	/**
+	 * Erases all output since the invocation of the template - only works if buffering is on
+	 * 
+	 * @return void
+	 */
+	public function destroy()
+	{
+		if (!$this->buffered_id) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'A template can only be destroyed if buffering has been enabled'
+				)
+			);	
+		}
+		
+		$this->buffered_id = NULL;
+		
+		fBuffer::erase();
+		fBuffer::stop();
+		
+		$this->__destruct();
+	}
+	
+	
+	/**
 	 * Gets the value of an element
 	 * 
 	 * @param  string $element        The element to get
