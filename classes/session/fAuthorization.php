@@ -358,6 +358,18 @@ class fAuthorization
 	
 	
 	/**
+	 * Sets the restricted URL requested by the user 
+	 * 
+	 * @param  string  $url  The URL to save as the requested URL
+	 * @return void
+	 */
+	static public function setRequestedURL($url)
+	{
+		fSession::set('requested_url', $url, self::SESSION_PREFIX);
+	}
+	
+	
+	/**
 	 * Sets the ACLs for the logged in user.
 	 * 
 	 * Array should be formatted like:
