@@ -252,7 +252,7 @@ class fCRUD
 	static public function printOption($text, $value, $selected_value=NULL)
 	{
 		$selected = FALSE;
-		if ($value == $selected_value || is_array($selected_value) && in_array($value, $selected_value)) {
+		if ($value == $selected_value || (is_array($selected_value) && in_array($value, $selected_value))) {
 			$selected = TRUE;
 		}
 		
@@ -262,10 +262,7 @@ class fCRUD
 		}
 		echo '>' . fHTML::prepare($text) . '</option>';
 	}
-	
-	
-	
-	
+		
 	
 	/**
 	 * Checks to see if any values (search or sort) were loaded from the session, and if so redirects the user to the current URL with those values added
@@ -406,6 +403,26 @@ class fCRUD
 	static private function setPreviousSortDirection($sort_direction)
 	{
 		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, 'fCRUD::');
+	}
+	
+	
+	/**
+	 * Prints a checked="checked" HTML input attribute if $value == $checked_value, or if $value is in $checked_value
+	 * 
+	 * @param  string       $value          The value for the current HTML input tag
+	 * @param  string|array $checked_value  The value (or array of values) that has been checked
+	 * @return void
+	 */
+	static public function showChecked($value, $checked_value)
+	{
+		$checked = FALSE;
+		if ($value == $checked_value || (is_array($checked_value) && in_array($value, $checked_value))) {
+			$checked = TRUE;
+		}
+		
+		if ($checked) {
+			echo ' checked="checked"';
+		}
 	}
 	
 	
