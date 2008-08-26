@@ -212,10 +212,20 @@ class fORMValidation
 				join(', ', $column_info['valid_values'])
 			);
 		}
+		
 		// Make sure the value isn't too long
-		if (isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
+		if ($column_info['type'] == 'varchar' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
 			return fGrammar::compose(
 				'%1$s: Please enter a value no longer than %2$s characters',
+				fORM::getColumnName($class, $column),
+				$column_info['max_length']
+			);
+		}
+		
+		// Make sure the value is the proper length
+		if ($column_info['type'] == 'char' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) != $column_info['max_length']) {
+			return fGrammar::compose(
+				'%1$s: Please enter exactly %2$s characters',
 				fORM::getColumnName($class, $column),
 				$column_info['max_length']
 			);
