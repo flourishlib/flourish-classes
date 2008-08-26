@@ -303,7 +303,7 @@ class fSchema implements fISchema
 			}
 			
 			// Handle the special data for varchar columns
-			if ($info['type'] == 'varchar') {
+			if (in_array($info['type'], array('char', 'varchar'))) {
 				$info['max_length'] = $row['max_length'];
 			}
 			
@@ -541,7 +541,7 @@ class fSchema implements fISchema
 			}
 			
 			// Type specific information
-			if ($info['type'] == 'varchar') {
+			if (in_array($info['type'], array('char', 'varchar'))) {
 				$info['max_length'] = $match[3];
 			}
 			
@@ -744,7 +744,7 @@ class fSchema implements fISchema
 			} 
 			
 			// Handle the special data for varchar fields
-			if ($info['type'] == 'varchar') {
+			if (in_array($info['type'], array('char', 'varchar'))) {
 				$info['max_length'] = $column_data_type[2];
 			}
 			
@@ -972,7 +972,7 @@ class fSchema implements fISchema
 			}
 		
 			// Type specific information
-			if (stripos($match[2], 'varchar') === 0) {
+			if (in_array($info['type'], array('char', 'varchar'))) {
 				$info['max_length'] = $match[3];
 			}
 			
