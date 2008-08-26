@@ -518,6 +518,17 @@ class fORMValidation
 		foreach ($unique_keys AS $unique_columns) {
 			settype($unique_columns, 'array');
 			if (in_array($column, $unique_columns)) {
+				// NULL values are unique
+				$found_not_null = FALSE;
+				foreach ($unique_columns as $unique_column) {
+					if ($values[$unique_column] !== NULL) {
+						$found_not_null = TRUE;
+					}	
+				}
+				if (!$found_not_null) {
+					continue;	
+				}
+				
 				$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
 				$column_num = 0;
 				foreach ($unique_columns as $unique_column) {
