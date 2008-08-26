@@ -54,7 +54,7 @@ class fORMRelated
 			$new_primary_keys[] = $primary_key;
 		}
 		
-		$records = fRecordSet::createFromPrimaryKeys($related_class, $primary_keys);
+		$records = fRecordSet::buildFromPrimaryKeys($related_class, $primary_keys);
 		self::setRecords($class, $related_records, $related_class, $records, $route);
 		$records->flagForAssociation();
 	}
@@ -111,7 +111,7 @@ class fORMRelated
 		
 		// Determine how we are going to build the sequence
 		if ($values[$relationship['column']] === NULL) {
-			$record_set = fRecordSet::createEmpty($related_class);
+			$record_set = fRecordSet::buildFromRecords($related_class, array());
 		
 		} else {
 			// When joining to the same table, we have to use a different column
@@ -123,7 +123,7 @@ class fORMRelated
 			
 			$where_conditions = array($table . '.' . $column . '=' => $values[$relationship['column']]);
 			$order_bys        = self::getOrderBys($class, $related_class, $route);
-			$record_set       = fRecordSet::create($related_class, $where_conditions, $order_bys);
+			$record_set       = fRecordSet::build($related_class, $where_conditions, $order_bys);
 		}
 		
 		self::setRecords($class, $related_records, $related_class, $record_set, $route);
@@ -231,7 +231,7 @@ class fORMRelated
 	 * @param  mixed  $class          The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class  The related class the ordering rules apply to
 	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
-	 * @return array  An array of the order bys (see {@link fRecordSet::create()} for format)
+	 * @return array  An array of the order bys (see {@link fRecordSet::build()} for format)
 	 */
 	static public function getOrderBys($class, $related_class, $route)
 	{
@@ -390,12 +390,7 @@ class fORMRelated
 			fRequest::unfilter();
 		}
 		
-		if (empty($records)) {
-			$record_set = fRecordSet::createEmpty($related_class);	
-		} else {
-			$record_set = fRecordSet::createFromObjects($records);
-		}
-		
+		$record_set = fRecordSet::buildFromRecords($related_class, $records);
 		$record_set->flagForAssociation();
 		self::setRecords($class, $related_records, $related_class, $record_set, $route);
 	}
@@ -535,7 +530,7 @@ class fORMRelated
 	 * @param  mixed  $class           The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class   The related class we are getting info from
 	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
-	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::create()} for format)
+	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::build()} for format)
 	 * @return void
 	 */
 	static public function setOrderBys($class, $related_class, $route, $order_bys)
@@ -608,7 +603,7 @@ class fORMRelated
 		);
 		
 		$related_class    = $record_set->getClassName();
-		$existing_records = fRecordSet::create($related_class, $where_conditions);
+		$existing_records = fRecordSet::build($related_class, $where_conditions);
 		
 		$existing_primary_keys  = $existing_records->getPrimaryKeys();
 		$new_primary_keys       = $record_set->getPrimaryKeys();

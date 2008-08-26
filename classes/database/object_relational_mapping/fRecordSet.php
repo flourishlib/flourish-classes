@@ -75,7 +75,7 @@ class fRecordSet implements Iterator
 	 * @param  integer $offset            The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function create($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
+	static public function build($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
 		self::configure($class_name);
 		
@@ -125,51 +125,17 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an empty {@link fRecordSet}
-	 * 
-	 * @throws fValidationException
-	 * @internal
-	 * 
-	 * @param  string $class_name  The type of object to create
-	 * @return fRecordSet  A set of {@link fActiveRecord} objects
-	 */
-	static public function createEmpty($class_name)
-	{
-		self::configure($class_name);
-		
-		$table_name = fORM::tablize($class_name);
-		
-		settype($primary_keys, 'array');
-		$primary_keys = array_merge($primary_keys);
-		
-		$sql  = 'SELECT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
-		$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);
-		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql));
-	}
-	
-	
-	/**
 	 * Creates an {@link fRecordSet} from an array of records
 	 * 
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  array $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  string $class_name  The type of object to create
+	 * @param  array  $records     The records to create the set from, the order of the record set will be the same as the order of the array.
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function createFromObjects($records)
+	static public function buildFromRecords($class_name, $records)
 	{
-		if (empty($records)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'You can not build a record set from an empty array of records'
-				)
-			);	
-		}
-		
-		$class_name = get_class($records[0]);
 		self::configure($class_name);
 		$table_name = fORM::tablize($class_name);
 		
@@ -208,6 +174,11 @@ class fRecordSet implements Iterator
 			$i++;
 		}
 		
+		// Empty sets have SQL that won't return anything
+		if (sizeof($records) == 0) {
+			$sql .= " 0 = 1";	
+		}
+		
 		$result = new fResult('array');
 		$result->setResult(array());
 		$result->setReturnedRows(sizeof($records));
@@ -228,10 +199,10 @@ class fRecordSet implements Iterator
 	 * 
 	 * @param  string  $class_name    The type of object to create
 	 * @param  array   $primary_keys  The primary keys of the objects to create
-	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::create()} for format)
+	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::build()} for format)
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function createFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
+	static public function buildFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
 	{
 		self::configure($class_name);
 		
@@ -330,7 +301,7 @@ class fRecordSet implements Iterator
 	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function createFromSQL($class_name, $sql, $non_limited_count_sql=NULL)
+	static public function buildFromSQL($class_name, $sql, $non_limited_count_sql=NULL)
 	{
 		self::configure($class_name);
 		
