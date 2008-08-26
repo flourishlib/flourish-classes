@@ -112,8 +112,16 @@ class fORMRelated
 		// Determine how we are going to build the sequence
 		if ($values[$relationship['column']] === NULL) {
 			$record_set = fRecordSet::createEmpty($related_class);
+		
 		} else {
-			$where_conditions = array($table . '.' . $relationship['column'] . '=' => $values[$relationship['column']]);
+			// When joining to the same table, we have to use a different column
+			if ($related_class == fORM::getClassName($class)) {
+				$column = $relationship['related_column'];
+			} else {
+				$column = $relationship['column'];	
+			}
+			
+			$where_conditions = array($table . '.' . $column . '=' => $values[$relationship['column']]);
 			$order_bys        = self::getOrderBys($class, $related_class, $route);
 			$record_set       = fRecordSet::create($related_class, $where_conditions, $order_bys);
 		}
