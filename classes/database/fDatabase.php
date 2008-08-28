@@ -652,9 +652,7 @@ class fDatabase
 	/**
 	 * Escapes a date for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL value will be returned as 'NULL'
-	 * 
-	 * @throws fValidationException
+	 * A NULL or invalid value will be returned as 'NULL'
 	 * 
 	 * @param  string $value  The date to escape
 	 * @return string  The escaped date
@@ -664,15 +662,8 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';	
 		}
-		
 		if (!strtotime($value)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The value provided, %s, is not a valid date',
-					fCore::dump($value)
-				)
-			);
+			return 'NULL';
 		}
 		return "'" . date('Y-m-d', strtotime($value)) . "'";
 	}
@@ -691,15 +682,20 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';	
 		}
-		
-		return (float) $value;
+		if (!strlen($value)) {
+			return 'NULL';	
+		}
+		if (!preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#', $value)) {
+			return 'NULL';	
+		}
+		return (string) $value;
 	}
 	
 	
 	/**
 	 * Escapes an integer for use in SQL
 	 * 
-	 * A NULL value will be returned as 'NULL'
+	 * A NULL or invalid value will be returned as 'NULL'
 	 * 
 	 * @param  integer $value  The integer to escape
 	 * @return string  The escaped integer
@@ -709,8 +705,13 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';	
 		}
-		
-		return (int) $value;
+		if (!strlen($value)) {
+			return 'NULL';	
+		}
+		if (!preg_match('#^[+\-]?[0-9]+$#', $value)) {
+			return 'NULL';	
+		}
+		return (string) $value;
 	}
 	
 	
@@ -792,9 +793,7 @@ class fDatabase
 	/**
 	 * Escapes a time for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL value will be returned as 'NULL'
-	 * 
-	 * @throws fValidationException
+	 * A NULL or invalid value will be returned as 'NULL'
 	 * 
 	 * @param  string $value  The time to escape
 	 * @return string  The escaped time
@@ -804,15 +803,8 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';	
 		}
-		
 		if (!strtotime($value)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The value provided, %s, is not a valid time',
-					fCore::dump($value)
-				)
-			);
+			return 'NULL';
 		}
 		return "'" . date('H:i:s', strtotime($value)) . "'";
 	}
@@ -821,9 +813,7 @@ class fDatabase
 	/**
 	 * Escapes a timestamp for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL value will be returned as 'NULL'
-	 * 
-	 * @throws fValidationException
+	 * A NULL or invalid value will be returned as 'NULL'
 	 * 
 	 * @param  string $value  The timestamp to escape
 	 * @return string  The escaped timestamp
@@ -833,15 +823,8 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';	
 		}
-		
 		if (!strtotime($value)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The value provided, %s, is not a valid timestamp',
-					fCore::dump($value)
-				)
-			);
+			return 'NULL';
 		}
 		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
 	}
@@ -1567,7 +1550,7 @@ class fDatabase
 	 */
 	public function unescapeFloat($value)
 	{
-		return (float) $value;
+		return $value;
 	}
 	
 	
@@ -1579,7 +1562,7 @@ class fDatabase
 	 */
 	public function unescapeInteger($value)
 	{
-		return (integer) $value;
+		return $value;
 	}
 	
 	
