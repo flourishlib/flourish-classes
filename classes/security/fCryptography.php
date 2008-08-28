@@ -84,7 +84,7 @@ class fCryptography
 		$output = '';
 		
 		for ($i = 0; $i < $length; $i++) {
-			$output .= $alphabet[rand(0, $alphabet_length-1)];
+			$output .= $alphabet[self::random(0, $alphabet_length-1)];
 		}
 		
 		return $output;
@@ -253,6 +253,46 @@ class fCryptography
 		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
 		
 		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
+	}
+	
+	
+	/**
+	 * Generates a random number using mt_rand() - make sure {@link seedRandom()} has been called
+	 * 
+	 * @param  integer $min  The minimum number to return
+	 * @param  integer $max  The maximum number to return
+	 * @return integer  The psuedo-random number
+	 */
+	static public function random($min=NULL, $max=NULL)
+	{
+		self::seedRandom();
+		if ($min !== NULL || $max !== NULL) {
+			return mt_rand($min, $max); 		
+		}
+		return mt_rand();
+	}
+	
+	
+	/**
+	 * Makes sure that the PRNG has been seeded with a fairly secure value
+	 * 
+	 * @return void
+	 */
+	static private function seedRandom()
+	{
+		static $seeded = FALSE;
+		
+		if ($seeded) {
+			return;	
+		}
+		
+		$seed = md5(microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__));
+		$seed = base_convert($seed, 16, 10);
+		$seed = (double) substr($seed, 0, 13) + (double) substr($seed, 14, 13);
+		
+		mt_srand($seed);
+		
+		$seeded = TRUE;
 	}
 	
 	
