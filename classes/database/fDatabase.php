@@ -1543,7 +1543,7 @@ class fDatabase
 	 */
 	public function unescapeBoolean($value)
 	{
-		return ($value == 'f' || !$value) ? FALSE : TRUE;
+		return ($value === 'f' || !$value) ? FALSE : TRUE;
 	}
 	
 	
