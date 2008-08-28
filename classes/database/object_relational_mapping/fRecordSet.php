@@ -436,6 +436,22 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Calls a specific method on each object, returning an array of the results
+	 * 
+	 * @return array  An array the size of the record set with one result from each record/method
+	 */
+	public function call($method)
+	{
+		$output = array();
+		$this->createAllRecords();
+		foreach ($this->records as $record) {
+			$output[] = $record->$method();
+		}	
+		return $output;
+	}
+	
+	
+	/**
 	 * Creates an order by clause for the primary keys of this record set
 	 * 
 	 * @return string  The order by clause 
@@ -625,6 +641,42 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Filters the record set via a callback
+	 * 
+	 * @param  callback $callback  The callback can be either a callback that accepts a single parameter and returns a boolean, or a string like '{record}::methodName' to filter based on the output of $record->methodName()
+	 * @return fRecordSet  A new fRecordSet with the filtered records
+	 */
+	public function filter($callback)
+	{
+		$this->createAllRecords();
+		
+		if (!$this->records) {
+			return clone $this;	
+		}
+		
+		$call_filter = FALSE;
+		if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $callback, $matches)) {
+			$call_filter = TRUE;
+			$method      = $matches[1];
+		}
+			
+		$new_records = array();
+		foreach ($this->records as $record) {
+			if ($call_filter) {
+				$value = $record->$method();
+			} else {
+				$value = call_user_func($callback, $record);
+			}
+			if ($value) {
+				$new_records[] = $record;	
+			}
+		}	
+		
+		return self::buildFromRecords($this->class_name, $new_records);
+	}
+	
+	
+	/**
 	 * Flags this record set for association with the {@link fActiveRecord} object that references it
 	 * 
 	 * @internal
@@ -731,6 +783,76 @@ class fRecordSet implements Iterator
 	public function key()
 	{
 		return $this->pointer;
+	}
+	
+	
+	/**
+	 * Performs an array_map on the record in the set
+	 * 
+	 * The record will be passed to the callback as the first parameter unless
+	 * it's position is specified by the placeholder string '{record}'. More
+	 * details further down.
+	 * 
+	 * Additional parameters can be passed to the callback in one of two
+	 * different ways:
+	 *  - Passing a non-array value will cause it to be passed to the callback
+	 *  - Passing an array value will cause the array values to be passed to the callback with their corresponding record
+	 *  
+	 * If an array parameter is too long (more items than records in the set)
+	 * it will be truncated. If an array parameter is too short (less items
+	 * than records in the set) it will be padded with NULL values.
+	 * 
+	 * To allow passing the record as a specific parameter to the callback, a
+	 * placeholder string '{record}' will be replaced with a the record. You
+	 * can also specify '{record}::methodName' to cause the output of a method
+	 * from the record to be passed instead of the whole record.
+	 * 
+	 * @param  callback $callback       The callback to pass the values to
+	 * @param  mixed    $parameter,...  The parameter to pass to the callback - see method description for details
+	 * @return array  An array of the results from the callback
+	 */
+	public function map($callback)
+	{
+		$parameters = array_slice(func_get_args(), 1);
+		
+		$this->createAllRecords();
+		
+		if (!$this->records) {
+			return array();	
+		}
+		
+		$parameters_array = array();
+		$found_record     = FALSE;
+		$total_records    = sizeof($this->records);
+		
+		foreach ($parameters as $parameter) {
+			if (!is_array($parameter)) {
+				if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $parameter, $matches)) {
+					$parameters_array[] = $this->call($matches[1]);	
+					$found_record = TRUE;
+				} elseif ($parameter == '{record}') {
+					$parameters_array[] = $this->records;
+					$found_record = TRUE;
+				} else {
+					$parameters_array[] = array_pad(array(), $total_records, $parameter);
+				}
+				
+			} elseif (sizeof($parameter) > $total_records) {
+				$parameters_array[] = array_slice($parameter, 0, $total_records);	
+			} elseif (sizeof($parameter) < $total_records) {
+				$parameters_array[] = array_pad($parameter, $total_records, NULL);	
+			} else {
+				$parameters_array[] = $parameter;	
+			}
+		}
+		
+		if (!$found_record) {
+			array_unshift($parameters_array, $this->records);	
+		}
+		
+		array_unshift($parameters_array, $callback);
+		
+		return call_user_func_array('array_map', $parameters_array);
 	}
 	
 	
@@ -942,6 +1064,42 @@ class fRecordSet implements Iterator
 			$method = 'inject' . fGrammar::pluralize($related_class); 
 			$record->$method($set, $route);      
 		}
+	}
+	
+	
+	/**
+	 * Reduces the record set to a single value via a callback
+	 * 
+	 * The callback should take two parameters:
+	 *  - The first two records on the first call if no $inital_value is specified
+	 *  - The initial value and the first record for the first call if an $initial_value is specified
+	 *  - The result of the last call plus the next record for the second and subsequent calls
+	 * 
+	 * @param  callback $callback      The callback to pass the records to - see method description for details
+	 * @param  mixed    $inital_value  The initial value to seed reduce with
+	 * @return mixed  The result of the reduce operation
+	 */
+	public function reduce($callback, $inital_value=NULL)
+	{
+		$this->createAllRecords();
+		
+		if (!$this->records) {
+			return $initial_value;	
+		}
+		
+		$values = $this->records;
+		if ($inital_value === NULL) {
+			$result = $values[0];
+			$values = array_slice($values, 1);	
+		} else {
+			$result = $inital_value;	
+		}
+		
+		foreach($values as $value) {
+			$result = call_user_func($callback, $result, $value);		
+		}
+		
+		return $result;
 	}
 	
 	
