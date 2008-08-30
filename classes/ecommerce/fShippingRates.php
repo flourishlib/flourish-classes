@@ -502,7 +502,7 @@ XMLDATA;
 		
 		if ($xml->Response->ResponseStatusCode != '1') {
 			fCore::toss(
-				'fUnexpectedException',
+				'fValidationException',
 				fGrammar::compose(
 					'There was an error retrieving the rates from the API'
 				)
