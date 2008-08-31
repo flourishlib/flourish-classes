@@ -46,7 +46,7 @@ class fORMSchema
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose('Smart caching is only available (and most likely only applicable) if you are using the fSchema object')
-			);       
+			);
 		}
 		self::getInstance()->setCacheFile($cache_file);
 		fCore::registerTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo'));
@@ -98,7 +98,7 @@ class fORMSchema
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
-			);	
+			);
 		}
 		
 		if ($route === NULL) {
@@ -107,7 +107,7 @@ class fORMSchema
 		
 		$routes = self::getRoutes($table, $related_table, $relationship_type);
 		
-		if (!isset($routes[$route])) {                                                                             
+		if (!isset($routes[$route])) {
 			$relationship_type .= ($relationship_type) ? ' ' : '';
 			fCore::toss(
 				'fProgrammerException',
@@ -156,7 +156,7 @@ class fORMSchema
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
-			);	
+			);
 		}
 		
 		$routes = self::getRoutes($table, $related_table, $relationship_type);
@@ -261,7 +261,7 @@ class fORMSchema
 					fCore::dump($relationship_type),
 					join(', ', $valid_relationship_types)
 				)
-			);	
+			);
 		}
 		
 		$all_relationships = self::getInstance()->getRelationships($table);
@@ -274,7 +274,7 @@ class fORMSchema
 			if ($relationship_type !== NULL) {
 				$match = strpos($type, str_replace('*', '', $relationship_type)) !== FALSE;
 				if (!$match) {
-					continue;	
+					continue;
 				}
 			}
 			

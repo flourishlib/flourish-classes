@@ -325,7 +325,7 @@ class fORMDatabase
 						'An invalid sort column, %s, was specified',
 						fCore::dump($column)
 					)
-				); 		
+				);
 			}
 			
 			$direction = strtoupper($direction);
@@ -390,7 +390,7 @@ class fORMDatabase
 			$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '=');
 		}
 		
-		return $sql;			
+		return $sql;
 	}
 	
 	
@@ -410,9 +410,9 @@ class fORMDatabase
 			
 			if (substr($column, -2) == '<=' || substr($column, -2) == '>=') {
 				$type   = substr($column, -2);
-				$column = substr($column, 0, -2);	
+				$column = substr($column, 0, -2);
 			} else {
-				$type   = substr($column, -1);	
+				$type   = substr($column, -1);
 				$column = substr($column, 0, -1);
 			}
 			
@@ -428,11 +428,11 @@ class fORMDatabase
 				foreach ($columns as &$_column) {
 					if (substr($_column, -2) == '<=' || substr($_column, -2) == '>=') {
 						$types[] = substr($_column, -2);
-						$_column = substr($_column, 0, -2);	
+						$_column = substr($_column, 0, -2);
 					} elseif (!ctype_alnum(substr($_column, -1))) {
-						$types[] = substr($_column, -1);	
+						$types[] = substr($_column, -1);
 						$_column = substr($_column, 0, -1);
-					} 		
+					}
 				}
 				$types[] = $type;
 				
@@ -472,8 +472,8 @@ class fORMDatabase
 								sizeof($columns),
 								sizeof($values)
 							)
-						); 		
-					}	
+						);
+					}
 					
 					if (sizeof($columns) != sizeof($types)) {
 						fCore::toss(
@@ -482,7 +482,7 @@ class fORMDatabase
 								'When creating an %s where clause there must be a comparison operator for each column, however one or more is missing',
 								'OR'
 							)
-						); 		
+						);
 					}
 					
 					$conditions = array();
@@ -720,12 +720,12 @@ class fORMDatabase
 		$joined_to_many = FALSE;
 		foreach ($joins as $name => $join) {
 			if (is_numeric($name)) {
-				continue;	
+				continue;
 			}
 			
 			if (substr($name, -5) == '_join') {
 				$joined_to_many = TRUE;
-				break;	
+				break;
 			}
 			
 			$main_table   = preg_replace('#_' . $join['table_name'] . '{\w+}$#i', '', $name);
@@ -735,7 +735,7 @@ class fORMDatabase
 			if (isset($routes[$route])) {
 				$joined_to_many = TRUE;
 				break;
-			}	
+			}
 		}
 		$found_order_by = FALSE;
 		
@@ -752,7 +752,7 @@ class fORMDatabase
 			}
 			$group_by_clause .= join(', ', $columns) . ' ';
 		} else {
-			$group_by_clause = ' ';	
+			$group_by_clause = ' ';
 		}
 		
 		// Put the SQL back together
@@ -768,11 +768,11 @@ class fORMDatabase
 				
 				// In the ORDER BY clause we need to wrap columns in
 				if ($found_order_by && $joined_to_many) {
-					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $temp_sql);	
+					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $temp_sql);
 				}
 				
 				if ($joined_to_many && preg_match('#order\s+by#i', $temp_sql)) {
-					$order_by_found = TRUE;	
+					$order_by_found = TRUE;
 					
 					$parts = preg_split('#(order\s+by)#i', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE);
 					$parts[2] = $temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $parts[2]);

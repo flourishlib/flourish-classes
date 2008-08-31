@@ -13,7 +13,7 @@
  * @changes    1.0.0b  The initial implementation [wb, 2008-03-24]
  */
 class fFilesystem
-{	
+{
 	/**
 	 * Stores the operations to perform when a commit occurs
 	 * 
@@ -61,7 +61,7 @@ class fFilesystem
 	 * essence stripping it from filesystem paths.
 	 * 
 	 * @param  string $search_path   The path to look for
-	 * @param  string $replace_path  The path to replace with 
+	 * @param  string $replace_path  The path to replace with
 	 * @return void
 	 */
 	static public function addWebPathTranslation($search_path, $replace_path)
@@ -246,7 +246,7 @@ class fFilesystem
 		$path_info = pathinfo($file);
 		
 		if (!isset($path_info['extension'])) {
-			$path_info['extension'] = NULL;	
+			$path_info['extension'] = NULL;
 		}
 		
 		if (!isset($path_info['filename'])) {
@@ -543,7 +543,7 @@ class fFilesystem
 		$translations = array(realpath($_SERVER['DOCUMENT_ROOT']) => '') + self::$web_path_translations;
 		
 		foreach ($translations as $search => $replace) {
-			$path = preg_replace('#^' . preg_quote($search, '#') . '#', $replace, $path);	
+			$path = preg_replace('#^' . preg_quote($search, '#') . '#', $replace, $path);
 		}
 		
 		return $path;

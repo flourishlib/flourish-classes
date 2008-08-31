@@ -294,12 +294,12 @@ class fSchema implements fISchema
 			
 			// Handle decimal places for numeric/decimals
 			if (in_array($row['type'], array('numeric', 'decimal'))) {
-				$info['decimal_places'] = $row['decimal_places'];	
+				$info['decimal_places'] = $row['decimal_places'];
 			}
 			
 			// Handle decimal places for money/smallmoney
 			if (in_array($row['type'], array('money', 'smallmoney'))) {
-				$info['decimal_places'] = 2;	
+				$info['decimal_places'] = 2;
 			}
 			
 			// Handle the special data for varchar columns
@@ -548,7 +548,7 @@ class fSchema implements fISchema
 			// Grab the number of decimal places
 			if (stripos($match[2], 'decimal') === 0) {
 				if (preg_match('#^\s*\d+\s*,\s*(\d+)\s*$#', $match[3], $data_type_info)) {
-					$info['decimal_places'] = $data_type_info[1];	
+					$info['decimal_places'] = $data_type_info[1];
 				}
 			}
 			
@@ -740,15 +740,15 @@ class fSchema implements fISchema
 			
 			// Handle the length of decimal/numeric fields
 			if ($info['type'] == 'float' && isset($column_data_type[3]) && strlen($column_data_type[3]) > 0) {
-				$info['decimal_places'] = (int) $column_data_type[3];	
-			} 
+				$info['decimal_places'] = (int) $column_data_type[3];
+			}
 			
 			// Handle the special data for varchar fields
 			if (in_array($info['type'], array('char', 'varchar'))) {
 				$info['max_length'] = $column_data_type[2];
 			}
 			
-			// Handle check constraints that are just simple lists 
+			// Handle check constraints that are just simple lists
 			if (in_array($info['type'], array('varchar', 'char')) && !empty($row['constraint'])) {
 				if (preg_match('/CHECK[\( "]+' . $row['column'] . '[a-z\) ":]+\s+=\s+/i', $row['constraint'])) {
 					if (preg_match_all("/(?!').'((''|[^']+)*)'/", $row['constraint'], $matches, PREG_PATTERN_ORDER)) {
@@ -763,7 +763,7 @@ class fSchema implements fISchema
 			} elseif ($row['default'] !== NULL) {
 				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+$/i", '\1', $row['default']));
 				if ($info['type'] == 'boolean') {
-					$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;	
+					$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;
 				}
 			}
 			
@@ -978,7 +978,7 @@ class fSchema implements fISchema
 			
 			// Figure out how many decimal places for a decimal
 			if ($match[2] == 'decimal' && !empty($match[4])) {
-				$info['decimal_places'] = $match[4]; 		
+				$info['decimal_places'] = $match[4];
 			}
 			
 			// Not null

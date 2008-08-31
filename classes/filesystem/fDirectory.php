@@ -13,7 +13,7 @@
  * @changes    1.0.0b  The initial implementation [wb, 2007-12-21]
  */
 class fDirectory
-{	
+{
 	/**
 	 * Creates a directory on the filesystem and returns an object representing it
 	 * 

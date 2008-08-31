@@ -164,7 +164,7 @@ class fTemplating
 				fGrammar::compose(
 					'A template can only be destroyed if buffering has been enabled'
 				)
-			);	
+			);
 		}
 		
 		$this->buffered_id = NULL;
@@ -480,7 +480,7 @@ class fTemplating
 		}
 		
 		if ($file_type) {
-			return $file_type;	
+			return $file_type;
 		}
 		
 		$path = (is_array($value)) ? $value['path'] : $value;
@@ -494,7 +494,7 @@ class fTemplating
 		);
 		
 		if (isset($extension_map[$extension])) {
-			$extension = $extension_map[$extension];	
+			$extension = $extension_map[$extension];
 		}
 		
 		if (!in_array($extension, array('css', 'js', 'php', 'rss'))) {
@@ -504,7 +504,7 @@ class fTemplating
 					'The element specified, %1$s, has a value whose path, %2$s, does not end with a recognized file extension: %3$s.',
 					fCore::dump($element),
 					fCore::dump($path),
-					'.css, .inc, .js, .php, .php5, .rss, .xml'	
+					'.css, .inc, .js, .php, .php5, .rss, .xml'
 				)
 			);
 		}

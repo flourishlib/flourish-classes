@@ -299,7 +299,7 @@ class fDate
 		}
 		if (!is_numeric($day) || $day < 1 || $day > 31) {
 			fCore::toss(
-				'fValidationException', 
+				'fValidationException',
 				fGrammar::compose(
 					'The day specified, %s, does not appear to be a valid day',
 					fCore::dump($day)
@@ -380,7 +380,7 @@ class fDate
 		$timestamp = strtotime($year . '-01-01 +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
 		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss(
-				'fValidationException', 
+				'fValidationException',
 				fGrammar::compose(
 					'The ISO date specified, %1$s-W%2$s-%3$s, does not appear to be a valid ISO date',
 					fCore::dump($year),

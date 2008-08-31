@@ -151,7 +151,7 @@ class fSession
 					__CLASS__ . '::clear()',
 					__CLASS__ . '::get()',
 					__CLASS__ . '::set()'
-				)	
+				)
 			);
 		}
 		$seconds = strtotime($timespan) - time();

@@ -146,7 +146,7 @@ class fTime
 		
 		if (abs($diff) < 10) {
 			if ($relative_to_now) {
-				return fGrammar::compose('right now');	
+				return fGrammar::compose('right now');
 			}
 			return fGrammar::compose('at the same time');
 		}
@@ -178,7 +178,7 @@ class fTime
 				return fGrammar::compose('%1$s %2$s from now', $unit_diff, $units);
 			}
 			
-			return fGrammar::compose('%1$s %2$s ago', $unit_diff, $units);	
+			return fGrammar::compose('%1$s %2$s ago', $unit_diff, $units);
 		}
 		
 		

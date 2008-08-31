@@ -151,7 +151,7 @@ class fFile
 		// The only kind of stored exception is if the file has already
 		// been deleted so in that case nothing needs to be done
 		if ($this->exception) {
-			return;	
+			return;
 		}
 		
 		if (!$this->getDirectory()->isWritable()) {

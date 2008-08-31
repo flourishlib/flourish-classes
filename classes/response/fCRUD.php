@@ -171,7 +171,7 @@ class fCRUD
 		// Reset values if requested
 		if (self::wasResetRequested()) {
 			self::setPreviousSearchValue($column, NULL);
-			return;	
+			return;
 		}
 		
 		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
@@ -196,13 +196,13 @@ class fCRUD
 		// Reset value if requested
 		if (self::wasResetRequested()) {
 			self::setPreviousSortColumn(NULL);
-			return;	
+			return;
 		}
 		
 		$possible_columns = func_get_args();
 		
 		if (sizeof($possible_columns) == 1 && is_array($possible_columns[0])) {
-			$possible_columns = $possible_columns[0]; 		
+			$possible_columns = $possible_columns[0];
 		}
 		
 		if (self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
@@ -227,7 +227,7 @@ class fCRUD
 		// Reset value if requested
 		if (self::wasResetRequested()) {
 			self::setPreviousSortDirection(NULL);
-			return;	
+			return;
 		}
 		
 		if (self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
@@ -429,7 +429,7 @@ class fCRUD
 	static private function wasResetRequested()
 	{
 		$tail = substr(fURL::getWithQueryString(), -6);
-		return $tail == '?reset' || $tail == '&reset';	
+		return $tail == '?reset' || $tail == '&reset';
 	}
 	
 	

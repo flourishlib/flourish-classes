@@ -158,7 +158,7 @@ class fGrammar
 	{
 		// Make a humanized string like underscore notation
 		if (strpos($string, ' ') !== FALSE) {
-			$string = strtolower(preg_replace('#\s+#', '_', $string));	
+			$string = strtolower(preg_replace('#\s+#', '_', $string));
 		}
 		
 		// Check to make sure this is not already camel case
@@ -166,8 +166,8 @@ class fGrammar
 			if ($upper) {
 				$string = strtoupper($string[0]) . substr($string, 1);
 			}
-			return $string;	
-		}  
+			return $string;
+		}
 		
 		// Handle underscore notation
 		$string = strtolower($string);
@@ -189,16 +189,16 @@ class fGrammar
 	{
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['pre'] as $callback) {
-				$message = call_user_func($callback, $message);	
+				$message = call_user_func($callback, $message);
 			}
 		}
 		
 		$components = array_slice(func_get_args(), 1);
-		$message    = vsprintf($message, $components);	
+		$message    = vsprintf($message, $components);
 		
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['post'] as $callback) {
-				$message = call_user_func($callback, $message);	
+				$message = call_user_func($callback, $message);
 			}
 		}
 		
@@ -215,17 +215,17 @@ class fGrammar
 	static public function humanize($string)
 	{
 		if (self::$humanize_replacement) {
-			return call_user_func(self::$humanize_replacement, $string);	
+			return call_user_func(self::$humanize_replacement, $string);
 		}
 		
 		// If there is a space, it is already humanized
 		if (strpos($string, ' ') !== FALSE) {
-			return $string;	
+			return $string;
 		}
 		
 		// If we don't have an underscore we probably have camelCase
 		if (strpos($string, '_') === FALSE) {
-			$string = self::underscorize($string);	
+			$string = self::underscorize($string);
 		}
 		
 		return preg_replace(
@@ -248,7 +248,7 @@ class fGrammar
 	static public function inflectOnQuantity($quantity, $singular_form, $plural_form=NULL, $use_words_for_single_digits=FALSE)
 	{
 		if ($plural_form === NULL) {
-			$plural_form = self::pluralize($singular_form);	
+			$plural_form = self::pluralize($singular_form);
 		}
 		
 		if (is_array($quantity)) {
@@ -308,11 +308,11 @@ class fGrammar
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
-			);	
+			);
 		}
 		
 		if (self::$join_array_replacement) {
-			return call_user_func(self::$join_array_replacement, $strings, $type);	
+			return call_user_func(self::$join_array_replacement, $strings, $type);
 		}
 		
 		settype($strings, 'array');
@@ -373,7 +373,7 @@ class fGrammar
 	 * {@link http://php.net/sprintf sprintf()}. Thus the message passed 'pre'
 	 * will always be exactly the same, while the message 'post' will include
 	 * the interpolated variables. Because of this, most of the time the 'pre'
-	 * timing should be chosen. 
+	 * timing should be chosen.
 	 * 
 	 * @param  string   $timing    When the callback should be executed, 'pre' or 'post' performing the actual composition
 	 * @param  callback $callback  The callback
@@ -389,8 +389,8 @@ class fGrammar
 					'The timing specified, %1$s, is not a valid timing. Must be one of: %2$s.',
 					fCore::dump($timing),
 					join(', ', $valid_timings)
-				)	
-			);	
+				)
+			);
 		}
 		
 		self::$compose_callbacks[$timing][] = $callback;
@@ -408,7 +408,7 @@ class fGrammar
 	 */
 	static public function replaceHumanize($callback)
 	{
-		self::$humanize_replacement = $callback;	
+		self::$humanize_replacement = $callback;
 	}
 	
 	
@@ -423,7 +423,7 @@ class fGrammar
 	 */
 	static public function replaceJoinArray($callback)
 	{
-		self::$join_array_replacement = $callback;	
+		self::$join_array_replacement = $callback;
 	}
 	
 	
@@ -486,12 +486,12 @@ class fGrammar
 	{
 		// If the string is already underscore notation then leave it
 		if (strpos($string, '_') !== FALSE) {
-			return $string;	
+			return $string;
 		}
 		
 		// Allow humanized string to be passed in
 		if (strpos($string, ' ') !== FALSE) {
-			return strtolower(preg_replace('#\s+#', '_', $string));	
+			return strtolower(preg_replace('#\s+#', '_', $string));
 		}
 		
 		do {

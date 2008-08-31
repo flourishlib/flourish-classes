@@ -20,7 +20,7 @@
  * @changes    1.0.0b  The initial implementation [wb, 2008-06-01]
  */
 class fUTF8
-{	
+{
 	/**
 	 * All lowercase UTF-8 characters mapped to uppercase characters
 	 * 
@@ -474,7 +474,7 @@ class fUTF8
 		'…' => '...', ' ' => ' ',   '′' => "'",   '″' => '"',   '‴' => '\'"',
 		'‵' => "'",   '‶' => '"',   '‷' => '"\'', '‹' => '<',   '›' => '>',
 		'‼' => '!!',  '‽' => '?!',  '⁄' => '/',   '⁇' => '?/',  '⁈' => '?!',
-		'⁉' => '!?', 
+		'⁉' => '!?',
 		// Letterlike Symbols
 		'℠' => 'SM',  '™' => 'TM',
 		// Number Forms
@@ -514,7 +514,7 @@ class fUTF8
 	 *  - Latin Extended Additional
 	 *  - General Punctuation
 	 *  - Letterlike symbols
-	 *  - Number Forms 
+	 *  - Number Forms
 	 * 
 	 * @param  string $string  The string to convert
 	 * @return string  The input string in pure ASCII
@@ -522,7 +522,7 @@ class fUTF8
 	static public function ascii($string)
 	{
 		if (!self::detect($string)) {
-			return $string;	
+			return $string;
 		}
 		
 		$string = strtr($string, self::$utf8_to_ascii);
@@ -551,7 +551,7 @@ class fUTF8
 	{
 		if (is_string($unicode_code_point) && substr($unicode_code_point, 0, 2) == 'U+') {
 			$unicode_code_point = substr($unicode_code_point, 2);
-			$unicode_code_point = hexdec($unicode_code_point);	
+			$unicode_code_point = hexdec($unicode_code_point);
 		}
 		
 		$bin = decbin($unicode_code_point);
@@ -561,7 +561,7 @@ class fUTF8
 		
 		// One byte characters
 		if ($digits <= 7) {
-			$first = chr(bindec($bin));	
+			$first = chr(bindec($bin));
 			
 		// Two byte characters
 		} elseif ($digits <= 11) {
@@ -580,7 +580,7 @@ class fUTF8
 			$second = chr(bindec('10' . substr($bin, -18, -12)));
 			$third  = chr(bindec('10' . substr($bin, -12, -6)));
 			$fourth = chr(bindec('10' . substr($bin, -6)));
-		}	
+		}
 		
 		$ord = ord($first);
 		if ($digits > 21 || $ord == 0xC0 || $ord == 0xC1 || $ord > 0xF4) {
@@ -591,10 +591,10 @@ class fUTF8
 						'The code point specified, %s, is invalid.',
 						fCore::dump($unicode_code_point)
 					)
-				);	
+				);
 			} else {
-				trigger_error('The code point specified is invalid. NULL returned instead of a UTF-8 character.', E_USER_WARNING);	
-				return NULL;	
+				trigger_error('The code point specified is invalid. NULL returned instead of a UTF-8 character.', E_USER_WARNING);
+				return NULL;
 			}
 		}
 		
@@ -645,7 +645,7 @@ class fUTF8
 		
 		// If the ASCII representations are the same, sort by the UTF-8 representations
 		if ($res === 0) {
-			$res = strcmp($str1, $str2);	
+			$res = strcmp($str1, $str2);
 		}
 		
 		return $res;
@@ -662,7 +662,7 @@ class fUTF8
 	static private function convertOffsetToBytes($string, $offset)
 	{
 		if ($offset == 0) {
-			return 0;	
+			return 0;
 		}
 		
 		$len = strlen($string);
@@ -682,7 +682,7 @@ class fUTF8
 			$char = $string[$i];
 			++$byte_offset;
 			if (ord($char) < 0x80) {
-				++$measured_offset;	
+				++$measured_offset;
 			} else {
 				switch (ord($char) & 0xF0) {
 					case 0xF0:
@@ -691,7 +691,7 @@ class fUTF8
 					case 0xC0:
 						++$measured_offset;
 						break;
-				}	
+				}
 			}
 		}
 		
@@ -725,11 +725,11 @@ class fUTF8
 	{
 		// If a delimiter was passed, we just do an explode
 		if ($delimiter || (!$delimiter && is_numeric($delimiter))) {
-			return explode($delimiter, $string);	
+			return explode($delimiter, $string);
 		}
 		
 		// If no delimiter was passed, we explode the characters into an array
-		return preg_split('##us', $string, NULL, PREG_SPLIT_NO_EMPTY);	
+		return preg_split('##us', $string, NULL, PREG_SPLIT_NO_EMPTY);
 	}
 	
 	
@@ -787,21 +787,21 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($haystack)) {
-			return stripos($haystack, $needle, $offset);	
+			return stripos($haystack, $needle, $offset);
 		}
 		
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available && function_exists('mb_stripos')) {
-			return mb_stripos($haystack, $needle, $offset, 'UTF-8');	
+			return mb_stripos($haystack, $needle, $offset, 'UTF-8');
 		}
 		
 		$haystack = self::lower($haystack);
 		$needle   = self::lower($needle);
 		
-		return self::pos($haystack, $needle, $offset);	
+		return self::pos($haystack, $needle, $offset);
 	}
 	
 	
@@ -813,7 +813,7 @@ class fUTF8
 	 * is an array and $replace is a string, all $search values will be replaced
 	 * with the string specified.
 	 * 
-	 * @param  string $string   The string to perform the replacements on 
+	 * @param  string $string   The string to perform the replacements on
 	 * @param  mixed  $search   The string (or array of strings) to search for - see method description for details
 	 * @param  mixed  $replace  The string (or array of strings) to replace with - see method description for details
 	 * @return string  The input string with the specified replacements
@@ -822,12 +822,12 @@ class fUTF8
 	{
 		if (is_array($search)) {
 			foreach ($search as &$needle) {
-				$needle = '#' . preg_quote($needle, '#') . '#ui';	
+				$needle = '#' . preg_quote($needle, '#') . '#ui';
 			}
 		} else {
-			$search = '#' . preg_quote($search, '#') . '#ui';	
+			$search = '#' . preg_quote($search, '#') . '#ui';
 		}
-		return preg_replace($search, $replace, $string);		
+		return preg_replace($search, $replace, $string);
 	}
 	
 	
@@ -843,21 +843,21 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($haystack)) {
-			return strripos($haystack, $needle, $offset);	
+			return strripos($haystack, $needle, $offset);
 		}
 		
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available && function_exists('mb_strripos')) {
-			return mb_strripos($haystack, $needle, $offset, 'UTF-8');	
+			return mb_strripos($haystack, $needle, $offset, 'UTF-8');
 		}
 		
 		$haystack = self::lower($haystack);
 		$needle   = self::lower($needle);
 		
-		return self::rpos($haystack, $needle, $offset);	
+		return self::rpos($haystack, $needle, $offset);
 	}
 	
 	
@@ -869,22 +869,22 @@ class fUTF8
 	 * 
 	 * @param  string  $haystack       The string to search in
 	 * @param  string  $needle         The string to search for. This match will be done in a case-insensitive manner.
-	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack 
+	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack
 	 * @return mixed  The specified part of the haystack, or FALSE if the needle was not found
 	 */
 	static public function istr($haystack, $needle, $before_needle=FALSE)
 	{
 		// We get better performance falling back for ASCII strings
 		if ($before_needle == FALSE && !self::detect($haystack)) {
-			return stristr($haystack, $needle);	
+			return stristr($haystack, $needle);
 		}
 		
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available && function_exists('mb_stristr')) {
-			return mb_stristr($haystack, $needle, $before_needle, 'UTF-8');	
+			return mb_stristr($haystack, $needle, $before_needle, 'UTF-8');
 		}
 		
 		$lower_haystack = self::lower($haystack);
@@ -894,7 +894,7 @@ class fUTF8
 		
 		if ($before_needle) {
 			return substr($haystack, 0, $pos);
-		} 		
+		}
 		
 		return substr($haystack, $pos);
 	}
@@ -909,14 +909,14 @@ class fUTF8
 	static public function len($string)
 	{
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available) {
-			return mb_strlen($string, 'UTF-8');	
+			return mb_strlen($string, 'UTF-8');
 		}
 		
-		return strlen(utf8_decode($string));	
+		return strlen(utf8_decode($string));
 	}
 	
 	
@@ -930,20 +930,20 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
-			return strtolower($string);	
+			return strtolower($string);
 		}
 		
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available) {
-			$string = mb_strtolower($string, 'utf-8');	
+			$string = mb_strtolower($string, 'utf-8');
 			// For some reason mb_strtolower misses some character
 			return strtr($string, self::$mb_upper_to_lower_fix);
 		}
 		
-		return strtr($string, self::$upper_to_lower);	
+		return strtr($string, self::$upper_to_lower);
 	}
 	
 	
@@ -968,7 +968,7 @@ class fUTF8
 		
 		// If the ASCII representations are the same, sort by the UTF-8 representations
 		if ($res === 0) {
-			$res = strnatcmp($str1, $str2);	
+			$res = strnatcmp($str1, $str2);
 		}
 		
 		return $res;
@@ -990,7 +990,7 @@ class fUTF8
 			case 1:
 				if ($b[0] > 0x7F) {
 					$invalid = TRUE;
-					break;	
+					break;
 				}
 				$bin = decbin($b[0]);
 				break;
@@ -998,7 +998,7 @@ class fUTF8
 			case 2:
 				if ($b[0] < 0xC2 || $b[0] > 0xDF ||
 					  $b[1] < 0x80 || $b[1] > 0xBF) {
-					$invalid = TRUE;	
+					$invalid = TRUE;
 					break;
 				}
 				$bin = substr(decbin($b[0]), 3) .
@@ -1009,7 +1009,7 @@ class fUTF8
 				if ($b[0] < 0xE0 || $b[0] > 0xEF ||
 					  $b[1] < 0x80 || $b[1] > 0xBF ||
 					  $b[2] < 0x80 || $b[2] > 0xBF) {
-					$invalid = TRUE;	
+					$invalid = TRUE;
 					break;
 				}
 				$bin = substr(decbin($b[0]), 4) .
@@ -1022,7 +1022,7 @@ class fUTF8
 					  $b[1] < 0x80 || $b[1] > 0xBF ||
 					  $b[2] < 0x80 || $b[2] > 0xBF ||
 					  $b[3] < 0x80 || $b[3] > 0xBF) {
-					$invalid = TRUE;	
+					$invalid = TRUE;
 					break;
 				}
 				$bin = substr(decbin($b[0]), 5) .
@@ -1033,7 +1033,7 @@ class fUTF8
 			
 			default:
 				$invalid = TRUE;
-				break;	
+				break;
 		}
 		
 		if ($invalid) {
@@ -1043,11 +1043,11 @@ class fUTF8
 					fGrammar::compose(
 						'The UTF-8 character specified is invalid.'
 					)
-				);	
+				);
 			} else {
-				trigger_error('The UTF-8 character specified is invalid. NULL returned instead of a unicode code point.', E_USER_WARNING);	
+				trigger_error('The UTF-8 character specified is invalid. NULL returned instead of a unicode code point.', E_USER_WARNING);
 			}
-			return NULL; 		
+			return NULL;
 		}
 		
 		$hex = strtoupper(dechex(bindec($bin)));
@@ -1074,11 +1074,11 @@ class fUTF8
 					fGrammar::compose(
 						'The pad type specified, %1$s, is not valid. Must be one of: %2$s.',
 						fCore::dump($pad_type),
-						join(', ', $valid_pad_types)	
+						join(', ', $valid_pad_types)
 					)
-				);	
+				);
 			} else {
-				trigger_error('The pad type specified, ' . $pad_type . ', is not valid. Must be one of: ' . join(', ', $valid_pad_types) . '. Defaulting to right.', E_USER_WARNING);	
+				trigger_error('The pad type specified, ' . $pad_type . ', is not valid. Must be one of: ' . join(', ', $valid_pad_types) . '. Defaulting to right.', E_USER_WARNING);
 				$pad_type = 'right';
 			}
 		}
@@ -1089,7 +1089,7 @@ class fUTF8
 				'left'  => STR_PAD_LEFT,
 				'right' => STR_PAD_RIGHT,
 				'both'  => STR_PAD_BOTH
-			);	
+			);
 			return str_pad($string, $pad_length, $pad_string, $type_map[$pad_type]);
 		}
 		
@@ -1101,7 +1101,7 @@ class fUTF8
 		
 		if ($pad_to_length < 1) {
 			return $string;
-		}	
+		}
 		
 		$padded           = 0;
 		$next_side        = 'left';
@@ -1113,7 +1113,7 @@ class fUTF8
 			// For pad strings over 1 characters long, they may be too long to fit
 			if ($pad_to_length - $padded < $pad_string_length) {
 				$pad_string = self::sub($pad_string, 0, $pad_to_length - $padded);
-			}	
+			}
 			
 			switch (($pad_type != 'both') ? $pad_type : $next_side) {
 				case 'right':
@@ -1145,11 +1145,11 @@ class fUTF8
 	static public function pos($haystack, $needle, $offset=0)
 	{
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available) {
-			return mb_strpos($haystack, $needle, $offset, 'UTF-8');	
+			return mb_strpos($haystack, $needle, $offset, 'UTF-8');
 		}
 		
 		$offset = self::convertOffsetToBytes($haystack, $offset);
@@ -1157,10 +1157,10 @@ class fUTF8
 		$position = strpos($haystack, $needle, $offset);
 		
 		if ($position === FALSE) {
-			return FALSE;	
+			return FALSE;
 		}
 		
-		return strlen(utf8_decode(substr($haystack, 0, $position))); 		
+		return strlen(utf8_decode(substr($haystack, 0, $position)));
 	}
 	
 	
@@ -1172,14 +1172,14 @@ class fUTF8
 	 * is an array and $replace is a string, all $search values will be replaced
 	 * with the string specified.
 	 * 
-	 * @param  string $string   The string to perform the replacements on 
+	 * @param  string $string   The string to perform the replacements on
 	 * @param  mixed  $search   The string (or array of strings) to search for - see method description for details
 	 * @param  mixed  $replace  The string (or array of strings) to replace with - see method description for details
 	 * @return string  The input string with the specified replacements
 	 */
 	static public function replace($string, $search, $replace)
 	{
-		return str_replace($search, $replace, $string);		
+		return str_replace($search, $replace, $string);
 	}
 	
 	
@@ -1205,7 +1205,7 @@ class fUTF8
 		for ($i=0; $i<$len; $i++) {
 			$char = $string[$i];
 			if (ord($char) < 128) {
-				$output = $char . $output;	
+				$output = $char . $output;
 			} else {
 				switch (ord($char) & 0xF0) {
 					case 0xF0:
@@ -1223,11 +1223,11 @@ class fUTF8
 						$output = $string[$i] . $string[$i+1] . $output;
 						$i += 1;
 						break;
-				}	
+				}
 			}
 		}
 		
-		return $output;	
+		return $output;
 	}
 	
 	
@@ -1243,7 +1243,7 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($haystack)) {
-			return strrpos($haystack, $needle, $offset);	
+			return strrpos($haystack, $needle, $offset);
 		}
 		
 		// We don't even both trying mb_strrpos since this method is faster
@@ -1253,10 +1253,10 @@ class fUTF8
 		$position = strrpos($haystack, $needle, $offset);
 		
 		if ($position === FALSE) {
-			return FALSE;	
+			return FALSE;
 		}
 		
-		return strlen(utf8_decode(substr($haystack, 0, $position))); 		
+		return strlen(utf8_decode(substr($haystack, 0, $position)));
 	}
 	
 	
@@ -1267,28 +1267,28 @@ class fUTF8
 	 * 
 	 * @param  string  $haystack       The string to search in
 	 * @param  string  $needle         The string to search for
-	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack 
+	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack
 	 * @return mixed  The specified part of the haystack, or FALSE if the needle was not found
 	 */
 	static public function str($haystack, $needle, $before_needle=FALSE)
 	{
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available && function_exists('mb_strstr')) {
-			return mb_strstr($haystack, $needle, $before_needle, 'UTF-8');	
+			return mb_strstr($haystack, $needle, $before_needle, 'UTF-8');
 		}
 		
 		$pos = strpos($haystack, $needle);
 		
 		if ($pos === FALSE) {
-			return $pos;	
+			return $pos;
 		}
 		
 		if ($before_needle) {
 			return substr($haystack, 0, $pos);
-		} 		
+		}
 		
 		return substr($haystack, $pos);
 	}
@@ -1305,22 +1305,22 @@ class fUTF8
 	static public function sub($string, $start, $length=NULL)
 	{
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available) {
 			$str_len = mb_strlen($string, 'UTF-8');
 			if (abs($start) > $str_len) {
-				return FALSE;	
+				return FALSE;
 			}
 			if ($length === NULL) {
 				if ($start >= 0) {
 					$length = $str_len-$start;
 				} else {
 					$length = abs($start);
-				}	
+				}
 			}
-			return mb_substr($string, $start, $length, 'UTF-8');	
+			return mb_substr($string, $start, $length, 'UTF-8');
 		}
 		
 		// We get better performance falling back for ASCII strings
@@ -1330,23 +1330,23 @@ class fUTF8
 					$length = strlen($string)-$start;
 				} else {
 					$length = abs($start);
-				}	
+				}
 			}
-			return substr($string, $start, $length);	
-		}		
+			return substr($string, $start, $length);
+		}
 		
 		
 		// This is the slowest version
 		$str_len = strlen(utf8_decode($string));
 		
 		if (abs($start) > $str_len) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		// Optimize looking by changing to negative start positions if the
 		// start is in the second half of the string
 		if ($start > $str_len/2) {
-			$start = 0-($str_len-$start);	
+			$start = 0-($str_len-$start);
 		}
 		
 		// Substrings to the end of the string are pretty simple
@@ -1358,7 +1358,7 @@ class fUTF8
 		}
 		
 		$length = self::convertOffsetToBytes($string, $length);
-		return substr($string, 0, $length);	
+		return substr($string, 0, $length);
 	}
 	
 	
@@ -1370,7 +1370,7 @@ class fUTF8
 	 */
 	static public function ucfirst($string)
 	{
-		return self::upper(self::sub($string, 0, 1)) . self::sub($string, 1); 		
+		return self::upper(self::sub($string, 0, 1)) . self::sub($string, 1);
 	}
 	
 	
@@ -1378,7 +1378,7 @@ class fUTF8
 	 * Converts the first character of every word to uppercase
 	 * 
 	 * Words are considered to start at the beginning of the string, or after any
-	 * whitespace character. 
+	 * whitespace character.
 	 * 
 	 * @param  string $string  The string to process
 	 * @return string  The processed string
@@ -1387,10 +1387,10 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
-			return ucwords($string);	
+			return ucwords($string);
 		}
 		
-		return preg_replace('#(?<=^|\s|[\x{2000}-\x{200A}])(.)#ue', 'self::upper("$1")', $string);		
+		return preg_replace('#(?<=^|\s|[\x{2000}-\x{200A}])(.)#ue', 'self::upper("$1")', $string);
 	}
 	
 	
@@ -1404,20 +1404,20 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
-			return strtoupper($string);	
+			return strtoupper($string);
 		}
 		
 		if (self::$mbstring_available === NULL) {
-			self::checkMbString();	
+			self::checkMbString();
 		}
 		
 		if (self::$mbstring_available) {
-			$string = mb_strtoupper($string, 'utf-8');	
+			$string = mb_strtoupper($string, 'utf-8');
 			// For some reason mb_strtoupper misses some character
 			return strtr($string, self::$mb_lower_to_upper_fix);
 		}
 		
-		return strtr($string, self::$lower_to_upper);		
+		return strtr($string, self::$lower_to_upper);
 	}
 	
 	
@@ -1434,7 +1434,7 @@ class fUTF8
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
-			return wordwrap($string, $width, $break, $cut);	
+			return wordwrap($string, $width, $break, $cut);
 		}
 		
 		$words = preg_split('#(?<=\s|[\x{2000}-\x{200A}])#ue', $string);
@@ -1452,15 +1452,15 @@ class fUTF8
 				$line_len = $width;
 				$word	  = self::sub($word, $width);
 				$word_len = self::len($word);
-			}	
+			}
 			
 			if ($line_len && $line_len + $word_len > $width) {
 				$output  .= $break;
-				$line_len = 0;	
+				$line_len = 0;
 			}
 			$output   .= $word;
 			$line_len += $word_len;
-		}	
+		}
 		
 		return $output;
 	}

@@ -80,7 +80,7 @@ class fORMColumn
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -98,7 +98,7 @@ class fORMColumn
 		);
 		
 		if (empty(self::$date_created_columns[$class])) {
-			self::$date_created_columns[$class] = array();	
+			self::$date_created_columns[$class] = array();
 		}
 		
 		self::$date_created_columns[$class][$column] = TRUE;
@@ -146,7 +146,7 @@ class fORMColumn
 		);
 		
 		if (empty(self::$date_updated_columns[$class])) {
-			self::$date_updated_columns[$class] = array();	
+			self::$date_updated_columns[$class] = array();
 		}
 		
 		self::$date_updated_columns[$class][$column] = TRUE;
@@ -176,7 +176,7 @@ class fORMColumn
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -194,7 +194,7 @@ class fORMColumn
 		}
 		
 		if (empty(self::$email_columns[$class])) {
-			self::$email_columns[$class] = array();	
+			self::$email_columns[$class] = array();
 		}
 		
 		self::$email_columns[$class][$column] = TRUE;
@@ -224,7 +224,7 @@ class fORMColumn
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -253,7 +253,7 @@ class fORMColumn
 		);
 		
 		if (empty(self::$link_columns[$class])) {
-			self::$link_columns[$class] = array();	
+			self::$link_columns[$class] = array();
 		}
 		
 		self::$link_columns[$class][$column] = TRUE;
@@ -283,7 +283,7 @@ class fORMColumn
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -324,7 +324,7 @@ class fORMColumn
 		);
 		
 		if (empty(self::$money_columns[$class])) {
-			self::$money_columns[$class] = array();	
+			self::$money_columns[$class] = array();
 		}
 		
 		self::$money_columns[$class][$column] = TRUE;
@@ -347,7 +347,7 @@ class fORMColumn
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
-		if (!in_array($data_type, $valid_data_types)) {                                                                                                                       
+		if (!in_array($data_type, $valid_data_types)) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
@@ -356,7 +356,7 @@ class fORMColumn
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		$valid_types = array('alphanumeric', 'alpha', 'numeric', 'hexadecimal');
@@ -368,7 +368,7 @@ class fORMColumn
 					fCore::dump($type),
 					join(', ', $valid_types)
 				)
-			);	
+			);
 		}
 		
 		if (!is_numeric($length) || $length < 1) {
@@ -378,7 +378,7 @@ class fORMColumn
 					'The length specified, %s, needs to be an integer greater than zero.',
 					$length
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -396,7 +396,7 @@ class fORMColumn
 		}
 		
 		if (empty(self::$random_columns[$class])) {
-			self::$random_columns[$class] = array();	
+			self::$random_columns[$class] = array();
 		}
 		
 		self::$random_columns[$class][$column] = array('type' => $type, 'length' => (int) $length);
@@ -452,31 +452,31 @@ class fORMColumn
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		if (!empty(self::$date_created_columns[$class][$column])) {
-			$info['feature'] = 'date created';	
+			$info['feature'] = 'date created';
 		}
 		
 		if (!empty(self::$date_updated_columns[$class][$column])) {
-			$info['feature'] = 'date updated';	
+			$info['feature'] = 'date updated';
 		}
 		
 		if (!empty(self::$email_columns[$class][$column])) {
-			$info['feature'] = 'email';	
+			$info['feature'] = 'email';
 		}
 		
 		if (!empty(self::$link_columns[$class][$column])) {
-			$info['feature'] = 'link';	
+			$info['feature'] = 'link';
 		}
 		
 		if (!empty(self::$random_columns[$class][$column])) {
-			$info['feature'] = 'random';	
+			$info['feature'] = 'random';
 		}
 		
 		if (!empty(self::$money_columns[$class][$column])) {
-			$info['feature'] = 'money';	
+			$info['feature'] = 'money';
 		}
 		
 		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;	
+			return (isset($info[$element])) ? $info[$element] : NULL;
 		}
 		
 		return $info;
@@ -496,7 +496,7 @@ class fORMColumn
 	static public function objectifyMoney($class, $column, $value)
 	{
 		if (!fCore::stringlike($value)) {
-			return $value;	
+			return $value;
 		}
 		
 		try {
@@ -505,7 +505,7 @@ class fORMColumn
 			 
 		// If there was some error creating the file, just return the raw value
 		} catch (fExpectedException $e) {
-			return $value;	
+			return $value;
 		}
 	}
 	
@@ -557,7 +557,7 @@ class fORMColumn
 		
 		if (empty($values[$column])) {
 			return $values[$column];
-		}	
+		}
 		$value = $values[$column];
 		
 		if ($value instanceof fMoney) {
@@ -591,13 +591,13 @@ class fORMColumn
 					$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
 					$signature .= " * \n";
 					$signature .= " * @return string  The HTML-ready value\n";
-					$signature .= " */\n";	
+					$signature .= " */\n";
 				}
 				$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
-				$signature .= 'public function prepare' . $prepare_method . '()';	
+				$signature .= 'public function prepare' . $prepare_method . '()';
 				
 				$signatures[$prepare_method] = $signature;
-			}	
+			}
 		}
 		
 		if (isset(self::$money_columns[$class])) {
@@ -613,10 +613,10 @@ class fORMColumn
 					$signature .= " * resulting in the value minus the currency symbol and thousands separators\n";
 					$signature .= " * \n";
 					$signature .= " * @return string  The HTML form-ready value\n";
-					$signature .= " */\n";	
+					$signature .= " */\n";
 				}
 				$encode_method = 'encode' . $camelized_column;
-				$signature .= 'public function ' . $encode_method . '()';	
+				$signature .= 'public function ' . $encode_method . '()';
 				
 				$signatures[$encode_method] = $signature;
 				
@@ -629,13 +629,13 @@ class fORMColumn
 					$signature .= " * resulting in the value including the currency symbol and thousands separators\n";
 					$signature .= " * \n";
 					$signature .= " * @return string  The HTML-ready value\n";
-					$signature .= " */\n";	
+					$signature .= " */\n";
 				}
 				$prepare_method = 'prepare' . $camelized_column;
-				$signature .= 'public function ' . $prepare_method . '()';	
+				$signature .= 'public function ' . $prepare_method . '()';
 				
 				$signatures[$prepare_method] = $signature;
-			}	
+			}
 		}
 	}
 	
@@ -654,17 +654,17 @@ class fORMColumn
 	static public function setDateCreated($object, &$values, &$old_values, &$related_records)
 	{
 		if ($object->exists()) {
-			return;	
+			return;
 		}
 		
 		$class = get_class($object);
 		
 		foreach (self::$date_created_columns[$class] as $column => $enabled) {
 			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();	
+				$old_values[$column] = array();
 			}
 			$old_values[$column] = $values[$column];
-			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
+			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));
 		}
 	}
 	
@@ -686,10 +686,10 @@ class fORMColumn
 		
 		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
 			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();	
+				$old_values[$column] = array();
 			}
 			$old_values[$column][] = $values[$column];
-			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));		
+			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));
 		}
 	}
 	
@@ -708,7 +708,7 @@ class fORMColumn
 	static public function setRandomStrings($object, &$values, &$old_values, &$related_records)
 	{
 		if ($object->exists()) {
-			return;	
+			return;
 		}
 		
 		$class = get_class($object);
@@ -716,7 +716,7 @@ class fORMColumn
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
 			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();	
+				$old_values[$column] = array();
 			}
 			$old_values[$column] = $values[$column];
 			
@@ -738,7 +738,7 @@ class fORMColumn
 			
 			// If is is not a unique column, just generate a value
 			if (!$is_unique_column) {
-				$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);	
+				$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);
 			}
 		}
 	}
@@ -762,18 +762,18 @@ class fORMColumn
 		
 		if (empty(self::$email_columns[$class])) {
 			return;
-		}	
+		}
 		
 		foreach (self::$email_columns[$class] as $column => $enabled) {
 			if (!fCore::stringlike($values[$column])) {
-				continue;	
+				continue;
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
 				$validation_messages[] = fGrammar::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fORM::getColumnName($class, $column)
 				);
-			}	
+			}
 		}
 	}
 	
@@ -796,18 +796,18 @@ class fORMColumn
 		
 		if (empty(self::$link_columns[$class])) {
 			return;
-		}	
+		}
 		
 		foreach (self::$link_columns[$class] as $column => $enabled) {
 			if (!fCore::stringlike($values[$column])) {
-				continue;	
+				continue;
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
 				$validation_messages[] = fGrammar::compose(
 					'%s: Please enter a link in the form http://www.example.com',
 					fORM::getColumnName($class, $column)
 				);
-			}	
+			}
 		}
 	}
 	
@@ -830,11 +830,11 @@ class fORMColumn
 		
 		if (empty(self::$money_columns[$class])) {
 			return;
-		}	
+		}
 		
 		foreach (self::$money_columns[$class] as $column => $enabled) {
 			if ($values[$column] instanceof fMoney) {
-				continue;	
+				continue;
 			}
 			$validation_messages[] = fGrammar::compose(
 				'%s: Please enter a valid monetary value',

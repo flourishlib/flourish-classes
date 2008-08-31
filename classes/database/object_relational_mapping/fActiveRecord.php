@@ -58,7 +58,7 @@ abstract class fActiveRecord
 				$this->related_records,
 				$method_name,
 				$parameters
-			);	
+			);
 		}
 		
 		// This will prevent quiet failure
@@ -138,14 +138,14 @@ abstract class fActiveRecord
 				}
 				return fORMRelated::createRecord($this, $this->values, $subject);
 			 
-			case 'inject': 
-				$subject = fGrammar::singularize($subject); 
-				$subject = fGrammar::camelize($subject, TRUE); 
+			case 'inject':
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
 				 
-				if (isset($parameters[1])) { 
-					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]); 
-				} 
-				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]); 			
+				if (isset($parameters[1])) {
+					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				}
+				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]);
 
 			case 'link':
 				$subject = fGrammar::singularize($subject);
@@ -187,7 +187,7 @@ abstract class fActiveRecord
 	/**
 	 * Creates a record
 	 * 
-	 * @throws  fNotFoundException
+	 * @throws fNotFoundException
 	 * 
 	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of (string) {field name} => (mixed) {value}.
 	 * @return fActiveRecord
@@ -208,7 +208,7 @@ abstract class fActiveRecord
 				$this->old_values,
 				$this->related_records,
 				$primary_key
-			);	
+			);
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
@@ -346,8 +346,8 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records
-			);	
-		}	
+			);
+		}
 		
 		if (!$this->exists()) {
 			fCore::toss(
@@ -653,7 +653,7 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records
-			);	
+			);
 		}
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
@@ -709,9 +709,9 @@ abstract class fActiveRecord
 		$info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
-			unset($info['valid_values']);	
+			unset($info['valid_values']);
 			unset($info['max_length']);
-		}                                   
+		}
 		
 		if ($info['type'] != 'float') {
 			unset($info['decimal_places']);
@@ -732,9 +732,9 @@ abstract class fActiveRecord
 						fCore::dump($element),
 						join(', ', array_keys($info))
 					)
-				);	
+				);
 			}
-			return $info[$element];	
+			return $info[$element];
 		}
 		
 		return $info;
@@ -744,7 +744,7 @@ abstract class fActiveRecord
 	/**
 	 * Loads a record from the database
 	 * 
-	 * @throws  fNotFoundException
+	 * @throws fNotFoundException
 	 * 
 	 * @return void
 	 */
@@ -757,7 +757,7 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records
-			);	
+			);
 		}
 		
 		try {
@@ -882,7 +882,7 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records
-			);	
+			);
 		}
 		
 		fORM::callHookCallback(
@@ -1027,7 +1027,7 @@ abstract class fActiveRecord
 		
 		// Turn like-breaks into breaks for text fields and add links
 		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
-			return fHTML::createLinks(fHTML::convertNewlines(fHTML::prepare($value)));		
+			return fHTML::createLinks(fHTML::convertNewlines(fHTML::prepare($value)));
 		}
 		
 		// Anything that has gotten to here is a string value, or is not the
@@ -1056,16 +1056,16 @@ abstract class fActiveRecord
 			if ($include_doc_comments) {
 				$fixed_type = $column_info['type'];
 				if ($fixed_type == 'blob') {
-					$fixed_type = 'string';	
+					$fixed_type = 'string';
 				}
 				if ($fixed_type == 'date') {
-					$fixed_type = 'fDate';	
+					$fixed_type = 'fDate';
 				}
 				if ($fixed_type == 'timestamp') {
-					$fixed_type = 'fTimestamp';	
+					$fixed_type = 'fTimestamp';
 				}
 				if ($fixed_type == 'time') {
-					$fixed_type = 'fTime';	
+					$fixed_type = 'fTime';
 				}
 				
 				$signature .= "/**\n";
@@ -1084,16 +1084,16 @@ abstract class fActiveRecord
 			if ($include_doc_comments) {
 				$fixed_type = $column_info['type'];
 				if ($fixed_type == 'blob') {
-					$fixed_type = 'string';	
+					$fixed_type = 'string';
 				}
 				if ($fixed_type == 'date') {
-					$fixed_type = 'fDate|string';	
+					$fixed_type = 'fDate|string';
 				}
 				if ($fixed_type == 'timestamp') {
-					$fixed_type = 'fTimestamp|string';	
+					$fixed_type = 'fTimestamp|string';
 				}
 				if ($fixed_type == 'time') {
-					$fixed_type = 'fTime|string';	
+					$fixed_type = 'fTime|string';
 				}
 				
 				$signature .= "/**\n";
@@ -1120,7 +1120,7 @@ abstract class fActiveRecord
 					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
 				}
 				if (in_array($column_info['type'], array('float'))) {
-					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";		
+					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";
 				}
 				
 				$signature .= " * @return string  The HTML form-ready value\n";
@@ -1129,10 +1129,10 @@ abstract class fActiveRecord
 			$encode_method = 'encode' . $camelized_column;
 			$signature .= 'public function ' . $encode_method . '(';
 			if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
-				$signature .= '$date_formatting_string';		
+				$signature .= '$date_formatting_string';
 			}
 			if (in_array($column_info['type'], array('float'))) {
-				$signature .= '$decimal_places=NULL';		
+				$signature .= '$decimal_places=NULL';
 			}
 			$signature .= ')';
 			
@@ -1150,25 +1150,25 @@ abstract class fActiveRecord
 					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
 				}
 				if (in_array($column_info['type'], array('float'))) {
-					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";		
+					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";
 				}
 				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";;		
+					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";;
 				}
 				
 				$signature .= " * @return string  The HTML-ready value\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$prepare_method = 'prepare' . $camelized_column;
 			$signature .= 'public function ' . $prepare_method . '(';
 			if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
-				$signature .= '$date_formatting_string';		
+				$signature .= '$date_formatting_string';
 			}
 			if (in_array($column_info['type'], array('float'))) {
-				$signature .= '$decimal_places=NULL';		
+				$signature .= '$decimal_places=NULL';
 			}
 			if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-				$signature .= '$create_links_and_line_breaks=FALSE';		
+				$signature .= '$create_links_and_line_breaks=FALSE';
 			}
 			$signature .= ')';
 			
@@ -1183,7 +1183,7 @@ abstract class fActiveRecord
 				$signature .= " * \n";
 				$elements = array('type', 'not_null', 'default');
 				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-					$elements[] = 'valid_values';	
+					$elements[] = 'valid_values';
 					$elements[] = 'max_length';
 				}
 				if ($column_info['type'] == 'float') {
@@ -1194,7 +1194,7 @@ abstract class fActiveRecord
 				}
 				$signature .= " * @param  string \$element  The element to return. Must be one of: '" . join("', '", $elements) . "'.\n";
 				$signature .= " * @return mixed  The metadata array or a single element\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$inspect_method = 'inspect' . $camelized_column;
 			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
@@ -1213,12 +1213,12 @@ abstract class fActiveRecord
 			$signature = '';
 			
 			if (!$method->isPublic() || $method->getName() == '__call') {
-				continue;	
+				continue;
 			}
 			
 			if ($method->isFinal()) {
 				$signature .= 'final ';
-			}	
+			}
 			
 			if ($method->isAbstract()) {
 				$signature .= 'abstract ';
@@ -1231,7 +1231,7 @@ abstract class fActiveRecord
 			$signature .= 'public function ';
 			
 			if ($method->returnsReference()) {
-				$signature .= '&';	
+				$signature .= '&';
 			}
 			
 			$signature .= $method->getName();
@@ -1239,28 +1239,28 @@ abstract class fActiveRecord
 			
 			$parameters = $method->getParameters();
 			foreach ($parameters as $parameter) {
-				if (substr($signature, -1) == '(') { 
+				if (substr($signature, -1) == '(') {
 					$signature .= '';
 				} else {
 					$signature .= ', ';
-				}	
+				}
 				
-				$signature .= '$' . $parameter->getName();	
+				$signature .= '$' . $parameter->getName();
 				
 				if ($parameter->isDefaultValueAvailable()) {
-					$val = var_export($parameter->getDefaultValue(), TRUE);	
+					$val = var_export($parameter->getDefaultValue(), TRUE);
 					if ($val == 'true') {
-						$val = 'TRUE';	
+						$val = 'TRUE';
 					}
 					if ($val == 'false') {
-						$val = 'FALSE';	
+						$val = 'FALSE';
 					}
 					if (is_array($parameter->getDefaultValue())) {
 						$val = preg_replace('#array\s+\(\s+#', 'array(', $val);
 						$val = preg_replace('#,(\r)?\n  #', ', ', $val);
-						$val = preg_replace('#,(\r)?\n\)#', ')', $val);	
+						$val = preg_replace('#,(\r)?\n\)#', ')', $val);
 					}
-					$signature .= '=' . $val; 		
+					$signature .= '=' . $val;
 				}
 			}
 			
@@ -1307,7 +1307,7 @@ abstract class fActiveRecord
 		$value = fORM::objectify($this, $column, $value);
 		
 		if (!isset($this->old_values[$column])) {
-			$this->old_values[$column] = array();	
+			$this->old_values[$column] = array();
 		}
 		
 		$this->old_values[$column][] = $this->values[$column];
@@ -1319,7 +1319,7 @@ abstract class fActiveRecord
 	 * Stores a record in the database. Will start database and filesystem
 	 * transactions if not already inside them.
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @return void
 	 */
@@ -1332,7 +1332,7 @@ abstract class fActiveRecord
 				$this->values,
 				$this->old_values,
 				$this->related_records
-			);	
+			);
 		}
 		
 		fORM::callHookCallback(
@@ -1480,7 +1480,7 @@ abstract class fActiveRecord
 			$this->related_records
 		);
 		
-		// If we got here we succefully stored, so update old values to make exists() work 
+		// If we got here we succefully stored, so update old values to make exists() work
 		foreach ($this->values as $column => $value) {
 			$this->old_values[$column] = array($value);
 		}
@@ -1490,7 +1490,7 @@ abstract class fActiveRecord
 	/**
 	 * Validates the contents of the record
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  boolean $return_messages  If an array of validation messages should be returned instead of an exception being thrown
 	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned
@@ -1505,7 +1505,7 @@ abstract class fActiveRecord
 				$this->old_values,
 				$this->related_records,
 				$return_messages
-			);	
+			);
 		}
 		
 		$validation_messages = array();
@@ -1523,7 +1523,7 @@ abstract class fActiveRecord
 		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
 		
 		// Validate related records
-		$related_validation_messages = fORMValidation::validateRelated($this, $this->related_records);	
+		$related_validation_messages = fORMValidation::validateRelated($this, $this->related_records);
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		
@@ -1539,7 +1539,7 @@ abstract class fActiveRecord
 		fORMValidation::reorderMessages($this, $validation_messages);
 		
 		if ($return_messages) {
-			return $validation_messages;	
+			return $validation_messages;
 		}
 		
 		if (!empty($validation_messages)) {

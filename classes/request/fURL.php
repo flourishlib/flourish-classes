@@ -90,7 +90,7 @@ class fURL
 		
 		// Strip the ? if there are no query string parameters
 		if (substr($url, -1) == '?') {
-			$url = substr($url, 0, -1);	
+			$url = substr($url, 0, -1);
 		}
 		
 		header('Location: ' . $url);
@@ -118,7 +118,7 @@ class fURL
 		}
 		
 		foreach ($parameters as $parameter) {
-			unset($qs_array[$parameter]);	
+			unset($qs_array[$parameter]);
 		}
 		
 		return '?' . http_build_query($qs_array, '', '&');
@@ -159,7 +159,7 @@ class fURL
 		
 		for ($i=0; $i<sizeof($parameter); $i++) {
 			$qs_array[$parameter[$i]] = $value[$i];
-		}   
+		}
 		
 		return '?' . http_build_query($qs_array, '', '&');
 	}

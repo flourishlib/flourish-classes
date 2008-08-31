@@ -40,7 +40,7 @@ class fTimestamp
 	static public function callFormatCallback($formatted_string)
 	{
 		if (self::$format_callback) {
-			return call_user_func(self::$format_callback, $formatted_string);	
+			return call_user_func(self::$format_callback, $formatted_string);
 		}
 		return $formatted_string;
 	}
@@ -362,7 +362,7 @@ class fTimestamp
 				return fGrammar::compose('right now');
 			}
 			return fGrammar::compose('at the same time');
-		}		
+		}
 		
 		$break_points = array(
 			/* 45 seconds  */
@@ -373,11 +373,11 @@ class fTimestamp
 			64800      => array(3600,     fGrammar::compose('hour'),   fGrammar::compose('hours')),
 			/* 5 days      */
 			432000     => array(86400,    fGrammar::compose('day'),    fGrammar::compose('days')),
-			/* 3 weeks     */ 
+			/* 3 weeks     */
 			1814400    => array(604800,   fGrammar::compose('week'),   fGrammar::compose('weeks')),
-			/* 9 months    */ 
+			/* 9 months    */
 			23328000   => array(2592000,  fGrammar::compose('month'),  fGrammar::compose('months')),
-			/* largest int */ 
+			/* largest int */
 			2147483647 => array(31536000, fGrammar::compose('year'),   fGrammar::compose('years'))
 		);
 		
@@ -402,8 +402,8 @@ class fTimestamp
 				'%1$s %2$s ago',
 				$unit_diff,
 				$units
-			);	
-		} 
+			);
+		}
 		
 		if ($diff > 0) {
 			return fGrammar::compose(

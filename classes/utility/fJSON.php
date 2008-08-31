@@ -20,11 +20,11 @@
 class fJSON
 {
 	/** 
-	 * An abstract representation of [ 
+	 * An abstract representation of [
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_ARRAY_OPEN  = 0;
 	
@@ -33,88 +33,88 @@ class fJSON
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_ARRAY_COMMA = 1;
 	
 	/** 
-	 * An abstract representation of ] 
+	 * An abstract representation of ]
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_ARRAY_CLOSE = 2;
 	
 	/** 
-	 * An abstract representation of { 
+	 * An abstract representation of {
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_OBJ_OPEN    = 3;
 	
 	/** 
-	 * An abstract representation of a JSON object key 
+	 * An abstract representation of a JSON object key
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_KEY         = 4;
 	
 	/** 
-	 * An abstract representation of : 
+	 * An abstract representation of :
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_COLON       = 5;
 	
 	/** 
-	 * An abstract representation of , in a JSON object 
+	 * An abstract representation of , in a JSON object
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_OBJ_COMMA   = 6;
 	
 	/** 
-	 * An abstract representation of } 
+	 * An abstract representation of }
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_OBJ_CLOSE   = 7;
 	
 	/** 
-	 * An abstract representation of an integer 
+	 * An abstract representation of an integer
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_INTEGER     = 8;
 	
 	/** 
-	 * An abstract representation of a floating value 
+	 * An abstract representation of a floating value
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_FLOAT       = 9;
 	
 	/** 
-	 * An abstract representation of a boolean true  
+	 * An abstract representation of a boolean true
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_TRUE        = 10;
 	
@@ -123,33 +123,33 @@ class fJSON
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_FALSE       = 11;
 	
 	/** 
-	 * An abstract representation of null 
+	 * An abstract representation of null
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_NULL        = 12;
 	
 	/** 
-	 * An abstract representation of a string 
+	 * An abstract representation of a string
 	 * 
 	 * @internal
 	 *  
-	 * @var integer 
+	 * @var integer
 	 */
 	const J_STRING      = 13;
 	
 	
 	/** 
-	 * An array of special characters in JSON strings 
+	 * An array of special characters in JSON strings
 	 *  
-	 * @var array 
+	 * @var array
 	 */
 	static private $control_character_map = array(
 		'"'   => '\"', '\\' => '\\\\', '/'  => '\/', "\x8" => '\b',
@@ -161,7 +161,7 @@ class fJSON
 	 * 
 	 * @internal
 	 *  
-	 * @var array 
+	 * @var array
 	 */
 	static private $next_values = array(
 		self::J_ARRAY_OPEN => array(
@@ -193,7 +193,7 @@ class fJSON
 		),
 		self::J_OBJ_OPEN => array(
 			self::J_OBJ_CLOSE   => TRUE,
-			self::J_KEY         => TRUE	
+			self::J_KEY         => TRUE
 		),
 		self::J_KEY => array(
 			self::J_COLON       => TRUE
@@ -253,7 +253,7 @@ class fJSON
 			self::J_ARRAY_COMMA => TRUE,
 			self::J_OBJ_COMMA   => TRUE
 		)
-	);	
+	);
 	
 	
 	/** 
@@ -262,25 +262,25 @@ class fJSON
 	 * This function is very strict about the format of JSON. If the string is
 	 * not a valid JSON string, an exception will be thrown.
 	 *  
-	 * @param  string  $json   This should be the name of a related class 
+	 * @param  string  $json   This should be the name of a related class
 	 * @param  boolean $assoc  If this is TRUE, JSON objects will be represented as an assocative array instead of a stdClass object
-	 * @return array|stdClass  A PHP equivalent of the JSON string 
+	 * @return array|stdClass  A PHP equivalent of the JSON string
 	 */
 	static public function decode($json, $assoc=FALSE)
 	{
 		if (!is_string($json) && !is_numeric($json)) {
-			return NULL;	
+			return NULL;
 		}
 		
 		$json = trim($json);
 		
 		if ($json === '') {
-			return NULL;	
+			return NULL;
 		}
 		
 		// If the json is an array or object, we can rely on the php function
 		if (function_exists('json_decode') && ($json[0] == '[' || $json[0] == '{')) {
-			return json_decode($json, $assoc);	
+			return json_decode($json, $assoc);
 		}
 		
 		preg_match_all('~\[|									 # Array begin
@@ -289,7 +289,7 @@ class fJSON
 						 }|										 # Object end
 						 -?(?:0|[1-9]\d*)                        # Float
 							 (?:\.\d*(?:[eE][+\-]?\d+)?|
-							 (?:[eE][+\-]?\d+))|	            
+							 (?:[eE][+\-]?\d+))|
 						 -?(?:0|[1-9]\d*)|						 # Integer
 						 true|									 # True
 						 false|								     # False
@@ -323,11 +323,11 @@ class fJSON
 			$element = self::scalarize($type, $match);
 			if ($match !== $element) {
 				return $element;
-			}			
+			}
 		}
 		
 		if ($json[0] != '[' && $json[0] != '{') {
-			return $json;	
+			return $json;
 		}
 		
 		foreach ($matches[0] as $match) {
@@ -336,18 +336,18 @@ class fJSON
 					$output  = array();
 					$last    = self::J_ARRAY_OPEN;
 				} else {
-					$output  = ($assoc) ? array() : new stdClass();	
+					$output  = ($assoc) ? array() : new stdClass();
 					$last    = self::J_OBJ_OPEN;
 				}
 				$stack[]   =  array($last, &$output);
 				$container =& $output;
 				
-				$matched_length = 1;			
+				$matched_length = 1;
 			
-				continue;	
+				continue;
 			}
 			
-			$matched_length += strlen($match);	
+			$matched_length += strlen($match);
 			
 			// Whitespace can be skipped over
 			if (ctype_space($match)) {
@@ -362,7 +362,7 @@ class fJSON
 			}
 			
 			// Decode the data values
-			$match = self::scalarize($type, $match);	
+			$match = self::scalarize($type, $match);
 			
 			// If the element is not a value, record some info and continue
 			if ($type == self::J_COLON ||
@@ -371,9 +371,9 @@ class fJSON
 				  $type == self::J_KEY) {
 				$last = $type;
 				if ($type == self::J_KEY) {
-					$last_key = $match;	
+					$last_key = $match;
 				}
-				continue;	
+				continue;
 			}
 			
 			// This flag is used to indicate if an array or object is being added and thus
@@ -400,12 +400,12 @@ class fJSON
 			}
 			if ($type == self::J_ARRAY_OPEN) {
 				$match = array();
-				$ref_match = TRUE;	
+				$ref_match = TRUE;
 			}
 			
 			if ($ref_match) {
 				$stack[] = array($type, $match);
-				$stack_end = end($stack);	
+				$stack_end = end($stack);
 			}
 			
 			
@@ -415,13 +415,13 @@ class fJSON
 			// nested arrays and objects
 			if ($last == self::J_COLON && !$assoc) {
 				if ($last_key == '') {
-					$last_key = '_empty_';	
+					$last_key = '_empty_';
 				}
 				if ($ref_match) {
 					$container->$last_key =& $stack_end[1];
 					$container =& $stack_end[1];
 				} else {
-					$container->$last_key = $match;	
+					$container->$last_key = $match;
 				}
 				
 			} elseif ($last == self::J_COLON) {
@@ -429,7 +429,7 @@ class fJSON
 					$container[$last_key] =& $stack_end[1];
 					$container =& $stack_end[1];
 				} else {
-					$container[$last_key] = $match;		
+					$container[$last_key] = $match;
 				}
 				
 			} else {
@@ -438,19 +438,19 @@ class fJSON
 					$container =& $stack_end[1];
 				} else {
 					$container[] = $match;
-				}	
+				}
 			}
 			
 			if ($last == self::J_COLON) {
 				$last_key = NULL;
 			}
-			$last = $type; 
+			$last = $type;
 
 		}
 		
 		if ($matched_length != strlen($json) || sizeof($stack) > 0) {
 			return NULL;
-		}	
+		}
 		
 		return $output;
 	}
@@ -465,7 +465,7 @@ class fJSON
 	static public function encode($value)
 	{
 		if (function_exists('json_encode')) {
-			return @json_encode($value);	
+			return @json_encode($value);
 		}
 		
 		if (is_int($value)) {
@@ -479,27 +479,27 @@ class fJSON
 			//		return $value . '.0';
 			//	}
 			//}
-			return (string) $value;	
-		}	 	
+			return (string) $value;
+		}
 		
 		if (is_bool($value)) {
 			return ($value) ? 'true' : 'false';
-		}	
+		}
 		
 		if (is_null($value)) {
-			return 'null';	
+			return 'null';
 		}
 		
 		if (is_resource($value)) {
-			return 'null';	
+			return 'null';
 		}
 		
 		if (is_string($value)) {
 			//if (self::$fix) {
-			//	$value = fUTF8::clean($value);	
+			//	$value = fUTF8::clean($value);
 			//} else {
 				// strip any bad characters
-				$value = iconv('utf-8', 'utf-8', $value);	
+				$value = iconv('utf-8', 'utf-8', $value);
 			//}
 			
 			$char_array = fUTF8::explode($value);
@@ -514,7 +514,7 @@ class fJSON
 				
 				} else {
 					$output .= '\u' . substr(strtolower(fUTF8::ord($char)), 2);
-				}	 		
+				}
 			}
 			$output .= '"';
 			
@@ -527,7 +527,7 @@ class fJSON
 			$looking_for = 0;
 			foreach ($value as $key => $val) {
 				if (!is_numeric($key) || $key != $looking_for) {
-					$is_assoc_array = TRUE;	
+					$is_assoc_array = TRUE;
 					break;
 				}
 				$looking_for++;
@@ -539,11 +539,11 @@ class fJSON
 			$members = array();
 			
 			foreach ($value as $key => $val) {
-				$members[] = self::encode((string) $key) . ':' . self::encode($val);	
+				$members[] = self::encode((string) $key) . ':' . self::encode($val);
 			}
 			
 			$output .= join(',', $members);
-			$output .= '}';	
+			$output .= '}';
 			return $output;
 		}
 		
@@ -557,7 +557,7 @@ class fJSON
 			
 			$output .= join(',', $members);
 			$output .= ']';
-			return $output;	 		
+			return $output;
 		}
 	}
 	
@@ -574,38 +574,38 @@ class fJSON
 	{
 		if ($element == '[') {
 			return self::J_ARRAY_OPEN;
-		}	
+		}
 		
 		if ($element == ']') {
-			return self::J_ARRAY_CLOSE;	
+			return self::J_ARRAY_CLOSE;
 		}
 		
 		if ($element == '{') {
-			return self::J_OBJ_OPEN;	
+			return self::J_OBJ_OPEN;
 		}
 		
 		if ($element == '}') {
-			return self::J_OBJ_CLOSE;	
+			return self::J_OBJ_CLOSE;
 		}
 		
 		if (ctype_digit($element)) {
 			return self::J_INTEGER;
-		}	
+		}
 		
 		if (is_numeric($element)) {
-			return self::J_FLOAT;	
+			return self::J_FLOAT;
 		}
 		
 		if ($element == 'true') {
-			return self::J_TRUE;	
+			return self::J_TRUE;
 		}
 		
 		if ($element == 'false') {
-			return self::J_FALSE;	
+			return self::J_FALSE;
 		}
 		
 		if ($element == 'null') {
-			return self::J_NULL;	
+			return self::J_NULL;
 		}
 		
 		$last_stack = end($stack);
@@ -614,15 +614,15 @@ class fJSON
 		}
 		
 		if ($element == ',') {
-			return self::J_OBJ_COMMA;	
+			return self::J_OBJ_COMMA;
 		}
 		
 		if ($element == ':') {
-			return self::J_COLON;	
+			return self::J_COLON;
 		}
 		
 		if ($last == self::J_OBJ_OPEN || $last == self::J_OBJ_COMMA) {
-			return self::J_KEY;	
+			return self::J_KEY;
 		}
 		
 		return self::J_STRING;
@@ -639,25 +639,25 @@ class fJSON
 	static private function scalarize($type, $element)
 	{
 		if ($type == self::J_INTEGER) {
-			$element = (integer) $element;	
+			$element = (integer) $element;
 		}
 		if ($type == self::J_FLOAT) {
-			$element = (float) $element;	
+			$element = (float) $element;
 		}
 		if ($type == self::J_FALSE) {
-			$element = FALSE;	
+			$element = FALSE;
 		}
 		if ($type == self::J_TRUE) {
-			$element = TRUE;	
+			$element = TRUE;
 		}
 		if ($type == self::J_NULL) {
-			$element = NULL;	
+			$element = NULL;
 		}
 		if ($type == self::J_STRING || $type == self::J_KEY) {
 			$element = substr($element, 1, -1);
 			$element = strtr($element, array_flip(self::$control_character_map));
-			$element = preg_replace('#\\\\u([0-9a-fA-F]{4})#e', 'fUTF8::chr("U+\1")', $element);	
-		}	
+			$element = preg_replace('#\\\\u([0-9a-fA-F]{4})#e', 'fUTF8::chr("U+\1")', $element);
+		}
 		
 		return $element;
 	}

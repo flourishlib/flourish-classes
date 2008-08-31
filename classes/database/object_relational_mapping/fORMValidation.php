@@ -13,7 +13,7 @@
  * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
  */
 class fORMValidation
-{	
+{
 	/**
 	 * Conditional validation rules
 	 * 
@@ -368,7 +368,7 @@ class fORMValidation
 				} catch (fNoResultsException $e) {
 					return fGrammar::compose(
 						'%s: The value specified is invalid',
-						fORM::getColumnName($class, $column)	
+						fORM::getColumnName($class, $column)
 					);
 				}
 			}
@@ -402,7 +402,7 @@ class fORMValidation
 			}
 			return fGrammar::compose(
 				'%s: Please enter a value for at least one',
-				join(', ', $column_names)	
+				join(', ', $column_names)
 			);
 		}
 	}
@@ -445,7 +445,7 @@ class fORMValidation
 	 * @param  fActiveRecord  $object       The instance of the class to check
 	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array          &$old_values  The old values for the record
-	 * @return string  A validation error message 
+	 * @return string  A validation error message
 	 */
 	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
@@ -460,7 +460,7 @@ class fORMValidation
 		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
 		$columns      = array();
 		foreach ($primary_keys as $primary_key) {
-			$columns[] = fORM::getColumnName($class, $primary_key);	
+			$columns[] = fORM::getColumnName($class, $primary_key);
 		}
 		
 		try {
@@ -486,13 +486,13 @@ class fORMValidation
 	 * @param  mixed  $class             The class name or instance of the class we are checking
 	 * @param  array  &$related_records  The related records array to check
 	 * @param  string $related_class     The name of the related class
-	 * @param  string $route             The name of the route from the class to the related class 
+	 * @param  string $route             The name of the route from the class to the related class
 	 * @return string  A validation error message for the rule
 	 */
 	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
 	{
 		if (!empty($related_records[$related_class][$route]['record_set']) && $related_records[$related_class][$route]['record_set']->isFlaggedForAssociation()) {
-			return;		
+			return;
 		}
 		
 		return fGrammar::compose(
@@ -529,10 +529,10 @@ class fORMValidation
 				foreach ($unique_columns as $unique_column) {
 					if ($values[$unique_column] !== NULL) {
 						$found_not_null = TRUE;
-					}	
+					}
 				}
 				if (!$found_not_null) {
-					continue;	
+					continue;
 				}
 				
 				$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
@@ -548,8 +548,8 @@ class fORMValidation
 					$first = TRUE;
 					foreach ($primary_keys as $primary_key) {
 						$sql  .= ($first && !$first = FALSE) ? '' : ' AND ';
-						$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key]; 
-						$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '<>');	
+						$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
+						$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '<>');
 					}
 					$sql .= ')';
 				}
@@ -603,7 +603,7 @@ class fORMValidation
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed $class                 The class name or an instance of the class to reorder messages for                 
+	 * @param  mixed $class                 The class name or an instance of the class to reorder messages for
 	 * @param  array &$validation_messages  An array of one validation message per value
 	 * @return void
 	 */
@@ -738,11 +738,11 @@ class fORMValidation
 					continue;
 				}
 				
-				$related_class = fORM::classize($related_table); 
-				$relationship  = fORMSchema::getRoute($table, $related_table, $route);	
+				$related_class = fORM::classize($related_table);
+				$relationship  = fORMSchema::getRoute($table, $related_table, $route);
 																												
 				if (isset($relationship['join_table'])) {
-					$related_messages = self::validateManyToMany($class, $related_class, $route, $record_set);	
+					$related_messages = self::validateManyToMany($class, $related_class, $route, $record_set);
 				} else {
 					$related_messages = self::validateOneToMany($class, $related_class, $route, $record_set);
 				}
@@ -751,7 +751,7 @@ class fORMValidation
 			}
 		}
 		
-		return $validation_messages;	
+		return $validation_messages;
 	}
 	
 	
@@ -782,22 +782,22 @@ class fORMValidation
 			fRequest::filter($filter, $record_number-1);
 			$record_messages = $record->validate(TRUE);
 			foreach ($record_messages as $record_message) {
-				// Ignore validation messages about the primary key since it will be added 
+				// Ignore validation messages about the primary key since it will be added
 				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
-					continue;	
+					continue;
 				}
 				$messages[] = fGrammar::compose(
 					'%1$s #%2$s %3$s',
 					$related_record_name,
 					$record_number,
 					$record_message
-				);	
+				);
 			}
 			$record_number++;
 			fRequest::unfilter();
-		}	
+		}
 		
-		return $messages;	
+		return $messages;
 	}
 	
 	
@@ -826,12 +826,12 @@ class fORMValidation
 					$related_record_name,
 					$record_number,
 					$related_record_name
-				);		
+				);
 			}
 			$record_number++;
-		}	
+		}
 		
-		return $messages;	
+		return $messages;
 	}
 }
 

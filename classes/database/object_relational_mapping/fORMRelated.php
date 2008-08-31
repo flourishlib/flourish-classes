@@ -50,7 +50,7 @@ class fORMRelated
 		foreach ($primary_keys as $primary_key) {
 			if (empty($primary_key)) {
 				continue;
-			}	
+			}
 			$new_primary_keys[] = $primary_key;
 		}
 		
@@ -98,7 +98,7 @@ class fORMRelated
 			} elseif ($same_class) {
 				$column = $table . '.' . $relationship['related_column'];
 			} else {
-				$column = $table . '.' . $relationship['column'];	
+				$column = $table . '.' . $relationship['column'];
 			}
 			
 			$where_conditions = array($column . '=' => $values[$relationship['column']]);
@@ -192,7 +192,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Figures out what filter to pass to {@link fRequest::filter()} for the specified related class 
+	 * Figures out what filter to pass to {@link fRequest::filter()} for the specified related class
 	 *
 	 * @internal
 	 * 
@@ -219,10 +219,10 @@ class fORMRelated
 		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
 		
 		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
-			$filter_table = $filter_table_with_route;	
+			$filter_table = $filter_table_with_route;
 		}
 		
-		return $filter_table . '::';	
+		return $filter_table . '::';
 	}
 	
 	
@@ -272,7 +272,7 @@ class fORMRelated
 		if (!isset(self::$related_record_names[$table]) ||
 			  !isset(self::$related_record_names[$table][$related_class]) ||
 			  !isset(self::$related_record_names[$table][$related_class][$route])) {
-			return fORM::getRecordName($related_class);	
+			return fORM::getRecordName($related_class);
 		}
 		
 		return self::$related_record_names[$table][$related_class][$route];
@@ -306,7 +306,7 @@ class fORMRelated
 		
 		// If there is only one route and they specified the route instead of leaving it off, use that
 		if ($route === NULL && !fRequest::check($field) && fRequest::check($field_with_route)) {
-			$field = $field_with_route;	
+			$field = $field_with_route;
 		}
 		
 		$primary_keys = fRequest::get($field, 'array', array());
@@ -333,12 +333,12 @@ class fORMRelated
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		if (!isset(self::$related_record_names[$table])) {
-			self::$related_record_names[$table] = array();	
+			self::$related_record_names[$table] = array();
 		}
 		
 		if (!isset(self::$related_record_names[$table][$related_class])) {
-			self::$related_record_names[$table][$related_class] = array();	
-		}   
+			self::$related_record_names[$table][$related_class] = array();
+		}
 		
 		self::$related_record_names[$table][$related_class][$route] = $record_name;
 	}
@@ -405,7 +405,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed   $class                 The class name or instance of the class this ordering rule applies to
-	 * @param  array   &$signatures           The associative array of {method_name} => {signature}     
+	 * @param  array   &$signatures           The associative array of {method_name} => {signature}
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
 	 * @return void
 	 */
@@ -427,14 +427,14 @@ class fORMRelated
 			$related_class = fORM::classize($relationship['related_table']);
 			
 			if (isset($to_one_created[$related_class])) {
-				continue;	
+				continue;
 			}
 			
 			$routes = fORMSchema::getRoutes($table, $relationship['related_table'], '*-to-one');
 			$route_names = array();
 			
 			foreach ($routes as $route) {
-				$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-one', $route);	
+				$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-one', $route);
 			}
 			
 			$signature = '';
@@ -443,7 +443,7 @@ class fORMRelated
 				$signature .= " * Creates the related " . $related_class . "\n";
 				$signature .= " * \n";
 				if (sizeof($route_names) > 1) {
-					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
 				}
 				$signature .= " * @return " . $related_class . "  The related object\n";
 				$signature .= " */\n";
@@ -451,7 +451,7 @@ class fORMRelated
 			$create_method = 'create' . $related_class;
 			$signature .= 'public function ' . $create_method . '(';
 			if (sizeof($route_names) > 1) {
-				$signature .= '$route';	
+				$signature .= '$route';
 			}
 			$signature .= ')';
 			
@@ -466,7 +466,7 @@ class fORMRelated
 			$related_class = fORM::classize($relationship['related_table']);
 			
 			if (isset($to_many_created[$related_class])) {
-				continue;	
+				continue;
 			}
 			
 			$routes = fORMSchema::getRoutes($table, $relationship['related_table'], '*-to-many');
@@ -476,7 +476,7 @@ class fORMRelated
 				if (isset($relationship['join_table'])) {
 					$route_names[] = fORMSchema::getRouteNameFromRelationship('many-to-many', $route);
 				} else {
-					$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-many', $route);	
+					$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-many', $route);
 				}
 			}
 			
@@ -486,7 +486,7 @@ class fORMRelated
 				$signature .= " * Builds an fRecordSet of the related " . $related_class . " objects\n";
 				$signature .= " * \n";
 				if (sizeof($route_names) > 1) {
-					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
 				}
 				$signature .= " * @return fRecordSet  A record set of the related " . $related_class . " objects\n";
 				$signature .= " */\n";
@@ -494,7 +494,7 @@ class fORMRelated
 			$build_method = 'build' . fGrammar::pluralize($related_class);
 			$signature .= 'public function ' . $build_method . '(';
 			if (sizeof($route_names) > 1) {
-				$signature .= '$route';	
+				$signature .= '$route';
 			}
 			$signature .= ')';
 			
@@ -507,7 +507,7 @@ class fORMRelated
 				$signature .= " * Counts the number of related " . $related_class . " objects\n";
 				$signature .= " * \n";
 				if (sizeof($route_names) > 1) {
-					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";	
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
 				}
 				$signature .= " * @return integer  The number related " . $related_class . " objects\n";
 				$signature .= " */\n";
@@ -515,7 +515,7 @@ class fORMRelated
 			$count_method = 'count' . fGrammar::pluralize($related_class);
 			$signature .= 'public function ' . $count_method . '(';
 			if (sizeof($route_names) > 1) {
-				$signature .= '$route';	
+				$signature .= '$route';
 			}
 			$signature .= ')';
 			
@@ -575,10 +575,10 @@ class fORMRelated
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		if (!isset($related_records[$related_table])) {
-			$related_records[$related_table] = array();	
+			$related_records[$related_table] = array();
 		}
 		if (!isset($related_records[$related_table][$route])) {
-			$related_records[$related_table][$route] = array();	
+			$related_records[$related_table][$route] = array();
 		}
 		
 		$related_records[$related_table][$route]['record_set'] = $records;
@@ -703,9 +703,9 @@ class fORMRelated
 		}
 		
 		if (!isset($related_records[$related_table][$route]['record_set'])) {
-			$related_records[$related_table][$route]['record_set'] = NULL;	
+			$related_records[$related_table][$route]['record_set'] = NULL;
 		}
-		$related_records[$related_table][$route]['count'] = $count;	
+		$related_records[$related_table][$route]['count'] = $count;
 		
 	}
 	

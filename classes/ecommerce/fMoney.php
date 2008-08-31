@@ -67,7 +67,7 @@ class fMoney
 			'symbol'    => $symbol,
 			'precision' => $precision,
 			'value'     => $value
-		);	
+		);
 	}
 	
 	
@@ -90,11 +90,11 @@ class fMoney
 					fCore::dump($iso_code),
 					join(', ', array_keys(self::$currencies))
 				)
-			);		
+			);
 		}
 		
 		if (!$element === NULL) {
-			return self::$currencies[$iso_code];		
+			return self::$currencies[$iso_code];
 		}
 		
 		if (!isset(self::$currencies[$iso_code][$element])) {
@@ -105,7 +105,7 @@ class fMoney
 					fCore::dump($element),
 					join(', ', array_keys(self::$currencies[$iso_code]))
 				)
-			);	
+			);
 		}
 		
 		return self::$currencies[$iso_code][$element];
@@ -152,7 +152,7 @@ class fMoney
 					fCore::dump($iso_code),
 					join(', ', array_keys(self::$currencies))
 				)
-			);		
+			);
 		}
 		
 		self::$default_currency = $iso_code;
@@ -193,7 +193,7 @@ class fMoney
 					fCore::dump($abbreviation),
 					join(', ', array_keys(self::$currencies))
 				)
-			);		
+			);
 		}
 		
 		if ($currency === NULL && self::$default_currency === NULL) {
@@ -202,7 +202,7 @@ class fMoney
 				fGrammar::compose(
 					'No currency was specified and no default currency has been set'
 				)
-			);	
+			);
 		}
 		
 		$this->currency = ($currency !== NULL) ? $currency : self::$default_currency;
@@ -271,13 +271,13 @@ class fMoney
 		
 		$total = new fNumber('0', 10);
 		foreach ($ratios as $ratio) {
-			$total = $total->add($ratio);	
+			$total = $total->add($ratio);
 		}
 		
 		if (!$total->eq('1.0')) {
 			$ratio_values = array();
 			foreach ($ratios as $ratio) {
-				$ratio_values[] = ($ratio instanceof fNumber) ? $ratio->__toString() : (string) $ratio;	
+				$ratio_values[] = ($ratio instanceof fNumber) ? $ratio->__toString() : (string) $ratio;
 			}
 			
 			fCore::toss(
@@ -286,7 +286,7 @@ class fMoney
 					'The ratios specified (%s) combined are not equal to 1',
 					join(', ', $ratio_values)
 				)
-			);		
+			);
 		}
 		
 		$truncate_precision = self::getCurrencyInfo($this->currency, 'precision');
@@ -294,7 +294,7 @@ class fMoney
 		if ($truncate_precision == 0) {
 			$smallest_amount = new fNumber('1');
 		} else {
-			$smallest_amount = new fNumber('0.' . str_pad('', $truncate_precision-1, '0') . '1');	
+			$smallest_amount = new fNumber('0.' . str_pad('', $truncate_precision-1, '0') . '1');
 		}
 		$smallest_money = new fMoney($smallest_amount, $this->currency);
 		
@@ -304,7 +304,7 @@ class fMoney
 		foreach ($ratios as $ratio) {
 			$new_amount = $this->amount->mul($ratio)->trunc($truncate_precision);
 			$sum = $sum->add($new_amount);
-			$monies[] = new fMoney($new_amount, $this->currency);	
+			$monies[] = new fMoney($new_amount, $this->currency);
 		}
 		
 		$rounded_amount = $this->round();
@@ -316,7 +316,7 @@ class fMoney
 				}
 				$money = $money->add($smallest_money);
 				$sum   = $sum->add($smallest_amount);
-			}	
+			}
 		}
 		
 		return $monies;
@@ -326,13 +326,13 @@ class fMoney
 	/**
 	 * Converts this money amount to another currency
 	 * 
-	 * @param  string $new_currency  The ISO code (three letters, e.g. 'USD') for the new currency  
+	 * @param  string $new_currency  The ISO code (three letters, e.g. 'USD') for the new currency
 	 * @return fMoney  A new fMoney object representing this amount in the new currency
 	 */
 	public function convert($new_currency)
 	{
 		if ($new_currency == $this->currency) {
-			return $this;	
+			return $this;
 		}
 		
 		if (!isset(self::$currencies[$new_currency])) {
@@ -343,8 +343,8 @@ class fMoney
 					fCore::dump($new_currency),
 					join(', ', array_keys(self::$currencies))
 				)
-			);		
-		}		
+			);
+		}
 		
 		$currency_value     = self::getCurrencyInfo($this->currency, 'value');
 		$new_currency_value = self::getCurrencyInfo($new_currency, 'value');
@@ -392,12 +392,12 @@ class fMoney
 		$sign     = '';
 		if ($integer[0] == '-') {
 			$sign    = '-';
-			$integer = substr($integer, 1);	
+			$integer = substr($integer, 1);
 		}
 		
 		$int_sections = array();
 		for ($i = strlen($integer)-3; $i > 0; $i -= 3) {
-			array_unshift($int_sections, substr($integer, $i, 3));	
+			array_unshift($int_sections, substr($integer, $i, 3));
 		}
 		array_unshift($int_sections, substr($integer, 0, $i+3));
 		
@@ -502,7 +502,7 @@ class fMoney
 	protected function round()
 	{
 		$precision = self::getCurrencyInfo($this->currency, 'precision');
-		return $this->amount->round($precision);	
+		return $this->amount->round($precision);
 	}
 	
 	

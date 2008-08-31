@@ -412,7 +412,7 @@ class fDatabase
 		
 		// Make PostgreSQL use UTF-8
 		if ($this->type == 'postgresql') {
-			$this->query("SET NAMES 'UTF8'");	
+			$this->query("SET NAMES 'UTF8'");
 		}
 	}
 	
@@ -440,7 +440,7 @@ class fDatabase
 					} else {
 						$type = 'MSSQL (ODBC)';
 						$exts = 'pdo_odbc, odbc';
-					}	
+					}
 					
 				} else {
 					if (extension_loaded('sqlsrv')) {
@@ -455,7 +455,7 @@ class fDatabase
 					} else {
 						$type = 'MSSQL';
 						$exts = 'sqlsrv, pdo_dblib, mssql';
-					}	
+					}
 				}
 				break;
 			
@@ -528,7 +528,7 @@ class fDatabase
 						fGrammar::compose(
 							'The database specified is an %2$s database and the %2$s extension is not installed',
 							'SQLite v3',
-							'pdo_sqlite'	
+							'pdo_sqlite'
 						)
 					);
 					
@@ -560,7 +560,7 @@ class fDatabase
 					$type,
 					$exts
 				)
-			);				
+			);
 		}
 	}
 	
@@ -606,7 +606,7 @@ class fDatabase
 	public function escapeBlob($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		
 		$this->connectToDatabase();
@@ -638,7 +638,7 @@ class fDatabase
 	public function escapeBoolean($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		
 		if (in_array($this->type, array('postgresql', 'mysql'))) {
@@ -660,7 +660,7 @@ class fDatabase
 	public function escapeDate($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!strtotime($value)) {
 			return 'NULL';
@@ -680,13 +680,13 @@ class fDatabase
 	public function escapeFloat($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!strlen($value)) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#', $value)) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		return (string) $value;
 	}
@@ -703,13 +703,13 @@ class fDatabase
 	public function escapeInteger($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!strlen($value)) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!preg_match('#^[+\-]?[0-9]+$#', $value)) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		return (string) $value;
 	}
@@ -726,7 +726,7 @@ class fDatabase
 	public function escapeString($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		
 		$this->connectToDatabase();
@@ -772,9 +772,9 @@ class fDatabase
 						$output .= $character;
 						// Escape single quotes
 						if ($character = "'") {
-							$output .= "'";	
+							$output .= "'";
 						}
-					}		
+					}
 				}
 				$output .= "'";
 				return $output;
@@ -801,7 +801,7 @@ class fDatabase
 	public function escapeTime($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!strtotime($value)) {
 			return 'NULL';
@@ -821,7 +821,7 @@ class fDatabase
 	public function escapeTimestamp($value)
 	{
 		if ($value === NULL) {
-			return 'NULL';	
+			return 'NULL';
 		}
 		if (!strtotime($value)) {
 			return 'NULL';
@@ -852,11 +852,11 @@ class fDatabase
 				odbc_longreadlen($resource, 1048576);
 				odbc_binmode($resource, ODBC_BINMODE_CONVERT);
 				while ($row = odbc_fetch_array($resource)) {
-					$rows[] = $row;	
+					$rows[] = $row;
 				}
 				$result->setResult($rows);
 			} else {
-				$result->setResult($resource);	
+				$result->setResult($resource);
 			}
 		} elseif ($this->extension == 'pgsql') {
 			$result->setResult(@pg_query($this->connection, $result->getSQL()));
@@ -868,10 +868,10 @@ class fDatabase
 			if (is_resource($resource)) {
 				while ($row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC)) {
 					$rows[] = $row;
-				}		
+				}
 				$result->setResult($rows);
 			} else {
-				$result->setResult($resource);	
+				$result->setResult($resource);
 			}
 		} elseif ($this->extension == 'pdo') {
 			$pdo_statement = $this->connection->query($result->getSQL());
@@ -1101,7 +1101,7 @@ class fDatabase
 						$insert_id = array_shift($insert_id_row);
 						
 					} catch (Exception $e) {
-						// If there was an error we don't have an insert id	
+						// If there was an error we don't have an insert id
 					}
 				
 				case 'postgresql':
@@ -1274,7 +1274,7 @@ class fDatabase
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()
 				)
-			);	
+			);
 		}
 		
 		// Handle multiple SQL queries
@@ -1467,7 +1467,7 @@ class fDatabase
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()
 				)
-			);	
+			);
 		}
 		
 		$this->unbuffered_result = $result;

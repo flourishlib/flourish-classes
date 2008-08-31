@@ -370,9 +370,9 @@ class fShippingRates
 	/**
 	 * Fetches the rates from the shipping company
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
-	 * @return array  An array of (string) {service name} => (string) {price with currency symbol} 
+	 * @return array  An array of (string) {service name} => (string) {price with currency symbol}
 	 */
 	public function fetch()
 	{
@@ -388,6 +388,8 @@ class fShippingRates
 	
 	/**
 	 * Builds and sends the XML request to the UPS servers, returning an array of service names and prices
+	 * 
+	 * @throws fValidationException
 	 * 
 	 * @return array  An associative array of service names and prices
 	 */
@@ -876,7 +878,7 @@ XMLDATA;
 	/**
 	 * Makes sure all of the required fields are entered, and that data types are correct
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @return void
 	 */

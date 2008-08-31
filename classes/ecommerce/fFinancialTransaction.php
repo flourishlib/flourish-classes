@@ -622,7 +622,7 @@ class fFinancialTransaction
 	/**
 	 * Runs the transaction, will thrown an exception if something goes wrong
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @return string  The transaction id returned by the gateway
 	 */
@@ -1246,7 +1246,7 @@ class fFinancialTransaction
 	/**
 	 * Makes sure all of the required fields are entered, and that data types are correct
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @return void
 	 */

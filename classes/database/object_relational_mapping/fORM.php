@@ -196,13 +196,13 @@ class fORM
 		}
 		
 		if (!$callback) {
-			return TRUE;	
+			return TRUE;
 		}
 		
 		foreach (self::$hook_callbacks[$class][$hook] as $_callback) {
 			if ($_callback == $callback) {
 				return TRUE;
-			}	
+			}
 		}
 		
 		return FALSE;
@@ -292,7 +292,7 @@ class fORM
 		sort($primary_key_data);
 		foreach ($primary_key_data as $primary_key => $data) {
 			if (is_object($data) && is_callable(array($data, '__toString'))) {
-				$data = $data->__toString();	
+				$data = $data->__toString();
 			}
 			$primary_key_data[$primary_key] = (string) $data;
 		}
@@ -405,7 +405,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
-			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);	
+			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		$table = self::tablize($class);
@@ -469,7 +469,7 @@ class fORM
 	/**
 	 * Registers a callback for one of the various {@link fActiveRecord} hooks
 	 * 
-	 * Any hook that does not begin with replace:: can have multiple callbacks. 
+	 * Any hook that does not begin with replace:: can have multiple callbacks.
 	 * replace:: hooks can only have one, the most recently registered.
 	 * 
 	 * The method signature should include the follow parameters:
@@ -482,7 +482,7 @@ class fORM
 	 * Below is a list of other parameters passed to specific hooks:
 	 *   - 'replace::validate()': $return messages - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
 	 *   - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
-	 *   - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with  
+	 *   - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to hook
 	 * @param  string   $hook      The hook to register for
@@ -542,7 +542,7 @@ class fORM
 					join(', ', $valid_hooks),
 					'replace::{methodName}()'
 				)
-			);	
+			);
 		}
 		
 		if ($replace_hook && in_array($hook, $invalid_replace_hooks)) {
@@ -554,7 +554,7 @@ class fORM
 					'replace::',
 					join(', ', $invalid_replace_hooks)
 				)
-			);	
+			);
 		}
 		
 		if (!isset(self::$hook_callbacks[$class])) {
@@ -569,7 +569,7 @@ class fORM
 		} else {
 			if (!isset(self::$hook_callbacks[$class][$hook])) {
 				self::$hook_callbacks[$class][$hook] = array();
-			}	
+			}
 			self::$hook_callbacks[$class][$hook][] = $callback;
 		}
 	}
@@ -618,7 +618,7 @@ class fORM
 		if (!isset(self::$reflect_callbacks[$class])) {
 			self::$reflect_callbacks[$class] = array();
 		} elseif (in_array($callback, self::$reflect_callbacks[$class])) {
-			return;	
+			return;
 		}
 		
 		self::$reflect_callbacks[$class][] = $callback;
@@ -683,7 +683,7 @@ class fORM
 		$class = self::getClassName($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
-			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);	
+			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		if (is_object($value)) {

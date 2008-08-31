@@ -90,7 +90,7 @@ class fResult implements Iterator
 	{
 		// Certain extensions don't offer a buffered query, so it is emulated using an array
 		if (in_array($extension, array('odbc', 'pdo', 'sqlsrv'))) {
-			$extension = 'array';	
+			$extension = 'array';
 		}
 		
 		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite');
@@ -182,8 +182,8 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws  fNoResultsException
-	 * @throws  fNoRemainingException
+	 * @throws fNoResultsException
+	 * @throws fNoRemainingException
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -234,8 +234,8 @@ class fResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws  fNoResultsException
-	 * @throws  fNoRemainingException
+	 * @throws fNoResultsException
+	 * @throws fNoRemainingException
 	 * 
 	 * @return array|false  The associative array of the row or FALSE if no remaining records
 	 */
@@ -250,8 +250,8 @@ class fResult implements Iterator
 	/**
 	 * Wraps around {@link fetchRow()} and returns the first field from the row instead of the whole row.
 	 * 
-	 * @throws  fNoResultsException
-	 * @throws  fNoRemainingException
+	 * @throws fNoResultsException
+	 * @throws fNoRemainingException
 	 * 
 	 * @return string|number  The first scalar value from {@link fetchRow()}
 	 */
@@ -465,7 +465,7 @@ class fResult implements Iterator
 	/** 
 	 * Seeks to the specified zero-based row for the specified SQL query
 	 * 
-	 * @throws  fNoResultsException
+	 * @throws fNoResultsException
 	 * 
 	 * @param  integer $row  The row number to seek to (zero-based)
 	 * @return void
@@ -607,7 +607,7 @@ class fResult implements Iterator
 	/**
 	 * Throws an {@link fNoResultException} if the query did not return any rows
 	 * 
-	 * @throws  fNoResultsException
+	 * @throws fNoResultsException
 	 * 
 	 * @return void
 	 */

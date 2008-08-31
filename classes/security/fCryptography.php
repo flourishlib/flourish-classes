@@ -129,7 +129,7 @@ class fCryptography
 	 * A public key (X.509 certificate) is required for encryption and a
 	 * private key (PEM) is required for decryption.
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  string $ciphertext        The content to be decrypted
 	 * @param  string $private_key_file  The path to a PEM-encoded private key
@@ -267,7 +267,7 @@ class fCryptography
 	{
 		self::seedRandom();
 		if ($min !== NULL || $max !== NULL) {
-			return mt_rand($min, $max); 		
+			return mt_rand($min, $max);
 		}
 		return mt_rand();
 	}
@@ -283,7 +283,7 @@ class fCryptography
 		static $seeded = FALSE;
 		
 		if ($seeded) {
-			return;	
+			return;
 		}
 		
 		$seed = md5(microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__));
@@ -302,7 +302,7 @@ class fCryptography
 	 * Since this is symmetric-key cryptography, the same key is used for
 	 * encryption and decryption.
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  string $ciphertext  The content to be decrypted
 	 * @param  string $secret_key  The secret key to use for decryption

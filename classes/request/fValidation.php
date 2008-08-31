@@ -53,10 +53,10 @@ class fValidation
 					'fProgrammerException',
 					fGrammar::compose(
 						'The field specified, %s, does not appear to be a valid field name',
-						fCore::dump($arg)	
+						fCore::dump($arg)
 					)
 				);
-			}	
+			}
 		}
 		$this->email_fields = array_merge($this->email_fields, $args);
 	}
@@ -80,10 +80,10 @@ class fValidation
 					'fProgrammerException',
 					fGrammar::compose(
 						'The field specified, %s, does not appear to be a valid field name',
-						fCore::dump($arg)	
+						fCore::dump($arg)
 					)
 				);
-			}	
+			}
 		}
 		$this->email_header_fields = array_merge($this->email_header_fields, $args);
 	}
@@ -116,7 +116,7 @@ class fValidation
 		foreach ($args as $arg) {
 			// This handles normal field validation
 			if (fCore::stringlike($arg)) {
-				$fixed_args[] = $arg;		
+				$fixed_args[] = $arg;
 			
 			// This allows for 'or' validation
 			} elseif (is_array($arg) && sizeof($arg) > 1) {
@@ -131,13 +131,13 @@ class fValidation
 					'fProgrammerException',
 					fGrammar::compose(
 						'The field specified, %s, does not appear to be a valid required field definition',
-						fCore::dump($arg)	
+						fCore::dump($arg)
 					)
 				);
-			}	
+			}
 		}
 		
-		$this->required_fields = array_merge($this->required_fields, $fixed_args);	
+		$this->required_fields = array_merge($this->required_fields, $fixed_args);
 	}
 	
 	
@@ -218,7 +218,7 @@ class fValidation
 			// Handle conditional fields
 			} else {
 				if (!fCore::stringlike(fRequest::get($key))) {
-					continue;	
+					continue;
 				}
 				foreach ($required_field as $individual_field) {
 					if (!fCore::stringlike(fRequest::get($individual_field))) {
@@ -264,7 +264,7 @@ class fValidation
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
 					fGrammar::compose("The following problems we found:"),
 					join("</li>\n<li>", $messages)
-				)	
+				)
 			);
 		}
 	}

@@ -72,7 +72,7 @@ class fUpload
 	
 	
 	/**
-	 * Returns the number of files uploaded to a file upload array field 
+	 * Returns the number of files uploaded to a file upload array field
 	 * 
 	 * @param  string  $field  The field to get the number of files for
 	 * @return integer  The number of uploaded files
@@ -95,7 +95,7 @@ class fUpload
 					'The field specified, %s, does not appear to be an array file upload field',
 					fCore::dump($field)
 				)
-			);	
+			);
 		}
 		
 		return sizeof($_FILES[$field]['name']);
@@ -103,7 +103,7 @@ class fUpload
 	
 	
 	/**
-	 * Returns the $_FILES array for the field specified. 
+	 * Returns the $_FILES array for the field specified.
 	 * 
 	 * @param  string  $field  The field to get the file array for
 	 * @param  integer $index  If the field is an array file upload field, use this to specify which array index to return
@@ -112,7 +112,7 @@ class fUpload
 	static private function extractFileUploadArray($field, $index=NULL)
 	{
 		if ($index === NULL) {
-			return $_FILES[$field];	
+			return $_FILES[$field];
 		}
 		
 		if (!is_array($_FILES[$field]['name'])) {
@@ -122,7 +122,7 @@ class fUpload
 					'The field specified, %s, does not appear to be an array file upload field',
 					fCore::dump($field)
 				)
-			);	
+			);
 		}
 		if (!isset($_FILES[$field]['name'][$index])) {
 			fCore::toss(
@@ -138,7 +138,7 @@ class fUpload
 		$file_array['type']     = $_FILES[$field]['type'][$index];
 		$file_array['tmp_name'] = $_FILES[$field]['tmp_name'][$index];
 		$file_array['error']    = $_FILES[$field]['error'][$index];
-		$file_array['size']     = $_FILES[$field]['size'][$index];	
+		$file_array['size']     = $_FILES[$field]['size'][$index];
 		
 		return $file_array;
 	}
@@ -245,7 +245,7 @@ class fUpload
 	/**
 	 * Handles a file upload
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @param  string            $field      The file upload field to get the file from
@@ -308,7 +308,7 @@ class fUpload
 	/**
 	 * Validates the uploaded file, ensuring a file was actually uploaded and that is matched the restrictions put in place
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  string  $field  The field the file was uploaded through
 	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
@@ -323,7 +323,7 @@ class fUpload
 					'The field specified, %s, does not appear to be a file upload field',
 					fCore::dump($field)
 				)
-			); 		
+			);
 		}
 		
 		$file_array = self::extractFileUploadArray($field, $index);

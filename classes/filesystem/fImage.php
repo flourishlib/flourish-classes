@@ -56,7 +56,7 @@ class fImage extends fFile
 		}
 		
 		if (self::isOpenBaseDirRestricted($path)) {
-			exec($path . 'convert -version', $executable);	
+			exec($path . 'convert -version', $executable);
 		} else {
 			$executable = is_executable($path . 'convert');
 		}
@@ -138,27 +138,27 @@ class fImage extends fFile
 			// Look for imagemagick first since it can handle more than GD
 			try {
 				
-				$locations = array( 
+				$locations = array(
 					'solaris'    => array(
 						'/opt/local/bin/',
 						'/opt/bin/',
 						'/opt/csw/bin/'
-					), 
+					),
 					'linux/unix' => array(
 						'/usr/local/bin/',
 						'/usr/bin/'
 					)
 				);
 				
-				switch ($os = fCore::getOS()) { 
-					case 'windows': 
+				switch ($os = fCore::getOS()) {
+					case 'windows':
 						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
 						exec($win_search, $win_output);
-						$win_output = trim(join("\n", $win_output)); 
+						$win_output = trim(join("\n", $win_output));
 						 
 						if (!$win_output || stripos($win_output, 'File not found') !== FALSE) {
-							throw new Exception(); 
-						} 
+							throw new Exception();
+						}
 						 
 						$path = 'C:\Program Files\\' . $win_output . '\\';
 						break;
@@ -169,14 +169,14 @@ class fImage extends fFile
 						foreach($locations[$os] as $location) {
 							if (self::isSafeModeExecDirRestricted($location)) {
 								continue;
-							}	
+							}
 							if (self::isOpenBaseDirRestricted($location)) {
 								exec($location . 'convert -version', $output);
 								if ($output) {
 									$found = TRUE;
 									$path  = $location;
 									break;
-								}	
+								}
 							} elseif (is_executable($location . 'convert')) {
 								$found = TRUE;
 								$path  = $location;
@@ -204,7 +204,7 @@ class fImage extends fFile
 						break;
 					
 					default:
-						$path = NULL; 
+						$path = NULL;
 				}
 				
 				self::checkImageMagickBinary($path);
@@ -258,7 +258,7 @@ class fImage extends fFile
 	 *  - 'png'
 	 *  - 'tif'
 	 * 
-	 * @throws  fValidationException
+	 * @throws fValidationException
 	 * 
 	 * @param  string $image_path  The path to the image to get stats for
 	 * @param  string $element     The element to retrieve ('type', 'width', 'height')
@@ -284,7 +284,7 @@ class fImage extends fFile
 				fGrammar::compose(
 					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 					fCore::dump($element),
-					join(', ', $valid_elements)	
+					join(', ', $valid_elements)
 				)
 			);
 		}
@@ -341,7 +341,7 @@ class fImage extends fFile
 				return FALSE;
 			}
 		} catch (fValidationException $e) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		return TRUE;
@@ -363,11 +363,11 @@ class fImage extends fFile
 			foreach ($open_basedirs as $open_basedir) {
 				if (strpos($path, $open_basedir) === 0) {
 					$found = TRUE;
-				}	
+				}
 			}
 			
 			if (!$found) {
-				return TRUE;	
+				return TRUE;
 			}
 		}
 		
@@ -389,7 +389,7 @@ class fImage extends fFile
 				return TRUE;
 			}
 		}
-		return FALSE;	
+		return FALSE;
 	}
 	
 	
@@ -426,7 +426,7 @@ class fImage extends fFile
 					'The ImageMagick temp directory specified, %s, does not appear to be writable',
 					$temp_dir->getPath()
 				)
-			);	
+			);
 		}
 		self::$imagemagick_temp_dir = $temp_dir->getPath();
 	}
@@ -457,7 +457,7 @@ class fImage extends fFile
 			if (!self::isImageCompatible($file_path)) {
 				$valid_image_types = array('GIF', 'JPG', 'PNG');
 				if (self::$processor == 'imagemagick') {
-					$valid_image_types[] = 'TIF';	
+					$valid_image_types[] = 'TIF';
 				}
 				fCore::toss(
 					'fValidationException',
@@ -466,7 +466,7 @@ class fImage extends fFile
 						fCore::dump($file_path),
 						fGrammar::joinArray($valid_image_types, 'or')
 					)
-				);	
+				);
 			}
 			parent::__construct($file_path);
 				
@@ -843,7 +843,7 @@ class fImage extends fFile
 				'fProgrammerException',
 				fGrammar::compose(
 					'The canvas height specified, %s is not an integer or is less than zero',
-					fCore::dump($canvas_height)	
+					fCore::dump($canvas_height)
 				)
 			);
 		}

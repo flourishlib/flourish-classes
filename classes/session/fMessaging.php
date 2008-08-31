@@ -23,7 +23,7 @@ class fMessaging
 	 * @return void
 	 */
 	static public function create($name, $message, $recipient)
-	{                                         
+	{
 		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
 	}
 	

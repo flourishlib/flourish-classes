@@ -205,7 +205,7 @@ class fBuffer
 		if (ob_get_contents()) {
 			ob_end_flush();
 		} else {
-			ob_end_clean();	
+			ob_end_clean();
 		}
 		
 		self::$started = FALSE;

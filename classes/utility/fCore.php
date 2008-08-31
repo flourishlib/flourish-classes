@@ -115,7 +115,7 @@ class fCore
 				$bt_string .= $call['function'] . '(';
 					$j = 0;
 					if (!isset($call['args'])) {
-						$call['args'] = array();	
+						$call['args'] = array();
 					}
 					foreach ($call['args'] as $arg) {
 						if ($j) {
@@ -339,7 +339,7 @@ class fCore
 			"\n\n\$_GET\n" . self::dump($_GET) .
 			"\n\n\$_POST\n" . self::dump($_POST) .
 			"\n\n\$_FILES\n"   . self::dump($_FILES) .
-			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL);	
+			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL);
 	}
 	
 	
@@ -483,7 +483,7 @@ class fCore
 	static public function registerTossCallback($exception_type, $callback)
 	{
 		if (!isset(self::$toss_callbacks[$exception_type])) {
-			self::$toss_callbacks[$exception_type] = array();	
+			self::$toss_callbacks[$exception_type] = array();
 		}
 		
 		self::$toss_callbacks[$exception_type][] = $callback;
@@ -509,16 +509,16 @@ class fCore
 		
 		if (self::$error_message_queue) {
 			$message = join("\n\n", self::$error_message_queue);
-			$messages[self::$error_destination] = $message;				
+			$messages[self::$error_destination] = $message;
 		}
 		
 		if (self::$exception_message) {
 			if (isset($messages[self::$exception_destination])) {
-				$messages[self::$exception_destination] .= "\n\n";	
+				$messages[self::$exception_destination] .= "\n\n";
 			} else {
 				$messages[self::$exception_destination] = '';
 			}
-			$messages[self::$exception_destination] .= self::$exception_message;	
+			$messages[self::$exception_destination] .= self::$exception_message;
 		}
 		
 		foreach ($messages as $destination => $message) {
@@ -531,7 +531,7 @@ class fCore
 				fwrite($handle, $message . "\n\n");
 				fwrite($handle, self::generateContext() . "\n\n");
 				fclose($handle);
-			}	
+			}
 		}
 	}
 	
@@ -554,7 +554,7 @@ class fCore
 				$shown_context = TRUE;
 			}
 			self::expose($message);
-			return; 		
+			return;
 		}
 
 		static $registered_function = FALSE;
@@ -566,7 +566,7 @@ class fCore
 		if ($type == 'error') {
 			self::$error_message_queue[] = $message;
 		} else {
-			self::$exception_message = $message;	
+			self::$exception_message = $message;
 		}
 	}
 	
@@ -581,13 +581,13 @@ class fCore
 	{
 		if (!$value && !is_numeric($value)) {
 			return FALSE;
-		} 	
+		}
 		
 		if (is_resource($value) || is_array($value) || $value === TRUE) {
 			return FALSE;
 		}
 		
-		return TRUE;	
+		return TRUE;
 	}
 	
 	

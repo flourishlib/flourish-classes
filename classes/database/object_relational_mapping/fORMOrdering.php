@@ -47,7 +47,7 @@ class fORMOrdering
 					fCore::dump($column),
 					$data_type
 				)
-			);	
+			);
 		}
 		
 		$found = FALSE;
@@ -57,7 +57,7 @@ class fORMOrdering
 				$other_columns = array_diff($unique_key, array($column));
 				$found = TRUE;
 				break;
-			}		
+			}
 		}
 		
 		if (!$found) {
@@ -67,7 +67,7 @@ class fORMOrdering
 					'The column specified, %s, does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.',
 					fCore::dump($column)
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -102,7 +102,7 @@ class fORMOrdering
 		);
 		
 		// Ensure we only ever have one ordering column by overwriting
-		self::$ordering_columns[$class]['column']        = $column;	
+		self::$ordering_columns[$class]['column']        = $column;
 		self::$ordering_columns[$class]['other_columns'] = $other_columns;
 	}
 	
@@ -141,7 +141,7 @@ class fORMOrdering
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
 			$conditions[] = $other_column . fORMDatabase::prepareBySchema($table, $other_column, $values[$other_column], '=');
-		}		
+		}
 		
 		return join(' AND ', $conditions);
 	}
@@ -159,7 +159,7 @@ class fORMOrdering
 	 * @return string  The formatted link
 	 */
 	static public function delete($object, &$values, &$old_values, &$related_records)
-	{              
+	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
@@ -235,14 +235,14 @@ class fORMOrdering
 		
 		// If this is a new record, or in a new set, we need one more space in the ordering index
 		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
-			$max_index += 1;	
+			$max_index += 1;
 		}
 		
 		$info['max_ordering_index'] = $max_index;
 		$info['feature']            = 'ordering';
 				
 		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;	
+			return (isset($info[$element])) ? $info[$element] : NULL;
 		}
 		
 		return $info;
@@ -279,13 +279,13 @@ class fORMOrdering
 		// changed because of a new value in one of those columns
 		foreach ($other_columns as $other_column) {
 			if (isset($old_values[$other_column]) && $old_values[$other_column][0] != $values[$other_column]) {
-				return TRUE;	
-			}		
+				return TRUE;
+			}
 		}
 		
 		// If none of the multi-column values changed, the record must be part
 		// of the same set it was
-		return FALSE;		
+		return FALSE;
 	}
 	
 	
@@ -302,7 +302,7 @@ class fORMOrdering
 	static public function reflect($class, &$signatures, $include_doc_comments)
 	{
 		if (!isset(self::$ordering_columns[$class])) {
-			return;	
+			return;
 		}
 		
 		foreach(self::$ordering_columns[$class] as $column => $enabled) {
@@ -315,13 +315,13 @@ class fORMOrdering
 				$signature .= " * \n";
 				$signature .= " * @param  string \$element  The element to return. Must be one of: 'type', 'not_null', 'default', 'feature', 'max_ordering_value'.\n";
 				$signature .= " * @return mixed  The metadata array or a single element\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$inspect_method = 'inspect' . $camelized_column;
 			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
 			
 			$signatures[$inspect_method] = $signature;
-		}	
+		}
 	}
 	
 	
@@ -357,7 +357,7 @@ class fORMOrdering
 		$new_max_value     = $current_max_value;
 		
 		if ($new_set = self::isInNewSet($column, $other_columns, $values, $old_values)) {
-			$new_max_value = $current_max_value + 1;	
+			$new_max_value = $current_max_value + 1;
 		}
 		
 		// If a blank value was set, correct it to the old value (if there
@@ -366,7 +366,7 @@ class fORMOrdering
 			if ($old_value) {
 				$values[$column] = $current_value = $old_value;
 			} else {
-				$values[$column] = $current_value = $new_max_value;	
+				$values[$column] = $current_value = $new_max_value;
 			}
 		}
 		
@@ -378,8 +378,8 @@ class fORMOrdering
 		
 		// If we are entering a new record at the end of the set we don't need to shuffle anything either
 		if (!$object->exists() && $new_set && $current_value == $new_max_value) {
-			return;	
-		}	
+			return;
+		}
 		
 		
 		// If the object already exists in the database, grab the ordering value
@@ -387,7 +387,7 @@ class fORMOrdering
 		if ($object->exists()) {
 			$sql  = "SELECT " . $column . " FROM " . $table . " WHERE ";
 			$sql .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
-			$db_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();	
+			$db_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
 		}
 		
 		
@@ -397,7 +397,7 @@ class fORMOrdering
 			$shift_down = $new_max_value + 10;
 			
 			// If we are moving into the middle of a new set we just push everything up one value
-			if ($new_set) { 
+			if ($new_set) {
 				$shift_up       = $new_max_value + 11;
 				$down_condition = $column . " >= " . $current_value;
 			
@@ -417,7 +417,7 @@ class fORMOrdering
 			$sql .= " WHERE " . $down_condition;
 			if ($other_columns) {
 				$sql .= " AND " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
-			} 		
+			}
 			fORMDatabase::getInstance()->translatedQuery($sql);
 			
 			if ($object->exists()) {
@@ -426,7 +426,7 @@ class fORMOrdering
 				$sql .= " WHERE " . $column . " = " . $db_value;
 				if ($other_columns) {
 					$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
-				} 		
+				}
 				fORMDatabase::getInstance()->translatedQuery($sql);
 			}
 			
@@ -435,14 +435,14 @@ class fORMOrdering
 			$sql .= " WHERE " . $column . " < 0";
 			if ($other_columns) {
 				$sql .= " AND " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
-			} 		
+			}
 			fORMDatabase::getInstance()->translatedQuery($sql);
 		}
 		
 		
 		// If there was an old set, we need to close the gap
 		if ($object->exists() && $new_set) {
-			$sql  = "SELECT max(" . $column . ") FROM " . $table . " WHERE ";			
+			$sql  = "SELECT max(" . $column . ") FROM " . $table . " WHERE ";
 			$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 			
 			$old_set_max = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
@@ -499,7 +499,7 @@ class fORMOrdering
 		$new_max_value     = $current_max_value;
 		
 		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
-			$new_max_value = $current_max_value + 1;	
+			$new_max_value = $current_max_value + 1;
 		}
 		
 		$column_name = fORM::getColumnName($class, $column);
@@ -509,13 +509,13 @@ class fORMOrdering
 		foreach ($validation_messages as $validation_message) {
 			if (!preg_match('#^[^:]*\b' . preg_quote($column_name, '#') . '\b#', $validation_message)) {
 				$filtered_messages[] = $validation_message;
-			}	
+			}
 		}
 		$validation_messages = $filtered_messages;
 		
 		// If we have a completely empty value, we don't need to validate since a valid value will be generated
 		if ($current_value === '' || $current_value === NULL) {
-			return;	
+			return;
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {

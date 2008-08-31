@@ -13,7 +13,7 @@
  * @changes    1.0.0b  The initial implementation [wb, 2008-05-28]
  */
 class fORMFile
-{	
+{
 	/**
 	 * The temporary directory to use for various tasks
 	 * 
@@ -87,14 +87,14 @@ class fORMFile
 					'The column specified, %s, has not been configured as an image upload column.',
 					fCore::dump($column)
 				)
-			);	
+			);
 		}
 		
 		if (empty(self::$fimage_method_calls[$class])) {
-			self::$fimage_method_calls[$class] = array(); 		
+			self::$fimage_method_calls[$class] = array();
 		}
 		if (empty(self::$fimage_method_calls[$class][$column])) {
-			self::$fimage_method_calls[$class][$column] = array(); 		
+			self::$fimage_method_calls[$class][$column] = array();
 		}
 		
 		self::$fimage_method_calls[$class][$column][] = array(
@@ -128,10 +128,10 @@ class fORMFile
 		}
 		
 		if (empty(self::$fupload_method_calls[$class])) {
-			self::$fupload_method_calls[$class] = array(); 		
+			self::$fupload_method_calls[$class] = array();
 		}
 		if (empty(self::$fupload_method_calls[$class][$column])) {
-			self::$fupload_method_calls[$class][$column] = array(); 		
+			self::$fupload_method_calls[$class][$column] = array();
 		}
 		
 		self::$fupload_method_calls[$class][$column][] = array(
@@ -152,7 +152,7 @@ class fORMFile
 	{
 		// If the transaction was started by something else, don't even track it
 		if (self::$transaction_level == 0 && fFilesystem::isInsideTransaction()) {
-			return; 		
+			return;
 		}
 		
 		self::$transaction_level++;
@@ -174,7 +174,7 @@ class fORMFile
 	{
 		// If the transaction was started by something else, don't even track it
 		if (self::$transaction_level == 0) {
-			return; 		
+			return;
 		}
 		
 		self::$transaction_level--;
@@ -209,11 +209,11 @@ class fORMFile
 					$data_type,
 					join(', ', $valid_data_types)
 				)
-			);	
+			);
 		}
 		
 		if (!is_object($directory)) {
-			$directory = new fDirectory($directory);	
+			$directory = new fDirectory($directory);
 		}
 		
 		if (!$directory->isWritable()) {
@@ -223,7 +223,7 @@ class fORMFile
 					'The file upload directory, %s, is not writable',
 					$directory->getPath()
 				)
-			);	
+			);
 		}
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
@@ -285,12 +285,12 @@ class fORMFile
 		
 		foreach ($only_once_hooks as $hook => $callback) {
 			if (!fORM::checkHookCallback($class, $hook, $callback)) {
-				fORM::registerHookCallback($class, $hook, $callback);	
+				fORM::registerHookCallback($class, $hook, $callback);
 			}
 		}
 		
 		if (empty(self::$file_upload_columns[$class])) {
-			self::$file_upload_columns[$class] = array();	
+			self::$file_upload_columns[$class] = array();
 		}
 		
 		self::$file_upload_columns[$class][$column] = $directory;
@@ -310,11 +310,11 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		if (empty(self::$column_inheritence[$class])) {
-			self::$column_inheritence[$class] = array();	
+			self::$column_inheritence[$class] = array();
 		}
 		
 		if (empty(self::$column_inheritence[$class][$inherit_from_column])) {
-			self::$column_inheritence[$class][$inherit_from_column] = array();	
+			self::$column_inheritence[$class][$inherit_from_column] = array();
 		}
 		
 		self::$column_inheritence[$class][$inherit_from_column][] = $column;
@@ -342,7 +342,7 @@ class fORMFile
 					fCore::dump($image_type),
 					join(', ', $valid_image_types)
 				)
-			);	
+			);
 		}
 		
 		self::configureFileUploadColumn($class, $column, $directory);
@@ -350,7 +350,7 @@ class fORMFile
 		$class = fORM::getClassName($class);
 		
 		if (empty(self::$image_upload_columns[$class])) {
-			self::$image_upload_columns[$class] = array();	
+			self::$image_upload_columns[$class] = array();
 		}
 		
 		self::$image_upload_columns[$class][$column] = $image_type;
@@ -378,7 +378,7 @@ class fORMFile
 			
 			// Remove the current file for the column
 			if ($values[$column] instanceof fFile) {
-				$values[$column]->delete();	
+				$values[$column]->delete();
 			}
 			
 			// Remove the old files for the column
@@ -443,7 +443,7 @@ class fORMFile
 		
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
 		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . $filename) !== FALSE) {
-			$filename = self::TEMP_DIRECTORY . $filename; 		
+			$filename = self::TEMP_DIRECTORY . $filename;
 		}
 		
 		return fHTML::encode($filename);
@@ -472,16 +472,16 @@ class fORMFile
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		if (!empty(self::$image_upload_columns[$class][$column])) {
-			$info['feature'] = 'image';	
+			$info['feature'] = 'image';
 			
 		} elseif (!empty(self::$file_upload_columns[$class][$column])) {
-			$info['feature'] = 'file';	
+			$info['feature'] = 'file';
 		}
 		
 		$info['directory'] = self::$file_upload_columns[$class][$column]->getPath();
 		
 		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;	
+			return (isset($info[$element])) ? $info[$element] : NULL;
 		}
 		
 		return $info;
@@ -504,13 +504,13 @@ class fORMFile
 		foreach ($values as $column => $value) {
 			if (!$value instanceof fFile) {
 				continue;
-			}	
+			}
 			
 			// If the file is in a temp dir, move it out
 			if (stripos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
 				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
 				$new_filename = fFilesystem::createUniqueName($new_filename);
-				$value->rename($new_filename, FALSE);	
+				$value->rename($new_filename, FALSE);
 			}
 		}
 	}
@@ -529,7 +529,7 @@ class fORMFile
 	static public function objectify($class, $column, $value)
 	{
 		if (!fCore::stringlike($value)) {
-			return $value;	
+			return $value;
 		}
 		
 		$path = self::$file_upload_columns[$class][$column]->getPath() . $value;
@@ -537,14 +537,14 @@ class fORMFile
 		try {
 			
 			if (fImage::isImageCompatible($path)) {
-				return new fImage($path);	
+				return new fImage($path);
 			}
 			
 			return new fFile($path);
 			 
 		// If there was some error creating the file, just return the raw value
 		} catch (fExpectedException $e) {
-			return $value;	
+			return $value;
 		}
 	}
 	
@@ -597,7 +597,7 @@ class fORMFile
 					'The column specified, %s, does not accept more than one parameter',
 					fCore::dump($column)
 				)
-			);	
+			);
 		}
 		
 		$translate_to_web_path = (empty($parameters[0])) ? FALSE : TRUE;
@@ -606,7 +606,7 @@ class fORMFile
 		if ($value instanceof fFile) {
 			$path = ($translate_to_web_path) ? $value->getPath(TRUE) : $value->getFilename();
 		} else {
-			$path = NULL;	
+			$path = NULL;
 		}
 		
 		return fHTML::prepare($path);
@@ -627,7 +627,7 @@ class fORMFile
 	{
 		// If we don't have an image or we haven't set it up to manipulate images, just exit
 		if (!$image instanceof fImage || empty(self::$fimage_method_calls[$class][$column])) {
-			return;	
+			return;
 		}
 		
 		// Manipulate the image
@@ -645,7 +645,7 @@ class fORMFile
 					);
 				}
 				call_user_func_array($callback, $parameters);
-			}	
+			}
 		}
 		
 		// Save the changes
@@ -679,20 +679,20 @@ class fORMFile
 				$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
 				$signature .= " * \n";
 				$signature .= " * @return string  The HTML-ready value\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
-			$signature .= 'public function prepare' . $prepare_method . '()';	
+			$signature .= 'public function prepare' . $prepare_method . '()';
 			
 			$signatures[$prepare_method] = $signature;
-		}	
+		}
 		
 		foreach($file_columns as $column) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
 			
 			$noun = 'file';
 			if (in_array($column, $image_columns)) {
-				$noun = 'image';	
+				$noun = 'image';
 			}
 			
 			$signature = '';
@@ -703,10 +703,10 @@ class fORMFile
 				$signature .= " * Only the filename will be returned, any directory will be stripped.\n";
 				$signature .= " * \n";
 				$signature .= " * @return string  The HTML form-ready value\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$encode_method = 'encode' . $camelized_column;
-			$signature .= 'public function ' . $encode_method . '()';	
+			$signature .= 'public function ' . $encode_method . '()';
 			
 			$signatures[$encode_method] = $signature;
 			
@@ -720,10 +720,10 @@ class fORMFile
 				$signature .= " * \n";
 				$signature .= " * @param  boolean \$include_web_path  If the full web path to the " . $noun . " should be included\n";
 				$signature .= " * @return string  The HTML-ready value\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$prepare_method = 'prepare' . $camelized_column;
-			$signature .= 'public function ' . $prepare_method . '($include_web_path=FALSE)';	
+			$signature .= 'public function ' . $prepare_method . '($include_web_path=FALSE)';
 			
 			$signatures[$prepare_method] = $signature;
 			
@@ -740,10 +740,10 @@ class fORMFile
 					$signature .= " * \n";
 				}
 				$signature .= " * @return void\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$upload_method = 'upload' . $camelized_column;
-			$signature .= 'public function ' . $upload_method . '()';	
+			$signature .= 'public function ' . $upload_method . '()';
 			
 			$signatures[$upload_method] = $signature;
 			
@@ -757,10 +757,10 @@ class fORMFile
 					$signature .= " * \n";
 				}
 				$signature .= " * @return void\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$set_method = 'set' . $camelized_column;
-			$signature .= 'public function ' . $set_method . '()';	
+			$signature .= 'public function ' . $set_method . '()';
 			
 			$signatures[$set_method] = $signature;
 			
@@ -771,13 +771,13 @@ class fORMFile
 				$signature .= " * \n";
 				$signature .= " * @param  string \$element  The element to return. Must be one of: 'type', 'not_null', 'default', 'valid_values', 'max_length', 'feature', 'directory'.\n";
 				$signature .= " * @return mixed  The metadata array or a single element\n";
-				$signature .= " */\n";	
+				$signature .= " */\n";
 			}
 			$inspect_method = 'inspect' . $camelized_column;
 			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
 			
 			$signatures[$inspect_method] = $signature;
-		}	
+		}
 	}
 	
 	
@@ -792,7 +792,7 @@ class fORMFile
 	{
 		// If the transaction was started by something else, don't even track it
 		if (self::$transaction_level == 0) {
-			return; 		
+			return;
 		}
 		
 		self::$transaction_level--;
@@ -806,7 +806,7 @@ class fORMFile
 	/**
 	 * Copies a file from the filesystem to the file upload directory and sets it as the file for the specified column
 	 * 
-	 * This method will perform the fImage calls defined for the column. 
+	 * This method will perform the fImage calls defined for the column.
 	 * 
 	 * @internal
 	 * 
@@ -833,7 +833,7 @@ class fORMFile
 					'The method %s requires exactly one parameter',
 					fCore::dump($method_name) . '()'
 				)
-			);	
+			);
 		}
 		
 		$file_path    = $parameters[0];
@@ -846,18 +846,18 @@ class fORMFile
 					'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
 					fCore::dump($file_path)
 				)
-			);	
+			);
 		}
 		
 		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
-			$file_path = $doc_root . $file_path;	
+			$file_path = $doc_root . $file_path;
 		}
 		
 		$file     = new fFile($file_path);
 		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
 		
 		if (!isset($old_values[$column])) {
-			$old_values[$column] = array();	
+			$old_values[$column] = array();
 		}
 		
 		$old_values[$column][] = $values[$column];
@@ -871,7 +871,7 @@ class fORMFile
 	 * Sets up the {@link fUpload} class for a specific column
 	 * 
 	 * @param  string $class   The class to set up for
-	 * @param  string $column  The column to set up for 
+	 * @param  string $column  The column to set up for
 	 * @return void
 	 */
 	static private function setUpFUpload($class, $column)
@@ -883,15 +883,15 @@ class fORMFile
 			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
 				if (!is_callable($method_call['callback'])) {
 					fCore::toss(
-						'fProgrammerException', 
+						'fProgrammerException',
 						fGrammar::compose(
 							'The fUpload method specified, %s, is not a valid method.',
 							fCore::dump($method_call['method']) . '()'
 						)
 					);
 				}
-				call_user_func_array($method_call['callback'], $method_call['parameters']);	
-			}	
+				call_user_func_array($method_call['callback'], $method_call['parameters']);
+			}
 		}
 	}
 	
@@ -923,7 +923,7 @@ class fORMFile
 		try {
 			$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
 		} catch (fValidationException $e) {
-			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);			
+			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
 		}
 		
 		$temp_files = $temp_dir->scan();
@@ -935,7 +935,7 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
-			$file = fUpload::upload($temp_dir, $column);	
+			$file = fUpload::upload($temp_dir, $column);
 			fUpload::reset();
 		
 		// If there was an eror, check to see if we have an existing file
@@ -957,7 +957,7 @@ class fORMFile
 				$current_file = $values[$column];
 				if (!$current_file || ($current_file && $file->getPath() != $current_file->getPath())) {
 					if (!isset($old_values[$column])) {
-						$old_values[$column] = array();	
+						$old_values[$column] = array();
 					}
 					
 					$old_values[$column][] = $current_file;
@@ -972,7 +972,7 @@ class fORMFile
 		
 		// Assign the file
 		if (!isset($old_values[$column])) {
-			$old_values[$column] = array();	
+			$old_values[$column] = array();
 		}
 		
 		$old_values[$column][] = $values[$column];
@@ -988,7 +988,7 @@ class fORMFile
 						$other_upload_dir = self::$file_upload_columns[$class][$other_column];
 						$other_temp_dir   = new fDirectory($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
 					} catch (fValidationException $e) {
-						$other_temp_dir   = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);			
+						$other_temp_dir   = fDirectory::create($other_upload_dir->getPath() . self::TEMP_DIRECTORY);
 					}
 					
 					$temp_files = $other_temp_dir->scan();
@@ -1000,20 +1000,20 @@ class fORMFile
 					
 					$other_file = $file->duplicate($other_temp_dir, FALSE);
 				} else {
-					$other_file = $file;	
+					$other_file = $file;
 				}
 				
 				if (!isset($old_values[$other_column])) {
-					$old_values[$other_column] = array();	
+					$old_values[$other_column] = array();
 				}
 				
 				$old_values[$other_column][] = $values[$other_column];
 				$values[$other_column]       = $other_file;
 				
 				if ($other_file) {
-					self::processImage($class, $other_column, $other_file);	
+					self::processImage($class, $other_column, $other_file);
 				}
-			}	
+			}
 		}
 		
 		// Process the file
@@ -1055,7 +1055,7 @@ class fORMFile
 				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != fGrammar::compose('Please upload a file')) {
-					$validation_messages[] = $column_name . ': ' . $e->getMessage();	
+					$validation_messages[] = $column_name . ': ' . $e->getMessage();
 				}
 			}
 		}

@@ -56,7 +56,7 @@ class fEmail
 	 * 
 	 * @var string
 	 */
-	const NAME_EMAIL_REGEX = '~^[ \t]*(                                                                            # Allow leading whitespace                                                                       
+	const NAME_EMAIL_REGEX = '~^[ \t]*(                                                                            # Allow leading whitespace
 								(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*)                 # An "atom" or a quoted string
 								(?:\.?[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*))*)  # Another "atom" or a quoted string or a . followed by one of those, any number of times
 							  [ \t]*<[ \t]*((                                                                      # The < encapsulating the email address
@@ -91,7 +91,7 @@ class fEmail
 	static public function fixQmail()
 	{
 		if (fCore::getOS() == 'windows') {
-			return;	
+			return;
 		}
 		
 		$sendmail_command = ini_get('sendmail_path');
@@ -99,7 +99,7 @@ class fEmail
 		if (!$sendmail_command) {
 			self::$convert_crlf = TRUE;
 			fCore::trigger('warning', 'The proper fix for sending through qmail is not possible since the sendmail path is not set');
-			fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');	
+			fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
 		}
 		
 		$sendmail_command_parts = explode(' ', $sendmail_command, 2);
@@ -110,7 +110,7 @@ class fEmail
 		
 		// Check to see if we can run sendmail via popen
 		$executable = FALSE;
-		$safe_mode  = FALSE;			
+		$safe_mode  = FALSE;
 		
 		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
 			$safe_mode = TRUE;
@@ -125,8 +125,8 @@ class fEmail
 			}
 			
 		} else {
-			if (file_exists($sendmail_path) && is_executable($sendmail_path)) {			
-				$executable = TRUE;	
+			if (file_exists($sendmail_path) && is_executable($sendmail_path)) {
+				$executable = TRUE;
 			}
 		}
 		
@@ -139,7 +139,7 @@ class fEmail
 				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
 			} else {
 				fCore::trigger('warning', 'The proper fix for sending through qmail is not possible since the sendmail binary could not be found or is not executable');
-				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');	
+				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
 			}
 		}
 	}
@@ -284,7 +284,7 @@ class fEmail
 					'The filename specified, %s, does not appear to be a valid filename',
 					fCore::dump($filename)
 				)
-			);	
+			);
 		}
 		
 		$filename = (string) $filename;
@@ -294,7 +294,7 @@ class fEmail
 			$filename_info = fFilesystem::getPathInfo($filename);
 			$extension     = ($filename_info['extension']) ? '.' . $filename_info['extension'] : '';
 			$filename      = preg_replace('#_copy\d+$#', '', $filename_info['filename']) . '_copy' . $i . $extension;
-			$i++;	
+			$i++;
 		}
 		
 		$this->attachments[$filename] = array(
@@ -314,7 +314,7 @@ class fEmail
 	public function addBCCRecipient($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->bcc_emails[] = $this->combineNameEmail($name, $email);
@@ -331,7 +331,7 @@ class fEmail
 	public function addCCRecipient($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->cc_emails[] = $this->combineNameEmail($name, $email);
@@ -348,7 +348,7 @@ class fEmail
 	public function addRecipient($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->to_emails[] = $this->combineNameEmail($name, $email);
@@ -356,7 +356,7 @@ class fEmail
 	
 	
 	/**
-	 * Takes a multi-address email header and builds it out using an array of emails 
+	 * Takes a multi-address email header and builds it out using an array of emails
 	 * 
 	 * @param  string $header  The header name without ': ', the header is non-blank, ': ' will be added
 	 * @param  array  $emails  The email addresses for the header
@@ -377,17 +377,17 @@ class fEmail
 			if (strlen($header . $email) / 950 > $line) {
 				$header .= "\r\n ";
 				$line++;
-			}	
+			}
 			
-			$header .= trim($email);	
-		}	
+			$header .= trim($email);
+		}
 		
 		return $header . "\r\n";
 	}
 	
 	
 	/**
-	 * Creates a 32-character boundary for a multipart message 
+	 * Creates a 32-character boundary for a multipart message
 	 * 
 	 * @return string  A multipart boundary
 	 */
@@ -400,7 +400,7 @@ class fEmail
 		for ($i = 0; $i < 32; $i++) {
 			$output .= $chars[rand(0, $last_index)];
 		}
-		return $output;	
+		return $output;
 	}
 	
 	
@@ -409,7 +409,7 @@ class fEmail
 	 * 
 	 * This method will remove newline characters from the name and email, and
 	 * will remove any backslash (\) and double quote (") characters from
-	 * the name. 
+	 * the name.
 	 * 
 	 * @param  string $name   The name associated with the email address
 	 * @param  string $email  The email address
@@ -421,10 +421,10 @@ class fEmail
 		$name  = str_replace(array('\\', '"', "\r", "\n"), '', $name);
 		
 		if (!$name || fCore::getOS() == 'windows') {
-			return $email;	
+			return $email;
 		}
 		
-		return '"' . $name . '" <' . $email . '>';	
+		return '"' . $name . '" <' . $email . '>';
 	}
 	
 	
@@ -437,7 +437,7 @@ class fEmail
 	private function createBody($boundary)
 	{
 		$mime_notice = fGrammar::compose(
-			"This message has been formatted using MIME. It does not appear that your email client supports MIME."	
+			"This message has been formatted using MIME. It does not appear that your email client supports MIME."
 		);
 		
 		$body = '';
@@ -471,7 +471,7 @@ class fEmail
 				$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			}
 			
-			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";	
+			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";
 		}
 		
 		// If we have attachments, we need to wrap a multipart/mixed around the current body
@@ -488,7 +488,7 @@ class fEmail
 				$multipart_body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
 				$multipart_body .= $this->makeBase64($file_info['content']) . "\r\n\r\n";
 				$multipart_body .= '--' . $boundary . "\r\n";
-			}	
+			}
 			
 			$body = $multipart_body;
 		}
@@ -518,28 +518,28 @@ class fEmail
 		$headers .= "From: " . trim($this->from_email) . "\r\n";
 		
 		if ($this->reply_to_email) {
-			$headers .= "Reply-To: " . trim($this->reply_to_email) . "\r\n";	
+			$headers .= "Reply-To: " . trim($this->reply_to_email) . "\r\n";
 		}
 		
 		if ($this->sender_email) {
-			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";	
+			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";
 		}
 		
 		if ($this->html_body || $this->attachments) {
-			$headers .= "MIME-Version: 1.0\r\n";	  
+			$headers .= "MIME-Version: 1.0\r\n";
 		}
 		
 		if ($this->html_body && !$this->attachments) {
-			$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n"; 		
+			$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n";
 		}
 		
 		if (!$this->html_body && !$this->attachments) {
 			$headers .= "Content-Type: text/plain; charset=utf-8\r\n";
-			$headers .= "Content-Transfer-Encoding: quoted-printable\r\n";	
+			$headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
 		}
 		
 		if ($this->attachments) {
-			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n";	
+			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n";
 		}
 		
 		return $headers . "\r\n";
@@ -559,7 +559,7 @@ class fEmail
 	{
 		if (!$this->smime_encrypt && !$this->smime_sign) {
 			return array($headers, $body);
-		}		
+		}
 		
 		$plaintext_file  = tempnam('', '__fEmail_');
 		$ciphertext_file = tempnam('', '__fEmail_');
@@ -567,24 +567,24 @@ class fEmail
 		$headers_array = array(
 			'To'      => $to,
 			'Subject' => $subject
-		);	
+		);
 		
 		preg_match_all('#^([\w\-]+):\s+([^\n]+\n( [^\n]+\n)*)#im', $headers, $header_matches, PREG_SET_ORDER);
 		foreach ($header_matches as $header_match) {
-			$headers_array[$header_match[1]] = trim($header_match[2]);	
+			$headers_array[$header_match[1]] = trim($header_match[2]);
 		}
 		
 		$body_headers = "";
 		if (isset($headers_array['Content-Type'])) {
-			$body_headers .= 'Content-Type: ' . $headers_array['Content-Type'] . "\r\n";	
+			$body_headers .= 'Content-Type: ' . $headers_array['Content-Type'] . "\r\n";
 		}
 		if (isset($headers_array['Content-Transfer-Encoding'])) {
-			$body_headers .= 'Content-Transfer-Encoding: ' . $headers_array['Content-Transfer-Encoding'] . "\r\n";	
+			$body_headers .= 'Content-Transfer-Encoding: ' . $headers_array['Content-Transfer-Encoding'] . "\r\n";
 		}
 		
 		if ($body_headers) {
 			$body = $body_headers . "\r\n" . $body;
-		} 
+		}
 		
 		file_put_contents($plaintext_file, "\r\n" . $body);
 		file_put_contents($ciphertext_file, '');
@@ -595,7 +595,7 @@ class fEmail
 			$senders_private_key = openssl_pkey_get_private(
 				file_get_contents($this->senders_smime_pk_file),
 				$this->senders_smime_pk_password
-			);	
+			);
 			
 			if ($senders_private_key === FALSE) {
 				fCore::toss(
@@ -609,7 +609,7 @@ class fEmail
 		}
 		
 		if ($this->smime_encrypt) {
-			$recipients_smime_cert = file_get_contents($this->recipients_smime_cert_file);	
+			$recipients_smime_cert = file_get_contents($this->recipients_smime_cert_file);
 		}
 		
 		
@@ -623,7 +623,7 @@ class fEmail
 			openssl_pkcs7_sign($plaintext_file, $ciphertext_file, $senders_smime_cert, $senders_private_key, $headers_array);
 		  
 		} elseif ($this->smime_encrypt) {
-			openssl_pkcs7_encrypt($plaintext_file, $ciphertext_file, $recipients_smime_cert, $headers_array, NULL, OPENSSL_CIPHER_RC2_128);    
+			openssl_pkcs7_encrypt($plaintext_file, $ciphertext_file, $recipients_smime_cert, $headers_array, NULL, OPENSSL_CIPHER_RC2_128);
 		}
 		
 		// It seems that the contents of the ciphertext is not always \r\n line breaks
@@ -642,7 +642,7 @@ class fEmail
 		unlink($ciphertext_file);
 		
 		if ($this->smime_sign) {
-			openssl_pkey_free($senders_private_key);	
+			openssl_pkey_free($senders_private_key);
 		}
 								  
 		return array($new_headers, $new_body);
@@ -664,7 +664,7 @@ class fEmail
 					"The recipient's S/MIME certificate filename specified, %s, does not appear to be a valid filename",
 					fCore::dump($recipients_smime_cert_file)
 				)
-			);	
+			);
 		}
 		
 		$this->smime_encrypt              = TRUE;
@@ -680,7 +680,7 @@ class fEmail
 	 */
 	private function makeBase64($content)
 	{
-		return chunk_split(base64_encode($content));	
+		return chunk_split(base64_encode($content));
 	}
 	
 	
@@ -735,14 +735,14 @@ class fEmail
 			$char_length = ($content[$i] == '=') ? 3 : 1;
 			$char        = $content[$i];
 			if ($char_length == 3) {
-				$char .= $content[$i+1] . $content[$i+2]; 
+				$char .= $content[$i+1] . $content[$i+2];
 			}
 			
 			// If we have too long a line, wrap it
 			if ($line_length + $suffix_length + $char_length > 75) {
 				$output .= $suffix . "\r\n " . $prefix;
 				$line_length = $prefix_length + 2;
-			} 		
+			}
 			
 			// Add the character
 			$output .= $char;
@@ -751,14 +751,14 @@ class fEmail
 			$line_length += $char_length;
 			
 			// Skip characters if we have an encoded character
-			$i += $char_length-1;	
+			$i += $char_length-1;
 		}
 		
 		if (substr($output, -2) != $suffix) {
 			$output .= $suffix;
 		}
 		
-		return $output;	
+		return $output;
 	}
 	
 	
@@ -806,7 +806,7 @@ class fEmail
 			$char_length = ($content[$i] == '=') ? 3 : 1;
 			$char        = $content[$i];
 			if ($char_length == 3) {
-				$char .= $content[$i+1] . $content[$i+2]; 
+				$char .= $content[$i+1] . $content[$i+2];
 			}
 			
 			// Skip characters if we have an encoded character, this must be
@@ -817,29 +817,29 @@ class fEmail
 			// Spaces and tabs at the beginning and ending of lines have to be encoded
 			$begining_or_end = $line_length > 69 || $line_length == 0;
 			$tab_or_space    = $char == ' ' || $char == "\t";
-			if ($begining_or_end && $tab_or_space) {	
+			if ($begining_or_end && $tab_or_space) {
 				$char_length = 3;
-				$char        = ($char == ' ') ? '=20' : '=09';	
+				$char        = ($char == ' ') ? '=20' : '=09';
 			}
 			
 			// If we have too long a line, wrap it
 			if ($char != "\r" && $char != "\n" && $line_length + $char_length > 76) {
 				$output .= "=\r\n";
 				$line_length = 0;
-			} 		
+			}
 			
 			// Add the character
 			$output .= $char;
 			
 			// Figure out how much longer the line is now
 			if ($char == "\r" || $char == "\n") {
-				$line_length = 0;	
+				$line_length = 0;
 			} else {
 				$line_length += $char_length;
 			}
 		}
 		
-		return $output;	
+		return $output;
 	}
 	
 	
@@ -871,20 +871,20 @@ class fEmail
 		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
 		$parameters = NULL;
 		if (fCore::getOS() != 'windows' && $this->bounce_to_email && !ini_get('safe_mode')) {
-			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);	
-			$parameters = '-f ' . $matches[0];		
+			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
+			$parameters = '-f ' . $matches[0];
 		}
 		
 		// Windows takes the Return-Path email from the sendmail_from ini setting
 		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
 			$old_sendmail_from = ini_get('sendmail_from');
 			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
-			ini_set('sendmail_from', $matches[0]);	
+			ini_set('sendmail_from', $matches[0]);
 		}
 		
 		// Apparently SMTP server strip a leading . from lines
 		if (fCore::getOS() == 'windows') {
-			$body = str_replace("\r\n.", "\r\n..", $body);	
+			$body = str_replace("\r\n.", "\r\n..", $body);
 		}
 		
 		// Remove extra line breaks
@@ -896,14 +896,14 @@ class fEmail
 			$to      = str_replace("\r\n", "\n", $to);
 			$subject = str_replace("\r\n", "\n", $subject);
 			$body    = str_replace("\r\n", "\n", $body);
-			$headers = str_replace("\r\n", "\n", $headers);	
+			$headers = str_replace("\r\n", "\n", $headers);
 		}
 		
 		// If the user is using qmail and wants to try to fix the \r\r\n line break issue
 		if (self::$popen_sendmail) {
 			$sendmail_command = ini_get('sendmail_path');
 			if ($parameters) {
-				$sendmail_command .= ' ' . $parameters;	
+				$sendmail_command .= ' ' . $parameters;
 			}
 			
 			$sendmail_process = popen($sendmail_command, 'w');
@@ -915,13 +915,13 @@ class fEmail
 			fprintf($sendmail_process, "\n%s\n", $body);
 			$error = pclose($sendmail_process);
 			
-		// This is the normal way to send mail	
+		// This is the normal way to send mail
 		} else {
 			$error = !mail($to, $subject, $body, $headers, $parameters);
 		}
 		
 		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
-			ini_set('sendmail_from', $old_sendmail_from);	
+			ini_set('sendmail_from', $old_sendmail_from);
 		}
 		
 		if ($error) {
@@ -947,7 +947,7 @@ class fEmail
 	public function setBounceToEmail($email)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->bounce_to_email = $this->combineNameEmail('', $email);
@@ -964,7 +964,7 @@ class fEmail
 	public function setFromEmail($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->from_email = $this->combineNameEmail($name, $email);
@@ -1011,7 +1011,7 @@ class fEmail
 	public function setReplyToEmail($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->reply_to_email = $this->combineNameEmail($name, $email);
@@ -1031,7 +1031,7 @@ class fEmail
 	public function setSenderEmail($email, $name=NULL)
 	{
 		if (!$email) {
-			return;	
+			return;
 		}
 		
 		$this->sender_email = $this->combineNameEmail($name, $email);
@@ -1070,7 +1070,7 @@ class fEmail
 					"The sender's S/MIME certificate file specified, %s, does not appear to be a valid filename",
 					fCore::dump($senders_smime_cert_file)
 				)
-			);	
+			);
 		}
 		if (!file_exists($senders_smime_cert_file) || !is_readable($senders_smime_cert_file)) {
 			fCore::toss(
@@ -1089,7 +1089,7 @@ class fEmail
 					"The sender's S/MIME primary key file specified, %s, does not appear to be a valid filename",
 					fCore::dump($senders_smime_pk_file)
 				)
-			);	
+			);
 		}
 		if (!file_exists($senders_smime_pk_file) || !is_readable($senders_smime_pk_file)) {
 			fCore::toss(
@@ -1134,8 +1134,8 @@ class fEmail
 						$name,
 						fCore::dump($email)
 					);
-				}	
-			}	
+				}
+			}
 		}
 		
 		// Check all single-address email fields
@@ -1143,7 +1143,7 @@ class fEmail
 			'from_email'      => fGrammar::compose('From email address'),
 			'reply_to_email'  => fGrammar::compose('Reply-To email address'),
 			'sender_email'    => fGrammar::compose('Sender email address'),
-			'bounce_to_email' => fGrammar::compose('Bounce-To email address')	
+			'bounce_to_email' => fGrammar::compose('Bounce-To email address')
 		);
 		
 		foreach ($single_address_field_list as $field => $name) {
@@ -1153,32 +1153,32 @@ class fEmail
 					$name,
 					fCore::dump($this->$field)
 				);
-			} 		
+			}
 		}
 		
 		// Make sure the required fields are all set
 		if (!$this->to_emails) {
 			$validation_messages[] = fGrammar::compose(
 				"Please provide at least on recipient"
-			);	
+			);
 		}
 		
 		if (!$this->from_email) {
 			$validation_messages[] = fGrammar::compose(
 				"Please provide the from email address"
-			);	
+			);
 		}
 		
 		if (!fCore::stringlike($this->subject)) {
 			$validation_messages[] = fGrammar::compose(
 				"Please provide an email subject"
-			);	
+			);
 		}
 		
 		if (!fCore::stringlike($this->plaintext_body)) {
 			$validation_messages[] = fGrammar::compose(
 				"Please provide a plaintext email body"
-			);	
+			);
 		}
 		
 		// Make sure the attachments look good
@@ -1187,15 +1187,15 @@ class fEmail
 				$validation_messages[] = fGrammar::compose(
 					"No mime-type was specified for the attachment %s",
 					fCore::dump($filename)
-				);	
+				);
 			}
 			if (!fCore::stringlike($file_info['content'])) {
 				$validation_messages[] = fGrammar::compose(
 					"The attachment %s appears to be a blank file",
 					fCore::dump($filename)
-				);	
+				);
 			}
-		}		
+		}
 	}
 }
 

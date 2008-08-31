@@ -161,8 +161,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws  fNoResultsException
-	 * @throws  fNoRemainingException
+	 * @throws fNoResultsException
+	 * @throws fNoRemainingException
 	 * @internal
 	 * 
 	 * @return array  The current Row
@@ -195,8 +195,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws  fNoResultsException
-	 * @throws  fNoRemainingException
+	 * @throws fNoResultsException
+	 * @throws fNoRemainingException
 	 * 
 	 * @return array|false  The associative array of the row or FALSE if no remaining rows
 	 */
@@ -409,7 +409,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Throws an {@link fNoResultException} if the query did not return any rows
 	 * 
-	 * @throws  fNoResultsException
+	 * @throws fNoResultsException
 	 * 
 	 * @return void
 	 */

@@ -55,7 +55,7 @@ class fAuthorization
 	 */
 	static public function addNamedIPRange($name, $ip_ranges)
 	{
-		self::$named_ip_ranges[$name] = $ip_ranges;			 
+		self::$named_ip_ranges[$name] = $ip_ranges;
 	}
 	
 	
@@ -142,7 +142,7 @@ class fAuthorization
 		// Check to see if a named IP range was specified
 		if (isset(self::$named_ip_ranges[$ip_ranges])) {
 			$ip_ranges = self::$named_ip_ranges[$ip_ranges];
-		}	
+		}
 		
 		// Get the remote IP and remove any IPv6 to IPv4 mapping
 		$user_ip      = str_replace('::ffff:', '', $_SERVER['REMOTE_ADDR']);
@@ -159,9 +159,9 @@ class fAuthorization
 			list($range_ip, $range_mask) = explode('/', $ip_range);
 			
 			if (strlen($range_mask) < 3) {
-				$mask_long = pow(2, 32) - pow(2, 32 - $range_mask);		
+				$mask_long = pow(2, 32) - pow(2, 32 - $range_mask);
 			} else {
-				$mask_long = ip2long($range_mask);	
+				$mask_long = ip2long($range_mask);
 			}
 			
 			$range_ip_long = ip2long($range_ip);
@@ -176,15 +176,15 @@ class fAuthorization
 						'/' . $range_mask,
 						$proper_range_ip
 					)
-				);	
+				);
 			}
 			
 			if (($user_ip_long & $mask_long) == $range_ip_long) {
-				return TRUE;	
+				return TRUE;
 			}
 		}
 		
-		return FALSE;			 
+		return FALSE;
 	}
 	
 	
@@ -358,7 +358,7 @@ class fAuthorization
 	
 	
 	/**
-	 * Sets the restricted URL requested by the user 
+	 * Sets the restricted URL requested by the user
 	 * 
 	 * @param  string  $url  The URL to save as the requested URL
 	 * @return void
