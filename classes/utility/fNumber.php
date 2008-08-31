@@ -15,6 +15,21 @@
 class fNumber
 {
 	/**
+	 * A callback to process all values through
+	 * 
+	 * @var callback
+	 */
+	static private $format_callback = NULL;
+	
+	/**
+	 * A callback to process all values through
+	 * 
+	 * @var callback
+	 */
+	static private $unformat_callback = NULL;
+	
+	
+	/**
 	 * Converts any positive integer between any two bases ranging from 2 to 16
 	 * 
 	 * @param  fNumber|string $number     The positive integer to convert
@@ -233,6 +248,12 @@ class fNumber
 		}
 		$number = (string) $number;
 		$number = trim($number);
+		
+		if (self::$unformat_callback) {
+			$number = call_user_func(self::$unformat_callback, $number);
+		} else {
+			$number = str_replace(',', '', $number);	
+		}
 		
 		$matched = preg_match('#^([+\-]?)((?:\d*\.)?\d+)(?:e([+\-]?)(\d+))?$#i', $number, $matches);
 		
@@ -742,6 +763,30 @@ class fNumber
 	
 	
 	/**
+	 * Allows setting a callback to translate or modify any return values from {@link format()}
+	 * 
+	 * @param  callback $callback  The callback to pass the fNumber value to. Should accept a string value and return a single string.
+	 * @return void
+	 */
+	static public function registerFormatCallback($callback)
+	{
+		self::$format_callback = $callback;
+	}
+	
+	
+	/**
+	 * Allows setting a callback to clean any formatted values so they can be properly parsed - useful for languages where , is used as the decimal point
+	 * 
+	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and return a string the is a valid number using . as the decimal point.
+	 * @return void
+	 */
+	static public function registerUnformatCallback($callback)
+	{
+		self::$unformat_callback = $callback;
+	}
+	
+	
+	/**
 	 * Sets the scale for a number
 	 * 
 	 * @param  string  $number  The number to set the scale for
@@ -1026,6 +1071,40 @@ class fNumber
 		$remainder = self::setScale($remainder, $scale);
 		
 		return new fNumber($remainder);
+	}
+	
+	
+	/**
+	 * Formats the number to include thousands separators
+	 * 
+	 * @return string  The formatted value
+	 */
+	public function format()
+	{
+		if (self::$format_callback !== NULL) {
+			return call_user_func(self::$format_callback, $this->value);
+		}
+		
+		// We can't use number_format() since it takes a float and we have a
+		// string that can not be losslessly converted to a float
+		$parts    = explode('.', $this->value);
+		
+		$integer  = $parts[0];
+		$fraction = (!isset($parts[1])) ? '' : $parts[1];
+		
+		$sign    = ($integer[0] == '-') ? '-' : '';
+		$integer = substr($integer, 1);
+		
+		$int_sections = array();
+		for ($i = strlen($integer)-3; $i > 0; $i -= 3) {
+			array_unshift($int_sections, substr($integer, $i, 3));
+		}
+		array_unshift($int_sections, substr($integer, 0, $i+3));
+		
+		$integer  = join(',', $int_sections);
+		$fraction = (strlen($fraction)) ? '.' . $fraction : '';
+		
+		return $sign . $integer . $fraction;
 	}
 	
 	
