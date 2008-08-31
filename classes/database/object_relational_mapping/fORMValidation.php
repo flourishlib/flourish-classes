@@ -255,10 +255,6 @@ class fORMValidation
 		}
 		settype($conditional_columns, 'array');
 		
-		if ($values[$main_column] === NULL) {
-			return;
-		}
-		
 		if ((!empty($conditional_values) && in_array($values[$main_column], $conditional_values)) || (empty($conditional_values))) {
 			$messages = array();
 			foreach ($conditional_columns as $conditional_column) {
