@@ -22,6 +22,13 @@ class fImage extends fFile
 	static private $imagemagick_dir = NULL;
 	
 	/**
+	 * A custom tmp path to use for ImageMagick
+	 * 
+	 * @var string
+	 */
+	static private $imagemagick_temp_dir = NULL;
+	
+	/**
 	 * The processor to use for the image manipulation
 	 * 
 	 * @var string
@@ -411,18 +418,17 @@ class fImage extends fFile
 	 */
 	static public function setImageMagickTempDir($temp_dir)
 	{
-		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
-			if (stripos(ini_get('safe_mode_allowed_env_vars'), 'magick_') === FALSE) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'Safe mode is turned on and the safe_mode_allowed_env_vars ini setting is not set to allow environmental variables that start with MAGICK_. Currently safe_mode_allowed_env_vars is set to: %s.',
-						fCore::dump(ini_get('safe_mode_allowed_env_vars'))
-					)
-				);
-			}
+		$temp_dir = new fDirectory($temp_dir);
+		if (!$temp_dir->isWritable()) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The ImageMagick temp directory specified, %s, does not appear to be writable',
+					$temp_dir->getPath()
+				)
+			);	
 		}
-		putenv('MAGICK_TMPDIR=' . $temp_dir);
+		self::$imagemagick_temp_dir = $temp_dir->getPath();
 	}
 	
 	
@@ -756,6 +762,11 @@ class fImage extends fFile
 		$info = self::getInfo($this->file);
 		
 		$command_line  = escapeshellcmd(self::$imagemagick_dir . 'convert');
+		
+		if (self::$imagemagick_temp_dir) {
+			$command_line .= ' -set registry:temporary-path ' . escapeshellarg(self::$imagemagick_temp_dir) . ' ';
+		}
+		
 		$command_line .= ' ' . escapeshellarg($this->file) . ' ';
 		
 		// Animated gifs need to be coalesced
@@ -772,21 +783,17 @@ class fImage extends fFile
 			
 			// Perform the resize operation
 			if ($mod['operation'] == 'resize') {
-				
 				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . ' ';
 				
 			// Perform the crop operation
 			} elseif ($mod['operation'] == 'crop') {
-			
 				$command_line .= ' -crop ' . $mod['width'] . 'x' . $mod['height'];
 				$command_line .= '+' . $mod['start_x'] . '+' . $mod['start_y'];
 				$command_line .= ' -repage ' . $mod['width'] . 'x' . $mod['height'] . '+0+0 ';
 				
 			// Perform the desaturate operation
 			} elseif ($mod['operation'] == 'desaturate') {
-			
 				$command_line .= ' -colorspace GRAY ';
-				
 			}
 		}
 		
