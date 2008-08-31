@@ -487,7 +487,7 @@ class fMoney
 	 * @param  fNumber|string $multiplicand  The number of times to multiply this ammount - don't use a float since they are imprecise
 	 * @return fMoney  The product of the monetary value and the multiplicand passed
 	 */
-	public function multiply($multiplicand)
+	public function mul($multiplicand)
 	{
 		$new_amount = $this->amount->mul($multiplicand);
 		return new fMoney($new_amount, $this->currency);
@@ -512,7 +512,7 @@ class fMoney
 	 * @param  fMoney $subtrahend  The money object to subtract
 	 * @return fMoney  The difference of the monetary values in this currency
 	 */
-	public function subtract(fMoney $subtrahend)
+	public function sub(fMoney $subtrahend)
 	{
 		$converted_subtrahend = $subtrahend->convert($this->currency)->amount;
 		$new_amount           = $this->amount->sub($converted_subtrahend);
