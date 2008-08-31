@@ -50,6 +50,13 @@ class fORMColumn
 	static private $money_columns = array();
 	
 	/**
+	 * Columns that should be returned as fNumber objects
+	 * 
+	 * @var array
+	 */
+	static private $number_columns = array();
+	
+	/**
 	 * Columns that should be formatted as a random string
 	 * 
 	 * @var array
@@ -332,6 +339,71 @@ class fORMColumn
 	
 	
 	/**
+	 * Sets a column to be returned as an fNumber object from calls to get{Column}()
+	 * 
+	 * @param  mixed  $class   The class name or instance of the class to set the column format
+	 * @param  string $column  The column to return as an fNumber object
+	 * @return void
+	 */
+	static public function configureNumberColumn($class, $column)
+	{
+		$class     = fORM::getClassName($class);
+		$table     = fORM::tablize($class);
+		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		
+		$valid_data_types = array('integer', 'float');
+		if (!in_array($data_type, $valid_data_types)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a number column.',
+					fCore::dump($column),
+					$data_type,
+					join(', ', $valid_data_types)
+				)
+			);
+		}
+		
+		$camelized_column = fGrammar::camelize($column, TRUE);
+		
+		fORM::registerHookCallback(
+			$class,
+			'replace::inspect' . $camelized_column . '()',
+			array('fORMColumn', 'inspect')
+		);
+		
+		fORM::registerHookCallback(
+			$class,
+			'replace::encode' . $camelized_column . '()',
+			array('fORMColumn', 'encodeNumberColumn')
+		);
+		
+		fORM::registerHookCallback(
+			$class,
+			'replace::prepare' . $camelized_column . '()',
+			array('fORMColumn', 'prepareNumberColumn')
+		);
+		
+		fORM::registerReflectCallback(
+			$class,
+			array('fORMColumn', 'reflect')
+		);
+		
+		fORM::registerObjectifyCallback(
+			$class,
+			$column,
+			array('fORMColumn', 'objectifyNumber')
+		);
+		
+		if (empty(self::$number_columns[$class])) {
+			self::$number_columns[$class] = array();
+		}
+		
+		self::$number_columns[$class][$column] = TRUE;
+	}
+	
+	
+	/**
 	 * Sets a column to be a random string column - a random string will be generated when the record is saved
 	 * 
 	 * @param  mixed   $class   The class name or instance of the class
@@ -414,7 +486,7 @@ class fORMColumn
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  string        &$method_name      The method that was called
 	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted link
+	 * @return string  The encoded monetary value
 	 */
 	static public function encodeMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
@@ -424,6 +496,39 @@ class fORMColumn
 		
 		if ($value instanceof fMoney) {
 			$value = $value->__toString();
+		}
+		
+		return fHTML::prepare($value);
+	}
+	
+	
+	/**
+	 * Encodes a number column by calling {@link fNumber::__toString()}
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return string  The encoded number
+	 */
+	static public function encodeNumberColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		
+		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
+		$value       = $values[$column];
+		
+		if ($value instanceof fNumber) {
+			if ($column_info['type'] == 'float') {
+				$decimal_places = (isset($parameters[0])) ? (int) $parameters[0] : $column_info['decimal_places'];
+				$value = $value->trunc($decimal_places)->__toString();
+			} else {
+				$value = $value->__toString();
+			}
 		}
 		
 		return fHTML::prepare($value);
@@ -475,6 +580,10 @@ class fORMColumn
 			$info['feature'] = 'money';
 		}
 		
+		if (!empty(self::$number_columns[$class][$column])) {
+			$info['feature'] = 'number';
+		}
+		
 		if ($element) {
 			return (isset($info[$element])) ? $info[$element] : NULL;
 		}
@@ -500,10 +609,35 @@ class fORMColumn
 		}
 		
 		try {
-			
 			return new fMoney($value);
 			 
-		// If there was some error creating the file, just return the raw value
+		// If there was some error creating the money object, just return the raw value
+		} catch (fExpectedException $e) {
+			return $value;
+		}
+	}
+	
+	
+	/**
+	 * Turns a monetary value into an {@link fNumber} object
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The class this value is for
+	 * @param  string $column  The column the value is in
+	 * @param  mixed  $value   The value
+	 * @return mixed  The {@link fNumber} object or raw value
+	 */
+	static public function objectifyNumber($class, $column, $value)
+	{
+		if (!fCore::stringlike($value)) {
+			return $value;
+		}
+		
+		try {
+			return new fNumber($value);
+			 
+		// If there was some error creating the number object, just return the raw value
 		} catch (fExpectedException $e) {
 			return $value;
 		}
@@ -569,6 +703,43 @@ class fORMColumn
 	
 	
 	/**
+	 * Prepares a number column by calling {@link fNumber::format()}
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return string  The formatted link
+	 */
+	static public function prepareNumberColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		
+		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
+		$value       = $values[$column];
+		
+		if ($value instanceof fNumber) {
+			if ($column_info['type'] == 'float') {
+				$decimal_places = (isset($parameters[0])) ? (int) $parameters[0] : $column_info['decimal_places'];
+				if ($decimal_places !== NULL) {
+					$value = $value->trunc($decimal_places)->format();
+				} else {
+					$value = $value->format();
+				}
+			} else {
+				$value = $value->format();
+			}
+		}
+		
+		return fHTML::prepare($value);
+	}
+	
+	
+	/**
 	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
 	 * 
 	 * @internal
@@ -604,6 +775,35 @@ class fORMColumn
 			foreach(self::$money_columns[$class] as $column => $enabled) {
 				$camelized_column = fGrammar::camelize($column, TRUE);
 				
+				// Get and set methods
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Gets the current value of " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * @return fMoney  The current value\n";
+					$signature .= " */\n";
+				}
+				$get_method = 'get' . $camelized_column;
+				$signature .= 'public function ' . $get_method . '()';
+				
+				$signatures[$get_method] = $signature;
+				
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Sets the value for " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * @param  fMoney|string|integer \$" . $column . "  The new value - a string or integer will be converted to the default currency (if defined)\n";
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$set_method = 'set' . $camelized_column;
+				$signature .= 'public function ' . $set_method . '($' . $column . ')';
+				
+				$signatures[$set_method] = $signature;
+				
 				$signature = '';
 				if ($include_doc_comments) {
 					$signature .= "/**\n";
@@ -628,6 +828,80 @@ class fORMColumn
 					$signature .= " * If the value is an fMoney object, the ->format() method will be called\n";
 					$signature .= " * resulting in the value including the currency symbol and thousands separators\n";
 					$signature .= " * \n";
+					$signature .= " * @return string  The HTML-ready value\n";
+					$signature .= " */\n";
+				}
+				$prepare_method = 'prepare' . $camelized_column;
+				$signature .= 'public function ' . $prepare_method . '()';
+				
+				$signatures[$prepare_method] = $signature;
+			}
+		}
+		
+		if (isset(self::$number_columns[$class])) {
+			foreach(self::$number_columns[$class] as $column => $enabled) {
+				$camelized_column = fGrammar::camelize($column, TRUE);
+				$type             = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column, 'type');
+				
+				// Get and set methods
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Gets the current value of " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * @return fNumber  The current value\n";
+					$signature .= " */\n";
+				}
+				$get_method = 'get' . $camelized_column;
+				$signature .= 'public function ' . $get_method . '()';
+				
+				$signatures[$get_method] = $signature;
+				
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Sets the value for " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * @param  fNumber|string|integer \$" . $column . "  The new value - don't use floats since they are imprecise\n";
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$set_method = 'set' . $camelized_column;
+				$signature .= 'public function ' . $set_method . '($' . $column . ')';
+				
+				$signatures[$set_method] = $signature;
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Encodes the value of " . $column . " for output into an HTML form\n";
+					$signature .= " * \n";
+					$signature .= " * If the value is an fNumber object, the ->__toString() method will be called\n";
+					$signature .= " * resulting in the value without any thousands separators\n";
+					$signature .= " * \n";
+					if ($type == 'float') {
+						$signature .= " * @param  integer \$decimal_places  The number of decimal places to display - not passing any value or passing NULL will result in the intrisinc number of decimal places being shown\n"; 		
+					}
+					$signature .= " * @return string  The HTML form-ready value\n";
+					$signature .= " */\n";
+				}
+				$encode_method = 'encode' . $camelized_column;
+				$signature .= 'public function ' . $encode_method . '()';
+				
+				$signatures[$encode_method] = $signature;
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
+					$signature .= " * \n";
+					$signature .= " * If the value is an fNumber object, the ->format() method will be called\n";
+					$signature .= " * resulting in the value including thousands separators\n";
+					$signature .= " * \n";
+					if ($type == 'float') {
+						$signature .= " * @param  integer \$decimal_places  The number of decimal places to display - not passing any value or passing NULL will result in the intrisinc number of decimal places being shown\n"; 		
+					}
 					$signature .= " * @return string  The HTML-ready value\n";
 					$signature .= " */\n";
 				}

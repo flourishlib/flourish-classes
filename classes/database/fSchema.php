@@ -977,7 +977,7 @@ class fSchema implements fISchema
 			}
 			
 			// Figure out how many decimal places for a decimal
-			if ($match[2] == 'decimal' && !empty($match[4])) {
+			if (in_array(strtolower($match[2]), array('decimal', 'numeric')) && !empty($match[4])) {
 				$info['decimal_places'] = $match[4];
 			}
 			

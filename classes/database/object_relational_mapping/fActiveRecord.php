@@ -799,11 +799,24 @@ abstract class fActiveRecord
 				$this->values[$column] = fORMDatabase::getInstance()->unescapeBoolean($value);
 			} elseif ($column_info[$column]['type'] == 'blob') {
 				$this->values[$column] = fORMDatabase::getInstance()->unescapeBlob($value);
-			} elseif ($column_info[$column]['type'] == 'float' && $column_info[$column]['decimal_places'] !== NULL) {
-				$this->values[$column] = number_format($value, $column_info[$column]['decimal_places'], '.', '');
+			} elseif ($column_info[$column]['type'] == 'float') {
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeFloat($value);
+				if ($column_info[$column]['decimal_places'] !== NULL) {
+					$this->values[$column] = number_format($this->values[$column], $column_info[$column]['decimal_places'], '.', '');
+				}
+			} elseif ($column_info[$column]['type'] == 'integer') {
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeInteger($value);
+			} elseif ($column_info[$column]['type'] == 'date') {
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeDate($value);
+			} elseif ($column_info[$column]['type'] == 'time') {
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeTime($value);
+			} elseif ($column_info[$column]['type'] == 'timestamp') {
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeTimestamp($value);
 			} else {
-				$this->values[$column] = fORM::objectify($this, $column, $value);
+				$this->values[$column] = fORMDatabase::getInstance()->unescapeString($value);
 			}
+			
+			$this->values[$column] = fORM::objectify($this, $column, $this->values[$column]);
 		}
 		
 		// Save this object to the identity map
