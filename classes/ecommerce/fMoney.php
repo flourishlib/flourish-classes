@@ -242,11 +242,14 @@ class fMoney
 	/**
 	 * Adds the passed monetary value to the current one
 	 * 
-	 * @param  fMoney $addend  The money object to add
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $addend  The money object to add - a string or integer will be converted to the default currency (if defined)
 	 * @return fMoney  The sum of the monetary values in this currency
 	 */
-	public function add(fMoney $addend)
+	public function add($addend)
 	{
+		$addend           = $this->makeMoney($addend);
 		$converted_addend = $addend->convert($this->currency)->amount;
 		$new_amount       = $this->amount->add($converted_addend);
 		return new fMoney($new_amount, $this->currency);
@@ -359,11 +362,14 @@ class fMoney
 	/**
 	 * Checks to see if two monetary values are equal
 	 * 
-	 * @param  fMoney $money  The money object to compare to
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The money object to compare to - a string or integer will be converted to the default currency (if defined)
 	 * @return boolean  If the monetary values are equal
 	 */
-	public function eq(fMoney $money)
+	public function eq($money)
 	{
+		$money = $this->makeMoney($money);
 		return $this->round()->eq($money->convert($this->currency)->round());
 	}
 	
@@ -434,11 +440,14 @@ class fMoney
 	/**
 	 * Checks to see if this value is greater than the one passed
 	 * 
-	 * @param  fMoney $money  The money object to compare to
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The money object to compare to - a string or integer will be converted to the default currency (if defined)
 	 * @return boolean  If this value is greater than the one passed
 	 */
-	public function gt(fMoney $money)
+	public function gt($money)
 	{
+		$money = $this->makeMoney($money);
 		return $this->round()->gt($money->convert($this->currency)->round());
 	}
 	
@@ -446,11 +455,14 @@ class fMoney
 	/**
 	 * Checks to see if this value is greater than or equal to the one passed
 	 * 
-	 * @param  fMoney $money  The money object to compare to
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The money object to compare to - a string or integer will be converted to the default currency (if defined)
 	 * @return boolean  If this value is greater than or equal to the one passed
 	 */
-	public function gte(fMoney $money)
+	public function gte($money)
 	{
+		$money = $this->makeMoney($money);
 		return $this->round()->gte($money->convert($this->currency)->round());
 	}
 	
@@ -458,11 +470,14 @@ class fMoney
 	/**
 	 * Checks to see if this value is less than the one passed
 	 * 
-	 * @param  fMoney $money  The money object to compare to
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The money object to compare to - a string or integer will be converted to the default currency (if defined)
 	 * @return boolean  If this value is less than the one passed
 	 */
-	public function lt(fMoney $money)
+	public function lt($money)
 	{
+		$money = $this->makeMoney($money);
 		return $this->round()->lt($money->convert($this->currency)->round());
 	}
 	
@@ -470,12 +485,58 @@ class fMoney
 	/**
 	 * Checks to see if this value is less than or equal to the one passed
 	 * 
-	 * @param  fMoney $money  The money object to compare to
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The money object to compare to - a string or integer will be converted to the default currency (if defined)
 	 * @return boolean  If this value is less than or equal to the one passed
 	 */
-	public function lte(fMoney $money)
+	public function lte($money)
 	{
+		$money = $this->makeMoney($money);
 		return $this->round()->lte($money->convert($this->currency)->round());
+	}
+	
+	
+	/**
+	 * Turns a string into an fMoney object if a default currency is defined
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $money  The value to convert to an fMoney object
+	 * @return fMoney  The converted value
+	 */
+	private function makeMoney($money)
+	{
+		if ($money instanceof fMoney) {
+			return $money;
+		}	
+		
+		if (is_object($money) && is_callable(array($money, '__toString'))) {
+			$money = $money->__toString();	
+		} elseif (fCore::stringlike($money)) {
+			$money = (string) $money;	
+		}
+		
+		if (!is_string($money)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The money value specified, %s, is not an fMoney object, integer or string and is thus is invalid for this operation',
+					fCore::dump($money)
+				)
+			);	
+		}
+		
+		if (!self::$default_currency) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'A default currency must be set in order to convert strings or integers to fMoney objects on the fly'
+				)
+			);			
+		}
+		
+		return new fMoney($money);
 	}
 	
 	
@@ -484,7 +545,7 @@ class fMoney
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fNumber|string $multiplicand  The number of times to multiply this ammount - don't use a float since they are imprecise
+	 * @param  fNumber|string|integer $multiplicand  The number of times to multiply this ammount - don't use a float since they are imprecise
 	 * @return fMoney  The product of the monetary value and the multiplicand passed
 	 */
 	public function mul($multiplicand)
@@ -509,11 +570,14 @@ class fMoney
 	/**
 	 * Subtracts the passed monetary value from the current one
 	 * 
-	 * @param  fMoney $subtrahend  The money object to subtract
+	 * @throws fValidationException
+	 * 
+	 * @param  fMoney|string|integer $subtrahend  The money object to subtract - a string or integer will be converted to the default currency (if defined)
 	 * @return fMoney  The difference of the monetary values in this currency
 	 */
-	public function sub(fMoney $subtrahend)
+	public function sub($subtrahend)
 	{
+		$subtrahend           = $this->makeMoney($subtrahend);
 		$converted_subtrahend = $subtrahend->convert($this->currency)->amount;
 		$new_amount           = $this->amount->sub($converted_subtrahend);
 		return new fMoney($new_amount, $this->currency);
