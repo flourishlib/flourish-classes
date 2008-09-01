@@ -805,8 +805,11 @@ class fORMDatabase
 	 */
 	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
-		$class = fORM::classize($table);
-		$value = fORM::scalarize($class, $column, $value);
+		// Some of the tables being escaped for are linking tables that might break with classize()
+		if (is_object($value)) {
+			$class = fORM::classize($table);
+			$value = fORM::scalarize($class, $column, $value);
+		}
 		
 		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {

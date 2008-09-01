@@ -36,27 +36,22 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
-	 * @param  string $related_class     The class we are associating with the current record
-	 * @param  array  $primary_keys      The primary keys of the records to be associated
-	 * @param  string $route             The route to use between the current class and the related class
+	 * @param  mixed             $class                 The class name or instance of the class to get the related values for
+	 * @param  array             &$related_records      The related records existing for the {@link fActiveRecord} class
+	 * @param  string            $related_class         The class we are associating with the current record
+	 * @param  array|fRecordSet  $records_to_associate  An fRecordSet or an array of primary keys of the records to be associated
+	 * @param  string            $route                 The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function associateRecords($class, &$related_records, $related_class, $primary_keys, $route=NULL)
+	static public function associateRecords($class, &$related_records, $related_class, $records_to_associate, $route=NULL)
 	{
-		// Remove blank values from the related records primary keys
-		$new_primary_keys = array();
-		foreach ($primary_keys as $primary_key) {
-			if (empty($primary_key)) {
-				continue;
-			}
-			$new_primary_keys[] = $primary_key;
+		if (is_array($records_to_associate)) {
+			$records = fRecordSet::buildFromPrimaryKeys($related_class, array_filter($records_to_associate));
+		} else {
+			$records = clone $records_to_associate;	
 		}
-		
-		$records = fRecordSet::buildFromPrimaryKeys($related_class, $primary_keys);
-		self::setRecords($class, $related_records, $related_class, $records, $route);
 		$records->flagForAssociation();
+		self::setRecords($class, $related_records, $related_class, $records, $route);
 	}
 	
 	
@@ -96,9 +91,9 @@ class fORMRelated
 			if ($same_class && isset($relationship['join_table'])) {
 				$column = $table . '{' . $relationship['join_table'] . '}.' . $relationship['column'];
 			} elseif ($same_class) {
-				$column = $table . '.' . $relationship['related_column'];
+				$column = $table . '{' . $route . '}.' . $relationship['related_column'];
 			} else {
-				$column = $table . '.' . $relationship['column'];
+				$column = $table . '{' . $route . '}.' . $relationship['column'];
 			}
 			
 			$where_conditions = array($column . '=' => $values[$relationship['column']]);
