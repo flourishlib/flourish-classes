@@ -177,12 +177,12 @@ class fHTML
 	 * 
 	 * @param  string $content    The content to display
 	 * @param  string $css_class  The css class to apply
-	 * @return void
+	 * @return boolean  If the content was shown
 	 */
 	static public function show($content, $css_class='')
 	{
 		if (!fCore::stringlike($content)) {
-			return;
+			return FALSE;
 		}
 		
 		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
@@ -191,6 +191,8 @@ class fHTML
 		} else {
 			echo '<p' . $class . '>' . self::prepare($content) . '</p>';
 		}
+		
+		return TRUE;
 	}
 	
 	

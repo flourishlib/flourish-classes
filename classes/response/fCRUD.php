@@ -411,7 +411,7 @@ class fCRUD
 	 * 
 	 * @param  string       $value          The value for the current HTML input tag
 	 * @param  string|array $checked_value  The value (or array of values) that has been checked
-	 * @return void
+	 * @return boolean  If the checked attribute was printed
 	 */
 	static public function showChecked($value, $checked_value)
 	{
@@ -422,7 +422,10 @@ class fCRUD
 		
 		if ($checked) {
 			echo ' checked="checked"';
+			return TRUE;
 		}
+		
+		return FALSE;
 	}
 	
 	
