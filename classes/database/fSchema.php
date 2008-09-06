@@ -96,7 +96,7 @@ class fSchema implements fISchema
 	 * 
 	 * @var array
 	 */
-	private $tables = array();
+	private $tables = NULL;
 	
 	
 	/**
@@ -168,6 +168,10 @@ class fSchema implements fISchema
 			case 'sqlite':
 				$column_info = $this->fetchSQLiteColumnInfo($table);
 				break;
+		}
+			
+		if (!$column_info) {
+			return;	
 		}
 			
 		$this->column_info[$table] = $column_info;
@@ -512,8 +516,13 @@ class fSchema implements fISchema
 		$column_info = array();
 		
 		$result     = $this->database->query('SHOW CREATE TABLE ' . $table);
-		$row        = $result->fetchRow();
-		$create_sql = $row['Create Table'];
+		
+		try {
+			$row        = $result->fetchRow();
+			$create_sql = $row['Create Table'];
+		} catch (fNoResultsException $e) {
+			return array();			
+		}
 		
 		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?)( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
@@ -956,8 +965,13 @@ class fSchema implements fISchema
 		);
 		
 		$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table));
-		$row        = $result->fetchRow();
-		$create_sql = $row['sql'];
+		
+		try {
+			$row        = $result->fetchRow();
+			$create_sql = $row['sql'];
+		} catch (fNoResultsException $e) {
+			return array();			
+		}
 		
 		preg_match_all('#(?<=,|\()\s*(\w+)\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
@@ -1239,7 +1253,7 @@ class fSchema implements fISchema
 	public function flushInfo()
 	{
 		if ($this->state != 'current') {
-			$this->tables             = array();
+			$this->tables             = NULL;
 			$this->column_info        = array();
 			$this->keys               = array();
 			$this->merged_column_info = array();
@@ -1317,6 +1331,16 @@ class fSchema implements fISchema
 			);
 		}
 		
+		if (!in_array($table, $this->getTables())) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The table specified, %s, does not exist in the database',
+					fCore::dump($table)
+				)
+			);
+		}
+		
 		// Return the saved column info if possible
 		if (!$column && isset($this->merged_column_info[$table])) {
 			return $this->merged_column_info[$table];
@@ -1331,15 +1355,6 @@ class fSchema implements fISchema
 		$this->fetchColumnInfo($table);
 		$this->mergeColumnInfo();
 		
-		if (!isset($this->merged_column_info[$table])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The table specified, %s, does not exist in the database',
-					fCore::dump($element)
-				)
-			);
-		}
 		if ($column && !isset($this->merged_column_info[$table][$column])) {
 			fCore::toss(
 				'fProgrammerException',
@@ -1538,7 +1553,7 @@ class fSchema implements fISchema
 	 */
 	public function getTables()
 	{
-		if (!empty($this->tables)) {
+		if ($this->tables !== NULL) {
 			return $this->tables;
 		}
 		
@@ -1582,9 +1597,11 @@ class fSchema implements fISchema
 		
 		$result = $this->database->query($sql);
 		
+		$this->tables = array();
+		
 		foreach ($result as $row) {
 			$keys = array_keys($row);
-			array_push($this->tables, $row[$keys[0]]);
+			$this->tables[] = $row[$keys[0]];
 		}
 		return $this->tables;
 	}
