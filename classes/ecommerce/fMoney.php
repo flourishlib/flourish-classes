@@ -36,7 +36,7 @@ class fMoney
 	static private $default_currency = NULL;
 	
 	/**
-	 * A callback to process all mmoney values through
+	 * A callback to process all money values through
 	 * 
 	 * @var callback
 	 */
@@ -72,9 +72,20 @@ class fMoney
 	
 	
 	/**
-	 * Allows retrieving information about a currency
+	 * Lists all of the defined currencies
 	 * 
 	 * @internal
+	 * 
+	 * @return array  The 3 letter ISO codes for all of the defined currencies
+	 */
+	static public function getCurrencies()
+	{
+		return array_keys(self::$currencies);
+	}
+	
+	
+	/**
+	 * Allows retrieving information about a currency
 	 * 
 	 * @param string  $iso_code  The ISO code (three letters, e.g. 'USD') for the currency
 	 * @param string  $element   The element to retrieve: 'name', 'symbol', 'precision', 'value'
