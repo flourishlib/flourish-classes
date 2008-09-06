@@ -43,13 +43,6 @@ class fORMColumn
 	static private $link_columns = array();
 	
 	/**
-	 * Columns that should be formatted as money
-	 * 
-	 * @var array
-	 */
-	static private $money_columns = array();
-	
-	/**
 	 * Columns that should be returned as fNumber objects
 	 * 
 	 * @var array
@@ -268,77 +261,6 @@ class fORMColumn
 	
 	
 	/**
-	 * Sets a column to be formatted as an fMoney object
-	 * 
-	 * @param  mixed  $class   The class name or instance of the class to set the column format
-	 * @param  string $column  The column to format as an fMoney object
-	 * @return void
-	 */
-	static public function configureMoneyColumn($class, $column)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('float');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a money column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
-			);
-		}
-		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
-		fORM::registerHookCallback(
-			$class,
-			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'replace::encode' . $camelized_column . '()',
-			array('fORMColumn', 'encodeMoneyColumn')
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'replace::prepare' . $camelized_column . '()',
-			array('fORMColumn', 'prepareMoneyColumn')
-		);
-		
-		$hook     = 'post::validate()';
-		$callback = array('fORMColumn', 'validateMoneyColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
-		}
-		
-		fORM::registerReflectCallback(
-			$class,
-			array('fORMColumn', 'reflect')
-		);
-		
-		fORM::registerObjectifyCallback(
-			$class,
-			$column,
-			array('fORMColumn', 'objectifyMoney')
-		);
-		
-		if (empty(self::$money_columns[$class])) {
-			self::$money_columns[$class] = array();
-		}
-		
-		self::$money_columns[$class][$column] = TRUE;
-	}
-	
-	
-	/**
 	 * Sets a column to be returned as an fNumber object from calls to get{Column}()
 	 * 
 	 * @param  mixed  $class   The class name or instance of the class to set the column format
@@ -476,33 +398,6 @@ class fORMColumn
 	
 	
 	/**
-	 * Encodes a money column by calling {@link fMoney::__toString()}
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The encoded monetary value
-	 */
-	static public function encodeMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
-	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
-		
-		$value = $values[$column];
-		
-		if ($value instanceof fMoney) {
-			$value = $value->__toString();
-		}
-		
-		return fHTML::prepare($value);
-	}
-	
-	
-	/**
 	 * Encodes a number column by calling {@link fNumber::__toString()}
 	 * 
 	 * @internal
@@ -556,6 +451,19 @@ class fORMColumn
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
+		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
+			unset($info['valid_values']);
+			unset($info['max_length']);
+		}
+		
+		if ($info['type'] != 'float') {
+			unset($info['decimal_places']);
+		}
+		
+		if ($info['type'] != 'integer') {
+			unset($info['auto_increment']);
+		}
+		
 		if (!empty(self::$date_created_columns[$class][$column])) {
 			$info['feature'] = 'date created';
 		}
@@ -576,45 +484,25 @@ class fORMColumn
 			$info['feature'] = 'random';
 		}
 		
-		if (!empty(self::$money_columns[$class][$column])) {
-			$info['feature'] = 'money';
-		}
-		
 		if (!empty(self::$number_columns[$class][$column])) {
 			$info['feature'] = 'number';
 		}
 		
 		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;
+			if (!isset($info[$element])) {
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+						fCore::dump($element),
+						join(', ', array_keys($info))
+					)
+				);
+			}
+			return $info[$element];
 		}
 		
 		return $info;
-	}
-	
-	
-	/**
-	 * Turns a monetary value into an {@link fMoney} object
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $class   The class this value is for
-	 * @param  string $column  The column the value is in
-	 * @param  mixed  $value   The value
-	 * @return mixed  The {@link fMoney} object or raw value
-	 */
-	static public function objectifyMoney($class, $column, $value)
-	{
-		if (!fCore::stringlike($value)) {
-			return $value;
-		}
-		
-		try {
-			return new fMoney($value);
-			 
-		// If there was some error creating the money object, just return the raw value
-		} catch (fExpectedException $e) {
-			return $value;
-		}
 	}
 	
 	
@@ -666,36 +554,6 @@ class fORMColumn
 		// Fix domains that don't have the protocol to start
 		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#i', $value)) {
 			$value = 'http://' . $value;
-		}
-		
-		return fHTML::prepare($value);
-	}
-	
-	
-	/**
-	 * Prepares a money column by calling {@link fMoney::format()}
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted link
-	 */
-	static public function prepareMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
-	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
-		
-		if (empty($values[$column])) {
-			return $values[$column];
-		}
-		$value = $values[$column];
-		
-		if ($value instanceof fMoney) {
-			$value = $value->format();
 		}
 		
 		return fHTML::prepare($value);
@@ -766,73 +624,6 @@ class fORMColumn
 				}
 				$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
 				$signature .= 'public function prepare' . $prepare_method . '()';
-				
-				$signatures[$prepare_method] = $signature;
-			}
-		}
-		
-		if (isset(self::$money_columns[$class])) {
-			foreach(self::$money_columns[$class] as $column => $enabled) {
-				$camelized_column = fGrammar::camelize($column, TRUE);
-				
-				// Get and set methods
-				$signature = '';
-				if ($include_doc_comments) {
-					$signature .= "/**\n";
-					$signature .= " * Gets the current value of " . $column . "\n";
-					$signature .= " * \n";
-					$signature .= " * @return fMoney  The current value\n";
-					$signature .= " */\n";
-				}
-				$get_method = 'get' . $camelized_column;
-				$signature .= 'public function ' . $get_method . '()';
-				
-				$signatures[$get_method] = $signature;
-				
-				
-				$signature = '';
-				if ($include_doc_comments) {
-					$signature .= "/**\n";
-					$signature .= " * Sets the value for " . $column . "\n";
-					$signature .= " * \n";
-					$signature .= " * @param  fMoney|string|integer \$" . $column . "  The new value - a string or integer will be converted to the default currency (if defined)\n";
-					$signature .= " * @return void\n";
-					$signature .= " */\n";
-				}
-				$set_method = 'set' . $camelized_column;
-				$signature .= 'public function ' . $set_method . '($' . $column . ')';
-				
-				$signatures[$set_method] = $signature;
-				
-				$signature = '';
-				if ($include_doc_comments) {
-					$signature .= "/**\n";
-					$signature .= " * Encodes the value of " . $column . " for output into an HTML form\n";
-					$signature .= " * \n";
-					$signature .= " * If the value is an fMoney object, the ->__toString() method will be called\n";
-					$signature .= " * resulting in the value minus the currency symbol and thousands separators\n";
-					$signature .= " * \n";
-					$signature .= " * @return string  The HTML form-ready value\n";
-					$signature .= " */\n";
-				}
-				$encode_method = 'encode' . $camelized_column;
-				$signature .= 'public function ' . $encode_method . '()';
-				
-				$signatures[$encode_method] = $signature;
-				
-				$signature = '';
-				if ($include_doc_comments) {
-					$signature .= "/**\n";
-					$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
-					$signature .= " * \n";
-					$signature .= " * If the value is an fMoney object, the ->format() method will be called\n";
-					$signature .= " * resulting in the value including the currency symbol and thousands separators\n";
-					$signature .= " * \n";
-					$signature .= " * @return string  The HTML-ready value\n";
-					$signature .= " */\n";
-				}
-				$prepare_method = 'prepare' . $camelized_column;
-				$signature .= 'public function ' . $prepare_method . '()';
 				
 				$signatures[$prepare_method] = $signature;
 			}
@@ -934,11 +725,12 @@ class fORMColumn
 		$class = get_class($object);
 		
 		foreach (self::$date_created_columns[$class] as $column => $enabled) {
-			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();
-			}
-			$old_values[$column] = $values[$column];
-			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));
+			fActiveRecord::assign(
+				$values,
+				$old_values,
+				$column,
+				fORM::objectify($class, $column, date('Y-m-d H:i:s'))
+			);
 		}
 	}
 	
@@ -959,11 +751,12 @@ class fORMColumn
 		$class = get_class($object);
 		
 		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
-			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();
-			}
-			$old_values[$column][] = $values[$column];
-			$values[$column] = fORM::objectify($class, $column, date('Y-m-d H:i:s'));
+			fActiveRecord::assign(
+				$values,
+				$old_values,
+				$column,
+				fORM::objectify($class, $column, date('Y-m-d H:i:s'))
+			);
 		}
 	}
 	
@@ -989,10 +782,6 @@ class fORMColumn
 		$table = fORM::tablize($class);
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
-			if (!isset($old_values[$column])) {
-				$old_values[$column] = array();
-			}
-			$old_values[$column] = $values[$column];
 			
 			// Check to see if this is a unique column
 			$unique_keys      = fORMSchema::getInstance()->getKeys($table, 'unique');
@@ -1001,10 +790,10 @@ class fORMColumn
 				if ($unique_key == array($column)) {
 					$is_unique_column = TRUE;
 					do {
-						$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);
+						$value = fCryptography::generateRandomString($settings['length'], $settings['type']);
 						
 						// See if this is unique
-						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::getInstance()->escapeString($values[$column]);
+						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::getInstance()->escapeString($value);
 					
 					} while (fORMDatabase::getInstance()->query($sql)->getReturnedRows());
 				}
@@ -1012,8 +801,10 @@ class fORMColumn
 			
 			// If is is not a unique column, just generate a value
 			if (!$is_unique_column) {
-				$values[$column] = fCryptography::generateRandomString($settings['length'], $settings['type']);
+				$value = fCryptography::generateRandomString($settings['length'], $settings['type']);
 			}
+			
+			fActiveRecord::assign($values, $old_values, $column, $value);
 		}
 	}
 	
@@ -1082,38 +873,6 @@ class fORMColumn
 					fORM::getColumnName($class, $column)
 				);
 			}
-		}
-	}
-	
-	
-	/**
-	 * Validates all money columns
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object                The fActiveRecord instance
-	 * @param  array         &$values               The current values
-	 * @param  array         &$old_values           The old values
-	 * @param  array         &$related_records      Any records related to this record
-	 * @param  array         &$validation_messages  An array of ordered validation messages
-	 * @return void
-	 */
-	static public function validateMoneyColumns($object, &$values, &$old_values, &$related_records, &$validation_messages)
-	{
-		$class = get_class($object);
-		
-		if (empty(self::$money_columns[$class])) {
-			return;
-		}
-		
-		foreach (self::$money_columns[$class] as $column => $enabled) {
-			if ($values[$column] instanceof fMoney) {
-				continue;
-			}
-			$validation_messages[] = fGrammar::compose(
-				'%s: Please enter a valid monetary value',
-				fORM::getColumnName($class, $column)
-			);
 		}
 	}
 	

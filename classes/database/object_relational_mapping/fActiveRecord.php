@@ -15,6 +15,28 @@
 abstract class fActiveRecord
 {
 	/**
+	 * Sets a value, preserving the old value to future reference
+	 *
+	 * @internal
+	 * 
+	 * @param  array  &$values      The current values
+	 * @param  array  &$old_values  The old values
+	 * @param  string $column       The column to set
+	 * @param  mixed  $value        The value to set
+	 * @return void
+	 */
+	static public function assign(&$values, &$old_values, $column, $value)
+	{
+		if (!isset($old_values[$column])) {
+			$old_values[$column] = array();
+		}
+		
+		$old_values[$column][] = $values[$column];
+		$values[$column]       = $value;	
+	}
+	
+	
+	/**
 	 * The old values for this record
 	 * 
 	 * @var array
@@ -856,7 +878,7 @@ abstract class fActiveRecord
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		
 		// If we don't have a value for each primary key, we can't load
-		if (is_array($row) && !array_diff($pk_columns, array_keys($row))) {
+		if (is_array($row) && array_diff($pk_columns, array_keys($row))) {
 			return FALSE;
 		}
 		
@@ -1319,12 +1341,7 @@ abstract class fActiveRecord
 		
 		$value = fORM::objectify($this, $column, $value);
 		
-		if (!isset($this->old_values[$column])) {
-			$this->old_values[$column] = array();
-		}
-		
-		$this->old_values[$column][] = $this->values[$column];
-		$this->values[$column]       = $value;
+		self::assign($this->values, $this->old_values, $column, $value);
 	}
 	
 	

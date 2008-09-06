@@ -856,12 +856,7 @@ class fORMFile
 		$file     = new fFile($file_path);
 		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
 		
-		if (!isset($old_values[$column])) {
-			$old_values[$column] = array();
-		}
-		
-		$old_values[$column][] = $values[$column];
-		$values[$column]       = $new_file;
+		fActiveRecord::assign($values, $old_values, $column, $new_file);
 		
 		self::processImage($class, $column, $new_file);
 	}
@@ -956,12 +951,7 @@ class fORMFile
 				
 				$current_file = $values[$column];
 				if (!$current_file || ($current_file && $file->getPath() != $current_file->getPath())) {
-					if (!isset($old_values[$column])) {
-						$old_values[$column] = array();
-					}
-					
-					$old_values[$column][] = $current_file;
-					$values[$column]       = $file;
+					fActiveRecord::assign($values, $old_values, $column, $file);
 				}
 				return;
 				
@@ -971,12 +961,7 @@ class fORMFile
 		}
 		
 		// Assign the file
-		if (!isset($old_values[$column])) {
-			$old_values[$column] = array();
-		}
-		
-		$old_values[$column][] = $values[$column];
-		$values[$column]       = $file;
+		fActiveRecord::assign($values, $old_values, $column, $file);
 		
 		// Perform the file upload inheritance
 		if (!empty(self::$column_inheritence[$class][$column])) {
@@ -1003,12 +988,7 @@ class fORMFile
 					$other_file = $file;
 				}
 				
-				if (!isset($old_values[$other_column])) {
-					$old_values[$other_column] = array();
-				}
-				
-				$old_values[$other_column][] = $values[$other_column];
-				$values[$other_column]       = $other_file;
+				fActiveRecord::assign($values, $old_values, $other_column, $other_file);
 				
 				if ($other_file) {
 					self::processImage($class, $other_column, $other_file);
