@@ -676,8 +676,10 @@ class fORMValidation
 		foreach ($values as $column => $value) {
 			$values[$column] = fORM::scalarize($class, $column, $value);
 		}
-		foreach ($old_values as $column => $value) {
-			$old_values[$column] = fORM::scalarize($class, $column, $value);
+		foreach ($old_values as $column => $column_values) {
+			foreach ($column_values as $key => $value) {
+				$old_values[$column][$key] = fORM::scalarize($class, $column, $value);
+			}
 		}
 		
 		$message = self::checkPrimaryKeys($object, $values, $old_values);
