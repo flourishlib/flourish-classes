@@ -74,8 +74,6 @@ class fMoney
 	/**
 	 * Lists all of the defined currencies
 	 * 
-	 * @internal
-	 * 
 	 * @return array  The 3 letter ISO codes for all of the defined currencies
 	 */
 	static public function getCurrencies()
