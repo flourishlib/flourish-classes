@@ -111,12 +111,20 @@ class fORM
 	{
 		$class = self::getClassName($object);
 		
-		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
+		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
+			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
 			return;
 		}
 		
 		// replace:: hooks are always singular and return a value
 		if (preg_match('#^replace::[\w_]+\(\)$#', $hook)) {
+			
+			if (isset(self::$hook_callbacks[$class][$hook])) {
+				$callback = self::$hook_callbacks[$class][$hook];
+			} else {
+				$callback = self::$hook_callbacks['*'][$hook];
+			}
+			
 			// This is the only way to pass by reference
 			$parameters = array(
 				$object,
@@ -126,11 +134,17 @@ class fORM
 				&$first_parameter,
 				&$second_parameter
 			);
-			return call_user_func_array(self::$hook_callbacks[$class][$hook], $parameters);
+			return call_user_func_array($callback, $parameters);
 		}
 		
 		// There can be more than one non-replace:: hook so we can't return a value
-		foreach (self::$hook_callbacks[$class][$hook] as $callback) {
+		if (isset(self::$hook_callbacks[$class][$hook])) {
+			$callbacks = self::$hook_callbacks[$class][$hook];
+		} else {
+			$callbacks = self::$hook_callbacks['*'][$hook];
+		}
+		
+		foreach ($callbacks as $callback) {
 			// This is the only way to pass by reference
 			$parameters = array(
 				$object,
@@ -191,7 +205,8 @@ class fORM
 	{
 		$class = self::getClassName($class);
 		
-		if (!isset(self::$hook_callbacks[$class]) || empty(self::$hook_callbacks[$class][$hook])) {
+		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
+			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
 			return FALSE;
 		}
 		
@@ -199,10 +214,12 @@ class fORM
 			return TRUE;
 		}
 		
-		foreach (self::$hook_callbacks[$class][$hook] as $_callback) {
-			if ($_callback == $callback) {
-				return TRUE;
-			}
+		if (!empty(self::$hook_callbacks[$class][$hook]) && in_array($callback, self::$hook_callbacks[$class][$hook])) {
+			return TRUE;	
+		}
+		
+		if (!empty(self::$hook_callbacks['*'][$hook]) && in_array($callback, self::$hook_callbacks['*'][$hook])) {
+			return TRUE;	
 		}
 		
 		return FALSE;
@@ -484,7 +501,7 @@ class fORM
 	 *   - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
 	 *   - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with
 	 * 
-	 * @param  mixed    $class     The class name or instance of the class to hook
+	 * @param  mixed    $class     The class name or instance of the class to hook, '*' will hook all classes
 	 * @param  string   $hook      The hook to register for
 	 * @param  callback $callback  The callback to register. See the method description for details about the method signature.
 	 * @return void
