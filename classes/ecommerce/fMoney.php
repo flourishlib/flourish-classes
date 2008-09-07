@@ -122,6 +122,17 @@ class fMoney
 	
 	
 	/**
+	 * Gets the default currency
+	 * 
+	 * @return string  The ISO code of the default currency
+	 */
+	static public function getDefaultCurrency()
+	{
+		return self::$default_currency;
+	}
+	
+	
+	/**
 	 * Allows setting a callback to translate or modify any return values from {@link format()}
 	 * 
 	 * @param  callback $callback  The callback to pass all fNumber objects to. Should accept an fNumber object and a string currency abbreviation and return a single string.
