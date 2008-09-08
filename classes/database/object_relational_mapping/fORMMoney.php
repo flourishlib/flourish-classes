@@ -119,7 +119,7 @@ class fORMMoney
 				fORM::registerHookCallback($class, $hook, $callback);
 			}
 			
-			$hook     = 'post-begin::store()';
+			$hook     = 'pre::validate()';
 			$callback = array('fORMMoney', 'makeMoneyObjects');
 			if (!fORM::checkHookCallback($class, $hook, $callback)) {
 				fORM::registerHookCallback($class, $hook, $callback);
@@ -311,6 +311,10 @@ class fORMMoney
 			} else {
 				$values[$value_column] = $value;
 			}
+			
+			if ($values[$currency_column] === NULL) {
+				fActiveRecord::assign($values, $old_values, $currency_column, $value->getCurrency());
+			}
 			 
 		// If there was some error creating the money object, we just leave all values alone
 		} catch (fExpectedException $e) { }	
@@ -461,7 +465,7 @@ class fORMMoney
 		
 		fActiveRecord::assign($values, $old_values, $column, $parameters[0]);
 		
-		// See if we can make a value fMoney object out of the columns
+		// See if we can make an fMoney object out of the values
 		self::objectifyMoneyWithCurrency(
 			$values,
 			$old_values,
@@ -506,11 +510,11 @@ class fORMMoney
 		
 		$currency_column = self::$money_columns[$class][$column];
 		
-		// See if we can make a value fMoney object out of the columns
+		// See if we can make an fMoney object out of the values
 		self::objectifyMoneyWithCurrency($values, $old_values, $column, $currency_column);
 		
 		if ($currency_column) {
-			if ($values[$currency_column] === NULL && $value instanceof fMoney) {
+			if ($value instanceof fMoney) {
 				fActiveRecord::assign($values, $old_values, $currency_column, $value->getCurrency());
 			}	
 		}
@@ -537,19 +541,19 @@ class fORMMoney
 			return;
 		}
 		
-		foreach (self::$money_columns[$class] as $column => $currency) {
-			if ($values[$column] instanceof fMoney) {
+		foreach (self::$money_columns[$class] as $column => $currency_column) {
+			if ($values[$column] instanceof fMoney || $values[$column] === NULL) {
 				continue;
 			}
-			if ($currency && !in_array($currency, fMoney::getCurrencies())) {
+			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
 				$validation_messages[] = fGrammar::compose(
 					'%s: The currency specified is invalid',
-					fORM::getColumnName($class, $currency)
+					fORM::getColumnName($class, $currency_column)
 				);	
 				
 			} else {
 				$validation_messages[] = fGrammar::compose(
-					'%s: Please enter a valid monetary value',
+					'%s: Please enter a monetary value',
 					fORM::getColumnName($class, $column)
 				);
 			}
