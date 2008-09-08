@@ -120,6 +120,21 @@ class fTimestamp
 	
 	
 	/**
+	 * Checks to see if a timezone is valid
+	 * 
+	 * @param  string  $timezone   The timezone to check
+	 * @return boolean  If the timezone is valid
+	 */
+	static public function isValidTimezone($timezone)
+	{
+		$default_tz = date_default_timezone_get();
+		$valid_tz = @date_default_timezone_set($timezone);
+		date_default_timezone_set($default_tz);
+		return $valid_tz;
+	}
+	
+	
+	/**
 	 * Allows setting a callback to translate or modify any return values from {@link format()}, {@link fDate::format()} and {@link fTime::format()}
 	 * 
 	 * @param  callback $callback  The callback to pass all formatted dates/times/timestamps through. Should accept a single string and return a single string.
@@ -202,7 +217,7 @@ class fTimestamp
 		$default_tz = date_default_timezone_get();
 		
 		if ($timezone) {
-			if (!$this->isValidTimezone($timezone)) {
+			if (!self::isValidTimezone($timezone)) {
 				fCore::toss(
 					'fValidationException',
 					fGrammar::compose(
@@ -240,7 +255,7 @@ class fTimestamp
 	 */
 	public function __toString()
 	{
-		return $this->format('Y-m-d H:i:s', self::getDefaultTimezone());
+		return $this->format('Y-m-d H:i:s');
 	}
 	
 	
@@ -254,7 +269,7 @@ class fTimestamp
 	 */
 	public function adjust($adjustment)
 	{
-		if ($this->isValidTimezone($adjustment)) {
+		if (self::isValidTimezone($adjustment)) {
 			$this->setTimezone($adjustment);
 		} else {
 			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
@@ -294,7 +309,7 @@ class fTimestamp
 		$timestamp = $this->timestamp;
 		
 		// Handle an adjustment that is a timezone
-		if ($adjustment && $this->isValidTimezone($adjustment)) {
+		if ($adjustment && self::isValidTimezone($adjustment)) {
 			$default_tz = date_default_timezone_get();
 			date_default_timezone_set($adjustment);
 			
@@ -304,7 +319,7 @@ class fTimestamp
 		}
 		
 		// Handle an adjustment that is a relative date/time
-		if ($adjustment && !$this->isValidTimezone($adjustment)) {
+		if ($adjustment && !self::isValidTimezone($adjustment)) {
 			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
 		}
 		
@@ -445,22 +460,6 @@ class fTimestamp
 	public function getTimezone()
 	{
 		return $this->timezone;
-	}
-	
-	
-	/**
-	 * Checks to see if a timezone is valid
-	 * 
-	 * @param  string  $timezone   The timezone to check
-	 * @param  integer $timestamp  The time to adjust
-	 * @return integer  The adjusted timestamp
-	 */
-	private function isValidTimezone($timezone)
-	{
-		$default_tz = date_default_timezone_get();
-		$valid_tz = @date_default_timezone_set($timezone);
-		date_default_timezone_set($default_tz);
-		return $valid_tz;
 	}
 	
 	
@@ -703,7 +702,7 @@ class fTimestamp
 	 */
 	public function setTimezone($timezone)
 	{
-		if (!$this->isValidTimezone($timezone)) {
+		if (!self::isValidTimezone($timezone)) {
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
