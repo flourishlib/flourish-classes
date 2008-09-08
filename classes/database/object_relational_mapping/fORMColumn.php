@@ -15,20 +15,6 @@
 class fORMColumn
 {
 	/**
-	 * Columns that should be filled with the date created for new objects
-	 * 
-	 * @var array
-	 */
-	static private $date_created_columns = array();
-	
-	/**
-	 * Columns that should be filled with the date updated
-	 * 
-	 * @var array
-	 */
-	static private $date_updated_columns = array();
-	
-	/**
 	 * Columns that should be formatted as email addresses
 	 * 
 	 * @var array
@@ -55,102 +41,6 @@ class fORMColumn
 	 * @var array
 	 */
 	static private $random_columns = array();
-	
-	
-	/**
-	 * Sets a column to be a date created column
-	 * 
-	 * @param  mixed  $class   The class name or instance of the class
-	 * @param  string $column  The column to set as a date created column
-	 * @return void
-	 */
-	static public function configureDateCreatedColumn($class, $column)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('date', 'time', 'timestamp');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date created column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
-			);
-		}
-		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
-		fORM::registerHookCallback(
-			$class,
-			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'post-begin::store()',
-			array('fORMColumn', 'setDateCreated')
-		);
-		
-		if (empty(self::$date_created_columns[$class])) {
-			self::$date_created_columns[$class] = array();
-		}
-		
-		self::$date_created_columns[$class][$column] = TRUE;
-	}
-	
-	
-	/**
-	 * Sets a column to be a date updated column
-	 * 
-	 * @param  mixed  $class   The class name or instance of the class
-	 * @param  string $column  The column to set as a date updated column
-	 * @return void
-	 */
-	static public function configureDateUpdatedColumn($class, $column)
-	{
-		$class     = fORM::getClassName($class);
-		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		
-		$valid_data_types = array('date', 'time', 'timestamp');
-		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date updated column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
-			);
-		}
-		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
-		fORM::registerHookCallback(
-			$class,
-			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'post-begin::store()',
-			array('fORMColumn', 'setDateUpdated')
-		);
-		
-		if (empty(self::$date_updated_columns[$class])) {
-			self::$date_updated_columns[$class] = array();
-		}
-		
-		self::$date_updated_columns[$class][$column] = TRUE;
-	}
 	
 	
 	/**
@@ -464,14 +354,6 @@ class fORMColumn
 			unset($info['auto_increment']);
 		}
 		
-		if (!empty(self::$date_created_columns[$class][$column])) {
-			$info['feature'] = 'date created';
-		}
-		
-		if (!empty(self::$date_updated_columns[$class][$column])) {
-			$info['feature'] = 'date updated';
-		}
-		
 		if (!empty(self::$email_columns[$class][$column])) {
 			$info['feature'] = 'email';
 		}
@@ -701,62 +583,6 @@ class fORMColumn
 				
 				$signatures[$prepare_method] = $signature;
 			}
-		}
-	}
-	
-	
-	/**
-	 * Sets the appropriate column values to the date the object was created (for new records)
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
-	 */
-	static public function setDateCreated($object, &$values, &$old_values, &$related_records)
-	{
-		if ($object->exists()) {
-			return;
-		}
-		
-		$class = get_class($object);
-		
-		foreach (self::$date_created_columns[$class] as $column => $enabled) {
-			fActiveRecord::assign(
-				$values,
-				$old_values,
-				$column,
-				fORM::objectify($class, $column, date('Y-m-d H:i:s'))
-			);
-		}
-	}
-	
-	
-	/**
-	 * Sets the appropriate column values to the date the object was updated
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
-	 */
-	static public function setDateUpdated($object, &$values, &$old_values, &$related_records)
-	{
-		$class = get_class($object);
-		
-		foreach (self::$date_updated_columns[$class] as $column => $enabled) {
-			fActiveRecord::assign(
-				$values,
-				$old_values,
-				$column,
-				fORM::objectify($class, $column, date('Y-m-d H:i:s'))
-			);
 		}
 	}
 	
