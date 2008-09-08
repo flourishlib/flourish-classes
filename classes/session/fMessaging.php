@@ -18,11 +18,11 @@ class fMessaging
 	 * Creates a message that is stored in the session and retrieved by another page
 	 * 
 	 * @param  string $name       A name for the message
-	 * @param  string $message    The message to send
 	 * @param  string $recipient  The intended recipient
+	 * @param  string $message    The message to send
 	 * @return void
 	 */
-	static public function create($name, $message, $recipient)
+	static public function create($name, $recipient, $message)
 	{
 		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
 	}
