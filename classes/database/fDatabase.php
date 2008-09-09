@@ -1198,7 +1198,7 @@ class fDatabase
 		}
 		
 		if ($success) {
-			$result = new $result_class($this->extension);
+			$result = new $result_class($this->type, $this->extension);
 			$result->setSQL($sql);
 			$result->setResult(TRUE);
 			return $result;
@@ -1247,7 +1247,7 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fResult')) {
-			$result = new fResult($this->extension);
+			$result = new fResult($this->type, $this->extension);
 			$result->setSQL($sql);
 			
 			$this->executeQuery($result);
@@ -1401,7 +1401,7 @@ class fDatabase
 	{
 		if (!$this->translation) {
 			$this->connectToDatabase();
-			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
+			$this->translation = new fSQLTranslation($this, $this->connection);
 			$this->translation->enableDebugging($this->debug);
 		}
 		$result = $this->query($this->translation->translate($sql));
@@ -1440,7 +1440,7 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fUnbufferedRequest')) {
-			$result = new fUnbufferedResult($this->extension);
+			$result = new fUnbufferedResult($this->type, $this->extension);
 			$result->setSQL($sql);
 			
 			$this->executeUnbufferedQuery($result);
@@ -1490,7 +1490,7 @@ class fDatabase
 	{
 		if (!$this->translation) {
 			$this->connectToDatabase();
-			$this->translation = new fSQLTranslation($this->connection, $this->type, $this->extension);
+			$this->translation = new fSQLTranslation($this, $this->connection);
 		}
 		$result = $this->unbufferedQuery($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);

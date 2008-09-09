@@ -24,35 +24,18 @@ class fSQLTranslation
 	private $connection;
 	
 	/**
+	 * The fDatabase instance
+	 * 
+	 * @var fDatabase
+	 */
+	private $database;
+	
+	/**
 	 * If debugging is enabled
 	 * 
 	 * @var boolean
 	 */
 	private $debug;
-	
-	/**
-	 * The extension to use for the database specified.
-	 * 
-	 * Options include:
-	 *  - mssql
-	 *  - mysql
-	 *  - mysqli
-	 *  - odbc
-	 *  - pdo
-	 *  - pgsql
-	 *  - sqlite
-	 *  - sqlsrv
-	 * 
-	 * @var string
-	 */
-	private $extension;
-	
-	/**
-	 * The database type (mssql, mysql, postgresql, sqlite)
-	 * 
-	 * @var string
-	 */
-	private $type;
 	
 	
 	/**
@@ -60,12 +43,11 @@ class fSQLTranslation
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $connection  The connection resource or PDO object
-	 * @param  string $type        The type of the database ('mssql', 'mysql', 'postgresql', or 'sqlite')
-	 * @param  string $extension   The extension being used to connect to the database ('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', or 'sqlsrv')
+	 * @param  fDatabase $database    The database being translated for
+	 * @param  mixed     $connection  The connection resource or PDO object
 	 * @return fSQLTranslation
 	 */
-	public function __construct($connection, $type, $extension)
+	public function __construct(fDatabase $database, $connection)
 	{
 		if (!is_resource($connection) && !is_object($connection)) {
 			fCore::toss(
@@ -77,35 +59,10 @@ class fSQLTranslation
 			);
 		}
 		
-		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
-		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
-			);
-		}
-		
-		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
-		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The extension specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($extension),
-					join(', ', $valid_extensions)
-				)
-			);
-		}
-		
 		$this->connection = $connection;
-		$this->type       = $type;
-		$this->extension  = $extension;
+		$this->database   = $database;
 		
-		if ($this->type == 'sqlite') {
+		if ($database->getType() == 'sqlite') {
 			$this->createSQLiteFunctions();
 		}
 	}
@@ -267,7 +224,7 @@ class fSQLTranslation
 		$functions[] = array('tan',      'tan',                                          1);
 		
 		foreach ($functions as $function) {
-			if ($this->extension == 'pdo') {
+			if ($this->database->getExtension() == 'pdo') {
 				$this->connection->sqliteCreateFunction($function[0], $function[1], $function[2]);
 			} else {
 				sqlite_create_function($this->connection, $function[0], $function[1], $function[2]);
@@ -285,6 +242,191 @@ class fSQLTranslation
 	public function enableDebugging($flag)
 	{
 		$this->debug = (boolean) $flag;
+	}
+	
+	
+	/**
+	 * Fixes pulling unicode data out of national data type MSSQL columns
+	 * 
+	 * @param  string $sql  The SQL to fix
+	 * @return string  The fixed SQL
+	 */
+	private function fixMSSQLNationalColumns($sql)
+	{
+		if (!preg_match_all('#^\s*(select.*)$|\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?2)\)|\(\))+\s*))\s*\)\s*(?= union)|\s+union(?:\s+all)?\s+\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?3)\)|\(\))+\s*))\s*\)#i', $sql, $matches)) {
+			return $sql;
+		}
+		
+		static $national_columns = NULL;
+		static $national_types   = NULL;
+		
+		if ($national_columns === NULL) {
+			$result = $this->database->query(
+				"SELECT
+						c.table_name  AS 'table',						
+						c.column_name AS 'column',
+						c.data_type   AS 'type'
+					FROM
+						INFORMATION_SCHEMA.COLUMNS AS c
+					WHERE
+						(c.data_type = 'nvarchar' OR
+						 c.data_type = 'ntext' OR
+						 c.data_type = 'nchar') AND
+						c.table_catalog = 'flourish'
+					ORDER BY
+						lower(c.table_name) ASC,
+						lower(c.column_name) ASC"
+			);
+			
+			$national_columns = array();
+			
+			foreach ($result as $row) {
+				if (!isset($national_columns[$row['table']])) {
+					$national_columns[$row['table']] = array();	
+					$national_types[$row['table']]   = array();
+				}	
+				$national_columns[$row['table']][] = $row['column'];
+				$national_types[$row['table']][$row['column']] = $row['type'];
+			}
+		}
+		
+		$selects = array_merge(
+			array_filter($matches[1]),
+			array_filter($matches[2]),
+			array_filter($matches[3])
+		);
+		
+		$additions = array();
+		
+		foreach ($selects as $select) {
+			$clauses       = fSQLParsing::parseSelectSQL($select);
+			$table_aliases = fSQLParsing::parseTableAliases($clauses['FROM']);
+			
+			preg_match_all('#([^,()\']+|\'(?>\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?:(?1)|,)*\)|\(\))+#i', $clauses['SELECT'], $selections);
+			$selections    = array_map('trim', $selections[0]);
+			$to_fix        = array();
+			
+			foreach ($selections as $selection) {
+				// We just skip CASE statements since we can't really do those reliably
+				if (preg_match('#^case#i', $selection)) {
+					continue;	
+				}
+				
+				if (preg_match('#(\w+)\.\*#i', $selection, $match)) {
+					$table = $table_aliases[$match[1]];
+					if (empty($national_columns[$table])) {
+						continue;	
+					}
+					if (!isset($to_fix[$table])) {
+						$to_fix[$table] = array();	
+					}
+					$to_fix[$table] = array_merge($to_fix[$table], $national_columns[$table]);
+						
+				} elseif (preg_match('#\*#', $selection, $match)) {
+					foreach ($table_aliases as $alias => $table) {
+						if (empty($national_columns[$table])) {
+							continue;	
+						}
+						if (!isset($to_fix[$table])) {
+							$to_fix[$table] = array();	
+						}
+						$to_fix[$table] = array_merge($to_fix[$table], $national_columns[$table]); 		
+					}
+					
+				} elseif (preg_match('#^(?:(\w+)\.(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+)\.(\w+).*?\)))(?:\s+as\s+(\w+))?$#i', $selection, $match)) {
+					$table = $match[1] . ((isset($match[4])) ? $match[4] : '');
+					$table = $table_aliases[$table];
+					
+					$column = $match[2] . ((isset($match[5])) ? $match[5] : '');;
+					
+					if (empty($national_columns[$table]) || !in_array($column, $national_columns[$table])) {
+						continue;	
+					}
+					
+					if (!isset($to_fix[$table])) {
+						$to_fix[$table] = array();	
+					}
+					
+					// Handle column aliasing
+					if (!empty($match[6])) {
+						$column = array('column' => $column, 'alias' => $match[6]);	
+					}
+					
+					if (!empty($match[3])) {
+						if (!is_array($column)) {
+							$column = array('column' => $column);
+						}	
+						$column['expression'] = $match[3];
+					}
+					
+					$to_fix[$table] = array_merge($to_fix[$table], array($column));
+				
+				// Match unqualified column names
+				} elseif (preg_match('#^(?:(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+).*?\)))(?:\s+as\s+(\w+))?$#i', $selection, $match)) {
+					$column = $match[1] . ((isset($match[3])) ? $match[3] : '');
+					foreach ($table_aliases as $alias => $table) {
+						if (empty($national_columns[$table])) {
+							continue;	
+						}
+						if (!in_array($column, $national_columns[$table])) {
+							continue;
+						}
+						if (!isset($to_fix[$table])) {
+							$to_fix[$table] = array();	
+						}
+						
+						// Handle column aliasing
+						if (!empty($match[4])) {
+							$column = array('column' => $column, 'alias' => $match[4]);	
+						}
+						
+						if (!empty($match[2])) {
+							if (!is_array($column)) {
+								$column = array('column' => $column);
+							}	
+							$column['expression'] = $match[2];
+						}
+						
+						$to_fix[$table] = array_merge($to_fix[$table], array($column)); 		
+					}
+				}
+			}
+			
+			$reverse_table_aliases = array_flip($table_aliases);
+			foreach ($to_fix as $table => $columns) {
+				$columns = array_unique($columns);
+				$alias   = $reverse_table_aliases[$table];
+				foreach ($columns as $column) {
+					if (is_array($column)) {
+						if (isset($column['alias'])) {
+							$as = ' AS __flourish_mssqln_' . $column['alias'];
+						} else {
+							$as = ' AS __flourish_mssqln_' . $column['column']; 	
+						}
+						if (isset($column['expression'])) {
+							$expression = $column['expression'];	
+						} else {
+							$expression = $alias . '.' . $column['column'];
+						}
+						$column = $column['column'];
+					} else {
+						$as     = ' AS __flourish_mssqln_' . $column;
+						$expression = $alias . '.' . $column;
+					}
+					if ($national_types[$table][$column] == 'ntext') {
+						$cast = 'CAST(' . $expression . ' AS IMAGE)';	
+					} else {
+						$cast = 'CAST(' . $expression . ' AS VARBINARY(8000))';
+					}
+					$additions[] = $cast . $as;
+				}		
+			}
+			
+			$replace = preg_replace('#\bselect\s+' . preg_quote($clauses['SELECT'], '#') . '#i', 'SELECT ' . join(', ', array_merge($selections, $additions)), $select);
+			$sql = str_replace($select, $replace, $sql);	
+		}
+		
+		return $sql;
 	}
 	
 	
@@ -367,6 +509,10 @@ class fSQLTranslation
 		$new_sql = $this->translateComplicatedSyntax($new_sql);
 		$new_sql = $this->translateCreateTableStatements($new_sql);
 		
+		if ($this->database->getType() == 'mssql') {
+			$new_sql = $this->fixMSSQLNationalColumns($new_sql);	
+		}
+		
 		if ($sql != $new_sql) {
 			fCore::debug(
 				fGrammar::compose(
@@ -397,9 +543,9 @@ class fSQLTranslation
 	private function translateBasicSyntax($sql)
 	{
 		// SQLite fixes
-		if ($this->type == 'sqlite') {
+		if ($this->database->getType() == 'sqlite') {
 			
-			if ($this->type == 'sqlite' && $this->extension == 'pdo') {
+			if ($this->database->getType() == 'sqlite' && $this->database->getExtension() == 'pdo') {
 				static $regex_sqlite = array(
 					'#\binteger\s+autoincrement\s+primary\s+key\b#i'  => 'INTEGER PRIMARY KEY AUTOINCREMENT',
 					'#\bcurrent_timestamp\b#i'                        => "datetime(CURRENT_TIMESTAMP, 'localtime')",
@@ -419,7 +565,7 @@ class fSQLTranslation
 		}
 		
 		// PostgreSQL fixes
-		if ($this->type == 'postgresql') {
+		if ($this->database->getType() == 'postgresql') {
 			static $regex_postgresql = array(
 				'#\blike\b#i'                    => 'ILIKE',
 				'#\bblob\b#i'                    => 'bytea',
@@ -430,7 +576,7 @@ class fSQLTranslation
 		}
 		
 		// MySQL fixes
-		if ($this->type == 'mysql') {
+		if ($this->database->getType() == 'mysql') {
 			static $regex_mysql = array(
 				'#\brandom\(#i'                  => 'rand(',
 				'#\btext\b#i'                    => 'MEDIUMTEXT',
@@ -443,7 +589,7 @@ class fSQLTranslation
 		}
 		
 		// MSSQL fixes
-		if ($this->type == 'mssql') {
+		if ($this->database->getType() == 'mssql') {
 			static $regex_mssql = array(
 				'#\bbegin\s*(?!tran)#i'          => 'BEGIN TRANSACTION ',
 				'#\brandom\(#i'                  => 'RAND(',
@@ -451,6 +597,7 @@ class fSQLTranslation
 				'#\bceil\(#i'                    => 'CEILING(',
 				'#\bln\(#i'                      => 'LOG(',
 				'#\blength\(#i'                  => 'LEN(',
+				'#\bsubstr\(#i'					 => 'SUBSTRING(',
 				'#\bblob\b#i'                    => 'IMAGE',
 				'#\btimestamp\b#i'               => 'DATETIME',
 				'#\btime\b#i'                    => 'DATETIME',
@@ -475,20 +622,21 @@ class fSQLTranslation
 	 */
 	private function translateComplicatedSyntax($sql)
 	{
-		if ($this->type == 'mssql') {
+		if ($this->database->getType() == 'mssql') {
 			
 			$sql = $this->translateLimitOffsetToRowNumber($sql);
 			
 			static $regex_mssql = array(
 				// These wrap multiple mssql functions to accomplish another function
 				'#\blog\(\s*((?>[^()\',]+|\'[^\']*\'|\((?1)(?:,(?1))?\)|\(\))+)\s*,\s*((?>[^()\',]+|\'[^\']*\'|\((?2)(?:,(?2))?\)|\(\))+)\s*\)#i' => '(LOG(\1)/LOG(\2))',
-				'#\btrim\(\s*((?>[^()\',]+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+)\s*\)#i' => 'RTRIM(LTRIM(\1))',
-				
-				// This fixes limit syntax
-				'#select(\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+\s*)\s+limit\s+(\d+)#i' => 'SELECT TOP \2\1'
+				'#\btrim\(\s*((?>[^()\',]+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+)\s*\)#i' => 'RTRIM(LTRIM(\1))'
 			);
 		
 			$sql = preg_replace(array_keys($regex_mssql), array_values($regex_mssql), $sql);
+			
+			if (preg_match('#select(\s*(?:[^()\']+|\'(?>\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?1)\)|\(\))+\s*)\s+limit\s+(\d+)#i', $sql, $match)) {
+				$sql = str_replace($match[0], 'SELECT TOP ' . $match[2] . $match[1], $sql);
+			}
 		}
 		
 		return $sql;
@@ -504,7 +652,7 @@ class fSQLTranslation
 	private function translateCreateTableStatements($sql)
 	{
 		// Make sure MySQL uses InnoDB tables
-		if ($this->type == 'mysql' && stripos($sql, 'CREATE TABLE') !== FALSE) {
+		if ($this->database->getType() == 'mysql' && stripos($sql, 'CREATE TABLE') !== FALSE) {
 			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\(\d+\))?(?:(\s+NOT\s+NULL)|(\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY)|(\s+CHECK\s*\(\w+\s+IN\s+(\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\))\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
@@ -517,7 +665,7 @@ class fSQLTranslation
 		
 		
 		// Create foreign key triggers for SQLite
-		} elseif ($this->type == 'sqlite' && preg_match('#CREATE\s+TABLE\s+(\w+)#i', $sql, $table_matches) !== FALSE && stripos($sql, 'REFERENCES') !== FALSE) {
+		} elseif ($this->database->getType() == 'sqlite' && preg_match('#CREATE\s+TABLE\s+(\w+)#i', $sql, $table_matches) !== FALSE && stripos($sql, 'REFERENCES') !== FALSE) {
 			
 			$referencing_table = $table_matches[1];
 			
@@ -596,19 +744,19 @@ class fSQLTranslation
 		foreach ($diff_matches as $match) {
 			
 			// SQLite
-			if ($this->type == 'sqlite') {
+			if ($this->database->getType() == 'sqlite') {
 				$sql = str_replace($match[0], "round((julianday(" . $match[2] . ") - julianday('1970-01-01 00:00:00')) * 86400) - round((julianday(" . $match[1] . ") - julianday('1970-01-01 00:00:00')) * 86400)", $sql);
 			
 			// PostgreSQL
-			} elseif ($this->type == 'postgresql') {
+			} elseif ($this->database->getType() == 'postgresql') {
 				$sql = str_replace($match[0], "extract(EPOCH FROM age(" . $match[2] . ", " . $match[1] . "))", $sql);
 			
 			// MySQL
-			} elseif ($this->type == 'mysql') {
+			} elseif ($this->database->getType() == 'mysql') {
 				$sql = str_replace($match[0], "(UNIX_TIMESTAMP(" . $match[2] . ") - UNIX_TIMESTAMP(" . $match[1] . "))", $sql);
 				
 			// MSSQL
-			} elseif ($this->type == 'mssql') {
+			} elseif ($this->database->getType() == 'mssql') {
 				$sql = str_replace($match[0], "DATEDIFF(second, " . $match[1] . ", " . $match[2] . ")", $sql);
 			}
 		}
@@ -618,17 +766,17 @@ class fSQLTranslation
 		foreach ($add_matches as $match) {
 			
 			// SQLite
-			if ($this->type == 'sqlite') {
+			if ($this->database->getType() == 'sqlite') {
 				preg_match_all("#(?:\\+|\\-)\\d+\\s+(?:year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches);
 				$strings = "'" . join("', '", $individual_matches[0]) . "'";
 				$sql = str_replace($match[0], "datetime(" . $match[1] . ", " . $strings . ")", $sql);
 			
 			// PostgreSQL
-			} elseif ($this->type == 'postgresql') {
+			} elseif ($this->database->getType() == 'postgresql') {
 				$sql = str_replace($match[0], "(" . $match[1] . " + INTERVAL '" . $match[2] . "')", $sql);
 			
 			// MySQL
-			} elseif ($this->type == 'mysql') {
+			} elseif ($this->database->getType() == 'mysql') {
 				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
 				$intervals_string = '';
 				foreach ($individual_matches as $individual_match) {
@@ -637,7 +785,7 @@ class fSQLTranslation
 				$sql = str_replace($match[0], "(" . $match[1] . $intervals_string . ")", $sql);
 			
 			// MSSQL
-			} elseif ($this->type == 'mssql') {
+			} elseif ($this->database->getType() == 'mssql') {
 				preg_match_all("#(\\+|\\-)(\\d+)\\s+(year|month|day|hour|minute|second)(?:s)?#i", $match[2], $individual_matches, PREG_SET_ORDER);
 				$date_add_string = '';
 				$stack = 0;

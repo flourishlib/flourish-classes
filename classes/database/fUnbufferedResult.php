@@ -50,6 +50,13 @@ class fUnbufferedResult implements Iterator
 	private $sql = '';
 	
 	/**
+	 * The type of the database
+	 * 
+	 * @var string
+	 */
+	private $type = NULL;
+	
+	/**
 	 * The SQL from before translation
 	 * 
 	 * @var string
@@ -62,11 +69,24 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @internal
 	 * 
+	 * @param  string $type       The type of database (valid: 'mssql', 'mysql', 'postgresql', 'sqlite')
 	 * @param  string $extension  The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv')
 	 * @return fUnbufferedResult
 	 */
-	public function __construct($extension)
+	public function __construct($type, $extension)
 	{
+		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The database type specified, %1$s, in invalid. Must be one of: %2$s.',
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
+		}
+		
 		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
 			fCore::toss(
@@ -78,6 +98,8 @@ class fUnbufferedResult implements Iterator
 				)
 			);
 		}
+		
+		$this->type      = $type;
 		$this->extension = $extension;
 	}
 	
@@ -129,7 +151,7 @@ class fUnbufferedResult implements Iterator
 				$row = mssql_fetch_assoc($this->result);
 			}
 			if (!empty($row)) {
-				$row = $this->fixDblibMssqlDriver($row);
+				$row = $this->fixDblibMSSQLDriver($row);
 				
 				// This is an unfortunate fix that required for databases that don't support limit
 				// clauses with an offset. It prevents unrequested columns from being returned.
@@ -148,11 +170,16 @@ class fUnbufferedResult implements Iterator
 			$row = pg_fetch_assoc($this->result);
 		} elseif ($this->extension == 'sqlite') {
 			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
-		} elseif ($this->extension == 'sqlite') {
+		} elseif ($this->extension == 'sqlsrv') {
 			$row = sqlsrv_fetch_array($this->result, SQLSRV_FETCH_ASSOC);
 		} elseif ($this->extension == 'pdo') {
 			$row = $this->result->fetch(PDO::FETCH_ASSOC);
 		}
+		
+		// This decodes the USC-2 data coming out of MSSQL into UTF-8
+		if ($row && $this->type == 'mssql') {
+			$row = $this->decodeMSSQLNationalColumns($row);
+		} 
 		
 		$this->current_row = $row;
 	}
@@ -193,6 +220,35 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
+	 * Decodes national (unicode) character data coming out of MSSQL into UTF-8
+	 * 
+	 * @param  array $row  The row from the database
+	 * @return array  The fixed row
+	 */
+	private function decodeMSSQLNationalColumns($row)
+	{
+		if (strpos($this->sql, '__flourish_mssqln_') === FALSE) {
+			return $row;
+		}
+		
+		$columns = array_keys($row);
+		
+		foreach ($columns as $column) {
+			if (substr($column, 0, 18) != '__flourish_mssqln_') {
+				continue;
+			}	
+			
+			$real_column = substr($column, 18);
+			
+			$row[$real_column] = iconv('ucs-2le', 'utf-8', $row[$column]);
+			unset($row[$column]);
+		}
+		
+		return $row;
+	}
+	
+	
+	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
 	 * @throws fNoResultsException
@@ -214,7 +270,7 @@ class fUnbufferedResult implements Iterator
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
 	 */
-	private function fixDblibMssqlDriver($row)
+	private function fixDblibMSSQLDriver($row)
 	{
 		static $using_dblib = NULL;
 		
