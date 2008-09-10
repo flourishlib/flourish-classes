@@ -1400,7 +1400,7 @@ abstract class fActiveRecord
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
 				$value = fORM::scalarize($this, $column, $this->values[$column]);
-				$sql_values[$column] = fORMDatabase::prepareBySchema($table, $column, $value);
+				$sql_values[$column] = fORMDatabase::escapeBySchema($table, $column, $value);
 			}
 			
 			// Most databases don't like the auto incrementing primary key to be set to NULL

@@ -121,7 +121,7 @@ class fORMOrdering
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
 			$other_value  = (isset($old_values[$other_column])) ? $old_values[$other_column][0] : $values[$other_column];
-			$conditions[] = $other_column . fORMDatabase::prepareBySchema($table, $other_column, $other_value, '=');
+			$conditions[] = $other_column . fORMDatabase::escapeBySchema($table, $other_column, $other_value, '=');
 		}
 		
 		return join(' AND ', $conditions);
@@ -140,7 +140,7 @@ class fORMOrdering
 	{
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
-			$conditions[] = $other_column . fORMDatabase::prepareBySchema($table, $other_column, $values[$other_column], '=');
+			$conditions[] = $other_column . fORMDatabase::escapeBySchema($table, $other_column, $values[$other_column], '=');
 		}
 		
 		return join(' AND ', $conditions);

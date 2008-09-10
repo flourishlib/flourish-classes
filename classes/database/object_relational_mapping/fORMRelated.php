@@ -138,7 +138,7 @@ class fORMRelated
 			$count = 0;
 		} else {
 			$column = $table . '.' . $relationship['column'];
-			$value  = fORMDatabase::prepareBySchema($table, $relationship['column'], $values[$relationship['column']], '=');
+			$value  = fORMDatabase::escapeBySchema($table, $relationship['column'], $values[$relationship['column']], '=');
 			
 			$primary_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
 			$primary_keys = fORMDatabase::addTableToValues($related_table, $primary_keys);
@@ -647,7 +647,7 @@ class fORMRelated
 		$join_table        = $relationship['join_table'];
 		$join_column       = $relationship['join_column'];
 		
-		$join_column_value = fORMDatabase::prepareBySchema($join_table, $join_column, $column_value);
+		$join_column_value = fORMDatabase::escapeBySchema($join_table, $join_column, $column_value);
 		
 		$delete_sql  = 'DELETE FROM ' . $join_table;
 		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
@@ -659,7 +659,7 @@ class fORMRelated
 		$get_related_method_name = 'get' . fGrammar::camelize($relationship['related_column'], TRUE);
 		
 		foreach ($record_set as $record) {
-			$related_column_value = fORMDatabase::prepareBySchema($join_table, $join_related_column, $record->$get_related_method_name());
+			$related_column_value = fORMDatabase::escapeBySchema($join_table, $join_related_column, $record->$get_related_method_name());
 			
 			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
 			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';

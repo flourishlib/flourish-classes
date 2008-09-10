@@ -387,7 +387,7 @@ class fORMDatabase
 			
 			$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
 			
-			$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '=');
+			$sql  .= $table . '.' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '=');
 		}
 		
 		return $sql;
@@ -488,7 +488,7 @@ class fORMDatabase
 					$conditions = array();
 					$iterations = sizeof($columns);
 					for ($i=0; $i<$iterations; $i++) {
-						$conditions[] = $columns[$i] . self::prepareByType($values[$i], $types[$i]);
+						$conditions[] = $columns[$i] . self::escapeByType($values[$i], $types[$i]);
 					}
 					$sql[] = ' (' . join(' OR ', $conditions) . ') ';
 				}
@@ -506,14 +506,14 @@ class fORMDatabase
 						case '=':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::prepareByType($value);
+								$condition[] = self::escapeByType($value);
 							}
 							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
 							break;
 						case '!':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::prepareByType($value);
+								$condition[] = self::escapeByType($value);
 							}
 							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
 							break;
@@ -543,14 +543,14 @@ class fORMDatabase
 						case '<=':
 						case '>':
 						case '>=':
-							$sql[] = $column . self::prepareByType($values[0], $type);
+							$sql[] = $column . self::escapeByType($values[0], $type);
 							break;
 							
 						case '!':
 							if ($values[0] !== NULL) {
-								$sql[] = '(' . $column . self::prepareByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
+								$sql[] = '(' . $column . self::escapeByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
 							} else {
-								$sql[] = $column . self::prepareByType($values[0], '<>');
+								$sql[] = $column . self::escapeByType($values[0], '<>');
 							}
 							break;
 							
@@ -573,6 +573,113 @@ class fORMDatabase
 		}
 		
 		return join(' AND ', $sql);
+	}
+	
+	
+	/**
+	 * Escapes a value for a DB call based on database schema
+	 * 
+	 * @throws fValidationException
+	 * @internal
+	 * 
+	 * @param  string $table                The table to store the value
+	 * @param  string $column               The column to store the value in
+	 * @param  mixed  $value                The value to escape
+	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @return string  The SQL-ready representation of the value
+	 */
+	static public function escapeBySchema($table, $column, $value, $comparison_operator=NULL)
+	{
+		// Some of the tables being escaped for are linking tables that might break with classize()
+		if (is_object($value)) {
+			$class = fORM::classize($table);
+			$value = fORM::scalarize($class, $column, $value);
+		}
+		
+		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
+					fCore::dump($comparison_operator),
+					join(', ', $valid_comparison_operators)
+				)
+			);
+		}
+		
+		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
+		
+		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
+			$value = $column_info['default'];
+		}
+		
+		if (is_null($value)) {
+			$prepared_value = 'NULL';
+		} else {
+			$prepared_value = self::getInstance()->escape($column_info['type'], $value);
+		}
+		
+		if ($prepared_value == 'NULL') {
+			if ($co) {
+				if (in_array(trim($co), array('=', 'IN'))) {
+					$co = ' IS ';
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+					$co = ' IS NOT ';
+				}
+			}
+		}
+		
+		return $co . $prepared_value;
+	}
+	
+	
+	/**
+	 * Escapes a value for a DB call based on variable type
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $value                The value to escape
+	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @return string  The SQL-ready representation of the value
+	 */
+	static public function escapeByType($value, $comparison_operator=NULL)
+	{
+		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
+					fCore::dump($comparison_operator),
+					join(', ', $valid_comparison_operators)
+				)
+			);
+		}
+		
+		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
+		
+		if (is_int($value) || preg_match('#^[+\-]?[0-9]+#', $value)) {
+			$prepared_value = self::getInstance()->escape('integer', $value);
+		} elseif (is_float($value) || preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?#', $value)) {
+			$prepared_value = self::getInstance()->escape('float', $value);
+		} elseif (is_bool($value)) {
+			$prepared_value = self::getInstance()->escape('boolean', $value);
+		} elseif (is_null($value)) {
+			if ($co) {
+				if (in_array(trim($co), array('=', 'IN'))) {
+					$co = ' IS ';
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+					$co = ' IS NOT ';
+				}
+			}
+			$prepared_value = 'NULL';
+		} else {
+			$prepared_value = self::getInstance()->escape('string', $value);
+		}
+		
+		return $co . $prepared_value;
 	}
 	
 	
@@ -788,113 +895,6 @@ class fORMDatabase
 		}
 			
 		return $new_sql;
-	}
-	
-	
-	/**
-	 * Prepares a value for a DB call based on database schema
-	 * 
-	 * @throws fValidationException
-	 * @internal
-	 * 
-	 * @param  string $table                The table to store the value
-	 * @param  string $column               The column to store the value in
-	 * @param  mixed  $value                The value to prepare
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
-	 * @return string  The SQL-ready representation of the value
-	 */
-	static public function prepareBySchema($table, $column, $value, $comparison_operator=NULL)
-	{
-		// Some of the tables being escaped for are linking tables that might break with classize()
-		if (is_object($value)) {
-			$class = fORM::classize($table);
-			$value = fORM::scalarize($class, $column, $value);
-		}
-		
-		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($comparison_operator),
-					join(', ', $valid_comparison_operators)
-				)
-			);
-		}
-		
-		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
-		
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
-		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
-			$value = $column_info['default'];
-		}
-		
-		if (is_null($value)) {
-			$prepared_value = 'NULL';
-		} else {
-			$prepared_value = self::getInstance()->escape($column_info['type'], $value);
-		}
-		
-		if ($prepared_value == 'NULL') {
-			if ($co) {
-				if (in_array(trim($co), array('=', 'IN'))) {
-					$co = ' IS ';
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
-					$co = ' IS NOT ';
-				}
-			}
-		}
-		
-		return $co . $prepared_value;
-	}
-	
-	
-	/**
-	 * Prepares a value for a DB call based on variable type
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed  $value                The value to prepare
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
-	 * @return string  The SQL-ready representation of the value
-	 */
-	static public function prepareByType($value, $comparison_operator=NULL)
-	{
-		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($comparison_operator),
-					join(', ', $valid_comparison_operators)
-				)
-			);
-		}
-		
-		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
-		
-		if (is_int($value) || preg_match('#^[+\-]?[0-9]+#', $value)) {
-			$prepared_value = self::getInstance()->escape('integer', $value);
-		} elseif (is_float($value) || preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?#', $value)) {
-			$prepared_value = self::getInstance()->escape('float', $value);
-		} elseif (is_bool($value)) {
-			$prepared_value = self::getInstance()->escape('boolean', $value);
-		} elseif (is_null($value)) {
-			if ($co) {
-				if (in_array(trim($co), array('=', 'IN'))) {
-					$co = ' IS ';
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
-					$co = ' IS NOT ';
-				}
-			}
-			$prepared_value = 'NULL';
-		} else {
-			$prepared_value = self::getInstance()->escape('string', $value);
-		}
-		
-		return $co . $prepared_value;
 	}
 	
 	

@@ -360,7 +360,7 @@ class fORMValidation
 					$sql  = "SELECT " . $foreign_key['foreign_column'];
 					$sql .= " FROM " . $foreign_key['foreign_table'];
 					$sql .= " WHERE ";
-					$sql .= $column . fORMDatabase::prepareBySchema($table, $column, $values[$column], '=');
+					$sql .= $column . fORMDatabase::escapeBySchema($table, $column, $values[$column], '=');
 					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
 					$result = fORMDatabase::getInstance()->translatedQuery($sql);
@@ -539,7 +539,7 @@ class fORMValidation
 				$column_num = 0;
 				foreach ($unique_columns as $unique_column) {
 					if ($column_num) { $sql .= " AND "; }
-					$sql .= $unique_column . fORMDatabase::prepareBySchema($table, $unique_column, $values[$unique_column], '=');
+					$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $values[$unique_column], '=');
 					$column_num++;
 				}
 				
@@ -549,7 +549,7 @@ class fORMValidation
 					foreach ($primary_keys as $primary_key) {
 						$sql  .= ($first && !$first = FALSE) ? '' : ' AND ';
 						$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
-						$sql  .= $table . '.' . $primary_key . fORMDatabase::prepareBySchema($table, $primary_key, $value, '<>');
+						$sql  .= $table . '.' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
 					}
 					$sql .= ')';
 				}

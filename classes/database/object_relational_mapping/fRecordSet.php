@@ -167,7 +167,7 @@ class fRecordSet implements Iterator
 				}
 				
 				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pk_field . fORMDatabase::prepareBySchema($table_name, $pk_field, $pk_value, '=');
+				$sql .= $table_name . '.' . $pk_field . fORMDatabase::escapeBySchema($table_name, $pk_field, $pk_value, '=');
 			}
 			
 			$sql .= ($total_pk_fields > 1) ? ') ' : '';
@@ -229,7 +229,7 @@ class fRecordSet implements Iterator
 					$pkf = $primary_key_fields[$j];
 					
 					$sql .= ($j > 0) ? ' AND ' : '';
-					$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
+					$sql .= $table_name . '.' . $pkf . fORMDatabase::escapeBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
 				}
 			} else {
 				if (empty($primary_keys[$i])) {
@@ -238,7 +238,7 @@ class fRecordSet implements Iterator
 				}
 				$sql .= ($i > 0) ? ' OR ' : '';
 				$pkf  = $primary_key_fields[0];
-				$sql .= $table_name . '.' . $pkf . fORMDatabase::prepareBySchema($table_name, $pkf, $primary_keys[$i], '=');
+				$sql .= $table_name . '.' . $pkf . fORMDatabase::escapeBySchema($table_name, $pkf, $primary_keys[$i], '=');
 			}
 		}
 		
@@ -474,11 +474,11 @@ class fRecordSet implements Iterator
 			if (is_array($primary_key)) {
 				$conditions = array();
 				foreach ($pk_columns as $pk_column) {
-					$conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_key[$pk_column], '=');
+					$conditions[] = $table . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
 				}
 				$sql .= join(' AND ', $conditions);
 			} else {
-				$sql .= $table . '.' . $first_pk_column . fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_key, '=');
+				$sql .= $table . '.' . $first_pk_column . fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key, '=');
 			}
 			 
 			$sql .= ' THEN ' . $number . ' ';
@@ -512,7 +512,7 @@ class fRecordSet implements Iterator
 			foreach ($primary_keys as $primary_key) {
 				$sub_conditions = array();
 				foreach ($pk_columns as $pk_column) {
-					$sub_conditions[] = $table . '.' . $pk_column . fORMDatabase::prepareBySchema($table, $pk_column, $primary_key[$pk_column], '=');
+					$sub_conditions[] = $table . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
 				}
 				$conditions[] = join(' AND ', $sub_conditions);
 			}
@@ -524,7 +524,7 @@ class fRecordSet implements Iterator
 		 
 			$values = array();
 			foreach ($primary_keys as $primary_key) {
-				$values[] = fORMDatabase::prepareBySchema($table, $first_pk_column, $primary_key);
+				$values[] = fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key);
 			}
 			$sql .= $table . '.' . $first_pk_column . ' IN (' . join(', ', $values) . ')';
 		}
