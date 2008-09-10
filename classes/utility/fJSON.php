@@ -664,6 +664,17 @@ class fJSON
 	
 	
 	/**
+	 * Sets the proper Content-Type header for UTF-8 encoded JSON
+	 * 
+	 * @return void
+	 */
+	static public function sendHeader()
+	{
+		header('Content-Type: application/json; charset=utf-8');
+	}
+	
+	
+	/**
 	 * Forces use as a static class
 	 * 
 	 * @return fJSON
