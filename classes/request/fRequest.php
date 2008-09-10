@@ -168,6 +168,52 @@ class fRequest
 	
 	
 	/**
+	 * Returns the HTTP accept languages sorted by their q values (from high to low)
+	 * 
+	 * @return array  An associative array of {language} => {q value} sorted (in a stable-fashion) from highest to lowest q
+	 */
+	static public function getAcceptLanguages()
+	{
+		return self::processAcceptHeader($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+	}
+	
+	
+	/**
+	 * Returns the HTTP accept types sorted by their q values (from high to low)
+	 * 
+	 * @return array  An associative array of {type} => {q value} sorted (in a stable-fashion) from highest to lowest q
+	 */
+	static public function getAcceptTypes()
+	{
+		return self::processAcceptHeader($_SERVER['HTTP_ACCEPT']);
+	}
+	
+	
+	/**
+	 * Returns the best HTTP accept language (based on q value) - can be filtered to only allow certain languages
+	 * 
+	 * @param  array $filter  An array of languages that are valid to return
+	 * @return string  The best language listed in the accept header
+	 */
+	static public function getBestAcceptLanguage($filter=array())
+	{
+		return self::pickBestAcceptItem($_SERVER['HTTP_ACCEPT_LANGUAGE'], $filter);
+	}
+	
+	
+	/**
+	 * Returns the best HTTP accept type (based on q value) - can be filtered to only allow certain types
+	 * 
+	 * @param  array $filter  An array of types that are valid to return
+	 * @return string  The best type listed in the accept header
+	 */
+	static public function getBestAcceptType($filter=array())
+	{
+		return self::pickBestAcceptItem($_SERVER['HTTP_ACCEPT'], $filter);
+	}
+	
+	
+	/**
 	 * Gets a value from the $_POST or $_GET superglobals (in that order), restricting to a specific set of values
 	 * 
 	 * @param  string $key           The key to get the value of
@@ -227,6 +273,92 @@ class fRequest
 		if ($redirect && $found) {
 			fURL::redirect(str_replace('%%action%%', $found, $redirect));
 		}
+	}
+	
+	
+	/**
+	 * Returns the best HTTP accept header item match (based on q value), optionally filtered by an array of options
+	 * 
+	 * @param  string $header   The accept header to pick the best item from
+	 * @param  array  $options  A list of supported options to pick the best from
+	 * @return string  The best accept item, NULL if an options array is specified and none are valid
+	 */
+	static private function pickBestAcceptItem($header, $options)
+	{
+		settype($options, 'array');
+		
+		$items = self::processAcceptHeader($header);
+		
+		if (!$options) {
+			return key($items);		
+		}
+		
+		$top_q    = 0;
+		$top_item = NULL;
+		
+		foreach ($items as $item => $q) {
+			if ($q < $top_q) {
+				continue;	
+			}
+			
+			// Type matches have /s
+			if (strpos($item, '/') !== FALSE) {
+				$regex = '#^' . str_replace('*', '.*', $item) . '$#i';
+			
+			// Language matches that don't have a - are a wildcard
+			} elseif (strpos($item, '-') === FALSE) {
+				$regex = '#^' . str_replace('*', '.*', $item) . '(-.*)?$#i';	
+				
+			// Non-wildcard languages are straight-up matches
+			} else {
+				$regex = '#^' . str_replace('*', '.*', $item) . '$#i';	
+			}
+			foreach ($options as $option) {
+				if (preg_match($regex, $option) && $top_q < $q) {
+					$top_q = $q;
+					$top_item = $option;
+					continue 2;
+				}	
+			}
+		}
+		
+		return $top_item;
+	}
+	
+	
+	/**
+	 * Returns an array of values from one of the HTTP Accept-* headers
+	 * 
+	 * @return array  An associative array of {value} => {quality} sorted (in a stable-fashion) from highest to lowest quality
+	 */
+	static private function processAcceptHeader($header)
+	{
+		$types  = explode(',', $header);
+		$output = array();
+		
+		// We use this suffix to force stable sorting with the built-in sort function
+		$suffix = sizeof($types);
+		
+		foreach ($types as $type) {
+			$parts = explode(';', $type);
+			
+			if (!empty($parts[1]) && preg_match('#^q=(\d(?:\.\d)?)#', $parts[1], $match)) {
+				$q = number_format((float)$match[1], 5);
+			} else {
+				$q = number_format(1.0, 5);	
+			}
+			$q .= $suffix--;
+			
+			$output[$parts[0]] = $q;	
+		}
+		
+		arsort($output, SORT_NUMERIC);
+		
+		foreach ($output as $type => $q) {
+			$output[$type] = (float) substr($q, 0, -1);	
+		}
+		
+		return $output;
 	}
 	
 	
