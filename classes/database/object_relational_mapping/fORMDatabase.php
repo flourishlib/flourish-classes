@@ -725,23 +725,6 @@ class fORMDatabase
 	
 	
 	/**
-	 * Initializes a singleton instance of the {@link fDatabase} class
-	 * 
-	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
-	 * @param  string  $database  Name of the database. If an ODBC connection 'dsn:' concatenated with the DSN, if SQLite the path to the database file.
-	 * @param  string  $username  Database username, required for all databases except SQLite
-	 * @param  string  $password  The password for the username specified
-	 * @param  string  $host      Database server host or ip, defaults to localhost for all databases except SQLite
-	 * @param  integer $port      The port to connect to, defaults to the standard port for the database type specified
-	 * @return void
-	 */
-	static public function initialize($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
-	{
-		self::$database_object = new fDatabase($type, $database, $username, $password, $host, $port);
-	}
-	
-	
-	/**
 	 * Finds all of the table names in the SQL and creates a from clause
 	 * 
 	 * @internal
