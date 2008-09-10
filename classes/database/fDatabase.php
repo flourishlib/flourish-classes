@@ -596,6 +596,169 @@ class fDatabase
 	
 	
 	/**
+	 * Escapes a value for insertion into SQL
+	 * 
+	 * The valid data types are:
+	 *   - blob
+	 *   - boolean
+	 *   - date
+	 *   - float
+	 *   - integer
+	 *   - string (also varchar, char or text)
+	 *   - time
+	 *   - timestamp
+	 * 
+	 * In addition to being able to specify the data type, you can also pass
+	 * in an SQL statement with data type placeholders in the following form:
+	 *   - %l for a blob
+	 *   - %b for a boolean
+	 *   - %d for a date
+	 *   - %f for a float
+	 *   - %i for an integer
+	 *   - %s for a string
+	 *   - %t for a time
+	 *   - %p for a timestamp
+	 * 
+	 * @param  string $sql_or_type  This can either be the data type to escape or an SQL string with a data type placeholder - see method description
+	 * @param  mixed  $value,...    The value to escape - you should pass a single value if a data type is specified or a value for each placeholder
+	 * @return string  The escaped value/SQL
+	 */
+	public function escape($sql_or_type)
+	{
+		$values = array_slice(func_get_args(), 1);
+		
+		if (sizeof($values) < 1) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'No value was specified to escape'
+				)
+			);	
+		}
+		
+		$value = array_shift($values);
+		
+		switch ($sql_or_type) {
+			case 'blob':
+			case '%l':
+				return $this->escapeBlob($value);
+			case 'boolean':
+			case '%b':
+				return $this->escapeBoolean($value);
+			case 'date':
+			case '%d':
+				return $this->escapeDate($value);
+			case 'float':
+			case '%f':
+				return $this->escapeFloat($value);
+			case 'integer':
+			case '%i':
+				return $this->escapeInteger($value);
+			case 'string':
+			case 'varchar':
+			case 'char':
+			case 'text':
+			case '%s':
+				return $this->escapeString($value);
+			case 'time':
+			case '%t':
+				return $this->escapeTime($value);
+			case 'timestamp':
+			case '%p':
+				return $this->escapeTimestamp($value);
+		}	
+		
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql_or_type, $matches);
+		
+		foreach ($matches[0] as $match) {
+			$temp_sql = '';
+			$strings = array();
+			
+			// Replace strings with a placeholder so they don't mess use the regex parsing
+			foreach ($matches[0] as $match) {
+				if ($match[0] == "'") {
+					$strings[] = $match;
+					$match = ':string_' . (sizeof($strings)-1);
+				}
+				$temp_sql .= $match;
+			} 		
+		}
+		
+		$pieces = preg_split('#(%[lbdfistp])\b#', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+		$sql = '';
+		
+		$missing_values = -1;
+		
+		foreach ($pieces as $piece) {
+			switch ($piece) {
+				case '%l':
+					$sql .= $this->escapeBlob($value);
+					break;
+				case '%b':
+					$sql .= $this->escapeBoolean($value);
+					break;
+				case '%d':
+					$sql .= $this->escapeDate($value);
+					break;
+				case '%f':
+					$sql .= $this->escapeFloat($value);
+					break;
+				case '%i':
+					$sql .= $this->escapeInteger($value);
+					break;
+				case '%s':
+					$sql .= $this->escapeString($value);
+					break;
+				case '%t':
+					$sql .= $this->escapeTime($value);
+					break;
+				case '%p':
+					$sql .= $this->escapeTimestamp($value);
+					break;
+				default:
+					$sql .= $piece;
+					continue 2;	
+			} 		
+			if (sizeof($values)) {
+				$value = array_shift($values);
+			} else {
+				$value = NULL;
+				$missing_values++;	
+			}
+		}
+		
+		if ($missing_values > 0) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%1$s value(s) are missing for the placeholders in: %2$s',
+					$missing_values,
+					fCore::dump($sql_or_type)
+				)
+			);	
+		}
+		
+		if (sizeof($values)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%1$s extra value(s) were passed for the placeholders in: %2$s',
+					sizeof($values),
+					fCore::dump($sql_or_type)
+				)
+			); 		
+		}
+		
+		$string_number = 0;
+		foreach ($strings as $string) {
+			$sql = str_replace(':string_' . $string_number++, $string, $sql);	
+		}
+		
+		return $sql;
+	}
+	
+	
+	/**
 	 * Escapes a blob for use in SQL, includes surround quotes when appropriate
 	 * 
 	 * A NULL value will be returned as 'NULL'
@@ -603,7 +766,7 @@ class fDatabase
 	 * @param  string $value  The blob to escape
 	 * @return string  The escaped blob
 	 */
-	public function escapeBlob($value)
+	private function escapeBlob($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -617,7 +780,7 @@ class fDatabase
 			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
 		} elseif ($this->extension == 'pgsql') {
 			return "'" . pg_escape_bytea($this->connection, $value) . "'";
-		} elseif ($this->extension == 'sqlite') {
+		} elseif ($this->type == 'sqlite') {
 			return "X'" . bin2hex($value) . "'";
 		} elseif ($this->type == 'mssql') {
 			return '0x' . bin2hex($value);
@@ -635,7 +798,7 @@ class fDatabase
 	 * @param  boolean $value  The boolean to escape
 	 * @return string  The database equivalent of the boolean passed
 	 */
-	public function escapeBoolean($value)
+	private function escapeBoolean($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -657,7 +820,7 @@ class fDatabase
 	 * @param  string $value  The date to escape
 	 * @return string  The escaped date
 	 */
-	public function escapeDate($value)
+	private function escapeDate($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -677,7 +840,7 @@ class fDatabase
 	 * @param  float $value  The float to escape
 	 * @return string  The escaped float
 	 */
-	public function escapeFloat($value)
+	private function escapeFloat($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -700,7 +863,7 @@ class fDatabase
 	 * @param  integer $value  The integer to escape
 	 * @return string  The escaped integer
 	 */
-	public function escapeInteger($value)
+	private function escapeInteger($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -723,7 +886,7 @@ class fDatabase
 	 * @param  string $value  The string to escape
 	 * @return string  The escaped string
 	 */
-	public function escapeString($value)
+	private function escapeString($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -798,7 +961,7 @@ class fDatabase
 	 * @param  string $value  The time to escape
 	 * @return string  The escaped time
 	 */
-	public function escapeTime($value)
+	private function escapeTime($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -818,7 +981,7 @@ class fDatabase
 	 * @param  string $value  The timestamp to escape
 	 * @return string  The escaped timestamp
 	 */
-	public function escapeTimestamp($value)
+	private function escapeTimestamp($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1222,7 +1385,8 @@ class fDatabase
 	/**
 	 * Executes one or more sql queries
 	 * 
-	 * @param  string $sql  One or more SQL statements
+	 * @param  string $sql        One or more SQL statements
+	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function query($sql)
@@ -1235,6 +1399,11 @@ class fDatabase
 				'fProgrammerException',
 				fGrammar::compose('No SQL statement passed')
 			);
+		}
+		
+		if (func_num_args() > 1) {
+			$args = func_get_args();
+			$sql  = call_user_func_array(array($this, 'escape'), $args);
 		}
 		
 		// Split multiple queries
@@ -1394,7 +1563,8 @@ class fDatabase
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
-	 * @param  string $sql  One or more SQL statements
+	 * @param  string $sql        One or more SQL statements
+	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function translatedQuery($sql)
@@ -1404,6 +1574,12 @@ class fDatabase
 			$this->translation = new fSQLTranslation($this, $this->connection);
 			$this->translation->enableDebugging($this->debug);
 		}
+		
+		if (func_num_args() > 1) {
+			$args = func_get_args();
+			$sql  = call_user_func_array(array($this, 'escape'), $args);
+		}
+		
 		$result = $this->query($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
 		return $result;
@@ -1417,7 +1593,8 @@ class fDatabase
 	 * one time. If another unbuffered query is executed, the old result will
 	 * be deleted.
 	 * 
-	 * @param  string $sql  A single SQL statement
+	 * @param  string $sql        A single SQL statement
+	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedQuery($sql)
@@ -1430,6 +1607,11 @@ class fDatabase
 				'fProgrammerException',
 				fGrammar::compose('No SQL statement passed')
 			);
+		}
+		
+		if (func_num_args() > 1) {
+			$args = func_get_args();
+			$sql  = call_user_func_array(array($this, 'escape'), $args);
 		}
 		
 		if ($this->unbuffered_result) {
@@ -1483,7 +1665,8 @@ class fDatabase
 	 * one unbuffered result can exist at one time. If another unbuffered query
 	 * is executed, the old result will be deleted.
 	 * 
-	 * @param  string $sql  A single SQL statement
+	 * @param  string $sql        A single SQL statement
+	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedTranslatedQuery($sql)
@@ -1492,9 +1675,75 @@ class fDatabase
 			$this->connectToDatabase();
 			$this->translation = new fSQLTranslation($this, $this->connection);
 		}
+		
+		if (func_num_args() > 1) {
+			$args = func_get_args();
+			$sql  = call_user_func_array(array($this, 'escape'), $args);
+		}
+		
 		$result = $this->unbufferedQuery($this->translation->translate($sql));
 		$result->setUntranslatedSQL($sql);
 		return $result;
+	}
+	
+	
+	/**
+	 * Unescapes a value coming out of a database based on its data type
+	 * 
+	 * The valid data types are:
+	 *   - blob (or %l)
+	 *   - boolean (or %b)
+	 *   - date (or %d)
+	 *   - float (or %f)
+	 *   - integer (or %i)
+	 *   - string (also %s, varchar, char or text)
+	 *   - time (or %t)
+	 *   - timestamp (or %p)
+	 * 
+	 * @param  string $data_type  The data type being unescaped - see method description for valid values
+	 * @param  mixed  $value      The value to unescape
+	 * @return mixed  The unescaped value
+	 */
+	public function unescape($data_type, $value)
+	{
+		switch ($data_type) {
+			case 'blob':
+			case '%l':
+				return $this->unescapeBlob($value);
+			case 'boolean':
+			case '%b':
+				return $this->unescapeBoolean($value);
+			case 'date':
+			case '%d':
+				return $this->unescapeDate($value);
+			case 'float':
+			case '%f':
+				return $this->unescapeFloat($value);
+			case 'integer':
+			case '%i':
+				return $this->unescapeInteger($value);
+			case 'string':
+			case 'varchar':
+			case 'char':
+			case 'text':
+			case '%s':
+				return $this->unescapeString($value);
+			case 'time':
+			case '%t':
+				return $this->unescapeTime($value);
+			case 'timestamp':
+			case '%p':
+				return $this->unescapeTimestamp($value);
+		}	
+		
+		fCore::toss(
+			'fProgrammerException',
+			fGrammar::compose(
+				'Unknown data type, %1$s, specified. Must be one of: %2$s.',
+				fCore::dump($data_type),
+				'blob, %l, boolean, %b, date, %d, float, %f, integer, %i, string, %s, time, %t, timestamp, %p'
+			)
+		);	
 	}
 	
 	
@@ -1504,7 +1753,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return binary  The binary data
 	 */
-	public function unescapeBlob($value)
+	private function unescapeBlob($value)
 	{
 		$this->connectToDatabase();
 		
@@ -1524,7 +1773,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return boolean  The boolean
 	 */
-	public function unescapeBoolean($value)
+	private function unescapeBoolean($value)
 	{
 		return ($value === 'f' || !$value) ? FALSE : TRUE;
 	}
@@ -1536,7 +1785,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The date in YYYY-MM-DD format
 	 */
-	public function unescapeDate($value)
+	private function unescapeDate($value)
 	{
 		return date('Y-m-d', strtotime($value));
 	}
@@ -1548,7 +1797,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return float  The float
 	 */
-	public function unescapeFloat($value)
+	private function unescapeFloat($value)
 	{
 		return $value;
 	}
@@ -1560,7 +1809,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return integer  The integer
 	 */
-	public function unescapeInteger($value)
+	private function unescapeInteger($value)
 	{
 		return $value;
 	}
@@ -1572,7 +1821,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The string
 	 */
-	public function unescapeString($value)
+	private function unescapeString($value)
 	{
 		return $value;
 	}
@@ -1584,7 +1833,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The time in HH:MM:SS format
 	 */
-	public function unescapeTime($value)
+	private function unescapeTime($value)
 	{
 		return date('H:i:s', strtotime($value));
 	}
@@ -1596,7 +1845,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The timestamp in YYYY-MM-DD HH:MM:SS format
 	 */
-	public function unescapeTimestamp($value)
+	private function unescapeTimestamp($value)
 	{
 		return date('Y-m-d H:i:s', strtotime($value));
 	}

@@ -244,7 +244,7 @@ class fRecordSet implements Iterator
 		
 		// If we don't have any real records to pull out, create an unequal where condition
 		if ($empty_records == sizeof($primary_keys)) {
-			$sql .= fORMDatabase::getInstance()->escapeBoolean(TRUE) . ' = ' . fORMDatabase::getInstance()->escapeBoolean(FALSE);
+			$sql .= fORMDatabase::getInstance()->escape('boolean', TRUE) . ' = ' . fORMDatabase::getInstance()->escape('boolean', FALSE);
 		}
 		
 		$sql .= ' :group_by_clause ';

@@ -454,7 +454,7 @@ class fORMDatabase
 					foreach ($values as $value) {
 						$sub_condition = array();
 						foreach ($columns as $column) {
-							$sub_condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');
+							$sub_condition[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
 						}
 						$condition[] = '(' . join(' OR ', $sub_condition) . ')';
 					}
@@ -520,7 +520,7 @@ class fORMDatabase
 						case '~':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $value . '%');
+								$condition[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
 							}
 							$sql[] = '(' . join(' OR ', $condition) . ')';
 							break;
@@ -555,7 +555,7 @@ class fORMDatabase
 							break;
 							
 						case '~':
-							$sql[] = $column . ' LIKE ' . self::getInstance()->escapeString('%' . $values[0] . '%');
+							$sql[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $values[0] . '%');
 							break;
 							
 						default:
@@ -832,22 +832,8 @@ class fORMDatabase
 		
 		if (is_null($value)) {
 			$prepared_value = 'NULL';
-		} elseif (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-			$prepared_value = self::getInstance()->escapeString($value);
-		} elseif ($column_info['type'] == 'timestamp') {
-			$prepared_value = self::getInstance()->escapeTimestamp($value);
-		} elseif ($column_info['type'] == 'date') {
-			$prepared_value = self::getInstance()->escapeDate($value);
-		} elseif ($column_info['type'] == 'time') {
-			$prepared_value = self::getInstance()->escapeTime($value);
-		} elseif ($column_info['type'] == 'blob') {
-			$prepared_value = self::getInstance()->escapeBlob($value);
-		} elseif ($column_info['type'] == 'boolean') {
-			$prepared_value = self::getInstance()->escapeBoolean($value);
-		} elseif ($column_info['type'] == 'integer') {
-			$prepared_value = self::getInstance()->escapeInteger($value);
-		} elseif ($column_info['type'] == 'float') {
-			$prepared_value = self::getInstance()->escapeFloat($value);
+		} else {
+			$prepared_value = self::getInstance()->escape($column_info['type'], $value);
 		}
 		
 		if ($prepared_value == 'NULL') {
@@ -890,11 +876,11 @@ class fORMDatabase
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
 		
 		if (is_int($value) || preg_match('#^[+\-]?[0-9]+#', $value)) {
-			$prepared_value = self::getInstance()->escapeInteger($value);
+			$prepared_value = self::getInstance()->escape('integer', $value);
 		} elseif (is_float($value) || preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?#', $value)) {
-			$prepared_value = self::getInstance()->escapeFloat($value);
+			$prepared_value = self::getInstance()->escape('float', $value);
 		} elseif (is_bool($value)) {
-			$prepared_value = self::getInstance()->escapeBoolean($value);
+			$prepared_value = self::getInstance()->escape('boolean', $value);
 		} elseif (is_null($value)) {
 			if ($co) {
 				if (in_array(trim($co), array('=', 'IN'))) {
@@ -905,7 +891,7 @@ class fORMDatabase
 			}
 			$prepared_value = 'NULL';
 		} else {
-			$prepared_value = self::getInstance()->escapeString($value);
+			$prepared_value = self::getInstance()->escape('string', $value);
 		}
 		
 		return $co . $prepared_value;

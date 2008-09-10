@@ -624,7 +624,7 @@ class fSchema implements fISchema
 			$keys[$table]['foreign'] = array();
 			$keys[$table]['unique']  = array();
 			
-			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escapeString($table), 1, -1) . '`');
+			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escape('string', $table), 1, -1) . '`');
 			$row    = $result->fetchRow();
 			// Primary keys
 			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
@@ -724,12 +724,12 @@ class fSchema implements fISchema
 									  pg_attribute.attnum = pg_attrdef.adnum
 					WHERE
 						NOT pg_attribute.attisdropped AND
-						pg_class.relname = " . $this->database->escapeString($table) . " AND
+						pg_class.relname = %s AND
 						pg_type.typname NOT IN ('oid', 'cid', 'xid', 'cid', 'xid', 'tid')
 					ORDER BY
 						pg_attribute.attnum,
 						pg_constraint.contype";
-		$result = $this->database->query($sql);
+		$result = $this->database->query($sql, $table);
 		
 		foreach ($result as $row) {
 			$info = array();
@@ -964,7 +964,7 @@ class fSchema implements fISchema
 			'text'				=> 'text'
 		);
 		
-		$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table));
+		$result = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = %s", $table);
 		
 		try {
 			$row        = $result->fetchRow();
@@ -1063,7 +1063,7 @@ class fSchema implements fISchema
 			$keys[$table]['foreign'] = array();
 			$keys[$table]['unique']  = array();
 			
-			$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = " . $this->database->escapeString($table));
+			$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = %s", $table);
 			$row        = $result->fetchRow();
 			$create_sql = $row['sql'];
 			
