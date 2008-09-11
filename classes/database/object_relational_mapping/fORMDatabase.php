@@ -731,11 +731,12 @@ class fORMDatabase
 	 * 
 	 * @param  string $table  The main table to be queried
 	 * @param  string $sql    The SQL to insert the from clause into
-	 * @param  array $joins   Optional: The existing joins that have been parsed
 	 * @return string  The from SQL clause
 	 */
-	static public function insertFromAndGroupByClauses($table, $sql, $joins=array())
+	static public function insertFromAndGroupByClauses($table, $sql)
 	{
+		$joins = array();
+		
 		if (strpos($sql, ':from_clause') === FALSE) {
 			fCore::toss(
 				'fProgrammerException',

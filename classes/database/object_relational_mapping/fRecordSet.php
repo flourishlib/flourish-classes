@@ -15,17 +15,11 @@
 class fRecordSet implements Iterator
 {
 	/**
-	 * Ensures that an {@link fActiveRecord} class has been configured, allowing custom mapping options to be set in {@link fActiveRecord::configure()}
-	 *  
-	 * @param  string  $class_name  The class to ensure the configuration of
-	 * @return void
+	 * Callbacks registered for the __call() handler
+	 * 
+	 * @var array
 	 */
-	static public function configure($class_name)
-	{
-		if (!fORM::isConfigured($class_name)) {
-			new $class_name();
-		}
-	}
+	static private $callbacks = array();
 	
 	
 	/**
@@ -179,7 +173,7 @@ class fRecordSet implements Iterator
 			$sql .= " 0 = 1";
 		}
 		
-		$result = new fResult('array');
+		$result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
 		$result->setResult(array());
 		$result->setReturnedRows(sizeof($records));
 		$result->setSQL($sql);
@@ -259,7 +253,7 @@ class fRecordSet implements Iterator
 		
 		// If we have empty records we need to splice in some new records with results from the database
 		if ($empty_records) {
-			$fake_result = new fResult('array');
+			$fake_result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
 			
 			// Create a blank row for the empty results
 			$column_info = fORMSchema::getInstance()->getColumnInfo($table_name);
@@ -311,6 +305,39 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Ensures that an {@link fActiveRecord} class has been configured, allowing custom mapping options to be set in {@link fActiveRecord::configure()}
+	 *  
+	 * @param  string  $class_name  The class to ensure the configuration of
+	 * @return void
+	 */
+	static public function configure($class_name)
+	{
+		if (!fORM::isConfigured($class_name)) {
+			new $class_name();
+		}
+	}
+	
+	
+	/**
+	 * Registers a callback to be called when a specific method name is handled by __call()
+	 *  
+	 * The callback should accept the following parameters:
+	 *   - $class:       The class of each record
+	 *   - &$records:    The ordered array of fActiveRecords
+	 *   - &$pointer:    The current array pointer for the records array
+	 *   - &$associate:  If the record should be associated with an fActiveRecord holding it
+	 * 
+	 * @param  string   $method    The method to hook for
+	 * @param  callback $callback  The callback to execute - see method description for parameter list
+	 * @return void
+	 */
+	static public function registerCallback($method, $callback)
+	{
+		self::$callbacks[$method] = $callback;
+	}
+	
+	
+	/**
 	 * A flag to indicate this should record set should be associated to the parent {@link fActiveRecord} object
 	 * 
 	 * @var boolean
@@ -322,21 +349,21 @@ class fRecordSet implements Iterator
 	 * 
 	 * @var string
 	 */
-	private $class_name;
+	private $class_name = NULL;
 	
 	/**
 	 * The number of rows that would have been returned if a LIMIT clause had not been used
 	 * 
 	 * @var integer
 	 */
-	private $non_limited_count;
+	private $non_limited_count = NULL;
 	
 	/**
 	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
 	 * 
 	 * @var string
 	 */
-	private $non_limited_count_sql;
+	private $non_limited_count_sql = NULL;
 	
 	/**
 	 * The index of the current record
@@ -346,32 +373,18 @@ class fRecordSet implements Iterator
 	private $pointer = 0;
 	
 	/**
-	 * An array of the primary keys for the records in the set, initially empty
-	 * 
-	 * @var array
-	 */
-	private $primary_keys = array();
-	
-	/**
 	 * An array of the records in the set, initially empty
 	 * 
 	 * @var array
 	 */
 	private $records = array();
 	
-	/**
-	 * The result object that will act as the data source
-	 * 
-	 * @var object
-	 */
-	private $result_object;
-	
 	
 	/**
 	 * Allows for preloading of related records by dynamically creating preload{related plural class}() methods
 	 *  
 	 * @throws fValidationException
-	 *  
+	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
 	 * @return void
@@ -379,6 +392,18 @@ class fRecordSet implements Iterator
 	public function __call($method_name, $parameters)
 	{
 		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2);
+		
+		if (isset(self::$callbacks[$method_name])) {
+			return call_user_func_array(
+				self::$callbacks[$method_name],
+				array(
+					$this->class_name,
+					&$this->records,
+					&$this->pointer,
+					&$this->associate
+				)
+			);	
+		}
 		 
 		switch ($action) {
 			case 'build':
@@ -430,8 +455,12 @@ class fRecordSet implements Iterator
 		}
 		
 		$this->class_name            = $class_name;
-		$this->result_object         = $result_object;
 		$this->non_limited_count_sql = $non_limited_count_sql;
+		
+		while ($result_object->valid()) {
+			$this->records[] = new $class_name($result_object);
+			$result_object->next();
+		}
 	}
 	
 	
@@ -443,7 +472,6 @@ class fRecordSet implements Iterator
 	public function call($method)
 	{
 		$output = array();
-		$this->createAllRecords();
 		foreach ($this->records as $record) {
 			$output[] = $record->$method();
 		}
@@ -454,31 +482,31 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an order by clause for the primary keys of this record set
 	 * 
+	 * @param  string $route  The route to this table from another table
 	 * @return string  The order by clause
 	 */
-	private function constructOrderByClause()
+	private function constructOrderByClause($route=NULL)
 	{
 		$table = fORM::tablize($this->class_name);
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
-		$primary_keys    = $this->getPrimaryKeys();
-		
 		$sql = '';
 		
 		$number = 0;
-		foreach ($primary_keys as $primary_key) {
+		foreach ($this->getPrimaryKeys() as $primary_key) {
 			$sql .= 'WHEN ';
 			 
 			if (is_array($primary_key)) {
 				$conditions = array();
 				foreach ($pk_columns as $pk_column) {
-					$conditions[] = $table . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
+					$conditions[] = $table_with_route . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
 				}
 				$sql .= join(' AND ', $conditions);
 			} else {
-				$sql .= $table . '.' . $first_pk_column . fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key, '=');
+				$sql .= $table_with_route . '.' . $first_pk_column . fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key, '=');
 			}
 			 
 			$sql .= ' THEN ' . $number . ' ';
@@ -493,14 +521,15 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates a where clause for the primary keys of this record set
 	 * 
+	 * @param  string $route  The route to this table from another table
 	 * @return string  The where clause
 	 */
-	private function constructWhereClause()
+	private function constructWhereClause($route=NULL)
 	{
 		$table = fORM::tablize($this->class_name);
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
-		$pk_columns   = fORMSchema::getInstance()->getKeys($table, 'primary');
-		$primary_keys = $this->getPrimaryKeys();
+		$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
 		
 		$sql = '';
 		
@@ -509,10 +538,10 @@ class fRecordSet implements Iterator
 			
 			$conditions = array();
 			 
-			foreach ($primary_keys as $primary_key) {
+			foreach ($this->getPrimaryKeys() as $primary_key) {
 				$sub_conditions = array();
 				foreach ($pk_columns as $pk_column) {
-					$sub_conditions[] = $table . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
+					$sub_conditions[] = $table_with_route . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
 				}
 				$conditions[] = join(' AND ', $sub_conditions);
 			}
@@ -523,10 +552,10 @@ class fRecordSet implements Iterator
 			$first_pk_column = $pk_columns[0];
 		 
 			$values = array();
-			foreach ($primary_keys as $primary_key) {
+			foreach ($this->getPrimaryKeys() as $primary_key) {
 				$values[] = fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key);
 			}
-			$sql .= $table . '.' . $first_pk_column . ' IN (' . join(', ', $values) . ')';
+			$sql .= $table_with_route . '.' . $first_pk_column . ' IN (' . join(', ', $values) . ')';
 		}
 		
 		return $sql;
@@ -540,7 +569,7 @@ class fRecordSet implements Iterator
 	 */
 	public function count()
 	{
-		return $this->result_object->getReturnedRows();
+		return sizeof($this->records);
 	}
 	
 	
@@ -568,22 +597,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates all records for the primary keys provided
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @return void
-	 */
-	private function createAllRecords()
-	{
-		while ($this->valid()) {
-			$this->current();
-			$this->next();
-		}
-	}
-	
-	
-	/**
 	 * Returns the current record in the set (used for iteration)
 	 * 
 	 * @throws fValidationException
@@ -600,43 +613,7 @@ class fRecordSet implements Iterator
 			);
 		}
 		
-		if (!isset($this->records[$this->pointer])) {
-			$this->records[$this->pointer] = new $this->class_name($this->result_object);
-			$this->extractPrimaryKeys($this->pointer);
-		}
-		
 		return $this->records[$this->pointer];
-	}
-	
-	
-	/**
-	 * Extracts the primary key(s) from a record or all records
-	 * 
-	 * @param  integer $record_number  The record number to extract the primary key(s) for. If not provided all records will be extracted.
-	 * @return void
-	 */
-	private function extractPrimaryKeys($record_number=NULL)
-	{
-		$table           = fORM::tablize($this->class_name);
-		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
-		$first_pk_column = $pk_columns[0];
-		
-		if ($record_number === NULL) {
-			$records = $this->records;
-		} else {
-			$records = array($record_number => $this->records[$record_number]);
-		}
-		
-		foreach ($records as $number => $record) {
-			$keys = array();
-			
-			foreach ($pk_columns as $pk_column) {
-				$method = 'get' . fGrammar::camelize($pk_column, TRUE);
-				$keys[$pk_column] = $record->$method();
-			}
-			
-			$this->primary_keys[$number] = (sizeof($pk_columns) == 1) ? $keys[$first_pk_column] : $keys;
-		}
 	}
 	
 	
@@ -648,8 +625,6 @@ class fRecordSet implements Iterator
 	 */
 	public function filter($callback)
 	{
-		$this->createAllRecords();
-		
 		if (!$this->records) {
 			return clone $this;
 		}
@@ -733,11 +708,6 @@ class fRecordSet implements Iterator
 	 */
 	public function getRecords()
 	{
-		if (sizeof($this->records) != $this->result_object->getReturnedRows()) {
-			$pointer = $this->pointer;
-			$this->createAllRecords();
-			$this->pointer = $pointer;
-		}
 		return $this->records;
 	}
 	
@@ -751,12 +721,24 @@ class fRecordSet implements Iterator
 	 */
 	public function getPrimaryKeys()
 	{
-		if (sizeof($this->primary_keys) != $this->result_object->getReturnedRows()) {
-			$pointer = $this->pointer;
-			$this->createAllRecords();
-			$this->pointer = $pointer;
+		$table           = fORM::tablize($this->class_name);
+		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$first_pk_column = $pk_columns[0];
+		
+		$primary_keys = array();
+		
+		foreach ($this->records as $number => $record) {
+			$keys = array();
+			
+			foreach ($pk_columns as $pk_column) {
+				$method = 'get' . fGrammar::camelize($pk_column, TRUE);
+				$keys[$pk_column] = $record->$method();
+			}
+			
+			$primary_keys[$number] = (sizeof($pk_columns) == 1) ? $keys[$first_pk_column] : $keys;
 		}
-		return $this->primary_keys;
+		
+		return $primary_keys;
 	}
 	
 	
@@ -815,8 +797,6 @@ class fRecordSet implements Iterator
 	{
 		$parameters = array_slice(func_get_args(), 1);
 		
-		$this->createAllRecords();
-		
 		if (!$this->records) {
 			return array();
 		}
@@ -865,9 +845,6 @@ class fRecordSet implements Iterator
 	 */
 	public function next()
 	{
-		if (sizeof($this->records) < $this->result_object->getReturnedRows()) {
-			$this->result_object->next();
-		}
 		$this->pointer++;
 	}
 	
@@ -894,16 +871,17 @@ class fRecordSet implements Iterator
 		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
 		
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		// Build the query out
-		$where_sql    = $this->constructWhereClause();
-		$order_by_sql = $this->constructOrderByClause();
+		$where_sql    = $this->constructWhereClause($route);
+		$order_by_sql = $this->constructOrderByClause($route);
 		
 		$related_table_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
 		$related_table_keys = fORMDatabase::addTableToValues($related_table, $related_table_keys);
 		$related_table_keys = join(', ', $related_table_keys);
 		
-		$column = $table . '.' . $relationship['column'];
+		$column = $table_with_route . '.' . $relationship['column'];
 		
 		$new_sql  = 'SELECT count(' . $related_table_keys . ') AS __flourish_count, ' . $column . ' AS __flourish_column ';
 		$new_sql .= ' FROM :from_clause ';
@@ -957,21 +935,21 @@ class fRecordSet implements Iterator
 		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
 		
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		// Build the query out
-		$where_sql    = $this->constructWhereClause();
+		$where_sql    = $this->constructWhereClause($route);
 		
-		$order_by_sql = $this->constructOrderByClause();
+		$order_by_sql = $this->constructOrderByClause($route);
 		if ($related_order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route)) {
 			$order_by_sql .= ', ' . fORMDatabase::createOrderByClause($related_table, $related_order_bys);
 		}
-		
 		
 		$new_sql  = 'SELECT ' . $related_table . '.*';
 		
 		// If we are going through a join table we need the related primary key for matching
 		if (isset($relationship['join_table'])) {
-			$new_sql .= ", " . $table . '.' . $relationship['column'];
+			$new_sql .= ", " . $table_with_route . '.' . $relationship['column'];
 		}
 		
 		$new_sql .= ' FROM :from_clause ';
@@ -1036,7 +1014,7 @@ class fRecordSet implements Iterator
 			$sql  = "SELECT " . $related_table . ".* FROM :from_clause";
 			 
 			$where_conditions = array(
-				$table . '.' . $relationship['column'] . '=' => $record->$method()
+				$table_with_route . '.' . $relationship['column'] . '=' => $record->$method()
 			);
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($related_table, $where_conditions);
 			
@@ -1050,7 +1028,7 @@ class fRecordSet implements Iterator
 			 
 			
 			// Set up the result object for the new record set
-			$injected_result = new fResult('array');
+			$injected_result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
 			$injected_result->setSQL($sql);
 			$injected_result->setResult($rows);
 			$injected_result->setReturnedRows(sizeof($rows));
@@ -1081,8 +1059,6 @@ class fRecordSet implements Iterator
 	 */
 	public function reduce($callback, $inital_value=NULL)
 	{
-		$this->createAllRecords();
-		
 		if (!$this->records) {
 			return $initial_value;
 		}
@@ -1112,9 +1088,6 @@ class fRecordSet implements Iterator
 	 */
 	public function rewind()
 	{
-		if (sizeof($this->records) < $this->result_object->getReturnedRows()) {
-			$this->result_object->rewind();
-		}
 		$this->pointer = 0;
 	}
 	
@@ -1165,9 +1138,7 @@ class fRecordSet implements Iterator
 	 */
 	public function sortByCallback($callback)
 	{
-		$this->createAllRecords();
 		usort($this->records, $callback);
-		$this->extractPrimaryKeys();
 		$this->rewind();
 	}
 	
@@ -1202,7 +1173,7 @@ class fRecordSet implements Iterator
 	 */
 	public function valid()
 	{
-		return $this->pointer < $this->result_object->getReturnedRows();
+		return $this->pointer < $this->count();
 	}
 }
 
