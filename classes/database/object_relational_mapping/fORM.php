@@ -175,18 +175,32 @@ class fORM
 	{
 		$class = self::getClassName($object);
 		
-		if (!isset(self::$reflect_callbacks[$class])) {
+		if (!isset(self::$reflect_callbacks[$class]) && !isset(self::$reflect_callbacks['*'])) {
 			return;
 		}
 		
-		foreach (self::$reflect_callbacks[$class] as $callback) {
-			// This is the only way to pass by reference
-			$parameters = array(
-				$class,
-				&$signatures,
-				$include_doc_comments
-			);
-			call_user_func_array($callback, $parameters);
+		if (!empty(self::$reflect_callbacks['*'])) {
+			foreach (self::$reflect_callbacks['*'] as $callback) {
+				// This is the only way to pass by reference
+				$parameters = array(
+					$class,
+					&$signatures,
+					$include_doc_comments
+				);
+				call_user_func_array($callback, $parameters);
+			}	
+		}
+		
+		if (!empty(self::$reflect_callbacks[$class])) {
+			foreach (self::$reflect_callbacks[$class] as $callback) {
+				// This is the only way to pass by reference
+				$parameters = array(
+					$class,
+					&$signatures,
+					$include_doc_comments
+				);
+				call_user_func_array($callback, $parameters);
+			}
 		}
 	}
 	
@@ -624,7 +638,7 @@ class fORM
 	 *  - &$signatures: an associative array of {method_name} => {signature}
 	 *  - $include_doc_comments: a boolean indicating if the signature should include the doc comment for the method, or just the signature
 	 * 
-	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  mixed    $class     The class name or instance of the class to register for ,'*' will register for all classes
 	 * @param  callback $callback  The callback to register. Callback should accept a three parameters - see method description for details.
 	 * @return void
 	 */
