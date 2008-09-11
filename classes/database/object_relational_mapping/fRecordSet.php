@@ -62,49 +62,49 @@ class fRecordSet implements Iterator
 	 *  - '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * </pre>
 	 * 
-	 * @param  string  $class_name        The class to create the {@link fRecordSet} of
+	 * @param  string  $class             The class to create the {@link fRecordSet} of
 	 * @param  array   $where_conditions  The column => value comparisons for the where clause
 	 * @param  array   $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit             The number of records to fetch
 	 * @param  integer $offset            The offset to use before limiting
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function build($class_name, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
+	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
 	{
-		self::configure($class_name);
+		self::configure($class);
 		
-		$table_name = fORM::tablize($class_name);
+		$table = fORM::tablize($class);
 		
-		$sql = "SELECT " . $table_name . ".* FROM :from_clause";
+		$sql = "SELECT " . $table . ".* FROM :from_clause";
 		
 		if ($where_conditions) {
-			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table_name, $where_conditions);
+			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table, $where_conditions);
 		}
 		
 		$sql .= ' :group_by_clause ';
 		
 		if ($order_bys) {
-			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
+			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
 		
 		// If no ordering is specified, order by the primary key
 		} else {
-			$primary_keys = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+			$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
 			$expressions = array();
 			foreach ($primary_keys as $primary_key) {
-				$expressions[] = $table_name . '.' . $primary_key . ' ASC';
+				$expressions[] = $table . '.' . $primary_key . ' ASC';
 			}
 			$sql .= 'ORDER BY ' . join(', ', $expressions);
 		}
 		
-		$sql = fORMDatabase::insertFromAndGroupByClauses($table_name, $sql);
+		$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
 		
 		// Add the limit clause and create a query to get the non-limited total
 		$non_limited_count_sql = NULL;
 		if ($limit !== NULL) {
-			$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
-			$primary_key_fields = fORMDatabase::addTableToValues($table_name, $primary_key_fields);
+			$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$primary_key_fields = fORMDatabase::addTableToValues($table, $primary_key_fields);
 			
-			$non_limited_count_sql = str_replace('SELECT ' . $table_name . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
+			$non_limited_count_sql = str_replace('SELECT ' . $table . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
 			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
 			
 			$sql .= ' LIMIT ' . $limit;
@@ -114,7 +114,7 @@ class fRecordSet implements Iterator
 			}
 		}
 		
-		return new fRecordSet($class_name, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
+		return new fRecordSet($class, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
 	}
 	
 	
@@ -124,19 +124,19 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  string $class_name  The type of object to create
-	 * @param  array  $records     The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  string $class    The type of object to create
+	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function buildFromRecords($class_name, $records)
+	static public function buildFromRecords($class, $records)
 	{
-		self::configure($class_name);
-		$table_name = fORM::tablize($class_name);
+		self::configure($class);
+		$table = fORM::tablize($class);
 		
-		$sql  = 'SELECT ' . $table_name . '.* FROM ' . $table_name . ' WHERE ';
+		$sql  = 'SELECT ' . $table . '.* FROM ' . $table . ' WHERE ';
 		
 		// Build the where clause
-		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
 		$total_pk_fields = sizeof($primary_key_fields);
 		
 		$primary_keys = array();
@@ -161,7 +161,7 @@ class fRecordSet implements Iterator
 				}
 				
 				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table_name . '.' . $pk_field . fORMDatabase::escapeBySchema($table_name, $pk_field, $pk_value, '=');
+				$sql .= $table . '.' . $pk_field . fORMDatabase::escapeBySchema($table, $pk_field, $pk_value, '=');
 			}
 			
 			$sql .= ($total_pk_fields > 1) ? ') ' : '';
@@ -178,7 +178,7 @@ class fRecordSet implements Iterator
 		$result->setReturnedRows(sizeof($records));
 		$result->setSQL($sql);
 		
-		$record_set = new fRecordSet($class_name, $result);
+		$record_set = new fRecordSet($class, $result);
 		$record_set->records      = $records;
 		$record_set->primary_keys = $primary_keys;
 		return $record_set;
@@ -191,24 +191,24 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  string  $class_name    The type of object to create
+	 * @param  string  $class         The type of object to create
 	 * @param  array   $primary_keys  The primary keys of the objects to create
 	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::build()} for format)
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function buildFromPrimaryKeys($class_name, $primary_keys, $order_bys=array())
+	static public function buildFromPrimaryKeys($class, $primary_keys, $order_bys=array())
 	{
-		self::configure($class_name);
+		self::configure($class);
 		
-		$table_name = fORM::tablize($class_name);
+		$table = fORM::tablize($class);
 		
 		settype($primary_keys, 'array');
 		$primary_keys = array_merge($primary_keys);
 		
-		$sql  = 'SELECT ' . $table_name . '.* FROM :from_clause WHERE ';
+		$sql  = 'SELECT ' . $table . '.* FROM :from_clause WHERE ';
 		
 		// Build the where clause
-		$primary_key_fields = fORMSchema::getInstance()->getKeys($table_name, 'primary');
+		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
 		$total_pk_fields = sizeof($primary_key_fields);
 		
 		$empty_records = 0;
@@ -223,7 +223,7 @@ class fRecordSet implements Iterator
 					$pkf = $primary_key_fields[$j];
 					
 					$sql .= ($j > 0) ? ' AND ' : '';
-					$sql .= $table_name . '.' . $pkf . fORMDatabase::escapeBySchema($table_name, $pkf, $primary_keys[$i][$pkf], '=');
+					$sql .= $table . '.' . $pkf . fORMDatabase::escapeBySchema($table, $pkf, $primary_keys[$i][$pkf], '=');
 				}
 			} else {
 				if (empty($primary_keys[$i])) {
@@ -232,7 +232,7 @@ class fRecordSet implements Iterator
 				}
 				$sql .= ($i > 0) ? ' OR ' : '';
 				$pkf  = $primary_key_fields[0];
-				$sql .= $table_name . '.' . $pkf . fORMDatabase::escapeBySchema($table_name, $pkf, $primary_keys[$i], '=');
+				$sql .= $table . '.' . $pkf . fORMDatabase::escapeBySchema($table, $pkf, $primary_keys[$i], '=');
 			}
 		}
 		
@@ -244,10 +244,10 @@ class fRecordSet implements Iterator
 		$sql .= ' :group_by_clause ';
 		
 		if (!empty($order_bys)) {
-			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table_name, $order_bys);
+			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
 		}
 		
-		$sql = fORMDatabase::insertFromAndGroupByClauses($table_name, $sql);
+		$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
 		
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
 		
@@ -256,7 +256,7 @@ class fRecordSet implements Iterator
 			$fake_result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
 			
 			// Create a blank row for the empty results
-			$column_info = fORMSchema::getInstance()->getColumnInfo($table_name);
+			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
 			$blank_row = array();
 			foreach ($column_info as $column => $info) {
 				$blank_row[$column] = NULL;
@@ -283,37 +283,37 @@ class fRecordSet implements Iterator
 			$result = $fake_result;
 		}
 		
-		return new fRecordSet($class_name, $result);
+		return new fRecordSet($class, $result);
 	}
 	
 	
 	/**
 	 * Creates an {@link fRecordSet} from an SQL statement
 	 * 
-	 * @param  string $class_name             The type of object to create
+	 * @param  string $class                  The type of object to create
 	 * @param  string $sql                    The SQL to create the set from
 	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function buildFromSQL($class_name, $sql, $non_limited_count_sql=NULL)
+	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
-		self::configure($class_name);
+		self::configure($class);
 		
 		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		return new fRecordSet($class_name, $result, $non_limited_count_sql);
+		return new fRecordSet($class, $result, $non_limited_count_sql);
 	}
 	
 	
 	/**
 	 * Ensures that an {@link fActiveRecord} class has been configured, allowing custom mapping options to be set in {@link fActiveRecord::configure()}
 	 *  
-	 * @param  string  $class_name  The class to ensure the configuration of
+	 * @param  string  $class  The class to ensure the configuration of
 	 * @return void
 	 */
-	static public function configure($class_name)
+	static public function configure($class)
 	{
-		if (!fORM::isConfigured($class_name)) {
-			new $class_name();
+		if (!fORM::isConfigured($class)) {
+			new $class();
 		}
 	}
 	
@@ -322,6 +322,7 @@ class fRecordSet implements Iterator
 	 * Registers a callback to be called when a specific method name is handled by __call()
 	 *  
 	 * The callback should accept the following parameters:
+	 *   - $record_set:  The actual record set
 	 *   - $class:       The class of each record
 	 *   - &$records:    The ordered array of fActiveRecords
 	 *   - &$pointer:    The current array pointer for the records array
@@ -349,7 +350,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @var string
 	 */
-	private $class_name = NULL;
+	private $class = NULL;
 	
 	/**
 	 * The number of rows that would have been returned if a LIMIT clause had not been used
@@ -397,7 +398,8 @@ class fRecordSet implements Iterator
 			return call_user_func_array(
 				self::$callbacks[$method_name],
 				array(
-					$this->class_name,
+					$this,
+					$this->class,
 					&$this->records,
 					&$this->pointer,
 					&$this->associate
@@ -424,29 +426,29 @@ class fRecordSet implements Iterator
 	/** 
 	 * Sets the contents of the set
 	 * 
-	 * @param  string  $class_name             The type of records to create
+	 * @param  string  $class                  The type of records to create
 	 * @param  fResult $result_object          The {@link fResult} object of the records to create
 	 * @param  string  $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet
 	 */
-	protected function __construct($class_name, fResult $result_object, $non_limited_count_sql=NULL)
+	protected function __construct($class, fResult $result_object, $non_limited_count_sql=NULL)
 	{
-		if (!class_exists($class_name)) {
+		if (!class_exists($class)) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
 					'The class specified, %s, could not be loaded',
-					fCore::dump($class_name)
+					fCore::dump($class)
 				)
 			);
 		}
 		
-		if (!is_subclass_of($class_name, 'fActiveRecord')) {
+		if (!is_subclass_of($class, 'fActiveRecord')) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
 					'The class specified, %1$s, does not extend %2$s. All classes used with %3$s must extend %4$s.',
-					fCore::dump($class_name),
+					fCore::dump($class),
 					'fActiveRecord',
 					'fRecordSet',
 					'fActiveRecord'
@@ -454,11 +456,11 @@ class fRecordSet implements Iterator
 			);
 		}
 		
-		$this->class_name            = $class_name;
+		$this->class                 = $class;
 		$this->non_limited_count_sql = $non_limited_count_sql;
 		
 		while ($result_object->valid()) {
-			$this->records[] = new $class_name($result_object);
+			$this->records[] = new $class($result_object);
 			$result_object->next();
 		}
 	}
@@ -487,7 +489,7 @@ class fRecordSet implements Iterator
 	 */
 	private function constructOrderByClause($route=NULL)
 	{
-		$table = fORM::tablize($this->class_name);
+		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
@@ -526,7 +528,7 @@ class fRecordSet implements Iterator
 	 */
 	private function constructWhereClause($route=NULL)
 	{
-		$table = fORM::tablize($this->class_name);
+		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
@@ -647,7 +649,7 @@ class fRecordSet implements Iterator
 			}
 		}
 		
-		return self::buildFromRecords($this->class_name, $new_records);
+		return self::buildFromRecords($this->class, $new_records);
 	}
 	
 	
@@ -695,7 +697,7 @@ class fRecordSet implements Iterator
 	 */
 	public function getClassName()
 	{
-		return $this->class_name;
+		return $this->class;
 	}
 	
 	
@@ -721,7 +723,7 @@ class fRecordSet implements Iterator
 	 */
 	public function getPrimaryKeys()
 	{
-		$table           = fORM::tablize($this->class_name);
+		$table           = fORM::tablize($this->class);
 		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
@@ -866,7 +868,7 @@ class fRecordSet implements Iterator
 		}
 		
 		$related_table = fORM::tablize($related_class);
-		$table         = fORM::tablize($this->class_name);
+		$table         = fORM::tablize($this->class);
 		 
 		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
@@ -930,7 +932,7 @@ class fRecordSet implements Iterator
 		}
 		
 		$related_table = fORM::tablize($related_class);
-		$table         = fORM::tablize($this->class_name);
+		$table         = fORM::tablize($this->class);
 		 
 		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
@@ -941,7 +943,7 @@ class fRecordSet implements Iterator
 		$where_sql    = $this->constructWhereClause($route);
 		
 		$order_by_sql = $this->constructOrderByClause($route);
-		if ($related_order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route)) {
+		if ($related_order_bys = fORMRelated::getOrderBys($this->class, $related_class, $route)) {
 			$order_by_sql .= ', ' . fORMDatabase::createOrderByClause($related_table, $related_order_bys);
 		}
 		
@@ -1020,7 +1022,7 @@ class fRecordSet implements Iterator
 			
 			$sql .= ' :group_by_clause ';
 			 
-			if ($order_bys = fORMRelated::getOrderBys($this->class_name, $related_class, $route)) {
+			if ($order_bys = fORMRelated::getOrderBys($this->class, $related_class, $route)) {
 				$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($related_table, $order_bys);
 			}
 			 
@@ -1157,7 +1159,7 @@ class fRecordSet implements Iterator
 				'fEmptySetException',
 				fGrammar::compose(
 					'No %s could be found',
-					fGrammar::pluralize(fORM::getRecordName($this->class_name))
+					fGrammar::pluralize(fORM::getRecordName($this->class))
 				)
 			);
 		}
