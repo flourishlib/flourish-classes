@@ -616,7 +616,7 @@ class fORMColumn
 				if ($unique_key == array($column)) {
 					$is_unique_column = TRUE;
 					do {
-						$value = fCryptography::generateRandomString($settings['length'], $settings['type']);
+						$value = fCryptography::randomString($settings['length'], $settings['type']);
 						
 						// See if this is unique
 						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::escapeByType($value);
@@ -627,7 +627,7 @@ class fORMColumn
 			
 			// If is is not a unique column, just generate a value
 			if (!$is_unique_column) {
-				$value = fCryptography::generateRandomString($settings['length'], $settings['type']);
+				$value = fCryptography::randomString($settings['length'], $settings['type']);
 			}
 			
 			fActiveRecord::assign($values, $old_values, $column, $value);

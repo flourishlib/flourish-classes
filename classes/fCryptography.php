@@ -34,64 +34,6 @@ class fCryptography
 	
 	
 	/**
-	 * Returns a random string of the type and length specified
-	 * 
-	 * @param  integer $length  The length of string to return
-	 * @param  string  $type    The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
-	 * @return string  A random string of the type and length specified
-	 */
-	static public function generateRandomString($length, $type='alphanumeric')
-	{
-		if ($length < 1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The length specified, %1$s, is less than the minimum of %2$s',
-					$length,
-					1
-				)
-			);
-		}
-		
-		switch ($type) {
-			case 'alphanumeric':
-				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-				break;
-				
-			case 'alpha':
-				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-				break;
-				
-			case 'numeric':
-				$alphabet = '0123456789';
-				break;
-				
-			case 'hexadecimal':
-				$alphabet = 'abcdef0123456789';
-				break;
-				
-			default:
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The type specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($type)
-					)
-				);
-		}
-		
-		$alphabet_length = strlen($alphabet);
-		$output = '';
-		
-		for ($i = 0; $i < $length; $i++) {
-			$output .= $alphabet[self::random(0, $alphabet_length-1)];
-		}
-		
-		return $output;
-	}
-	
-	
-	/**
 	 * Hashes a password using a loop of sha1 hashes and a salt, making rainbow table attacks infeasible
 	 * 
 	 * @param  string $password  The password to hash
@@ -99,7 +41,7 @@ class fCryptography
 	 */
 	static public function hashPassword($password)
 	{
-		$salt = self::generateRandomString(10);
+		$salt = self::randomString(10);
 		
 		return self::hashWithSalt($password, $salt);
 	}
@@ -270,6 +212,64 @@ class fCryptography
 			return mt_rand($min, $max);
 		}
 		return mt_rand();
+	}
+	
+	
+	/**
+	 * Returns a random string of the type and length specified
+	 * 
+	 * @param  integer $length  The length of string to return
+	 * @param  string  $type    The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
+	 * @return string  A random string of the type and length specified
+	 */
+	static public function randomString($length, $type='alphanumeric')
+	{
+		if ($length < 1) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The length specified, %1$s, is less than the minimum of %2$s',
+					$length,
+					1
+				)
+			);
+		}
+		
+		switch ($type) {
+			case 'alphanumeric':
+				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+				break;
+				
+			case 'alpha':
+				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				break;
+				
+			case 'numeric':
+				$alphabet = '0123456789';
+				break;
+				
+			case 'hexadecimal':
+				$alphabet = 'abcdef0123456789';
+				break;
+				
+			default:
+				fCore::toss(
+					'fProgrammerException',
+					fGrammar::compose(
+						'The type specified, %1$s, is invalid. Must be one of: %2$s.',
+						fCore::dump($type)
+					)
+				);
+		}
+		
+		$alphabet_length = strlen($alphabet);
+		$output = '';
+		
+		for ($i = 0; $i < $length; $i++) {
+			$output .= $alphabet[self::random(0, $alphabet_length-1)];
+		}
+		
+		return $output;
 	}
 	
 	
