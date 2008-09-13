@@ -54,33 +54,6 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a sortable column header
-	 * 
-	 * @param  string $column       The column to create the sortable header for
-	 * @param  string $column_name  This will override the humanized version of the column
-	 * @return void
-	 */
-	static public function createSortableColumn($column, $column_name=NULL)
-	{
-		if ($column_name === NULL) {
-			$column_name = fGrammar::humanize($column);
-		}
-		
-		if (self::$sort_column == $column) {
-			$sort      = $column;
-			$direction = (self::$sort_direction == 'asc') ? 'desc' : 'asc';
-		} else {
-			$sort      = $column;
-			$direction = 'asc';
-		}
-		
-		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
-		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
-		?><a href="<?= fHTML::encode(fURL::get() . fURL::replaceInQueryString($columns, $values)) ?>" class="sortable_column<?= (self::$sort_column == $column) ? ' ' . self::$sort_direction : '' ?>"><?= fHTML::prepare($column_name) ?></a><?
-	}
-	
-	
-	/**
 	 * Return the string 'sorted' if $column is the column that is currently being sorted by, otherwise returns ''
 	 * 
 	 * @param  string $column  The column to check
@@ -261,6 +234,38 @@ class fCRUD
 			echo ' selected="selected"';
 		}
 		echo '>' . fHTML::prepare($text) . '</option>';
+	}
+	
+	
+	/**
+	 * Prints a sortable column header
+	 * 
+	 * @param  string $column       The column to create the sortable header for
+	 * @param  string $column_name  This will override the humanized version of the column
+	 * @return void
+	 */
+	static public function printSortableColumn($column, $column_name=NULL)
+	{
+		if ($column_name === NULL) {
+			$column_name = fGrammar::humanize($column);
+		}
+		
+		if (self::$sort_column == $column) {
+			$sort      = $column;
+			$direction = (self::$sort_direction == 'asc') ? 'desc' : 'asc';
+		} else {
+			$sort      = $column;
+			$direction = 'asc';
+		}
+		
+		$columns = array_merge(array('sort', 'dir'), array_keys(self::$search_values));
+		$values  = array_merge(array($sort, $direction), array_values(self::$search_values));
+		
+		$url         = fHTML::encode(fURL::get() . fURL::replaceInQueryString($columns, $values));
+		$css_class   = (self::$sort_column == $column) ? ' ' . self::$sort_direction : '';
+		$column_name = fHTML::prepare($column_name);
+		
+		echo '<a href="' . $url . '" class="sortable_column' . $css_class . '">' . $column_name . '</a>';
 	}
 		
 	
