@@ -660,9 +660,9 @@ class fORMDatabase
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
 		
-		if (is_int($value) || preg_match('#^[+\-]?[0-9]+#', $value)) {
+		if (is_int($value) || preg_match('#^[+\-]?[0-9]+$#', $value)) {
 			$prepared_value = self::getInstance()->escape('integer', $value);
-		} elseif (is_float($value) || preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?#', $value)) {
+		} elseif (is_float($value) || preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#', $value)) {
 			$prepared_value = self::getInstance()->escape('float', $value);
 		} elseif (is_bool($value)) {
 			$prepared_value = self::getInstance()->escape('boolean', $value);
