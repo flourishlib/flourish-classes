@@ -17,6 +17,55 @@
 class fSQLTranslation
 {
 	/**
+	 * Callback for custom SQLite function; calculates the cotangent of a number
+	 * 
+	 * @internal
+	 * 
+	 * @param  numeric $x  The number to calculate the cotangent of
+	 * @return numeric  The contangent of $x
+	 */
+	static public function sqliteCotangent($x)
+	{
+		return 1/tan($x);
+	}
+	
+	
+	/**
+	 * Callback for custom SQLite function; calculates the log to a specific base of a number
+	 * 
+	 * @internal
+	 * 
+	 * @param  integer $base  The base for the log calculation
+	 * @param  numeric $num   The number to calculate the logarithm of
+	 * @return numeric  The logarithm of $num to $base
+	 */
+	static public function sqliteLogBaseFirst($base, $num)
+	{
+		return log($num, $base);
+	}
+	
+	
+	/**
+	 * Callback for custom SQLite function; returns the sign of the number
+	 * 
+	 * @internal
+	 * 
+	 * @param  numeric $x  The number to change the sign of
+	 * @return numeric  -1 if a negative sign, 0 if 0, 1 if positive sign
+	 */
+	static public function sqliteSign($x)
+	{
+		if ($x == 0) {
+			return 0;
+		}
+		if ($x > 0) {
+			return 1;
+		}
+		return -1;
+	}
+	
+	
+	/**
 	 * The database connection resource or PDO object
 	 * 
 	 * @var mixed
@@ -427,55 +476,6 @@ class fSQLTranslation
 		}
 		
 		return $sql;
-	}
-	
-	
-	/**
-	 * Callback for custom SQLite function; calculates the cotangent of a number
-	 * 
-	 * @internal
-	 * 
-	 * @param  numeric $x  The number to calculate the cotangent of
-	 * @return numeric  The contangent of $x
-	 */
-	public static function sqliteCotangent($x)
-	{
-		return 1/tan($x);
-	}
-	
-	
-	/**
-	 * Callback for custom SQLite function; calculates the log to a specific base of a number
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $base  The base for the log calculation
-	 * @param  numeric $num   The number to calculate the logarithm of
-	 * @return numeric  The logarithm of $num to $base
-	 */
-	public static function sqliteLogBaseFirst($base, $num)
-	{
-		return log($num, $base);
-	}
-	
-	
-	/**
-	 * Callback for custom SQLite function; returns the sign of the number
-	 * 
-	 * @internal
-	 * 
-	 * @param  numeric $x  The number to change the sign of
-	 * @return numeric  -1 if a negative sign, 0 if 0, 1 if positive sign
-	 */
-	public static function sqliteSign($x)
-	{
-		if ($x == 0) {
-			return 0;
-		}
-		if ($x > 0) {
-			return 1;
-		}
-		return -1;
 	}
 	
 	
