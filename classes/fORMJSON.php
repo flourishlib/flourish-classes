@@ -32,13 +32,7 @@ class fORMJSON
 			array('fORMJSON', 'toJSON')
 		);
 		
-		fORM::registerHookCallback(
-			'*',
-			'replace::toArray()',
-			array('fORMJSON', 'toArray')
-		);
-		
-		fRecordSet::registerCallback(
+		fRecordSet::registerMethodCallback(
 			'toJSON',
 			array('fORMJSON', 'toJSONRecordSet')
 		);
@@ -72,33 +66,6 @@ class fORMJSON
 	
 	
 	/**
-	 * Returns the values array - used by {@link toJSONRecordSet()}
-	 * 
-	 * @internal
-	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The JSON object that represents the values of this record
-	 */
-	static public function toArray($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
-	{
-		$output = array();
-		foreach ($values as $column => $value) {
-			if (is_object($value) && is_callable(array($value, '__toString'))) {
-				$value = $value->__toString();
-			}
-			$output[$column] = $value;
-		}		
-		
-		return $output;
-	}
-	
-	
-	/**
 	 * Returns a JSON object representation of the record
 	 * 
 	 * @internal
@@ -113,9 +80,15 @@ class fORMJSON
 	 */
 	static public function toJSON($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		$method = 'toArray';
-		$params = array();
-		return fJSON::encode(self::toArray($object, $values, $old_values, $related_records, $method, $params));
+		$output = array();
+		foreach ($values as $column => $value) {
+			if (is_object($value) && is_callable(array($value, '__toString'))) {
+				$value = $value->__toString();
+			}
+			$output[$column] = $value;
+		}
+		
+		return fJSON::encode($output);
 	}
 	
 	
@@ -133,7 +106,7 @@ class fORMJSON
 	 */
 	static public function toJSONRecordSet($record_set, $class, &$records, &$pointer, &$associate)
 	{
-		return fJSON::encode($record_set->call('toArray'));	
+		return '[' . join(',', $record_set->call('toJSON')) . ']';	
 	}
 	
 	

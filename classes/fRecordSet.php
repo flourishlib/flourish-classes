@@ -19,7 +19,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @var array
 	 */
-	static private $callbacks = array();
+	static private $method_callbacks = array();
 	
 	
 	/**
@@ -319,7 +319,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Registers a callback to be called when a specific method name is handled by __call()
+	 * Registers a callback to be called when a specific method is handled by __call()
 	 *  
 	 * The callback should accept the following parameters:
 	 *   - $record_set:  The actual record set
@@ -332,9 +332,9 @@ class fRecordSet implements Iterator
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
 	 * @return void
 	 */
-	static public function registerCallback($method, $callback)
+	static public function registerMethodCallback($method, $callback)
 	{
-		self::$callbacks[$method] = $callback;
+		self::$method_callbacks[$method] = $callback;
 	}
 	
 	
@@ -394,9 +394,9 @@ class fRecordSet implements Iterator
 	{
 		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2);
 		
-		if (isset(self::$callbacks[$method_name])) {
+		if (isset(self::$method_callbacks[$method_name])) {
 			return call_user_func_array(
-				self::$callbacks[$method_name],
+				self::$method_callbacks[$method_name],
 				array(
 					$this,
 					$this->class,
