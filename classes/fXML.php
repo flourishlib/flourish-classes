@@ -18,12 +18,12 @@
 class fXML
 {
 	/**
-	 * Prepares content for display in a UTF-8 encoded XML document
+	 * Encodes content for display in a UTF-8 encoded XML document
 	 * 
-	 * @param  string $content  The content to prepare
-	 * @return string  The encoded xml
+	 * @param  string $content  The content to encode
+	 * @return string  The encoded content
 	 */
-	static public function prepare($content)
+	static public function encode($content)
 	{
 		return htmlspecialchars(fHTML::decode($content));
 	}
