@@ -81,13 +81,13 @@ class fORM
 	/**
 	 * Allows non-standard (plural, underscore notation table name <-> singular, upper-camel case class name) table to class mapping
 	 * 
-	 * @param  string $table_name  The name of the database table
-	 * @param  string $class_name  The name of the class
+	 * @param  string $table  The name of the database table
+	 * @param  string $class  The name of the class
 	 * @return void
 	 */
-	static public function addCustomTableClassMapping($table_name, $class_name)
+	static public function addCustomTableClassMapping($table, $class)
 	{
-		self::$table_class_map[$table_name] = $class_name;
+		self::$table_class_map[$table] = $class;
 	}
 	
 	
@@ -268,17 +268,17 @@ class fORM
 	
 	
 	/**
-	 * Takes a table name and turns it into a class name - uses custom mapping if set
+	 * Takes a table and turns it into a class name - uses custom mapping if set
 	 * 
-	 * @param  string $table_name  The table name
+	 * @param  string $table  The table name
 	 * @return string  The class name
 	 */
-	static public function classize($table_name)
+	static public function classize($table)
 	{
-		if (!isset(self::$table_class_map[$table_name])) {
-			self::$table_class_map[$table_name] = fGrammar::camelize(fGrammar::singularize($table_name), TRUE);
+		if (!isset(self::$table_class_map[$table])) {
+			self::$table_class_map[$table] = fGrammar::camelize(fGrammar::singularize($table), TRUE);
 		}
-		return self::$table_class_map[$table_name];
+		return self::$table_class_map[$table];
 	}
 	
 	
@@ -287,18 +287,18 @@ class fORM
 	 * 
 	 * Normally this would be called from an __autoload() function
 	 * 
-	 * @param  string $class_name  The name of the class to create
+	 * @param  string $class  The name of the class to create
 	 * @return void
 	 */
-	static public function createActiveRecordClass($class_name)
+	static public function createActiveRecordClass($class)
 	{
-		if (class_exists($class_name, FALSE)) {
+		if (class_exists($class, FALSE)) {
 			return;
 		}
 		$tables = fORMSchema::getInstance()->getTables();
-		$table_name = self::tablize($class_name);
-		if (in_array($table_name, $tables)) {
-			eval('class ' . $class_name . ' extends fActiveRecord { };');
+		$table = self::tablize($class);
+		if (in_array($table, $tables)) {
+			eval('class ' . $class . ' extends fActiveRecord { };');
 			return;
 		}
 		
@@ -306,7 +306,7 @@ class fORM
 			'fProgrammerException',
 			fGrammar::compose(
 				'The class specified, %s, does not correspond to a database table',
-				fCore::dump($class_name)
+				fCore::dump($class)
 			)
 		);
 	}
@@ -734,12 +734,12 @@ class fORM
 	{
 		$class = self::getClassName($class);
 		
-		if (!$table_name = array_search($class, self::$table_class_map)) {
-			$table_name = fGrammar::underscorize(fGrammar::pluralize($class));
-			self::$table_class_map[$table_name] = $class;
+		if (!$table = array_search($class, self::$table_class_map)) {
+			$table = fGrammar::underscorize(fGrammar::pluralize($class));
+			self::$table_class_map[$table] = $class;
 		}
 		
-		return $table_name;
+		return $table;
 	}
 	
 	

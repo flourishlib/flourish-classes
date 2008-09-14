@@ -65,7 +65,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Prepends the table_name. to the keys of the array
+	 * Prepends the table to the keys of the array
 	 * 
 	 * @internal
 	 * 
@@ -88,7 +88,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Prepends the table_name. to the values of the array
+	 * Prepends the table to the values of the array
 	 * 
 	 * @internal
 	 * 
