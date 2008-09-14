@@ -1045,7 +1045,7 @@ abstract class fActiveRecord
 		
 		// Turn like-breaks into breaks for text fields and add links
 		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
-			return fHTML::createLinks(fHTML::convertNewlines(fHTML::prepare($value)));
+			return fHTML::makeLinks(fHTML::convertNewlines(fHTML::prepare($value)));
 		}
 		
 		// Anything that has gotten to here is a string value, or is not the

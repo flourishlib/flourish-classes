@@ -23,7 +23,7 @@ class fHTML
 	 * @param  string $content  The HTML content to check
 	 * @return boolean  If the content contains a block level tag
 	 */
-	static public function checkForBlockLevelHTML($content)
+	static public function containsBlockLevelHTML($content)
 	{
 		static $inline_tags = '<a><abbr><acronym><b><big><br><button><cite><code><del><dfn><em><font><i><img><input><ins><kbd><label><q><s><samp><select><small><span><strike><strong><sub><sup><textarea><tt><u><var>';
 		return strip_tags($content, $inline_tags) != $content;
@@ -44,13 +44,37 @@ class fHTML
 	
 	
 	/**
+	 * Converts all html entities to normal characters, using UTF-8
+	 * 
+	 * @param  string $content  The content to decode
+	 * @return string  The decoded content
+	 */
+	static public function decode($content)
+	{
+		return html_entity_decode($content, ENT_COMPAT, 'UTF-8');
+	}
+	
+	
+	/**
+	 * Converts all special characters to entites, using UTF-8.
+	 * 
+	 * @param  string $content  The content to encode
+	 * @return string  The encoded content
+	 */
+	static public function encode($content)
+	{
+		return htmlentities($content, ENT_COMPAT, 'UTF-8');
+	}
+	
+	
+	/**
 	 * Takes a block of text and converts all URLs into HTML links
 	 * 
 	 * @param  string  $content           The content to parse for links
 	 * @param  integer $link_text_length  If non-zero, all link text will be truncated to this many characters
 	 * @return string  The content with all URLs converted to HTML link
 	 */
-	static public function createLinks($content, $link_text_length=0)
+	static public function makeLinks($content, $link_text_length=0)
 	{
 		// Determine what replacement to perform
 		if ($link_text_length) {
@@ -109,30 +133,6 @@ class fHTML
 	
 	
 	/**
-	 * Converts all html entities to normal characters, using UTF-8
-	 * 
-	 * @param  string $content  The content to decode
-	 * @return string  The decoded content
-	 */
-	static public function decode($content)
-	{
-		return html_entity_decode($content, ENT_COMPAT, 'UTF-8');
-	}
-	
-	
-	/**
-	 * Converts all special characters to entites, using UTF-8.
-	 * 
-	 * @param  string $content  The content to encode
-	 * @return string  The encoded content
-	 */
-	static public function encode($content)
-	{
-		return htmlentities($content, ENT_COMPAT, 'UTF-8');
-	}
-	
-	
-	/**
 	 * Prepares content for display in UTF-8 encoded HTML - allows HTML tags
 	 * 
 	 * @param  string $content  The content to prepare
@@ -186,7 +186,7 @@ class fHTML
 		}
 		
 		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
-		if (self::checkForBlockLevelHTML($content)) {
+		if (self::containsBlockLevelHTML($content)) {
 			echo '<div' . $class . '>' . self::prepare($content) . '</div>';
 		} else {
 			echo '<p' . $class . '>' . self::prepare($content) . '</p>';
