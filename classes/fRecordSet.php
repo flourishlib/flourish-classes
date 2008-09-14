@@ -660,7 +660,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @return void
 	 */
-	public function flagForAssociation()
+	public function flagAssociate()
 	{
 		$this->associate = TRUE;
 	}

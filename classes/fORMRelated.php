@@ -50,7 +50,7 @@ class fORMRelated
 		} else {
 			$records = clone $records_to_associate;	
 		}
-		$records->flagForAssociation();
+		$records->flagAssociate();
 		self::setRecords($class, $related_records, $related_class, $records, $route);
 	}
 	
@@ -389,7 +389,7 @@ class fORMRelated
 		}
 		
 		$record_set = fRecordSet::buildFromRecords($related_class, $records);
-		$record_set->flagForAssociation();
+		$record_set->flagAssociate();
 		self::setRecords($class, $related_records, $related_class, $record_set, $route);
 	}
 	
