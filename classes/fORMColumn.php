@@ -52,7 +52,7 @@ class fORMColumn
 	 */
 	static public function configureEmailColumn($class, $column)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -100,7 +100,7 @@ class fORMColumn
 	 */
 	static public function configureLinkColumn($class, $column)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -159,7 +159,7 @@ class fORMColumn
 	 */
 	static public function configureNumberColumn($class, $column)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -226,7 +226,7 @@ class fORMColumn
 	 */
 	static public function configureRandomColumn($class, $column, $type, $length)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		

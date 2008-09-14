@@ -34,7 +34,7 @@ class fORMOrdering
 	 */
 	static public function configureOrderingColumn($class, $column)
 	{
-		$class       = fORM::getClassName($class);
+		$class       = fORM::getClass($class);
 		$table       = fORM::tablize($class);
 		$data_type   = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		$unique_keys = fORMSchema::getInstance()->getKeys($table, 'unique');
@@ -481,7 +481,7 @@ class fORMOrdering
 	 */
 	static public function validate($object, &$values, &$old_values, &$related_records, &$validation_messages)
 	{
-		$class = fORM::getClassName($object);
+		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
 		$column        = self::$ordering_columns[$class]['column'];

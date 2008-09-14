@@ -61,7 +61,7 @@ class fORMValidation
 	 */
 	static public function addConditionalValidationRule($class, $main_column, $conditional_values, $conditional_columns)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (!isset(self::$conditional_validation_rules[$class])) {
 			self::$conditional_validation_rules[$class] = array();
@@ -86,7 +86,7 @@ class fORMValidation
 	 */
 	static public function addManyToManyValidationRule($class, $related_class, $route=NULL)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
 			self::$related_one_or_more_validation_rules[$class] = array();
@@ -112,7 +112,7 @@ class fORMValidation
 	 */
 	static public function addOneOrMoreValidationRule($class, $columns)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		settype($columns, 'array');
 		
@@ -137,7 +137,7 @@ class fORMValidation
 	 */
 	static public function addOneToManyValidationRule($class, $related_class, $route=NULL)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
 			self::$related_one_or_more_validation_rules[$class] = array();
@@ -163,7 +163,7 @@ class fORMValidation
 	 */
 	static public function addOnlyOneValidationRule($class, $columns)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		settype($columns, 'array');
 		
@@ -189,7 +189,7 @@ class fORMValidation
 	 */
 	static private function checkAgainstSchema($object, $column, &$values, &$old_values)
 	{
-		$class = fORM::getClassName($object);
+		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
@@ -449,7 +449,7 @@ class fORMValidation
 	 */
 	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
-		$class = fORM::getClassName($object);
+		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
 		// We don't need to check if the record is existing
@@ -513,7 +513,7 @@ class fORMValidation
 	 */
 	static private function checkUniqueConstraints($object, $column, &$values, &$old_values)
 	{
-		$class = fORM::getClassName($object);
+		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
 		$key_info = fORMSchema::getInstance()->getKeys($table);
@@ -609,7 +609,7 @@ class fORMValidation
 	 */
 	static public function reorderMessages($class, &$validation_messages)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (!isset(self::$message_orders[$class])) {
 			return;
@@ -648,7 +648,7 @@ class fORMValidation
 	 */
 	static public function setMessageOrder($class, $matches)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		self::$message_orders[$class] = $matches;
 	}
 	
@@ -665,7 +665,7 @@ class fORMValidation
 	 */
 	static public function validate($object, $values, $old_values)
 	{
-		$class = fORM::getClassName($object);
+		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
 		self::initializeRuleArrays($class);

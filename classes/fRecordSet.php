@@ -695,7 +695,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @return string  The class name of the records in the set
 	 */
-	public function getClassName()
+	public function getClass()
 	{
 		return $this->class;
 	}

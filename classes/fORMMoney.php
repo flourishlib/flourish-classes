@@ -39,7 +39,7 @@ class fORMMoney
 	 */
 	static public function configureMoneyColumn($class, $column, $currency_column=NULL)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		

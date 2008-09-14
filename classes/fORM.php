@@ -109,7 +109,7 @@ class fORM
 	 */
 	static public function callHookCallback(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
-		$class = self::getClassName($object);
+		$class = self::getClass($object);
 		
 		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
 			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
@@ -173,7 +173,7 @@ class fORM
 	 */
 	static public function callReflectCallbacks(fActiveRecord $object, &$signatures, $include_doc_comments)
 	{
-		$class = self::getClassName($object);
+		$class = self::getClass($object);
 		
 		if (!isset(self::$reflect_callbacks[$class]) && !isset(self::$reflect_callbacks['*'])) {
 			return;
@@ -217,7 +217,7 @@ class fORM
 	 */
 	static public function checkHookCallback($class, $hook, $callback=NULL)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
 			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
@@ -251,7 +251,7 @@ class fORM
 	 */
 	static public function checkIdentityMap($class, $primary_key_data)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$identity_map[$class])) {
 			return FALSE;
@@ -341,7 +341,7 @@ class fORM
 	 */
 	static public function flagConfigured($class)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		self::$configured[$class] = TRUE;
 	}
 	
@@ -351,10 +351,10 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed $class  The class to get the name of
+	 * @param  mixed $class  The object to get the name of, or possibly a string already containing the class
 	 * @return string  The class name
 	 */
-	static public function getClassName($class)
+	static public function getClass($class)
 	{
 		if (is_object($class)) { return get_class($class); }
 		return $class;
@@ -372,7 +372,7 @@ class fORM
 	 */
 	static public function getColumnName($class, $column)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$column_names[$class])) {
 			self::$column_names[$class] = array();
@@ -396,7 +396,7 @@ class fORM
 	 */
 	static public function getRecordName($class)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$record_names[$class])) {
 			self::$record_names[$class] = fGrammar::humanize($class);
@@ -416,7 +416,7 @@ class fORM
 	 */
 	static public function isConfigured($class)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		return !empty(self::$configured[$class]);
 	}
 	
@@ -433,7 +433,7 @@ class fORM
 	 */
 	static public function objectify($class, $column, $value)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
 			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
@@ -473,7 +473,7 @@ class fORM
 	 */
 	static public function overrideColumnName($class, $column, $column_name)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$column_names[$class])) {
 			self::$column_names[$class] = array();
@@ -492,7 +492,7 @@ class fORM
 	 */
 	static public function overrideRecordName($class, $record_name)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		self::$record_names[$class] = $record_name;
 	}
 	
@@ -522,7 +522,7 @@ class fORM
 	 */
 	static public function registerHookCallback($class, $hook, $callback)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		$replace_hook = preg_match('#^replace::[\w_]+\(\)$#', $hook);
 		
 		static $valid_hooks = array(
@@ -616,7 +616,7 @@ class fORM
 	 */
 	static public function registerObjectifyCallback($class, $column, $callback)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$objectify_callbacks[$class])) {
 			self::$objectify_callbacks[$class] = array();
@@ -644,7 +644,7 @@ class fORM
 	 */
 	static public function registerReflectCallback($class, $callback)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$reflect_callbacks[$class])) {
 			self::$reflect_callbacks[$class] = array();
@@ -666,7 +666,7 @@ class fORM
 	 */
 	static public function registerScalarizeCallback($class, $column, $callback)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!isset(self::$scalarize_callbacks[$class])) {
 			self::$scalarize_callbacks[$class] = array();
@@ -687,7 +687,7 @@ class fORM
 	 */
 	static public function saveToIdentityMap($object, $primary_key_data)
 	{
-		$class = self::getClassName($object);
+		$class = self::getClass($object);
 		
 		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array();
@@ -711,7 +711,7 @@ class fORM
 	 */
 	static public function scalarize($class, $column, $value)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
 			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
@@ -727,12 +727,12 @@ class fORM
 	/**
 	 * Takes a class name (or class) and turns it into a table name. Uses custom mapping if set.
 	 * 
-	 * @param  mixed $class  The name of the class or the class to extract the name from
+	 * @param  mixed $class  he class name or instance of the class
 	 * @return string  The table name
 	 */
 	static public function tablize($class)
 	{
-		$class = self::getClassName($class);
+		$class = self::getClass($class);
 		
 		if (!$table = array_search($class, self::$table_class_map)) {
 			$table = fGrammar::underscorize(fGrammar::pluralize($class));

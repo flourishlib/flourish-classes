@@ -87,7 +87,7 @@ class fORMRelated
 		
 		} else {
 			// When joining to the same table, we have to use a different column
-			$same_class = $related_class == fORM::getClassName($class);
+			$same_class = $related_class == fORM::getClass($class);
 			if ($same_class && isset($relationship['join_table'])) {
 				$column = $table . '{' . $relationship['join_table'] . '}.' . $relationship['column'];
 			} elseif ($same_class) {
@@ -259,7 +259,7 @@ class fORMRelated
 	{
 		$table = fORM::tablize($class);
 		
-		$related_class = fORM::getClassName($related_class);
+		$related_class = fORM::getClass($related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
@@ -322,7 +322,7 @@ class fORMRelated
 	{
 		$table = fORM::tablize($class);
 		
-		$related_class = fORM::getClassName($related_class);
+		$related_class = fORM::getClass($related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
@@ -600,7 +600,7 @@ class fORMRelated
 			$relationship['related_column'] . '=' => $column_value
 		);
 		
-		$related_class    = $record_set->getClassName();
+		$related_class    = $record_set->getClass();
 		$existing_records = fRecordSet::build($related_class, $where_conditions);
 		
 		$existing_primary_keys  = $existing_records->getPrimaryKeys();

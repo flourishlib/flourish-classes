@@ -78,7 +78,7 @@ class fORMFile
 	 */
 	static public function addFImageMethodCall($class, $column, $method, $parameters=array())
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (!array_key_exists($column, self::$image_upload_columns[$class])) {
 			fCore::toss(
@@ -115,7 +115,7 @@ class fORMFile
 	 */
 	static public function addFUploadMethodCall($class, $column, $method, $parameters=array())
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (empty(self::$file_upload_columns[$class][$column])) {
 			fCore::toss(
@@ -195,7 +195,7 @@ class fORMFile
 	 */
 	static public function configureFileUploadColumn($class, $column, $directory)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -307,7 +307,7 @@ class fORMFile
 	 */
 	static public function configureColumnInheritance($class, $column, $inherit_from_column)
 	{
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (empty(self::$column_inheritence[$class])) {
 			self::$column_inheritence[$class] = array();
@@ -347,7 +347,7 @@ class fORMFile
 		
 		self::configureFileUploadColumn($class, $column, $directory);
 		
-		$class = fORM::getClassName($class);
+		$class = fORM::getClass($class);
 		
 		if (empty(self::$image_upload_columns[$class])) {
 			self::$image_upload_columns[$class] = array();

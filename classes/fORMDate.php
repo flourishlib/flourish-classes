@@ -52,7 +52,7 @@ class fORMDate
 	 */
 	static public function configureDateCreatedColumn($class, $column)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -100,7 +100,7 @@ class fORMDate
 	 */
 	static public function configureDateUpdatedColumn($class, $column)
 	{
-		$class     = fORM::getClassName($class);
+		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
 		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
 		
@@ -149,7 +149,7 @@ class fORMDate
 	 */
 	static public function configureTimezoneColumn($class, $timestamp_column, $timezone_column)
 	{
-		$class               = fORM::getClassName($class);
+		$class               = fORM::getClass($class);
 		$table               = fORM::tablize($class);
 		$timestamp_data_type = fORMSchema::getInstance()->getColumnInfo($table, $timestamp_column, 'type');
 		
