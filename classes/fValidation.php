@@ -39,7 +39,7 @@ class fValidation
 	/**
 	 * Adds form fields to be required to be blank or a valid email address
 	 * 
-	 * Use {@link fValidation::setRequiredFields()} to not allow blank values.
+	 * Use {@link fValidation::addRequiredFields()} to not allow blank values.
 	 * 
 	 * @param  string $field,...  Any number of fields to required valid email addresses for
 	 * @return void
@@ -262,7 +262,7 @@ class fValidation
 				'fValidationException',
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					fGrammar::compose("The following problems we found:"),
+					fGrammar::compose("The following problems were found:"),
 					join("</li>\n<li>", $messages)
 				)
 			);
