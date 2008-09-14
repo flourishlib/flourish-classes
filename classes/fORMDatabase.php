@@ -715,7 +715,7 @@ class fORMDatabase
 				'fProgrammerException',
 				fGrammar::compose(
 					'The method %1$s needs to be called before %2$s',
-					'initialize()',
+					'attach()',
 					'getInstance()'
 				)
 			);
