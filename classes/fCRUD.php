@@ -293,13 +293,12 @@ class fCRUD
 	/**
 	 * Removes list items from an fPrintableException based on their contents
 	 * 
-	 * @param  fPrintableException $exception   The exception to remove field names from
-	 * @param  string              $filter,...  If this content is found in a list item, the list item will be removed
+	 * @param  fPrintableException $exception  The exception to remove field names from
+	 * @param  array               $filters    An array of strings to search for, if a string is found in a list item, the list item will be removed
 	 * @return void
 	 */
-	static public function removeListItems(fPrintableException $exception, $filter)
+	static public function removeListItems(fPrintableException $exception, $filters)
 	{
-		$filters = array_slice(func_get_args(), 1);
 		$message = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
