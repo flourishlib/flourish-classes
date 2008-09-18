@@ -66,7 +66,7 @@ class fCryptography
 		
 	
 	/**
-	 * Decrypts ciphertext encrypted using public-key encryption via {@link fCryptography::publicKeyEncrypt()}
+	 * Decrypts ciphertext encrypted using public-key encryption via {@link publicKeyEncrypt()}
 	 * 
 	 * A public key (X.509 certificate) is required for encryption and a
 	 * private key (PEM) is required for decryption.
@@ -297,7 +297,7 @@ class fCryptography
 	
 	
 	/**
-	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link fCryptography::symmetricKeyEncrypt()}
+	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link symmetricKeyEncrypt()}
 	 * 
 	 * Since this is symmetric-key cryptography, the same key is used for
 	 * encryption and decryption.
