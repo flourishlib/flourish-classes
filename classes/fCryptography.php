@@ -286,7 +286,23 @@ class fCryptography
 			return;
 		}
 		
-		$seed = md5(microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__));
+		// On linux/unix/solaris we should be able to use /dev/urandom
+		if (fCore::getOS() != 'windows' && @$handle = fopen('/dev/urandom', 'rb')) {
+			$bytes = fread($handle, 32);
+			fclose($handle);
+				
+		// On windows we should be able to use the Cryptographic Application Programming Interface COM object
+		} elseif (fCore::getOS() == 'windows' && class_exists('COM', FALSE)) {
+			$capi  = new COM('CAPICOM.Utilities.1');
+			$bytes = base64_decode($capi->getrandom(32, 0));
+			unset($capi);
+		
+		// Otherwise we get some of the most unique info we can		
+		} else {
+			$bytes = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);	
+		}
+		
+		$seed = md5($bytes);
 		$seed = base_convert($seed, 16, 10);
 		$seed = (double) substr($seed, 0, 13) + (double) substr($seed, 14, 13);
 		
