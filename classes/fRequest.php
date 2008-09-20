@@ -5,6 +5,9 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * {@link http://flourishlib.com/docs/UTF-8} for more information.
  * 
+ * Please also note that using this class in a PUT or DELETE request will
+ * cause the php://input stream to be consumed, and thus no longer available.
+ * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -22,37 +25,53 @@ class fRequest
 	 * 
 	 * @var array
 	 */
-	static private $_files = NULL;
+	static private $backup_files = NULL;
 	
 	/**
 	 * A backup copy of $_GET for unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $_get = NULL;
+	static private $backup_get = NULL;
 	
 	/**
 	 * A backup copy of $_POST for unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $_post = NULL;
+	static private $backup_post = NULL;
+	
+	/**
+	 * A backup copy of the local $_PUT for unfilter()
+	 * 
+	 * @var array
+	 */
+	static private $backup_put_delete = NULL;
+	
+	/**
+	 * The key/value pairs from the post data of a PUT/DELETE request
+	 * 
+	 * @var array
+	 */
+	static private $put_delete = NULL;
 	
 	
 	/**
-	 * Indicated if the parameter specified is set in the $_GET or $_POST superglobals
+	 * Indicated if the parameter specified is set in the $_GET or $_POST superglobals or in the post data of a PUT or DELETE request
 	 * 
 	 * @param  string $key  The key to check
 	 * @return boolean  If the parameter is set
 	 */
 	static public function check($key)
 	{
-		return isset($_GET[$key]) || isset($_POST[$key]);
+		self::initPutDelete();
+		
+		return isset($_GET[$key]) || isset($_POST[$key]) || isset(self::$put_delete[$key]);
 	}
 	
 	
 	/**
-	 * Parses through $_FILES, $_GET and $_POST and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
+	 * Parses through $_FILES, $_GET, $_POST and the PUT/DELETE post data and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
 	 * 
 	 * @internal
 	 * 
@@ -62,46 +81,37 @@ class fRequest
 	 */
 	static public function filter($prefix, $key)
 	{
-		self::$_files   = $_FILES;
-		self::$_get     = $_GET;
-		self::$_post    = $_POST;
+		self::initPutDelete();
+		
+		$regex = '#^' . preg_quote($prefix, '#') . '#';
+		
+		self::$backup_files = $_FILES;
 		
 		$_FILES = array();
-		foreach (self::$_files as $field => $value) {
-			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
-				if (is_array($value)) {
-					if (isset($value['name'][$key])) {
-						$_FILES[$new_field]['name']     = $value['name'][$key];
-						$_FILES[$new_field]['type']     = $value['type'][$key];
-						$_FILES[$new_field]['tmp_name'] = $value['tmp_name'][$key];
-						$_FILES[$new_field]['error']    = $value['error'][$key];
-						$_FILES[$new_field]['size']     = $value['size'][$key];
-					}
-				}
-			}
-		}
-			
-		$_GET = array();
-		foreach (self::$_get as $field => $value) {
-			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
-				if (is_array($value)) {
-					if (isset($value[$key])) {
-						$_GET[$new_field] = $value[$key];
-					}
-				}
+		foreach (self::$backup_files as $field => $value) {
+			if (strpos($field, $prefix) === 0 && is_array($value) && isset($value['name'][$key])) {
+				$new_field = preg_replace($regex, '', $field);
+				$_FILES[$new_field]['name']     = $value['name'][$key];
+				$_FILES[$new_field]['type']     = $value['type'][$key];
+				$_FILES[$new_field]['tmp_name'] = $value['tmp_name'][$key];
+				$_FILES[$new_field]['error']    = $value['error'][$key];
+				$_FILES[$new_field]['size']     = $value['size'][$key];
 			}
 		}
 		
-		$_POST = array();
-		foreach (self::$_post as $field => $value) {
-			if (strpos($field, $prefix) === 0) {
-				$new_field = preg_replace('#^' . preg_quote($prefix, '#') . '#', '', $field);
-				if (is_array($value)) {
-					if (isset($value[$key])) {
-						$_POST[$new_field] = $value[$key];
-					}
+		$globals = array(
+			'get'        => array('array' => &$_GET,             'backup' => &self::$backup_get),
+			'post'       => array('array' => &$_POST,            'backup' => &self::$backup_post),
+			'put/delete' => array('array' => &self::$put_delete, 'backup' => &self::$backup_put_delete)
+		);
+		
+		foreach ($globals as $refs) {
+			$refs['backup'] = $refs['array'];
+			$refs['array']  = array();	
+			foreach ($refs['backup'] as $field => $value) {
+				if (strpos($field, $prefix) === 0 && is_array($value) && isset($value[$key])) {
+					$new_field = preg_replace($regex, '', $field);
+					$refs['array'][$new_field] = $value[$key];
 				}
 			}
 		}
@@ -109,7 +119,7 @@ class fRequest
 	
 	
 	/**
-	 * Gets a value from the $_POST or $_GET superglobals (in that order)
+	 * Gets a value from the DELETE/PUT post data, $_POST or $_GET superglobals (in that order)
 	 * 
 	 * A value that === '' and is not cast to a specific type will become NULL.
 	 *  
@@ -123,14 +133,18 @@ class fRequest
 	 */
 	static public function get($key, $cast_to=NULL, $default_value=NULL)
 	{
+		self::initPutDelete();
+		
 		$value = $default_value;
-		if (isset($_POST[$key])) {
+		if (isset(self::$put_delete[$key])) {
+			$value = self::$put_delete[$key];
+		} elseif (isset($_POST[$key])) {
 			$value = $_POST[$key];
 		} elseif (isset($_GET[$key])) {
 			$value = $_GET[$key];
 		}
 		
-		if (get_magic_quotes_gpc()) {
+		if (get_magic_quotes_gpc() && (self::isPost() || self::isGet())) {
 			if (is_array($value)) {
 				$value = array_map('stripslashes', $value);
 			} else {
@@ -233,6 +247,47 @@ class fRequest
 	
 	
 	/**
+	 * Parses post data for PUT and DELETE HTTP methods
+	 * 
+	 * @return void
+	 */
+	static private function initPutDelete()
+	{
+		if (is_array(self::$put_delete)) {
+			return;	
+		}
+		
+		if (self::isPut() || self::isDelete()) {
+			parse_str(file_get_contents('php://input'), self::$put_delete);
+		} else {
+			self::$put_delete = array();
+		}
+	}
+	
+	
+	/**
+	 * Indicates if the URL was accessed via the DELETE HTTP method
+	 * 
+	 * @return boolean  If the URL was accessed via the DELETE HTTP method
+	 */
+	static public function isDelete()
+	{
+		return strtolower($_SERVER['REQUEST_METHOD']) == 'delete';
+	}
+	
+	
+	/**
+	 * Indicates if the URL was accessed via the GET HTTP method
+	 * 
+	 * @return boolean  If the URL was accessed via the GET HTTP method
+	 */
+	static public function isGet()
+	{
+		return strtolower($_SERVER['REQUEST_METHOD']) == 'get';
+	}
+	
+	
+	/**
 	 * Indicates if the URL was accessed via the POST HTTP method
 	 * 
 	 * @return boolean  If the URL was accessed via the POST HTTP method
@@ -240,6 +295,17 @@ class fRequest
 	static public function isPost()
 	{
 		return strtolower($_SERVER['REQUEST_METHOD']) == 'post';
+	}
+	
+	
+	/**
+	 * Indicates if the URL was accessed via the PUT HTTP method
+	 * 
+	 * @return boolean  If the URL was accessed via the PUT HTTP method
+	 */
+	static public function isPut()
+	{
+		return strtolower($_SERVER['REQUEST_METHOD']) == 'put';
 	}
 	
 	
@@ -254,19 +320,18 @@ class fRequest
 	 */
 	static public function overrideAction($redirect=NULL)
 	{
+		self::initPutDelete();
+		
 		$found = FALSE;
 		
-		foreach ($_GET as $key => $value) {
-			if (substr($key, 0, 8) == 'action::') {
-				$found = $_GET['action'] = substr($key, 8);
-				unset($_GET[$key]);
-			}
-		}
+		$globals = array(&$_GET, &$_POST, &self::$put_delete);
 		
-		foreach ($_POST as $key => $value) {
-			if (substr($key, 0, 8) == 'action::') {
-				$found = $_POST['action'] = substr($key, 8);
-				unset($_POST[$key]);
+		foreach ($globals as &$global) {
+			foreach ($global as $key => $value) {
+				if (substr($key, 0, 8) == 'action::') {
+					$found = (boolean) $global['action'] = substr($key, 8);
+					unset($global[$key]);
+				}
 			}
 		}
 		
@@ -363,7 +428,34 @@ class fRequest
 	
 	
 	/**
-	 * Returns $_GET, $_POST and $_FILES to the state they were at before filter() was called
+	 * Sets a value into the appropriate superglobal ($_GET or $_POST) based on what HTTP method was used for the request
+	 * 
+	 * @param  string $key    The key to set the value to
+	 * @param  mixed  $value  The value to set
+	 * @return void
+	 */
+	static public function set($key, $value)
+	{		
+		if (self::isPost()) {
+			$_POST[$key] = $value;	
+			return;
+		}
+		
+		if (self::isGet()) {
+			$_GET[$key] = $value;	
+			return;
+		}
+		
+		if (self::isDelete() || self::isDelete()) {
+			self::initPutDelete();
+			self::$put_delete[$key] = $value;	
+			return;
+		}
+	}
+	
+	
+	/**
+	 * Returns $_GET, $_POST and $_FILES and the PUT/DELTE post data to the state they were at before filter() was called
 	 * 
 	 * @internal
 	 * 
@@ -371,7 +463,7 @@ class fRequest
 	 */
 	static public function unfilter()
 	{
-		if (self::$_files === NULL || self::$_get === NULL || self::$_post === NULL) {
+		if (self::$backup_get === NULL) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
@@ -381,9 +473,11 @@ class fRequest
 				)
 			);
 		}
-		$_FILES   = self::$_files;
-		$_GET     = self::$_get;
-		$_POST    = self::$_post;
+		
+		$_FILES           = self::$backup_files;
+		$_GET             = self::$backup_get;
+		$_POST            = self::$backup_post;
+		self::$put_delete = self::$backup_put_delete;
 	}
 	
 	
