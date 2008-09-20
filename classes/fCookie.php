@@ -60,7 +60,11 @@ class fCookie
 	static public function get($name, $default_value=NULL)
 	{
 		if (isset($_COOKIE[$name])) {
-			return $_COOKIE[$name];	
+			$value = $_COOKIE[$name];
+			if (get_magic_quotes_gpc()) {
+				$value = stripslashes($value);
+			}
+			return $value;
 		}
 		return $default_value;
 	}
