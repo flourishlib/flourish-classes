@@ -24,12 +24,9 @@ class fEmail
 	 * A regular expression to match an email address, exluding those with comments and folding whitespace
 	 * 
 	 * The matches will be:
-	 * 
 	 *   - [0]: The whole email address
 	 *   - [1]: The name before the @
 	 *   - [2]: The domain/ip after the @
-	 * 
-	 * @internal
 	 * 
 	 * @var string
 	 */
@@ -45,14 +42,11 @@ class fEmail
 	 * A regular expression to match a 'name <email>' string, exluding those with comments and folding whitespace
 	 * 
 	 * The matches will be:
-	 * 
 	 *   - [0]: The whole name and email address
 	 *   - [1]: The name
 	 *   - [2]: The whole email address
 	 *   - [3]: The email username before the @
 	 *   - [4]: The email domain/ip after the @
-	 * 
-	 * @internal
 	 * 
 	 * @var string
 	 */
@@ -958,7 +952,7 @@ class fEmail
 	 * Adds the From: email address to the email
 	 * 
 	 * @param  string $email  The email address being sent from
-	 * @param  string $name   The from email user's name
+	 * @param  string $name   The from email user's name - unfortunately on windows this is ignored
 	 * @return void
 	 */
 	public function setFromEmail($email, $name=NULL)
