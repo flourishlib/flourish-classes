@@ -419,6 +419,14 @@ class fORMDatabase
 			settype($values, 'array');
 			if (!$values) { $values = array(NULL); }
 			
+			$new_values = array();
+			foreach ($values as $value) {
+				if (is_object($value) && is_callable(array($value, '__toString'))) {
+					$value = $value->__toString();
+				}
+				$new_values[] = $value;
+			}
+			$values = $new_values;
 			
 			// Multi-column condition
 			if (strpos($column, '|') !== FALSE) {

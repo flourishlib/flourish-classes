@@ -636,6 +636,17 @@ class fDatabase
 			);	
 		}
 		
+		// Convert all objects into strings
+		$new_values = array();
+		foreach ($values as $value) {
+			if (is_object($value) && is_callable(array($value, '__toString'))) {
+				$value = $value->__toString();
+			}
+			$new_values[] = $value;
+		}
+		$values = $new_values;
+		
+		// Handle single value escaping
 		$value = array_shift($values);
 		
 		switch ($sql_or_type) {
@@ -668,6 +679,7 @@ class fDatabase
 				return $this->escapeTimestamp($value);
 		}	
 		
+		// Handle SQL escaping
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql_or_type, $matches);
 		
 		foreach ($matches[0] as $match) {
