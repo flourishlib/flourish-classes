@@ -733,7 +733,16 @@ class fORMDatabase
 	
 	
 	/**
-	 * Finds all of the table names in the SQL and creates a from clause
+	 * Finds all of the table names in the SQL and creates the appropriate from and group clauses with all necessary joins
+	 * 
+	 * The SQL string should contain two placeholders, :from_clause and
+	 * :group_by_clause. All columns should be qualified with their full table
+	 * name. Here is an example SQL string to pass in presumming that the
+	 * tables users and groups are in a relationship:
+	 * 
+	 * <pre>
+	 * SELECT users.* FROM :from_clause WHERE groups.group_id = 5 :group_by_clause ORDER BY lower(users.first_name) ASC
+	 * </pre>
 	 * 
 	 * @internal
 	 * 
