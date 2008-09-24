@@ -15,6 +15,19 @@
 class fMessaging
 {
 	/**
+	 * Checks to see if a message exists of the name specified for the recipient specified
+	 * 
+	 * @param  string $name       The name of the message
+	 * @param  string $recipient  The intended recipient
+	 * @return boolean  If a message of the type and recipient specified exists
+	 */
+	static public function check($name, $recipient)
+	{
+		return fSession::get($name, NULL, __CLASS__ . '::' . $recipient . '::') !== NULL;
+	}
+	
+	
+	/**
 	 * Creates a message that is stored in the session and retrieved by another page
 	 * 
 	 * @param  string $name       A name for the message
