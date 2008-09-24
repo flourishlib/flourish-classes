@@ -206,11 +206,11 @@ class fTimestamp
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $datetime  The date/time to represent
+	 * @param  fTimestamp|object|string|integer $datetime  The date/time to represent, NULL is interpreted as now
 	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}.
 	 * @return fTimestamp
 	 */
-	public function __construct($datetime, $timezone=NULL)
+	public function __construct($datetime=NULL, $timezone=NULL)
 	{
 		self::checkPHPVersion();
 		
@@ -227,13 +227,25 @@ class fTimestamp
 				);
 			}
 			
+		} elseif ($datetime instanceof fTimestamp) {
+			$timezone = $datetime->getTimezone();
+			
 		} else {
 			$timezone = $default_tz;
 		}
 		
 		$this->timezone = $timezone;
 		
-		$timestamp = strtotime($datetime . ' ' . $timezone);
+		if ($datetime === NULL) {
+			$timestamp = strtotime('now');
+		} elseif (is_numeric($datetime) && ctype_digit($datetime)) {
+			$timestamp = (int) $datetime;
+		} elseif (is_object($datetime) && is_callable(array($datetime, '__toString'))) {
+			$timestamp = strtotime($datetime->__toString() . ' ' . $timezone);
+		} else {
+			$timestamp = strtotime($datetime . ' ' . $timezone);
+		}
+		
 		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss(
 				'fValidationException',
@@ -359,18 +371,18 @@ class fTimestamp
 	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
 	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
-	 * @param  fTimestamp $other_timestamp  The timestamp to create the difference with, passing NULL will get the difference with the current timestamp
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to create the difference with, NULL is interpreted as now
 	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
 	 */
-	public function getFuzzyDifference(fTimestamp $other_timestamp=NULL)
+	public function getFuzzyDifference($other_timestamp=NULL)
 	{
 		$relative_to_now = FALSE;
 		if ($other_timestamp === NULL) {
-			$other_timestamp = new fTimestamp('now');
 			$relative_to_now = TRUE;
 		}
+		$other_timestamp = new fTimestamp($other_timestamp);
 		
-		$diff = $this->timestamp - $other_timestamp->format('U');
+		$diff = $this->timestamp - $other_timestamp->timestamp;
 		
 		if (abs($diff) < 10) {
 			if ($relative_to_now) {
@@ -439,16 +451,13 @@ class fTimestamp
 	/**
 	 * Returns the difference between the two timestamps in seconds
 	 * 
-	 * @param  fTimestamp $other_timestamp  The timestamp to calculate the difference with, if NULL is passed will compare with current timestamp
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to calculate the difference with, NULL is interpreted as now
 	 * @return integer  The difference between the two timestamps in seconds, positive if $other_timestamp is before this time or negative if after
 	 */
-	public function getSecondsDifference(fTimestamp $other_timestamp=NULL)
+	public function getSecondsDifference($other_timestamp=NULL)
 	{
-		if ($other_timestamp === NULL) {
-			$other_timestamp = new fTimestamp('now');
-		}
-		
-		return $this->timestamp - $other_timestamp->format('U');
+		$other_timestamp = new fTimestamp($other_timestamp);
+		return $this->timestamp - $other_timestamp->timestamp;
 	}
 	
 	

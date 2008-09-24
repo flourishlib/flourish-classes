@@ -27,13 +27,22 @@ class fTime
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $time  The time to represent
+	 * @param  fTime|object|string|integer $time  The time to represent, NULL is interpreted as now
 	 * @return fTime
 	 */
-	public function __construct($time)
+	public function __construct($time=NULL)
 	{
-		$parsed = strtotime($time);
-		if ($parsed === FALSE || $parsed === -1) {
+		if ($time === NULL) {
+			$timestamp = strtotime('now');
+		} elseif (is_numeric($time) && ctype_digit($time)) {
+			$timestamp = (int) $time;
+		} elseif (is_object($time) && is_callable(array($time, '__toString'))) {
+			$timestamp = strtotime($time->__toString());
+		} else {
+			$timestamp = strtotime($time);
+		}
+		
+		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss(
 				'fValidationException',
 				fGrammar::compose(
@@ -42,7 +51,8 @@ class fTime
 				)
 			);
 		}
-		$this->set($parsed);
+		
+		$this->set($timestamp);
 	}
 	
 	
@@ -53,7 +63,7 @@ class fTime
 	 */
 	public function __toString()
 	{
-		return $this->format('H:i:s');
+		return date('H:i:s', $this->time);
 	}
 	
 	
@@ -131,18 +141,18 @@ class fTime
 	 * Values that are close to the next largest unit of measure will be rounded up:
 	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
 	 * 
-	 * @param  fTime $other_time  The time to create the difference with, passing NULL will get the difference with the current time
+	 * @param  fTime|object|string|integer $other_time  The time to create the difference with, NULL is interpreted as now
 	 * @return string  The fuzzy difference in time between the this time and the one provided
 	 */
-	public function getFuzzyDifference(fTime $other_time=NULL)
+	public function getFuzzyDifference($other_time=NULL)
 	{
 		$relative_to_now = FALSE;
 		if ($other_time === NULL) {
-			$other_time = new fTime('now');
 			$relative_to_now = TRUE;
 		}
+		$other_time = new fTime($other_time);
 		
-		$diff = $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
+		$diff = $this->time - $other_time->time;
 		
 		if (abs($diff) < 10) {
 			if ($relative_to_now) {
@@ -193,16 +203,13 @@ class fTime
 	/**
 	 * Returns the difference between the two times in seconds
 	 * 
-	 * @param  fTime $other_time  The time to calculate the difference with, if NULL is passed will compare with current time
+	 * @param  fTime|object|string|integer $other_time  The time to calculate the difference with, NULL is interpreted as now
 	 * @return integer  The difference between the two times in seconds, positive if $other_time is before this time or negative if after
 	 */
-	public function getSecondsDifference(fTime $other_time=NULL)
+	public function getSecondsDifference($other_time=NULL)
 	{
-		if ($other_time === NULL) {
-			$other_time = new fTime('now');
-		}
-		
-		return $this->time - strtotime($other_time->format('1970-01-01 H:i:s'));
+		$other_time = new fTime($other_time);
+		return $this->time - $other_time->time;
 	}
 	
 	

@@ -27,12 +27,21 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $date  The date to represent
+	 * @param  fDate|object|string|integer $date  The date to represent, NULL is interpreted as today
 	 * @return fDate
 	 */
-	public function __construct($date)
+	public function __construct($date=NULL)
 	{
-		$timestamp = strtotime($date);
+		if ($date === NULL) {
+			$timestamp = strtotime('now');
+		} elseif (is_numeric($date) && ctype_digit($date)) {
+			$timestamp = (int) $date;
+		} elseif (is_object($date) && is_callable(array($date, '__toString'))) {
+			$timestamp = strtotime($date->__toString());
+		} else {
+			$timestamp = strtotime($date);
+		}
+		
 		if ($timestamp === FALSE || $timestamp === -1) {
 			fCore::toss(
 				'fValidationException',
@@ -42,6 +51,7 @@ class fDate
 				)
 			);
 		}
+		
 		$this->set($timestamp);
 	}
 	
@@ -53,7 +63,7 @@ class fDate
 	 */
 	public function __toString()
 	{
-		return $this->format('Y-m-d');
+		return date('Y-m-d', $this->date);
 	}
 	
 	
@@ -132,18 +142,18 @@ class fDate
 	 *  - 6 days would be represented as 1 week, however 5 days would not
 	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
-	 * @param  fDate $other_date  The date to create the difference with, if NULL is passed will compare with current date
+	 * @param  fDate|object|string|integer $other_date  The date to create the difference with, NULL is interpreted as today
 	 * @return string  The fuzzy difference in time between the this date and the one provided
 	 */
-	public function getFuzzyDifference(fDate $other_date=NULL)
+	public function getFuzzyDifference($other_date=NULL)
 	{
 		$relative_to_now = FALSE;
 		if ($other_date === NULL) {
-			$other_date = new fDate('now');
 			$relative_to_now = TRUE;
 		}
+		$other_date = new fDate($other_date);
 		
-		$diff = $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
+		$diff = $this->date - $other_date->date;
 		
 		if (abs($diff) < 86400) {
 			if ($relative_to_now) {
@@ -201,16 +211,13 @@ class fDate
 	/**
 	 * Returns the difference between the two dates in seconds
 	 * 
-	 * @param  fDate $other_date  The date to calculate the difference with, if NULL is passed will compare with current date
+	 * @param  fDate|object|string|integer $other_date  The date to calculate the difference with, NULL is interpreted as today
 	 * @return integer  The difference between the two dates in seconds, positive if $other_date is before this date or negative if after
 	 */
-	public function getSecondsDifference(fDate $other_date=NULL)
+	public function getSecondsDifference($other_date=NULL)
 	{
-		if ($other_date === NULL) {
-			$other_date = new fDate('now');
-		}
-		
-		return $this->date - strtotime($other_date->format('Y-m-d 00:00:00'));
+		$other_date = new fDate($other_date);
+		return $this->date - $other_date->date;
 	}
 	
 	
