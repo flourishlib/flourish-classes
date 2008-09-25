@@ -95,6 +95,34 @@ class fTimestamp
 	
 	
 	/**
+	 * Fixes an ISO week format into a Y-m-d so strtotime will accept it
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $date  The date to fix
+	 * @return string  The fixed date
+	 */
+	static public function fixISOWeek($date)
+	{
+		if (preg_match('#^(.*)(\d{4})-W(5[0-3]|[1-4][0-9]|0?[1-9])-([1-7])(.*)$#', $date, $matches)) {
+			$before = $matches[1];
+			$year   = $matches[2];
+			$week   = $matches[3];
+			$day    = $matches[4];
+			$after  = $matches[5];
+			
+			$first_of_year  = strtotime($year . '-01-01');
+			$iso_year_start = strtotime('-' . date('N', $first_of_year) . ' days', $first_of_year);
+			
+			$ymd = date('Y-m-d', strtotime('+' . ($week-1) . ' weeks +' . $day . ' days', $iso_year_start));	
+			
+			$date = $before . $ymd . $after;
+		}
+		return $date;
+	}
+	
+	
+	/**
 	 * Provides a consistent interface to getting the default timezone. Wraps the {@link http://php.net/date_default_timezone_get date_default_timezone_get()} function.
 	 * 
 	 * @return string  The default timezone used for all date/time calculations
@@ -127,10 +155,456 @@ class fTimestamp
 	 */
 	static public function isValidTimezone($timezone)
 	{
-		$default_tz = date_default_timezone_get();
-		$valid_tz = @date_default_timezone_set($timezone);
-		date_default_timezone_set($default_tz);
-		return $valid_tz;
+		static $valid_timezones = array(
+			'UTC'                                   => TRUE, 
+			'Africa/Abidjan'                        => TRUE, 
+			'Africa/Accra'                          => TRUE, 
+			'Africa/Addis_Ababa'                    => TRUE, 
+			'Africa/Algiers'                        => TRUE, 
+			'Africa/Asmara'                         => TRUE, 
+			'Africa/Asmera'                         => TRUE, 
+			'Africa/Bamako'                         => TRUE, 
+			'Africa/Bangui'                         => TRUE, 
+			'Africa/Banjul'                         => TRUE, 
+			'Africa/Bissau'                         => TRUE, 
+			'Africa/Blantyre'                       => TRUE, 
+			'Africa/Brazzaville'                    => TRUE, 
+			'Africa/Bujumbura'                      => TRUE, 
+			'Africa/Cairo'                          => TRUE, 
+			'Africa/Casablanca'                     => TRUE, 
+			'Africa/Ceuta'                          => TRUE, 
+			'Africa/Conakry'                        => TRUE, 
+			'Africa/Dakar'                          => TRUE, 
+			'Africa/Dar_es_Salaam'                  => TRUE, 
+			'Africa/Djibouti'                       => TRUE, 
+			'Africa/Douala'                         => TRUE, 
+			'Africa/El_Aaiun'                       => TRUE, 
+			'Africa/Freetown'                       => TRUE, 
+			'Africa/Gaborone'                       => TRUE, 
+			'Africa/Harare'                         => TRUE, 
+			'Africa/Johannesburg'                   => TRUE, 
+			'Africa/Kampala'                        => TRUE, 
+			'Africa/Khartoum'                       => TRUE, 
+			'Africa/Kigali'                         => TRUE, 
+			'Africa/Kinshasa'                       => TRUE, 
+			'Africa/Lagos'                          => TRUE, 
+			'Africa/Libreville'                     => TRUE, 
+			'Africa/Lome'                           => TRUE, 
+			'Africa/Luanda'                         => TRUE, 
+			'Africa/Lubumbashi'                     => TRUE, 
+			'Africa/Lusaka'                         => TRUE, 
+			'Africa/Malabo'                         => TRUE, 
+			'Africa/Maputo'                         => TRUE, 
+			'Africa/Maseru'                         => TRUE, 
+			'Africa/Mbabane'                        => TRUE, 
+			'Africa/Mogadishu'                      => TRUE, 
+			'Africa/Monrovia'                       => TRUE, 
+			'Africa/Nairobi'                        => TRUE, 
+			'Africa/Ndjamena'                       => TRUE, 
+			'Africa/Niamey'                         => TRUE, 
+			'Africa/Nouakchott'                     => TRUE, 
+			'Africa/Ouagadougou'                    => TRUE, 
+			'Africa/Porto-Novo'                     => TRUE, 
+			'Africa/Sao_Tome'                       => TRUE, 
+			'Africa/Timbuktu'                       => TRUE, 
+			'Africa/Tripoli'                        => TRUE, 
+			'Africa/Tunis'                          => TRUE, 
+			'Africa/Windhoek'                       => TRUE, 
+			'America/Adak'                          => TRUE, 
+			'America/Anchorage'                     => TRUE, 
+			'America/Anguilla'                      => TRUE, 
+			'America/Antigua'                       => TRUE, 
+			'America/Araguaina'                     => TRUE, 
+			'America/Argentina/Buenos_Aires'        => TRUE, 
+			'America/Argentina/Catamarca'           => TRUE, 
+			'America/Argentina/ComodRivadavia'      => TRUE, 
+			'America/Argentina/Cordoba'             => TRUE, 
+			'America/Argentina/Jujuy'               => TRUE, 
+			'America/Argentina/La_Rioja'            => TRUE, 
+			'America/Argentina/Mendoza'             => TRUE, 
+			'America/Argentina/Rio_Gallegos'        => TRUE, 
+			'America/Argentina/San_Juan'            => TRUE, 
+			'America/Argentina/San_Luis'            => TRUE, 
+			'America/Argentina/Tucuman'             => TRUE, 
+			'America/Argentina/Ushuaia'             => TRUE, 
+			'America/Aruba'                         => TRUE, 
+			'America/Asuncion'                      => TRUE, 
+			'America/Atikokan'                      => TRUE, 
+			'America/Atka'                          => TRUE, 
+			'America/Bahia'                         => TRUE, 
+			'America/Barbados'                      => TRUE, 
+			'America/Belem'                         => TRUE, 
+			'America/Belize'                        => TRUE, 
+			'America/Blanc-Sablon'                  => TRUE, 
+			'America/Boa_Vista'                     => TRUE, 
+			'America/Bogota'                        => TRUE, 
+			'America/Boise'                         => TRUE, 
+			'America/Buenos_Aires'                  => TRUE, 
+			'America/Cambridge_Bay'                 => TRUE, 
+			'America/Campo_Grande'                  => TRUE, 
+			'America/Cancun'                        => TRUE, 
+			'America/Caracas'                       => TRUE, 
+			'America/Catamarca'                     => TRUE, 
+			'America/Cayenne'                       => TRUE, 
+			'America/Cayman'                        => TRUE, 
+			'America/Chicago'                       => TRUE, 
+			'America/Chihuahua'                     => TRUE, 
+			'America/Coral_Harbour'                 => TRUE, 
+			'America/Cordoba'                       => TRUE, 
+			'America/Costa_Rica'                    => TRUE, 
+			'America/Cuiaba'                        => TRUE, 
+			'America/Curacao'                       => TRUE, 
+			'America/Danmarkshavn'                  => TRUE, 
+			'America/Dawson'                        => TRUE, 
+			'America/Dawson_Creek'                  => TRUE, 
+			'America/Denver'                        => TRUE, 
+			'America/Detroit'                       => TRUE, 
+			'America/Dominica'                      => TRUE, 
+			'America/Edmonton'                      => TRUE, 
+			'America/Eirunepe'                      => TRUE, 
+			'America/El_Salvador'                   => TRUE, 
+			'America/Ensenada'                      => TRUE, 
+			'America/Fort_Wayne'                    => TRUE, 
+			'America/Fortaleza'                     => TRUE, 
+			'America/Glace_Bay'                     => TRUE, 
+			'America/Godthab'                       => TRUE, 
+			'America/Goose_Bay'                     => TRUE, 
+			'America/Grand_Turk'                    => TRUE, 
+			'America/Grenada'                       => TRUE, 
+			'America/Guadeloupe'                    => TRUE, 
+			'America/Guatemala'                     => TRUE, 
+			'America/Guayaquil'                     => TRUE, 
+			'America/Guyana'                        => TRUE, 
+			'America/Halifax'                       => TRUE, 
+			'America/Havana'                        => TRUE, 
+			'America/Hermosillo'                    => TRUE, 
+			'America/Indiana/Indianapolis'          => TRUE, 
+			'America/Indiana/Knox'                  => TRUE, 
+			'America/Indiana/Marengo'               => TRUE, 
+			'America/Indiana/Petersburg'            => TRUE, 
+			'America/Indiana/Tell_City'             => TRUE, 
+			'America/Indiana/Vevay'                 => TRUE, 
+			'America/Indiana/Vincennes'             => TRUE, 
+			'America/Indiana/Winamac'               => TRUE, 
+			'America/Indianapolis'                  => TRUE, 
+			'America/Inuvik'                        => TRUE, 
+			'America/Iqaluit'                       => TRUE, 
+			'America/Jamaica'                       => TRUE, 
+			'America/Jujuy'                         => TRUE, 
+			'America/Juneau'                        => TRUE, 
+			'America/Kentucky/Louisville'           => TRUE, 
+			'America/Kentucky/Monticello'           => TRUE, 
+			'America/Knox_IN'                       => TRUE, 
+			'America/La_Paz'                        => TRUE, 
+			'America/Lima'                          => TRUE, 
+			'America/Los_Angeles'                   => TRUE, 
+			'America/Louisville'                    => TRUE, 
+			'America/Maceio'                        => TRUE, 
+			'America/Managua'                       => TRUE, 
+			'America/Manaus'                        => TRUE, 
+			'America/Marigot'                       => TRUE, 
+			'America/Martinique'                    => TRUE, 
+			'America/Mazatlan'                      => TRUE, 
+			'America/Mendoza'                       => TRUE, 
+			'America/Menominee'                     => TRUE, 
+			'America/Merida'                        => TRUE, 
+			'America/Mexico_City'                   => TRUE, 
+			'America/Miquelon'                      => TRUE, 
+			'America/Moncton'                       => TRUE, 
+			'America/Monterrey'                     => TRUE, 
+			'America/Montevideo'                    => TRUE, 
+			'America/Montreal'                      => TRUE, 
+			'America/Montserrat'                    => TRUE, 
+			'America/Nassau'                        => TRUE, 
+			'America/New_York'                      => TRUE, 
+			'America/Nipigon'                       => TRUE, 
+			'America/Nome'                          => TRUE, 
+			'America/Noronha'                       => TRUE, 
+			'America/North_Dakota/Center'           => TRUE, 
+			'America/North_Dakota/New_Salem'        => TRUE, 
+			'America/Panama'                        => TRUE, 
+			'America/Pangnirtung'                   => TRUE, 
+			'America/Paramaribo'                    => TRUE, 
+			'America/Phoenix'                       => TRUE, 
+			'America/Port-au-Prince'                => TRUE, 
+			'America/Port_of_Spain'                 => TRUE, 
+			'America/Porto_Acre'                    => TRUE, 
+			'America/Porto_Velho'                   => TRUE, 
+			'America/Puerto_Rico'                   => TRUE, 
+			'America/Rainy_River'                   => TRUE, 
+			'America/Rankin_Inlet'                  => TRUE, 
+			'America/Recife'                        => TRUE, 
+			'America/Regina'                        => TRUE, 
+			'America/Resolute'                      => TRUE, 
+			'America/Rio_Branco'                    => TRUE, 
+			'America/Rosario'                       => TRUE, 
+			'America/Santiago'                      => TRUE, 
+			'America/Santo_Domingo'                 => TRUE, 
+			'America/Sao_Paulo'                     => TRUE, 
+			'America/Scoresbysund'                  => TRUE, 
+			'America/Shiprock'                      => TRUE, 
+			'America/St_Barthelemy'                 => TRUE, 
+			'America/St_Johns'                      => TRUE, 
+			'America/St_Kitts'                      => TRUE, 
+			'America/St_Lucia'                      => TRUE, 
+			'America/St_Thomas'                     => TRUE, 
+			'America/St_Vincent'                    => TRUE, 
+			'America/Swift_Current'                 => TRUE, 
+			'America/Tegucigalpa'                   => TRUE, 
+			'America/Thule'                         => TRUE, 
+			'America/Thunder_Bay'                   => TRUE, 
+			'America/Tijuana'                       => TRUE, 
+			'America/Toronto'                       => TRUE, 
+			'America/Tortola'                       => TRUE, 
+			'America/Vancouver'                     => TRUE, 
+			'America/Virgin'                        => TRUE, 
+			'America/Whitehorse'                    => TRUE, 
+			'America/Winnipeg'                      => TRUE, 
+			'America/Yakutat'                       => TRUE, 
+			'America/Yellowknife'                   => TRUE, 
+			'Antarctica/Casey'                      => TRUE, 
+			'Antarctica/Davis'                      => TRUE, 
+			'Antarctica/DumontDUrville'             => TRUE, 
+			'Antarctica/Mawson'                     => TRUE, 
+			'Antarctica/McMurdo'                    => TRUE, 
+			'Antarctica/Palmer'                     => TRUE, 
+			'Antarctica/Rothera'                    => TRUE, 
+			'Antarctica/South_Pole'                 => TRUE, 
+			'Antarctica/Syowa'                      => TRUE, 
+			'Antarctica/Vostok'                     => TRUE, 
+			'Arctic/Longyearbyen'                   => TRUE, 
+			'Asia/Aden'                             => TRUE, 
+			'Asia/Almaty'                           => TRUE, 
+			'Asia/Amman'                            => TRUE, 
+			'Asia/Anadyr'                           => TRUE, 
+			'Asia/Aqtau'                            => TRUE, 
+			'Asia/Aqtobe'                           => TRUE, 
+			'Asia/Ashgabat'                         => TRUE, 
+			'Asia/Ashkhabad'                        => TRUE, 
+			'Asia/Baghdad'                          => TRUE, 
+			'Asia/Bahrain'                          => TRUE, 
+			'Asia/Baku'                             => TRUE, 
+			'Asia/Bangkok'                          => TRUE, 
+			'Asia/Beirut'                           => TRUE, 
+			'Asia/Bishkek'                          => TRUE, 
+			'Asia/Brunei'                           => TRUE, 
+			'Asia/Calcutta'                         => TRUE, 
+			'Asia/Choibalsan'                       => TRUE, 
+			'Asia/Chongqing'                        => TRUE, 
+			'Asia/Chungking'                        => TRUE, 
+			'Asia/Colombo'                          => TRUE, 
+			'Asia/Dacca'                            => TRUE, 
+			'Asia/Damascus'                         => TRUE, 
+			'Asia/Dhaka'                            => TRUE, 
+			'Asia/Dili'                             => TRUE, 
+			'Asia/Dubai'                            => TRUE, 
+			'Asia/Dushanbe'                         => TRUE, 
+			'Asia/Gaza'                             => TRUE, 
+			'Asia/Harbin'                           => TRUE, 
+			'Asia/Ho_Chi_Minh'                      => TRUE, 
+			'Asia/Hong_Kong'                        => TRUE, 
+			'Asia/Hovd'                             => TRUE, 
+			'Asia/Irkutsk'                          => TRUE, 
+			'Asia/Istanbul'                         => TRUE, 
+			'Asia/Jakarta'                          => TRUE, 
+			'Asia/Jayapura'                         => TRUE, 
+			'Asia/Jerusalem'                        => TRUE, 
+			'Asia/Kabul'                            => TRUE, 
+			'Asia/Kamchatka'                        => TRUE, 
+			'Asia/Karachi'                          => TRUE, 
+			'Asia/Kashgar'                          => TRUE, 
+			'Asia/Katmandu'                         => TRUE, 
+			'Asia/Kolkata'                          => TRUE, 
+			'Asia/Krasnoyarsk'                      => TRUE, 
+			'Asia/Kuala_Lumpur'                     => TRUE, 
+			'Asia/Kuching'                          => TRUE, 
+			'Asia/Kuwait'                           => TRUE, 
+			'Asia/Macao'                            => TRUE, 
+			'Asia/Macau'                            => TRUE, 
+			'Asia/Magadan'                          => TRUE, 
+			'Asia/Makassar'                         => TRUE, 
+			'Asia/Manila'                           => TRUE, 
+			'Asia/Muscat'                           => TRUE, 
+			'Asia/Nicosia'                          => TRUE, 
+			'Asia/Novosibirsk'                      => TRUE, 
+			'Asia/Omsk'                             => TRUE, 
+			'Asia/Oral'                             => TRUE, 
+			'Asia/Phnom_Penh'                       => TRUE, 
+			'Asia/Pontianak'                        => TRUE, 
+			'Asia/Pyongyang'                        => TRUE, 
+			'Asia/Qatar'                            => TRUE, 
+			'Asia/Qyzylorda'                        => TRUE, 
+			'Asia/Rangoon'                          => TRUE, 
+			'Asia/Riyadh'                           => TRUE, 
+			'Asia/Saigon'                           => TRUE, 
+			'Asia/Sakhalin'                         => TRUE, 
+			'Asia/Samarkand'                        => TRUE, 
+			'Asia/Seoul'                            => TRUE, 
+			'Asia/Shanghai'                         => TRUE, 
+			'Asia/Singapore'                        => TRUE, 
+			'Asia/Taipei'                           => TRUE, 
+			'Asia/Tashkent'                         => TRUE, 
+			'Asia/Tbilisi'                          => TRUE, 
+			'Asia/Tehran'                           => TRUE, 
+			'Asia/Tel_Aviv'                         => TRUE, 
+			'Asia/Thimbu'                           => TRUE, 
+			'Asia/Thimphu'                          => TRUE, 
+			'Asia/Tokyo'                            => TRUE, 
+			'Asia/Ujung_Pandang'                    => TRUE, 
+			'Asia/Ulaanbaatar'                      => TRUE, 
+			'Asia/Ulan_Bator'                       => TRUE, 
+			'Asia/Urumqi'                           => TRUE, 
+			'Asia/Vientiane'                        => TRUE, 
+			'Asia/Vladivostok'                      => TRUE, 
+			'Asia/Yakutsk'                          => TRUE, 
+			'Asia/Yekaterinburg'                    => TRUE, 
+			'Asia/Yerevan'                          => TRUE, 
+			'Atlantic/Azores'                       => TRUE, 
+			'Atlantic/Bermuda'                      => TRUE, 
+			'Atlantic/Canary'                       => TRUE, 
+			'Atlantic/Cape_Verde'                   => TRUE, 
+			'Atlantic/Faeroe'                       => TRUE, 
+			'Atlantic/Faroe'                        => TRUE, 
+			'Atlantic/Jan_Mayen'                    => TRUE, 
+			'Atlantic/Madeira'                      => TRUE, 
+			'Atlantic/Reykjavik'                    => TRUE, 
+			'Atlantic/South_Georgia'                => TRUE, 
+			'Atlantic/St_Helena'                    => TRUE, 
+			'Atlantic/Stanley'                      => TRUE, 
+			'Australia/ACT'                         => TRUE, 
+			'Australia/Adelaide'                    => TRUE, 
+			'Australia/Brisbane'                    => TRUE, 
+			'Australia/Broken_Hill'                 => TRUE, 
+			'Australia/Canberra'                    => TRUE, 
+			'Australia/Currie'                      => TRUE, 
+			'Australia/Darwin'                      => TRUE, 
+			'Australia/Eucla'                       => TRUE, 
+			'Australia/Hobart'                      => TRUE, 
+			'Australia/LHI'                         => TRUE, 
+			'Australia/Lindeman'                    => TRUE, 
+			'Australia/Lord_Howe'                   => TRUE, 
+			'Australia/Melbourne'                   => TRUE, 
+			'Australia/North'                       => TRUE, 
+			'Australia/NSW'                         => TRUE, 
+			'Australia/Perth'                       => TRUE, 
+			'Australia/Queensland'                  => TRUE, 
+			'Australia/South'                       => TRUE, 
+			'Australia/Sydney'                      => TRUE, 
+			'Australia/Tasmania'                    => TRUE, 
+			'Australia/Victoria'                    => TRUE, 
+			'Australia/West'                        => TRUE, 
+			'Australia/Yancowinna'                  => TRUE, 
+			'Europe/Amsterdam'                      => TRUE, 
+			'Europe/Andorra'                        => TRUE, 
+			'Europe/Athens'                         => TRUE, 
+			'Europe/Belfast'                        => TRUE, 
+			'Europe/Belgrade'                       => TRUE, 
+			'Europe/Berlin'                         => TRUE, 
+			'Europe/Bratislava'                     => TRUE, 
+			'Europe/Brussels'                       => TRUE, 
+			'Europe/Bucharest'                      => TRUE, 
+			'Europe/Budapest'                       => TRUE, 
+			'Europe/Chisinau'                       => TRUE, 
+			'Europe/Copenhagen'                     => TRUE, 
+			'Europe/Dublin'                         => TRUE, 
+			'Europe/Gibraltar'                      => TRUE, 
+			'Europe/Guernsey'                       => TRUE, 
+			'Europe/Helsinki'                       => TRUE, 
+			'Europe/Isle_of_Man'                    => TRUE, 
+			'Europe/Istanbul'                       => TRUE, 
+			'Europe/Jersey'                         => TRUE, 
+			'Europe/Kaliningrad'                    => TRUE, 
+			'Europe/Kiev'                           => TRUE, 
+			'Europe/Lisbon'                         => TRUE, 
+			'Europe/Ljubljana'                      => TRUE, 
+			'Europe/London'                         => TRUE, 
+			'Europe/Luxembourg'                     => TRUE, 
+			'Europe/Madrid'                         => TRUE, 
+			'Europe/Malta'                          => TRUE, 
+			'Europe/Mariehamn'                      => TRUE, 
+			'Europe/Minsk'                          => TRUE, 
+			'Europe/Monaco'                         => TRUE, 
+			'Europe/Moscow'                         => TRUE, 
+			'Europe/Nicosia'                        => TRUE, 
+			'Europe/Oslo'                           => TRUE, 
+			'Europe/Paris'                          => TRUE, 
+			'Europe/Podgorica'                      => TRUE, 
+			'Europe/Prague'                         => TRUE, 
+			'Europe/Riga'                           => TRUE, 
+			'Europe/Rome'                           => TRUE, 
+			'Europe/Samara'                         => TRUE, 
+			'Europe/San_Marino'                     => TRUE, 
+			'Europe/Sarajevo'                       => TRUE, 
+			'Europe/Simferopol'                     => TRUE, 
+			'Europe/Skopje'                         => TRUE, 
+			'Europe/Sofia'                          => TRUE, 
+			'Europe/Stockholm'                      => TRUE, 
+			'Europe/Tallinn'                        => TRUE, 
+			'Europe/Tirane'                         => TRUE, 
+			'Europe/Tiraspol'                       => TRUE, 
+			'Europe/Uzhgorod'                       => TRUE, 
+			'Europe/Vaduz'                          => TRUE, 
+			'Europe/Vatican'                        => TRUE, 
+			'Europe/Vienna'                         => TRUE, 
+			'Europe/Vilnius'                        => TRUE, 
+			'Europe/Volgograd'                      => TRUE, 
+			'Europe/Warsaw'                         => TRUE, 
+			'Europe/Zagreb'                         => TRUE, 
+			'Europe/Zaporozhye'                     => TRUE, 
+			'Europe/Zurich'                         => TRUE, 
+			'Indian/Antananarivo'                   => TRUE, 
+			'Indian/Chagos'                         => TRUE, 
+			'Indian/Christmas'                      => TRUE, 
+			'Indian/Cocos'                          => TRUE, 
+			'Indian/Comoro'                         => TRUE, 
+			'Indian/Kerguelen'                      => TRUE, 
+			'Indian/Mahe'                           => TRUE, 
+			'Indian/Maldives'                       => TRUE, 
+			'Indian/Mauritius'                      => TRUE, 
+			'Indian/Mayotte'                        => TRUE, 
+			'Indian/Reunion'                        => TRUE, 
+			'Pacific/Apia'                          => TRUE, 
+			'Pacific/Auckland'                      => TRUE, 
+			'Pacific/Chatham'                       => TRUE, 
+			'Pacific/Easter'                        => TRUE, 
+			'Pacific/Efate'                         => TRUE, 
+			'Pacific/Enderbury'                     => TRUE, 
+			'Pacific/Fakaofo'                       => TRUE, 
+			'Pacific/Fiji'                          => TRUE, 
+			'Pacific/Funafuti'                      => TRUE, 
+			'Pacific/Galapagos'                     => TRUE, 
+			'Pacific/Gambier'                       => TRUE, 
+			'Pacific/Guadalcanal'                   => TRUE, 
+			'Pacific/Guam'                          => TRUE, 
+			'Pacific/Honolulu'                      => TRUE, 
+			'Pacific/Johnston'                      => TRUE, 
+			'Pacific/Kiritimati'                    => TRUE, 
+			'Pacific/Kosrae'                        => TRUE, 
+			'Pacific/Kwajalein'                     => TRUE, 
+			'Pacific/Majuro'                        => TRUE, 
+			'Pacific/Marquesas'                     => TRUE, 
+			'Pacific/Midway'                        => TRUE, 
+			'Pacific/Nauru'                         => TRUE, 
+			'Pacific/Niue'                          => TRUE, 
+			'Pacific/Norfolk'                       => TRUE, 
+			'Pacific/Noumea'                        => TRUE, 
+			'Pacific/Pago_Pago'                     => TRUE, 
+			'Pacific/Palau'                         => TRUE, 
+			'Pacific/Pitcairn'                      => TRUE, 
+			'Pacific/Ponape'                        => TRUE, 
+			'Pacific/Port_Moresby'                  => TRUE, 
+			'Pacific/Rarotonga'                     => TRUE, 
+			'Pacific/Saipan'                        => TRUE, 
+			'Pacific/Samoa'                         => TRUE, 
+			'Pacific/Tahiti'                        => TRUE, 
+			'Pacific/Tarawa'                        => TRUE, 
+			'Pacific/Tongatapu'                     => TRUE, 
+			'Pacific/Truk'                          => TRUE, 
+			'Pacific/Wake'                          => TRUE, 
+			'Pacific/Wallis'                        => TRUE
+		);
+		
+		return isset($valid_timezones[$timezone]);
 	}
 	
 	
@@ -228,7 +702,7 @@ class fTimestamp
 			}
 			
 		} elseif ($datetime instanceof fTimestamp) {
-			$timezone = $datetime->getTimezone();
+			$timezone = $datetime->timezone;
 			
 		} else {
 			$timezone = $default_tz;
@@ -240,10 +714,11 @@ class fTimestamp
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($datetime) && ctype_digit($datetime)) {
 			$timestamp = (int) $datetime;
-		} elseif (is_object($datetime) && is_callable(array($datetime, '__toString'))) {
-			$timestamp = strtotime($datetime->__toString() . ' ' . $timezone);
 		} else {
-			$timestamp = strtotime($datetime . ' ' . $timezone);
+			if (is_object($datetime) && is_callable(array($datetime, '__toString'))) {
+				$datetime = $datetime->__toString();	
+			}
+			$timestamp = strtotime(self::fixISOWeek($datetime) . ' ' . $timezone);
 		}
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
@@ -272,70 +747,54 @@ class fTimestamp
 	
 	
 	/**
-	 * Changes the time by the adjustment specified
+	 * Changes the date/time by the adjustment specified
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $adjustment  The adjustment to make
-	 * @return void
+	 * @param  string $adjustment  The adjustment to make - may be a relative adjustment or a different timezone
+	 * @return fTimestamp  The adjusted date/time
 	 */
 	public function adjust($adjustment)
 	{
 		if (self::isValidTimezone($adjustment)) {
-			$this->setTimezone($adjustment);
+			$timezone  = $adjustment;
+			$timestamp = $this->timestamp;
+		
 		} else {
-			$this->timestamp = $this->makeAdustment($adjustment, $this->timestamp);
+			$timezone  = $this->timezone;
+			$timestamp = strtotime($adjustment, $this->timestamp);
+			
+			if ($timestamp === FALSE || $timestamp === -1) {
+				fCore::toss(
+					'fValidationException',
+					fGrammar::compose(
+						'The adjustment specified, %s, does not appear to be a valid relative date/time measurement',
+						fCore::dump($adjustment)
+					)
+				);
+			}
 		}
+		
+		return new fTimestamp($timestamp, $timezone);
 	}
 	
 	
 	/**
-	 * Takes a date/time to pass to strtotime and interprets it using the current timestamp's timezone
-	 * 
-	 * @param  string $datetime  The datetime to interpret
-	 * @return integer  The timestamp
-	 */
-	private function covertToTimestampWithTimezone($datetime)
-	{
-		$default_tz = date_default_timezone_get();
-		date_default_timezone_set($this->timezone);
-		$timestamp = strtotime($datetime);
-		date_default_timezone_set($default_tz);
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Formats the date/time, with an optional adjustment of a relative date/time or a timezone
+	 * Formats the date/time
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
-	 * @param  string $adjustment  A temporary adjustment to make, can be a relative date/time amount or a timezone
-	 * @return string  The formatted (and possibly adjusted) date/time
+	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @return string  The formatted date/time
 	 */
-	public function format($format, $adjustment=NULL)
+	public function format($format)
 	{
 		$format = self::translateFormat($format);
 		
-		$timestamp = $this->timestamp;
+		$default_tz = date_default_timezone_get();
+		date_default_timezone_set($this->timezone);
 		
-		// Handle an adjustment that is a timezone
-		if ($adjustment && self::isValidTimezone($adjustment)) {
-			$default_tz = date_default_timezone_get();
-			date_default_timezone_set($adjustment);
-			
-		} else {
-			$default_tz = date_default_timezone_get();
-			date_default_timezone_set($this->timezone);
-		}
-		
-		// Handle an adjustment that is a relative date/time
-		if ($adjustment && !self::isValidTimezone($adjustment)) {
-			$timestamp = $this->makeAdjustment($adjustment, $timestamp);
-		}
-		
-		$formatted = date($format, $timestamp);
+		$formatted = date($format, $this->timestamp);
 		
 		date_default_timezone_set($default_tz);
 		
@@ -462,265 +921,38 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns the timezone for this date/time
+	 * Modifies the current timestamp, creating a new fTimestamp object
 	 * 
-	 * @return string  The timezone for thie date/time
+	 * The purpose of this method is to allow for easy creation of a timestamp
+	 * based on this timestamp. Below are some examples of formats to
+	 * modify the current timestamp:
+	 * 
+	 * To change the date of the timestamp to the first of the month:
+	 * 
+	 * <pre>
+	 * Y-m-01 H:i:s
+	 * </pre>
+	 * 
+	 * To change the date of the timestamp to the last of the month:
+	 * 
+	 * <pre>
+	 * Y-m-t H:i:s
+	 * </pre>
+	 * 
+	 * To set the hour of the timestamp to 5 PM:
+	 * 
+	 * <pre>
+	 * Y-m-d 17:i:s
+	 * </pre>
+	 * 
+	 * @param  string $format    The current timestamp will be formatted with this string, and the output used to create a new object. The format should NOT include the timezone (character e).
+	 * @param  string $timezone  The timezone for the new object if different from the current timezone
+	 * @return fTimestamp  The new timestamp
 	 */
-	public function getTimezone()
+	public function modify($format, $timezone=NULL)
 	{
-		return $this->timezone;
-	}
-	
-	
-	/**
-	 * Makes an adjustment, returning the adjusted time
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string  $adjustment  The adjustment to make
-	 * @param  integer $timestamp   The time to adjust
-	 * @return integer  The adjusted timestamp
-	 */
-	private function makeAdjustment($adjustment, $timestamp)
-	{
-		$timestamp = strtotime($adjustment, $timestamp);
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, does not appear to be a valid relative date/time measurement',
-					fCore::dump($adjustment)
-				)
-			);
-		}
-		
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Changes the date to the date specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $year   The year to change to
-	 * @param  integer $month  The month to change to
-	 * @param  integer $day    The day of the month to change to
-	 * @return void
-	 */
-	public function setDate($year, $month, $day)
-	{
-		$year  = ($year === NULL)  ? date('Y', $this->timestamp) : $year;
-		$month = ($month === NULL) ? date('m', $this->timestamp) : $month;
-		$day   = ($day === NULL)   ? date('d', $this->timestamp) : $day;
-		
-		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The year specified, %s, does not appear to be a valid year',
-					fCore::dump($year)
-				)
-			);
-		}
-		if (!is_numeric($month) || $month < 1 || $month > 12) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The month specified, %s, does not appear to be a valid month',
-					fCore::dump($month)
-				)
-			);
-		}
-		if (!is_numeric($day) || $day < 1 || $day > 31) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The day specified, %s, does not appear to be a valid day',
-					fCore::dump($day)
-				)
-			);
-		}
-		
-		settype($month, 'integer');
-		settype($day,   'integer');
-		
-		if ($month < 10) { $month = '0' . $month; }
-		if ($day < 10)   { $day   = '0' . $day; }
-		
-		$timestamp = $this->covertToTimestampWithTimezone($year . '-' . $month . '-' . $day . date(' H:i:s', $this->timestamp));
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The date specified, %1$s-%2$s-%3$s, does not appear to be a valid date',
-					fCore::dump($year),
-					fCore::dump($month),
-					fCore::dump($day)
-				)
-			);
-		}
-		
-		$this->timestamp = $timestamp;
-	}
-	
-	
-	/**
-	 * Changes the date to the ISO date (year, week, day of week) specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $year         The year to change to
-	 * @param  integer $week         The week to change to
-	 * @param  integer $day_of_week  The day of the week to change to
-	 * @return void
-	 */
-	public function setISODate($year, $week, $day_of_week)
-	{
-		$year        = ($year === NULL)        ? date('Y', $this->timestamp) : $year;
-		$week        = ($week === NULL)        ? date('W', $this->timestamp) : $week;
-		$day_of_week = ($day_of_week === NULL) ? date('N', $this->timestamp) : $day_of_week;
-		
-		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The year specified, %s, does not appear to be a valid year',
-					fCore::dump($year)
-				)
-			);
-		}
-		if (!is_numeric($week) || $week < 1 || $week > 53) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The week specified, %s, does not appear to be a valid week',
-					fCore::dump($week)
-				)
-			);
-		}
-		if (!is_numeric($day_of_week) || $day_of_week < 1 || $day_of_week > 7) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The day of week specified, %s, does not appear to be a valid day of the week',
-					fCore::dump($day_of_week)
-				)
-			);
-		}
-		
-		settype($week, 'integer');
-		
-		if ($week < 10) { $week = '0' . $week; }
-		
-		$timestamp = $this->covertToTimestampWithTimezone($year . '-01-01 ' . date('H:i:s', $this->timestamp) . ' +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The ISO date specified, %1$s-W%2$s-%3$s, does not appear to be a valid ISO date',
-					fCore::dump($year),
-					fCore::dump($week),
-					fCore::dump($day_of_week)
-				)
-			);
-		}
-		
-		$this->timestamp = $timestamp;
-	}
-	
-	
-	/**
-	 * Changes the time to the time specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $hour    The hour to change to
-	 * @param  integer $minute  The minute to change to
-	 * @param  integer $second  The second to change to
-	 * @return void
-	 */
-	public function setTime($hour, $minute, $second)
-	{
-		$hour   = ($hour === NULL)   ? date('H', $this->timestamp) : $hour;
-		$minute = ($minute === NULL) ? date('i', $this->timestamp) : $minute;
-		$second = ($second === NULL) ? date('s', $this->timestamp) : $second;
-		
-		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The hour specified, %s, does not appear to be a valid hour',
-					fCore::dump($hour)
-				)
-			);
-		}
-		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The minute specified, %s, does not appear to be a valid minute',
-					fCore::dump($minute)
-				)
-			);
-		}
-		if (!is_numeric($second) || $second < 0 || $second > 59) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The second specified, %s, does not appear to be a valid second',
-					fCore::dump($second)
-				)
-			);
-		}
-		
-		settype($minute, 'integer');
-		settype($second, 'integer');
-		
-		if ($minute < 10) { $minute = '0' . $minute; }
-		if ($second < 10) { $second = '0' . $second; }
-		
-		$timestamp = $this->covertToTimestampWithTimezone(date('Y-m-d ', $this->timestamp) . $hour . ':' . $minute . ':' . $second);
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The time specified, %1$s:%2$s:%3$s, does not appear to be a valid time',
-					fCore::dump($hour),
-					fCore::dump($minute),
-					fCore::dump($second)
-				)
-			);
-		}
-		
-		$this->timestamp = $timestamp;
-	}
-	
-	
-	/**
-	 * Changes the timezone for this date/time
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $timezone  The timezone for this date/time
-	 * @return void
-	 */
-	public function setTimezone($timezone)
-	{
-		if (!self::isValidTimezone($timezone)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The timezone specified, %s, is not a valid timezone',
-					fCore::dump($timezone)
-				)
-			);
-		}
-		$this->timezone = $timezone;
+		$timezone = ($timezone !== NULL) ? $timezone : $this->timezone;
+		return new fTimestamp($this->format($format), $timezone);
 	}
 }
 

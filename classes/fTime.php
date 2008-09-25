@@ -36,9 +36,10 @@ class fTime
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($time) && ctype_digit($time)) {
 			$timestamp = (int) $time;
-		} elseif (is_object($time) && is_callable(array($time, '__toString'))) {
-			$timestamp = strtotime($time->__toString());
 		} else {
+			if (is_object($time) && is_callable(array($time, '__toString'))) {
+				$time = $time->__toString();	
+			}
 			$timestamp = strtotime($time);
 		}
 		
@@ -52,7 +53,7 @@ class fTime
 			);
 		}
 		
-		$this->set($timestamp);
+		$this->time = strtotime(date('1970-01-01 H:i:s', $timestamp));
 	}
 	
 	
@@ -73,25 +74,45 @@ class fTime
 	 * @throws fValidationException
 	 * 
 	 * @param  string $adjustment  The adjustment to make
-	 * @return void
+	 * @return fTime  The adjusted time
 	 */
 	public function adjust($adjustment)
 	{
-		$time = $this->makeAdustment($adjustment, $this->time);
-		$this->set($time);
+		$timestamp = strtotime($adjustment, $this->time);
+		
+		if ($timestamp === FALSE || $timestamp === -1) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, does not appear to be a valid relative time measurement',
+					fCore::dump($adjustment)
+				)
+			);
+		}
+		
+		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.',
+					fCore::dump($adjustment)
+				)
+			);
+		}
+		
+		return new fTime($timestamp);
 	}
 	
 	
 	/**
-	 * Formats the time, with an optional adjustment
+	 * Formats the time
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
-	 * @param  string $adjustment  A temporary adjustment to make
-	 * @return string  The formatted (and possibly adjusted) time
+	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @return string  The formatted time
 	 */
-	public function format($format, $adjustment=NULL)
+	public function format($format)
 	{
 		$format = fTimestamp::translateFormat($format);
 		
@@ -107,13 +128,7 @@ class fTime
 			);
 		}
 		
-		$time = $this->time;
-		
-		if ($adjustment) {
-			$time = $this->makeAdjustment($adjustment, $time);
-		}
-		
-		return fTimestamp::callFormatCallback(date($format, $time));
+		return fTimestamp::callFormatCallback(date($format, $this->time));
 	}
 	
 	
@@ -214,117 +229,30 @@ class fTime
 	
 	
 	/**
-	 * Makes an adjustment, returning the adjusted time
+	 * Modifies the current time, creating a new fTime object
 	 * 
-	 * @throws fValidationException
+	 * The purpose of this method is to allow for easy creation of a time
+	 * based on this time. Below are some examples of formats to
+	 * modify the current time:
 	 * 
-	 * @param  string  $adjustment  The adjustment to make
-	 * @param  integer $timestamp   The time to adjust
-	 * @return integer  The adjusted timestamp
+	 * To set the hour of the time to 5 PM:
+	 * 
+	 * <pre>
+	 * 17:i:s
+	 * </pre>
+	 * 
+	 * To set the time to the beginning of the current hour:
+	 * 
+	 * <pre>
+	 * H:00:00
+	 * </pre>
+	 * 
+	 * @param  string $format  The current time will be formatted with this string, and the output used to create a new object
+	 * @return fTime  The new time
 	 */
-	private function makeAdjustment($adjustment, $timestamp)
+	public function modify($format)
 	{
-		$timestamp = strtotime($adjustment, $timestamp);
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, does not appear to be a valid relative time measurement',
-					fCore::dump($adjustment)
-				)
-			);
-		}
-		
-		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.',
-					fCore::dump($adjustment)
-				)
-			);
-		}
-		
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Sets the time, changing the date on the timestamp to 1970-01-01
-	 * 
-	 * @param  integer $timestamp  The time to set. The date will be changed to 1970-01-01.
-	 * @return void
-	 */
-	private function set($timestamp)
-	{
-		$this->time = strtotime(date('1970-01-01 H:i:s', $timestamp));
-	}
-	
-	
-	/**
-	 * Changes the time to the time specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $hour    The hour to change to
-	 * @param  integer $minute  The minute to change to
-	 * @param  integer $second  The second to change to
-	 * @return void
-	 */
-	public function setTime($hour, $minute, $second)
-	{
-		$hour   = ($hour === NULL)   ? date('H', $this->time) : $hour;
-		$minute = ($minute === NULL) ? date('i', $this->time) : $minute;
-		$second = ($second === NULL) ? date('s', $this->time) : $second;
-		
-		if (!is_numeric($hour) || $hour < 0 || $hour > 23) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The hour specified, %s, does not appear to be a valid hour',
-					fCore::dump($hour)
-				)
-			);
-		}
-		if (!is_numeric($minute) || $minute < 0 || $minute > 59) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The minute specified, %s, does not appear to be a valid minute',
-					fCore::dump($minute)
-				)
-			);
-		}
-		if (!is_numeric($second) || $second < 0 || $second > 59) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The second specified, %s, does not appear to be a valid second',
-					fCore::dump($second)
-				)
-			);
-		}
-		
-		settype($minute, 'integer');
-		settype($second, 'integer');
-		
-		if ($minute < 10) { $minute = '0' . $minute; }
-		if ($second < 10) { $second = '0' . $second; }
-		
-		$parsed = strtotime($hour . ':' . $minute . ':' . $second);
-		if ($parsed === FALSE || $parsed === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The time specified, %1$s:%2$s:%3$s, does not appear to be a valid time'.
-					fCore::dump($hour),
-					fCore::dump($minute),
-					fCore::dump($second)
-				)
-			);
-		}
-		$this->set($parsed);
+	   return new fTime($this->format($format));
 	}
 }
 

@@ -36,10 +36,11 @@ class fDate
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($date) && ctype_digit($date)) {
 			$timestamp = (int) $date;
-		} elseif (is_object($date) && is_callable(array($date, '__toString'))) {
-			$timestamp = strtotime($date->__toString());
 		} else {
-			$timestamp = strtotime($date);
+			if (is_object($date) && is_callable(array($date, '__toString'))) {
+				$date = $date->__toString();	
+			}
+			$timestamp = strtotime(fTimestamp::fixISOWeek($date));
 		}
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
@@ -52,7 +53,7 @@ class fDate
 			);
 		}
 		
-		$this->set($timestamp);
+		$this->date = strtotime(date('Y-m-d 00:00:00', $timestamp));
 	}
 	
 	
@@ -73,25 +74,45 @@ class fDate
 	 * @throws fValidationException
 	 * 
 	 * @param  string $adjustment  The adjustment to make
-	 * @return void
+	 * @return fDate  The adjusted date
 	 */
 	public function adjust($adjustment)
 	{
-		$date = $this->makeAdjustment($adjustment, $this->date);
-		$this->set($date);
+		$timestamp = strtotime($adjustment, $this->date);
+		
+		if ($timestamp === FALSE || $timestamp === -1) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, does not appear to be a valid relative date measurement',
+					fCore::dump($adjustment)
+				)
+			);
+		}
+		
+		if (date('H:i:s', $timestamp) != '00:00:00') {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The adjustment specified, %s, appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.',
+					fCore::dump($adjustment)
+				)
+			);
+		}
+		
+		return new fDate($timestamp);
 	}
 	
 	
 	/**
-	 * Formats the date, with an optional adjustment
+	 * Formats the date
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format      The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
-	 * @param  string $adjustment  A temporary adjustment to make
-	 * @return string  The formatted (and possibly adjusted) date
+	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @return string  The formatted date
 	 */
-	public function format($format, $adjustment=NULL)
+	public function format($format)
 	{
 		$format = fTimestamp::translateFormat($format);
 		
@@ -107,13 +128,7 @@ class fDate
 			);
 		}
 		
-		$date = $this->date;
-		
-		if ($adjustment) {
-			$date = $this->makeAdjustment($adjustment, $date);
-		}
-		
-		return fTimestamp::callFormatCallback(date($format, $date));
+		return fTimestamp::callFormatCallback(date($format, $this->date));
 	}
 	
 	
@@ -222,181 +237,36 @@ class fDate
 	
 	
 	/**
-	 * Makes an adjustment, returning the adjusted date
+	 * Modifies the current date, creating a new fDate object
 	 * 
-	 * @throws fValidationException
+	 * The purpose of this method is to allow for easy creation of a date
+	 * based on this date. Below are some examples of formats to
+	 * modify the current date:
 	 * 
-	 * @param  string  $adjustment  The adjustment to make
-	 * @param  integer $timestamp   The date to adjust
-	 * @return integer  The adjusted timestamp
+	 * To change the date to the first of the month:
+	 * 
+	 * <pre>
+	 * Y-m-01
+	 * </pre>
+	 * 
+	 * To change the date to the last of the month:
+	 * 
+	 * <pre>
+	 * Y-m-t
+	 * </pre>
+	 * 
+	 * To change the date to the 5th week of the year:
+	 * 
+	 * <pre>
+	 * Y-\W5-N
+	 * </pre>
+	 * 
+	 * @param  string $format  The current date will be formatted with this string, and the output used to create a new object
+	 * @return fDate  The new date
 	 */
-	private function makeAdjustment($adjustment, $timestamp)
+	public function modify($format)
 	{
-		$timestamp = strtotime($adjustment, $timestamp);
-		
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, does not appear to be a valid relative date measurement',
-					fCore::dump($adjustment)
-				)
-			);
-		}
-		
-		if (date('H:i:s', $timestamp) != '00:00:00') {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.',
-					fCore::dump($adjustment)
-				)
-			);
-		}
-		
-		return $timestamp;
-	}
-	
-	
-	/**
-	 * Sets the date, making sure all hours minutes and seconds are removed
-	 * 
-	 * @param  integer $timestamp  The date to set. All hours, minutes and seconds will be removed
-	 * @return void
-	 */
-	private function set($timestamp)
-	{
-		$this->date = strtotime(date('Y-m-d 00:00:00', $timestamp));
-	}
-	
-	
-	/**
-	 * Changes the date to the date specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $year   The year to change to
-	 * @param  integer $month  The month to change to
-	 * @param  integer $day    The day of the month to change to
-	 * @return void
-	 */
-	public function setDate($year, $month, $day)
-	{
-		$year  = ($year === NULL)  ? date('Y', $this->date) : $year;
-		$month = ($month === NULL) ? date('m', $this->date) : $month;
-		$day   = ($day === NULL)   ? date('d', $this->date) : $day;
-		
-		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The year specified, %s, does not appear to be a valid year',
-					fCore::dump($year)
-				)
-			);
-		}
-		if (!is_numeric($month) || $month < 1 || $month > 12) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The month specified, %s, does not appear to be a valid month',
-					fCore::dump($month)
-				)
-			);
-		}
-		if (!is_numeric($day) || $day < 1 || $day > 31) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The day specified, %s, does not appear to be a valid day',
-					fCore::dump($day)
-				)
-			);
-		}
-		
-		settype($month, 'integer');
-		settype($day,   'integer');
-		
-		if ($month < 10) { $month = '0' . $month; }
-		if ($day < 10)   { $day   = '0' . $day; }
-		
-		$timestamp = strtotime($year . '-' . $month . '-' . $day);
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The date specified, %1$s-%2$s-%3$s, does not appear to be a valid date',
-					fCore::dump($year),
-					fCore::dump($month),
-					fCore::dump($day)
-				)
-			);
-		}
-		$this->set($timestamp);
-	}
-	
-	
-	/**
-	 * Changes the date to the ISO date (year, week, day of week) specified. Any parameters that are NULL are ignored.
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  integer $year         The year to change to
-	 * @param  integer $week         The week to change to
-	 * @param  integer $day_of_week  The day of the week to change to
-	 * @return void
-	 */
-	public function setISODate($year, $week, $day_of_week)
-	{
-		$year        = ($year === NULL)        ? date('Y', $this->date) : $year;
-		$week        = ($week === NULL)        ? date('W', $this->date) : $week;
-		$day_of_week = ($day_of_week === NULL) ? date('N', $this->date) : $day_of_week;
-		
-		if (!is_numeric($year) || $year < 1901 || $year > 2038) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The year specified, %s, does not appear to be a valid year',
-					fCore::dump($year)
-				)
-			);
-		}
-		if (!is_numeric($week) || $week < 1 || $week > 53) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The week specified, %s, does not appear to be a valid week',
-					fCore::dump($week)
-				)
-			);
-		}
-		if (!is_numeric($day_of_week) || $day_of_week < 1 || $day_of_week > 7) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The day of week specified, %s, does not appear to be a valid day of the week',
-					fCore::dump($day_of_week)
-				)
-			);
-		}
-		
-		settype($week, 'integer');
-		
-		if ($week < 10) { $week = '0' . $week; }
-		
-		$timestamp = strtotime($year . '-01-01 +' . ($week-1) . ' weeks +' . ($day_of_week-1) . ' days');
-		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The ISO date specified, %1$s-W%2$s-%3$s, does not appear to be a valid ISO date',
-					fCore::dump($year),
-					fCore::dump($week),
-					fCore::dump($day_of_week)
-				)
-			);
-		}
-		$this->set($timestamp);
+	   return new fDate($this->format($format));
 	}
 }
 
