@@ -736,9 +736,9 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns this date/time in the current default timezone
+	 * Returns this date/time
 	 * 
-	 * @return string  The 'Y-m-d H:i:s' format of this date/time in the current default timezone
+	 * @return string  The 'Y-m-d H:i:s' format of this date/time
 	 */
 	public function __toString()
 	{
