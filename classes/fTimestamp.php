@@ -717,6 +717,8 @@ class fTimestamp
 		} else {
 			if (is_object($datetime) && is_callable(array($datetime, '__toString'))) {
 				$datetime = $datetime->__toString();	
+			} elseif (fCore::stringlike($datetime)) {
+				$datetime = (string) $datetime;	
 			}
 			$timestamp = strtotime(self::fixISOWeek($datetime) . ' ' . $timezone);
 		}

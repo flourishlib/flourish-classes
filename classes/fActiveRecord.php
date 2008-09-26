@@ -622,17 +622,8 @@ abstract class fActiveRecord
 		// Other objects
 		if (is_object($value) && is_callable(array($value, '__toString'))) {
 			$value = $value->__toString();
-		}
-		
-		// If we are left with an object at this point then we don't know what to do with it
-		if (is_object($value)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
-					fCore::dump($column)
-				)
-			);
+		} elseif (is_object($value)) {
+			$value = (string) $value;	
 		}
 		
 		// Make sure we don't mangle a non-float value
@@ -1002,18 +993,9 @@ abstract class fActiveRecord
 		
 		// Other objects
 		if (is_object($value) && is_callable(array($value, '__toString'))) {
-			return fHTML::prepare($value->__toString());
-		}
-		
-		// If we are left with an object at this point then we don't know what to do with it
-		if (is_object($value)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, contains an object that does not have a __toString() method - unsure how to get object value',
-					fCore::dump($column)
-				)
-			);
+			$value = $value->__toString();
+		} elseif (is_object($value)) {
+			$value = (string) $value;	
 		}
 		
 		// Ensure the value matches the data type specified to prevent mangling

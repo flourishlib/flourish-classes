@@ -39,6 +39,8 @@ class fDate
 		} else {
 			if (is_object($date) && is_callable(array($date, '__toString'))) {
 				$date = $date->__toString();	
+			} elseif (fCore::stringlike($date)) {
+				$date = (string) $date;	
 			}
 			$timestamp = strtotime(fTimestamp::fixISOWeek($date));
 		}

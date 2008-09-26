@@ -84,6 +84,8 @@ class fORMJSON
 		foreach ($values as $column => $value) {
 			if (is_object($value) && is_callable(array($value, '__toString'))) {
 				$value = $value->__toString();
+			} elseif (is_object($value)) {
+				$value = (string) $value;	
 			}
 			$output[$column] = $value;
 		}

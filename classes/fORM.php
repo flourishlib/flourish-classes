@@ -325,7 +325,7 @@ class fORM
 			if (is_object($data) && is_callable(array($data, '__toString'))) {
 				$data = $data->__toString();
 			}
-			$primary_key_data[$primary_key] = (string) $data;
+			$primary_key_data[$primary_key] = $data;
 		}
 		return md5(serialize($primary_key_data));
 	}
@@ -717,9 +717,12 @@ class fORM
 			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
 		}
 		
-		if (is_object($value)) {
+		if (is_object($value) && is_callable(array($value, '__toString'))) {
 			return $value->__toString();
+		} elseif (is_object($value)) {
+			return (string) $value;
 		}
+		
 		return $value;
 	}
 	

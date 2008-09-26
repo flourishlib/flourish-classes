@@ -245,8 +245,9 @@ class fNumber
 	{
 		if (is_object($number) && is_callable(array($number, '__toString'))) {
 			$number = $number->__toString();
+		} elseif (fCore::stringlike($number)) {
+			$number = (string) $number;
 		}
-		$number = (string) $number;
 		$number = trim($number);
 		
 		if (self::$unformat_callback) {

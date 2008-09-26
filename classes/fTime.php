@@ -39,6 +39,8 @@ class fTime
 		} else {
 			if (is_object($time) && is_callable(array($time, '__toString'))) {
 				$time = $time->__toString();	
+			} elseif (fCore::stringlike($time)) {
+				$time = (string) $time;	
 			}
 			$timestamp = strtotime($time);
 		}
