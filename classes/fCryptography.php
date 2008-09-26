@@ -34,6 +34,97 @@ class fCryptography
 	
 	
 	/**
+	 * Create a private key resource based on a filename and password
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $private_key_file  The path to a PEM-encoded private key
+	 * @param  string $password          The password for the private key
+	 * @return resource  The private key resource
+	 */
+	static public function createPrivateKeyResource($private_key_file, $password)
+	{
+		if (!file_exists($private_key_file)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The path to the PEM-encoded private key specified, %s, is not valid',
+					fCore::dump($private_key_file)
+				)
+			);
+		}
+		if (!is_readable($private_key_file)) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The PEM-encoded private key specified, %s, is not readable',
+					fCore::dump($private_key_file)
+				)
+			);
+		}
+		
+		$private_key          = file_get_contents($private_key_file);
+		$private_key_resource = openssl_pkey_get_private($private_key, $password);
+		
+		if ($private_key_resource === FALSE) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The private key file specified, %s, does not appear to be a valid private key or the password provided is incorrect',
+					fCore::dump($private_key_file)
+				)
+			);
+		}
+		
+		return $private_key_resource;
+	}
+	
+	
+	/**
+	 * Create a public key resource based on a filename
+	 * 
+	 * @param  string $public_key_file  The path to an X.509 public key certificate
+	 * @return resource  The public key resource
+	 */
+	static public function createPublicKeyResource($public_key_file)
+	{
+		if (!file_exists($public_key_file)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The path to the X.509 certificate specified, %s, is not valid',
+					fCore::dump($public_key_file)
+				)
+			);
+		}
+		if (!is_readable($public_key_file)) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The X.509 certificate specified, %s, can not be read',
+					fCore::dump($public_key_file)
+				)
+			);
+		}
+		
+		$public_key = file_get_contents($public_key_file);
+		$public_key_resource = openssl_pkey_get_public($public_key);
+		
+		if ($public_key_resource === FALSE) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The public key certificate specified, %s, does not appear to be a valid certificate',
+					fCore::dump($public_key_file)
+				)
+			);
+		}
+		
+		return $public_key_resource;
+	}
+	
+	
+	/**
 	 * Hashes a password using a loop of sha1 hashes and a salt, making rainbow table attacks infeasible
 	 * 
 	 * @param  string $password  The password to hash
@@ -82,37 +173,7 @@ class fCryptography
 	{
 		self::verifyPublicKeyEnvironment();
 		
-		if (!file_exists($private_key_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The path to the PEM-encoded private key specified, %s, is not valid',
-					fCore::dump($private_key_file)
-				)
-			);
-		}
-		if (!is_readable($private_key_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The PEM-encoded private key specified, %s, is not readable',
-					fCore::dump($private_key_file)
-				)
-			);
-		}
-		
-		$private_key          = file_get_contents($private_key_file);
-		$private_key_resource = openssl_pkey_get_private($private_key, $password);
-		
-		if ($private_key_resource === FALSE) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The private key password specified does not appear to be valid for the private key',
-					fCore::dump($primary_key_file)
-				)
-			);
-		}
+		$private_key_resource = self::createPrivateKeyResource($private_key_file, $password);
 		
 		$elements = explode('#', $ciphertext);
 		
@@ -132,8 +193,17 @@ class fCryptography
 		$provided_hmac = $elements[3];
 		
 		$plaintext = '';
-		openssl_open($ciphertext, $plaintext, $encrypted_key, $private_key_resource);
+		$result = openssl_open($ciphertext, $plaintext, $encrypted_key, $private_key_resource);
 		openssl_free_key($private_key_resource);
+		
+		if ($result === FALSE) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'There was an unknown error decrypting the ciphertext provided'
+				)
+			);
+		}
 		
 		$hmac = hash_hmac('sha1', $encrypted_key . $ciphertext, $plaintext);
 		
@@ -165,36 +235,93 @@ class fCryptography
 	{
 		self::verifyPublicKeyEnvironment();
 		
-		if (!file_exists($public_key_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The path to the X.509 certificate specified, %s, is not valid',
-					fCore::dump($public_key_file)
-				)
-			);
-		}
-		if (!is_readable($public_key_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The X.509 certificate specified, %s, can not be read',
-					fCore::dump($public_key_file)
-				)
-			);
-		}
-		
-		$public_key = file_get_contents($public_key_file);
-		$public_key_resource = openssl_pkey_get_public($public_key);
+		$public_key_resource = self::createPublicKeyResource($public_key_file);
 		
 		$ciphertext     = '';
 		$encrypted_keys = array();
-		openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
+		$result = openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
 		openssl_free_key($public_key_resource);
+		
+		if ($result === FALSE) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'There was an unknown error encrypting the plaintext provided'
+				)
+			);
+		}
 		
 		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
 		
 		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
+	}
+	
+	
+	/**
+	 * Creates a signature for plaintext to allow verification of the creator
+	 * 
+	 * A private key (PEM) is required for signing and a public key
+	 * (X.509 certificate) is required for verification.
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $plaintext         The content to be signed
+	 * @param  string $private_key_file  The path to a PEM-encoded private key
+	 * @param  string $password          The password for the private key
+	 * @return string  The base64-encoded signature
+	 */
+	static public function publicKeySign($plaintext, $private_key_file, $password)
+	{
+		self::verifyPublicKeyEnvironment();
+		
+		$private_key_resource = self::createPrivateKeyResource($private_key_file, $password);
+		
+		$result = openssl_sign($plaintext, $signature, $private_key_resource);
+		openssl_free_key($private_key_resource);
+		
+		if (!$result) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'There was an unknown error signing the plaintext'
+				)
+			);
+		}
+		
+		return base64_encode($signature);
+	}
+	
+	
+	/**
+	 * Checks a signature for plaintext to verify the creator
+	 * 
+	 * A private key (PEM) is required for signing and a public key
+	 * (X.509 certificate) is required for verification.
+	 * 
+	 * @param  string $plaintext         The content to check
+	 * @param  string $signature         The base64-encoded signature for the plaintext
+	 * @param  string $public_key_file   The path to an X.509 public key certificate
+	 * @return boolean  If the public key file is the public key of the user who signed the plaintext
+	 */
+	static public function publicKeyVerify($plaintext, $signature, $public_key_file)
+	{
+		self::verifyPublicKeyEnvironment();
+		
+		$public_key_resource = self::createPublicKeyResource($public_key_file);
+		
+		$result = openssl_verify($plaintext, base64_decode($signature), $public_key_resource);
+		openssl_free_key($public_key_resource);
+		
+		if ($result === -1) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'There was an unknown error verifying the plaintext and signature against the public key specified'
+				)
+			);
+		}
+		
+		return ($result === 1) ? TRUE : FALSE;
 	}
 	
 	
