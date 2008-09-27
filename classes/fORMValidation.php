@@ -649,7 +649,27 @@ class fORMValidation
 	static public function setMessageOrder($class, $matches)
 	{
 		$class = fORM::getClass($class);
+		uasort($matches, array('self', 'sortMessageMatches'));
 		self::$message_orders[$class] = $matches;
+	}
+	
+	
+	/**
+	 * Compares the message matching strings by longest first so that the longest matches are made first
+	 *
+	 * @param  string $a  The first string to compare
+	 * @param  string $b  The second string to compare
+	 * @return integer  -1 if $a is long than $b, 0 if they are equal length, 1 if $a is shorted than $b
+	 */
+	static private function sortMessageMatches($a, $b)
+	{
+		if (strlen($a) == strlen($b)) {
+			return 0;	
+		}
+		if (strlen($a) > strlen($b)) {
+			return -1;	
+		}
+		return 1;
 	}
 	
 	
