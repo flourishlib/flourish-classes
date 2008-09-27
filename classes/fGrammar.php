@@ -74,7 +74,7 @@ class fGrammar
 		'people$'                      => 'person',
 		'men$'                         => 'man',
 		'((?!sh).)oes$'                => '\1o',
-		'([ieu]s|[ieuo]x)es$'          => '\1',
+		'((?<!o)[ieu]s|[ieuo]x)es$'    => '\1',
 		'([cs]h)es$'                   => '\1',
 		'(ss)es$'                      => '\1',
 		'([aeo]l)ves$'                 => '\1f',
