@@ -15,29 +15,6 @@
 class fGrammar
 {
 	/**
-	 * A listing of words that should be converted to all capital letters, instead of just the first letter
-	 * 
-	 * @var array
-	 */
-	static private $all_capitals_words = array(
-		'api',
-		'css',
-		'gif',
-		'html',
-		'id',
-		'jpg',
-		'mp3',
-		'pdf',
-		'php',
-		'png',
-		'sql',
-		'swf',
-		'url',
-		'xhtml',
-		'xml'
-	);
-	
-	/**
 	 * Custom rules for camelizing a string
 	 * 
 	 * @var array
@@ -55,18 +32,25 @@ class fGrammar
 	);
 	
 	/**
+	 * Custom rules for humanizing a string
+	 * 
+	 * @var array
+	 */
+	static private $humanize_rules = array();
+	
+	/**
 	 * The callback to replace {@link humanize()} with
 	 * 
 	 * @var callback
 	 */
-	static private $humanize_replacement = NULL;
+	static private $humanize_callback = NULL;
 	
 	/**
 	 * The callback to replace {@link joinArray()} with
 	 * 
 	 * @var callback
 	 */
-	static private $join_array_replacement = NULL;
+	static private $join_array_callback = NULL;
 	
 	/**
 	 * Rules for plural to singular inflection of nouns
@@ -130,14 +114,15 @@ class fGrammar
 	
 	
 	/**
-	 * Adds a word to the list of all capital letters words, which is used by {@link humanize()} to produce more gramatically correct results
+	 * Adds a custom mapping of a non-humanized string to a humanized string for {@link humanize()}
 	 * 
-	 * @param  string $word  The word that should be in all caps when printed
+	 * @param  string $non_humanized_string  The non-humanized string
+	 * @param  string $humanized_string      The humanized string
 	 * @return void
 	 */
-	static public function addAllCapitalsWord($word)
+	static public function addHumanizeRule($non_humanized_string, $humanized_string)
 	{
-		self::$all_capitals_words[] = strtolower($word);
+		self::$humanize_rules[$non_humanized_string] = $humanized_string;
 	}
 	
 	
@@ -150,6 +135,7 @@ class fGrammar
 	 */
 	static public function addCamelUnderscoreRule($camel_case, $underscore_notation)
 	{
+		$camel_case = strtolower($camel_case[0]) . substr($camel_case, 1);
 		self::$underscorize_rules[$camel_case] = $underscore_notation;
 		self::$camelize_rules[$underscore_notation] = $camel_case;
 	}
@@ -251,8 +237,12 @@ class fGrammar
 	 */
 	static public function humanize($string)
 	{
-		if (self::$humanize_replacement) {
-			return call_user_func(self::$humanize_replacement, $string);
+		if (self::$humanize_callback) {
+			return call_user_func(self::$humanize_callback, $string);
+		}
+		
+		if (isset(self::$humanize_rules[$string])) {
+			return self::$humanize_rules[$string];	
 		}
 		
 		// If there is a space, it is already humanized
@@ -266,7 +256,7 @@ class fGrammar
 		}
 		
 		return preg_replace(
-			'/(\b(' . join('|', self::$all_capitals_words) . ')\b|\b\w)/e',
+			'/(\b(api|css|gif|html|id|jpg|js|mp3|pdf|php|png|sql|swf|url|xhtml|xml)\b|\b\w)/e',
 			'strtoupper("\1")',
 			str_replace('_', ' ', $string)
 		);
@@ -348,8 +338,8 @@ class fGrammar
 			);
 		}
 		
-		if (self::$join_array_replacement) {
-			return call_user_func(self::$join_array_replacement, $strings, $type);
+		if (self::$join_array_callback) {
+			return call_user_func(self::$join_array_callback, $strings, $type);
 		}
 		
 		settype($strings, 'array');
@@ -443,9 +433,9 @@ class fGrammar
 	 * @param  callback $callback  The function to replace {@link humanize()} with. This function should accept the same parameters and return the same type as {@link humanize()}
 	 * @return void
 	 */
-	static public function replaceHumanize($callback)
+	static public function registerHumanizeCallback($callback)
 	{
-		self::$humanize_replacement = $callback;
+		self::$humanize_callback = $callback;
 	}
 	
 	
@@ -458,9 +448,9 @@ class fGrammar
 	 * @param  callback $callback  The function to replace {@link joinArray()} with. This function should accept the same parameters and return the same type as {@link joinArray()}.
 	 * @return void
 	 */
-	static public function replaceJoinArray($callback)
+	static public function registerJoinArrayCallback($callback)
 	{
-		self::$join_array_replacement = $callback;
+		self::$join_array_callback = $callback;
 	}
 	
 	
@@ -521,6 +511,8 @@ class fGrammar
 	 */
 	static public function underscorize($string)
 	{
+		$string = strtolower($string[0]) . substr($string, 1);
+		
 		// Handle custom rules
 		if (isset(self::$underscorize_rules[$string])) {
 			return self::$underscorize_rules[$string];
