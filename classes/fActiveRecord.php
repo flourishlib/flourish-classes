@@ -69,7 +69,7 @@ abstract class fActiveRecord
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list ($action, $subject) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
 		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
 			return fORM::callHookCallback(

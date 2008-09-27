@@ -498,6 +498,29 @@ class fORM
 	
 	
 	/**
+	 * Parses a camelCase method name for an action and subject in the form actionSubject
+	 *
+	 * @internal
+	 * 
+	 * @param  string $method  The method name to parse
+	 * @return array  An array of 0 => {action}, 1 => {subject}
+	 */
+	static public function parseMethod($method)
+	{
+		if (!preg_match('#^([a-z]+)(.*)$#', $method, $matches)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Invalid method, %s(), called',
+					$method
+				)
+			);	
+		}
+		return array($matches[1], fGrammar::underscorize($matches[2]));
+	}
+	
+	
+	/**
 	 * Registers a callback for one of the various {@link fActiveRecord} hooks
 	 * 
 	 * Any hook that does not begin with replace:: can have multiple callbacks.

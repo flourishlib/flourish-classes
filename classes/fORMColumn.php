@@ -302,7 +302,7 @@ class fORMColumn
 	 */
 	static public function encodeNumberColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
 		$value       = $values[$column];
@@ -335,7 +335,7 @@ class fORMColumn
 	 */
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -429,7 +429,7 @@ class fORMColumn
 	 */
 	static public function prepareLinkColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$value = $values[$column];
 		
@@ -457,7 +457,7 @@ class fORMColumn
 	 */
 	static public function prepareNumberColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
 		$value       = $values[$column];

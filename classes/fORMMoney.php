@@ -168,7 +168,7 @@ class fORMMoney
 	 */
 	static public function encodeMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$value = $values[$column];
 		
@@ -195,7 +195,7 @@ class fORMMoney
 	 */
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -336,7 +336,7 @@ class fORMMoney
 	 */
 	static public function prepareMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		if (empty($values[$column])) {
 			return $values[$column];
@@ -449,7 +449,7 @@ class fORMMoney
 	 */
 	static public function setCurrencyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class = get_class($object);
 		
@@ -490,7 +490,7 @@ class fORMMoney
 	 */
 	static public function setMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class = get_class($object);
 		

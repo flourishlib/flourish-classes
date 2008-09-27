@@ -439,7 +439,7 @@ class fORMFile
 	 */
 	static public function encode($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
 		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . $filename) !== FALSE) {
@@ -465,7 +465,7 @@ class fORMFile
 	 */
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -588,7 +588,7 @@ class fORMFile
 	 */
 	static public function prepare($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		if (sizeof($parameters) > 1) {
 			fCore::toss(
@@ -822,7 +822,7 @@ class fORMFile
 	{
 		$class = get_class($object);
 		
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
 		
@@ -908,7 +908,7 @@ class fORMFile
 	{
 		$class = get_class($object);
 		
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		self::setUpFUpload($class, $column);
 		

@@ -215,7 +215,7 @@ class fORMOrdering
 	 */
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class = get_class($object);
 		$table = fORM::tablize($class);

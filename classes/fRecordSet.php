@@ -392,7 +392,7 @@ class fRecordSet implements Iterator
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list($action, $element) = explode('_', fGrammar::underscorize($method_name), 2);
+		list($action, $element) = fORM::parseMethod($method_name);
 		
 		if (isset(self::$method_callbacks[$method_name])) {
 			return call_user_func_array(

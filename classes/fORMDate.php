@@ -245,7 +245,7 @@ class fORMDate
 	 */
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
 		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
@@ -453,7 +453,7 @@ class fORMDate
 	 */
 	static public function setTimestampColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class = get_class($object);
 		
@@ -497,7 +497,7 @@ class fORMDate
 	 */
 	static public function setTimezoneColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
-		list ($action, $column) = explode('_', fGrammar::underscorize($method_name), 2);
+		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class = get_class($object);
 		
