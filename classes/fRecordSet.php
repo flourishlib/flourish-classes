@@ -587,7 +587,7 @@ class fRecordSet implements Iterator
 			return $this->count();
 		}
 		
-		if ($this->non_limited_count !== NULL) {
+		if ($this->non_limited_count === NULL) {
 			try {
 				$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
 			} catch (fExpectedException $e) {
