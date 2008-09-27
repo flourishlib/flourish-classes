@@ -38,6 +38,13 @@ class fGrammar
 	);
 	
 	/**
+	 * Custom rules for camelizing a string
+	 * 
+	 * @var array
+	 */
+	static private $camelize_rules = array();
+	
+	/**
 	 * Callbacks for when messages are composed
 	 * 
 	 * @var array
@@ -114,6 +121,13 @@ class fGrammar
 		'(.)$'                         => '\1s'
 	);
 	
+	/**
+	 * Custom rules for underscorizing a string
+	 * 
+	 * @var array
+	 */
+	static private $underscorize_rules = array();
+	
 	
 	/**
 	 * Adds a word to the list of all capital letters words, which is used by {@link humanize()} to produce more gramatically correct results
@@ -124,6 +138,20 @@ class fGrammar
 	static public function addAllCapitalsWord($word)
 	{
 		self::$all_capitals_words[] = strtolower($word);
+	}
+	
+	
+	/**
+	 * Adds a custom camelCase->underscore_notation and underscore_notation->camelCase rule
+	 * 
+	 * @param  string $camel_case           The lower camelCase version of the string
+	 * @param  string $underscore_notation  The underscore_notation version of the string
+	 * @return void
+	 */
+	static public function addCamelUnderscoreRule($camel_case, $underscore_notation)
+	{
+		self::$underscorize_rules[$camel_case] = $underscore_notation;
+		self::$camelize_rules[$underscore_notation] = $camel_case;
 	}
 	
 	
@@ -156,6 +184,15 @@ class fGrammar
 	 */
 	static public function camelize($string, $upper)
 	{
+		// Handle custom rules
+		if (isset(self::$camelize_rules[$string])) {
+			$camel = self::$camelize_rules[$string];
+			if ($upper) {
+				return strtoupper($camel[0]) . substr($camel, 1);
+			}
+			return $camel;	
+		}
+		
 		// Make a humanized string like underscore notation
 		if (strpos($string, ' ') !== FALSE) {
 			$string = strtolower(preg_replace('#\s+#', '_', $string));
@@ -484,6 +521,11 @@ class fGrammar
 	 */
 	static public function underscorize($string)
 	{
+		// Handle custom rules
+		if (isset(self::$underscorize_rules[$string])) {
+			return self::$underscorize_rules[$string];
+		}
+		
 		// If the string is already underscore notation then leave it
 		if (strpos($string, '_') !== FALSE) {
 			return $string;
