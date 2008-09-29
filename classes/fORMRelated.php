@@ -310,6 +310,31 @@ class fORMRelated
 	
 	
 	/**
+	 * Does an array_diff() for two arrays that have arrays as values
+	 * 
+	 * @param  array $array1  The array to remove items from
+	 * @param  array $array2  The array of items to remove
+	 * @return array  The items in $array1 that were not also in $array2
+	 */
+	static private function multidimensionArrayDiff($array1, $array2)
+	{
+		$output = array();
+		foreach ($array1 as $sub_array1) {
+			$remove = FALSE;
+			foreach ($array2 as $sub_array2) {
+				if ($sub_array1 == $sub_array2) {
+					$remove = TRUE;
+				}
+			}
+			if (!$remove) {
+				$output[] = $sub_array1;
+			}
+		}
+		return $output;
+	}
+	
+	
+	/**
 	 * Allows overriding of default (humanize-d class name) record names or related records
 	 * 
 	 * @param  mixed  $class          The class name or instance of the class to set the related record name for
@@ -353,8 +378,31 @@ class fORMRelated
 	 */
 	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
 	{
-		$pk_columns      = fORMSchema::getInstance()->getKeys(fORM::tablize($related_class), 'primary');
-		$first_pk_column = $pk_columns[0];
+		$related_table   = fORM::tablize($related_class);
+		$pk_columns      = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		
+		// If there is a multi-fiend primary key we want to populate based on any field BUT the foreign key to the current class
+		if (sizeof($pk_columns) > 1) {
+		
+			$first_pk_column = NULL;
+			$relationships   = fORMSchema::getRoutes($related_table, fORM::tablize($class), '*-to-one');
+			foreach ($pk_columns as $pk_column) {
+				foreach ($relationships as $relationship) {
+					if ($pk_column == $relationship['column']) {
+						continue;
+					}
+					$first_pk_column = $pk_column;
+					break 2;
+				}	
+			}
+			
+			if (!$first_pk_column) {
+				$first_pk_column = $pk_columns[0];
+			}
+			
+		} else {
+			$first_pk_column = $pk_columns[0];
+		}
 		
 		$filter          = self::determineRequestFilter($class, $related_class, $route);
 		$pk_field        = $filter . $first_pk_column;
@@ -365,9 +413,9 @@ class fORMRelated
 		for ($i = 0; $i < $total_records; $i++) {
 			fRequest::filter($filter, $i);
 			
-			// Existing record are loaded out of the database before populating
-			if (fRequest::get($first_pk_column) !== NULL) {
-				if (sizeof($pk_columns) == 1) {
+			// Try to load the value from the database first
+			try {
+				if (sizeof($pk_fields) == 1) {
 					$primary_key_values = fRequest::get($first_pk_column);
 				} else {
 					$primary_key_values = array();
@@ -375,10 +423,10 @@ class fORMRelated
 						$primary_key_values[$pk_column] = fRequest::get($pk_column);
 					}
 				}
+				
 				$record = new $related_class($primary_key_values);
-			
-			// If we have a new record, created an empty object
-			} else {
+				
+			} catch (fNotFoundException $e) {
 				$record = new $related_class();
 			}
 			
@@ -582,53 +630,6 @@ class fORMRelated
 	
 	
 	/**
-	 * Stores a set of one-to-many related records in the database
-	 * 
-	 * @throws fValidationException
-	 * @internal
-	 * 
-	 * @param  array      &$values       The current values for the main record being stored
-	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set    The set of records to store
-	 * @return void
-	 */
-	static public function storeOneToMany(&$values, $relationship, $record_set)
-	{
-		$column_value = $values[$relationship['column']];
-		
-		$where_conditions = array(
-			$relationship['related_column'] . '=' => $column_value
-		);
-		
-		$related_class    = $record_set->getClass();
-		$existing_records = fRecordSet::build($related_class, $where_conditions);
-		
-		$existing_primary_keys  = $existing_records->getPrimaryKeys();
-		$new_primary_keys       = $record_set->getPrimaryKeys();
-		
-		$primary_keys_to_delete = array_diff($existing_primary_keys, $new_primary_keys);
-		
-		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
-			$object_to_delete = new $related_class();
-			$object_to_delete->delete(FALSE);
-		}
-		
-		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
-		
-		$record_number = 0;
-		$filter        = fORMRelated::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
-		
-		foreach ($record_set as $record) {
-			fRequest::filter($filter, $record_number);
-			$record->$set_method_name($column_value);
-			$record->store();
-			fRequest::unfilter();
-			$record_number++;
-		}
-	}
-	
-	
-	/**
 	 * Associates a set of many-to-many related records with the current record
 	 * 
 	 * @throws fValidationException
@@ -665,6 +666,53 @@ class fORMRelated
 			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
 			
 			fORMDatabase::getInstance()->translatedQuery($insert_sql);
+		}
+	}
+	
+	
+	/**
+	 * Stores a set of one-to-many related records in the database
+	 * 
+	 * @throws fValidationException
+	 * @internal
+	 * 
+	 * @param  array      &$values       The current values for the main record being stored
+	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  fRecordSet $record_set    The set of records to store
+	 * @return void
+	 */
+	static public function storeOneToMany(&$values, $relationship, $record_set)
+	{
+		$column_value = $values[$relationship['column']];
+		
+		$where_conditions = array(
+			$relationship['related_column'] . '=' => $column_value
+		);
+		
+		$related_class    = $record_set->getClass();
+		$existing_records = fRecordSet::build($related_class, $where_conditions);
+		
+		$existing_primary_keys  = $existing_records->getPrimaryKeys();
+		$new_primary_keys       = $record_set->getPrimaryKeys();
+		
+		$primary_keys_to_delete = self::multidimensionArrayDiff($existing_primary_keys, $new_primary_keys);
+		
+		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
+			$object_to_delete = new $related_class($primary_key_to_delete);
+			$object_to_delete->delete();
+		}
+		
+		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
+		
+		$record_number = 0;
+		$filter        = fORMRelated::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
+		
+		foreach ($record_set as $record) {
+			fRequest::filter($filter, $record_number);
+			$record->$set_method_name($column_value);
+			$record->store();
+			fRequest::unfilter();
+			$record_number++;
 		}
 	}
 	
