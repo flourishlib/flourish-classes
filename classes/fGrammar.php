@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides english words pluralization, singularization, camelCase, undercore_notation, plus a few other grammar functions
+ * Provides english word inflection, notation conversion, grammar helpers and internationlization support
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -37,13 +37,6 @@ class fGrammar
 	 * @var array
 	 */
 	static private $humanize_rules = array();
-	
-	/**
-	 * The callback to replace {@link humanize()} with
-	 * 
-	 * @var callback
-	 */
-	static private $humanize_callback = NULL;
 	
 	/**
 	 * The callback to replace {@link joinArray()} with
@@ -237,10 +230,6 @@ class fGrammar
 	 */
 	static public function humanize($string)
 	{
-		if (self::$humanize_callback) {
-			return call_user_func(self::$humanize_callback, $string);
-		}
-		
 		if (isset(self::$humanize_rules[$string])) {
 			return self::$humanize_rules[$string];	
 		}
@@ -421,21 +410,6 @@ class fGrammar
 		}
 		
 		self::$compose_callbacks[$timing][] = $callback;
-	}
-	
-	
-	/**
-	 * Allows replacing the {@link humanize()} function with a user defined function
-	 * 
-	 * This would be most useful for changing {@link humanize()} to work with other
-	 * languages, or to enhance it in some way.
-	 * 
-	 * @param  callback $callback  The function to replace {@link humanize()} with. This function should accept the same parameters and return the same type as {@link humanize()}
-	 * @return void
-	 */
-	static public function registerHumanizeCallback($callback)
-	{
-		self::$humanize_callback = $callback;
 	}
 	
 	
