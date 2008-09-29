@@ -66,10 +66,10 @@ class fRecordSet implements Iterator
 	 * @param  array   $where_conditions  The column => value comparisons for the where clause
 	 * @param  array   $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit             The number of records to fetch
-	 * @param  integer $offset            The offset to use before limiting
+	 * @param  integer $page              The page offset to use when limiting records
 	 * @return fRecordSet  A set of {@link fActiveRecord} objects
 	 */
-	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $offset=NULL)
+	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
 		self::configure($class);
 		
@@ -109,8 +109,19 @@ class fRecordSet implements Iterator
 			
 			$sql .= ' LIMIT ' . $limit;
 			
-			if ($offset !== NULL) {
-				$sql .= ' OFFSET ' . $offset;
+			if ($page !== NULL) {
+				
+				if (!is_numeric($page) || $page < 1) {
+					fCore::toss(
+						'fProgrammerException',
+						fGrammar::compose(
+							'The page specified, %s, is not a number or less than one',
+							fCore::dump($page)
+						)
+					);
+				}
+				
+				$sql .= ' OFFSET ' . (($page-1) * $limit);
 			}
 		}
 		
@@ -133,19 +144,14 @@ class fRecordSet implements Iterator
 		self::configure($class);
 		$table = fORM::tablize($class);
 		
-		$sql  = 'SELECT ' . $table . '.* FROM ' . $table . ' WHERE ';
-		
-		// Build the where clause
+		// Extract the primary key values
 		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
-		$total_pk_fields = sizeof($primary_key_fields);
+		$total_pk_fields    = sizeof($primary_key_fields);
 		
 		$primary_keys = array();
 		
 		$i = 0;
 		foreach ($records as $record) {
-			$sql .= ($i > 0) ? ' OR ' : '';
-			$sql .= ($total_pk_fields > 1) ? ' (' : '';
-			
 			for ($j=0; $j < $total_pk_fields; $j++) {
 				$pk_field      = $primary_key_fields[$j];
 				$pk_get_method = 'get' . fGrammar::camelize($pk_field, TRUE);
@@ -159,24 +165,11 @@ class fRecordSet implements Iterator
 				if ($total_pk_fields > 1) {
 					$primary_keys[$i][$pk_field] = $pk_value;
 				}
-				
-				$sql .= ($j > 0) ? ' AND ' : '';
-				$sql .= $table . '.' . $pk_field . fORMDatabase::escapeBySchema($table, $pk_field, $pk_value, '=');
 			}
-			
-			$sql .= ($total_pk_fields > 1) ? ') ' : '';
 			$i++;
 		}
 		
-		// Empty sets have SQL that won't return anything
-		if (sizeof($records) == 0) {
-			$sql .= " 0 = 1";
-		}
-		
 		$result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
-		$result->setResult(array());
-		$result->setReturnedRows(sizeof($records));
-		$result->setSQL($sql);
 		
 		$record_set = new fRecordSet($class, $result);
 		$record_set->records      = $records;
