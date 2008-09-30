@@ -409,11 +409,11 @@ class fORMDatabase
 		foreach ($conditions as $column => $values) {
 			
 			if (substr($column, -2) == '<=' || substr($column, -2) == '>=') {
-				$type   = substr($column, -2);
-				$column = substr($column, 0, -2);
+				$operator = substr($column, -2);
+				$column   = substr($column, 0, -2);
 			} else {
-				$type   = substr($column, -1);
-				$column = substr($column, 0, -1);
+				$operator = substr($column, -1);
+				$column   = substr($column, 0, -1);
 			}
 			
 			settype($values, 'array');
@@ -432,30 +432,30 @@ class fORMDatabase
 			
 			// Multi-column condition
 			if (strpos($column, '|') !== FALSE) {
-				$columns = explode('|', $column);
-				$types   = array();
+				$columns   = explode('|', $column);
+				$operators = array();
 				
 				foreach ($columns as &$_column) {
 					if (substr($_column, -2) == '<=' || substr($_column, -2) == '>=') {
-						$types[] = substr($_column, -2);
-						$_column = substr($_column, 0, -2);
+						$operator[] = substr($_column, -2);
+						$_column    = substr($_column, 0, -2);
 					} elseif (!ctype_alnum(substr($_column, -1))) {
-						$types[] = substr($_column, -1);
-						$_column = substr($_column, 0, -1);
+						$operator[] = substr($_column, -1);
+						$_column    = substr($_column, 0, -1);
 					}
 				}
-				$types[] = $type;
+				$operator[] = $operator;
 				
 				$columns = self::addTableToValues($table, $columns);
 				
 				// Handle fuzzy searches
-				if (sizeof($types) == 1) {
-					if ($type != '~') {
+				if (sizeof($operator) == 1) {
+					if ($operator != '~') {
 						fCore::toss(
 							'fProgrammerException',
 							fGrammar::compose(
-								'An invalid matching type, %s, was specified',
-								fCore::dump($type)
+								'An invalid comparison operator, %s, was specified',
+								fCore::dump($operator)
 							)
 						);
 					}
@@ -485,7 +485,7 @@ class fORMDatabase
 						);
 					}
 					
-					if (sizeof($columns) != sizeof($types)) {
+					if (sizeof($columns) != sizeof($operators)) {
 						fCore::toss(
 							'fProgrammerException',
 							fGrammar::compose(
@@ -498,7 +498,7 @@ class fORMDatabase
 					$conditions = array();
 					$iterations = sizeof($columns);
 					for ($i=0; $i<$iterations; $i++) {
-						$conditions[] = $columns[$i] . self::escapeByType($values[$i], $types[$i]);
+						$conditions[] = $columns[$i] . self::escapeBySchema($table, $columns[$i], $values[$i], $operators[$i]);
 					}
 					$sql[] = ' (' . join(' OR ', $conditions) . ') ';
 				}
@@ -512,18 +512,18 @@ class fORMDatabase
 				
 				// More than one value
 				if (sizeof($values) > 1) {
-					switch ($type) {
+					switch ($operator) {
 						case '=':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::escapeByType($value);
+								$condition[] = self::escapeBySchema($table, $columns[$i], $value);
 							}
 							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
 							break;
 						case '!':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::escapeByType($value);
+								$condition[] = self::escapeBySchema($table, $columns[$i], $value);
 							}
 							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
 							break;
@@ -538,8 +538,8 @@ class fORMDatabase
 							fCore::toss(
 								'fProgrammerException',
 								fGrammar::compose(
-									'An invalid matching type, %s, was specified',
-									fCore::dump($type)
+									'An invalid comparison operator, %s, was specified',
+									fCore::dump($operator)
 								)
 							);
 							break;
@@ -547,20 +547,20 @@ class fORMDatabase
 					
 				// A single value
 				} else {
-					switch ($type) {
+					switch ($operator) {
 						case '=':
 						case '<':
 						case '<=':
 						case '>':
 						case '>=':
-							$sql[] = $column . self::escapeByType($values[0], $type);
+							$sql[] = $column . self::escapeBySchema($table, $columns[$i], $values[0], $operator);
 							break;
 							
 						case '!':
 							if ($values[0] !== NULL) {
-								$sql[] = '(' . $column . self::escapeByType($values[0], '<>') . ' OR ' . $column . ' IS NULL)';
+								$sql[] = '(' . $column . self::escapeBySchema($table, $columns[$i], $values[0], '<>') . ' OR ' . $column . ' IS NULL)';
 							} else {
-								$sql[] = $column . self::escapeByType($values[0], '<>');
+								$sql[] = $column . self::escapeBySchema($table, $columns[$i], $values[0], '<>');
 							}
 							break;
 							
@@ -572,8 +572,8 @@ class fORMDatabase
 							fCore::toss(
 								'fProgrammerException',
 								fGrammar::compose(
-									'An invalid matching type, %s, was specified',
-									fCore::dump($type)
+									'An invalid comparison operator, %s, was specified',
+									fCore::dump($operator)
 								)
 							);
 							break;
@@ -593,20 +593,26 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string $table                The table to store the value
-	 * @param  string $column               The column to store the value in
+	 * @param  string $column               The column to store the value in, may also be shorthand column name like table.column or table=>related_table.column
 	 * @param  mixed  $value                The value to escape
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @param  string $comparison_operator  Optional: should be '=', '!=', '!', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
 	 * @return string  The SQL-ready representation of the value
 	 */
 	static public function escapeBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
+		// Handle shorthand column names like table.column and table=>related_table.column
+		if (preg_match('#(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $match)) {
+			$table  = $match[1];
+			$column = $match[2];
+		}
+		
 		// Some of the tables being escaped for are linking tables that might break with classize()
 		if (is_object($value)) {
 			$class = fORM::classize($table);
 			$value = fORM::scalarize($class, $column, $value);
 		}
 		
-		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		$valid_comparison_operators = array('=', '!=', '!', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
 			fCore::toss(
 				'fProgrammerException',
@@ -635,58 +641,10 @@ class fORMDatabase
 			if ($co) {
 				if (in_array(trim($co), array('=', 'IN'))) {
 					$co = ' IS ';
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+				} elseif (in_array(trim($co), array('<>', '!=', '!', 'NOT IN'))) {
 					$co = ' IS NOT ';
 				}
 			}
-		}
-		
-		return $co . $prepared_value;
-	}
-	
-	
-	/**
-	 * Escapes a value for a DB call based on variable type
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed  $value                The value to escape
-	 * @param  string $comparison_operator  Optional: should be '=', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
-	 * @return string  The SQL-ready representation of the value
-	 */
-	static public function escapeByType($value, $comparison_operator=NULL)
-	{
-		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
-		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($comparison_operator),
-					join(', ', $valid_comparison_operators)
-				)
-			);
-		}
-		
-		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
-		
-		if (is_int($value) || (is_string($value) && preg_match('#^[+\-]?[0-9]+$#', $value))) {
-			$prepared_value = self::getInstance()->escape('integer', $value);
-		} elseif (is_float($value) || (is_string($value) && preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#', $value))) {
-			$prepared_value = self::getInstance()->escape('float', $value);
-		} elseif (is_bool($value)) {
-			$prepared_value = self::getInstance()->escape('boolean', $value);
-		} elseif (is_null($value)) {
-			if ($co) {
-				if (in_array(trim($co), array('=', 'IN'))) {
-					$co = ' IS ';
-				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
-					$co = ' IS NOT ';
-				}
-			}
-			$prepared_value = 'NULL';
-		} else {
-			$prepared_value = self::getInstance()->escape('string', $value);
 		}
 		
 		return $co . $prepared_value;
