@@ -147,7 +147,7 @@ class fMoney
 	/**
 	 * Allows setting a callback to clean any formatted values so they can be passed to {@link fNumber}
 	 * 
-	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and return a string suitable to passing to the fNumber constructor.
+	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and a currency code and return a string suitable to passing to the fNumber constructor.
 	 * @return void
 	 */
 	static public function registerUnformatCallback($callback)
@@ -232,7 +232,7 @@ class fMoney
 		
 		// Unformat any money value
 		if (self::$unformat_callback !== NULL) {
-			$amount = call_user_func(self::$unformat_callback, $amount);
+			$amount = call_user_func(self::$unformat_callback, $amount, $this->currency);
 		} else {
 			$amount = str_replace(
 				array(
