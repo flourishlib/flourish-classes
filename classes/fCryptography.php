@@ -42,7 +42,7 @@ class fCryptography
 	 * @param  string $password          The password for the private key
 	 * @return resource  The private key resource
 	 */
-	static public function createPrivateKeyResource($private_key_file, $password)
+	static private function createPrivateKeyResource($private_key_file, $password)
 	{
 		if (!file_exists($private_key_file)) {
 			fCore::toss(
@@ -86,7 +86,7 @@ class fCryptography
 	 * @param  string $public_key_file  The path to an X.509 public key certificate
 	 * @return resource  The public key resource
 	 */
-	static public function createPublicKeyResource($public_key_file)
+	static private function createPublicKeyResource($public_key_file)
 	{
 		if (!file_exists($public_key_file)) {
 			fCore::toss(
