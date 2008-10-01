@@ -111,7 +111,7 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::defineFormat()}
 	 * @return string  The formatted date
 	 */
 	public function format($format)

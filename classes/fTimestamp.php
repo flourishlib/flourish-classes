@@ -88,7 +88,7 @@ class fTimestamp
 	 * @param  string $formatting_string  The format string compatible with the {@link http://php.net/date date()} function
 	 * @return void
 	 */
-	static public function createFormat($name, $formatting_string)
+	static public function defineFormat($name, $formatting_string)
 	{
 		self::$formats[$name] = $formatting_string;
 	}
@@ -644,7 +644,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Takes a format name set via {@link fTimestamp::createFormat()} and returns the {@link http://php.net/date date()} function formatting string
+	 * Takes a format name set via {@link fTimestamp::defineFormat()} and returns the {@link http://php.net/date date()} function formatting string
 	 * 
 	 * @internal
 	 * 
@@ -786,7 +786,7 @@ class fTimestamp
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::createFormat()}
+	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::defineFormat()}
 	 * @return string  The formatted date/time
 	 */
 	public function format($format)
