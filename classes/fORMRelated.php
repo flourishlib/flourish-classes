@@ -415,7 +415,7 @@ class fORMRelated
 			
 			// Try to load the value from the database first
 			try {
-				if (sizeof($pk_fields) == 1) {
+				if (sizeof($pk_columns) == 1) {
 					$primary_key_values = fRequest::get($first_pk_column);
 				} else {
 					$primary_key_values = array();

@@ -516,14 +516,14 @@ class fORMDatabase
 						case '=':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::escapeBySchema($table, $columns[$i], $value);
+								$condition[] = self::escapeBySchema($table, $column, $value);
 							}
 							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
 							break;
 						case '!':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = self::escapeBySchema($table, $columns[$i], $value);
+								$condition[] = self::escapeBySchema($table, $column, $value);
 							}
 							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
 							break;
@@ -547,25 +547,27 @@ class fORMDatabase
 					
 				// A single value
 				} else {
+					$value = $values[0];
+					
 					switch ($operator) {
 						case '=':
 						case '<':
 						case '<=':
 						case '>':
 						case '>=':
-							$sql[] = $column . self::escapeBySchema($table, $columns[$i], $values[0], $operator);
+							$sql[] = $column . self::escapeBySchema($table, $column, $value, $operator);
 							break;
 							
 						case '!':
 							if ($values[0] !== NULL) {
-								$sql[] = '(' . $column . self::escapeBySchema($table, $columns[$i], $values[0], '<>') . ' OR ' . $column . ' IS NULL)';
+								$sql[] = '(' . $column . self::escapeBySchema($table, $column, $value, '<>') . ' OR ' . $column . ' IS NULL)';
 							} else {
-								$sql[] = $column . self::escapeBySchema($table, $columns[$i], $values[0], '<>');
+								$sql[] = $column . self::escapeBySchema($table, $column, $value, '<>');
 							}
 							break;
 							
 						case '~':
-							$sql[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $values[0] . '%');
+							$sql[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
 							break;
 							
 						default:
