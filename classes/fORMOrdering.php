@@ -364,10 +364,17 @@ class fORMOrdering
 		// was one), or a new value at the end of the set
 		if ($current_value === '' || $current_value === NULL) {
 			if ($old_value) {
-				$values[$column] = $current_value = $old_value;
+				$current_value = $old_value;
 			} else {
-				$values[$column] = $current_value = $new_max_value;
+				$current_value = $new_max_value;
 			}
+			fActiveRecord::assign($values, $old_values, $column, $current_value);
+		}
+		
+		// When we move an object into a new set and the value didn't change then move it to the end of the new set
+		if ($new_set && ($old_value === NULL || $old_value == $current_value)) {
+			$current_value = $new_max_value;
+			fActiveRecord::assign($values, $old_values, $column, $current_value);		
 		}
 		
 		// If the value didn't change, we can exit
@@ -498,8 +505,9 @@ class fORMOrdering
 		$current_max_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
 		$new_max_value     = $current_max_value;
 		
-		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
-			$new_max_value = $current_max_value + 1;
+		if ($new_set = self::isInNewSet($column, $other_columns, $values, $old_values)) {
+			$new_max_value     = $current_max_value + 1;
+			$new_set_new_value = isset($old_values[$column][0]) && $old_value != $current_value;
 		}
 		
 		$column_name = fORM::getColumnName($class, $column);
@@ -524,7 +532,7 @@ class fORMOrdering
 		} elseif ($current_value < 1) {
 			$validation_messages[] = fGrammar::compose('%s: The value can not be less than 1', $column_name);
 			
-		} elseif ($current_value > $new_max_value) {
+		} elseif ((!$new_set || $new_set_new_value) && $current_value > $new_max_value) {
 			$validation_messages[] = fGrammar::compose('%1$s: The value can not be greater than %2$s', $column_name, $new_max_value);
 		}
 	}
