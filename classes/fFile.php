@@ -233,7 +233,7 @@ class fFile
 				);
 			}
 			if (!$overwrite) {
-				$new_filename = fFilesystem::createUniqueName($new_filename);
+				$new_filename = fFilesystem::makeUniqueName($new_filename);
 				$check_dir_permissions = TRUE;
 			}
 		} else {
@@ -421,7 +421,7 @@ class fFile
 				);
 			}
 			if (!$overwrite) {
-				$new_filename = fFilesystem::createUniqueName($new_filename);
+				$new_filename = fFilesystem::makeUniqueName($new_filename);
 			}
 		} else {
 			$new_dir = new fDirectory($info['dirname']);

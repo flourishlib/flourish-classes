@@ -949,7 +949,7 @@ class fImage extends fFile
 		}
 		
 		if ($new_image_type) {
-			$output_file = fFilesystem::createUniqueName($this->file, $new_image_type);
+			$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
 		} else {
 			$output_file = $this->file;
 		}

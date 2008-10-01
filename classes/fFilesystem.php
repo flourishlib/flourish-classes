@@ -166,44 +166,6 @@ class fFilesystem
 	
 	
 	/**
-	 * Returns a unique name for a file
-	 * 
-	 * @param  string $file           The filename to check
-	 * @param  string $new_extension  The new extension for the filename, do not include .
-	 * @return string  The unique file name
-	 */
-	static public function createUniqueName($file, $new_extension=NULL)
-	{
-		$info = self::getPathInfo($file);
-		
-		// Change the file extension
-		if ($new_extension !== NULL) {
-			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
-			$file = $info['dirname'] . $info['filename'] . $new_extension;
-			$info = self::getPathInfo($file);
-		}
-		
-		// If there is an extension, be sure to add . before it
-		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
-		
-		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file);
-		
-		// Look for a unique name by adding _copy# to the end of the file
-		while (file_exists($file)) {
-			$info = self::getPathInfo($file);
-			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
-				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
-			} else {
-				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;
-			}
-		}
-		
-		return $file;
-	}
-	
-	
-	/**
 	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb
 	 * 
 	 * @param  integer $bytes           The size of the file in bytes
@@ -310,6 +272,44 @@ class fFilesystem
 	static public function isInsideTransaction()
 	{
 		return is_array(self::$commit_operations);
+	}
+	
+	
+	/**
+	 * Returns a unique name for a file
+	 * 
+	 * @param  string $file           The filename to check
+	 * @param  string $new_extension  The new extension for the filename, do not include .
+	 * @return string  The unique file name
+	 */
+	static public function makeUniqueName($file, $new_extension=NULL)
+	{
+		$info = self::getPathInfo($file);
+		
+		// Change the file extension
+		if ($new_extension !== NULL) {
+			$new_extension = ($new_extension) ? '.' . $new_extension : $new_extension;
+			$file = $info['dirname'] . $info['filename'] . $new_extension;
+			$info = self::getPathInfo($file);
+		}
+		
+		// If there is an extension, be sure to add . before it
+		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
+		
+		// Remove _copy# from the filename to start
+		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file);
+		
+		// Look for a unique name by adding _copy# to the end of the file
+		while (file_exists($file)) {
+			$info = self::getPathInfo($file);
+			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
+				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
+			} else {
+				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;
+			}
+		}
+		
+		return $file;
 	}
 	
 	

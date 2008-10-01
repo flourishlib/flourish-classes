@@ -282,7 +282,7 @@ class fUpload
 		$file_name  = strtolower($file_array['name']);
 		$file_name  = preg_replace('#\s+#', '_', $file_name);
 		$file_name  = preg_replace('#[^a-z0-9_\.-]#', '', $file_name);
-		$file_name  = fFilesystem::createUniqueName($directory->getPath() . $file_name);
+		$file_name  = fFilesystem::makeUniqueName($directory->getPath() . $file_name);
 		
 		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
 			fCore::toss(

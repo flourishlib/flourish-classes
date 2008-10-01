@@ -338,7 +338,7 @@ class fDirectory
 				);
 			}
 			if (!$overwrite) {
-				$new_dirname = fFilesystem::createUniqueName($new_dirname);
+				$new_dirname = fFilesystem::makeUniqueName($new_dirname);
 			}
 		} else {
 			$parent_dir = new fDirectory($info['dirname']);
