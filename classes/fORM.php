@@ -283,6 +283,25 @@ class fORM
 	
 	
 	/**
+	 * Turns a primary key array into a hash key using md5
+	 * 
+	 * @param  array $primary_key_data  The primary key data to hash
+	 * @return string  An md5 of the sorted, serialized primary key data
+	 */
+	static private function createPrimaryKeyHash($primary_key_data)
+	{
+		sort($primary_key_data);
+		foreach ($primary_key_data as $primary_key => $data) {
+			if (is_object($data) && is_callable(array($data, '__toString'))) {
+				$data = $data->__toString();
+			}
+			$primary_key_data[$primary_key] = $data;
+		}
+		return md5(serialize($primary_key_data));
+	}
+	
+	
+	/**
 	 * Will dynamically create an {@link fActiveRecord}-based class for a database table
 	 * 
 	 * Normally this would be called from an __autoload() function
@@ -290,7 +309,7 @@ class fORM
 	 * @param  string $class  The name of the class to create
 	 * @return void
 	 */
-	static public function createActiveRecordClass($class)
+	static public function defineActiveRecordClass($class)
 	{
 		if (class_exists($class, FALSE)) {
 			return;
@@ -309,25 +328,6 @@ class fORM
 				fCore::dump($class)
 			)
 		);
-	}
-	
-	
-	/**
-	 * Turns a primary key array into a hash key using md5
-	 * 
-	 * @param  array $primary_key_data  The primary key data to hash
-	 * @return string  An md5 of the sorted, serialized primary key data
-	 */
-	static private function createPrimaryKeyHash($primary_key_data)
-	{
-		sort($primary_key_data);
-		foreach ($primary_key_data as $primary_key => $data) {
-			if (is_object($data) && is_callable(array($data, '__toString'))) {
-				$data = $data->__toString();
-			}
-			$primary_key_data[$primary_key] = $data;
-		}
-		return md5(serialize($primary_key_data));
 	}
 	
 	
