@@ -206,14 +206,14 @@ class fORMRelated
 		$filter_table            = $related_table;
 		$filter_table_with_route = $related_table . '{' . $route_name . '}';
 		
-		$pk_field            = $filter_table . '::' . $first_pk_column;
-		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
+		$pk_field            = $filter_table . '.' . $first_pk_column;
+		$pk_field_with_route = $filter_table_with_route . '.' . $first_pk_column;
 		
 		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
 			$filter_table = $filter_table_with_route;
 		}
 		
-		return $filter_table . '::';
+		return $filter_table . '.';
 	}
 	
 	
@@ -290,7 +290,7 @@ class fORMRelated
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, 'many-to-many');
 		
 		$field_table      = $relationship['related_table'];
-		$field_column     = '::' . $relationship['related_column'];
+		$field_column     = '.' . $relationship['related_column'];
 		
 		$field            = $field_table . $field_column;
 		$field_with_route = $field_table . '{' . $route_name . '}' . $field_column;
@@ -303,7 +303,7 @@ class fORMRelated
 		$record_set = fRecordSet::build(
 			$related_class,
 			array(
-				str_replace('::', '.', $field_with_route) . '=' => fRequest::get($field, 'array', array())
+				$field_with_route . '=' => fRequest::get($field, 'array', array())
 			)
 		);
 		
@@ -707,7 +707,7 @@ class fORMRelated
 		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
 		
 		$record_number = 0;
-		$filter        = fORMRelated::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
+		$filter        = self::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
 		
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number);
