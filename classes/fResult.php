@@ -29,6 +29,13 @@ class fResult implements Iterator
 	private $auto_incremented_value = NULL;
 	
 	/**
+	 * The character set to transcode from for MSSQL queries
+	 * 
+	 * @var string
+	 */
+	private $character_set = NULL;
+	
+	/**
 	 * The current row of the result set
 	 * 
 	 * @var array
@@ -90,11 +97,12 @@ class fResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type       The type of database (valid: 'mssql', 'mysql', 'postgresql', 'sqlite')
-	 * @param  string $extension  The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite')
+	 * @param  string $type           The type of database (valid: 'mssql', 'mysql', 'postgresql', 'sqlite')
+	 * @param  string $extension      The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite')
+	 * @param  string $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
 	 * @return fResult
 	 */
-	public function __construct($type, $extension)
+	public function __construct($type, $extension, $character_set=NULL)
 	{
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
@@ -125,8 +133,9 @@ class fResult implements Iterator
 			);
 		}
 		
-		$this->type      = $type;
-		$this->extension = $extension;
+		$this->type          = $type;
+		$this->extension     = $extension;
+		$this->character_set = $character_set;
 	}
 	
 	
@@ -186,8 +195,16 @@ class fResult implements Iterator
 			$row = $this->result[$this->pointer];
 		}
 		
-		// This decodes the USC-2 data coming out of MSSQL into UTF-8
+		// This decodes the data coming out of MSSQL into UTF-8
 		if ($this->type == 'mssql') {
+			if ($this->character_set) {
+				foreach ($row as $key => $value) {
+					if (!is_string($value) || strpos($key, '__flourish_mssqln_') === 0) {
+						continue;
+					} 		
+					$row[$key] = iconv($this->character_set, 'UTF-8', $value);
+				}
+			}
 			$row = $this->decodeMSSQLNationalColumns($row);
 		} 
 		

@@ -43,6 +43,13 @@
 class fDatabase
 {
 	/**
+	 * The character set that data is coming back as
+	 * 
+	 * @var string 
+	 */
+	private $character_set;
+	
+	/**
 	 * Database connection resource or PDO object
 	 * 
 	 * @var mixed
@@ -194,6 +201,8 @@ class fDatabase
 		$this->password = $password;
 		$this->host     = $host;
 		$this->port     = $port;
+		
+		$this->character_set = NULL;
 		
 		$this->determineExtension();
 	}
@@ -408,6 +417,7 @@ class fDatabase
 		// Fix some issues with mssql
 		if ($this->type == 'mssql') {
 			$this->query('SET TEXTSIZE 65536');
+			$this->character_set = $this->query("SELECT 'WINDOWS-' + CONVERT(VARCHAR, COLLATIONPROPERTY(CONVERT(NVARCHAR, DATABASEPROPERTYEX(%s, 'Collation')), 'CodePage')) AS charset", $this->database)->fetchScalar();
 		}
 		
 		// Make PostgreSQL use UTF-8
@@ -765,7 +775,7 @@ class fDatabase
 		
 		$string_number = 0;
 		foreach ($strings as $string) {
-			$sql = str_replace(':string_' . $string_number++, $string, $sql);	
+			$sql = preg_replace('#:string_' . $string_number++ . '\b#', $string, $sql);	
 		}
 		
 		return $sql;
@@ -920,7 +930,7 @@ class fDatabase
 		} elseif ($this->type == 'mssql') {
 			
 			// If there are any non-ASCII characters, we need to escape
-			if (preg_match('#[^\x00-\x7F]#')) {
+			if (preg_match('#[^\x00-\x7F]#', $value)) {
 				$characters = preg_split('##u', $value);
 				$output = "'";
 				foreach ($characters as $character) {
@@ -954,12 +964,14 @@ class fDatabase
 					}
 				}
 				$output .= "'";
-				return $output;
 			
 			// ASCII text is normal
 			} else {
-				return "'" . str_replace("'", "''", $value) . "'";
+				$output = "'" . str_replace("'", "''", $value) . "'";
 			}
+			
+			# a \ before a \r\n has to be escaped with another \
+			return preg_replace('#(?<!\\\\)\\\\(?=\r\n)#', '\\\\', $output);
 		
 		} elseif ($this->extension == 'pdo') {
 			return $this->connection->quote($value);
@@ -1430,7 +1442,7 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fResult')) {
-			$result = new fResult($this->type, $this->extension);
+			$result = new fResult($this->type, $this->extension, $this->character_set);
 			$result->setSQL($sql);
 			
 			$this->executeQuery($result);
@@ -1636,7 +1648,7 @@ class fDatabase
 		
 		$this->trackTransactions($sql);
 		if (!$result = $this->handleTransactionQueries($sql, 'fUnbufferedRequest')) {
-			$result = new fUnbufferedResult($this->type, $this->extension);
+			$result = new fUnbufferedResult($this->type, $this->extension, $this->character_set);
 			$result->setSQL($sql);
 			
 			$this->executeUnbufferedQuery($result);
