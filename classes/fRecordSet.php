@@ -141,142 +141,9 @@ class fRecordSet implements Iterator
 	 */
 	static public function buildFromRecords($class, $records)
 	{
-		self::configure($class);
-		$table = fORM::tablize($class);
-		
-		// Extract the primary key values
-		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
-		$total_pk_fields    = sizeof($primary_key_fields);
-		
-		$primary_keys = array();
-		
-		$i = 0;
-		foreach ($records as $record) {
-			for ($j=0; $j < $total_pk_fields; $j++) {
-				$pk_field      = $primary_key_fields[$j];
-				$pk_get_method = 'get' . fGrammar::camelize($pk_field, TRUE);
-				
-				$pk_value = $record->$pk_get_method();
-				if ($j == 0 && $total_pk_fields == 1) {
-					$primary_keys[$i] = $pk_value;
-				} elseif ($j == 0) {
-					$primary_keys[$i] = array();
-				}
-				if ($total_pk_fields > 1) {
-					$primary_keys[$i][$pk_field] = $pk_value;
-				}
-			}
-			$i++;
-		}
-		
-		$result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
-		
-		$record_set = new fRecordSet($class, $result);
-		$record_set->records      = $records;
-		$record_set->primary_keys = $primary_keys;
+		$record_set = new fRecordSet($class);
+		$record_set->records = $records;
 		return $record_set;
-	}
-	
-	
-	/**
-	 * Creates an {@link fRecordSet} from an array of primary keys
-	 * 
-	 * @throws fValidationException
-	 * @internal
-	 * 
-	 * @param  string  $class         The type of object to create
-	 * @param  array   $primary_keys  The primary keys of the objects to create
-	 * @param  array   $order_bys     The column => direction values to use for sorting (see {@link fRecordSet::build()} for format)
-	 * @return fRecordSet  A set of {@link fActiveRecord} objects
-	 */
-	static public function buildFromPrimaryKeys($class, $primary_keys, $order_bys=array())
-	{
-		self::configure($class);
-		
-		$table = fORM::tablize($class);
-		
-		settype($primary_keys, 'array');
-		$primary_keys = array_merge($primary_keys);
-		
-		$sql  = 'SELECT ' . $table . '.* FROM :from_clause WHERE ';
-		
-		// Build the where clause
-		$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
-		$total_pk_fields = sizeof($primary_key_fields);
-		
-		$empty_records = 0;
-		
-		$total_primary_keys = sizeof($primary_keys);
-		for ($i=0; $i < $total_primary_keys; $i++) {
-			if ($total_pk_fields > 1) {
-				$sql .= ($i > 0) ? ' OR ' : '';
-			
-				$sql .= ' (';
-				for ($j=0; $j < $total_pk_fields; $j++) {
-					$pkf = $primary_key_fields[$j];
-					
-					$sql .= ($j > 0) ? ' AND ' : '';
-					$sql .= $table . '.' . $pkf . fORMDatabase::escapeBySchema($table, $pkf, $primary_keys[$i][$pkf], '=');
-				}
-			} else {
-				if (empty($primary_keys[$i])) {
-					$empty_records++;
-					continue;
-				}
-				$sql .= ($i > 0) ? ' OR ' : '';
-				$pkf  = $primary_key_fields[0];
-				$sql .= $table . '.' . $pkf . fORMDatabase::escapeBySchema($table, $pkf, $primary_keys[$i], '=');
-			}
-		}
-		
-		// If we don't have any real records to pull out, create an unequal where condition
-		if ($empty_records == sizeof($primary_keys)) {
-			$sql .= fORMDatabase::getInstance()->escape('boolean', TRUE) . ' = ' . fORMDatabase::getInstance()->escape('boolean', FALSE);
-		}
-		
-		$sql .= ' :group_by_clause ';
-		
-		if (!empty($order_bys)) {
-			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
-		}
-		
-		$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
-		
-		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		
-		// If we have empty records we need to splice in some new records with results from the database
-		if ($empty_records) {
-			$fake_result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
-			
-			// Create a blank row for the empty results
-			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
-			$blank_row = array();
-			foreach ($column_info as $column => $info) {
-				$blank_row[$column] = NULL;
-			}
-			
-			$result_array = array();
-			for ($j=0; $j < $total_primary_keys; $j++) {
-				if(empty($primary_keys[$j])) {
-					$result_array[] = $blank_row;
-				} else {
-					try {
-						$result_array[] = $result->fetchRow();
-					} catch (fExpectedException $e) {
-						$result_array[] = $blank_row;
-					}
-				}
-			}
-			
-			$fake_result->setResult($result_array);
-			$fake_result->setReturnedRows(sizeof($result_array));
-			$fake_result->setSQL($sql);
-			
-			unset($result);
-			$result = $fake_result;
-		}
-		
-		return new fRecordSet($class, $result);
 	}
 	
 	
@@ -424,7 +291,7 @@ class fRecordSet implements Iterator
 	 * @param  string  $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
 	 * @return fRecordSet
 	 */
-	protected function __construct($class, fResult $result_object, $non_limited_count_sql=NULL)
+	protected function __construct($class, fResult $result_object=NULL, $non_limited_count_sql=NULL)
 	{
 		if (!class_exists($class)) {
 			fCore::toss(
@@ -452,7 +319,7 @@ class fRecordSet implements Iterator
 		$this->class                 = $class;
 		$this->non_limited_count_sql = $non_limited_count_sql;
 		
-		while ($result_object->valid()) {
+		while ($result_object && $result_object->valid()) {
 			$this->records[] = new $class($result_object);
 			$result_object->next();
 		}

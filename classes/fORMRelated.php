@@ -36,20 +36,16 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed             $class                 The class name or instance of the class to get the related values for
-	 * @param  array             &$related_records      The related records existing for the {@link fActiveRecord} class
-	 * @param  string            $related_class         The class we are associating with the current record
-	 * @param  array|fRecordSet  $records_to_associate  An fRecordSet or an array of primary keys of the records to be associated
-	 * @param  string            $route                 The route to use between the current class and the related class
+	 * @param  mixed       $class                 The class name or instance of the class to get the related values for
+	 * @param  array       &$related_records      The related records existing for the {@link fActiveRecord} class
+	 * @param  string      $related_class         The class we are associating with the current record
+	 * @param  fRecordSet  $records_to_associate  An fRecordSet of the records to be associated
+	 * @param  string      $route                 The route to use between the current class and the related class
 	 * @return void
 	 */
 	static public function associateRecords($class, &$related_records, $related_class, $records_to_associate, $route=NULL)
 	{
-		if (is_array($records_to_associate)) {
-			$records = fRecordSet::buildFromPrimaryKeys($related_class, array_filter($records_to_associate));
-		} else {
-			$records = clone $records_to_associate;	
-		}
+		$records = clone $records_to_associate;
 		$records->flagAssociate();
 		self::setRecords($class, $related_records, $related_class, $records, $route);
 	}
@@ -304,8 +300,14 @@ class fORMRelated
 			$field = $field_with_route;
 		}
 		
-		$primary_keys = fRequest::get($field, 'array', array());
-		self::associateRecords($class, $related_records, $related_class, $primary_keys, $route);
+		$record_set = fRecordSet::build(
+			$related_class,
+			array(
+				str_replace('::', '.', $field_with_route) . '=' => fRequest::get($field, 'array', array())
+			)
+		);
+		
+		self::associateRecords($class, $related_records, $related_class, $record_set, $route);
 	}
 	
 	
