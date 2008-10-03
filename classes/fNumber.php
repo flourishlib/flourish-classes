@@ -14,8 +14,10 @@
  */
 class fNumber
 {
-	const baseConvert = 'fNumber::baseConvert';
-	const pi          = 'fNumber::pi';
+	const baseConvert              = 'fNumber::baseConvert';
+	const pi                       = 'fNumber::pi';
+	const registerFormatCallback   = 'fNumber::registerFormatCallback';
+	const registerUnformatCallback = 'fNumber::registerUnformatCallback';
 	
 	
 	/**
