@@ -14,6 +14,16 @@
  */
 class fURL
 {
+	const get                   = 'fURL::get';
+	const getDomain             = 'fURL::getDomain';
+	const getQueryString        = 'fURL::getQueryString';
+	const getWithQueryString    = 'fURL::getWithQueryString';
+	const makeFriendly          = 'fURL::makeFriendly';
+	const redirect              = 'fURL::redirect';
+	const removeFromQueryString = 'fURL::removeFromQueryString';
+	const replaceInQueryString  = 'fURL::replaceInQueryString';
+	
+	
 	/**
 	 * Returns the requested url, does no include the domain name or query string
 	 * 

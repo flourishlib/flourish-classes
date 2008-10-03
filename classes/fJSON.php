@@ -19,6 +19,11 @@
  */
 class fJSON
 {
+	const decode     = 'fJSON::decode';
+	const encode     = 'fJSON::encode';
+	const sendHeader = 'fJSON::sendHeader';
+	
+	
 	/** 
 	 * An abstract representation of [
 	 * 

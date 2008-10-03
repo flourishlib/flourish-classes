@@ -20,6 +20,23 @@
  */
 class fRequest
 {
+	const check                 = 'fRequest::check';
+	const filter                = 'fRequest::filter';
+	const get                   = 'fRequest::get';
+	const getAcceptLanguages    = 'fRequest::getAcceptLanguages';
+	const getAcceptTypes        = 'fRequest::getAcceptTypes';
+	const getBestAcceptLanguage = 'fRequest::getBestAcceptLanguage';
+	const getBestAcceptType     = 'fRequest::getBestAcceptType';
+	const getValid              = 'fRequest::getValid';
+	const isDelete              = 'fRequest::isDelete';
+	const isGet                 = 'fRequest::isGet';
+	const isPost                = 'fRequest::isPost';
+	const isPut                 = 'fRequest::isPut';
+	const overrideAction        = 'fRequest::overrideAction';
+	const set                   = 'fRequest::set';
+	const unfilter              = 'fRequest::unfilter';
+	
+	
 	/**
 	 * A backup copy of $_FILES for unfilter()
 	 * 

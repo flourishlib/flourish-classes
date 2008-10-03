@@ -14,6 +14,17 @@
  */
 class fUpload
 {
+	const check            = 'fUpload::check';
+	const count            = 'fUpload::count';
+	const reset            = 'fUpload::reset';
+	const setMaxFileSize   = 'fUpload::setMaxFileSize';
+	const setMimeTypes     = 'fUpload::setMimeTypes';
+	const setOverwriteMode = 'fUpload::setOverwriteMode';
+	const setType          = 'fUpload::setType';
+	const upload           = 'fUpload::upload';
+	const validate         = 'fUpload::validate';
+	
+	
 	/**
 	 * The maximum file size in bytes
 	 * 

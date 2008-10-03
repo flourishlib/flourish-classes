@@ -14,6 +14,15 @@
  */
 class fSession
 {
+	const clear           = 'fSession::clear';
+	const close           = 'fSession::close';
+	const destroy         = 'fSession::destroy';
+	const get             = 'fSession::get';
+	const ignoreSubdomain = 'fSession::ignoreSubdomain';
+	const set             = 'fSession::set';
+	const setLength       = 'fSession::setLength';
+	
+	
 	/**
 	 * If the session is open
 	 * 

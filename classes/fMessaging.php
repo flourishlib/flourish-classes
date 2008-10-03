@@ -14,6 +14,12 @@
  */
 class fMessaging
 {
+	const check     = 'fMessaging::check';
+	const create    = 'fMessaging::create';
+	const retrieval = 'fMessaging::retrieval';
+	const show      = 'fMessaging::show';
+	
+	
 	/**
 	 * Checks to see if a message exists of the name specified for the recipient specified
 	 * 

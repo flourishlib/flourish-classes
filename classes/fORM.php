@@ -14,6 +14,31 @@
  */
 class fORM
 {
+	const addCustomTableClassMapping = 'fORM::addCustomTableClassMapping';
+	const callHookCallback           = 'fORM::callHookCallback';
+	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
+	const checkHookCallback          = 'fORM::checkHookCallback';
+	const checkIdentityMap           = 'fORM::checkIdentityMap';
+	const classize                   = 'fORM::classize';
+	const defineActiveRecordClass    = 'fORM::defineActiveRecordClass';
+	const flagConfigured             = 'fORM::flagConfigured';
+	const getClass                   = 'fORM::getClass';
+	const getColumnName              = 'fORM::getColumnName';
+	const getRecordName              = 'fORM::getRecordName';
+	const isConfigured               = 'fORM::isConfigured';
+	const objectify                  = 'fORM::objectify';
+	const overrideColumnName         = 'fORM::overrideColumnName';
+	const overrideRecordName         = 'fORM::overrideRecordName';
+	const parseMethod                = 'fORM::parseMethod';
+	const registerHookCallback       = 'fORM::registerHookCallback';
+	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
+	const registerReflectCallback    = 'fORM::registerReflectCallback';
+	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
+	const saveToIdentityMap          = 'fORM::saveToIdentityMap';
+	const scalarize                  = 'fORM::scalarize';
+	const tablize                    = 'fORM::tablize';
+	
+	
 	/**
 	 * Custom column names for columns in fActiveRecord classes
 	 * 

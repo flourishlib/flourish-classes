@@ -14,6 +14,15 @@
  */
 class fORMSchema
 {
+	const attach                       = 'fORMSchema::attach';
+	const enableSmartCaching           = 'fORMSchema::enableSmartCaching';
+	const getInstance                  = 'fORMSchema::getInstance';
+	const getRoute                     = 'fORMSchema::getRoute';
+	const getRouteName                 = 'fORMSchema::getRouteName';
+	const getRouteNameFromRelationship = 'fORMSchema::getRouteNameFromRelationship';
+	const getRoutes                    = 'fORMSchema::getRoutes';
+	
+	
 	/**
 	 * An object that implements the fISchema interface
 	 * 

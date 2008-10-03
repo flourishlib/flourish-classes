@@ -14,6 +14,19 @@
  */
 class fORMMoney
 {
+	const configureMoneyColumn       = 'fORMMoney::configureMoneyColumn';
+	const encodeMoneyColumn          = 'fORMMoney::encodeMoneyColumn';
+	const inspect                    = 'fORMMoney::inspect';
+	const makeMoneyObjects           = 'fORMMoney::makeMoneyObjects';
+	const objectifyMoney             = 'fORMMoney::objectifyMoney';
+	const objectifyMoneyWithCurrency = 'fORMMoney::objectifyMoneyWithCurrency';
+	const prepareMoneyColumn         = 'fORMMoney::prepareMoneyColumn';
+	const reflect                    = 'fORMMoney::reflect';
+	const setCurrencyColumn          = 'fORMMoney::setCurrencyColumn';
+	const setMoneyColumn             = 'fORMMoney::setMoneyColumn';
+	const validateMoneyColumns       = 'fORMMoney::validateMoneyColumns';
+	
+	
 	/**
 	 * Columns that store currency information for a money column
 	 * 

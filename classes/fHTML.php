@@ -17,6 +17,16 @@
  */
 class fHTML
 {
+	const containsBlockLevelHTML = 'fHTML::containsBlockLevelHTML';
+	const convertNewlines        = 'fHTML::convertNewlines';
+	const decode                 = 'fHTML::decode';
+	const encode                 = 'fHTML::encode';
+	const makeLinks              = 'fHTML::makeLinks';
+	const prepare                = 'fHTML::prepare';
+	const sendHeader             = 'fHTML::sendHeader';
+	const show                   = 'fHTML::show';
+	
+	
 	/**
 	 * Checks a string of HTML for block level elements
 	 * 

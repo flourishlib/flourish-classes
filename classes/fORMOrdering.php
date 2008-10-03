@@ -14,6 +14,14 @@
  */
 class fORMOrdering
 {
+	const configureOrderingColumn = 'fORMOrdering::configureOrderingColumn';
+	const delete                  = 'fORMOrdering::delete';
+	const inspect                 = 'fORMOrdering::inspect';
+	const reflect                 = 'fORMOrdering::reflect';
+	const reorder                 = 'fORMOrdering::reorder';
+	const validate                = 'fORMOrdering::validate';
+	
+	
 	/**
 	 * The columns configured as ordering columns
 	 * 

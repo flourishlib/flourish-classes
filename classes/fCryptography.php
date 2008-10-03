@@ -14,6 +14,18 @@
  */
 class fCryptography
 {
+	const checkPasswordHash   = 'fCryptography::checkPasswordHash';
+	const hashPassword        = 'fCryptography::hashPassword';
+	const publicKeyDecrypt    = 'fCryptography::publicKeyDecrypt';
+	const publicKeyEncrypt    = 'fCryptography::publicKeyEncrypt';
+	const publicKeySign       = 'fCryptography::publicKeySign';
+	const publicKeyVerify     = 'fCryptography::publicKeyVerify';
+	const random              = 'fCryptography::random';
+	const randomString        = 'fCryptography::randomString';
+	const symmetricKeyDecrypt = 'fCryptography::symmetricKeyDecrypt';
+	const symmetricKeyEncrypt = 'fCryptography::symmetricKeyEncrypt';
+	
+	
 	/**
 	 * Checks a password against a hash
 	 * 

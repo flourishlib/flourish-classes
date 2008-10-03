@@ -17,6 +17,19 @@
  */
 class fCRUD
 {
+	const getColumnClass           = 'fCRUD::getColumnClass';
+	const getRowClass              = 'fCRUD::getRowClass';
+	const getSearchValue           = 'fCRUD::getSearchValue';
+	const getSortColumn            = 'fCRUD::getSortColumn';
+	const getSortDirection         = 'fCRUD::getSortDirection';
+	const printOption              = 'fCRUD::printOption';
+	const printSortableColumn      = 'fCRUD::printSortableColumn';
+	const redirectWithLoadedValues = 'fCRUD::redirectWithLoadedValues';
+	const removeListItems          = 'fCRUD::removeListItems';
+	const reorderListItems         = 'fCRUD::reorderListItems';
+	const showChecked              = 'fCRUD::showChecked';
+	
+	
 	/**
 	 * Any values that were loaded from the session, used for redirection
 	 * 

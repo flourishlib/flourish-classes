@@ -14,6 +14,9 @@
  */
 abstract class fActiveRecord
 {
+	const assign = 'fActiveRecord::assign';
+	
+	
 	/**
 	 * Sets a value, preserving the old value to future reference
 	 *

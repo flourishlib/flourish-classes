@@ -14,6 +14,15 @@
  */
 class fCookie
 {
+	const get                = 'fCookie::get';
+	const set                = 'fCookie::set';
+	const setDefaultDomain   = 'fCookie::setDefaultDomain';
+	const setDefaultExpires  = 'fCookie::setDefaultExpires';
+	const setDefaultHTTPOnly = 'fCookie::setDefaultHTTPOnly';
+	const setDefaultPath     = 'fCookie::setDefaultPath';
+	const setDefaultSecure   = 'fCookie::setDefaultSecure';
+	
+	
 	/**
 	 * The default domain to set for cookies
 	 * 

@@ -17,6 +17,10 @@
  */
 class fXML
 {
+	const encode     = 'fXML::encode';
+	const sendHeader = 'fXML::sendHeader';
+	
+	
 	/**
 	 * Encodes content for display in a UTF-8 encoded XML document
 	 * 

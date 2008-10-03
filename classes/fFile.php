@@ -14,6 +14,9 @@
  */
 class fFile
 {
+	const create = 'fFile::create';
+	
+	
 	/**
 	 * Creates a file on the filesystem and returns an object representing it.
 	 * 

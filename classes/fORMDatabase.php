@@ -14,6 +14,21 @@
  */
 class fORMDatabase
 {
+	const addJoin                     = 'fORMDatabase::addJoin';
+	const addTableToKeys              = 'fORMDatabase::addTableToKeys';
+	const addTableToValues            = 'fORMDatabase::addTableToValues';
+	const attach                      = 'fORMDatabase::attach';
+	const condensePrimaryKeyArray     = 'fORMDatabase::condensePrimaryKeyArray';
+	const createFromClauseFromJoins   = 'fORMDatabase::createFromClauseFromJoins';
+	const createOrderByClause         = 'fORMDatabase::createOrderByClause';
+	const createPrimaryKeyWhereClause = 'fORMDatabase::createPrimaryKeyWhereClause';
+	const createWhereClause           = 'fORMDatabase::createWhereClause';
+	const escapeBySchema              = 'fORMDatabase::escapeBySchema';
+	const findTableAlias              = 'fORMDatabase::findTableAlias';
+	const getInstance                 = 'fORMDatabase::getInstance';
+	const insertFromAndGroupByClauses = 'fORMDatabase::insertFromAndGroupByClauses';
+	
+	
 	/**
 	 * The instance of fDatabase
 	 * 

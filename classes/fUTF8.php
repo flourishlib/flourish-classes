@@ -21,6 +21,35 @@
  */
 class fUTF8
 {
+	const ascii    = 'fUTF8::ascii';
+	const chr      = 'fUTF8::chr';
+	const clean    = 'fUTF8::clean';
+	const cmp      = 'fUTF8::cmp';
+	const detect   = 'fUTF8::detect';
+	const explode  = 'fUTF8::explode';
+	const icmp     = 'fUTF8::icmp';
+	const inatcmp  = 'fUTF8::inatcmp';
+	const ipos     = 'fUTF8::ipos';
+	const ireplace = 'fUTF8::ireplace';
+	const irpos    = 'fUTF8::irpos';
+	const istr     = 'fUTF8::istr';
+	const len      = 'fUTF8::len';
+	const lower    = 'fUTF8::lower';
+	const natcmp   = 'fUTF8::natcmp';
+	const ord      = 'fUTF8::ord';
+	const pad      = 'fUTF8::pad';
+	const pos      = 'fUTF8::pos';
+	const replace  = 'fUTF8::replace';
+	const rev      = 'fUTF8::rev';
+	const rpos     = 'fUTF8::rpos';
+	const str      = 'fUTF8::str';
+	const sub      = 'fUTF8::sub';
+	const ucfirst  = 'fUTF8::ucfirst';
+	const ucwords  = 'fUTF8::ucwords';
+	const upper    = 'fUTF8::upper';
+	const wordwrap = 'fUTF8::wordwrap';
+	
+	
 	/**
 	 * All lowercase UTF-8 characters mapped to uppercase characters
 	 * 

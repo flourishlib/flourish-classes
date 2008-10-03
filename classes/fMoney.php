@@ -14,6 +14,15 @@
  */
 class fMoney
 {
+	const defineCurrency           = 'fMoney::defineCurrency';
+	const getCurrencies            = 'fMoney::getCurrencies';
+	const getCurrencyInfo          = 'fMoney::getCurrencyInfo';
+	const getDefaultCurrency       = 'fMoney::getDefaultCurrency';
+	const registerFormatCallback   = 'fMoney::registerFormatCallback';
+	const registerUnformatCallback = 'fMoney::registerUnformatCallback';
+	const setDefaultCurrency       = 'fMoney::setDefaultCurrency';
+	
+	
 	/**
 	 * The number of decimal places to use for values
 	 * 

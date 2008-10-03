@@ -14,6 +14,12 @@
  */
 class fORMJSON
 {
+	const extend          = 'fORMJSON::extend';
+	const reflect         = 'fORMJSON::reflect';
+	const toJSON          = 'fORMJSON::toJSON';
+	const toJSONRecordSet = 'fORMJSON::toJSONRecordSet';
+	
+	
 	/**
 	 * Adds the method toJSON() to fActiveRecord and fRecordSet instances
 	 * 

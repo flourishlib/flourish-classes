@@ -14,6 +14,21 @@
  */
 class fORMColumn
 {
+	const configureEmailColumn  = 'fORMColumn::configureEmailColumn';
+	const configureLinkColumn   = 'fORMColumn::configureLinkColumn';
+	const configureNumberColumn = 'fORMColumn::configureNumberColumn';
+	const configureRandomColumn = 'fORMColumn::configureRandomColumn';
+	const encodeNumberColumn    = 'fORMColumn::encodeNumberColumn';
+	const inspect               = 'fORMColumn::inspect';
+	const objectifyNumber       = 'fORMColumn::objectifyNumber';
+	const prepareLinkColumn     = 'fORMColumn::prepareLinkColumn';
+	const prepareNumberColumn   = 'fORMColumn::prepareNumberColumn';
+	const reflect               = 'fORMColumn::reflect';
+	const setRandomStrings      = 'fORMColumn::setRandomStrings';
+	const validateEmailColumns  = 'fORMColumn::validateEmailColumns';
+	const validateLinkColumns   = 'fORMColumn::validateLinkColumns';
+	
+	
 	/**
 	 * Columns that should be formatted as email addresses
 	 * 

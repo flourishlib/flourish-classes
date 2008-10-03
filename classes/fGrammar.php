@@ -14,6 +14,21 @@
  */
 class fGrammar
 {
+	const addCamelUnderscoreRule    = 'fGrammar::addCamelUnderscoreRule';
+	const addHumanizeRule           = 'fGrammar::addHumanizeRule';
+	const addSingularPluralRule     = 'fGrammar::addSingularPluralRule';
+	const camelize                  = 'fGrammar::camelize';
+	const compose                   = 'fGrammar::compose';
+	const humanize                  = 'fGrammar::humanize';
+	const inflectOnQuantity         = 'fGrammar::inflectOnQuantity';
+	const joinArray                 = 'fGrammar::joinArray';
+	const pluralize                 = 'fGrammar::pluralize';
+	const registerComposeCallback   = 'fGrammar::registerComposeCallback';
+	const registerJoinArrayCallback = 'fGrammar::registerJoinArrayCallback';
+	const singularize               = 'fGrammar::singularize';
+	const underscorize              = 'fGrammar::underscorize';
+	
+	
 	/**
 	 * Custom rules for camelizing a string
 	 * 

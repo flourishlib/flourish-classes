@@ -14,6 +14,18 @@
  */
 class fTimestamp
 {
+	const callFormatCallback     = 'fTimestamp::callFormatCallback';
+	const combine                = 'fTimestamp::combine';
+	const defineFormat           = 'fTimestamp::defineFormat';
+	const fixISOWeek             = 'fTimestamp::fixISOWeek';
+	const getDefaultTimezone     = 'fTimestamp::getDefaultTimezone';
+	const getSeconds             = 'fTimestamp::getSeconds';
+	const isValidTimezone        = 'fTimestamp::isValidTimezone';
+	const registerFormatCallback = 'fTimestamp::registerFormatCallback';
+	const setDefaultTimezone     = 'fTimestamp::setDefaultTimezone';
+	const translateFormat        = 'fTimestamp::translateFormat';
+	
+	
 	/**
 	 * Pre-defined formatting styles
 	 * 

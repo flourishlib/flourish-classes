@@ -14,6 +14,19 @@
  */
 class fORMDate
 {
+	const configureDateCreatedColumn        = 'fORMDate::configureDateCreatedColumn';
+	const configureDateUpdatedColumn        = 'fORMDate::configureDateUpdatedColumn';
+	const configureTimezoneColumn           = 'fORMDate::configureTimezoneColumn';
+	const inspect                           = 'fORMDate::inspect';
+	const makeTimestampObjects              = 'fORMDate::makeTimestampObjects';
+	const objectifyTimestampWithoutTimezone = 'fORMDate::objectifyTimestampWithoutTimezone';
+	const setDateCreated                    = 'fORMDate::setDateCreated';
+	const setDateUpdated                    = 'fORMDate::setDateUpdated';
+	const setTimestampColumn                = 'fORMDate::setTimestampColumn';
+	const setTimezoneColumn                 = 'fORMDate::setTimezoneColumn';
+	const validateTimezoneColumns           = 'fORMDate::validateTimezoneColumns';
+	
+	
 	/**
 	 * Columns that should be filled with the date created for new objects
 	 * 

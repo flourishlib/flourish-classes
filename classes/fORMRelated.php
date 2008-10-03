@@ -16,6 +16,24 @@
  */
 class fORMRelated
 {
+	const associateRecords          = 'fORMRelated::associateRecords';
+	const buildRecords              = 'fORMRelated::buildRecords';
+	const countRecords              = 'fORMRelated::countRecords';
+	const createRecord              = 'fORMRelated::createRecord';
+	const determineRequestFilter    = 'fORMRelated::determineRequestFilter';
+	const getOrderBys               = 'fORMRelated::getOrderBys';
+	const getRelatedRecordName      = 'fORMRelated::getRelatedRecordName';
+	const linkRecords               = 'fORMRelated::linkRecords';
+	const overrideRelatedRecordName = 'fORMRelated::overrideRelatedRecordName';
+	const populateRecords           = 'fORMRelated::populateRecords';
+	const reflect                   = 'fORMRelated::reflect';
+	const setOrderBys               = 'fORMRelated::setOrderBys';
+	const setRecords                = 'fORMRelated::setRecords';
+	const storeManyToMany           = 'fORMRelated::storeManyToMany';
+	const storeOneToMany            = 'fORMRelated::storeOneToMany';
+	const tallyRecords              = 'fORMRelated::tallyRecords';
+	
+	
 	/**
 	 * Rules that control what order related data is returned in
 	 * 

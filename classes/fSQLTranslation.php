@@ -16,6 +16,11 @@
  */
 class fSQLTranslation
 {
+	const sqliteCotangent    = 'fSQLTranslation::sqliteCotangent';
+	const sqliteLogBaseFirst = 'fSQLTranslation::sqliteLogBaseFirst';
+	const sqliteSign         = 'fSQLTranslation::sqliteSign';
+	
+	
 	/**
 	 * Takes a Flourish SQL SELECT query and parses it into clauses.
 	 * 

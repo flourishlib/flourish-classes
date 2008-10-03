@@ -14,6 +14,16 @@
  */
 class fBuffer
 {
+	const erase        = 'fBuffer::erase';
+	const get          = 'fBuffer::get';
+	const isStarted    = 'fBuffer::isStarted';
+	const replace      = 'fBuffer::replace';
+	const start        = 'fBuffer::start';
+	const startCapture = 'fBuffer::startCapture';
+	const stop         = 'fBuffer::stop';
+	const stopCapture  = 'fBuffer::stopCapture';
+	
+	
 	/**
 	 * If output capturing is currently active
 	 * 

@@ -14,6 +14,12 @@
  */
 class fRecordSet implements Iterator
 {
+	const build            = 'fRecordSet::build';
+	const buildFromRecords = 'fRecordSet::buildFromRecords';
+	const buildFromSQL     = 'fRecordSet::buildFromSQL';
+	const configure        = 'fRecordSet::configure';
+	
+	
 	/**
 	 * Callbacks registered for the __call() handler
 	 * 

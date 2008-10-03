@@ -14,6 +14,10 @@
  */
 class fDirectory
 {
+	const create        = 'fDirectory::create';
+	const makeCanonical = 'fDirectory::makeCanonical';
+	
+	
 	/**
 	 * Creates a directory on the filesystem and returns an object representing it
 	 * 

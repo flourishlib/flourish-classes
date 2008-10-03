@@ -14,6 +14,28 @@
  */
 class fFilesystem
 {
+	const addWebPathTranslation         = 'fFilesystem::addWebPathTranslation';
+	const begin                         = 'fFilesystem::begin';
+	const commit                        = 'fFilesystem::commit';
+	const convertToBytes                = 'fFilesystem::convertToBytes';
+	const formatFilesize                = 'fFilesystem::formatFilesize';
+	const getPathInfo                   = 'fFilesystem::getPathInfo';
+	const hookExceptionMap              = 'fFilesystem::hookExceptionMap';
+	const hookFilenameMap               = 'fFilesystem::hookFilenameMap';
+	const isInsideTransaction           = 'fFilesystem::isInsideTransaction';
+	const makeUniqueName                = 'fFilesystem::makeUniqueName';
+	const recordCreate                  = 'fFilesystem::recordCreate';
+	const recordDelete                  = 'fFilesystem::recordDelete';
+	const recordDuplicate               = 'fFilesystem::recordDuplicate';
+	const recordRename                  = 'fFilesystem::recordRename';
+	const recordWrite                   = 'fFilesystem::recordWrite';
+	const rollback                      = 'fFilesystem::rollback';
+	const translateToWebPath            = 'fFilesystem::translateToWebPath';
+	const updateExceptionMap            = 'fFilesystem::updateExceptionMap';
+	const updateFilenameMap             = 'fFilesystem::updateFilenameMap';
+	const updateFilenameMapForDirectory = 'fFilesystem::updateFilenameMapForDirectory';
+	
+	
 	/**
 	 * Stores the operations to perform when a commit occurs
 	 * 

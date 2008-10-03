@@ -14,6 +14,29 @@
  */
 class fORMFile
 {
+	const addFImageMethodCall        = 'fORMFile::addFImageMethodCall';
+	const addFUploadMethodCall       = 'fORMFile::addFUploadMethodCall';
+	const begin                      = 'fORMFile::begin';
+	const commit                     = 'fORMFile::commit';
+	const configureColumnInheritance = 'fORMFile::configureColumnInheritance';
+	const configureFileUploadColumn  = 'fORMFile::configureFileUploadColumn';
+	const configureImageUploadColumn = 'fORMFile::configureImageUploadColumn';
+	const delete                     = 'fORMFile::delete';
+	const deleteOld                  = 'fORMFile::deleteOld';
+	const encode                     = 'fORMFile::encode';
+	const inspect                    = 'fORMFile::inspect';
+	const moveFromTemp               = 'fORMFile::moveFromTemp';
+	const objectify                  = 'fORMFile::objectify';
+	const populate                   = 'fORMFile::populate';
+	const prepare                    = 'fORMFile::prepare';
+	const processImage               = 'fORMFile::processImage';
+	const reflect                    = 'fORMFile::reflect';
+	const rollback                   = 'fORMFile::rollback';
+	const set                        = 'fORMFile::set';
+	const upload                     = 'fORMFile::upload';
+	const validate                   = 'fORMFile::validate';
+	
+	
 	/**
 	 * The temporary directory to use for various tasks
 	 * 

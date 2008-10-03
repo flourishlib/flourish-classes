@@ -14,6 +14,10 @@
  */
 class fNumber
 {
+	const baseConvert = 'fNumber::baseConvert';
+	const pi          = 'fNumber::pi';
+	
+	
 	/**
 	 * A callback to process all values through
 	 * 

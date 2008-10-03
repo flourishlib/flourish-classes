@@ -14,6 +14,13 @@
  */
 class fImage extends fFile
 {
+	const create                  = 'fImage::create';
+	const getCompatibleMimetypes  = 'fImage::getCompatibleMimetypes';
+	const isImageCompatible       = 'fImage::isImageCompatible';
+	const setImageMagickDirectory = 'fImage::setImageMagickDirectory';
+	const setImageMagickTempDir   = 'fImage::setImageMagickTempDir';
+	
+	
 	/**
 	 * If we are using the imagemagick processor, this stores the path to the binaries
 	 * 

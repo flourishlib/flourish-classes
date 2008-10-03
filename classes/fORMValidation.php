@@ -14,6 +14,17 @@
  */
 class fORMValidation
 {
+	const addConditionalValidationRule = 'fORMValidation::addConditionalValidationRule';
+	const addManyToManyValidationRule  = 'fORMValidation::addManyToManyValidationRule';
+	const addOneOrMoreValidationRule   = 'fORMValidation::addOneOrMoreValidationRule';
+	const addOneToManyValidationRule   = 'fORMValidation::addOneToManyValidationRule';
+	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
+	const reorderMessages              = 'fORMValidation::reorderMessages';
+	const setMessageOrder              = 'fORMValidation::setMessageOrder';
+	const validate                     = 'fORMValidation::validate';
+	const validateRelated              = 'fORMValidation::validateRelated';	
+	
+	
 	/**
 	 * Conditional validation rules
 	 * 

@@ -14,6 +14,24 @@
  */
 class fCore
 {
+	const backtrace               = 'fCore::backtrace';
+	const debug                   = 'fCore::debug';
+	const dump                    = 'fCore::dump';
+	const enableDebugging         = 'fCore::enableDebugging';
+	const enableErrorHandling     = 'fCore::enableErrorHandling';
+	const enableExceptionHandling = 'fCore::enableExceptionHandling';
+	const expose                  = 'fCore::expose';
+	const getOS                   = 'fCore::getOS';
+	const getPHPVersion           = 'fCore::getPHPVersion';
+	const handleError             = 'fCore::handleError';
+	const handleException         = 'fCore::handleException';
+	const registerTossCallback    = 'fCore::registerTossCallback';
+	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
+	const stringlike              = 'fCore::stringlike';
+	const toss                    = 'fCore::toss';
+	const trigger                 = 'fCore::trigger';
+	
+	
 	/**
 	 * If global debugging is enabled
 	 * 

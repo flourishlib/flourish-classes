@@ -14,6 +14,26 @@
  */
 class fAuthorization
 {
+	const addNamedIPRange  = 'fAuthorization::addNamedIPRange';
+	const checkACL         = 'fAuthorization::checkACL';
+	const checkAuthLevel   = 'fAuthorization::checkAuthLevel';
+	const checkIP          = 'fAuthorization::checkIP';
+	const checkLoggedIn    = 'fAuthorization::checkLoggedIn';
+	const destroyUserInfo  = 'fAuthorization::destroyUserInfo';
+	const getRequestedURL  = 'fAuthorization::getRequestedURL';
+	const getUserACLs      = 'fAuthorization::getUserACLs';
+	const getUserAuthLevel = 'fAuthorization::getUserAuthLevel';
+	const getUserToken     = 'fAuthorization::getUserToken';
+	const requireACL       = 'fAuthorization::requireACL';
+	const requireAuthLevel = 'fAuthorization::requireAuthLevel';
+	const requireLoggedIn  = 'fAuthorization::requireLoggedIn';
+	const setAuthLevels    = 'fAuthorization::setAuthLevels';
+	const setLoginPage     = 'fAuthorization::setLoginPage';
+	const setRequestedURL  = 'fAuthorization::setRequestedURL';
+	const setUserACLs      = 'fAuthorization::setUserACLs';
+	const setUserAuthLevel = 'fAuthorization::setUserAuthLevel';
+	const setUserToken     = 'fAuthorization::setUserToken';
+	
 	/**
 	 * The prefix for session variables
 	 * 
