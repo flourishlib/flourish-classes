@@ -147,6 +147,18 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
+	}
+	
+	
+	/**
 	 * Gets the next row from the result and assigns it to the current row
 	 * 
 	 * @return void

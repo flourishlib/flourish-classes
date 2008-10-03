@@ -129,6 +129,18 @@ class fFile
 	
 	
 	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
+	}
+	
+	
+	/**
 	 * When used in a string context, represents the file as the filename
 	 * 
 	 * @return string  The filename of the file

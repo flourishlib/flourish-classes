@@ -94,6 +94,18 @@ class fTemplating
 	
 	
 	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
+	}
+	
+	
+	/**
 	 * Adds a value to an array element
 	 * 
 	 * @param  string $element  The element to add to

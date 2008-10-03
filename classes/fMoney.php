@@ -258,6 +258,18 @@ class fMoney
 	
 	
 	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
+	}
+	
+	
+	/**
 	 * Returns the monetary value without a currency symbol or thousand separator (e.g. 2000.12)
 	 * 
 	 * @return string  The monetary value without currency symbol or thousands separator

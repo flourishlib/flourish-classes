@@ -15,6 +15,18 @@
 abstract class fPrintableException extends Exception
 {
 	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
+	}
+	
+	
+	/**
 	 * Gets the backtrace to currently called exception
 	 * 
 	 * @return string  A nicely formatted backtrace to this exception
