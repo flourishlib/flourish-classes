@@ -18,6 +18,7 @@ class fCore
 	const debug                   = 'fCore::debug';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
+	const enableDynamicConstants  = 'fCore::enableDynamicConstants';
 	const enableErrorHandling     = 'fCore::enableErrorHandling';
 	const enableExceptionHandling = 'fCore::enableExceptionHandling';
 	const expose                  = 'fCore::expose';
@@ -38,6 +39,13 @@ class fCore
 	 * @var boolean
 	 */
 	static private $debug = NULL;
+	
+	/**
+	 * If dynamic constants should be created
+	 * 
+	 * @var boolean
+	 */
+	static private $dynamic_constants = FALSE;
 	
 	/**
 	 * Error destination
@@ -80,6 +88,13 @@ class fCore
 	 * @var string
 	 */
 	static private $exception_message = NULL;
+	
+	/**
+	 * If this class is handling errors
+	 * 
+	 * @var boolean
+	 */
+	static private $handles_errors = FALSE;
 	
 	/**
 	 * Callbacks for when exceptions are tossed
@@ -291,6 +306,28 @@ class fCore
 	
 	
 	/**
+	 * Turns on a feature where undefined constants are automatically created with the string value equivalent to the name
+	 * 
+	 * This functionality only works if {@link enableErrorHandling()} has been called
+	 * 
+	 * @return void
+	 */
+	static public function enableDynamicConstants()
+	{
+		if (!self::$handles_errors) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Dynamic constants can not be enabled unless error handling has been enabled via %s',
+					__CLASS__ . '::enableErrorHandling()'
+				)
+			);
+		}
+		self::$dynamic_constants = TRUE;
+	}
+	
+	
+	/**
 	 * Turns on special error handling
 	 * 
 	 * All errors that match the current error_reporting() level will be
@@ -305,6 +342,7 @@ class fCore
 			return;
 		}
 		self::$error_destination = $destination;
+		self::$handles_errors    = TRUE;
 		set_error_handler(array('fCore', 'handleError'));
 	}
 	
@@ -427,6 +465,13 @@ class fCore
 	 */
 	static public function handleError($error_number, $error_string, $error_file=NULL, $error_line=NULL, $error_context=NULL)
 	{
+		if (self::$dynamic_constants && $error_number == E_NOTICE) {
+			if (preg_match("#^Use of undefined constant (\w+) - assumed '\w+'\$#", $error_string, $matches)) {
+				define($matches[1], $matches[1]);
+				return;
+			}		
+		}
+		
 		if ((error_reporting() & $error_number) == 0) {
 			return;
 		}
