@@ -87,13 +87,13 @@ class fORMDate
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMDate', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'post-begin::store()',
-			array('fORMDate', 'setDateCreated')
+			self::setDateCreated
 		);
 		
 		if (empty(self::$date_created_columns[$class])) {
@@ -135,13 +135,13 @@ class fORMDate
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMDate', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'post-begin::store()',
-			array('fORMDate', 'setDateUpdated')
+			self::setDateUpdated
 		);
 		
 		if (empty(self::$date_updated_columns[$class])) {
@@ -198,37 +198,31 @@ class fORMDate
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_timezone_column . '()',
-			array('fORMDate', 'inspect')
+			self::inspect
 		);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMDate', 'validateTimezoneColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateTimezoneColumns)) {
+			fORM::registerHookCallback($class, 'post::validate()', self::validateTimezoneColumns);
 		}
 		
-		$hook     = 'post::loadFromResult()';
-		$callback = array('fORMDate', 'makeTimestampObjects');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'post::loadFromResult()', self::makeTimestampObjects)) {
+			fORM::registerHookCallback($class, 'post::loadFromResult()', self::makeTimestampObjects);
 		}
 		
-		$hook     = 'pre::validate()';
-		$callback = array('fORMDate', 'makeTimestampObjects');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'pre::validate()', self::makeTimestampObjects)) {
+			fORM::registerHookCallback($class, 'pre::validate()', self::makeTimestampObjects);
 		}
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::set' . $camelized_timestamp_column . '()',
-			array('fORMDate', 'setTimestampColumn')
+			self::setTimestampColumn
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::set' . $camelized_timezone_column . '()',
-			array('fORMDate', 'setTimezoneColumn')
+			self::setTimezoneColumn
 		);
 		
 		if (empty(self::$timestamp_columns[$class])) {

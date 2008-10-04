@@ -89,13 +89,11 @@ class fORMColumn
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
+			self::inspect
 		);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMColumn', 'validateEmailColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateEmailColumns)) {
+			fORM::registerHookCallback($class, 'post::validate()', self::validateEmailColumns);
 		}
 		
 		if (empty(self::$email_columns[$class])) {
@@ -137,24 +135,22 @@ class fORMColumn
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::prepare' . $camelized_column . '()',
-			array('fORMColumn', 'prepareLinkColumn')
+			self::prepareLinkColumn
 		);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMColumn', 'validateLinkColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateLinkColumns)) {
+			fORM::registerHookCallback($class, 'post::validate()', self::validateLinkColumns);
 		}
 		
 		fORM::registerReflectCallback(
 			$class,
-			array('fORMColumn', 'reflect')
+			self::reflect
 		);
 		
 		if (empty(self::$link_columns[$class])) {
@@ -196,30 +192,30 @@ class fORMColumn
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::encode' . $camelized_column . '()',
-			array('fORMColumn', 'encodeNumberColumn')
+			self::encodeNumberColumn
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::prepare' . $camelized_column . '()',
-			array('fORMColumn', 'prepareNumberColumn')
+			self::prepareNumberColumn
 		);
 		
 		fORM::registerReflectCallback(
 			$class,
-			array('fORMColumn', 'reflect')
+			self::reflect
 		);
 		
 		fORM::registerObjectifyCallback(
 			$class,
 			$column,
-			array('fORMColumn', 'objectifyNumber')
+			self::objectifyNumber
 		);
 		
 		if (empty(self::$number_columns[$class])) {
@@ -285,13 +281,11 @@ class fORMColumn
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMColumn', 'inspect')
+			self::inspect
 		);
 		
-		$hook     = 'pre::validate()';
-		$callback = array('fORMColumn', 'setRandomStrings');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'pre::validate()', self::setRandomStrings)) {
+			fORM::registerHookCallback($class, 'pre::validate()', self::setRandomStrings);
 		}
 		
 		if (empty(self::$random_columns[$class])) {

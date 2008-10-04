@@ -52,7 +52,7 @@ class fTimestamp
 	static public function callFormatCallback($formatted_string)
 	{
 		if (self::$format_callback) {
-			return call_user_func(self::$format_callback, $formatted_string);
+			return fCore::call(self::$format_callback, array($formatted_string));
 		}
 		return $formatted_string;
 	}

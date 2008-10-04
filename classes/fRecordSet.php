@@ -261,7 +261,7 @@ class fRecordSet implements Iterator
 		list($action, $element) = fORM::parseMethod($method_name);
 		
 		if (isset(self::$method_callbacks[$method_name])) {
-			return call_user_func_array(
+			return fCore::call(
 				self::$method_callbacks[$method_name],
 				array(
 					$this,
@@ -520,7 +520,7 @@ class fRecordSet implements Iterator
 			if ($call_filter) {
 				$value = $record->$method();
 			} else {
-				$value = call_user_func($callback, $record);
+				$value = fCore::call($callback, array($record));
 			}
 			if ($value) {
 				$new_records[] = $record;
@@ -952,7 +952,7 @@ class fRecordSet implements Iterator
 		}
 		
 		foreach($values as $value) {
-			$result = call_user_func($callback, $result, $value);
+			$result = fCore::call($callback, array($result, $value));
 		}
 		
 		return $result;

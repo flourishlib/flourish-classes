@@ -257,7 +257,7 @@ class fNumber
 		$number = trim($number);
 		
 		if (self::$unformat_callback) {
-			$number = call_user_func(self::$unformat_callback, $number);
+			$number = fCore::call(self::$unformat_callback, array($number));
 		} else {
 			$number = str_replace(',', '', $number);	
 		}
@@ -1101,7 +1101,7 @@ class fNumber
 	public function format()
 	{
 		if (self::$format_callback !== NULL) {
-			return call_user_func(self::$format_callback, $this->value);
+			return fCore::call(self::$format_callback, array($this->value));
 		}
 		
 		// We can't use number_format() since it takes a float and we have a

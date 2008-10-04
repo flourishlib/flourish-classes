@@ -184,6 +184,29 @@ class fCore
 	
 	
 	/**
+	 * Performs a call_user_func_array, while translating PHP 5.2 static callback syntax for PHP 5.1 and 5.0
+	 * 
+	 * To pass parameters by reference they must be assigned to the parameters
+	 * array by reference and the function/method being called must accept those
+	 * parameters by reference. If either condition is not met, the parameter
+	 * will be passed by value.
+	 * 
+	 * @param  callback $callback    The function or method to call
+	 * @param  array    $parameters  The parameters to pass to the function/method
+	 * @return mixed  The return value of the called function/method
+	 */
+	static public function call($callback, $parameters=array())
+	{
+		// Fix PHP 5.0 and 5.1 static callback syntax
+		if (is_string($callback) && self::getPHPVersion() < '5.2.0' && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);
+		}
+		
+		return call_user_func_array($callback, $parameters);
+	}
+	
+	
+	/**
 	 * Checks an error/exception destination
 	 * 
 	 * @param  string $destination  The destination for the exception. An email or file.
@@ -519,7 +542,7 @@ class fCore
 		}
 				
 		try {
-			call_user_func_array(self::$exception_handler_callback, self::$exception_handler_parameters);
+			self::call(self::$exception_handler_callback, self::$exception_handler_parameters);
 		} catch (Exception $e) {
 			self::trigger(
 				'error',
@@ -667,7 +690,7 @@ class fCore
 		foreach (self::$toss_callbacks as $class => $callbacks) {
 			foreach ($callbacks as $callback) {
 				if ($exception instanceof $class) {
-					call_user_func($callback, $exception);
+					self::call($callback, array($exception));
 				}
 			}
 		}

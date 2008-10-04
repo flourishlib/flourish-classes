@@ -29,18 +29,18 @@ class fORMJSON
 	{
 		fORM::registerReflectCallback(
 			'*',
-			array('fORMJSON', 'reflect')
+			self::reflect
 		);
 		
 		fORM::registerHookCallback(
 			'*',
 			'replace::toJSON()',
-			array('fORMJSON', 'toJSON')
+			self::toJSON
 		);
 		
 		fRecordSet::registerMethodCallback(
 			'toJSON',
-			array('fORMJSON', 'toJSONRecordSet')
+			self::toJSONRecordSet
 		);
 	}
 	

@@ -90,30 +90,28 @@ class fORMMoney
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMMoney', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::encode' . $camelized_column . '()',
-			array('fORMMoney', 'encodeMoneyColumn')
+			self::encodeMoneyColumn
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::prepare' . $camelized_column . '()',
-			array('fORMMoney', 'prepareMoneyColumn')
+			self::prepareMoneyColumn
 		);
 		
-		$hook     = 'post::validate()';
-		$callback = array('fORMMoney', 'validateMoneyColumns');
-		if (!fORM::checkHookCallback($class, $hook, $callback)) {
-			fORM::registerHookCallback($class, $hook, $callback);
+		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateMoneyColumns)) {
+			fORM::registerHookCallback($class, 'post::validate()', self::validateMoneyColumns);
 		}
 		
 		fORM::registerReflectCallback(
 			$class,
-			array('fORMMoney', 'reflect')
+			self::reflect
 		);
 		
 		$value = FALSE;
@@ -126,35 +124,31 @@ class fORMMoney
 			}
 			self::$currency_columns[$class][$currency_column] = $column;
 			
-			$hook     = 'post::loadFromResult()';
-			$callback = array('fORMMoney', 'makeMoneyObjects');
-			if (!fORM::checkHookCallback($class, $hook, $callback)) {
-				fORM::registerHookCallback($class, $hook, $callback);
+			if (!fORM::checkHookCallback($class, 'post::loadFromResult()', self::makeMoneyObjects)) {
+				fORM::registerHookCallback($class, 'post::loadFromResult()', self::makeMoneyObjects);
 			}
 			
-			$hook     = 'pre::validate()';
-			$callback = array('fORMMoney', 'makeMoneyObjects');
-			if (!fORM::checkHookCallback($class, $hook, $callback)) {
-				fORM::registerHookCallback($class, $hook, $callback);
+			if (!fORM::checkHookCallback($class, 'pre::validate()', self::makeMoneyObjects)) {
+				fORM::registerHookCallback($class, 'pre::validate()', self::makeMoneyObjects);
 			}
 			
 			fORM::registerHookCallback(
 				$class,
 				'replace::set' . $camelized_column . '()',
-				array('fORMMoney', 'setMoneyColumn')
+				self::setMoneyColumn
 			);
 			
 			fORM::registerHookCallback(
 				$class,
 				'replace::set' . fGrammar::camelize($currency_column, TRUE) . '()',
-				array('fORMMoney', 'setCurrencyColumn')
+				self::setCurrencyColumn
 			);
 		
 		} else {
 			fORM::registerObjectifyCallback(
 				$class,
 				$column,
-				array('fORMMoney', 'objectifyMoney')
+				self::objectifyMoney
 			);
 		}
 		

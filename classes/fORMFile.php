@@ -254,56 +254,56 @@ class fORMFile
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMFile', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::upload' . $camelized_column . '()',
-			array('fORMFile', 'upload')
+			self::upload
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::set' . $camelized_column . '()',
-			array('fORMFile', 'set')
+			self::set
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::encode' . $camelized_column . '()',
-			array('fORMFile', 'encode')
+			self::encode
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'replace::prepare' . $camelized_column . '()',
-			array('fORMFile', 'prepare')
+			self::prepare
 		);
 		
 		fORM::registerReflectCallback(
 			$class,
-			array('fORMFile', 'reflect')
+			self::reflect
 		);
 		
 		fORM::registerObjectifyCallback(
 			$class,
 			$column,
-			array('fORMFile', 'objectify')
+			self::objectify
 		);
 		
 		$only_once_hooks = array(
-			'post-begin::delete()'    => array('fORMFile', 'begin'),
-			'pre-commit::delete()'    => array('fORMFile', 'delete'),
-			'post-commit::delete()'   => array('fORMFile', 'commit'),
-			'post-rollback::delete()' => array('fORMFile', 'rollback'),
-			'post::populate()'        => array('fORMFile', 'populate'),
-			'post-begin::store()'     => array('fORMFile', 'begin'),
-			'post-validate::store()'  => array('fORMFile', 'moveFromTemp'),
-			'pre-commit::store()'     => array('fORMFile', 'deleteOld'),
-			'post-commit::store()'    => array('fORMFile', 'commit'),
-			'post-rollback::store()'  => array('fORMFile', 'rollback'),
-			'post::validate()'        => array('fORMFile', 'validate')
+			'post-begin::delete()'    => self::begin,
+			'pre-commit::delete()'    => self::delete,
+			'post-commit::delete()'   => self::commit,
+			'post-rollback::delete()' => self::rollback,
+			'post::populate()'        => self::populate,
+			'post-begin::store()'     => self::begin,
+			'post-validate::store()'  => self::moveFromTemp,
+			'pre-commit::store()'     => self::deleteOld,
+			'post-commit::store()'    => self::commit,
+			'post-rollback::store()'  => self::rollback,
+			'post::validate()'        => self::validate
 		);
 		
 		foreach ($only_once_hooks as $hook => $callback) {
@@ -667,14 +667,14 @@ class fORMFile
 						)
 					);
 				}
-				call_user_func_array($callback, $parameters);
+				fCore::call($callback, $parameters);
 			}
 		}
 		
 		// Save the changes
 		$callback   = array($image, 'saveChanges');
 		$parameters = array(self::$image_upload_columns[$class][$column]);
-		call_user_func_array($callback, $parameters);
+		fCore::call($callback, $parameters);
 	}
 	
 	
@@ -908,7 +908,7 @@ class fORMFile
 						)
 					);
 				}
-				call_user_func_array($method_call['callback'], $method_call['parameters']);
+				fCore::call($method_call['callback'], $method_call['parameters']);
 			}
 		}
 	}

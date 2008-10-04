@@ -159,7 +159,7 @@ class fORM
 				&$first_parameter,
 				&$second_parameter
 			);
-			return call_user_func_array($callback, $parameters);
+			return fCore::call($callback, $parameters);
 		}
 		
 		// There can be more than one non-replace:: hook so we can't return a value
@@ -179,7 +179,7 @@ class fORM
 				&$first_parameter,
 				&$second_parameter
 			);
-			call_user_func_array($callback, $parameters);
+			fCore::call($callback, $parameters);
 		}
 	}
 	
@@ -212,7 +212,7 @@ class fORM
 					&$signatures,
 					$include_doc_comments
 				);
-				call_user_func_array($callback, $parameters);
+				fCore::call($callback, $parameters);
 			}	
 		}
 		
@@ -224,7 +224,7 @@ class fORM
 					&$signatures,
 					$include_doc_comments
 				);
-				call_user_func_array($callback, $parameters);
+				fCore::call($callback, $parameters);
 			}
 		}
 	}
@@ -461,7 +461,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
-			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
+			return fCore::call(self::$objectify_callbacks[$class][$column], array($class, $column, $value));
 		}
 		
 		$table = self::tablize($class);
@@ -762,7 +762,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
-			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
+			return fCore::call(self::$scalarize_callbacks[$class][$column], array($class, $column, $value));
 		}
 		
 		if (is_object($value) && is_callable(array($value, '__toString'))) {

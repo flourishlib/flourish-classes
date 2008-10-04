@@ -220,7 +220,7 @@ class fGrammar
 	{
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['pre'] as $callback) {
-				$message = call_user_func($callback, $message);
+				$message = fCore::call($callback, array($message));
 			}
 		}
 		
@@ -229,7 +229,7 @@ class fGrammar
 		
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['post'] as $callback) {
-				$message = call_user_func($callback, $message);
+				$message = fCore::call($callback, array($message));
 			}
 		}
 		
@@ -343,7 +343,7 @@ class fGrammar
 		}
 		
 		if (self::$join_array_callback) {
-			return call_user_func(self::$join_array_callback, $strings, $type);
+			return fCore::call(self::$join_array_callback, array($strings, $type));
 		}
 		
 		settype($strings, 'array');

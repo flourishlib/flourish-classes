@@ -83,30 +83,30 @@ class fORMOrdering
 		fORM::registerHookCallback(
 			$class,
 			'replace::inspect' . $camelized_column . '()',
-			array('fORMOrdering', 'inspect')
+			self::inspect
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'post::validate()',
-			array('fORMOrdering', 'validate')
+			self::validate
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'post-validate::store()',
-			array('fORMOrdering', 'reorder')
+			self::reorder
 		);
 		
 		fORM::registerHookCallback(
 			$class,
 			'pre-commit::delete()',
-			array('fORMOrdering', 'delete')
+			self::delete
 		);
 		
 		fORM::registerReflectCallback(
 			$class,
-			array('fORMOrdering', 'reflect')
+			self::reflect
 		);
 		
 		// Ensure we only ever have one ordering column by overwriting

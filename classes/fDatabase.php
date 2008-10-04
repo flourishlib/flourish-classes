@@ -1441,7 +1441,7 @@ class fDatabase
 		
 		if (func_num_args() > 1) {
 			$args = func_get_args();
-			$sql  = call_user_func_array(array($this, 'escape'), $args);
+			$sql  = call_user_func_array($this->escape, $args);
 		}
 		
 		// Split multiple queries
@@ -1615,7 +1615,7 @@ class fDatabase
 		
 		if (func_num_args() > 1) {
 			$args = func_get_args();
-			$sql  = call_user_func_array(array($this, 'escape'), $args);
+			$sql  = call_user_func_array($this->escape, $args);
 		}
 		
 		$result = $this->query($this->translation->translate($sql));
@@ -1649,7 +1649,7 @@ class fDatabase
 		
 		if (func_num_args() > 1) {
 			$args = func_get_args();
-			$sql  = call_user_func_array(array($this, 'escape'), $args);
+			$sql  = call_user_func_array($this->escape, $args);
 		}
 		
 		if ($this->unbuffered_result) {
@@ -1716,7 +1716,7 @@ class fDatabase
 		
 		if (func_num_args() > 1) {
 			$args = func_get_args();
-			$sql  = call_user_func_array(array($this, 'escape'), $args);
+			$sql  = call_user_func_array($this->escape, $args);
 		}
 		
 		$result = $this->unbufferedQuery($this->translation->translate($sql));

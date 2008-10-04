@@ -238,7 +238,7 @@ class fUpload
 		self::$type = $type;
 		switch ($type) {
 			case 'image':
-				call_user_func_array(array('fUpload', 'setMimeTypes'), fImage::getCompatibleMimetypes());
+				fCore::call(self::setMimeTypes, fImage::getCompatibleMimetypes());
 				break;
 			case 'zip':
 				self::setMimeTypes('application/zip', 'application/gzip', 'application/x-zip-compressed');
