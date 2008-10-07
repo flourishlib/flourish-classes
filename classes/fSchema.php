@@ -960,8 +960,10 @@ class fSchema implements fISchema
 		
 		$data_type_mapping = array(
 			'boolean'			=> 'boolean',
+			'serial'            => 'integer',
 			'smallint'			=> 'integer',
 			'int'				=> 'integer',
+			'integer'           => 'integer',
 			'bigint'			=> 'integer',
 			'timestamp'			=> 'timestamp',
 			'date'				=> 'date',
@@ -969,6 +971,7 @@ class fSchema implements fISchema
 			'varchar'			=> 'varchar',
 			'char'				=> 'char',
 			'real'				=> 'float',
+			'numeric'           => 'float',
 			'float'             => 'float',
 			'double'			=> 'float',
 			'decimal'			=> 'float',
