@@ -17,6 +17,7 @@
  */
 class fCRUD
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const getColumnClass           = 'fCRUD::getColumnClass';
 	const getRowClass              = 'fCRUD::getRowClass';
 	const getSearchValue           = 'fCRUD::getSearchValue';

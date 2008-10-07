@@ -17,6 +17,7 @@
  */
 class fHTML
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const containsBlockLevelHTML = 'fHTML::containsBlockLevelHTML';
 	const convertNewlines        = 'fHTML::convertNewlines';
 	const decode                 = 'fHTML::decode';

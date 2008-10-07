@@ -14,6 +14,7 @@
  */
 class fBuffer
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const erase        = 'fBuffer::erase';
 	const get          = 'fBuffer::get';
 	const isStarted    = 'fBuffer::isStarted';

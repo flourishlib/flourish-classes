@@ -17,6 +17,7 @@
  */
 class fXML
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const encode     = 'fXML::encode';
 	const sendHeader = 'fXML::sendHeader';
 	

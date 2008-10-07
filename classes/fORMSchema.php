@@ -14,6 +14,7 @@
  */
 class fORMSchema
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const attach                       = 'fORMSchema::attach';
 	const enableSmartCaching           = 'fORMSchema::enableSmartCaching';
 	const getInstance                  = 'fORMSchema::getInstance';

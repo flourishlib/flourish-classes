@@ -14,6 +14,7 @@
  */
 class fFilesystem
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addWebPathTranslation         = 'fFilesystem::addWebPathTranslation';
 	const begin                         = 'fFilesystem::begin';
 	const commit                        = 'fFilesystem::commit';

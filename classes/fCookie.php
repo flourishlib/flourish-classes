@@ -14,6 +14,7 @@
  */
 class fCookie
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const get                = 'fCookie::get';
 	const set                = 'fCookie::set';
 	const setDefaultDomain   = 'fCookie::setDefaultDomain';

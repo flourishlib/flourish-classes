@@ -14,6 +14,7 @@
  */
 class fAuthorization
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addNamedIPRange  = 'fAuthorization::addNamedIPRange';
 	const checkACL         = 'fAuthorization::checkACL';
 	const checkAuthLevel   = 'fAuthorization::checkAuthLevel';

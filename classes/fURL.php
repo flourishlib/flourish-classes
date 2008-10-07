@@ -14,6 +14,7 @@
  */
 class fURL
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const get                   = 'fURL::get';
 	const getDomain             = 'fURL::getDomain';
 	const getQueryString        = 'fURL::getQueryString';

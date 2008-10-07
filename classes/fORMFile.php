@@ -14,6 +14,7 @@
  */
 class fORMFile
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addFImageMethodCall        = 'fORMFile::addFImageMethodCall';
 	const addFUploadMethodCall       = 'fORMFile::addFUploadMethodCall';
 	const begin                      = 'fORMFile::begin';

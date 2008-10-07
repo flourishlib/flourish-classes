@@ -14,6 +14,7 @@
  */
 abstract class fActiveRecord
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const assign = 'fActiveRecord::assign';
 	
 	

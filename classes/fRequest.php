@@ -20,6 +20,7 @@
  */
 class fRequest
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const check                 = 'fRequest::check';
 	const filter                = 'fRequest::filter';
 	const get                   = 'fRequest::get';

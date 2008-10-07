@@ -16,6 +16,7 @@
  */
 class fORMRelated
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const associateRecords          = 'fORMRelated::associateRecords';
 	const buildRecords              = 'fORMRelated::buildRecords';
 	const countRecords              = 'fORMRelated::countRecords';

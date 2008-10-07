@@ -14,6 +14,7 @@
  */
 class fORMMoney
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const configureMoneyColumn       = 'fORMMoney::configureMoneyColumn';
 	const encodeMoneyColumn          = 'fORMMoney::encodeMoneyColumn';
 	const inspect                    = 'fORMMoney::inspect';

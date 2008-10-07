@@ -14,6 +14,7 @@
  */
 class fUpload
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const check            = 'fUpload::check';
 	const count            = 'fUpload::count';
 	const reset            = 'fUpload::reset';

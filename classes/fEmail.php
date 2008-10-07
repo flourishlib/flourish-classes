@@ -20,8 +20,8 @@
  */
 class fEmail
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const fixQmail = 'fEmail::fixQmail';
-	
 	
 	/**
 	 * A regular expression to match an email address, exluding those with comments and folding whitespace

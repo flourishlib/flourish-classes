@@ -14,6 +14,7 @@
  */
 class fFile
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const create = 'fFile::create';
 	
 	

@@ -14,6 +14,7 @@
  */
 class fORMColumn
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const configureEmailColumn  = 'fORMColumn::configureEmailColumn';
 	const configureLinkColumn   = 'fORMColumn::configureLinkColumn';
 	const configureNumberColumn = 'fORMColumn::configureNumberColumn';

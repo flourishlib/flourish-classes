@@ -21,6 +21,7 @@
  */
 class fUTF8
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const ascii    = 'fUTF8::ascii';
 	const chr      = 'fUTF8::chr';
 	const clean    = 'fUTF8::clean';

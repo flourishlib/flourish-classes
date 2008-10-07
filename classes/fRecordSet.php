@@ -14,6 +14,7 @@
  */
 class fRecordSet implements Iterator
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const build            = 'fRecordSet::build';
 	const buildFromRecords = 'fRecordSet::buildFromRecords';
 	const buildFromSQL     = 'fRecordSet::buildFromSQL';

@@ -14,6 +14,7 @@
  */
 class fCryptography
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const checkPasswordHash   = 'fCryptography::checkPasswordHash';
 	const hashPassword        = 'fCryptography::hashPassword';
 	const publicKeyDecrypt    = 'fCryptography::publicKeyDecrypt';

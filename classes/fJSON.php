@@ -19,6 +19,7 @@
  */
 class fJSON
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const decode     = 'fJSON::decode';
 	const encode     = 'fJSON::encode';
 	const sendHeader = 'fJSON::sendHeader';

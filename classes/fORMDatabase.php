@@ -14,6 +14,7 @@
  */
 class fORMDatabase
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addJoin                     = 'fORMDatabase::addJoin';
 	const addTableToKeys              = 'fORMDatabase::addTableToKeys';
 	const addTableToValues            = 'fORMDatabase::addTableToValues';

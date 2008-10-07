@@ -14,6 +14,7 @@
  */
 class fSession
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const clear           = 'fSession::clear';
 	const close           = 'fSession::close';
 	const destroy         = 'fSession::destroy';

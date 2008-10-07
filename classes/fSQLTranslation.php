@@ -16,6 +16,7 @@
  */
 class fSQLTranslation
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const sqliteCotangent    = 'fSQLTranslation::sqliteCotangent';
 	const sqliteLogBaseFirst = 'fSQLTranslation::sqliteLogBaseFirst';
 	const sqliteSign         = 'fSQLTranslation::sqliteSign';

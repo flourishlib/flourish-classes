@@ -14,6 +14,7 @@
  */
 class fTimestamp
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const callFormatCallback     = 'fTimestamp::callFormatCallback';
 	const combine                = 'fTimestamp::combine';
 	const defineFormat           = 'fTimestamp::defineFormat';

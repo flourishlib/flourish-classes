@@ -14,6 +14,7 @@
  */
 class fORMOrdering
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const configureOrderingColumn = 'fORMOrdering::configureOrderingColumn';
 	const delete                  = 'fORMOrdering::delete';
 	const inspect                 = 'fORMOrdering::inspect';

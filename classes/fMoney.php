@@ -14,6 +14,7 @@
  */
 class fMoney
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const defineCurrency           = 'fMoney::defineCurrency';
 	const getCurrencies            = 'fMoney::getCurrencies';
 	const getCurrencyInfo          = 'fMoney::getCurrencyInfo';

@@ -14,6 +14,7 @@
  */
 class fORMJSON
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const extend          = 'fORMJSON::extend';
 	const reflect         = 'fORMJSON::reflect';
 	const toJSON          = 'fORMJSON::toJSON';

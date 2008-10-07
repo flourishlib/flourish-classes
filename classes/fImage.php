@@ -14,6 +14,7 @@
  */
 class fImage extends fFile
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const create                  = 'fImage::create';
 	const getCompatibleMimetypes  = 'fImage::getCompatibleMimetypes';
 	const isImageCompatible       = 'fImage::isImageCompatible';

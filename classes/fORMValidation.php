@@ -14,6 +14,7 @@
  */
 class fORMValidation
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addConditionalValidationRule = 'fORMValidation::addConditionalValidationRule';
 	const addManyToManyValidationRule  = 'fORMValidation::addManyToManyValidationRule';
 	const addOneOrMoreValidationRule   = 'fORMValidation::addOneOrMoreValidationRule';

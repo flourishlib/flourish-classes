@@ -14,6 +14,7 @@
  */
 class fNumber
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const baseConvert              = 'fNumber::baseConvert';
 	const pi                       = 'fNumber::pi';
 	const registerFormatCallback   = 'fNumber::registerFormatCallback';

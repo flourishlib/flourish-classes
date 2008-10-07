@@ -14,6 +14,7 @@
  */
 class fGrammar
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addCamelUnderscoreRule    = 'fGrammar::addCamelUnderscoreRule';
 	const addHumanizeRule           = 'fGrammar::addHumanizeRule';
 	const addSingularPluralRule     = 'fGrammar::addSingularPluralRule';

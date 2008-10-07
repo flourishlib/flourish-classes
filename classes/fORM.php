@@ -14,6 +14,7 @@
  */
 class fORM
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const addCustomTableClassMapping = 'fORM::addCustomTableClassMapping';
 	const callHookCallback           = 'fORM::callHookCallback';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';

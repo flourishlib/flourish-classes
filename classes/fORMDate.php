@@ -14,6 +14,7 @@
  */
 class fORMDate
 {
+	// The following constants allow for nice looking callbacks to static methods
 	const configureDateCreatedColumn        = 'fORMDate::configureDateCreatedColumn';
 	const configureDateUpdatedColumn        = 'fORMDate::configureDateUpdatedColumn';
 	const configureTimezoneColumn           = 'fORMDate::configureTimezoneColumn';
