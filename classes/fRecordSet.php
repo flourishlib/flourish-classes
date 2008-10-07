@@ -446,24 +446,13 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the number of records in the set
 	 * 
+	 * @param  boolean $ignore_limit  If set to TRUE, this method will return the number of records that would be in the set if there was no LIMIT clause
 	 * @return integer  The number of records in the set
 	 */
-	public function count()
+	public function count($ignore_limit=FALSE)
 	{
-		return sizeof($this->records);
-	}
-	
-	
-	/**
-	 * Returns the number of records that would have been returned if the SQL statement had not used a LIMIT clause.
-	 * 
-	 * @return integer  The number of records that would have been returned if there was no LIMIT clause, or the number of records in the set if there was no LIMIT clause.
-	 */
-	public function countWithoutLimit()
-	{
-		// A query that does not use a LIMIT clause just returns the number of returned rows
-		if ($this->non_limited_count_sql === NULL) {
-			return $this->count();
+		if ($ignore_limit !== TRUE || $this->non_limited_count_sql === NULL) {
+			return sizeof($this->records);
 		}
 		
 		if ($this->non_limited_count === NULL) {
