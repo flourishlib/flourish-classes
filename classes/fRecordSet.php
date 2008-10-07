@@ -273,17 +273,19 @@ class fRecordSet implements Iterator
 				)
 			);	
 		}
+		
+		$route         = ($parameters) ? $parameters[0] : NULL;
+		$related_class = fGrammar::singularize(fGrammar::camelize($element, TRUE));
 		 
 		switch ($action) {
-			case 'build':
-				$element = fGrammar::camelize($element, TRUE);
-				$element = fGrammar::singularize($element);
-				return $this->preloadRecords($element, ($parameters != array()) ? $parameters[0] : NULL);
+			case 'prebuild':
+				return $this->prebuild($related_class, $route);
 			
-			case 'count':
-				$element = fGrammar::camelize($element, TRUE);
-				$element = fGrammar::singularize($element);
-				return $this->preloadCounts($element, ($parameters != array()) ? $parameters[0] : NULL);
+			case 'precount':
+				return $this->precount($related_class, $route);
+				
+			case 'precreate':
+				return $this->precreate($related_class, $route);
 		}
 		 
 		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
@@ -585,8 +587,6 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the primary keys for all of the records in the set
 	 * 
-	 * @throws fValidationException
-	 * 
 	 * @return array  The primary keys of all the records in the set
 	 */
 	public function getPrimaryKeys()
@@ -720,79 +720,13 @@ class fRecordSet implements Iterator
 	
 	
 	/** 
-	 * Counts the related records for all records in this set in one DB query
-	 *  
-	 * @throws fValidationException
-	 *  
-	 * @param  string $related_class  This should be the name of a related class
-	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
-	 * @return void
-	 */
-	private function preloadCounts($related_class, $route=NULL)
-	{
-		// If there are no primary keys we can just exit
-		if (!array_merge($this->getPrimaryKeys())) {
-			return;
-		}
-		
-		$related_table = fORM::tablize($related_class);
-		$table         = fORM::tablize($this->class);
-		 
-		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
-		
-		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
-		
-		// Build the query out
-		$where_sql    = $this->constructWhereClause($route);
-		$order_by_sql = $this->constructOrderByClause($route);
-		
-		$related_table_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
-		$related_table_keys = fORMDatabase::addTableToValues($related_table, $related_table_keys);
-		$related_table_keys = join(', ', $related_table_keys);
-		
-		$column = $table_with_route . '.' . $relationship['column'];
-		
-		$new_sql  = 'SELECT count(' . $related_table_keys . ') AS __flourish_count, ' . $column . ' AS __flourish_column ';
-		$new_sql .= ' FROM :from_clause ';
-		$new_sql .= ' WHERE ' . $where_sql;
-		$new_sql .= ' GROUP BY ' . $column;
-		$new_sql .= ' ORDER BY ' . $column . ' ASC';
-		 
-		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql);
-		 
-		// Run the query and inject the results into the records
-		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
-		
-		$counts = array();
-		foreach ($result as $row) {
-			$counts[$row['__flourish_column']] = (int) $row['__flourish_count'];
-		}
-		
-		unset($result);
-		 
-		$total_records = sizeof($this->records);
-		$get_method   = 'get' . fGrammar::camelize($relationship['column'], TRUE);
-		$tally_method = 'tally' . fGrammar::pluralize($related_class);
-		
-		for ($i=0; $i < $total_records; $i++) {
-			$record = $this->records[$i];
-			$count  = (isset($counts[$record->$get_method()])) ? $counts[$record->$get_method()] : 0;
-			$record->$tally_method($count, $route);
-		}
-	}
-	
-	
-	/** 
 	 * Builds the related records for all records in this set in one DB query
 	 *  
-	 * @throws fValidationException
-	 *  
 	 * @param  string $related_class  This should be the name of a related class
 	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
 	 * @return void
 	 */
-	private function preloadRecords($related_class, $route=NULL)
+	private function prebuild($related_class, $route=NULL)
 	{
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
@@ -912,6 +846,103 @@ class fRecordSet implements Iterator
 			$method = 'inject' . fGrammar::pluralize($related_class);
 			$record->$method($set, $route);
 		}
+	}
+	
+	
+	/** 
+	 * Counts the related records for all records in this set in one DB query
+	 *  
+	 * @param  string $related_class  This should be the name of a related class
+	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
+	 * @return void
+	 */
+	private function precount($related_class, $route=NULL)
+	{
+		// If there are no primary keys we can just exit
+		if (!array_merge($this->getPrimaryKeys())) {
+			return;
+		}
+		
+		$related_table = fORM::tablize($related_class);
+		$table         = fORM::tablize($this->class);
+		 
+		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
+		
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
+		
+		// Build the query out
+		$where_sql    = $this->constructWhereClause($route);
+		$order_by_sql = $this->constructOrderByClause($route);
+		
+		$related_table_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$related_table_keys = fORMDatabase::addTableToValues($related_table, $related_table_keys);
+		$related_table_keys = join(', ', $related_table_keys);
+		
+		$column = $table_with_route . '.' . $relationship['column'];
+		
+		$new_sql  = 'SELECT count(' . $related_table_keys . ') AS __flourish_count, ' . $column . ' AS __flourish_column ';
+		$new_sql .= ' FROM :from_clause ';
+		$new_sql .= ' WHERE ' . $where_sql;
+		$new_sql .= ' GROUP BY ' . $column;
+		$new_sql .= ' ORDER BY ' . $column . ' ASC';
+		 
+		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql);
+		 
+		// Run the query and inject the results into the records
+		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
+		
+		$counts = array();
+		foreach ($result as $row) {
+			$counts[$row['__flourish_column']] = (int) $row['__flourish_count'];
+		}
+		
+		unset($result);
+		 
+		$total_records = sizeof($this->records);
+		$get_method   = 'get' . fGrammar::camelize($relationship['column'], TRUE);
+		$tally_method = 'tally' . fGrammar::pluralize($related_class);
+		
+		for ($i=0; $i < $total_records; $i++) {
+			$record = $this->records[$i];
+			$count  = (isset($counts[$record->$get_method()])) ? $counts[$record->$get_method()] : 0;
+			$record->$tally_method($count, $route);
+		}
+	}
+	
+	
+	/** 
+	 * Creates the objects for related records that are in a one-to-one or many-to-one relationship with the current class in a single DB query
+	 *  
+	 * @param  string $related_class  This should be the name of a related class
+	 * @param  string $route          This should be the column name of the foreign key and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
+	 * @return void
+	 */
+	private function precreate($related_class, $route=NULL)
+	{
+		// If there are no primary keys we can just exit
+		if (!array_merge($this->getPrimaryKeys())) {
+			return;
+		}
+		
+		$relationship = fORMSchema::getRoute(
+			fORM::tablize($this->class),
+			fORM::tablize($related_class),
+			$route,
+			'*-to-many'
+		);
+		
+		self::build(
+			$related_class,
+			array(
+				$relationship['related_column'] . '=' => $this->call(
+					fGrammar::camelize(
+						$relatioship['column'],
+						TRUE
+					)
+				)
+			)
+		);
 	}
 	
 	
