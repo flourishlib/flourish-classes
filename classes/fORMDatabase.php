@@ -15,17 +15,14 @@
 class fORMDatabase
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const addJoin                     = 'fORMDatabase::addJoin';
 	const addTableToKeys              = 'fORMDatabase::addTableToKeys';
 	const addTableToValues            = 'fORMDatabase::addTableToValues';
 	const attach                      = 'fORMDatabase::attach';
-	const condensePrimaryKeyArray     = 'fORMDatabase::condensePrimaryKeyArray';
 	const createFromClauseFromJoins   = 'fORMDatabase::createFromClauseFromJoins';
 	const createOrderByClause         = 'fORMDatabase::createOrderByClause';
 	const createPrimaryKeyWhereClause = 'fORMDatabase::createPrimaryKeyWhereClause';
 	const createWhereClause           = 'fORMDatabase::createWhereClause';
 	const escapeBySchema              = 'fORMDatabase::escapeBySchema';
-	const findTableAlias              = 'fORMDatabase::findTableAlias';
 	const getInstance                 = 'fORMDatabase::getInstance';
 	const insertFromAndGroupByClauses = 'fORMDatabase::insertFromAndGroupByClauses';
 	
@@ -36,48 +33,6 @@ class fORMDatabase
 	 * @var fDatabase
 	 */
 	static private $database_object;
-	
-	
-	/**
-	 * Adds a join to an existing array of joins
-	 * 
-	 * @internal
-	 * 
-	 * @param  array  $joins         The existing joins
-	 * @param  string $table         The table the relationship extends from
-	 * @param  string $route         The route to the related table
-	 * @param  array  $relationship  The relationship info for the route specified
-	 * @return array  The joins array with the new join added
-	 */
-	static public function addJoin($joins, $table, $route, $relationship)
-	{
-		$related_table = $relationship['related_table'];
-		
-		if (isset($joins[$table . '_' . $related_table . '{' . $route . '}'])) {
-			return $joins;
-		}
-		
-		$table_alias = self::findTableAlias($table, $joins);
-		
-		if (!$table_alias) {
-			fCore::toss(
-				'fProgrammerException',
-				fCore::compsoe(
-					'The table %s has not been joined to yet, so it can not be joined from',
-					fCore::dump($table)
-				)
-			);
-		}
-		
-		$aliases = array();
-		foreach ($joins as $join) {
-			$aliases[] = $join['table_alias'];
-		}
-		
-		self::createJoin($table, $table_alias, $related_table, $route, $joins, $aliases);
-		
-		return $joins;
-	}
 	
 	
 	/**
@@ -135,34 +90,6 @@ class fORMDatabase
 	static public function attach(fDatabase $database)
 	{
 		self::$database_object = $database;
-	}
-	
-	
-	/**
-	 * Turns a single field primary key list from an array into a string
-	 * 
-	 * @internal
-	 * 
-	 * @param  array $rows  The rows of primary keys
-	 * @return array  A possibly condensed array of primary keys
-	 */
-	static public function condensePrimaryKeyArray($rows)
-	{
-		if (empty($rows)) {
-			return $rows;
-		}
-		
-		$test_row = $rows[0];
-		if (sizeof($test_row) == 1) {
-			$new_rows = array();
-			$row_keys = array_keys($test_row);
-			foreach ($rows as $row) {
-				$new_rows[] = $row[$row_keys[0]];
-			}
-			$rows = $new_rows;
-		}
-		
-		return $rows;
 	}
 	
 	
@@ -245,7 +172,7 @@ class fORMDatabase
 			$join = array(
 				'join_type' => 'INNER JOIN',
 				'table_name' => $routes[$route]['join_table'],
-				'table_alias' => self::createNewAlias($routes[$route]['join_table'], $used_aliases), // Fix this
+				'table_alias' => self::createNewAlias($routes[$route]['join_table'], $used_aliases),
 				'on_clause_type' => 'simple_equation',
 				'on_clause_fields' => array()
 			);
@@ -279,7 +206,7 @@ class fORMDatabase
 			$join = array(
 				'join_type' => 'INNER JOIN',
 				'table_name' => $related_table,
-				'table_alias' => self::createNewAlias($related_table, $used_aliases), // Fix this
+				'table_alias' => self::createNewAlias($related_table, $used_aliases),
 				'on_clause_type' => 'simple_equation',
 				'on_clause_fields' => array()
 			);
@@ -666,26 +593,6 @@ class fORMDatabase
 		}
 		
 		return $co . $prepared_value;
-	}
-	
-	
-	/**
-	 * Finds the first table alias for the table specified in the list of joins provided
-	 * 
-	 * @internal
-	 * 
-	 * @param  string $table  The table to find the alias for
-	 * @param  array  $joins  The joins to look through
-	 * @return string  The alias to use for the table
-	 */
-	static public function findTableAlias($table, $joins)
-	{
-		foreach ($joins as $join) {
-			if ($join['table_name'] == $table) {
-				return $join['table_alias'];
-			}
-		}
-		return NULL;
 	}
 	
 	
