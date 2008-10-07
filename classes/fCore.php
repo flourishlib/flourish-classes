@@ -189,23 +189,23 @@ class fCore
 	 * Parameters can be passed either as a single array of parameters or as
 	 * multiple parameters.
 	 * 
-	 * <code>
+	 * <pre>
 	 * // Passing multiple parameters in a normal fashion
 	 * fCore::call('Class::method', TRUE, 0, 'test');
 	 * 
 	 * // Passing multiple parameters in a parameters array
 	 * fCore::call('Class::method', array(TRUE, 0, 'test'));
-	 * </code>
+	 * </pre>
 	 * 
 	 * To pass parameters by reference they must be assigned to an
 	 * array by reference and the function/method being called must accept those
 	 * parameters by reference. If either condition is not met, the parameter
 	 * will be passed by value.
 	 * 
-	 * <code>
+	 * <pre>
 	 * // Passing parameters by reference
 	 * fCore::call('Class::method', array(&$var1, &$var2));
-	 * </code>
+	 * </pre>
 	 * 
 	 * @param  callback $callback    The function or method to call
 	 * @param  array    $parameters  The parameters to pass to the function/method
