@@ -461,7 +461,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
-			return fCore::call(self::$objectify_callbacks[$class][$column], array($class, $column, $value));
+			return fCore::call(self::$objectify_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		$table = self::tablize($class);
@@ -762,7 +762,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
-			return fCore::call(self::$scalarize_callbacks[$class][$column], array($class, $column, $value));
+			return fCore::call(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		if (is_object($value) && is_callable(array($value, '__toString'))) {

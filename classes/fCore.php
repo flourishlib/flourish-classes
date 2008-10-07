@@ -184,12 +184,28 @@ class fCore
 	
 	
 	/**
-	 * Performs a call_user_func_array, while translating PHP 5.2 static callback syntax for PHP 5.1 and 5.0
+	 * Performs a call_user_func, while translating PHP 5.2 static callback syntax for PHP 5.1 and 5.0
 	 * 
-	 * To pass parameters by reference they must be assigned to the parameters
+	 * Parameters can be passed either as a single array of parameters or as
+	 * multiple parameters.
+	 * 
+	 * <code>
+	 * // Passing multiple parameters in a normal fashion
+	 * fCore::call('Class::method', TRUE, 0, 'test');
+	 * 
+	 * // Passing multiple parameters in a parameters array
+	 * fCore::call('Class::method', array(TRUE, 0, 'test'));
+	 * </code>
+	 * 
+	 * To pass parameters by reference they must be assigned to an
 	 * array by reference and the function/method being called must accept those
 	 * parameters by reference. If either condition is not met, the parameter
 	 * will be passed by value.
+	 * 
+	 * <code>
+	 * // Passing parameters by reference
+	 * fCore::call('Class::method', array(&$var1, &$var2));
+	 * </code>
 	 * 
 	 * @param  callback $callback    The function or method to call
 	 * @param  array    $parameters  The parameters to pass to the function/method
@@ -202,7 +218,37 @@ class fCore
 			$callback = explode('::', $callback);
 		}
 		
+		$parameters = array_shift(func_get_args());
+		if (sizeof($parameters) == 1 && is_array($parameters[0])) {
+			$parameters = $parameters[0];	
+		}
+		
 		return call_user_func_array($callback, $parameters);
+	}
+	
+	
+	/**
+	 * Translates a Class::method style static method callback to array style for compatibility with PHP 5.0 and 5.1 and built-in PHP functions
+	 * 
+	 * @param  callback $callback  The callback to translate
+	 * @return array  The translated callback
+	 */
+	static public function callback($callback)
+	{
+		if (!is_string($callback) || strpos($callback, '::') === FALSE) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'Only string static method callbacks can be translated with this method'
+				)
+			);	
+		}
+		
+		if (self::getPHPVersion() < '5.2.0') {
+			return explode('::', $callback);	
+		}
+		
+		return $callback;
 	}
 	
 	
@@ -366,7 +412,7 @@ class fCore
 		}
 		self::$error_destination = $destination;
 		self::$handles_errors    = TRUE;
-		set_error_handler(array('fCore', 'handleError'));
+		set_error_handler(self::callback(self::handleError));
 	}
 	
 	
@@ -390,7 +436,7 @@ class fCore
 		self::$exception_handler_callback   = $closing_code;
 		settype($parameters, 'array');
 		self::$exception_handler_parameters = $parameters;
-		set_exception_handler(array('fCore', 'handleException'));
+		set_exception_handler(self::callback(self::handleException));
 	}
 	
 	
@@ -645,7 +691,7 @@ class fCore
 
 		static $registered_function = FALSE;
 		if (!$registered_function) {
-			register_shutdown_function(array('fCore', 'sendMessagesOnShutdown'));
+			register_shutdown_function(self::callback(self::sendMessagesOnShutdown));
 			$registered_function = TRUE;
 		}
 		

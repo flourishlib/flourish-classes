@@ -241,7 +241,7 @@ class fMoney
 		
 		// Unformat any money value
 		if (self::$unformat_callback !== NULL) {
-			$amount = fCore::call(self::$unformat_callback, array($amount, $this->currency));
+			$amount = fCore::call(self::$unformat_callback, $amount, $this->currency);
 		} else {
 			$amount = str_replace(
 				array(
@@ -425,7 +425,7 @@ class fMoney
 	public function format()
 	{
 		if (self::$format_callback !== NULL) {
-			return fCore::call(self::$format_callback, array($this->value, $this->currency));
+			return fCore::call(self::$format_callback, $this->value, $this->currency);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a

@@ -158,7 +158,7 @@ class fORMFile
 		}
 		
 		self::$fupload_method_calls[$class][$column][] = array(
-			'callback'   => array('fUpload', $method),
+			'callback'   => 'fUpload::' . $method,
 			'parameters' => $parameters
 		);
 	}

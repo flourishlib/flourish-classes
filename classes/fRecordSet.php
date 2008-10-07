@@ -520,7 +520,7 @@ class fRecordSet implements Iterator
 			if ($call_filter) {
 				$value = $record->$method();
 			} else {
-				$value = fCore::call($callback, array($record));
+				$value = fCore::call($callback, $record);
 			}
 			if ($value) {
 				$new_records[] = $record;
@@ -952,7 +952,7 @@ class fRecordSet implements Iterator
 		}
 		
 		foreach($values as $value) {
-			$result = fCore::call($callback, array($result, $value));
+			$result = fCore::call($callback, $result, $value);
 		}
 		
 		return $result;
