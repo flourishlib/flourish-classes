@@ -274,6 +274,17 @@ class fImage extends fFile
 	 */
 	static protected function getInfo($image_path, $element=NULL)
 	{
+		$extension = strtolower(fFilesystem::getPathInfo($image_path, 'extension'));
+		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'gif', 'tif', 'tiff'))) {
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose(
+					'The file specified, %s, does not appear to be an image',
+					fCore::dump($image_path)
+				)
+			);		
+		}
+		
 		$image_info = @getimagesize($image_path);
 		if ($image_info == FALSE) {
 			fCore::toss(

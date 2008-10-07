@@ -395,10 +395,13 @@ class fDirectory
 		$objects = array();
 		
 		foreach ($files as $file) {
-			if (is_dir($this->directory . $file)) {
-				$objects[] = new fDirectory($this->directory . $file);
+			$file = $this->directory . $file;
+			if (is_dir($file)) {
+				$objects[] = new fDirectory($file);
+			} elseif (fImage::isImageCompatible($file)) {
+				$objects[] = new fImage($file);
 			} else {
-				$objects[] = new fFile($this->directory . $file);
+				$objects[] = new fFile($file);
 			}
 		}
 		
