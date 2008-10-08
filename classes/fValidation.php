@@ -162,7 +162,7 @@ class fValidation
 	private function checkEmailFields(&$messages)
 	{
 		foreach ($this->email_fields as $email_field) {
-			$value = fRequest::get($email_field);
+			$value = trim(fRequest::get($email_field));
 			if (fCore::stringlike($value) && !preg_match(fEmail::EMAIL_REGEX, $value)) {
 				$messages[] = fGrammar::compose(
 					'%s: Please enter an email address in the form name@example.com',
@@ -203,7 +203,7 @@ class fValidation
 		foreach ($this->required_fields as $key => $required_field) {
 			// Handle single fields
 			if (is_numeric($key) && is_string($required_field)) {
-				if (fRequest::get($required_field) === '' || fRequest::get($required_field) === NULL) {
+				if (!fCore::stringlike(fRequest::get($required_field))) {
 					$messages[] = fGrammar::compose(
 						'%s: Please enter a value',
 						fGrammar::humanize($required_field)
@@ -214,7 +214,7 @@ class fValidation
 			} elseif (is_numeric($key) && is_array($required_field)) {
 				$found = FALSE;
 				foreach ($required_field as $individual_field) {
-					if (fCore::stringlike(fRequest::get($individual_field))) {
+					if (fCore::stringlike(trim(fRequest::get($individual_field)))) {
 						$found = TRUE;
 					}
 				}

@@ -720,6 +720,10 @@ class fCore
 			return FALSE;
 		}
 		
+		if (is_string($value) && !trim($value)) {
+			return FALSE;	
+		}
+		
 		return TRUE;
 	}
 	
