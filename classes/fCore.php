@@ -219,7 +219,7 @@ class fCore
 			$callback = explode('::', $callback);
 		}
 		
-		$parameters = array_shift(func_get_args());
+		$parameters = array_slice(func_get_args(), 1);
 		if (sizeof($parameters) == 1 && is_array($parameters[0])) {
 			$parameters = $parameters[0];	
 		}
