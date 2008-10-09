@@ -592,7 +592,7 @@ class fEmail
 		}
 		
 		if ($body_headers) {
-			$body = $body_headers . "\r\n" . $body;
+			$body = $body_headers . "\r\n\r\n" . $body;
 		}
 		
 		file_put_contents($plaintext_file, "\r\n" . $body);
