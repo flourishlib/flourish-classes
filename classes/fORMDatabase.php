@@ -380,19 +380,19 @@ class fORMDatabase
 				
 				foreach ($columns as &$_column) {
 					if (substr($_column, -2) == '<=' || substr($_column, -2) == '>=') {
-						$operator[] = substr($_column, -2);
-						$_column    = substr($_column, 0, -2);
+						$operators[] = substr($_column, -2);
+						$_column     = substr($_column, 0, -2);
 					} elseif (!ctype_alnum(substr($_column, -1))) {
-						$operator[] = substr($_column, -1);
-						$_column    = substr($_column, 0, -1);
+						$operators[] = substr($_column, -1);
+						$_column     = substr($_column, 0, -1);
 					}
 				}
-				$operator[] = $operator;
+				$operators[] = $operator;
 				
 				$columns = self::addTableToValues($table, $columns);
 				
 				// Handle fuzzy searches
-				if (sizeof($operator) == 1) {
+				if (sizeof($operators) == 1) {
 					if ($operator != '~') {
 						fCore::toss(
 							'fProgrammerException',
