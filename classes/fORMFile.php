@@ -406,14 +406,11 @@ class fORMFile
 			}
 			
 			// Remove the old files for the column
-			if (isset($old_values[$column])) {
-				foreach ($old_values[$column] as $file) {
-					if ($file instanceof fFile) {
-						$file->delete();
-					}
+			foreach (fActiveRecord::retrieve($old_values, $column, array(), TRUE) as $file) {
+				if ($file instanceof fFile) {
+					$file->delete();
 				}
 			}
-			
 		}
 	}
 	
@@ -433,17 +430,13 @@ class fORMFile
 	{
 		$class = get_class($object);
 		
+		// Remove the old files for the column
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
-			
-			// Remove the old files for the column
-			if (isset($old_values[$column])) {
-				foreach ($old_values[$column] as $file) {
-					if ($file instanceof fFile) {
-						$file->delete();
-					}
+			foreach (fActiveRecord::retrieve($old_values, $column, array(), TRUE) as $file) {
+				if ($file instanceof fFile) {
+					$file->delete();
 				}
 			}
-			
 		}
 	}
 	

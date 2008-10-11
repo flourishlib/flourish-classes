@@ -129,7 +129,7 @@ class fORMOrdering
 	{
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
-			$other_value  = (isset($old_values[$other_column])) ? $old_values[$other_column][0] : $values[$other_column];
+			$other_value  = fActiveRecord::retrieve($old_values, $other_column, $values[$other_column]);
 			$conditions[] = $other_column . fORMDatabase::escapeBySchema($table, $other_column, $other_value, '=');
 		}
 		
@@ -176,7 +176,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
+		$old_value     = fActiveRecord::retrieve($old_values, $column, $current_value);
 		
 		// Figure out the range we are dealing with
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -191,7 +191,7 @@ class fORMOrdering
 		
 		// Close the gap for all records after this one in the set
 		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' - ' . $shift_down . ' ';
-		$sql .= 'WHERE ' . $column . ' > ' . (($old_value) ? $old_value : $current_value);
+		$sql .= 'WHERE ' . $column . ' > ' . $old_value;
 		if ($other_columns) {
 			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 		}
@@ -270,8 +270,8 @@ class fORMOrdering
 	static private function isInNewSet($ordering_column, $other_columns, &$values, &$old_values)
 	{
 		$value_empty      = !$values[$ordering_column];
-		$old_value_empty  = (isset($old_values[$ordering_column])) ? !$old_values[$ordering_column][0] : FALSE;
-		$no_old_value_set = !isset($old_values[$ordering_column]);
+		$old_value_empty  = !fActiveRecord::retrieve($old_values, $ordering_column, TRUE);
+		$no_old_value_set = !fActiveRecord::has($old_values, $ordering_column);
 		
 		// If the value appears to be new, the record must be new to the order
 		if ($old_value_empty || ($value_empty && $no_old_value_set)) {
@@ -287,7 +287,7 @@ class fORMOrdering
 		// Check through each of the other columns to see if the set could have
 		// changed because of a new value in one of those columns
 		foreach ($other_columns as $other_column) {
-			if (isset($old_values[$other_column]) && $old_values[$other_column][0] != $values[$other_column]) {
+			if (fActiveRecord::changed($values, $old_values, $other_column)) {
 				return TRUE;
 			}
 		}
@@ -354,7 +354,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
+		$old_value     = fActiveRecord::retrieve($old_values, $column);
 		
 		// Figure out the range we are dealing with
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -504,7 +504,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = (isset($old_values[$column])) ? $old_values[$column][0] : NULL;
+		$old_value     = fActiveRecord::retrieve($old_values, $column);
 		
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
 		if ($other_columns) {
@@ -516,7 +516,7 @@ class fORMOrdering
 		
 		if ($new_set = self::isInNewSet($column, $other_columns, $values, $old_values)) {
 			$new_max_value     = $current_max_value + 1;
-			$new_set_new_value = isset($old_values[$column][0]) && $old_value != $current_value;
+			$new_set_new_value = fActiveRecord::changed($values, $old_values, $column);
 		}
 		
 		$column_name = fORM::getColumnName($class, $column);

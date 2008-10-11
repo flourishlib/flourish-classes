@@ -314,7 +314,7 @@ class fORMMoney
 			
 			$value = new fMoney($value, $currency);
 			 
-			if (!empty($old_values[$currency_column]) && empty($old_values[$value_column])) {
+			if (fActiveRecord::has($old_values, $currency_column) && !fActiveRecord::has($old_values, $value_column)) {
 				fActiveRecord::assign($values, $old_values, $value_column, $value);		
 			} else {
 				$values[$value_column] = $value;

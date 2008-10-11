@@ -15,7 +15,10 @@
 abstract class fActiveRecord
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const assign = 'fActiveRecord::assign';
+	const assign   = 'fActiveRecord::assign';
+	const changed  = 'fActiveRecord::changed';
+	const has      = 'fActiveRecord::has';
+	const retrieve = 'fActiveRecord::retrieve';
 	
 	
 	/**
@@ -39,6 +42,73 @@ abstract class fActiveRecord
 		$values[$column]       = $value;	
 	}
 	
+	
+	/**
+	 * Checks to see if a value has changed
+	 *
+	 * @internal
+	 * 
+	 * @param  array  &$values      The current values
+	 * @param  array  &$old_values  The old values
+	 * @param  string $column       The column to check
+	 * @return void
+	 */
+	static public function changed(&$values, &$old_values, $column)
+	{
+		if (!isset($old_values[$column])) {
+			return FALSE;
+		}
+		
+		return $old_values[$column][0] != $values[$column];	
+	}
+	
+	
+	/**
+	 * Checks to see if an old value exists for a column 
+	 *
+	 * @internal
+	 * 
+	 * @param  array  &$old_values  The old values
+	 * @param  string $column       The column to set
+	 * @return boolean  If an old value for that column exists
+	 */
+	static public function has(&$old_values, $column)
+	{
+		return isset($old_values[$column]);
+	}
+	
+	
+	/**
+	 * Retrieves an old value for a column 
+	 *
+	 * @internal
+	 * 
+	 * @param  array   &$old_values  The old values
+	 * @param  string  $column       The column to get
+	 * @param  mixed   $default      The default value to return if no value exists
+	 * @param  boolean $return_all   Return the array of all old values for this column
+	 * @return mixed  The old value for the column
+	 */
+	static public function retrieve(&$old_values, $column, $default=NULL, $return_all=FALSE)
+	{
+		if (!isset($old_values[$column])) {
+			return $default;	
+		}
+		
+		if ($return_all === TRUE) {
+			return $old_values[$column];	
+		}
+		
+		return $old_values[$column][0];
+	}
+	
+	
+	/**
+	 * A data store for caching data related to a record
+	 * 
+	 * @var array
+	 */
+	protected $cache = array();
 	
 	/**
 	 * The old values for this record
@@ -687,7 +757,7 @@ abstract class fActiveRecord
 		
 		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
-			if ((array_key_exists($pk_column, $this->old_values) && $this->old_values[$pk_column][0] === NULL) || $this->values[$pk_column] === NULL) {
+			if ((self::has($this->old_values, $pk_column) && self::retrieve($this->old_values, $pk_column) === NULL) || $this->values[$pk_column] === NULL) {
 				return FALSE;
 			}
 		}
@@ -886,6 +956,7 @@ abstract class fActiveRecord
 		}
 		
 		// If we got a result back, it is the object we are creating
+		$this->cache           = &$object->cache;
 		$this->values          = &$object->values;
 		$this->old_values      = &$object->old_values;
 		$this->related_records = &$object->related_records;
@@ -1475,8 +1546,8 @@ abstract class fActiveRecord
 				$this->related_records
 			);
 			
-			if ($new_autoincrementing_record && array_key_exists($pk_column, $this->old_values)) {
-				$this->values[$pk_column] = $this->old_values[$pk_column][0];
+			if ($new_autoincrementing_record && self::has($this->old_values, $pk_column)) {
+				$this->values[$pk_column] = self::retrieve($this->old_values, $pk_column);
 				unset($this->old_values[$pk_column]);
 			}
 			
