@@ -170,7 +170,7 @@ class fORMDatabase
 		// If the route uses a join table
 		if (isset($routes[$route]['join_table'])) {
 			$join = array(
-				'join_type' => 'INNER JOIN',
+				'join_type' => 'LEFT JOIN',
 				'table_name' => $routes[$route]['join_table'],
 				'table_alias' => self::createNewAlias($routes[$route]['join_table'], $used_aliases),
 				'on_clause_type' => 'simple_equation',
@@ -178,7 +178,7 @@ class fORMDatabase
 			);
 			
 			$join2 = array(
-				'join_type' => 'INNER JOIN',
+				'join_type' => 'LEFT JOIN',
 				'table_name' => $related_table,
 				'table_alias' => self::createNewAlias($related_table, $used_aliases),
 				'on_clause_type' => 'simple_equation',
@@ -204,7 +204,7 @@ class fORMDatabase
 		} else {
 			
 			$join = array(
-				'join_type' => 'INNER JOIN',
+				'join_type' => 'LEFT JOIN',
 				'table_name' => $related_table,
 				'table_alias' => self::createNewAlias($related_table, $used_aliases),
 				'on_clause_type' => 'simple_equation',
