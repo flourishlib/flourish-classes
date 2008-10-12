@@ -91,7 +91,7 @@ class fCRUD
 	 */
 	static private function getPreviousSearchValue($column)
 	{
-		return fSession::get(fURL::get() . '::previous_search::' . $column, NULL, 'fCRUD::');
+		return fSession::get(fURL::get() . '::previous_search::' . $column, NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -102,7 +102,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortColumn()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_column', NULL, 'fCRUD::');
+		return fSession::get(fURL::get() . '::previous_sort_column', NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -113,7 +113,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortDirection()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_direction', NULL, 'fCRUD::');
+		return fSession::get(fURL::get() . '::previous_sort_direction', NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -397,7 +397,7 @@ class fCRUD
 	 */
 	static public function reset()
 	{
-		fSession::clear(NULL, 'fCRUD::');
+		fSession::clear(NULL, __CLASS__ . '::');
 		
 		self::$loaded_values  = array();
 		self::$row_number     = 1;
@@ -416,7 +416,7 @@ class fCRUD
 	 */
 	static private function setPreviousSearchValue($column, $value)
 	{
-		fSession::set(fURL::get() . '::previous_search::' . $column, $value, 'fCRUD::');
+		fSession::set(fURL::get() . '::previous_search::' . $column, $value, __CLASS__ . '::');
 	}
 	
 	
@@ -428,7 +428,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortColumn($sort_column)
 	{
-		fSession::set(fURL::get() . '::previous_sort_column', $sort_column, 'fCRUD::');
+		fSession::set(fURL::get() . '::previous_sort_column', $sort_column, __CLASS__ . '::');
 	}
 	
 	
@@ -440,7 +440,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortDirection($sort_direction)
 	{
-		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, 'fCRUD::');
+		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, __CLASS__ . '::');
 	}
 	
 	

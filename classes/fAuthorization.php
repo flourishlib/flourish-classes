@@ -36,15 +36,6 @@ class fAuthorization
 	const setUserAuthLevel = 'fAuthorization::setUserAuthLevel';
 	const setUserToken     = 'fAuthorization::setUserToken';
 	
-	/**
-	 * The prefix for session variables
-	 * 
-	 * @internal
-	 * 
-	 * @var string
-	 */
-	const SESSION_PREFIX = 'fAuthorization::';
-	
 	
 	/**
 	 * The valid auth levels
@@ -217,8 +208,8 @@ class fAuthorization
 	 */
 	static public function checkLoggedIn()
 	{
-		if (fSession::get('user_auth_level', NULL, self::SESSION_PREFIX) !== NULL ||
-			fSession::get('user_acls', NULL, self::SESSION_PREFIX) !== NULL) {
+		if (fSession::get('user_auth_level', NULL, __CLASS__ . '::') !== NULL ||
+			fSession::get('user_acls', NULL, __CLASS__ . '::') !== NULL) {
 			return TRUE;
 		}
 		return FALSE;
@@ -232,10 +223,10 @@ class fAuthorization
 	 */
 	static public function destroyUserInfo()
 	{
-		fSession::clear('user_auth_level', self::SESSION_PREFIX);
-		fSession::clear('user_acls', self::SESSION_PREFIX);
-		fSession::clear('user_token',self::SESSION_PREFIX);
-		fSession::clear('requested_url', self::SESSION_PREFIX);
+		fSession::clear('user_auth_level', __CLASS__ . '::');
+		fSession::clear('user_acls', __CLASS__ . '::');
+		fSession::clear('user_token', __CLASS__ . '::');
+		fSession::clear('requested_url', __CLASS__ . '::');
 	}
 	
 	
@@ -248,9 +239,9 @@ class fAuthorization
 	 */
 	static public function getRequestedURL($clear, $default_url=NULL)
 	{
-		$requested_url = fSession::get('requested_url', $default_url, self::SESSION_PREFIX);
+		$requested_url = fSession::get('requested_url', $default_url, __CLASS__ . '::');
 		if ($clear) {
-			fSession::clear('requested_url', self::SESSION_PREFIX);
+			fSession::clear('requested_url', __CLASS__ . '::');
 		}
 		return $requested_url;
 	}
@@ -263,7 +254,7 @@ class fAuthorization
 	 */
 	static public function getUserACLs()
 	{
-		return fSession::get('user_acls', NULL, self::SESSION_PREFIX);
+		return fSession::get('user_acls', NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -274,7 +265,7 @@ class fAuthorization
 	 */
 	static public function getUserAuthLevel()
 	{
-		return fSession::get('user_auth_level', NULL, self::SESSION_PREFIX);
+		return fSession::get('user_auth_level', NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -285,7 +276,7 @@ class fAuthorization
 	 */
 	static public function getUserToken()
 	{
-		return fSession::get('user_token', NULL, self::SESSION_PREFIX);
+		return fSession::get('user_token', NULL, __CLASS__ . '::');
 	}
 	
 	
@@ -296,7 +287,7 @@ class fAuthorization
 	 */
 	static private function redirect()
 	{
-		fSession::set('requested_url', fURL::getWithQueryString(), self::SESSION_PREFIX);
+		fSession::set('requested_url', fURL::getWithQueryString(), __CLASS__ . '::');
 		fURL::redirect(self::$login_page);
 	}
 	
@@ -402,7 +393,7 @@ class fAuthorization
 	 */
 	static public function setRequestedURL($url)
 	{
-		fSession::set('requested_url', $url, self::SESSION_PREFIX);
+		fSession::set('requested_url', $url, __CLASS__ . '::');
 	}
 	
 	
@@ -425,7 +416,7 @@ class fAuthorization
 	 */
 	static public function setUserACLs($acls)
 	{
-		fSession::set('user_acls', $acls, self::SESSION_PREFIX);
+		fSession::set('user_acls', $acls, __CLASS__ . '::');
 	}
 	
 	
@@ -438,7 +429,7 @@ class fAuthorization
 	static public function setUserAuthLevel($level)
 	{
 		self::validateAuthLevel($level);
-		fSession::set('user_auth_level', $level, self::SESSION_PREFIX);
+		fSession::set('user_auth_level', $level, __CLASS__ . '::');
 	}
 	
 	
@@ -450,7 +441,7 @@ class fAuthorization
 	 */
 	static public function setUserToken($token)
 	{
-		fSession::set('user_token', $token, self::SESSION_PREFIX);
+		fSession::set('user_token', $token, __CLASS__ . '::');
 	}
 	
 	
