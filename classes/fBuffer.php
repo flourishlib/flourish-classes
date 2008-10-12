@@ -19,6 +19,7 @@ class fBuffer
 	const get          = 'fBuffer::get';
 	const isStarted    = 'fBuffer::isStarted';
 	const replace      = 'fBuffer::replace';
+	const reset        = 'fBuffer::reset';
 	const start        = 'fBuffer::start';
 	const startCapture = 'fBuffer::startCapture';
 	const stop         = 'fBuffer::stop';
@@ -134,6 +135,25 @@ class fBuffer
 		ob_clean();
 		
 		echo str_replace($find, $replace, $contents);
+	}
+	
+	
+	/**
+	 * Resets the configuration and buffer of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		if (self::$capturing) {
+			self::stopCapture();	
+		}
+		if (self::$started) {
+			self::erase();
+			self::stop();	
+		}
 	}
 	
 	

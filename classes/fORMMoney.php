@@ -23,6 +23,7 @@ class fORMMoney
 	const objectifyMoneyWithCurrency = 'fORMMoney::objectifyMoneyWithCurrency';
 	const prepareMoneyColumn         = 'fORMMoney::prepareMoneyColumn';
 	const reflect                    = 'fORMMoney::reflect';
+	const reset                      = 'fORMMoney::reset';
 	const setCurrencyColumn          = 'fORMMoney::setCurrencyColumn';
 	const setMoneyColumn             = 'fORMMoney::setMoneyColumn';
 	const validateMoneyColumns       = 'fORMMoney::validateMoneyColumns';
@@ -439,6 +440,20 @@ class fORMMoney
 			
 			$signatures[$prepare_method] = $signature;
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$currency_columns = array();
+		self::$money_columns    = array();
 	}
 	
 	

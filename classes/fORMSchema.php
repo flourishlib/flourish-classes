@@ -22,6 +22,7 @@ class fORMSchema
 	const getRouteName                 = 'fORMSchema::getRouteName';
 	const getRouteNameFromRelationship = 'fORMSchema::getRouteNameFromRelationship';
 	const getRoutes                    = 'fORMSchema::getRoutes';
+	const reset                        = 'fORMSchema::reset';
 	
 	
 	/**
@@ -29,7 +30,7 @@ class fORMSchema
 	 * 
 	 * @var fISchema
 	 */
-	static private $schema_object;
+	static private $schema_object = NULL;
 	
 	
 	/**
@@ -302,6 +303,19 @@ class fORMSchema
 		}
 		
 		return $routes;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$schema_object = NULL;
 	}
 	
 	

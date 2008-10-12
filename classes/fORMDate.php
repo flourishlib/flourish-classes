@@ -21,6 +21,7 @@ class fORMDate
 	const inspect                           = 'fORMDate::inspect';
 	const makeTimestampObjects              = 'fORMDate::makeTimestampObjects';
 	const objectifyTimestampWithoutTimezone = 'fORMDate::objectifyTimestampWithoutTimezone';
+	const reset                             = 'fORMDate::reset';
 	const setDateCreated                    = 'fORMDate::setDateCreated';
 	const setDateUpdated                    = 'fORMDate::setDateUpdated';
 	const setTimestampColumn                = 'fORMDate::setTimestampColumn';
@@ -369,6 +370,22 @@ class fORMDate
 			 
 		// If there was some error creating the timestamp object, we just leave all values alone
 		} catch (fExpectedException $e) { }	
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$date_created_columns = array();
+		self::$date_updated_columns = array();
+		self::$timezone_columns     = array();
+		self::$timestamp_columns    = array();
 	}
 	
 	

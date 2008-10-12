@@ -20,6 +20,7 @@ class fSession
 	const destroy         = 'fSession::destroy';
 	const get             = 'fSession::get';
 	const ignoreSubdomain = 'fSession::ignoreSubdomain';
+	const reset           = 'fSession::reset';
 	const set             = 'fSession::set';
 	const setLength       = 'fSession::setLength';
 	
@@ -35,14 +36,29 @@ class fSession
 	/**
 	 * Unsets a key from the session superglobal using the prefix provided
 	 * 
-	 * @param  string $key     The name to unset
+	 * @param  string $key     The key to unset, if no key is specified all keys with the prefix will be removed
 	 * @param  string $prefix  The prefix to stick before the key
 	 * @return void
 	 */
-	static public function clear($key, $prefix='fSession::')
+	static public function clear($key=NULL, $prefix='fSession::')
 	{
 		self::open();
-		unset($_SESSION[$prefix . $key]);
+		
+		if ($key !== NULL) {
+			unset($_SESSION[$prefix . $key]);
+			return;
+		}
+		
+		$remove = array();
+		foreach ($_SESSION as $key => $value) {
+			if (strpos($key, $prefix) === 0) {
+				$remove = $key;	
+			}
+		}
+		
+		foreach ($remove as $key) {
+			unset($_SESSION[$key]);	
+		}
 	}
 	
 	
@@ -126,6 +142,20 @@ class fSession
 			session_start();
 			self::$open = TRUE;
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::destroy();
+		self::close();	
 	}
 	
 	

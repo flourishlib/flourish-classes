@@ -28,6 +28,7 @@ class fCRUD
 	const redirectWithLoadedValues = 'fCRUD::redirectWithLoadedValues';
 	const removeListItems          = 'fCRUD::removeListItems';
 	const reorderListItems         = 'fCRUD::reorderListItems';
+	const reset                    = 'fCRUD::reset';
 	const showChecked              = 'fCRUD::showChecked';
 	
 	
@@ -384,6 +385,25 @@ class fCRUD
 		$final_list = array_merge($final_list, $other_items);
 		
 		$exception->setMessage($beginning . join("\n", $final_list) . $ending);
+	}
+	
+	
+	/**
+	 * Resets the configuration and data of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		fSession::clear(NULL, 'fCRUD::');
+		
+		self::$loaded_values  = array();
+		self::$row_number     = 1;
+		self::$search_values  = array();
+		self::$sort_column    = NULL;
+		self::$sort_direction = NULL;
 	}
 	
 	

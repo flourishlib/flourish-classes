@@ -19,6 +19,7 @@ class fNumber
 	const pi                       = 'fNumber::pi';
 	const registerFormatCallback   = 'fNumber::registerFormatCallback';
 	const registerUnformatCallback = 'fNumber::registerUnformatCallback';
+	const reset                    = 'fNumber::reset';
 	
 	
 	/**
@@ -791,6 +792,20 @@ class fNumber
 	static public function registerUnformatCallback($callback)
 	{
 		self::$unformat_callback = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$format_callback   = NULL;
+		self::$unformat_callback = NULL;
 	}
 	
 	

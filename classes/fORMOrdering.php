@@ -20,6 +20,7 @@ class fORMOrdering
 	const inspect                 = 'fORMOrdering::inspect';
 	const reflect                 = 'fORMOrdering::reflect';
 	const reorder                 = 'fORMOrdering::reorder';
+	const reset                   = 'fORMOrdering::reset';
 	const validate                = 'fORMOrdering::validate';
 	
 	
@@ -480,6 +481,19 @@ class fORMOrdering
 				fORMDatabase::getInstance()->translatedQuery($sql);
 			}
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$ordering_columns = array();
 	}
 	
 	

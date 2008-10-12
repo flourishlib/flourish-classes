@@ -35,6 +35,7 @@ class fORM
 	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
+	const reset                      = 'fORM::reset';
 	const saveToIdentityMap          = 'fORM::saveToIdentityMap';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
@@ -722,6 +723,27 @@ class fORM
 		}
 		
 		self::$scalarize_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$column_names        = array();
+		self::$configured          = array();
+		self::$hook_callbacks      = array();
+		self::$identity_map        = array();
+		self::$objectify_callbacks = array();
+		self::$record_names        = array();
+		self::$reflect_callbacks   = array();
+		self::$scalarize_callbacks = array();
+		self::$table_class_map     = array();
 	}
 	
 	

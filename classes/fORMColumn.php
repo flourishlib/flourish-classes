@@ -25,6 +25,7 @@ class fORMColumn
 	const prepareLinkColumn     = 'fORMColumn::prepareLinkColumn';
 	const prepareNumberColumn   = 'fORMColumn::prepareNumberColumn';
 	const reflect               = 'fORMColumn::reflect';
+	const reset                 = 'fORMColumn::reset';
 	const setRandomStrings      = 'fORMColumn::setRandomStrings';
 	const validateEmailColumns  = 'fORMColumn::validateEmailColumns';
 	const validateLinkColumns   = 'fORMColumn::validateLinkColumns';
@@ -594,6 +595,22 @@ class fORMColumn
 				$signatures[$prepare_method] = $signature;
 			}
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$email_columns  = array();
+		self::$link_columns   = array();
+		self::$number_columns = array();
+		self::$random_columns = array();
 	}
 	
 	

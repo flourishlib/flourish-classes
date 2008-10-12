@@ -30,6 +30,7 @@ class fFilesystem
 	const recordDuplicate               = 'fFilesystem::recordDuplicate';
 	const recordRename                  = 'fFilesystem::recordRename';
 	const recordWrite                   = 'fFilesystem::recordWrite';
+	const reset                         = 'fFilesystem::reset';
 	const rollback                      = 'fFilesystem::rollback';
 	const translateToWebPath            = 'fFilesystem::translateToWebPath';
 	const updateExceptionMap            = 'fFilesystem::updateExceptionMap';
@@ -513,6 +514,22 @@ class fFilesystem
 			'filename' => $file->getPath(),
 			'old_data' => file_get_contents($file->getPath())
 		);
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::rollback();
+		self::$exception_map         = array();
+		self::$filename_map          = array();
+		self::$web_path_translations = array();	
 	}
 	
 	

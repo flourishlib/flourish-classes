@@ -28,6 +28,7 @@ class fAuthorization
 	const requireACL       = 'fAuthorization::requireACL';
 	const requireAuthLevel = 'fAuthorization::requireAuthLevel';
 	const requireLoggedIn  = 'fAuthorization::requireLoggedIn';
+	const reset            = 'fAuthorization::reset';
 	const setAuthLevels    = 'fAuthorization::setAuthLevels';
 	const setLoginPage     = 'fAuthorization::setLoginPage';
 	const setRequestedURL  = 'fAuthorization::setRequestedURL';
@@ -351,6 +352,21 @@ class fAuthorization
 		}
 		
 		self::redirect();
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$level           = NULL;
+		self::$login_page      = NULL;
+		self::$named_ip_ranges = array();
 	}
 	
 	

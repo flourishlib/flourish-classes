@@ -17,6 +17,7 @@ class fMessaging
 	// The following constants allow for nice looking callbacks to static methods
 	const check     = 'fMessaging::check';
 	const create    = 'fMessaging::create';
+	const reset     = 'fMessaging::reset';
 	const retrieval = 'fMessaging::retrieval';
 	const show      = 'fMessaging::show';
 	
@@ -45,6 +46,19 @@ class fMessaging
 	static public function create($name, $recipient, $message)
 	{
 		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
+	}
+	
+	
+	/**
+	 * Resets the data of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		fSession::clear(NULL, __CLASS__ . '::');	
 	}
 	
 	

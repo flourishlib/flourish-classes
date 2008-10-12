@@ -18,6 +18,7 @@ class fImage extends fFile
 	const create                  = 'fImage::create';
 	const getCompatibleMimetypes  = 'fImage::getCompatibleMimetypes';
 	const isImageCompatible       = 'fImage::isImageCompatible';
+	const reset                   = 'fImage::reset';
 	const setImageMagickDirectory = 'fImage::setImageMagickDirectory';
 	const setImageMagickTempDir   = 'fImage::setImageMagickTempDir';
 	
@@ -409,6 +410,21 @@ class fImage extends fFile
 			}
 		}
 		return FALSE;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$imagemagick_dir      = NULL;
+		self::$imagemagick_temp_dir = NULL;
+		self::$processor            = NULL;	
 	}
 	
 	

@@ -26,6 +26,7 @@ class fGrammar
 	const pluralize                 = 'fGrammar::pluralize';
 	const registerComposeCallback   = 'fGrammar::registerComposeCallback';
 	const registerJoinArrayCallback = 'fGrammar::registerJoinArrayCallback';
+	const reset                     = 'fGrammar::reset';
 	const singularize               = 'fGrammar::singularize';
 	const underscorize              = 'fGrammar::underscorize';
 	
@@ -441,6 +442,66 @@ class fGrammar
 	static public function registerJoinArrayCallback($callback)
 	{
 		self::$join_array_callback = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$camelize_rules    = array();
+		self::$compose_callbacks = array(
+			'pre'  => array(),
+			'post' => array()
+		);
+		self::$humanize_rules           = array();
+		self::$join_array_callback      = NULL;
+		self::$plural_to_singular_rules = array(
+			'([ml])ice'                    => '\1ouse',
+			'(media|info(rmation)?|news)$' => '\1',
+			'quizzes$'                     => 'quiz',
+			'children$'                    => 'child',
+			'people$'                      => 'person',
+			'men$'                         => 'man',
+			'((?!sh).)oes$'                => '\1o',
+			'((?<!o)[ieu]s|[ieuo]x)es$'    => '\1',
+			'([cs]h)es$'                   => '\1',
+			'(ss)es$'                      => '\1',
+			'([aeo]l)ves$'                 => '\1f',
+			'([^d]ea)ves$'                 => '\1f',
+			'(ar)ves$'                     => '\1f',
+			'([nlw]i)ves$'                 => '\1fe',
+			'([aeiou]y)s$'                 => '\1',
+			'([^aeiou])ies$'               => '\1y',
+			'(la)ses$'                     => '\1s',
+			'(.)s$'                        => '\1'
+		);
+		self::$singular_to_plural_rules = array(
+			'([ml])ouse$'                  => '\1ice',
+			'(media|info(rmation)?|news)$' => '\1',
+			'(phot|log)o$'                 => '\1os',
+			'^(q)uiz$'                     => 'quizzes',
+			'child$'                       => 'children',
+			'person$'                      => 'people',
+			'man$'                         => 'men',
+			'([ieu]s|[ieuo]x)$'            => '\1es',
+			'([cs]h)$'                     => '\1es',
+			'(ss)$'                        => '\1es',
+			'([aeo]l)f$'                   => '\1ves',
+			'([^d]ea)f$'                   => '\1ves',
+			'(ar)f$'                       => '\1ves',
+			'([nlw]i)fe$'                  => '\1ves',
+			'([aeiou]y)$'                  => '\1s',
+			'([^aeiou])y$'                 => '\1ies',
+			'([^o])o$'                     => '\1oes',
+			's$'                           => 'ses',
+			'(.)$'                         => '\1s'
+		);	
 	}
 	
 	

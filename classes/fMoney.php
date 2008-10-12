@@ -21,6 +21,7 @@ class fMoney
 	const getDefaultCurrency       = 'fMoney::getDefaultCurrency';
 	const registerFormatCallback   = 'fMoney::registerFormatCallback';
 	const registerUnformatCallback = 'fMoney::registerUnformatCallback';
+	const reset                    = 'fMoney::reset';
 	const setDefaultCurrency       = 'fMoney::setDefaultCurrency';
 	
 	
@@ -163,6 +164,29 @@ class fMoney
 	static public function registerUnformatCallback($callback)
 	{
 		self::$unformat_callback = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$currencies = array(
+			'USD' => array(
+				'name'      => 'United States Dollar',
+				'symbol'    => '$',
+				'precision' => 2,
+				'value'     => '1.00000000'
+			)
+		);
+		self::$default_currency  = NULL;
+		self::$format_callback   = NULL;
+		self::$unformat_callback = NULL;	
 	}
 	
 	

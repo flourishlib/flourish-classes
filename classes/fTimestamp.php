@@ -23,6 +23,7 @@ class fTimestamp
 	const getSeconds             = 'fTimestamp::getSeconds';
 	const isValidTimezone        = 'fTimestamp::isValidTimezone';
 	const registerFormatCallback = 'fTimestamp::registerFormatCallback';
+	const reset                  = 'fTimestamp::reset';
 	const setDefaultTimezone     = 'fTimestamp::setDefaultTimezone';
 	const translateFormat        = 'fTimestamp::translateFormat';
 	
@@ -630,6 +631,20 @@ class fTimestamp
 	static public function registerFormatCallback($callback)
 	{
 		self::$format_callback = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$formats         = array();
+		self::$format_callback = NULL;
 	}
 	
 	

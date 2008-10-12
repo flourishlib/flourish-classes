@@ -28,6 +28,7 @@ class fCore
 	const handleError             = 'fCore::handleError';
 	const handleException         = 'fCore::handleException';
 	const registerTossCallback    = 'fCore::registerTossCallback';
+	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
 	const stringlike              = 'fCore::stringlike';
 	const toss                    = 'fCore::toss';
@@ -620,6 +621,31 @@ class fCore
 		}
 		
 		self::$toss_callbacks[$exception_type][] = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		restore_error_handler();
+		restore_exception_handler();
+		
+		self::$debug                        = NULL;
+		self::$dynamic_constants            = FALSE;
+		self::$error_destination            = 'html';
+		self::$error_message_queue          = array();
+		self::$exception_destination        = 'html';
+		self::$exception_handler_callback   = NULL;
+		self::$exception_handler_parameters = array();
+		self::$exception_message            = NULL;
+		self::$handles_errors               = FALSE;
+		self::$toss_callbacks               = array();
 	}
 	
 	

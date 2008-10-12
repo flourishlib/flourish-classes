@@ -16,6 +16,7 @@ class fCookie
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const get                = 'fCookie::get';
+	const reset              = 'fCookie::reset';
 	const set                = 'fCookie::set';
 	const setDefaultDomain   = 'fCookie::setDefaultDomain';
 	const setDefaultExpires  = 'fCookie::setDefaultExpires';
@@ -77,6 +78,23 @@ class fCookie
 			return $value;
 		}
 		return $default_value;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$default_domain   = NULL;
+		self::$default_expires  = NULL;
+		self::$default_httponly = FALSE;
+		self::$default_path     = NULL;
+		self::$default_secure   = FALSE;
 	}
 	
 	

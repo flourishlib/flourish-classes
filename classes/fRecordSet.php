@@ -15,10 +15,12 @@
 class fRecordSet implements Iterator
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const build            = 'fRecordSet::build';
-	const buildFromRecords = 'fRecordSet::buildFromRecords';
-	const buildFromSQL     = 'fRecordSet::buildFromSQL';
-	const configure        = 'fRecordSet::configure';
+	const build                  = 'fRecordSet::build';
+	const buildFromRecords       = 'fRecordSet::buildFromRecords';
+	const buildFromSQL           = 'fRecordSet::buildFromSQL';
+	const configure              = 'fRecordSet::configure';
+	const registerMethodCallback = 'fRecordSet::registerMethodCallback';
+	const reset                  = 'fRecordSet::reset';
 	
 	
 	/**
@@ -202,6 +204,19 @@ class fRecordSet implements Iterator
 	static public function registerMethodCallback($method, $callback)
 	{
 		self::$method_callbacks[$method] = $callback;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$method_callbacks = array();
 	}
 	
 	

@@ -34,6 +34,7 @@ class fRequest
 	const isPost                = 'fRequest::isPost';
 	const isPut                 = 'fRequest::isPut';
 	const overrideAction        = 'fRequest::overrideAction';
+	const reset                 = 'fRequest::reset';
 	const set                   = 'fRequest::set';
 	const unfilter              = 'fRequest::unfilter';
 	
@@ -442,6 +443,23 @@ class fRequest
 		}
 		
 		return $output;
+	}
+	
+	
+	/**
+	 * Resets the configuration and data of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$backup_files      = NULL;
+		self::$backup_get        = NULL;
+		self::$backup_post       = NULL;
+		self::$backup_put_delete = NULL;
+		self::$put_delete        = NULL;
 	}
 	
 	

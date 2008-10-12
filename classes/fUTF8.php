@@ -41,6 +41,7 @@ class fUTF8
 	const pad      = 'fUTF8::pad';
 	const pos      = 'fUTF8::pos';
 	const replace  = 'fUTF8::replace';
+	const reset    = 'fUTF8::reset';
 	const rev      = 'fUTF8::rev';
 	const rpos     = 'fUTF8::rpos';
 	const str      = 'fUTF8::str';
@@ -1210,6 +1211,19 @@ class fUTF8
 	static public function replace($string, $search, $replace)
 	{
 		return str_replace($search, $replace, $string);
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$mbstring_available = NULL;
 	}
 	
 	

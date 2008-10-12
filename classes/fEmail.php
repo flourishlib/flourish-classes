@@ -22,6 +22,7 @@ class fEmail
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const fixQmail = 'fEmail::fixQmail';
+	const reset    = 'fEmail::reset';
 	
 	/**
 	 * A regular expression to match an email address, exluding those with comments and folding whitespace
@@ -139,6 +140,20 @@ class fEmail
 				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
 			}
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$popen_sendmail = FALSE;
+		self::$convert_crlf   = FALSE;
 	}
 	
 	

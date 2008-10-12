@@ -21,6 +21,7 @@ class fORMValidation
 	const addOneToManyValidationRule   = 'fORMValidation::addOneToManyValidationRule';
 	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
 	const reorderMessages              = 'fORMValidation::reorderMessages';
+	const reset                        = 'fORMValidation::reset';
 	const setMessageOrder              = 'fORMValidation::setMessageOrder';
 	const validate                     = 'fORMValidation::validate';
 	const validateRelated              = 'fORMValidation::validateRelated';	
@@ -648,6 +649,23 @@ class fORMValidation
 			$final_list = array_merge($final_list, $ordered_item);
 		}
 		$validation_messages = array_merge($final_list, $other_items);
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$conditional_validation_rules         = array();
+		self::$message_orders                       = array();
+		self::$one_or_more_validation_rules         = array();
+		self::$only_one_validation_rules            = array();
+		self::$related_one_or_more_validation_rules = array();
 	}
 	
 	

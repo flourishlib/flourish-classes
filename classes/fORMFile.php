@@ -32,6 +32,7 @@ class fORMFile
 	const prepare                    = 'fORMFile::prepare';
 	const processImage               = 'fORMFile::processImage';
 	const reflect                    = 'fORMFile::reflect';
+	const reset                      = 'fORMFile::reset';
 	const rollback                   = 'fORMFile::rollback';
 	const set                        = 'fORMFile::set';
 	const upload                     = 'fORMFile::upload';
@@ -795,6 +796,24 @@ class fORMFile
 			
 			$signatures[$inspect_method] = $signature;
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$column_inheritence   = array();
+		self::$fupload_method_calls = array();
+		self::$file_upload_columns  = array();
+		self::$fimage_method_calls  = array();
+		self::$image_upload_columns = array();
+		self::$transaction_level    = 0;
 	}
 	
 	

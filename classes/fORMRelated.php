@@ -28,6 +28,7 @@ class fORMRelated
 	const overrideRelatedRecordName = 'fORMRelated::overrideRelatedRecordName';
 	const populateRecords           = 'fORMRelated::populateRecords';
 	const reflect                   = 'fORMRelated::reflect';
+	const reset                     = 'fORMRelated::reset';
 	const setOrderBys               = 'fORMRelated::setOrderBys';
 	const setRecords                = 'fORMRelated::setRecords';
 	const storeManyToMany           = 'fORMRelated::storeManyToMany';
@@ -588,6 +589,20 @@ class fORMRelated
 			
 			$to_many_created[$related_class] = TRUE;
 		}
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$order_bys            = array();
+		self::$related_record_names = array();
 	}
 	
 	

@@ -25,6 +25,7 @@ class fORMDatabase
 	const escapeBySchema              = 'fORMDatabase::escapeBySchema';
 	const getInstance                 = 'fORMDatabase::getInstance';
 	const insertFromAndGroupByClauses = 'fORMDatabase::insertFromAndGroupByClauses';
+	const reset                       = 'fORMDatabase::reset';
 	
 	
 	/**
@@ -32,7 +33,7 @@ class fORMDatabase
 	 * 
 	 * @var fDatabase
 	 */
-	static private $database_object;
+	static private $database_object = NULL;
 	
 	
 	/**
@@ -781,6 +782,19 @@ class fORMDatabase
 		}
 			
 		return $new_sql;
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$database_object = NULL;
 	}
 	
 	
