@@ -18,7 +18,6 @@ class fRecordSet implements Iterator
 	const build                  = 'fRecordSet::build';
 	const buildFromRecords       = 'fRecordSet::buildFromRecords';
 	const buildFromSQL           = 'fRecordSet::buildFromSQL';
-	const configure              = 'fRecordSet::configure';
 	const registerMethodCallback = 'fRecordSet::registerMethodCallback';
 	const reset                  = 'fRecordSet::reset';
 	
@@ -80,7 +79,10 @@ class fRecordSet implements Iterator
 	 */
 	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
-		self::configure($class);
+		// Ensure that the class has been configured
+		if (!fORM::isConfigured($class)) {
+			new $class();
+		}
 		
 		$table = fORM::tablize($class);
 		
@@ -166,24 +168,11 @@ class fRecordSet implements Iterator
 	 */
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
-		self::configure($class);
-		
-		$result = fORMDatabase::getInstance()->translatedQuery($sql);
-		return new fRecordSet($class, $result, $non_limited_count_sql);
-	}
-	
-	
-	/**
-	 * Ensures that an {@link fActiveRecord} class has been configured, allowing custom mapping options to be set in {@link fActiveRecord::configure()}
-	 *  
-	 * @param  string  $class  The class to ensure the configuration of
-	 * @return void
-	 */
-	static public function configure($class)
-	{
-		if (!fORM::isConfigured($class)) {
-			new $class();
-		}
+		return new fRecordSet(
+			$class,
+			fORMDatabase::getInstance()->translatedQuery($sql),
+			$non_limited_count_sql
+		);
 	}
 	
 	
