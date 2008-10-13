@@ -362,6 +362,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the result
 	 * 
+	 * @internal
+	 * 
 	 * @return mixed  The result of the query
 	 */
 	public function getResult()
