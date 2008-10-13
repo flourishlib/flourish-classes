@@ -334,7 +334,7 @@ class fRequest
 	 * This method is primarily intended to be used for hanlding multiple
 	 * submit buttons.
 	 * 
-	 * @param  string $redirect  The url to redirect to if the action is overriden. %%action%% will be replaced with the overridden action.
+	 * @param  string $redirect  The url to redirect to if the action is overriden. %action% will be replaced with the overridden action.
 	 * @return void
 	 */
 	static public function overrideAction($redirect=NULL)
@@ -355,7 +355,7 @@ class fRequest
 		}
 		
 		if ($redirect && $found) {
-			fURL::redirect(str_replace('%%action%%', $found, $redirect));
+			fURL::redirect(str_replace('%action%', $found, $redirect));
 		}
 	}
 	
