@@ -413,7 +413,9 @@ class fSQLTranslation
 	
 	/**
 	 * Sets if debug messages should be shown
-	 * 
+	 *
+	 * @internal
+	 *  
 	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
 	 */
