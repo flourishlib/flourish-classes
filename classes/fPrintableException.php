@@ -118,7 +118,7 @@ abstract class fPrintableException extends Exception
 	public function printTrace()
 	{
 		echo '<pre class="exception ' . $this->getCSSClass() . ' trace">';
-		$trace = $this->formatTrace();
+		echo $this->formatTrace();
 		echo '</pre>';
 	}
 	
