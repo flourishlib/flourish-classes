@@ -98,17 +98,6 @@ abstract class fPrintableException extends Exception
 	
 	
 	/**
-	 * Prepares the message for output into HTML
-	 * 
-	 * @return string  The prepared message
-	 */
-	public function prepareMessage()
-	{
-		return $this->prepare($this->message);
-	}
-	
-	
-	/**
 	 * Prints the message inside of a div with the class being 'exception %THIS_EXCEPTION_CLASS_NAME%'
 	 * 
 	 * @return void
