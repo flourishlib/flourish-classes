@@ -80,22 +80,6 @@ class fTimestamp
 	
 	
 	/**
-	 * Creates an fTimestamp object from fDate, fTime objects and optionally a timezone
-	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  fDate  $date      The date to combine
-	 * @param  fTime  $time      The time to combine
-	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. . If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}.
-	 * @return fTimestamp
-	 */
-	static public function combine(fDate $date, fTime $time, $timezone=NULL)
-	{
-		return new fTimestamp($date . ' ' . $time, $timezone);
-	}
-	
-	
-	/**
 	 * Creates a reusable format for formatting fDate/fTime/fTimestamp
 	 * 
 	 * @param  string $name               The name of the format
@@ -163,6 +147,8 @@ class fTimestamp
 	
 	/**
 	 * Checks to see if a timezone is valid
+	 * 
+	 * @internal
 	 * 
 	 * @param  string  $timezone   The timezone to check
 	 * @return boolean  If the timezone is valid
