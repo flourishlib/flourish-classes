@@ -82,11 +82,32 @@ class fUpload
 	
 	
 	/**
+	 * The type of files accepted
+	 * 
+	 * @var string
+	 */
+	private $allow_php = FALSE;
+	
+	/**
+	 * If existing files of the same name should be overwritten
+	 * 
+	 * @var boolean
+	 */
+	private $enable_overwrite = FALSE;
+	
+	/**
 	 * The maximum file size in bytes
 	 * 
 	 * @var integer
 	 */
 	private $max_file_size = 0;
+	
+	/**
+	 * The error message to display if the mime types do not match
+	 * 
+	 * @var string
+	 */
+	private $mime_type_message = NULL;
 	
 	/**
 	 * The mime types of files accepted
@@ -95,19 +116,27 @@ class fUpload
 	 */
 	private $mime_types = array();
 	
-	/**
-	 * The overwrite method
-	 * 
-	 * @var string
-	 */
-	private $overwrite_mode = 'rename';
 	
 	/**
-	 * The type of files accepted
+	 * Sets the upload class to allow PHP files
 	 * 
-	 * @var string
+	 * @return void
 	 */
-	private $type = 'non_php';
+	public function allowPHP()
+	{
+		$this->allow_php = TRUE;
+	}
+	
+	
+	/**
+	 * Set the class to overwrite existing files in the destination directory instead of renaming the file
+	 * 
+	 * @return void
+	 */
+	public function enableOverwrite()
+	{
+		$this->enable_overwrite = TRUE;
+	}
 	
 	
 	/**
@@ -167,77 +196,16 @@ class fUpload
 	
 	
 	/**
-	 * Sets the file mime types accepted, one per parameter
+	 * Sets the file mime types accepted
 	 * 
-	 * @param  string $mime_type,...  The mime type accepted
+	 * @param  array  $mime_types  The mime types to accept
+	 * @param  string $message     The message to display if the uploaded file is not one of the mime type specified
 	 * @return void
 	 */
-	public function setMimeTypes()
+	public function setMimeTypes($mime_types, $message)
 	{
-		$this->mime_types = func_get_args();
-	}
-	
-	
-	/**
-	 * Set the overwrite mode, either 'rename' or 'overwrite'
-	 * 
-	 * @param  string $mode  Either 'rename' or 'overwrite'
-	 * @return void
-	 */
-	public function setOverwriteMode($mode)
-	{
-		$valid_modes = array('rename', 'overwrite');
-		if (!in_array($mode, $valid_modes)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The mode specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($mode),
-					join(', ', $valid_modes)
-				)
-			);
-		}
-		
-		$this->overwrite_mode = $mode;
-	}
-	
-	
-	/**
-	 * Sets the file types accepted
-	 * 
-	 * @param  string $type  'image', 'zip', 'non_php', 'any'
-	 * @return void
-	 */
-	public function setType($type)
-	{
-		$valid_types = array('image', 'zip', 'non_php', 'any');
-		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
-			);
-		}
-		
-		$this->type = $type;
-		
-		switch ($type) {
-			case 'image':
-				fCore::call($this->setMimeTypes, fImage::getCompatibleMimetypes());
-				break;
-			case 'zip':
-				$this->setMimeTypes('application/zip', 'application/gzip', 'application/x-zip-compressed');
-				break;
-			case 'non_php':
-				$this->setMimeTypes();
-				break;
-			case 'any':
-				$this->setMimeTypes();
-				break;
-		}
+		$this->mime_types        = $mime_types;
+		$this->mime_type_message = $message;
 	}
 	
 	
@@ -281,7 +249,11 @@ class fUpload
 		$file_name  = strtolower($file_array['name']);
 		$file_name  = preg_replace('#\s+#', '_', $file_name);
 		$file_name  = preg_replace('#[^a-z0-9_\.-]#', '', $file_name);
-		$file_name  = fFilesystem::makeUniqueName($directory->getPath() . $file_name);
+		
+		$file_name = $directory->getPath() . $file_name;
+		if (!$this->enable_overwrite) {
+			$file_name = fFilesystem::makeUniqueName($file_name);
+		}
 		
 		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
 			fCore::toss(
@@ -343,28 +315,12 @@ class fUpload
 		}
 		
 		if (!empty($this->mime_types) && !in_array($file_array['type'], $this->mime_types)) {
-			if ($this->type != 'mime') {
-				$messages = array(
-					'image' => fGrammar::compose('The file uploaded is not an image'),
-					'zip'   => fGrammar::compose('The file uploaded is not a zip')
-				);
-				fCore::toss('fValidationException', $messages[$this->type]);
-				
-			} else {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose(
-						'The file uploaded is an invalid type. It is a %1$s file, but must be one of %2$s.',
-						fCore::dump($file_array['type']),
-						join(', ', $this->mime_types)
-					)
-				);
-			}
+			fCore::toss('fValidationException', $this->mime_type_message);
 		}
 		
-		if ($this->type == 'non_php') {
+		if (!$this->allow_php) {
 			$file_info = fFilesystem::getPathInfo($file_array['name']);
-			if ($file_info['extension'] == 'php') {
+			if (in_array(strtolower($file_info['extension']), array('php', 'php4', 'php5'))) {
 				fCore::toss(
 					'fValidationException',
 					fGrammar::compose('The file uploaded is a PHP file, but those are not permitted')

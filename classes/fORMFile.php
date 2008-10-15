@@ -380,7 +380,20 @@ class fORMFile
 		
 		self::$image_upload_columns[$class][$column] = $image_type;
 		
-		self::addFUploadMethodCall($class, $column, 'setType', array('image'));
+		self::addFUploadMethodCall(
+			$class,
+			$column,
+			'setMimeTypes',
+			array(
+				array(
+					'image/gif',
+					'image/jpeg',
+					'image/pjpeg',
+					'image/png'
+				),
+				'The file uploaded is not an image'
+			)
+		);
 	}
 	
 	
