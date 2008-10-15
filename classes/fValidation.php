@@ -203,7 +203,7 @@ class fValidation
 		foreach ($this->required_fields as $key => $required_field) {
 			// Handle single fields
 			if (is_numeric($key) && is_string($required_field)) {
-				if (!fCore::stringlike(fRequest::get($required_field))) {
+				if (!self::hasValue($required_field)) {
 					$messages[] = fGrammar::compose(
 						'%s: Please enter a value',
 						fGrammar::humanize($required_field)
@@ -214,7 +214,7 @@ class fValidation
 			} elseif (is_numeric($key) && is_array($required_field)) {
 				$found = FALSE;
 				foreach ($required_field as $individual_field) {
-					if (fCore::stringlike(trim(fRequest::get($individual_field)))) {
+					if (self::hasValue($individual_field)) {
 						$found = TRUE;
 					}
 				}
@@ -229,11 +229,11 @@ class fValidation
 				
 			// Handle conditional fields
 			} else {
-				if (!fCore::stringlike(fRequest::get($key))) {
+				if (!self::hasValue($key)) {
 					continue;
 				}
 				foreach ($required_field as $individual_field) {
-					if (!fCore::stringlike(fRequest::get($individual_field))) {
+					if (!self::hasValue($individual_field)) {
 						$messages[] = fGrammar::compose(
 							'%s: Please enter a value',
 							fGrammar::humanize($individual_field)
@@ -242,6 +242,29 @@ class fValidation
 				}
 			}
 		}
+	}
+	
+	
+	/**
+	 * Check if a field has a value
+	 * 
+	 * @param  string $key  The key to check for a value
+	 * @return boolean  If the key has a value
+	 */
+	static private function hasValue($key)
+	{
+		$value = fRequest::get($key);
+		if (fCore::stringlike($value)) {
+			return TRUE;
+		}	
+		if (is_array($value)) {
+			foreach ($value as $individual_value) {
+				if (fCore::stringlike($individual_value)) {
+					return TRUE;	
+				}
+			}	
+		}
+		return FALSE;
 	}
 	
 	
