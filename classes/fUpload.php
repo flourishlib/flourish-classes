@@ -17,42 +17,6 @@ class fUpload
 	// The following constants allow for nice looking callbacks to static methods
 	const check            = 'fUpload::check';
 	const count            = 'fUpload::count';
-	const reset            = 'fUpload::reset';
-	const setMaxFileSize   = 'fUpload::setMaxFileSize';
-	const setMimeTypes     = 'fUpload::setMimeTypes';
-	const setOverwriteMode = 'fUpload::setOverwriteMode';
-	const setType          = 'fUpload::setType';
-	const upload           = 'fUpload::upload';
-	const validate         = 'fUpload::validate';
-	
-	
-	/**
-	 * The maximum file size in bytes
-	 * 
-	 * @var integer
-	 */
-	static private $max_file_size = 0;
-	
-	/**
-	 * The mime types of files accepted
-	 * 
-	 * @var array
-	 */
-	static private $mime_types = array();
-	
-	/**
-	 * The overwrite method
-	 * 
-	 * @var string
-	 */
-	static private $overwrite_mode = 'rename';
-	
-	/**
-	 * The type of files accepted
-	 * 
-	 * @var string
-	 */
-	static private $type = 'non_php';
 	
 	
 	/**
@@ -71,6 +35,7 @@ class fUpload
 				)
 			);
 		}
+		
 		if (fRequest::check($field) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
 			fCore::toss(
 				'fProgrammerException',
@@ -79,6 +44,7 @@ class fUpload
 				)
 			);
 		}
+		
 		return isset($_FILES) && isset($_FILES[$field]) && is_array($_FILES[$field]);
 	}
 	
@@ -100,6 +66,7 @@ class fUpload
 				)
 			);
 		}
+		
 		if (!is_array($_FILES[$field]['name'])) {
 			fCore::toss(
 				'fProgrammerException',
@@ -115,13 +82,42 @@ class fUpload
 	
 	
 	/**
+	 * The maximum file size in bytes
+	 * 
+	 * @var integer
+	 */
+	private $max_file_size = 0;
+	
+	/**
+	 * The mime types of files accepted
+	 * 
+	 * @var array
+	 */
+	private $mime_types = array();
+	
+	/**
+	 * The overwrite method
+	 * 
+	 * @var string
+	 */
+	private $overwrite_mode = 'rename';
+	
+	/**
+	 * The type of files accepted
+	 * 
+	 * @var string
+	 */
+	private $type = 'non_php';
+	
+	
+	/**
 	 * Returns the $_FILES array for the field specified.
 	 * 
 	 * @param  string  $field  The field to get the file array for
 	 * @param  integer $index  If the field is an array file upload field, use this to specify which array index to return
 	 * @return array  The file info array from $_FILES
 	 */
-	static private function extractFileUploadArray($field, $index=NULL)
+	private function extractFileUploadArray($field, $index=NULL)
 	{
 		if ($index === NULL) {
 			return $_FILES[$field];
@@ -136,6 +132,7 @@ class fUpload
 				)
 			);
 		}
+		
 		if (!isset($_FILES[$field]['name'][$index])) {
 			fCore::toss(
 				'fProgrammerException',
@@ -145,6 +142,7 @@ class fUpload
 				)
 			);
 		}
+		
 		$file_array = array();
 		$file_array['name']     = $_FILES[$field]['name'][$index];
 		$file_array['type']     = $_FILES[$field]['type'][$index];
@@ -157,28 +155,14 @@ class fUpload
 	
 	
 	/**
-	 * Resets the max file size, mime types, overwrite mode and type to default values
-	 * 
-	 * @return void
-	 */
-	static public function reset()
-	{
-		self::$max_file_size  = 0;
-		self::$mime_types     = array();
-		self::$overwrite_mode = 'rename';
-		self::$type           = 'non_php';
-	}
-	
-	
-	/**
 	 * Sets the file mime types accepted, one per parameter
 	 * 
 	 * @param  string $size  The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit
 	 * @return void
 	 */
-	static public function setMaxFileSize($size)
+	public function setMaxFileSize($size)
 	{
-		self::$max_file_size = fFilesystem::convertToBytes($size);
+		$this->max_file_size = fFilesystem::convertToBytes($size);
 	}
 	
 	
@@ -188,9 +172,9 @@ class fUpload
 	 * @param  string $mime_type,...  The mime type accepted
 	 * @return void
 	 */
-	static public function setMimeTypes()
+	public function setMimeTypes()
 	{
-		self::$mime_types = func_get_args();
+		$this->mime_types = func_get_args();
 	}
 	
 	
@@ -200,7 +184,7 @@ class fUpload
 	 * @param  string $mode  Either 'rename' or 'overwrite'
 	 * @return void
 	 */
-	static public function setOverwriteMode($mode)
+	public function setOverwriteMode($mode)
 	{
 		$valid_modes = array('rename', 'overwrite');
 		if (!in_array($mode, $valid_modes)) {
@@ -213,7 +197,8 @@ class fUpload
 				)
 			);
 		}
-		self::$overwrite_mode = $mode;
+		
+		$this->overwrite_mode = $mode;
 	}
 	
 	
@@ -223,7 +208,7 @@ class fUpload
 	 * @param  string $type  'image', 'zip', 'non_php', 'any'
 	 * @return void
 	 */
-	static public function setType($type)
+	public function setType($type)
 	{
 		$valid_types = array('image', 'zip', 'non_php', 'any');
 		if (!in_array($type, $valid_types)) {
@@ -236,19 +221,21 @@ class fUpload
 				)
 			);
 		}
-		self::$type = $type;
+		
+		$this->type = $type;
+		
 		switch ($type) {
 			case 'image':
-				fCore::call(self::setMimeTypes, fImage::getCompatibleMimetypes());
+				fCore::call($this->setMimeTypes, fImage::getCompatibleMimetypes());
 				break;
 			case 'zip':
-				self::setMimeTypes('application/zip', 'application/gzip', 'application/x-zip-compressed');
+				$this->setMimeTypes('application/zip', 'application/gzip', 'application/x-zip-compressed');
 				break;
 			case 'non_php':
-				self::setMimeTypes();
+				$this->setMimeTypes();
 				break;
 			case 'any':
-				self::setMimeTypes();
+				$this->setMimeTypes();
 				break;
 		}
 	}
@@ -264,7 +251,7 @@ class fUpload
 	 * @param  integer           $index      If the field was an array file upload field, upload the file corresponding to this index
 	 * @return fFile  An fFile object
 	 */
-	static public function upload($directory, $field, $index=NULL)
+	public function upload($directory, $field, $index=NULL)
 	{
 		if (!is_object($directory)) {
 			$directory = new fDirectory($directory);
@@ -290,7 +277,7 @@ class fUpload
 			);
 		}
 		
-		$file_array = self::validate($field, $index);
+		$file_array = $this->validate($field, $index);
 		$file_name  = strtolower($file_array['name']);
 		$file_name  = preg_replace('#\s+#', '_', $file_name);
 		$file_name  = preg_replace('#[^a-z0-9_\.-]#', '', $file_name);
@@ -326,7 +313,7 @@ class fUpload
 	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
 	 * @return array  The $_FILES array for the field and index specified
 	 */
-	static public function validate($field, $index=NULL)
+	public function validate($field, $index=NULL)
 	{
 		if (!self::check($field)) {
 			fCore::toss(
@@ -338,7 +325,7 @@ class fUpload
 			);
 		}
 		
-		$file_array = self::extractFileUploadArray($field, $index);
+		$file_array = $this->extractFileUploadArray($field, $index);
 		
 		// Do some validation of the file provided
 		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
@@ -348,33 +335,34 @@ class fUpload
 			);
 		}
 		
-		if (self::$max_file_size && $file_array['size'] > self::$max_file_size) {
+		if ($this->max_file_size && $file_array['size'] > $this->max_file_size) {
 			fCore::toss(
 				'fValidationException',
-				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize(self::$max_file_size))
+				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize($this->max_file_size))
 			);
 		}
 		
-		if (!empty(self::$mime_types) && !in_array($file_array['type'], self::$mime_types)) {
-			if (self::$type != 'mime') {
+		if (!empty($this->mime_types) && !in_array($file_array['type'], $this->mime_types)) {
+			if ($this->type != 'mime') {
 				$messages = array(
 					'image' => fGrammar::compose('The file uploaded is not an image'),
 					'zip'   => fGrammar::compose('The file uploaded is not a zip')
 				);
-				fCore::toss('fValidationException', $messages[self::$type]);
+				fCore::toss('fValidationException', $messages[$this->type]);
+				
 			} else {
 				fCore::toss(
 					'fValidationException',
 					fGrammar::compose(
 						'The file uploaded is an invalid type. It is a %1$s file, but must be one of %2$s.',
 						fCore::dump($file_array['type']),
-						join(', ', self::$mime_types)
+						join(', ', $this->mime_types)
 					)
 				);
 			}
 		}
 		
-		if (self::$type == 'non_php') {
+		if ($this->type == 'non_php') {
 			$file_info = fFilesystem::getPathInfo($file_array['name']);
 			if ($file_info['extension'] == 'php') {
 				fCore::toss(
@@ -386,14 +374,6 @@ class fUpload
 		
 		return $file_array;
 	}
-	
-	
-	/**
-	 * Forces use as a static class
-	 * 
-	 * @return fUpload
-	 */
-	private function __construct() { }
 }
 
 

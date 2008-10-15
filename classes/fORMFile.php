@@ -160,7 +160,7 @@ class fORMFile
 		}
 		
 		self::$fupload_method_calls[$class][$column][] = array(
-			'callback'   => 'fUpload::' . $method,
+			'method'     => $method,
 			'parameters' => $parameters
 		);
 	}
@@ -907,12 +907,12 @@ class fORMFile
 	 */
 	static private function setUpFUpload($class, $column)
 	{
-		fUpload::reset();
+		$upload = new fUpload();
 		
 		// Set up the fUpload class
 		if (!empty(self::$fupload_method_calls[$class][$column])) {
 			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
-				if (!is_callable($method_call['callback'])) {
+				if (!is_callable($upload->{$method_call['method']})) {
 					fCore::toss(
 						'fProgrammerException',
 						fGrammar::compose(
@@ -921,9 +921,11 @@ class fORMFile
 						)
 					);
 				}
-				fCore::call($method_call['callback'], $method_call['parameters']);
+				fCore::call($upload->{$method_call['method']}, $method_call['parameters']);
 			}
 		}
+		
+		return $upload;
 	}
 	
 	
@@ -946,8 +948,6 @@ class fORMFile
 		
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		self::setUpFUpload($class, $column);
-		
 		$upload_dir = self::$file_upload_columns[$class][$column];
 		
 		// Let's clean out the upload temp dir
@@ -966,12 +966,11 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
-			$file = fUpload::upload($temp_dir, $column);
-			fUpload::reset();
+			$uploader = self::setUpFUpload($class, $column);
+			$file     = $uploader->upload($temp_dir, $column);
 		
 		// If there was an eror, check to see if we have an existing file
 		} catch (fExpectedException $e) {
-			fUpload::reset();
 			
 			// If there is an existing file and none was uploaded, substitute the existing file
 			$existing_file = fRequest::get('__flourish_existing_' . $column);
@@ -1020,6 +1019,7 @@ class fORMFile
 					}
 					
 					$other_file = $file->duplicate($other_temp_dir, FALSE);
+					
 				} else {
 					$other_file = $file;
 				}
@@ -1062,12 +1062,11 @@ class fORMFile
 			$replace_message = fGrammar::compose('%s: Please upload a file', $column_name);;
 			$validation_messages = str_replace($search_message, $replace_message, $validation_messages);
 			
-			self::setUpFUpload($class, $column);
-			
 			// Grab the error that occured
 			try {
 				if (fUpload::check($column)) {
-					fUpload::validate($column);
+					$uploader = self::setUpFUpload($class, $column);
+					$uploader->validate($column);
 				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != fGrammar::compose('Please upload a file')) {
