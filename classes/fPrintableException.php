@@ -105,7 +105,7 @@ abstract class fPrintableException extends Exception
 	public function printMessage()
 	{
 		echo '<div class="exception ' . $this->getCSSClass() . '">';
-		echo $this->prepareMessage();
+		echo $this->prepare($this->message);
 		echo '</div>';
 	}
 	
