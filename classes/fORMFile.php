@@ -980,7 +980,7 @@ class fORMFile
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
 			$uploader = self::setUpFUpload($class, $column);
-			$file     = $uploader->upload($temp_dir, $column);
+			$file     = $uploader->move($temp_dir, $column);
 		
 		// If there was an eror, check to see if we have an existing file
 		} catch (fExpectedException $e) {

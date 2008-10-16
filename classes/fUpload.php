@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides file upload functionality
+ * Provides validation and movement of uploaded files
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -15,8 +15,8 @@
 class fUpload
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const check            = 'fUpload::check';
-	const count            = 'fUpload::count';
+	const check = 'fUpload::check';
+	const count = 'fUpload::count';
 	
 	
 	/**
@@ -184,33 +184,7 @@ class fUpload
 	
 	
 	/**
-	 * Sets the file mime types accepted, one per parameter
-	 * 
-	 * @param  string $size  The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit
-	 * @return void
-	 */
-	public function setMaxFileSize($size)
-	{
-		$this->max_file_size = fFilesystem::convertToBytes($size);
-	}
-	
-	
-	/**
-	 * Sets the file mime types accepted
-	 * 
-	 * @param  array  $mime_types  The mime types to accept
-	 * @param  string $message     The message to display if the uploaded file is not one of the mime type specified
-	 * @return void
-	 */
-	public function setMimeTypes($mime_types, $message)
-	{
-		$this->mime_types        = $mime_types;
-		$this->mime_type_message = $message;
-	}
-	
-	
-	/**
-	 * Handles a file upload
+	 * Moves an uploaded file from the temp directory to a permanent location
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -219,7 +193,7 @@ class fUpload
 	 * @param  integer           $index      If the field was an array file upload field, upload the file corresponding to this index
 	 * @return fFile  An fFile object
 	 */
-	public function upload($directory, $field, $index=NULL)
+	public function move($directory, $field, $index=NULL)
 	{
 		if (!is_object($directory)) {
 			$directory = new fDirectory($directory);
@@ -273,6 +247,32 @@ class fUpload
 			return new fImage($file_name);
 		}
 		return new fFile($file_name);
+	}
+	
+	
+	/**
+	 * Sets the file mime types accepted, one per parameter
+	 * 
+	 * @param  string $size  The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit
+	 * @return void
+	 */
+	public function setMaxFileSize($size)
+	{
+		$this->max_file_size = fFilesystem::convertToBytes($size);
+	}
+	
+	
+	/**
+	 * Sets the file mime types accepted
+	 * 
+	 * @param  array  $mime_types  The mime types to accept
+	 * @param  string $message     The message to display if the uploaded file is not one of the mime type specified
+	 * @return void
+	 */
+	public function setMIMETypes($mime_types, $message)
+	{
+		$this->mime_types        = $mime_types;
+		$this->mime_type_message = $message;
 	}
 	
 	
