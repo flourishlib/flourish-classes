@@ -425,17 +425,6 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Returns the current position of the pointer in the result set
-	 * 
-	 * @return integer  The current position of the pointer in the result set
-	 */
-	public function getPointer()
-	{
-		return $this->pointer;
-	}
-	
-	
-	/**
 	 * Returns the result
 	 * 
 	 * @internal
