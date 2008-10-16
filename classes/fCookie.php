@@ -71,7 +71,7 @@ class fCookie
 	static public function get($name, $default_value=NULL)
 	{
 		if (isset($_COOKIE[$name])) {
-			$value = $_COOKIE[$name];
+			$value = fUTF8::clean($_COOKIE[$name]);
 			if (get_magic_quotes_gpc()) {
 				$value = stripslashes($value);
 			}
