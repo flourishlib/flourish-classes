@@ -546,6 +546,8 @@ class fUTF8
 	 *  - Letterlike symbols
 	 *  - Number Forms
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $string  The string to convert
 	 * @return string  The input string in pure ASCII
 	 */
