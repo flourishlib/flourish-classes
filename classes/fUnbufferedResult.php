@@ -507,9 +507,7 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Returns if the query has any rows left (required by iterator interface)
-	 * 
-	 * @internal
+	 * Returns if the query has any rows left
 	 * 
 	 * @return boolean  If the iterator is still valid
 	 */
