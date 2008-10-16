@@ -325,7 +325,7 @@ abstract class fActiveRecord
 			}
 			
 			// Check the primary keys
-			$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+			$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
 				fCore::toss(
 					'fProgrammerException',
@@ -349,7 +349,7 @@ abstract class fActiveRecord
 			
 		// Create an empty array for new objects
 		} else {
-			$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+			$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
 			foreach ($column_info as $column => $info) {
 				$this->values[$column] = NULL;
 			}
@@ -476,12 +476,12 @@ abstract class fActiveRecord
 		
 		$table  = fORM::tablize($this);
 		
-		$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
+		$inside_db_transaction = fORMDatabase::retrieve()->isInsideTransaction();
 		
 		try {
 			
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('BEGIN');
+				fORMDatabase::retrieve()->translatedQuery('BEGIN');
 			}
 			
 			fORM::callHookCallback(
@@ -493,8 +493,8 @@ abstract class fActiveRecord
 			);
 			
 			// Check to ensure no foreign dependencies prevent deletion
-			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
-			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
+			$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
+			$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
 			
 			$relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
 			$records_sets_to_delete = array();
@@ -548,7 +548,7 @@ abstract class fActiveRecord
 			
 			// Delete this record
 			$sql    = 'DELETE FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
-			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			
 			
 			// Delete related records
@@ -569,7 +569,7 @@ abstract class fActiveRecord
 			);
 			
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('COMMIT');
+				fORMDatabase::retrieve()->translatedQuery('COMMIT');
 			}
 			
 			fORM::callHookCallback(
@@ -582,8 +582,8 @@ abstract class fActiveRecord
 			
 			// If we just deleted an object that has an auto-incrementing primary key,
 			// lets delete that value from the object since it is no longer valid
-			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
-			$pk_columns  = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$column_info = fORMSchema::retrieve()->getColumnInfo($table);
+			$pk_columns  = fORMSchema::retrieve()->getKeys($table, 'primary');
 			if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
 				$this->values[$pk_columns[0]] = NULL;
 				unset($this->old_values[$pk_columns[0]]);
@@ -591,7 +591,7 @@ abstract class fActiveRecord
 			
 		} catch (fPrintableException $e) {
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
 			
 			fORM::callHookCallback(
@@ -664,7 +664,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$column_type = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		$column_type = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column, 'type');
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
@@ -714,7 +714,7 @@ abstract class fActiveRecord
 		
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
-			$column_decimal_places = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column, 'decimal_places');
+			$column_decimal_places = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column, 'decimal_places');
 			
 			// If the user passed in a formatting value, use it
 			if ($formatting !== NULL && is_numeric($formatting)) {
@@ -755,7 +755,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
 			if ((self::has($this->old_values, $pk_column) && self::retrieve($this->old_values, $pk_column) === NULL) || $this->values[$pk_column] === NULL) {
 				return FALSE;
@@ -805,7 +805,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
+		$info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column);
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
 			unset($info['valid_values']);
@@ -863,7 +863,7 @@ abstract class fActiveRecord
 			$table = fORM::tablize($this);
 			$sql = 'SELECT * FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
 		
-			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
 		} catch (fExpectedException $e) {
@@ -889,20 +889,20 @@ abstract class fActiveRecord
 	protected function loadFromResult(fResult $result)
 	{
 		$row = $result->current();
-		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
 		
 		foreach ($row as $column => $value) {
 			if ($value === NULL) {
 				$this->values[$column] = $value;
 			} else {
-				$this->values[$column] = fORMDatabase::getInstance()->unescape($column_info[$column]['type'], $value);
+				$this->values[$column] = fORMDatabase::retrieve()->unescape($column_info[$column]['type'], $value);
 			}
 			
 			$this->values[$column] = fORM::objectify($this, $column, $this->values[$column]);
 		}
 		
 		// Save this object to the identity map
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 		
 		$pk_data = array();
 		foreach ($pk_columns as $pk_column) {
@@ -935,7 +935,7 @@ abstract class fActiveRecord
 			$row = $source;
 		}
 		
-		$pk_columns = fORMSchema::getInstance()->getKeys(fORM::tablize($this), 'primary');
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 		
 		// If we don't have a value for each primary key, we can't load
 		if (is_array($row) && array_diff($pk_columns, array_keys($row))) {
@@ -991,7 +991,7 @@ abstract class fActiveRecord
 		
 		$table = fORM::tablize($this);
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
 				$method = 'set' . fGrammar::camelize($column, TRUE);
@@ -1036,7 +1036,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this), $column);
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column);
 		$column_type = $column_info['type'];
 		
 		// Ensure the programmer is calling the function properly
@@ -1134,7 +1134,7 @@ abstract class fActiveRecord
 	{
 		$signatures = array();
 		
-		$columns_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($this));
+		$columns_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
 		foreach ($columns_info as $column => $column_info) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
 			
@@ -1427,12 +1427,12 @@ abstract class fActiveRecord
 		
 		try {
 			$table       = fORM::tablize($this);
-			$column_info = fORMSchema::getInstance()->getColumnInfo($table);
+			$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 			
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
 			$new_autoincrementing_record = FALSE;
 			if (!$this->exists()) {
-				$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
+				$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 				
 				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
 					$new_autoincrementing_record = TRUE;
@@ -1440,10 +1440,10 @@ abstract class fActiveRecord
 				}
 			}
 			
-			$inside_db_transaction = fORMDatabase::getInstance()->isInsideTransaction();
+			$inside_db_transaction = fORMDatabase::retrieve()->isInsideTransaction();
 			
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('BEGIN');
+				fORMDatabase::retrieve()->translatedQuery('BEGIN');
 			}
 			
 			fORM::callHookCallback(
@@ -1482,7 +1482,7 @@ abstract class fActiveRecord
 			} else {
 				$sql = $this->constructUpdateSQL($sql_values);
 			}
-			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			
 			
 			// If there is an auto-incrementing primary key, grab the value from the database
@@ -1493,8 +1493,8 @@ abstract class fActiveRecord
 			
 			// Storing *-to-many relationships
 			
-			$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
-			$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
+			$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
+			$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
 			
 			foreach ($this->related_records as $related_table => $relationship) {
 				foreach ($relationship as $route => $info) {
@@ -1521,7 +1521,7 @@ abstract class fActiveRecord
 			);
 			
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('COMMIT');
+				fORMDatabase::retrieve()->translatedQuery('COMMIT');
 			}
 			
 			fORM::callHookCallback(
@@ -1535,7 +1535,7 @@ abstract class fActiveRecord
 		} catch (fPrintableException $e) {
 			
 			if (!$inside_db_transaction) {
-				fORMDatabase::getInstance()->translatedQuery('ROLLBACK');
+				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
 			
 			fORM::callHookCallback(

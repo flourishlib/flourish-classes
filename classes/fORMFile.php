@@ -222,7 +222,7 @@ class fORMFile
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -499,7 +499,7 @@ class fORMFile
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
-		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		if (!empty(self::$image_upload_columns[$class][$column])) {

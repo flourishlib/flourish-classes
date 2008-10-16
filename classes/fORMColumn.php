@@ -71,7 +71,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -117,7 +117,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -174,7 +174,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('integer', 'float');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -241,7 +241,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -315,7 +315,7 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($object), $column);	
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -349,7 +349,7 @@ class fORMColumn
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
-		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
@@ -470,7 +470,7 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($object), $column);	
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($object), $column);	
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -525,7 +525,7 @@ class fORMColumn
 		if (isset(self::$number_columns[$class])) {
 			foreach(self::$number_columns[$class] as $column => $enabled) {
 				$camelized_column = fGrammar::camelize($column, TRUE);
-				$type             = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column, 'type');
+				$type             = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column, 'type');
 				
 				// Get and set methods
 				$signature = '';
@@ -637,7 +637,7 @@ class fORMColumn
 		foreach (self::$random_columns[$class] as $column => $settings) {
 			
 			// Check to see if this is a unique column
-			$unique_keys      = fORMSchema::getInstance()->getKeys($table, 'unique');
+			$unique_keys      = fORMSchema::retrieve()->getKeys($table, 'unique');
 			$is_unique_column = FALSE;
 			foreach ($unique_keys as $unique_key) {
 				if ($unique_key == array($column)) {
@@ -646,9 +646,9 @@ class fORMColumn
 						$value = fCryptography::randomString($settings['length'], $settings['type']);
 						
 						// See if this is unique
-						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::getInstance()->escape('string', $value);
+						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::retrieve()->escape('string', $value);
 					
-					} while (fORMDatabase::getInstance()->query($sql)->getReturnedRows());
+					} while (fORMDatabase::retrieve()->query($sql)->getReturnedRows());
 				}
 			}
 			

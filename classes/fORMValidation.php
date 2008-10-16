@@ -205,7 +205,7 @@ class fORMValidation
 		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
 			return fGrammar::compose(
@@ -296,7 +296,7 @@ class fORMValidation
 	static private function checkDataType($class, $column, $value)
 	{
 		$table       = fORM::tablize($class);
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		
 		if ($value !== NULL) {
 			switch ($column_info['type']) {
@@ -365,7 +365,7 @@ class fORMValidation
 		}
 		
 		$table        = fORM::tablize($class);
-		$foreign_keys = fORMSchema::getInstance()->getKeys($table, 'foreign');
+		$foreign_keys = fORMSchema::retrieve()->getKeys($table, 'foreign');
 		
 		foreach ($foreign_keys AS $foreign_key) {
 			if ($foreign_key['column'] == $column) {
@@ -376,7 +376,7 @@ class fORMValidation
 					$sql .= $column . fORMDatabase::escapeBySchema($table, $column, $values[$column], '=');
 					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
-					$result = fORMDatabase::getInstance()->translatedQuery($sql);
+					$result = fORMDatabase::retrieve()->translatedQuery($sql);
 					$result->tossIfNoResults();
 				} catch (fNoResultsException $e) {
 					return fGrammar::compose(
@@ -470,7 +470,7 @@ class fORMValidation
 			return;
 		}
 		
-		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
 		$columns      = array();
 		foreach ($primary_keys as $primary_key) {
 			$columns[] = fORM::getColumnName($class, $primary_key);
@@ -480,7 +480,7 @@ class fORMValidation
 			$sql    = "SELECT " . $table . ".* FROM " . $table . " WHERE ";
 			$sql   .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
 			
-			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
 			return fGrammar::compose(
@@ -529,7 +529,7 @@ class fORMValidation
 		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
-		$key_info = fORMSchema::getInstance()->getKeys($table);
+		$key_info = fORMSchema::retrieve()->getKeys($table);
 		
 		$primary_keys = $key_info['primary'];
 		$unique_keys  = $key_info['unique'];
@@ -568,7 +568,7 @@ class fORMValidation
 				}
 				
 				try {
-					$result = fORMDatabase::getInstance()->translatedQuery($sql);
+					$result = fORMDatabase::retrieve()->translatedQuery($sql);
 					$result->tossIfNoResults();
 				
 					// If an exception was not throw, we have existing values
@@ -735,7 +735,7 @@ class fORMValidation
 		$message = self::checkPrimaryKeys($object, $values, $old_values);
 		if ($message) { $validation_messages[] = $message; }
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table);
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			$message = self::checkAgainstSchema($object, $column, $values, $old_values);
 			if ($message) { $validation_messages[] = $message; }

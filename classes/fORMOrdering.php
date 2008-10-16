@@ -46,8 +46,8 @@ class fORMOrdering
 	{
 		$class       = fORM::getClass($class);
 		$table       = fORM::tablize($class);
-		$data_type   = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
-		$unique_keys = fORMSchema::getInstance()->getKeys($table, 'unique');
+		$data_type   = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$unique_keys = fORMSchema::retrieve()->getKeys($table, 'unique');
 		
 		if ($data_type != 'integer') {
 			fCore::toss(
@@ -185,7 +185,7 @@ class fORMOrdering
 			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 		}
 		
-		$current_max_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		$current_max_value = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		
 		$shift_down = $current_max_value + 10;
 		$shift_up   = $current_max_value + 9;
@@ -197,7 +197,7 @@ class fORMOrdering
 			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 		}
 		
-		fORMDatabase::getInstance()->translatedQuery($sql);
+		fORMDatabase::retrieve()->translatedQuery($sql);
 		
 		// Close the gap for all records after this one in the set
 		$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' + ' . $shift_up . ' ';
@@ -206,7 +206,7 @@ class fORMOrdering
 			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 		}
 		
-		fORMDatabase::getInstance()->translatedQuery($sql);
+		fORMDatabase::retrieve()->translatedQuery($sql);
 	}
 	
 	
@@ -230,7 +230,7 @@ class fORMOrdering
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$info       = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		$info       = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		$column        = self::$ordering_columns[$class]['column'];
@@ -241,7 +241,7 @@ class fORMOrdering
 		if ($other_columns) {
 			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 		}
-		$max_index = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		$max_index = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		
 		// If this is a new record, or in a new set, we need one more space in the ordering index
 		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
@@ -363,7 +363,7 @@ class fORMOrdering
 			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 		}
 		
-		$current_max_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		$current_max_value = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		$new_max_value     = $current_max_value;
 		
 		if ($new_set = self::isInNewSet($column, $other_columns, $values, $old_values)) {
@@ -404,7 +404,7 @@ class fORMOrdering
 		if ($object->exists()) {
 			$sql  = "SELECT " . $column . " FROM " . $table . " WHERE ";
 			$sql .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
-			$db_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+			$db_value = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		}
 		
 		
@@ -435,7 +435,7 @@ class fORMOrdering
 			if ($other_columns) {
 				$sql .= " AND " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 			}
-			fORMDatabase::getInstance()->translatedQuery($sql);
+			fORMDatabase::retrieve()->translatedQuery($sql);
 			
 			if ($object->exists()) {
 				// Put the actual record we are changing in limbo to be updated when the actual update happens
@@ -444,7 +444,7 @@ class fORMOrdering
 				if ($other_columns) {
 					$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 				}
-				fORMDatabase::getInstance()->translatedQuery($sql);
+				fORMDatabase::retrieve()->translatedQuery($sql);
 			}
 			
 			// Anything below zero needs to be moved back up into its new position
@@ -453,7 +453,7 @@ class fORMOrdering
 			if ($other_columns) {
 				$sql .= " AND " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 			}
-			fORMDatabase::getInstance()->translatedQuery($sql);
+			fORMDatabase::retrieve()->translatedQuery($sql);
 		}
 		
 		
@@ -462,7 +462,7 @@ class fORMOrdering
 			$sql  = "SELECT max(" . $column . ") FROM " . $table . " WHERE ";
 			$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 			
-			$old_set_max = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+			$old_set_max = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 			
 			// We only need to close the gap if the record was not at the end
 			if ($db_value < $old_set_max) {
@@ -473,12 +473,12 @@ class fORMOrdering
 				$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' - ' . $shift_down . " WHERE ";
 				$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 				$sql .= " AND " . $column . " > " . $db_value;
-				fORMDatabase::getInstance()->translatedQuery($sql);
+				fORMDatabase::retrieve()->translatedQuery($sql);
 				
 				$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' + ' . $shift_up . " WHERE ";
 				$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 				$sql .= " AND " . $column . " < 0";
-				fORMDatabase::getInstance()->translatedQuery($sql);
+				fORMDatabase::retrieve()->translatedQuery($sql);
 			}
 		}
 	}
@@ -525,7 +525,7 @@ class fORMOrdering
 			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 		}
 		
-		$current_max_value = (integer) fORMDatabase::getInstance()->translatedQuery($sql)->fetchScalar();
+		$current_max_value = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		$new_max_value     = $current_max_value;
 		
 		if ($new_set = self::isInNewSet($column, $other_columns, $values, $old_values)) {

@@ -56,7 +56,7 @@ class fORMMoney
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('float');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -72,7 +72,7 @@ class fORMMoney
 		}
 		
 		if ($currency_column !== NULL) {
-			$currency_column_data_type = fORMSchema::getInstance()->getColumnInfo($table, $currency_column, 'type');
+			$currency_column_data_type = fORMSchema::retrieve()->getColumnInfo($table, $currency_column, 'type');
 			$valid_currency_column_data_types = array('varchar', 'char', 'text');
 			if (!in_array($currency_column_data_type, $valid_currency_column_data_types)) {
 				fCore::toss(
@@ -207,7 +207,7 @@ class fORMMoney
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
-		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		unset($info['valid_values']);

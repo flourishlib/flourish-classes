@@ -341,7 +341,7 @@ class fORM
 		if (class_exists($class, FALSE)) {
 			return;
 		}
-		$tables = fORMSchema::getInstance()->getTables();
+		$tables = fORMSchema::retrieve()->getTables();
 		$table = self::tablize($class);
 		if (in_array($table, $tables)) {
 			eval('class ' . $class . ' extends fActiveRecord { };');
@@ -469,7 +469,7 @@ class fORM
 		$table = self::tablize($class);
 		
 		// Turn date/time values into objects
-		$column_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$column_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		if ($value !== NULL && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			try {

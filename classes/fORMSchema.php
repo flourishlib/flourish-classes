@@ -17,12 +17,12 @@ class fORMSchema
 	// The following constants allow for nice looking callbacks to static methods
 	const attach                       = 'fORMSchema::attach';
 	const enableSmartCaching           = 'fORMSchema::enableSmartCaching';
-	const getInstance                  = 'fORMSchema::getInstance';
 	const getRoute                     = 'fORMSchema::getRoute';
 	const getRouteName                 = 'fORMSchema::getRouteName';
 	const getRouteNameFromRelationship = 'fORMSchema::getRouteNameFromRelationship';
 	const getRoutes                    = 'fORMSchema::getRoutes';
 	const reset                        = 'fORMSchema::reset';
+	const retrieve                     = 'fORMSchema::retrieve';
 	
 	
 	/**
@@ -53,28 +53,14 @@ class fORMSchema
 	 */
 	static public function enableSmartCaching($cache_file)
 	{
-		if (!self::getInstance() instanceof fSchema) {
+		if (!self::retrieve() instanceof fSchema) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose('Smart caching is only available (and most likely only applicable) if you are using the fSchema object')
 			);
 		}
-		self::getInstance()->setCacheFile($cache_file);
-		fCore::registerTossCallback('fUnexpectedException', array(self::getInstance(), 'flushInfo'));
-	}
-	
-	
-	/**
-	 * Return the instance of the {@link fSchema} class
-	 * 
-	 * @return fSchema  The schema instance
-	 */
-	static public function getInstance()
-	{
-		if (!self::$schema_object) {
-			self::$schema_object = new fSchema(fORMDatabase::getInstance());
-		}
-		return self::$schema_object;
+		self::retrieve()->setCacheFile($cache_file);
+		fCore::registerTossCallback('fUnexpectedException', array(self::retrieve(), 'flushInfo'));
 	}
 	
 	
@@ -275,7 +261,7 @@ class fORMSchema
 			);
 		}
 		
-		$all_relationships = self::getInstance()->getRelationships($table);
+		$all_relationships = self::retrieve()->getRelationships($table);
 		
 		$routes = array();
 		
@@ -316,6 +302,20 @@ class fORMSchema
 	static public function reset()
 	{
 		self::$schema_object = NULL;
+	}
+	
+	
+	/**
+	 * Return the instance of the {@link fSchema} class
+	 * 
+	 * @return fSchema  The schema instance
+	 */
+	static public function retrieve()
+	{
+		if (!self::$schema_object) {
+			self::$schema_object = new fSchema(fORMDatabase::retrieve());
+		}
+		return self::$schema_object;
 	}
 	
 	

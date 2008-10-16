@@ -23,9 +23,9 @@ class fORMDatabase
 	const createPrimaryKeyWhereClause = 'fORMDatabase::createPrimaryKeyWhereClause';
 	const createWhereClause           = 'fORMDatabase::createWhereClause';
 	const escapeBySchema              = 'fORMDatabase::escapeBySchema';
-	const getInstance                 = 'fORMDatabase::getInstance';
 	const insertFromAndGroupByClauses = 'fORMDatabase::insertFromAndGroupByClauses';
 	const reset                       = 'fORMDatabase::reset';
+	const retrieve                    = 'fORMDatabase::retrieve';
 	
 	
 	/**
@@ -284,7 +284,7 @@ class fORMDatabase
 			}
 			
 			if (preg_match('#^(?:\w+(?:\{\w+\})?=>)?(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $matches)) {
-				$column_type = fORMSchema::getInstance()->getColumnInfo($matches[1], $matches[2], 'type');
+				$column_type = fORMSchema::retrieve()->getColumnInfo($matches[1], $matches[2], 'type');
 				if (in_array($column_type, array('varchar', 'char', 'text'))) {
 					$sql[] = 'LOWER(' . $column . ') ' . $direction;
 				} else {
@@ -323,7 +323,7 @@ class fORMDatabase
 	 */
 	static public function createPrimaryKeyWhereClause($table, $table_alias, &$values, &$old_values)
 	{
-		$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
 		
 		$sql = '';
 		foreach ($primary_keys as $primary_key) {
@@ -408,7 +408,7 @@ class fORMDatabase
 					foreach ($values as $value) {
 						$sub_condition = array();
 						foreach ($columns as $column) {
-							$sub_condition[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
+							$sub_condition[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
 						}
 						$condition[] = '(' . join(' OR ', $sub_condition) . ')';
 					}
@@ -474,7 +474,7 @@ class fORMDatabase
 						case '~':
 							$condition = array();
 							foreach ($values as $value) {
-								$condition[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
+								$condition[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
 							}
 							$sql[] = '(' . join(' OR ', $condition) . ')';
 							break;
@@ -511,7 +511,7 @@ class fORMDatabase
 							break;
 							
 						case '~':
-							$sql[] = $column . self::getInstance()->escape(' LIKE %s', '%' . $value . '%');
+							$sql[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
 							break;
 							
 						default:
@@ -572,7 +572,7 @@ class fORMDatabase
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
 		
-		$column_info = fORMSchema::getInstance()->getColumnInfo($table, $column);
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
 			$value = $column_info['default'];
 		}
@@ -580,7 +580,7 @@ class fORMDatabase
 		if (is_null($value)) {
 			$prepared_value = 'NULL';
 		} else {
-			$prepared_value = self::getInstance()->escape($column_info['type'], $value);
+			$prepared_value = self::retrieve()->escape($column_info['type'], $value);
 		}
 		
 		if ($prepared_value == 'NULL') {
@@ -594,27 +594,6 @@ class fORMDatabase
 		}
 		
 		return $co . $prepared_value;
-	}
-	
-	
-	/**
-	 * Return the instance of the {@link fDatabase} class
-	 * 
-	 * @return fDatabase  The database instance
-	 */
-	static public function getInstance()
-	{
-		if (!self::$database_object) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method %1$s needs to be called before %2$s',
-					'attach()',
-					'getInstance()'
-				)
-			);
-		}
-		return self::$database_object;
 	}
 	
 	
@@ -738,7 +717,7 @@ class fORMDatabase
 		// If we are joining on a *-to-many relationship we need to group by the
 		// columns in the main table to prevent duplicate entries
 		if ($joined_to_many) {
-			$column_info     = fORMSchema::getInstance()->getColumnInfo($table);
+			$column_info     = fORMSchema::retrieve()->getColumnInfo($table);
 			$group_by_clause = ' GROUP BY ';
 			$columns         = array();
 			foreach ($column_info as $column => $info) {
@@ -795,6 +774,27 @@ class fORMDatabase
 	static public function reset()
 	{
 		self::$database_object = NULL;
+	}
+	
+	
+	/**
+	 * Return the instance of the {@link fDatabase} class
+	 * 
+	 * @return fDatabase  The database instance
+	 */
+	static public function retrieve()
+	{
+		if (!self::$database_object) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The method %1$s needs to be called before %2$s',
+					'attach()',
+					'getInstance()'
+				)
+			);
+		}
+		return self::$database_object;
 	}
 	
 	

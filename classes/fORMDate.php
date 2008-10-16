@@ -69,7 +69,7 @@ class fORMDate
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -117,7 +117,7 @@ class fORMDate
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::getInstance()->getColumnInfo($table, $column, 'type');
+		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -166,7 +166,7 @@ class fORMDate
 	{
 		$class               = fORM::getClass($class);
 		$table               = fORM::tablize($class);
-		$timestamp_data_type = fORMSchema::getInstance()->getColumnInfo($table, $timestamp_column, 'type');
+		$timestamp_data_type = fORMSchema::retrieve()->getColumnInfo($table, $timestamp_column, 'type');
 		
 		if ($timestamp_data_type != 'timestamp') {
 			fCore::toss(
@@ -180,7 +180,7 @@ class fORMDate
 			);
 		}
 		
-		$timezone_column_data_type = fORMSchema::getInstance()->getColumnInfo($table, $timezone_column, 'type');
+		$timezone_column_data_type = fORMSchema::retrieve()->getColumnInfo($table, $timezone_column, 'type');
 		$valid_timezone_column_data_types = array('varchar', 'char', 'text');
 		if (!in_array($timezone_column_data_type, $valid_timezone_column_data_types)) {
 			fCore::toss(
@@ -257,7 +257,7 @@ class fORMDate
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class   = get_class($object);
-		$info    = fORMSchema::getInstance()->getColumnInfo(fORM::tablize($class), $column);
+		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {

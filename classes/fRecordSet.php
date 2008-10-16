@@ -99,7 +99,7 @@ class fRecordSet implements Iterator
 		
 		// If no ordering is specified, order by the primary key
 		} else {
-			$primary_keys = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
 			$expressions = array();
 			foreach ($primary_keys as $primary_key) {
 				$expressions[] = $table . '.' . $primary_key . ' ASC';
@@ -112,7 +112,7 @@ class fRecordSet implements Iterator
 		// Add the limit clause and create a query to get the non-limited total
 		$non_limited_count_sql = NULL;
 		if ($limit !== NULL) {
-			$primary_key_fields = fORMSchema::getInstance()->getKeys($table, 'primary');
+			$primary_key_fields = fORMSchema::retrieve()->getKeys($table, 'primary');
 			$primary_key_fields = fORMDatabase::addTableToValues($table, $primary_key_fields);
 			
 			$non_limited_count_sql = str_replace('SELECT ' . $table . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
@@ -136,7 +136,7 @@ class fRecordSet implements Iterator
 			}
 		}
 		
-		return new fRecordSet($class, fORMDatabase::getInstance()->translatedQuery($sql), $non_limited_count_sql);
+		return new fRecordSet($class, fORMDatabase::retrieve()->translatedQuery($sql), $non_limited_count_sql);
 	}
 	
 	
@@ -170,7 +170,7 @@ class fRecordSet implements Iterator
 	{
 		return new fRecordSet(
 			$class,
-			fORMDatabase::getInstance()->translatedQuery($sql),
+			fORMDatabase::retrieve()->translatedQuery($sql),
 			$non_limited_count_sql
 		);
 	}
@@ -377,7 +377,7 @@ class fRecordSet implements Iterator
 		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
-		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$pk_columns      = fORMSchema::retrieve()->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
 		$sql = '';
@@ -416,7 +416,7 @@ class fRecordSet implements Iterator
 		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
-		$pk_columns = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 		
 		$sql = '';
 		
@@ -463,7 +463,7 @@ class fRecordSet implements Iterator
 		
 		if ($this->non_limited_count === NULL) {
 			try {
-				$this->non_limited_count = fORMDatabase::getInstance()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
+				$this->non_limited_count = fORMDatabase::retrieve()->translatedQuery($this->non_limited_count_sql)->fetchScalar();
 			} catch (fExpectedException $e) {
 				$this->non_limited_count = $this->count();
 			}
@@ -596,7 +596,7 @@ class fRecordSet implements Iterator
 	public function getPrimaryKeys()
 	{
 		$table           = fORM::tablize($this->class);
-		$pk_columns      = fORMSchema::getInstance()->getKeys($table, 'primary');
+		$pk_columns      = fORMSchema::retrieve()->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
 		$primary_keys = array();
@@ -774,7 +774,7 @@ class fRecordSet implements Iterator
 		 
 		 
 		// Run the query and inject the results into the records
-		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
+		$result = fORMDatabase::retrieve()->translatedQuery($new_sql);
 		 
 		$total_records = sizeof($this->records);
 		for ($i=0; $i < $total_records; $i++) {
@@ -836,7 +836,7 @@ class fRecordSet implements Iterator
 			 
 			
 			// Set up the result object for the new record set
-			$injected_result = new fResult(fORMDatabase::getInstance()->getType(), 'array');
+			$injected_result = new fResult(fORMDatabase::retrieve()->getType(), 'array');
 			$injected_result->setSQL($sql);
 			$injected_result->setResult($rows);
 			$injected_result->setReturnedRows(sizeof($rows));
@@ -879,7 +879,7 @@ class fRecordSet implements Iterator
 		$where_sql    = $this->constructWhereClause($route);
 		$order_by_sql = $this->constructOrderByClause($route);
 		
-		$related_table_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$related_table_keys = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 		$related_table_keys = fORMDatabase::addTableToValues($related_table, $related_table_keys);
 		$related_table_keys = join(', ', $related_table_keys);
 		
@@ -894,7 +894,7 @@ class fRecordSet implements Iterator
 		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql);
 		 
 		// Run the query and inject the results into the records
-		$result = fORMDatabase::getInstance()->translatedQuery($new_sql);
+		$result = fORMDatabase::retrieve()->translatedQuery($new_sql);
 		
 		$counts = array();
 		foreach ($result as $row) {

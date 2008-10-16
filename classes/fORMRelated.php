@@ -156,7 +156,7 @@ class fORMRelated
 			$column = $table . '.' . $relationship['column'];
 			$value  = fORMDatabase::escapeBySchema($table, $relationship['column'], $values[$relationship['column']], '=');
 			
-			$primary_keys = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+			$primary_keys = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 			$primary_keys = fORMDatabase::addTableToValues($related_table, $primary_keys);
 			$primary_keys = join(', ', $primary_keys);
 			
@@ -168,7 +168,7 @@ class fORMRelated
 			
 			$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
 			
-			$result = fORMDatabase::getInstance()->translatedQuery($sql);
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			
 			$count = ($result->getReturnedRows()) ? (int) $result->fetchScalar() : 0;
 		}
@@ -220,7 +220,7 @@ class fORMRelated
 		
 		$route_name    	 = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
 		
-		$primary_keys    = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$primary_keys    = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 		$first_pk_column = $primary_keys[0];
 		
 		$filter_table            = $related_table;
@@ -401,7 +401,7 @@ class fORMRelated
 	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
 	{
 		$related_table   = fORM::tablize($related_class);
-		$pk_columns      = fORMSchema::getInstance()->getKeys($related_table, 'primary');
+		$pk_columns      = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 		
 		// If there is a multi-fiend primary key we want to populate based on any field BUT the foreign key to the current class
 		if (sizeof($pk_columns) > 1) {
@@ -478,10 +478,10 @@ class fORMRelated
 	{
 		$table = fORM::tablize($class);
 		
-		$one_to_one_relationships   = fORMSchema::getInstance()->getRelationships($table, 'one-to-one');
-		$one_to_many_relationships  = fORMSchema::getInstance()->getRelationships($table, 'one-to-many');
-		$many_to_one_relationships  = fORMSchema::getInstance()->getRelationships($table, 'many-to-one');
-		$many_to_many_relationships = fORMSchema::getInstance()->getRelationships($table, 'many-to-many');
+		$one_to_one_relationships   = fORMSchema::retrieve()->getRelationships($table, 'one-to-one');
+		$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
+		$many_to_one_relationships  = fORMSchema::retrieve()->getRelationships($table, 'many-to-one');
+		$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
 		
 		$to_one_relationships  = array_merge($one_to_one_relationships, $many_to_one_relationships);
 		$to_many_relationships = array_merge($one_to_many_relationships, $many_to_many_relationships);
@@ -689,7 +689,7 @@ class fORMRelated
 		$delete_sql  = 'DELETE FROM ' . $join_table;
 		$delete_sql .= ' WHERE ' . $join_column . ' = ' . $join_column_value;
 		
-		fORMDatabase::getInstance()->translatedQuery($delete_sql);
+		fORMDatabase::retrieve()->translatedQuery($delete_sql);
 		
 		// Then we add back the ones in the record set
 		$join_related_column     = $relationship['join_related_column'];
@@ -701,7 +701,7 @@ class fORMRelated
 			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
 			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
 			
-			fORMDatabase::getInstance()->translatedQuery($insert_sql);
+			fORMDatabase::retrieve()->translatedQuery($insert_sql);
 		}
 	}
 	
