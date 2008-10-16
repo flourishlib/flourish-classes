@@ -307,6 +307,13 @@ class fUpload
 			);
 		}
 		
+		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE) {
+			$max_size = (fRequest::get('MAX_FILE_SIZE')) ? fRequest::get('MAX_FILE_SIZE') : ini_get('upload_max_filesize');
+			fCore::toss(
+				'fValidationException',
+				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize($max_size))
+			);
+		}
 		if ($this->max_file_size && $file_array['size'] > $this->max_file_size) {
 			fCore::toss(
 				'fValidationException',
