@@ -26,7 +26,6 @@ class fUTF8
 	const chr      = 'fUTF8::chr';
 	const clean    = 'fUTF8::clean';
 	const cmp      = 'fUTF8::cmp';
-	const detect   = 'fUTF8::detect';
 	const explode  = 'fUTF8::explode';
 	const icmp     = 'fUTF8::icmp';
 	const inatcmp  = 'fUTF8::inatcmp';
@@ -736,7 +735,7 @@ class fUTF8
 	 * @param  string $string  The string to check
 	 * @return boolean  If the string contains any non-ASCII characters
 	 */
-	static public function detect($string)
+	static private function detect($string)
 	{
 		return (boolean) preg_match('#[^\x00-\x7F]#', $string);
 	}
