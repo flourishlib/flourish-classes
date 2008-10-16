@@ -323,7 +323,7 @@ class fORMRelated
 		$record_set = fRecordSet::build(
 			$related_class,
 			array(
-				str_replace('::', '.', $field_with_route) . '=' => fRequest::get($field, 'array', array())
+				$relationship['related_column'] . '=' => fRequest::get($field, 'array', array())
 			)
 		);
 		
