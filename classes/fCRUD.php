@@ -146,9 +146,10 @@ class fCRUD
 	/**
 	 * Gets the current value of a search field
 	 * 
-	 * If a value === '' and no cast to is specified, the value will become NULL.
+	 * If a value is an empty string and no cast to is specified, the value will
+	 * become `NULL`.
 	 * 
-	 * If a query string of '?reset' is passed, all previous search values will
+	 * If a query string of `?reset` is passed, all previous search values will
 	 * be erased.
 	 * 
 	 * @param  string $column   The column that is being pulled back
@@ -179,7 +180,7 @@ class fCRUD
 	 * Gets the current column to sort by, defaults to first one specified
 	 * 
 	 * @param  string $possible_column  The columns that can be sorted by, defaults to first
-	 * @param  string ...               Any number of columns
+	 * @param  ...
 	 * @return string  The column to sort by
 	 */
 	static public function getSortColumn($possible_column)
