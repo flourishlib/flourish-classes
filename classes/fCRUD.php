@@ -1,9 +1,6 @@
 <?php
 /**
- * Provides functionality for CRUD pages
- * 
- * CRUD stands for Create, Read, Update and Delete - the basic functionality of
- * almost all web applications.
+ * Provides miscellaneous functionality for {@link http://en.wikipedia.org/wiki/Create,_read,_update_and_delete CRUD-like} pages
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -71,8 +68,12 @@ class fCRUD
 	/**
 	 * Return the string 'sorted' if $column is the column that is currently being sorted by, otherwise returns ''
 	 * 
+	 * This method will only be useful if used with the other sort methods 
+	 * {@link printSortColumn()}, {@link getSortColumn()} and
+	 * {@link getSortDirection()}. 
+	 * 
 	 * @param  string $column  The column to check
-	 * @return void
+	 * @return string  The CSS class for the column, either '' or 'sorted'
 	 */
 	static public function getColumnClass($column)
 	{
@@ -121,7 +122,7 @@ class fCRUD
 	 * Returns a CSS class name for a row
 	 * 
 	 * Will return 'even', 'odd', or 'highlighted' if the two parameters are
-	 * equal and not null. The first returned class will be concatenated with
+	 * equal and not NULL. The first returned class will be concatenated with
 	 * ' first'.
 	 * 
 	 * @param  mixed $row_value       The value from the row
@@ -132,10 +133,11 @@ class fCRUD
 	{
 		if ($row_value !== NULL && $row_value == $affected_value) {
 			 self::$row_number++;
-			 return 'highlighted';
+			 $class = 'highlighted';
+		} else {
+			$class = (self::$row_number++ % 2) ? 'odd' : 'even';
 		}
-			
-		$class = (self::$row_number++ % 2) ? 'odd' : 'even';
+		
 		$class .= (self::$row_number == 2) ? ' first' : '';
 		return $class;
 	}
@@ -152,7 +154,7 @@ class fCRUD
 	 * @param  string $column   The column that is being pulled back
 	 * @param  string $cast_to  The data type to cast to
 	 * @param  string $default  The default value
-	 * @return string  The current value
+	 * @return mixed  The current value
 	 */
 	static public function getSearchValue($column, $cast_to=NULL, $default=NULL)
 	{
@@ -174,9 +176,10 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current column to sort by, defaults to first
+	 * Gets the current column to sort by, defaults to first one specified
 	 * 
-	 * @param  string $possible_column,...  The columns that can be sorted by, defaults to first
+	 * @param  string $possible_column  The columns that can be sorted by, defaults to first
+	 * @param  string ...               Any number of columns
 	 * @return string  The column to sort by
 	 */
 	static public function getSortColumn($possible_column)
@@ -205,10 +208,10 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current sort direction
+	 * Gets the current sort direction, either 'asc' or 'desc'
 	 * 
 	 * @param  string $default_direction  The default direction, 'asc' or 'desc'
-	 * @return string  The direction, 'asc', or 'desc'
+	 * @return string  The direction: 'asc' or 'desc'
 	 */
 	static public function getSortDirection($default_direction)
 	{
@@ -253,7 +256,20 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a sortable column header
+	 * Prints a sortable column header a tag
+	 * 
+	 * The a tag will include the CSS class 'sortable_column' and the direction
+	 * being sorted, 'asc' or 'desc'.
+	 * 
+	 * <pre>
+	 * fCRUD::printSortableColumn('name', 'Name');
+	 * 
+	 * // If name is the current sort column in the asc direction, the output would be
+	 * <a href="?sort=name&dir=desc" class="sorted_column asc">Name</a>
+	 * 
+	 * // If name is not the current sort column, the output would be
+	 * <a href="?sort-name&dir=asc" class="sorted_column">Name</a>
+	 * </pre>
 	 * 
 	 * @param  string $column       The column to create the sortable header for
 	 * @param  string $column_name  This will override the humanized version of the column

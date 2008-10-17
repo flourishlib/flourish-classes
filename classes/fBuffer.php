@@ -1,6 +1,6 @@
 <?php
 /**
- * Controls and supplements output buffering
+ * Provides a single, simplified interface for {@link http://php.net/outcontrol output buffering} to prevent nested buffering issues and provide a more logical API
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -105,7 +105,7 @@ class fBuffer
 	
 	
 	/**
-	 * Erases the output buffer
+	 * Replaces a value in the output buffer
 	 * 
 	 * @param  string $find     The string to find
 	 * @param  string $replace  The string to replace
@@ -186,9 +186,7 @@ class fBuffer
 	
 	
 	/**
-	 * Starts capturing output
-	 * 
-	 * Output can be retrieved by calling {@link stopCapture()}.
+	 * Starts capturing output, should be used with {@link stopCapture()} to grab output from code that does not offer an option of returning a value instead of outputting it
 	 * 
 	 * @return void
 	 */
@@ -244,7 +242,7 @@ class fBuffer
 	
 	
 	/**
-	 * Stops capturing output, returning what was captured.
+	 * Stops capturing output, returning what was captured
 	 * 
 	 * @return string  The captured output
 	 */

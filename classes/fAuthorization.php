@@ -1,6 +1,6 @@
 <?php
 /**
- * Simplifies user permission checking
+ * Allows defining and checking user authentication via ACLs, authorization levels or a simple logged in/not logged in scheme
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -60,7 +60,10 @@ class fAuthorization
 	
 	
 	/**
-	 * Adds a named IP address or range, or array of addresses and/or ranges. This allows {@link checkIP()} to be called with a name instead of the actual IPs.
+	 * Adds a named IP address or range, or array of addresses and/or ranges
+	 * 
+	 * This method allows {@link checkIP()} to be called with a name instead
+	 * of the actual IPs.
 	 * 
 	 * @param  string $name       The name to give the IP address(es)/range(s)
 	 * @param  mixed  $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. Please see the {@link checkIP()} method description for details on the allowable formats.
@@ -133,7 +136,7 @@ class fAuthorization
 	
 	
 	/**
-	 * Checks to see if the user is from the IP or IP range specified
+	 * Checks to see if the user is from the IPs or IP ranges specified
 	 * 
 	 * The $ip_ranges parameter can be either a single string, or an array of
 	 * strings, each of which should be in one of the following formats:
@@ -147,8 +150,8 @@ class fAuthorization
 	 *     - 192.168.1.0/255.255.255.0
 	 *     - 208.77.188.160/255.255.255.240
 	 * 
-	 * @param  mixed $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. See method description for details.
-	 * @return boolean  If the user is coming from (one of) the IP(s) or range(s) specified
+	 * @param  mixed $ip_ranges  This can be string (or array of strings) of the IPs or IP ranges to restrict to. See method description for details.
+	 * @return boolean  If the user is coming from (one of) the IPs or ranges specified
 	 */
 	static public function checkIP($ip_ranges)
 	{
@@ -404,7 +407,7 @@ class fAuthorization
 	 * 
 	 * <pre>
 	 * array (
-	 *     (string) {resource name}  => array((mixed) {permission},...),...
+	 *     (string) {resource name} => array((mixed) {permission}, ... ), ...
 	 * )
 	 * </pre>
 	 * 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides cookie related methods including compatibility with older PHP versions and default parameters
+ * Provides a consistent cookie API, HTTPOnly compatibility with older PHP versions and default parameters
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -62,7 +62,7 @@ class fCookie
 	
 	
 	/**
-	 * Gets a cookie value from $_COOKIE, while allowing a default to be provided
+	 * Gets a cookie value from $_COOKIE, while allowing a default value to be provided
 	 * 
 	 * @param  string $name           The name of the cookie to retrieve
 	 * @param  mixed  $default_value  If there is no cookie with the name provided, return this value instead
@@ -99,7 +99,14 @@ class fCookie
 	
 	
 	/**
-	 * Sets a cookie to be sent back to the browser - uses default parameters set by various fCookie::set{Parameter}() methods
+	 * Sets a cookie to be sent back to the browser - uses default parameters set by the other set methods of this class
+	 * 
+	 * The following methods allow for setting default parameters for this method:
+	 *   - {@link setDefaultExpires()}:  Sets the default for the $expires parameter
+	 *   - {@link setDefaultPath()}:     Sets the default for the $path parameter
+	 *   - {@link setDefaultDomain()}:   Sets the default for the $domain parameter
+	 *   - {@link setDefaultSecure()}:   Sets the default for the $secure parameter
+	 *   - {@link setDefaultHTTPOnly()}: Sets the default for the $httponly parameter
 	 * 
 	 * @param  string         $name      The name of the cookie to set
 	 * @param  mixed          $value     The value of the cookie to set
@@ -168,6 +175,9 @@ class fCookie
 	/**
 	 * Sets the default domain to use for cookies
 	 * 
+	 * This value will be used when the $domain parameter of the {@link set()}
+	 * method is not specified or is set to NULL.
+	 * 
 	 * @param  string $domain  The default domain to use for cookies
 	 * @return void
 	 */
@@ -179,6 +189,9 @@ class fCookie
 	
 	/**
 	 * Sets the default expiration date to use for cookies
+	 * 
+	 * This value will be used when the $expires parameter of the {@link set()}
+	 * method is not specified or is set to NULL.
 	 * 
 	 * @param  string|integer $expires  The default expiration date to use for cookies
 	 * @return void
@@ -192,6 +205,9 @@ class fCookie
 	/**
 	 * Sets the default httponly flag to use for cookies
 	 * 
+	 * This value will be used when the $httponly parameter of the {@link set()}
+	 * method is not specified or is set to NULL.
+	 * 
 	 * @param  boolean $httponly  The default httponly flag to use for cookies
 	 * @return void
 	 */
@@ -203,6 +219,9 @@ class fCookie
 	
 	/**
 	 * Sets the default path to use for cookies
+	 * 
+	 * This value will be used when the $path parameter of the {@link set()}
+	 * method is not specified or is set to NULL.
 	 * 
 	 * @param  string $path  The default path to use for cookies
 	 * @return void

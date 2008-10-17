@@ -1202,6 +1202,8 @@ class fDatabase
 	/**
 	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
 	 * 
+	 * @internal
+	 * 
 	 * @return string  The php extension used for database interaction
 	 */
 	public function getExtension()

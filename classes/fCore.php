@@ -107,7 +107,7 @@ class fCore
 	
 	
 	/**
-	 * Creates a nicely formatted backtrace
+	 * Creates a nicely formatted backtrace to the the point where this method is called
 	 * 
 	 * @param  integer $remove_lines  The number of trailing lines to remove from the backtrace
 	 * @return string  The formatted backtrace
@@ -255,10 +255,10 @@ class fCore
 	
 	
 	/**
-	 * Checks an error/exception destination
+	 * Checks an error/exception destination to make sure it is valid
 	 * 
-	 * @param  string $destination  The destination for the exception. An email or file.
-	 * @return string|boolean  'email', 'file' or FALSE
+	 * @param  string $destination  The destination for the exception. An email, file or the string 'html'.
+	 * @return string|boolean  'email', 'file', 'html' or FALSE
 	 */
 	static private function checkDestination($destination)
 	{
@@ -288,7 +288,7 @@ class fCore
 	 * Prints a debugging message if global or code-specific debugging is enabled
 	 * 
 	 * @param  string  $message  The debug message
-	 * @param  boolean $force    If debugging should be forced even when global debug is off
+	 * @param  boolean $force    If debugging should be forced even when global debugging is off
 	 * @return void
 	 */
 	static public function debug($message, $force)
@@ -300,9 +300,17 @@ class fCore
 	
 	
 	/**
-	 * Returns a string representation of any variable
+	 * Creates a string representation of any variable using predefined strings for booleans, null and empty strings
 	 * 
-	 * @param  mixed $data  The variable to dump
+	 * The string output format of this method is very similar to the output of
+	 * {@link http://php.net/print_r print_r()} except that the following values
+	 * are represented as special strings:
+	 *   - TRUE: {true}
+	 *   - FALSE: {false}
+	 *   - NULL: {null}
+	 *   - '': {empty_string}
+	 * 
+	 * @param  mixed $data  The value to dump
 	 * @return string  The string representation of the value
 	 */
 	static public function dump($data)
@@ -365,7 +373,7 @@ class fCore
 	
 	
 	/**
-	 * Sets if debug messages should be shown globally (for every object)
+	 * Enables debug messages globally, i.e. they will be shown for any call to {@link debug()}
 	 * 
 	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
@@ -379,7 +387,10 @@ class fCore
 	/**
 	 * Turns on a feature where undefined constants are automatically created with the string value equivalent to the name
 	 * 
-	 * This functionality only works if {@link enableErrorHandling()} has been called
+	 * This functionality only works if {@link enableErrorHandling()} has been
+	 * called first. This functionality may have a very slight performance
+	 * impact since a E_STRICT error message must be captured and then a
+	 * call to {@link http://php.net/define define()} is made.
 	 * 
 	 * @return void
 	 */
@@ -399,12 +410,28 @@ class fCore
 	
 	
 	/**
-	 * Turns on special error handling
+	 * Turns on developer-friendly error handling that includes context information including a backtrace and superglobal dumps
 	 * 
 	 * All errors that match the current error_reporting() level will be
-	 * redirected to the destination.
+	 * redirected to the destination and will include a full backtrace. In
+	 * addition, dumps of the following superglobals will be made to aid in
+	 * debugging:
+	 *   - $_SERVER
+	 *   - $_POST
+	 *   - $_GET
+	 *   - $_SESSION
+	 *   - $_FILES
+	 *   - $_COOKIE
 	 * 
-	 * @param  string $destination  The destination for the errors. An email or file.
+	 * The superglobal dumps are only done once per page, however a backtrace
+	 * in included for each error.
+	 * 
+	 * If an email address is specified for the destination, only one email
+	 * will be sent per script execution. If both error and
+	 * {@link enableExceptionHandling() exception handling} are set to the same
+	 * email address, the email will contain both errors and exceptions.
+	 * 
+	 * @param  string $destination  The destination for the errors and context information - an email address, a file path or the string 'html'
 	 * @return void
 	 */
 	static public function enableErrorHandling($destination)
@@ -419,12 +446,31 @@ class fCore
 	
 	
 	/**
-	 * Turns on special exception handling
+	 * Turns on developer-friendly uncaught exception handling that includes context information including a backtrace and superglobal dumps
 	 * 
 	 * Any uncaught exception will be redirected to the destination specified,
-	 * and the page will execute the $closing_code callback before exiting.
+	 * and the page will execute the $closing_code callback before exiting. The
+	 * destination will receive a message with the exception messaage, a full
+	 * backtrace and dumps of the following superglobals to aid in debugging:
+	 *   - $_SERVER
+	 *   - $_POST
+	 *   - $_GET
+	 *   - $_SESSION
+	 *   - $_FILES
+	 *   - $_COOKIE
 	 * 
-	 * @param  string   $destination   The destination for the exception. An email or file.
+	 * The superglobal dumps are only done once per page, however a backtrace
+	 * in included for each error.
+	 * 
+	 * If an email address is specified for the destination, only one email
+	 * will be sent per script execution.
+	 * 
+	 * If an email address is specified for the destination, only one email
+	 * will be sent per script execution. If both exception and
+	 * {@link enableErrorHandling() error handling} are set to the same
+	 * email address, the email will contain both exceptions and errors.
+	 * 
+	 * @param  string   $destination   The destination for the exception and context information - an email address, a file path or the string 'html'
 	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
 	 * @param  array    $parameters    The parameters to send to $closing_code
 	 * @return void
@@ -443,9 +489,9 @@ class fCore
 	
 	
 	/**
-	 * Prints the contents of a variable
+	 * Prints the {@link dump()} of a value in a pre tag with the class "exposed"
 	 * 
-	 * @param  mixed $data  The data to show
+	 * @param  mixed $data  The value to show
 	 * @return void
 	 */
 	static public function expose($data)
@@ -463,10 +509,11 @@ class fCore
 	{
 		return fGrammar::compose('Context') . "\n-------" .
 			"\n\n\$_SERVER\n"  . self::dump($_SERVER) .
-			"\n\n\$_GET\n" . self::dump($_GET) .
 			"\n\n\$_POST\n" . self::dump($_POST) .
+			"\n\n\$_GET\n" . self::dump($_GET) .
 			"\n\n\$_FILES\n"   . self::dump($_FILES) .
-			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL);
+			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL) .
+			"\n\n\$_COOKIE\n" . self::dump($_COOKIE);
 	}
 	
 	
@@ -523,7 +570,7 @@ class fCore
 	
 	
 	/**
-	 * Handles an error
+	 * Handles an error, creating the necessary context information and sending it to the specified destination
 	 * 
 	 * @internal
 	 * 
@@ -563,7 +610,7 @@ class fCore
 	
 	
 	/**
-	 * Handles an uncaught exception
+	 * Handles an uncaught exception, creating the necessary context information, sending it to the specified destination and finally executing the closing callback
 	 * 
 	 * @internal
 	 * 
@@ -604,13 +651,13 @@ class fCore
 	
 	
 	/**
-	 * Adds a callback for when certain types of exceptions are tossed
+	 * Adds a callback for when certain types of exceptions are {@link toss() tossed} 
 	 * 
 	 * The callback will be called when any exception of the class, or any
 	 * child class, specified is tossed. A single parameter will be passed
 	 * to the callback, which will be the exception object.
 	 * 
-	 * @param  string   $exception_type  The type of exception to call the callback on
+	 * @param  string   $exception_type  The type of exception to call the callback for
 	 * @param  callback $callback        The callback
 	 * @return void
 	 */
@@ -650,7 +697,10 @@ class fCore
 	
 	
 	/**
-	 * A function to send an email or write a file with messages generated during the page execution
+	 * Sends an email or writes a file with messages generated during the page execution
+	 * 
+	 * This method prevents multiple emails from being sent or a log file from
+	 * being written multiple times for one script execution.
 	 * 
 	 * @internal
 	 * 
@@ -698,6 +748,10 @@ class fCore
 	/**
 	 * Handles sending a message to a destination
 	 * 
+	 * If the destination is an email address or file, the messages will be
+	 * spooled up until the end of the script execution to prevent multiple
+	 * emails from being sent or a log file being written to multiple times.
+	 * 
 	 * @param  string $type     If the message is an error or an exception
 	 * @param  string $message  The message to send to the destination
 	 * @return void
@@ -731,7 +785,7 @@ class fCore
 	
 	
 	/**
-	 * Returns TRUE for non-empty strings, numbers and objects and for empty numbers and string-like numbers (such as 0, 0.0, '0')
+	 * Returns TRUE for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as 0, 0.0, '0')
 	 * 
 	 * @param  mixed $value  The value to check
 	 * @return boolean  If the value is string-like
@@ -755,7 +809,10 @@ class fCore
 	
 	
 	/**
-	 * Throws the exception class specified (if the class exists), otherwise throws a normal exception
+	 * Throws an exception of the class specified
+	 * 
+	 * Using this method over the throw keyword allows for callbacks to be
+	 * executed for certain types of exceptions.
 	 * 
 	 * @param  string $exception_class  The class of exception to throw
 	 * @param  string $message          The exception message
@@ -782,7 +839,7 @@ class fCore
 	 * method as the triggering code. To get a full backtrace, use
 	 * {@link enableErrorHandling()}.
 	 * 
-	 * @param  string $error_type  The type of error to trigger ('error', 'warning' or 'notice')
+	 * @param  string $error_type  The type of error to trigger: 'error', 'warning', 'notice'
 	 * @param  string $message     The error message
 	 * @return void
 	 */

@@ -1,6 +1,11 @@
 <?php
 /**
- * An active record pattern base class
+ * An {@link http://en.wikipedia.org/wiki/Active_record_pattern active record pattern} base class
+ * 
+ * This class uses {@link fORMSchema} to inspect your database and provides an
+ * OO interface to a single database table. The class dynamically handles
+ * method calls for getting, setting and other operations on columns. It also
+ * dynamically handles retrieving and storing related records.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -22,7 +27,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Sets a value, preserving the old value to future reference
+	 * Sets a value to the $values array, preserving the old value in $old_values
 	 *
 	 * @internal
 	 * 
@@ -79,14 +84,14 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Retrieves an old value for a column 
+	 * Retrieves the oldest value for a column or all old values
 	 *
 	 * @internal
 	 * 
 	 * @param  array   &$old_values  The old values
 	 * @param  string  $column       The column to get
 	 * @param  mixed   $default      The default value to return if no value exists
-	 * @param  boolean $return_all   Return the array of all old values for this column
+	 * @param  boolean $return_all   Return the array of all old values for this column instead of just the oldest
 	 * @return mixed  The old value for the column
 	 */
 	static public function retrieve(&$old_values, $column, $default=NULL, $return_all=FALSE)
@@ -104,7 +109,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * A data store for caching data related to a record
+	 * A data store for caching data related to a record, the structure of this is completely up to the developer using it
 	 * 
 	 * @var array
 	 */
@@ -113,12 +118,23 @@ abstract class fActiveRecord
 	/**
 	 * The old values for this record
 	 * 
+	 * Column names are the keys, but a column key will only be present if a
+	 * value has changed. The value associated with each key is an array of
+	 * old values with the first entry being the oldest value. The static 
+	 * methods {@link assign()}, {@link changed()}, {@link has()} and
+	 * {@link retrieve()} are the best way to interact with this array.
+	 * 
 	 * @var array
 	 */
 	protected $old_values = array();
 	
 	/**
-	 * Related that are related to the current record via some relationship
+	 * Records that are related to the current record via some relationship
+	 * 
+	 * This array is used to cache related records so that a database query
+	 * is not required each time related records are accessed. The
+	 * {@link fORMRelated} class handles most of the interaction with this
+	 * array.
 	 * 
 	 * @var array
 	 */
@@ -127,13 +143,27 @@ abstract class fActiveRecord
 	/**
 	 * The values for this record
 	 * 
+	 * This array always contains every column in the database table as a key
+	 * with the value being the current value. 
+	 * 
 	 * @var array
 	 */
 	protected $values = array();
 	
 	
 	/**
-	 * Dynamically creates get{Column}(), set{Column}(), prepare{Column}(), encode{Column}() and inspect{Column}() methods for columns of this record
+	 * Handles all method calls for columns, related records and hook callbacks
+	 * 
+	 * Dynamically handles get, set, prepare, encode and inspect methods for
+	 * each column in this record. Method names are in the form verbColumName().
+	 * 
+	 * This method also handles associate, build, count and link verbs for
+	 * records in many-to-many relationships; build, count and populate verbs
+	 * for all related records in one-to-many relationships and the create verb
+	 * for all related records in *-to-one relationships.
+	 * 
+	 * replace:: hook callbacks registered through
+	 * {@link fORM::registerHookCallback()} will be delegated via this method.
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -281,7 +311,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Creates a record
+	 * Creates a new record or loads one from the database - if a primary key is provided the record will be loaded
 	 * 
 	 * @throws fNotFoundException
 	 * 
@@ -439,7 +469,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Delete a record from the database - does not destroy the object
+	 * Deletes a record from the database, but does not destroy the object
 	 * 
 	 * This method qill start a database transaction if one is not already active.
 	 * 
@@ -645,12 +675,12 @@ abstract class fActiveRecord
 	 * Below are the transformations performed:
 	 *   - float: takes 1 parameter to specify the number of decimal places
 	 *   - date, time, timestamp: format() will be called on the {@link fDate}/{@link fTime}/{@link fTimestamp} object with the 1 parameter specified
-	 *   - objects: if a __toString() method exists, the output of that will be run throught {@link fHTML::encode()}
+	 *   - objects: the object will be converted to a string by __toString() or a string cast and then will be run through {@link fHTML::encode()}
 	 *   - all other data types: the value will be run through {@link fHTML::encode()}
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  The formatting string
-	 * @return mixed  The encoded value for the column specified
+	 * @return string  The encoded value for the column specified
 	 */
 	protected function encode($column, $formatting=NULL)
 	{
@@ -922,7 +952,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Tries to load the object (via references to class vars) from the fORM identity map
+	 * Tries to load the object (via references to class vars) from the {@link fORM} identity map
 	 * 
 	 * @param  fResult|array $source  The data source for the primary key values
 	 * @return boolean  If the load was successful
@@ -965,7 +995,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Sets the values from this record via values from $_GET, $_POST and $_FILES
+	 * Sets the values for this record by getting values from the request through the {@link fRequest} class
 	 * 
 	 * @return void
 	 */
@@ -1018,11 +1048,11 @@ abstract class fActiveRecord
 	 *   - integer: will add thousands/millions/etc. separators
 	 *   - float: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
 	 *   - date, time, timestamp: format() will be called on the {@link fDate}/{@link fTime}/{@link fTimestamp} object with the 1 parameter specified
-	 *   - objects: if a __toString() method exists, the output of that will be run throught {@link fHTML::prepare()}
+	 *   - objects: objects: the object will be converted to a string by __toString() or a string cast and then will be run through {@link fHTML::prepare()}
 	 * 
 	 * @param  string $column      The name of the column to retrieve
-	 * @param  string $formatting  If php date() formatting string for date values
-	 * @return mixed  The formatted value for the column specified
+	 * @param  mixed  $formatting  The formatting parameter, if applicable
+	 * @return string  The formatted value for the column specified
 	 */
 	protected function prepare($column, $formatting=NULL)
 	{
@@ -1125,7 +1155,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Returns an array of method information for the class
+	 * Generates a preormatted block of text containing the method signatures for all methods (including dynamic ones)
 	 * 
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
 	 * @return string  A preformatted block of text with the method signatures and optionally the doc comment
@@ -1398,8 +1428,10 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Stores a record in the database. Will start database and filesystem
-	 * transactions if not already inside them.
+	 * Stores a record in the database, whether existing or new
+	 * 
+	 * This method will start database and filesystem transactions if they have
+	 * not already been started.
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -1570,7 +1602,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Validates the contents of the record
+	 * Validates the values of the record against the database and any additional validation rules
 	 * 
 	 * @throws fValidationException
 	 * 
