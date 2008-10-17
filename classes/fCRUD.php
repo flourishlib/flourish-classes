@@ -180,7 +180,7 @@ class fCRUD
 	 * Gets the current column to sort by, defaults to first one specified
 	 * 
 	 * @param  string $possible_column  The columns that can be sorted by, defaults to first
-	 * @param  ...
+	 * @param  string ...
 	 * @return string  The column to sort by
 	 */
 	static public function getSortColumn($possible_column)
