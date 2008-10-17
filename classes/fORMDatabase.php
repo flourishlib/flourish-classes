@@ -624,7 +624,18 @@ class fORMDatabase
 				'fProgrammerException',
 				fGrammar::compose(
 					"No %1\$s placeholder was found in:%2\$s",
-					'getInstance()',
+					':from_clause',
+					"\n" . $sql
+				)
+			);
+		}
+		
+		if (strpos($sql, ':group_by_clause') === FALSE) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					"No %1\$s placeholder was found in:%2\$s",
+					':group_by_clause',
 					"\n" . $sql
 				)
 			);
@@ -790,7 +801,7 @@ class fORMDatabase
 				fGrammar::compose(
 					'The method %1$s needs to be called before %2$s',
 					'attach()',
-					'getInstance()'
+					'retrieve()'
 				)
 			);
 		}

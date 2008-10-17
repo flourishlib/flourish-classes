@@ -501,7 +501,7 @@ class fEmail
 		// If we have attachments, we need to wrap a multipart/mixed around the current body
 		if ($this->attachments) {
 			
-			$multipart_body .= $mime_notice . "\r\n";
+			$multipart_body  = $mime_notice . "\r\n";
 			$multipart_body .= '--' . $boundary . "\r\n";
 			$multipart_body .= $body . "\r\n";
 			$multipart_body .= '--' . $boundary . "\r\n";
@@ -510,7 +510,7 @@ class fEmail
 				$multipart_body .= 'Content-Type: ' . $file_info['mime-type'] . "\r\n";
 				$multipart_body .= "Content-Transfer-Encoding: base64\r\n";
 				$multipart_body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
-				$multipart_body .= $this->makeBase64($file_info['content']) . "\r\n\r\n";
+				$multipart_body .= $this->makeBase64($file_info['contents']) . "\r\n\r\n";
 				$multipart_body .= '--' . $boundary . "\r\n";
 			}
 			
@@ -1213,7 +1213,7 @@ class fEmail
 					fCore::dump($filename)
 				);
 			}
-			if (!fCore::stringlike($file_info['content'])) {
+			if (!fCore::stringlike($file_info['contents'])) {
 				$validation_messages[] = fGrammar::compose(
 					"The attachment %s appears to be a blank file",
 					fCore::dump($filename)
