@@ -30,7 +30,7 @@ class fXML
 	 */
 	static public function encode($content)
 	{
-		return htmlspecialchars(fHTML::decode($content));
+		return htmlspecialchars(html_entity_decode($content, ENT_COMPAT, 'UTF-8'));
 	}
 	
 	
