@@ -673,10 +673,11 @@ abstract class fActiveRecord
 	 * Retrieves a value from the record and prepares it for output into an HTML form element.
 	 * 
 	 * Below are the transformations performed:
-	 *   - float: takes 1 parameter to specify the number of decimal places
-	 *   - date, time, timestamp: format() will be called on the {@link fDate}/{@link fTime}/{@link fTimestamp} object with the 1 parameter specified
-	 *   - objects: the object will be converted to a string by __toString() or a string cast and then will be run through {@link fHTML::encode()}
-	 *   - all other data types: the value will be run through {@link fHTML::encode()}
+	 *  
+	 *  - **float**: takes 1 parameter to specify the number of decimal places
+	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
+	 *  - **objects**: the object will be converted to a string by `__toString()` or a string cast and then will be run through fHTML::encode()
+	 *  - **all other data types**: the value will be run through fHTML::encode()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  The formatting string
@@ -952,7 +953,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Tries to load the object (via references to class vars) from the {@link fORM} identity map
+	 * Tries to load the object (via references to class vars) from the fORM identity map
 	 * 
 	 * @param  fResult|array $source  The data source for the primary key values
 	 * @return boolean  If the load was successful
@@ -995,7 +996,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Sets the values for this record by getting values from the request through the {@link fRequest} class
+	 * Sets the values for this record by getting values from the request through the fRequest class
 	 * 
 	 * @return void
 	 */

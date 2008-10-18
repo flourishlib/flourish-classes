@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides miscellaneous functionality for {@link http://en.wikipedia.org/wiki/Create,_read,_update_and_delete CRUD-like} pages
+ * Provides miscellaneous functionality for [http://en.wikipedia.org/wiki/Create,_read,_update_and_delete CRUD-like] pages
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -66,14 +66,13 @@ class fCRUD
 	
 	
 	/**
-	 * Return the string 'sorted' if $column is the column that is currently being sorted by, otherwise returns ''
+	 * Return the string `'sorted'` if `$column` is the column that is currently being sorted by, otherwise returns `''`
 	 * 
 	 * This method will only be useful if used with the other sort methods 
-	 * {@link printSortColumn()}, {@link getSortColumn()} and
-	 * {@link getSortDirection()}. 
+	 * ::printSortableColumn(), ::getSortColumn() and ::getSortDirection(). 
 	 * 
 	 * @param  string $column  The column to check
-	 * @return string  The CSS class for the column, either '' or 'sorted'
+	 * @return string  The CSS class for the column, either `''` or `'sorted'`
 	 */
 	static public function getColumnClass($column)
 	{
@@ -121,9 +120,9 @@ class fCRUD
 	/**
 	 * Returns a CSS class name for a row
 	 * 
-	 * Will return 'even', 'odd', or 'highlighted' if the two parameters are
-	 * equal and not NULL. The first returned class will be concatenated with
-	 * ' first'.
+	 * Will return `'even'`, `'odd'`, or `'highlighted'` if the two parameters
+	 * are equal and not `NULL`. The first call to this method will return
+	 * the appropriate class concatenated with `' first'`.
 	 * 
 	 * @param  mixed $row_value       The value from the row
 	 * @param  mixed $affected_value  The value that was just added or updated
@@ -209,10 +208,10 @@ class fCRUD
 	
 	
 	/**
-	 * Gets the current sort direction, either 'asc' or 'desc'
+	 * Gets the current sort direction
 	 * 
-	 * @param  string $default_direction  The default direction, 'asc' or 'desc'
-	 * @return string  The direction: 'asc' or 'desc'
+	 * @param  string $default_direction  The default direction, `'asc'` or `'desc'`
+	 * @return string  The direction, `'asc'` or `'desc'`
 	 */
 	static public function getSortDirection($default_direction)
 	{
@@ -259,18 +258,24 @@ class fCRUD
 	/**
 	 * Prints a sortable column header a tag
 	 * 
-	 * The a tag will include the CSS class 'sortable_column' and the direction
-	 * being sorted, 'asc' or 'desc'.
+	 * The a tag will include the CSS class `'sortable_column'` and the
+	 * direction being sorted, `'asc'` or `'desc'`.
 	 * 
-	 * <pre>
+	 * {{{
+	 * #!php
 	 * fCRUD::printSortableColumn('name', 'Name');
+	 * }}}
 	 * 
-	 * // If name is the current sort column in the asc direction, the output would be
+	 * would create the following HTML based on the page context
+	 * 
+	 * {{{
+	 * #!html
+	 * <!-- If name is the current sort column in the asc direction, the output would be -->
 	 * <a href="?sort=name&dir=desc" class="sorted_column asc">Name</a>
 	 * 
-	 * // If name is not the current sort column, the output would be
+	 * <!-- If name is not the current sort column, the output would be -->
 	 * <a href="?sort-name&dir=asc" class="sorted_column">Name</a>
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $column       The column to create the sortable header for
 	 * @param  string $column_name  This will override the humanized version of the column
@@ -462,7 +467,7 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a checked="checked" HTML input attribute if $value == $checked_value, or if $value is in $checked_value
+	 * Prints a `checked="checked"` HTML input attribute if `$value` equals `$checked_value`, or if `$value` is in `$checked_value`
 	 * 
 	 * @param  string       $value          The value for the current HTML input tag
 	 * @param  string|array $checked_value  The value (or array of values) that has been checked
@@ -484,6 +489,11 @@ class fCRUD
 	}
 	
 	
+	/**
+	 * Indicates if a reset was requested for search values
+	 * 
+	 * @return boolean  If a reset was requested
+	 */
 	static private function wasResetRequested()
 	{
 		$tail = substr(fURL::getWithQueryString(), -6);
