@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides cryptography functionality, including hashing, symmetric key encryption and public key encryption
+ * Provides cryptography functionality, including hashing, symmetric-key encryption and public-key encryption
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -28,7 +28,7 @@ class fCryptography
 	
 	
 	/**
-	 * Checks a password against a hash
+	 * Checks a password against a hash created with ::hashPassword()
 	 * 
 	 * @param  string $password  The password to check
 	 * @param  string $hash      The hash to check against
@@ -170,7 +170,7 @@ class fCryptography
 		
 	
 	/**
-	 * Decrypts ciphertext encrypted using public-key encryption via {@link publicKeyEncrypt()}
+	 * Decrypts ciphertext encrypted using public-key encryption via ::publicKeyEncrypt()
 	 * 
 	 * A public key (X.509 certificate) is required for encryption and a
 	 * private key (PEM) is required for decryption.
@@ -242,7 +242,7 @@ class fCryptography
 	 * 
 	 * @param  string $plaintext        The content to be encrypted
 	 * @param  string $public_key_file  The path to an X.509 public key certificate
-	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link publicKeyDecrypt()}
+	 * @return string  A base-64 encoded result containing a Flourish fingerprint and suitable for decryption using ::publicKeyDecrypt()
 	 */
 	static public function publicKeyEncrypt($plaintext, $public_key_file)
 	{
@@ -281,7 +281,7 @@ class fCryptography
 	 * @param  string $plaintext         The content to be signed
 	 * @param  string $private_key_file  The path to a PEM-encoded private key
 	 * @param  string $password          The password for the private key
-	 * @return string  The base64-encoded signature
+	 * @return string  The base64-encoded signature suitable for verification using ::publicKeyVerify()
 	 */
 	static public function publicKeySign($plaintext, $private_key_file, $password)
 	{
@@ -306,7 +306,7 @@ class fCryptography
 	
 	
 	/**
-	 * Checks a signature for plaintext to verify the creator
+	 * Checks a signature for plaintext to verify the creator - works with ::publicKeySign()
 	 * 
 	 * A private key (PEM) is required for signing and a public key
 	 * (X.509 certificate) is required for verification.
@@ -339,7 +339,7 @@ class fCryptography
 	
 	
 	/**
-	 * Generates a random number using mt_rand() - make sure {@link seedRandom()} has been called
+	 * Generates a random number using [http://php.net/mt_rand mt_rand()] after ensuring a good PRNG seed
 	 * 
 	 * @param  integer $min  The minimum number to return
 	 * @param  integer $max  The maximum number to return
@@ -359,7 +359,7 @@ class fCryptography
 	 * Returns a random string of the type and length specified
 	 * 
 	 * @param  integer $length  The length of string to return
-	 * @param  string  $type    The type of string to return, can be 'alphanumeric', 'alpha', 'numeric', or 'hexadecimal'
+	 * @param  string  $type    The type of string to return: `'alphanumeric'`, `'alpha'`, `'numeric'`, or `'hexadecimal'`
 	 * @return string  A random string of the type and length specified
 	 */
 	static public function randomString($length, $type='alphanumeric')
@@ -453,7 +453,7 @@ class fCryptography
 	
 	
 	/**
-	 * Decrypts ciphertext encrypted using symmetric-key encryption via {@link symmetricKeyEncrypt()}
+	 * Decrypts ciphertext encrypted using symmetric-key encryption via ::symmetricKeyEncrypt()
 	 * 
 	 * Since this is symmetric-key cryptography, the same key is used for
 	 * encryption and decryption.
@@ -525,7 +525,7 @@ class fCryptography
 	 *  
 	 * @param  string $plaintext   The content to be encrypted
 	 * @param  string $secret_key  The secret key to use for encryption
-	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using {@link symmetricKeyDecrypt()}
+	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using ::symmetricKeyDecrypt()
 	 */
 	static public function symmetricKeyEncrypt($plaintext, $secret_key)
 	{

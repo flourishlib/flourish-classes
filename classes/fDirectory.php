@@ -78,7 +78,7 @@ class fDirectory
 	
 	
 	/**
-	 * Makes sure a directory has a / or \ at the end
+	 * Makes sure a directory has a `/` or `\` at the end
 	 * 
 	 * @param  string $directory  The directory to check
 	 * @return string  The directory name in canonical form
@@ -109,6 +109,10 @@ class fDirectory
 	
 	/**
 	 * Creates an object to represent a directory on the filesystem
+	 * 
+	 * If multiple fDirectory objects are created for a single directory,
+	 * they will reflect changes in each other including rename and delete
+	 * actions.
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -172,9 +176,9 @@ class fDirectory
 	
 	
 	/**
-	 * When used in a string context, represents the file as the filename
+	 * Returns the full filesystem path for the directory
 	 * 
-	 * @return string  The filename of the file
+	 * @return string  The full filesystem path
 	 */
 	public function __toString()
 	{
@@ -183,7 +187,7 @@ class fDirectory
 	
 	
 	/**
-	 * Will delete a directory and all files and folders inside of it
+	 * Will delete a directory and all files and directories inside of it
 	 * 
 	 * This operation will not be performed until the filesystem transaction
 	 * has been committed, if a transaction is in progress. Any non-Flourish
@@ -221,11 +225,12 @@ class fDirectory
 	/**
 	 * Gets the disk usage of the directory and all files and folders contained within
 	 * 
-	 * May be incorrect if files over 2GB exist.
+	 * This method may return incorrect results if files over 2GB exist and the
+	 * server uses a 32 bit operating system
 	 * 
 	 * @param  boolean $format          If the filesize should be formatted for human readability
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
-	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+	 * @return integer|string  If formatted, a string with filesize in b/kb/mb/gb/tb, otherwise an integer
 	 */
 	public function getFilesize($format=FALSE, $decimal_places=1)
 	{
@@ -249,7 +254,7 @@ class fDirectory
 	/**
 	 * Gets the parent directory
 	 * 
-	 * @return fDirectory  The object representing the parent dir
+	 * @return fDirectory  The object representing the parent directory
 	 */
 	public function getParent()
 	{
@@ -274,7 +279,7 @@ class fDirectory
 	 * Gets the directory's current path
 	 * 
 	 * If the web path is requested, uses translations set with
-	 * {@link fFilesystem::addWebPathTranslation()}
+	 * fFilesystem::addWebPathTranslation()
 	 * 
 	 * @param  boolean $translate_to_web_path  If the path should be the web path
 	 * @return string  The path for the directory
@@ -383,9 +388,9 @@ class fDirectory
 	
 	
 	/**
-	 * Performs a scandir on a directory, removing the . and .. folder references
+	 * Performs a [http://php.net/scandir scandir()] on a directory, removing the `.` and `..` entries
 	 * 
-	 * @return array  The fFile and fDirectory objects for the files/folders in this directory
+	 * @return array  The fFile (or fImage) and fDirectory objects for the files/directories in this directory
 	 */
 	public function scan()
 	{
@@ -410,9 +415,9 @@ class fDirectory
 	
 	
 	/**
-	 * Performs a recursive scandir on a directory, removing the . and .. folder references
+	 * Performs a **recursive** [http://php.net/scandir scandir()] on a directory, removing the `.` and `..` entries
 	 * 
-	 * @return array  The fFile and fDirectory objects for the files/folders (listed recursively) in this directory
+	 * @return array  The fFile and fDirectory objects for the files/directory (listed recursively) in this directory
 	 */
 	public function scanRecursive()
 	{

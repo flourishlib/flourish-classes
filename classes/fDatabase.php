@@ -3,32 +3,34 @@
  * Provides a common API for different databases - will automatically use any installed extension
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/docs/UTF-8} for more information.
+ * http://flourishlib.com/docs/UTF-8 for more information.
  * 
  * The following databases are supported:
- *   - {@link http://microsoft.com/sql/ MSSQL}
- *   - {@link http://mysql.com MySQL}
- *   - {@link http://postgresql.org PostgreSQL}
- *   - {@link http://sqlite.org SQLite}
+ * 
+ *  - [http://microsoft.com/sql/ MSSQL]
+ *  - [http://mysql.com MySQL]
+ *  - [http://postgresql.org PostgreSQL]
+ *  - [http://sqlite.org SQLite]
  * 
  * The class will automatically use the first of the following extensions it finds:
- *   - MSSQL (via ODBC)
- *     - {@link http://php.net/pdo_odbc pdo_odbc}
- *     - {@link http://php.net/odbc odbc}
- *   - MSSQL
- *     - {@link http://msdn.microsoft.com/en-us/library/cc296221.aspx sqlsrv}
- *     - {@link http://php.net/pdo_dblib pdo_dblib}
- *     - {@link http://php.net/mssql mssql} (or {@link http://php.net/sybase sybase})
- *   - MySQL
- *     - {@link http://php.net/mysql mysql}
- *     - {@link http://php.net/mysqli mysqli}
- *     - {@link http://php.net/pdo_mysql pdo_mysql}
- *   - PostgreSQL
- *     - {@link http://php.net/pgsql pgsql}
- *     - {@link http://php.net/pdo_pgsql pdo_pgsql}
- *   - SQLite
- *     - {@link http://php.net/pdo_sqlite pdo_sqlite} (for v3.x)
- *     - {@link http://php.net/sqlite sqlite} (for v2.x)
+ * 
+ *  - MSSQL (via ODBC)
+ *   - [http://php.net/pdo_odbc pdo_odbc]
+ *   - [http://php.net/odbc odbc]
+ *  - MSSQL
+ *   - [http://msdn.microsoft.com/en-us/library/cc296221.aspx sqlsrv]
+ *   - [http://php.net/pdo_dblib pdo_dblib]
+ *   - [http://php.net/mssql mssql] (or [http://php.net/sybase sybase])
+ *  - MySQL
+ *   - [http://php.net/mysql mysql]
+ *   - [http://php.net/mysqli mysqli]
+ *   - [http://php.net/pdo_mysql pdo_mysql]
+ *  - PostgreSQL
+ *   - [http://php.net/pgsql pgsql]
+ *   - [http://php.net/pdo_pgsql pdo_pgsql]
+ *  - SQLite
+ *   - [http://php.net/pdo_sqlite pdo_sqlite] (for v3.x)
+ *   - [http://php.net/sqlite sqlite] (for v2.x)
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -74,7 +76,15 @@ class fDatabase
 	 * The extension to use for the database specified
 	 * 
 	 * Options include:
-	 *   - mssql, mysql, mysqli, odbc, pgsql, sqlite, sqlsrv, pdo
+	 * 
+	 *  - `'mssql'`
+	 *  - `'mysql'`
+	 *  - `'mysqli'`
+	 *  - `'odbc'`
+	 *  - `'pgsql'`
+	 *  - `'sqlite'`
+	 *  - `'sqlsrv'`
+	 *  - `'pdo'`
 	 * 
 	 * @var string
 	 */
@@ -130,7 +140,7 @@ class fDatabase
 	private $translation;
 	
 	/**
-	 * The database type (postgresql, mysql, sqlite)
+	 * The database type: `'mssql'`, `'mysql'`, `'postgresql'`, or `'sqlite'`
 	 * 
 	 * @var string
 	 */
@@ -152,10 +162,10 @@ class fDatabase
 	
 	
 	/**
-	 * Establishes a connection to the database.
+	 * Configures the connection to a database - connection is not made until the first query is executed
 	 * 
-	 * @param  string  $type      The type of the database: 'mssql', 'mysql', 'postgresql', 'sqlite'
-	 * @param  string  $database  Name of the database. If an ODBC connection 'dsn:' concatenated with the DSN, if SQLite the path to the database file.
+	 * @param  string  $type      The type of the database: `'mssql'`, `'mysql'`, `'postgresql'`, `'sqlite'`
+	 * @param  string  $database  Name of the database. If an ODBC connection `'dsn:'` concatenated with the DSN, if SQLite the path to the database file.
 	 * @param  string  $username  Database username, required for all databases except SQLite
 	 * @param  string  $password  The password for the username specified
 	 * @param  string  $host      Database server host or ip, defaults to localhost for all databases except SQLite
@@ -606,9 +616,9 @@ class fDatabase
 	 * Sets a flag to trigger a PHP warning message whenever a query takes longer than the millisecond threshold specified
 	 * 
 	 * It is recommended to use the error handling features of
-	 * {@link fCore::enableErrorHandling()} to log or email these warnings.
+	 * fCore::enableErrorHandling() to log or email these warnings.
 	 * 
-	 * @param  integer $threshold  The limit of how long an SQL query can take before a warning is triggered
+	 * @param  integer $threshold  The limit (in milliseconds) of how long an SQL query can take before a warning is triggered
 	 * @return void
 	 */
 	public function enableSlowQueryWarnings($threshold)
@@ -621,28 +631,34 @@ class fDatabase
 	 * Escapes a value for insertion into SQL
 	 * 
 	 * The valid data types are:
-	 *   - blob
-	 *   - boolean
-	 *   - date
-	 *   - float
-	 *   - integer
-	 *   - string (also varchar, char or text)
-	 *   - time
-	 *   - timestamp
+	 * 
+	 *  - `'blob'`
+	 *  - `'boolean'`
+	 *  - `'date'`
+	 *  - `'float'`
+	 *  - `'integer'`
+	 *  - `'string'` (also varchar, char or text)
+	 *  - `'varchar'`
+	 *  - `'char'`
+	 *  - `'text'`
+	 *  - `'time'`
+	 *  - `'timestamp'`
 	 * 
 	 * In addition to being able to specify the data type, you can also pass
 	 * in an SQL statement with data type placeholders in the following form:
-	 *   - %l for a blob
-	 *   - %b for a boolean
-	 *   - %d for a date
-	 *   - %f for a float
-	 *   - %i for an integer
-	 *   - %s for a string
-	 *   - %t for a time
-	 *   - %p for a timestamp
+	 *   
+	 *  - `%l` for a blob
+	 *  - `%b` for a boolean
+	 *  - `%d` for a date
+	 *  - `%f` for a float
+	 *  - `%i` for an integer
+	 *  - `%s` for a string
+	 *  - `%t` for a time
+	 *  - `%p` for a timestamp
 	 * 
 	 * @param  string $sql_or_type  This can either be the data type to escape or an SQL string with a data type placeholder - see method description
-	 * @param  mixed  $value,...    The value to escape - you should pass a single value if a data type is specified or a value for each placeholder
+	 * @param  mixed  $value        The value to escape - you should pass a single value if a data type is specified or a value for each placeholder
+	 * @param  mixed  ...
 	 * @return string  The escaped value/SQL
 	 */
 	public function escape($sql_or_type)
@@ -797,7 +813,7 @@ class fDatabase
 	/**
 	 * Escapes a blob for use in SQL, includes surround quotes when appropriate
 	 * 
-	 * A NULL value will be returned as 'NULL'
+	 * A `NULL` value will be returned as `'NULL'`
 	 * 
 	 * @param  string $value  The blob to escape
 	 * @return string  The escaped blob
@@ -829,7 +845,7 @@ class fDatabase
 	/**
 	 * Escapes a boolean for use in SQL, includes surround quotes when appropriate
 	 * 
-	 * A NULL value will be returned as 'NULL'
+	 * A `NULL` value will be returned as `'NULL'`
 	 * 
 	 * @param  boolean $value  The boolean to escape
 	 * @return string  The database equivalent of the boolean passed
@@ -851,7 +867,7 @@ class fDatabase
 	/**
 	 * Escapes a date for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL or invalid value will be returned as 'NULL'
+	 * A `NULL` or invalid value will be returned as `'NULL'`
 	 * 
 	 * @param  string $value  The date to escape
 	 * @return string  The escaped date
@@ -871,7 +887,7 @@ class fDatabase
 	/**
 	 * Escapes a float for use in SQL
 	 * 
-	 * A NULL value will be returned as 'NULL'
+	 * A `NULL` value will be returned as `'NULL'`
 	 * 
 	 * @param  float $value  The float to escape
 	 * @return string  The escaped float
@@ -894,7 +910,7 @@ class fDatabase
 	/**
 	 * Escapes an integer for use in SQL
 	 * 
-	 * A NULL or invalid value will be returned as 'NULL'
+	 * A `NULL` or invalid value will be returned as `'NULL'`
 	 * 
 	 * @param  integer $value  The integer to escape
 	 * @return string  The escaped integer
@@ -917,7 +933,7 @@ class fDatabase
 	/**
 	 * Escapes a string for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL value will be returned as 'NULL'
+	 * A `NULL` value will be returned as `'NULL'`
 	 * 
 	 * @param  string $value  The string to escape
 	 * @return string  The escaped string
@@ -994,7 +1010,7 @@ class fDatabase
 	/**
 	 * Escapes a time for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL or invalid value will be returned as 'NULL'
+	 * A `NULL` or invalid value will be returned as `'NULL'`
 	 * 
 	 * @param  string $value  The time to escape
 	 * @return string  The escaped time
@@ -1014,7 +1030,7 @@ class fDatabase
 	/**
 	 * Escapes a timestamp for use in SQL, includes surrounding quotes
 	 * 
-	 * A NULL or invalid value will be returned as 'NULL'
+	 * A `NULL` or invalid value will be returned as `'NULL'`
 	 * 
 	 * @param  string $value  The timestamp to escape
 	 * @return string  The escaped timestamp
@@ -1200,7 +1216,7 @@ class fDatabase
 	
 	
 	/**
-	 * Gets the php extension being used (mssql, mysql, mysqli, pgsql, sqlite, or pdo)
+	 * Gets the php extension being used
 	 * 
 	 * @internal
 	 * 
@@ -1215,7 +1231,7 @@ class fDatabase
 	/**
 	 * Gets the database type
 	 * 
-	 * @return string  The database type (mssql, mysql, pgsql or sqlite)
+	 * @return string  The database type: `'mssql'`, `'mysql'`, `'postgresql'` or `'sqlite'`
 	 */
 	public function getType()
 	{
@@ -1358,7 +1374,7 @@ class fDatabase
 	 * 
 	 * @param  string $sql           The SQL to check for a transaction query
 	 * @param  string $result_class  The type of result object to create
-	 * @return mixed  If the connection is not via PDO will return FALSE, otherwise an object of the type $result_class
+	 * @return mixed  If the connection is not via PDO will return `FALSE`, otherwise an object of the type $result_class
 	 */
 	private function handleTransactionQueries($sql, $result_class)
 	{
@@ -1423,10 +1439,11 @@ class fDatabase
 	
 	
 	/**
-	 * Executes one or more sql queries
+	 * Executes one or more SQL queries
 	 * 
-	 * @param  string $sql        One or more SQL statements
-	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
+	 * @param  string $sql    One or more SQL statements
+	 * @param  mixed  $value  The optional value(s) to place into any placeholders in the SQL - see ::escape() for details
+	 * @param  mixed  ...
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function query($sql)
@@ -1502,7 +1519,7 @@ class fDatabase
 	 * Sets the number of rows affected by the query
 	 * 
 	 * @param  fResult $result    The result object for the query
-	 * @param  mixed   $resource  Only applicable for pdo, odbc and sqlsrv extentions, this is either the PDOStatement object or odbc or sqlsrv resource
+	 * @param  mixed   $resource  Only applicable for `pdo`, `odbc` and `sqlsrv` extentions, this is either the `PDOStatement` object or `odbc` or `sqlsrv` resource
 	 * @return void
 	 */
 	private function setAffectedRows(fResult $result, $resource=NULL)
@@ -1603,8 +1620,9 @@ class fDatabase
 	/**
 	 * Translates the SQL statement using fSQLTranslation and executes it
 	 * 
-	 * @param  string $sql        One or more SQL statements
-	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
+	 * @param  string $sql    One or more SQL statements
+	 * @param  mixed  $value  The optional value(s) to place into any placeholders in the SQL - see ::escape() for details
+	 * @param  mixed  ...
 	 * @return fResult|array  The fResult object(s) for the query
 	 */
 	public function translatedQuery($sql)
@@ -1633,8 +1651,9 @@ class fDatabase
 	 * one time. If another unbuffered query is executed, the old result will
 	 * be deleted.
 	 * 
-	 * @param  string $sql        A single SQL statement
-	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
+	 * @param  string $sql    A single SQL statement
+	 * @param  mixed  $value  The optional value(s) to place into any placeholders in the SQL - see ::escape() for details
+	 * @param  mixed  ...
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedQuery($sql)
@@ -1705,8 +1724,9 @@ class fDatabase
 	 * one unbuffered result can exist at one time. If another unbuffered query
 	 * is executed, the old result will be deleted.
 	 * 
-	 * @param  string $sql        A single SQL statement
-	 * @param  mixed  $value,...  The optional value(s) to place into any placeholders in the SQL - see {@link escape()} for details
+	 * @param  string $sql    A single SQL statement
+	 * @param  mixed  $value  The optional value(s) to place into any placeholders in the SQL - see ::escape() for details
+	 * @param  mixed  ...
 	 * @return fUnbufferedResult  The result object for the unbuffered query
 	 */
 	public function unbufferedTranslatedQuery($sql)
@@ -1731,14 +1751,15 @@ class fDatabase
 	 * Unescapes a value coming out of a database based on its data type
 	 * 
 	 * The valid data types are:
-	 *   - blob (or %l)
-	 *   - boolean (or %b)
-	 *   - date (or %d)
-	 *   - float (or %f)
-	 *   - integer (or %i)
-	 *   - string (also %s, varchar, char or text)
-	 *   - time (or %t)
-	 *   - timestamp (or %p)
+	 * 
+	 *  - `'blob'` (or `'%l'`)
+	 *  - `'boolean'` (or `'%b'`)
+	 *  - `'date'` (or `'%d'`)
+	 *  - `'float'` (or `'%f'`)
+	 *  - `'integer'` (or `'%i'`)
+	 *  - `'string'` (also `'%s, `'varchar'`, `'char'` or `'text'`)
+	 *  - `'time'` (or `'%t'`)
+	 *  - `'timestamp'` (or `'%p'`)
 	 * 
 	 * @param  string $data_type  The data type being unescaped - see method description for valid values
 	 * @param  mixed  $value      The value to unescape
@@ -1871,7 +1892,7 @@ class fDatabase
 	 * Unescapes a time coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The time in HH:MM:SS format
+	 * @return string  The time in `HH:MM:SS` format
 	 */
 	private function unescapeTime($value)
 	{
@@ -1883,7 +1904,7 @@ class fDatabase
 	 * Unescapes a timestamp coming out of the database
 	 * 
 	 * @param  string $value  The value to unescape
-	 * @return string  The timestamp in YYYY-MM-DD HH:MM:SS format
+	 * @return string  The timestamp in `YYYY-MM-DD HH:MM:SS` format
 	 */
 	private function unescapeTimestamp($value)
 	{

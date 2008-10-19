@@ -1,6 +1,6 @@
 <?php
 /**
- * Represents a date
+ * Represents a date as a value object
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -27,7 +27,7 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fDate|object|string|integer $date  The date to represent, NULL is interpreted as today
+	 * @param  fDate|object|string|integer $date  The date to represent, `NULL` is interpreted as today
 	 * @return fDate
 	 */
 	public function __construct($date=NULL)
@@ -72,9 +72,9 @@ class fDate
 	
 	
 	/**
-	 * Returns this date in 'Y-m-d' format
+	 * Returns this date in `Y-m-d` format
 	 * 
-	 * @return string  The 'Y-m-d' format of this date
+	 * @return string  The `Y-m-d` format of this date
 	 */
 	public function __toString()
 	{
@@ -83,7 +83,7 @@ class fDate
 	
 	
 	/**
-	 * Changes the date by the adjustment specified, only asjustments of a day or more will be made
+	 * Changes the date by the adjustment specified, only adjustments of a day or more will be made
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -123,7 +123,7 @@ class fDate
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::defineFormat()}
+	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from fTimestamp::defineFormat()
 	 * @return string  The formatted date
 	 */
 	public function format($format)
@@ -150,28 +150,33 @@ class fDate
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This date is {return value} the provided one" when a date it passed
-	 *  - "This date is {return value}" when no date is passed and comparing with today
+	 * 
+	 *  - "This date is `{return value}` the provided one" when a date it passed
+	 *  - "This date is `{return value}`" when no date is passed and comparing with today
 	 * 
 	 * Examples of output for a date passed might be:
-	 *  - 2 days after
-	 *  - 1 year before
-	 *  - same day
+	 * 
+	 *  - `'2 days after'`
+	 *  - `'1 year before'`
+	 *  - `'same day'`
 	 * 
 	 * Examples of output for no date passed might be:
-	 *  - 2 days from now
-	 *  - 1 year ago
-	 *  - today
+	 * 
+	 *  - `'2 days from now'`
+	 *  - `'1 year ago'`
+	 *  - `'today'`
 	 * 
 	 * You would never get the following output since it includes more than one unit of time measurement:
-	 *  - 3 weeks and 1 day
-	 *  - 1 year and 2 months
+	 * 
+	 *  - `'3 weeks and 1 day'`
+	 *  - `'1 year and 2 months'`
 	 * 
 	 * Values that are close to the next largest unit of measure will be rounded up:
-	 *  - 6 days would be represented as 1 week, however 5 days would not
-	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
-	 * @param  fDate|object|string|integer $other_date  The date to create the difference with, NULL is interpreted as today
+	 *  - `6 days` would be represented as `1 week`, however `5 days` would not
+	 *  - `29 days` would be represented as `1 month`, but `21 days` would be shown as `3 weeks`
+	 * 
+	 * @param  fDate|object|string|integer $other_date  The date to create the difference with, `NULL` is interpreted as today
 	 * @return string  The fuzzy difference in time between the this date and the one provided
 	 */
 	public function getFuzzyDifference($other_date=NULL)
@@ -240,8 +245,8 @@ class fDate
 	/**
 	 * Returns the difference between the two dates in seconds
 	 * 
-	 * @param  fDate|object|string|integer $other_date  The date to calculate the difference with, NULL is interpreted as today
-	 * @return integer  The difference between the two dates in seconds, positive if $other_date is before this date or negative if after
+	 * @param  fDate|object|string|integer $other_date  The date to calculate the difference with, `NULL` is interpreted as today
+	 * @return integer  The difference between the two dates in seconds, positive if `$other_date` is before this date or negative if after
 	 */
 	public function getSecondsDifference($other_date=NULL)
 	{
@@ -257,23 +262,9 @@ class fDate
 	 * based on this date. Below are some examples of formats to
 	 * modify the current date:
 	 * 
-	 * To change the date to the first of the month:
-	 * 
-	 * <pre>
-	 * Y-m-01
-	 * </pre>
-	 * 
-	 * To change the date to the last of the month:
-	 * 
-	 * <pre>
-	 * Y-m-t
-	 * </pre>
-	 * 
-	 * To change the date to the 5th week of the year:
-	 * 
-	 * <pre>
-	 * Y-\W5-N
-	 * </pre>
+	 *  - `'Y-m-01'` to change the date to the first of the month
+	 *  - `'Y-m-t'` to change the date to the last of the month
+	 *  - `'Y-\W5-N'` to change the date to the 5th week of the year
 	 * 
 	 * @param  string $format  The current date will be formatted with this string, and the output used to create a new object
 	 * @return fDate  The new date

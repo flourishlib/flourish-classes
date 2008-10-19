@@ -1,6 +1,6 @@
 <?php
 /**
- * An exception caused by an environment error
+ * An exception caused by an environment error such a file permissions
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>

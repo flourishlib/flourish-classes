@@ -1,8 +1,8 @@
 <?php
 /**
- * An {@link http://en.wikipedia.org/wiki/Active_record_pattern active record pattern} base class
+ * An [http://en.wikipedia.org/wiki/Active_record_pattern active record pattern] base class
  * 
- * This class uses {@link fORMSchema} to inspect your database and provides an
+ * This class uses fORMSchema to inspect your database and provides an
  * OO interface to a single database table. The class dynamically handles
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
@@ -27,7 +27,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Sets a value to the $values array, preserving the old value in $old_values
+	 * Sets a value to the `$values` array, preserving the old value in `$old_values`
 	 *
 	 * @internal
 	 * 
@@ -121,8 +121,8 @@ abstract class fActiveRecord
 	 * Column names are the keys, but a column key will only be present if a
 	 * value has changed. The value associated with each key is an array of
 	 * old values with the first entry being the oldest value. The static 
-	 * methods {@link assign()}, {@link changed()}, {@link has()} and
-	 * {@link retrieve()} are the best way to interact with this array.
+	 * methods ::assign(), ::changed(), ::has() and ::retrieve() are the best 
+	 * way to interact with this array.
 	 * 
 	 * @var array
 	 */
@@ -132,9 +132,8 @@ abstract class fActiveRecord
 	 * Records that are related to the current record via some relationship
 	 * 
 	 * This array is used to cache related records so that a database query
-	 * is not required each time related records are accessed. The
-	 * {@link fORMRelated} class handles most of the interaction with this
-	 * array.
+	 * is not required each time related records are accessed. The fORMRelated
+	 * class handles most of the interaction with this array.
 	 * 
 	 * @var array
 	 */
@@ -154,16 +153,17 @@ abstract class fActiveRecord
 	/**
 	 * Handles all method calls for columns, related records and hook callbacks
 	 * 
-	 * Dynamically handles get, set, prepare, encode and inspect methods for
-	 * each column in this record. Method names are in the form verbColumName().
+	 * Dynamically handles `get`, `set`, `prepare`, `encode` and `inspect`
+	 * methods for each column in this record. Method names are in the form
+	 * `verbColumName()`.
 	 * 
-	 * This method also handles associate, build, count and link verbs for
-	 * records in many-to-many relationships; build, count and populate verbs
-	 * for all related records in one-to-many relationships and the create verb
-	 * for all related records in *-to-one relationships.
+	 * This method also handles `associate`, `build`, `count` and `link` verbs
+	 * for records in many-to-many relationships; `build`, `count` and
+	 * `populate` verbs for all related records in one-to-many relationships
+	 * and the `create` verb for all related records in *-to-one relationships.
 	 * 
-	 * replace:: hook callbacks registered through
-	 * {@link fORM::registerHookCallback()} will be delegated via this method.
+	 * `replace::` hook callbacks registered through
+	 * fORM::registerHookCallback() will be delegated via this method.
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -315,7 +315,7 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fNotFoundException
 	 * 
-	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of (string) {field name} => (mixed) {value}.
+	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of `(string) {field name} => (mixed) {value}`.
 	 * @return fActiveRecord
 	 */
 	public function __construct($primary_key=NULL)
@@ -676,7 +676,7 @@ abstract class fActiveRecord
 	 *  
 	 *  - **float**: takes 1 parameter to specify the number of decimal places
 	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
-	 *  - **objects**: the object will be converted to a string by `__toString()` or a string cast and then will be run through fHTML::encode()
+	 *  - **objects**: the object will be converted to a string by `__toString()` or a `(string)` cast and then will be run through fHTML::encode()
 	 *  - **all other data types**: the value will be run through fHTML::encode()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
@@ -1044,12 +1044,13 @@ abstract class fActiveRecord
 	 * Retrieves a value from the record and prepares it for output into html.
 	 * 
 	 * Below are the transformations performed:
-	 *   - varchar, char, text columns: will run through {@link fHTML::prepare()}
-	 *   - boolean: will return 'Yes' or 'No'
-	 *   - integer: will add thousands/millions/etc. separators
-	 *   - float: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
-	 *   - date, time, timestamp: format() will be called on the {@link fDate}/{@link fTime}/{@link fTimestamp} object with the 1 parameter specified
-	 *   - objects: objects: the object will be converted to a string by __toString() or a string cast and then will be run through {@link fHTML::prepare()}
+	 * 
+	 *  - **varchar, char, text**: will run through fHTML::prepare()
+	 *  - **boolean**: will return `'Yes'` or `'No'`
+	 *  - **integer**: will add thousands/millions/etc. separators
+	 *  - **float**: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
+	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
+	 *  - **objects**: the object will be converted to a string by `__toString()` or a `(string)` cast and then will be run through fHTML::prepare()
 	 * 
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  mixed  $formatting  The formatting parameter, if applicable

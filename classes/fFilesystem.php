@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles filesystem-level tasks
+ * Handles filesystem-level tasks including filesystem transactions and the reference map to keep all fFile and fDirectory objects in sync
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -81,8 +81,8 @@ class fFilesystem
 	 * converted (from the beginning of filesystem paths) when preparing a path
 	 * for output into HTML.
 	 * 
-	 * By default the DOCUMENT_ROOT will be converted to a blank string, in
-	 * essence stripping it from filesystem paths.
+	 * By default the `$_SERVER['DOCUMENT_ROOT']` will be converted to a blank
+	 * string, in essence stripping it from filesystem paths.
 	 * 
 	 * @param  string $search_path   The path to look for
 	 * @param  string $replace_path  The path to replace with
@@ -102,7 +102,7 @@ class fFilesystem
 	 * 
 	 * Flourish filesystem transactions are NOT full ACID-compliant
 	 * transactions, but rather more of an filesystem undo buffer which can
-	 * return the filesystem to the state when begin() was called. If your PHP
+	 * return the filesystem to the state when ::begin() was called. If your PHP
 	 * script dies in the middle of an operation this functionality will do
 	 * nothing for you and all operations will be retained, except for deletes
 	 * which only occur once the transaction is committed.
@@ -159,7 +159,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Takes a file size and converts it to bytes
+	 * Takes a file size including a unit of measure (i.e. kb, GB, M) and converts it to bytes
 	 * 
 	 * @param  string $size  The size to convert to bytes
 	 * @return integer  The number of bytes represented by the size
@@ -212,7 +212,7 @@ class fFilesystem
 	 * Returns info about a path including dirname, basename, extension and filename
 	 * 
 	 * @param  string $file_path  The file to rename
-	 * @param  string $element    The piece of information to return ('dirname', 'basename', 'extension', or 'filename')
+	 * @param  string $element    The piece of information to return: `'dirname'`, `'basename'`, `'extension'`, or `'filename'`
 	 * @return array  The file's dirname, basename, extension and filename
 	 */
 	static public function getPathInfo($file, $element=NULL)
@@ -257,7 +257,7 @@ class fFilesystem
 	 * @internal
 	 * 
 	 * @param  string $file  The name of the file or directory
-	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
+	 * @return mixed  Will return `NULL` if no match, or the exception object if a match occurs
 	 */
 	static public function &hookExceptionMap($file)
 	{
@@ -277,7 +277,7 @@ class fFilesystem
 	 * @internal
 	 * 
 	 * @param  string $file  The name of the file or directory
-	 * @return mixed  Will return NULL if no match, or the exception object if a match occurs
+	 * @return mixed  Will return `NULL` if no match, or the exception object if a match occurs
 	 */
 	static public function &hookFilenameMap($file)
 	{
@@ -303,7 +303,7 @@ class fFilesystem
 	 * Returns a unique name for a file
 	 * 
 	 * @param  string $file           The filename to check
-	 * @param  string $new_extension  The new extension for the filename, do not include .
+	 * @param  string $new_extension  The new extension for the filename, should not include `.`
 	 * @return string  The unique file name
 	 */
 	static public function makeUniqueName($file, $new_extension=NULL)
@@ -342,7 +342,7 @@ class fFilesystem
 	 * 
 	 * @internal
 	 * 
-	 * @param  string    $file		 A file or directory name, directories should end in / or \
+	 * @param  string    $file		 A file or directory name, directories should end in `/` or `\`
 	 * @param  Exception $exception  The exception for this file/directory
 	 * @return void
 	 */
@@ -380,7 +380,7 @@ class fFilesystem
 	/**
 	 * Updates the filename map recursively, causing all objects representing a directory to be updated
 	 * 
-	 * Also updated all files and directories in the specified directory to the new paths.
+	 * Also updates all files and directories in the specified directory to the new paths.
 	 * 
 	 * @internal
 	 * 

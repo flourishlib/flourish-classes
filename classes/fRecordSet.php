@@ -23,7 +23,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Callbacks registered for the __call() handler
+	 * Callbacks registered for the ::__call() handler
 	 * 
 	 * @var array
 	 */
@@ -31,51 +31,54 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an {@link fRecordSet} by specifying the class to create plus the where conditions and order by rules
+	 * Creates an fRecordSet by specifying the class to create plus the where conditions and order by rules
 	 * 
 	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
-	 * <pre>
-	 *  - '%column%='                       => VALUE,                        // column = VALUE
-	 *  - '%column%!'                       => VALUE,                        // column <> VALUE
-	 *  - '%column%~'                       => VALUE,                        // column LIKE '%VALUE%'
-	 *  - '%column%<'                       => VALUE,                        // column < VALUE
-	 *  - '%column%<='                      => VALUE,                        // column <= VALUE
-	 *  - '%column%>'                       => VALUE,                        // column > VALUE
-	 *  - '%column%>='                      => VALUE,                        // column >= VALUE
-	 *  - '%column%='                       => array(VALUE, VALUE2,...),     // column IN (VALUE, VALUE2, ...)
-	 *  - '%column%!'                       => array(VALUE, VALUE2,...),     // column NOT IN (VALUE, VALUE2, ...)
-	 *  - '%column%~'                       => array(VALUE, VALUE2,...),     // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
-	 *  - '%column%!|%column2%<|%column3%=' => array(VALUE, VALUE2, VALUE3), // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
-	 *  - '%column%|%column2%|%column3%~'   => VALUE,                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
-	 *  - '%column%|%column2%|%column3%~'   => array(VALUE, VALUE2,...)      // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
-	 * </pre>
+	 * 
+	 * {{{
+	 * '%column%='                       => VALUE,                        // column = VALUE
+	 * '%column%!'                       => VALUE,                        // column <> VALUE
+	 * '%column%~'                       => VALUE,                        // column LIKE '%VALUE%'
+	 * '%column%<'                       => VALUE,                        // column < VALUE
+	 * '%column%<='                      => VALUE,                        // column <= VALUE
+	 * '%column%>'                       => VALUE,                        // column > VALUE
+	 * '%column%>='                      => VALUE,                        // column >= VALUE
+	 * '%column%='                       => array(VALUE, VALUE2,...),     // column IN (VALUE, VALUE2, ...)
+	 * '%column%!'                       => array(VALUE, VALUE2,...),     // column NOT IN (VALUE, VALUE2, ...)
+	 * '%column%~'                       => array(VALUE, VALUE2,...),     // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
+	 * '%column%!|%column2%<|%column3%=' => array(VALUE, VALUE2, VALUE3), // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
+	 * '%column%|%column2%|%column3%~'   => VALUE,                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
+	 * '%column%|%column2%|%column3%~'   => array(VALUE, VALUE2,...)      // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
+	 * }}}
 	 * 
 	 * The order bys array can contain key => value entries in any of the following formats:
-	 * <pre>
-	 *  - '%column%'     => 'asc'      // 'first_name' => 'asc'
-	 *  - '%column%'     => 'desc'     // 'last_name'  => 'desc'
-	 *  - '%expression%' => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
-	 *  - '%expression%' => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
-	 * </pre>
+	 * 
+	 * {{{
+	 * '%column%'     => 'asc'      // 'first_name' => 'asc'
+	 * '%column%'     => 'desc'     // 'last_name'  => 'desc'
+	 * '%expression%' => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
+	 * '%expression%' => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
+	 * }}}
 	 * 
 	 * The %column% in both the where conditions and order bys can be in any of the formats:
-	 * <pre>
-	 *  - '%column%'                                                                 // e.g. 'first_name'
-	 *  - '%current_table%.%column%'                                                 // e.g. 'users.first_name'
-	 *  - '%related_table%.%column%'                                                 // e.g. 'user_groups.name'
-	 *  - '%related_table%{%route%}.%column%'                                        // e.g. 'user_groups{user_group_id}.name'
-	 *  - '%related_table%=>%once_removed_related_table%.%column%'                   // e.g. 'user_groups=>permissions.level'
-	 *  - '%related_table%{%route%}=>%once_removed_related_table%.%column%'          // e.g. 'user_groups{user_group_id}=>permissions.level'
-	 *  - '%related_table%=>%once_removed_related_table%{%route%}.%column%'          // e.g. 'user_groups=>permissions{read}.level'
-	 *  - '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
-	 * </pre>
 	 * 
-	 * @param  string  $class             The class to create the {@link fRecordSet} of
+	 * {{{
+	 * '%column%'                                                                 // e.g. 'first_name'
+	 * '%current_table%.%column%'                                                 // e.g. 'users.first_name'
+	 * '%related_table%.%column%'                                                 // e.g. 'user_groups.name'
+	 * '%related_table%{%route%}.%column%'                                        // e.g. 'user_groups{user_group_id}.name'
+	 * '%related_table%=>%once_removed_related_table%.%column%'                   // e.g. 'user_groups=>permissions.level'
+	 * '%related_table%{%route%}=>%once_removed_related_table%.%column%'          // e.g. 'user_groups{user_group_id}=>permissions.level'
+	 * '%related_table%=>%once_removed_related_table%{%route%}.%column%'          // e.g. 'user_groups=>permissions{read}.level'
+	 * '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
+	 * }}}
+	 * 
+	 * @param  string  $class             The class to create the fRecordSet of
 	 * @param  array   $where_conditions  The column => value comparisons for the where clause
 	 * @param  array   $order_bys         The column => direction values to use for sorting
 	 * @param  integer $limit             The number of records to fetch
 	 * @param  integer $page              The page offset to use when limiting records
-	 * @return fRecordSet  A set of {@link fActiveRecord} objects
+	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
 	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
@@ -141,7 +144,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an {@link fRecordSet} from an array of records
+	 * Creates an fRecordSet from an array of records
 	 * 
 	 * @throws fValidationException
 	 * @internal
@@ -159,7 +162,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an {@link fRecordSet} from an SQL statement
+	 * Creates an fRecordSet from an SQL statement
 	 * 
 	 * @param  string $class                  The type of object to create
 	 * @param  string $sql                    The SQL to create the set from
@@ -177,14 +180,15 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Registers a callback to be called when a specific method is handled by __call()
+	 * Registers a callback to be called when a specific method is handled by ::__call()
 	 *  
 	 * The callback should accept the following parameters:
-	 *   - $record_set:  The actual record set
-	 *   - $class:       The class of each record
-	 *   - &$records:    The ordered array of fActiveRecords
-	 *   - &$pointer:    The current array pointer for the records array
-	 *   - &$associate:  If the record should be associated with an fActiveRecord holding it
+	 * 
+	 *  - **`$record_set`**:  The actual record set
+	 *  - **`$class`**:       The class of each record
+	 *  - **`&$records`**:    The ordered array of fActiveRecords
+	 *  - **`&$pointer`**:    The current array pointer for the records array
+	 *  - **`&$associate`**:  If the record should be associated with an fActiveRecord holding it
 	 * 
 	 * @param  string   $method    The method to hook for
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
@@ -210,7 +214,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * A flag to indicate this should record set should be associated to the parent {@link fActiveRecord} object
+	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
 	 * 
 	 * @var boolean
 	 */
@@ -224,14 +228,14 @@ class fRecordSet implements Iterator
 	private $class = NULL;
 	
 	/**
-	 * The number of rows that would have been returned if a LIMIT clause had not been used
+	 * The number of rows that would have been returned if a `LIMIT` clause had not been used
 	 * 
 	 * @var integer
 	 */
 	private $non_limited_count = NULL;
 	
 	/**
-	 * The SQL to get the total number of rows that would have been returned if a LIMIT clause had not been used
+	 * The SQL to get the total number of rows that would have been returned if a `LIMIT` clause had not been used
 	 * 
 	 * @var string
 	 */
@@ -253,7 +257,9 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Allows for preloading of related records by dynamically creating preload{related plural class}() methods
+	 * Allows for preloading of related records for all records in record set
+	 * 
+	 * 
 	 *  
 	 * @throws fValidationException
 	 * 
@@ -300,8 +306,8 @@ class fRecordSet implements Iterator
 	 * Sets the contents of the set
 	 * 
 	 * @param  string  $class                  The type of records to create
-	 * @param  fResult $result_object          The {@link fResult} object of the records to create
-	 * @param  string  $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
+	 * @param  fResult $result_object          The fResult object of the records to create
+	 * @param  string  $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a `LIMIT` clause had not been used. Should only be passed if a `LIMIT` clause is used.
 	 * @return fRecordSet
 	 */
 	protected function __construct($class, fResult $result_object=NULL, $non_limited_count_sql=NULL)
@@ -452,7 +458,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the number of records in the set
 	 * 
-	 * @param  boolean $ignore_limit  If set to TRUE, this method will return the number of records that would be in the set if there was no LIMIT clause
+	 * @param  boolean $ignore_limit  If set to `TRUE`, this method will return the number of records that would be in the set if there was no `LIMIT` clause
 	 * @return integer  The number of records in the set
 	 */
 	public function count($ignore_limit=FALSE)
@@ -496,7 +502,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Filters the record set via a callback
 	 * 
-	 * @param  callback $callback  The callback can be either a callback that accepts a single parameter and returns a boolean, or a string like '{record}::methodName' to filter based on the output of $record->methodName()
+	 * @param  callback $callback  The callback can be either a callback that accepts a single parameter and returns a boolean, or a string like `'{record}::methodName'` to filter based on the output of `$record->methodName()`
 	 * @return fRecordSet  A new fRecordSet with the filtered records
 	 */
 	public function filter($callback)
@@ -528,7 +534,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Flags this record set for association with the {@link fActiveRecord} object that references it
+	 * Flags this record set for association with the fActiveRecord object that references it
 	 * 
 	 * @internal
 	 * 
@@ -545,7 +551,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @return object|false  The current record or FALSE if no remaining records
+	 * @return object|false  The current record or `FALSE` if no remaining records
 	 */
 	public function fetchRecord()
 	{
@@ -617,7 +623,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Returns if this record set is flagged for association with the {@link fActiveRecord} object that references it
+	 * Returns if this record set is flagged for association with the fActiveRecord object that references it
 	 * 
 	 * @internal
 	 * 
@@ -646,11 +652,12 @@ class fRecordSet implements Iterator
 	 * Performs an array_map on the record in the set
 	 * 
 	 * The record will be passed to the callback as the first parameter unless
-	 * it's position is specified by the placeholder string '{record}'. More
+	 * it's position is specified by the placeholder string `'{record}'`. More
 	 * details further down.
 	 * 
 	 * Additional parameters can be passed to the callback in one of two
 	 * different ways:
+	 * 
 	 *  - Passing a non-array value will cause it to be passed to the callback
 	 *  - Passing an array value will cause the array values to be passed to the callback with their corresponding record
 	 *  
@@ -659,15 +666,16 @@ class fRecordSet implements Iterator
 	 * than records in the set) it will be padded with NULL values.
 	 * 
 	 * To allow passing the record as a specific parameter to the callback, a
-	 * placeholder string '{record}' will be replaced with a the record. You
-	 * can also specify '{record}::methodName' to cause the output of a method
+	 * placeholder string `'{record}'` will be replaced with a the record. You
+	 * can also specify `'{record}::methodName'` to cause the output of a method
 	 * from the record to be passed instead of the whole record.
 	 * 
-	 * @param  callback $callback       The callback to pass the values to
-	 * @param  mixed    $parameter,...  The parameter to pass to the callback - see method description for details
+	 * @param  callback $callback   The callback to pass the values to
+	 * @param  mixed    $parameter  The parameter to pass to the callback - see method description for details
+	 * @param  mixed    ...
 	 * @return array  An array of the results from the callback
 	 */
-	public function map($callback)
+	public function map($callback, $parameter)
 	{
 		$parameters = array_slice(func_get_args(), 1);
 		
@@ -954,8 +962,9 @@ class fRecordSet implements Iterator
 	 * Reduces the record set to a single value via a callback
 	 * 
 	 * The callback should take two parameters:
-	 *  - The first two records on the first call if no $inital_value is specified
-	 *  - The initial value and the first record for the first call if an $initial_value is specified
+	 * 
+	 *  - The first two records on the first call if no `$inital_value` is specified
+	 *  - The initial value and the first record for the first call if an `$initial_value` is specified
 	 *  - The result of the last call plus the next record for the second and subsequent calls
 	 * 
 	 * @param  callback $callback      The callback to pass the records to - see method description for details
@@ -1000,12 +1009,12 @@ class fRecordSet implements Iterator
 	/**
 	 * Sorts the set by the return value of a method from the class created and rewind the interator
 	 * 
-	 * This methods uses {@link fUTF8::inatcmp()} to perform comparisons.
+	 * This methods uses fUTF8::inatcmp() to perform comparisons.
 	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string $method     The method to call on each object to get the value to sort by
-	 * @param  string $direction  Either 'asc' or 'desc'
+	 * @param  string $direction  Either `'asc'` or `'desc'`
 	 * @return void
 	 */
 	public function sort($method, $direction)
@@ -1034,11 +1043,11 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Sorts the set by passing the callback to {@link http://php.net/usort usort()} and rewinds the interator
+	 * Sorts the set by passing the callback to [http://php.net/usort `usort()`] and rewinds the interator
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  mixed $callback  The function/method to pass to usort()
+	 * @param  mixed $callback  The function/method to pass to `usort()`
 	 * @return void
 	 */
 	public function sortByCallback($callback)
@@ -1049,7 +1058,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Throws a {@link fEmptySetException} if the {@link fRecordSet} is empty
+	 * Throws an fEmptySetException if the record set is empty
 	 * 
 	 * @throws fEmptySetException
 	 * 

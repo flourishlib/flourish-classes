@@ -1,6 +1,6 @@
 <?php
 /**
- * An exception when an {@link fRecordSet} does not contain any elements
+ * An exception when an fRecordSet does not contain any elements
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>

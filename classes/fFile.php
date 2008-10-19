@@ -87,6 +87,9 @@ class fFile
 	/**
 	 * Creates an object to represent a file on the filesystem
 	 * 
+	 * If multiple fFile objects are created for a single file, they will
+	 * reflect changes in each other including rename and delete actions.
+	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string $file  The path to the file
@@ -142,9 +145,9 @@ class fFile
 	
 	
 	/**
-	 * When used in a string context, represents the file as the filename
+	 * Returns the filename of the file
 	 * 
-	 * @return string  The filename of the file
+	 * @return string  The filename
 	 */
 	public function __toString()
 	{
@@ -311,7 +314,7 @@ class fFile
 	/**
 	 * Gets the size of the file
 	 * 
-	 * May be incorrect for files over 2GB on certain operating systems.
+	 * The return value may be incorrect for files over 2GB on 32-bit OSes.
 	 * 
 	 * @param  boolean $format          If the filesize should be formatted for human readability
 	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
@@ -336,7 +339,7 @@ class fFile
 	 * Gets the file's current path (directory and filename)
 	 * 
 	 * If the web path is requested, uses translations set with
-	 * {@link fFilesystem::addWebPathTranslation()}
+	 * fFilesystem::addWebPathTranslation()
 	 * 
 	 * @param  boolean $translate_to_web_path  If the path should be the web path
 	 * @return string  The path (directory and filename) for the file
@@ -394,7 +397,7 @@ class fFile
 	 * progress and is later rolled back.
 	 * 
 	 * @param  string  $new_filename  The new full path to the file
-	 * @param  boolean $overwrite     If the new filename already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
+	 * @param  boolean $overwrite     If the new filename already exists, `TRUE` will cause the file to be overwritten, `FALSE` will cause the new filename to change
 	 * @return void
 	 */
 	public function rename($new_filename, $overwrite)

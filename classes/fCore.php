@@ -191,23 +191,25 @@ class fCore
 	 * Parameters can be passed either as a single array of parameters or as
 	 * multiple parameters.
 	 * 
-	 * <pre>
+	 * {{{
+	 * #!php
 	 * // Passing multiple parameters in a normal fashion
 	 * fCore::call('Class::method', TRUE, 0, 'test');
 	 * 
 	 * // Passing multiple parameters in a parameters array
 	 * fCore::call('Class::method', array(TRUE, 0, 'test'));
-	 * </pre>
+	 * }}}
 	 * 
 	 * To pass parameters by reference they must be assigned to an
 	 * array by reference and the function/method being called must accept those
 	 * parameters by reference. If either condition is not met, the parameter
 	 * will be passed by value.
 	 * 
-	 * <pre>
+	 * {{{
+	 * #!php
 	 * // Passing parameters by reference
 	 * fCore::call('Class::method', array(&$var1, &$var2));
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  callback $callback    The function or method to call
 	 * @param  array    $parameters  The parameters to pass to the function/method
@@ -257,8 +259,8 @@ class fCore
 	/**
 	 * Checks an error/exception destination to make sure it is valid
 	 * 
-	 * @param  string $destination  The destination for the exception. An email, file or the string 'html'.
-	 * @return string|boolean  'email', 'file', 'html' or FALSE
+	 * @param  string $destination  The destination for the exception. An email, file or the string `'html'`.
+	 * @return string|boolean  `'email'`, `'file'`, `'html'` or `FALSE`
 	 */
 	static private function checkDestination($destination)
 	{
@@ -300,15 +302,16 @@ class fCore
 	
 	
 	/**
-	 * Creates a string representation of any variable using predefined strings for booleans, null and empty strings
+	 * Creates a string representation of any variable using predefined strings for booleans, `NULL` and empty strings
 	 * 
 	 * The string output format of this method is very similar to the output of
-	 * {@link http://php.net/print_r print_r()} except that the following values
+	 * [http://php.net/print_r print_r()] except that the following values
 	 * are represented as special strings:
-	 *   - TRUE: {true}
-	 *   - FALSE: {false}
-	 *   - NULL: {null}
-	 *   - '': {empty_string}
+	 *   
+	 *  - `TRUE`: `'{true}'`
+	 *  - `FALSE`: `'{false}'`
+	 *  - `NULL`: `'{null}'`
+	 *  - `''`: `'{empty_string}'`
 	 * 
 	 * @param  mixed $data  The value to dump
 	 * @return string  The string representation of the value
@@ -373,7 +376,7 @@ class fCore
 	
 	
 	/**
-	 * Enables debug messages globally, i.e. they will be shown for any call to {@link debug()}
+	 * Enables debug messages globally, i.e. they will be shown for any call to ::debug()
 	 * 
 	 * @param  boolean $flag  If debugging messages should be shown
 	 * @return void
@@ -387,10 +390,10 @@ class fCore
 	/**
 	 * Turns on a feature where undefined constants are automatically created with the string value equivalent to the name
 	 * 
-	 * This functionality only works if {@link enableErrorHandling()} has been
+	 * This functionality only works if ::enableErrorHandling() has been
 	 * called first. This functionality may have a very slight performance
-	 * impact since a E_STRICT error message must be captured and then a
-	 * call to {@link http://php.net/define define()} is made.
+	 * impact since a `E_STRICT` error message must be captured and then a
+	 * call to [http://php.net/define define()] is made.
 	 * 
 	 * @return void
 	 */
@@ -412,26 +415,28 @@ class fCore
 	/**
 	 * Turns on developer-friendly error handling that includes context information including a backtrace and superglobal dumps
 	 * 
-	 * All errors that match the current error_reporting() level will be
+	 * All errors that match the current
+	 * [http://php.net/error_reporting error_reporting()] level will be
 	 * redirected to the destination and will include a full backtrace. In
 	 * addition, dumps of the following superglobals will be made to aid in
 	 * debugging:
-	 *   - $_SERVER
-	 *   - $_POST
-	 *   - $_GET
-	 *   - $_SESSION
-	 *   - $_FILES
-	 *   - $_COOKIE
+	 * 
+	 *  - `$_SERVER`
+	 *  - `$_POST`
+	 *  - `$_GET`
+	 *  - `$_SESSION`
+	 *  - `$_FILES`
+	 *  - `$_COOKIE`
 	 * 
 	 * The superglobal dumps are only done once per page, however a backtrace
 	 * in included for each error.
 	 * 
 	 * If an email address is specified for the destination, only one email
 	 * will be sent per script execution. If both error and
-	 * {@link enableExceptionHandling() exception handling} are set to the same
+	 * [enableExceptionHandling() exception handling] are set to the same
 	 * email address, the email will contain both errors and exceptions.
 	 * 
-	 * @param  string $destination  The destination for the errors and context information - an email address, a file path or the string 'html'
+	 * @param  string $destination  The destination for the errors and context information - an email address, a file path or the string `'html'`
 	 * @return void
 	 */
 	static public function enableErrorHandling($destination)
@@ -449,15 +454,17 @@ class fCore
 	 * Turns on developer-friendly uncaught exception handling that includes context information including a backtrace and superglobal dumps
 	 * 
 	 * Any uncaught exception will be redirected to the destination specified,
-	 * and the page will execute the $closing_code callback before exiting. The
-	 * destination will receive a message with the exception messaage, a full
-	 * backtrace and dumps of the following superglobals to aid in debugging:
-	 *   - $_SERVER
-	 *   - $_POST
-	 *   - $_GET
-	 *   - $_SESSION
-	 *   - $_FILES
-	 *   - $_COOKIE
+	 * and the page will execute the `$closing_code` callback before exiting.
+	 * The destination will receive a message with the exception messaage, a
+	 * full backtrace and dumps of the following superglobals to aid in
+	 * debugging:
+	 * 
+	 *  - `$_SERVER`
+	 *  - `$_POST`
+	 *  - `$_GET`
+	 *  - `$_SESSION`
+	 *  - `$_FILES`
+	 *  - `$_COOKIE`
 	 * 
 	 * The superglobal dumps are only done once per page, however a backtrace
 	 * in included for each error.
@@ -467,12 +474,12 @@ class fCore
 	 * 
 	 * If an email address is specified for the destination, only one email
 	 * will be sent per script execution. If both exception and
-	 * {@link enableErrorHandling() error handling} are set to the same
+	 * [enableErrorHandling() error handling] are set to the same
 	 * email address, the email will contain both exceptions and errors.
 	 * 
-	 * @param  string   $destination   The destination for the exception and context information - an email address, a file path or the string 'html'
+	 * @param  string   $destination   The destination for the exception and context information - an email address, a file path or the string `'html'`
 	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
-	 * @param  array    $parameters    The parameters to send to $closing_code
+	 * @param  array    $parameters    The parameters to send to `$closing_code`
 	 * @return void
 	 */
 	static public function enableExceptionHandling($destination, $closing_code=NULL, $parameters=array())
@@ -489,7 +496,7 @@ class fCore
 	
 	
 	/**
-	 * Prints the {@link dump()} of a value in a pre tag with the class "exposed"
+	 * Prints the ::dump() of a value in a pre tag with the class `exposed`
 	 * 
 	 * @param  mixed $data  The value to show
 	 * @return void
@@ -503,7 +510,7 @@ class fCore
 	/**
 	 * Generates some information about the context of an error or exception
 	 * 
-	 * @return string  A string containing $_SERVER, $_GET, $_POST, $_FILES, $_SESSSION
+	 * @return string  A string containing `$_SERVER`, `$_GET`, `$_POST`, `$_FILES`, `$_SESSION` and `$_COOKIE`
 	 */
 	static private function generateContext()
 	{
@@ -520,7 +527,7 @@ class fCore
 	/**
 	 * Returns the (generalized) operating system the code is currently running on
 	 * 
-	 * @return string  Either 'windows', 'solaris' or 'linux/unix' (linux, *BSD)
+	 * @return string  Either `'windows'`, `'solaris'` or `'linux/unix'` (linux, *BSD)
 	 */
 	static public function getOS()
 	{
@@ -651,7 +658,7 @@ class fCore
 	
 	
 	/**
-	 * Adds a callback for when certain types of exceptions are {@link toss() tossed} 
+	 * Adds a callback for when certain types of exceptions are [toss() tossed] 
 	 * 
 	 * The callback will be called when any exception of the class, or any
 	 * child class, specified is tossed. A single parameter will be passed
@@ -785,7 +792,7 @@ class fCore
 	
 	
 	/**
-	 * Returns TRUE for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as 0, 0.0, '0')
+	 * Returns `TRUE` for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as `0`, `0.0`, `'0'`)
 	 * 
 	 * @param  mixed $value  The value to check
 	 * @return boolean  If the value is string-like
@@ -837,9 +844,9 @@ class fCore
 	 * 
 	 * The default error handler in PHP will show the line number of this
 	 * method as the triggering code. To get a full backtrace, use
-	 * {@link enableErrorHandling()}.
+	 * ::enableErrorHandling().
 	 * 
-	 * @param  string $error_type  The type of error to trigger: 'error', 'warning', 'notice'
+	 * @param  string $error_type  The type of error to trigger: `'error'`, `'warning'`, `'notice'`
 	 * @param  string $message     The error message
 	 * @return void
 	 */

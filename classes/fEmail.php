@@ -2,11 +2,11 @@
 /**
  * Allows creating and sending a single email containing plaintext, HTML, attachments and S/MIME encryption
  * 
- * Please note that this class uses the {@link http://php.net/function.mail mail()}
+ * Please note that this class uses the [http://php.net/function.mail mail()]
  * function, and thus would have poor performance if used for mass mailing.
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/docs/UTF-8} for more information.
+ * http://flourishlib.com/docs/UTF-8 for more information.
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -28,9 +28,10 @@ class fEmail
 	 * A regular expression to match an email address, exluding those with comments and folding whitespace
 	 * 
 	 * The matches will be:
-	 *   - [0]: The whole email address
-	 *   - [1]: The name before the @
-	 *   - [2]: The domain/ip after the @
+	 *  
+	 *  - `[0]`: The whole email address
+	 *  - `[1]`: The name before the `@`
+	 *  - `[2]`: The domain/ip after the `@`
 	 * 
 	 * @var string
 	 */
@@ -43,14 +44,15 @@ class fEmail
 						 )[ \t]*$~ix';                                                                # Allow Trailing whitespace
 	
 	/**
-	 * A regular expression to match a 'name <email>' string, exluding those with comments and folding whitespace
+	 * A regular expression to match a `name <email>` string, exluding those with comments and folding whitespace
 	 * 
 	 * The matches will be:
-	 *   - [0]: The whole name and email address
-	 *   - [1]: The name
-	 *   - [2]: The whole email address
-	 *   - [3]: The email username before the @
-	 *   - [4]: The email domain/ip after the @
+	 * 
+	 *  - `[0]`: The whole name and email address
+	 *  - `[1]`: The name
+	 *  - `[2]`: The whole email address
+	 *  - `[3]`: The email username before the `@`
+	 *  - `[4]`: The email domain/ip after the `@`
 	 * 
 	 * @var string
 	 */
@@ -67,14 +69,14 @@ class fEmail
 	
 	
 	/**
-	 * Flags if the class should use popen to send mail via sendmail
+	 * Flags if the class should use [http://php.net/popen popen()] to send mail via sendmail
 	 * 
 	 * @var boolean
 	 */
 	static private $popen_sendmail = FALSE;
 	
 	/**
-	 * Flags if the class should convert \r\n to \n for qmail. This makes invalid email headers that may work.
+	 * Flags if the class should convert `\r\n` to `\n` for qmail. This makes invalid email headers that may work.
 	 * 
 	 * @var boolean
 	 */
@@ -82,7 +84,7 @@ class fEmail
 	
 	
 	/**
-	 * Sets the class to try and fix broken qmail implementations that add \r to \r\n
+	 * Sets the class to try and fix broken qmail implementations that add `\r` to `\r\n`
 	 * 
 	 * @return void
 	 */
@@ -292,7 +294,7 @@ class fEmail
 	/**
 	 * Adds an attachment to the email
 	 * 
-	 * Duplicate filenames will be changed to be unique.
+	 * If a duplicate filename is detected, it will be changed to be unique.
 	 * 
 	 * @param  string $filename   The name of the file to attach
 	 * @param  string $mime_type  The mime type of the file
@@ -382,9 +384,9 @@ class fEmail
 	/**
 	 * Takes a multi-address email header and builds it out using an array of emails
 	 * 
-	 * @param  string $header  The header name without ': ', the header is non-blank, ': ' will be added
+	 * @param  string $header  The header name without `': '`, the header is non-blank, `': '` will be added
 	 * @param  array  $emails  The email addresses for the header
-	 * @return string  The email header with a trailing "\r\n"
+	 * @return string  The email header with a trailing `\r\n`
 	 */
 	private function buildMultiAddressHeader($header, $emails)
 	{
@@ -429,10 +431,10 @@ class fEmail
 	
 	
 	/**
-	 * Turns a name and email into a '"name" <email>' string, or just 'email' if no name is provided
+	 * Turns a name and email into a `"name" <email>` string, or just `email` if no name is provided
 	 * 
 	 * This method will remove newline characters from the name and email, and
-	 * will remove any backslash (\) and double quote (") characters from
+	 * will remove any backslash (`\`) and double quote (`"`) characters from
 	 * the name.
 	 * 
 	 * @param  string $name   The name associated with the email address
@@ -525,7 +527,7 @@ class fEmail
 	 * Builds the headers for the email
 	 * 
 	 * @param  string $boundary  The boundary to use for the top level mime block
-	 * @return string  The headers to be sent to the mail() function
+	 * @return string  The headers to be sent to the [http://php.net/function.mail mail()] function
 	 */
 	private function createHeaders($boundary)
 	{
@@ -577,7 +579,7 @@ class fEmail
 	 * @param  string $subject  The subject of the email
 	 * @param  string $headers  The headers for the message
 	 * @param  string $body     The message body
-	 * @return array  0 => The message headers, 1 => The message body
+	 * @return array  `0` => The message headers, `1` => The message body
 	 */
 	private function createSMIMEBody($to, $subject, $headers, $body)
 	{
@@ -963,7 +965,7 @@ class fEmail
 	/**
 	 * Adds the email address the email will be bounced to
 	 * 
-	 * This email address will be set to the Return-Path and Errors-To headers.
+	 * This email address will be set to the `Return-Path` header.
 	 * 
 	 * @param  string $email  The email address to bounce to
 	 * @return void
@@ -979,7 +981,7 @@ class fEmail
 	
 	
 	/**
-	 * Adds the From: email address to the email
+	 * Adds the `From:` email address to the email
 	 * 
 	 * @param  string $email  The email address being sent from
 	 * @param  string $name   The from email user's name - unfortunately on windows this is ignored
@@ -999,7 +1001,7 @@ class fEmail
 	 * Sets the HTML version of the email body
 	 * 
 	 * This method accepts either ASCII or UTF-8 encoded text. Please see
-	 * {@link http://flourishlib.com/docs/UTF-8} for more information.
+	 * http://flourishlib.com/docs/UTF-8 for more information.
 	 * 
 	 * @param  string $html  The HTML version of the email body
 	 * @return void
@@ -1014,7 +1016,7 @@ class fEmail
 	 * Sets the plaintext version of the email body
 	 * 
 	 * This method accepts either ASCII or UTF-8 encoded text. Please see
-	 * {@link http://flourishlib.com/docs/UTF-8} for more information.
+	 * http://flourishlib.com/docs/UTF-8 for more information.
 	 * 
 	 * @param  string $plaintext  The plaintext version of the email body
 	 * @return void
@@ -1026,7 +1028,7 @@ class fEmail
 	
 	
 	/**
-	 * Adds the Reply-To: email address to the email
+	 * Adds the `Reply-To:` email address to the email
 	 * 
 	 * @param  string $email  The email address to reply to
 	 * @param  string $name   The reply-to email user's name
@@ -1043,9 +1045,9 @@ class fEmail
 	
 	
 	/**
-	 * Adds the Sender: email address to the email
+	 * Adds the `Sender:` email address to the email
 	 * 
-	 * The Sender: header is used to indicate someone other than the From:
+	 * The `Sender:` header is used to indicate someone other than the `From:`
 	 * address is actually submitting the message to the network.
 	 * 
 	 * @param  string $email  The email address the message is actually being sent from
@@ -1066,7 +1068,7 @@ class fEmail
 	 * Sets the subject of the email
 	 * 
 	 * This method accepts either ASCII or UTF-8 encoded text. Please see
-	 * {@link http://flourishlib.com/docs/UTF-8} for more information.
+	 * http://flourishlib.com/docs/UTF-8 for more information.
 	 * 
 	 * @param  string $subject  The subject of the email
 	 * @return void

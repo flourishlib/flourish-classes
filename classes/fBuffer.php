@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides a single, simplified interface for {@link http://php.net/outcontrol output buffering} to prevent nested buffering issues and provide a more logical API
+ * Provides a single, simplified interface for [http://php.net/outcontrol output buffering] to prevent nested buffering issues and provide a more logical API
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -186,7 +186,7 @@ class fBuffer
 	
 	
 	/**
-	 * Starts capturing output, should be used with {@link stopCapture()} to grab output from code that does not offer an option of returning a value instead of outputting it
+	 * Starts capturing output, should be used with ::stopCapture() to grab output from code that does not offer an option of returning a value instead of outputting it
 	 * 
 	 * @return void
 	 */

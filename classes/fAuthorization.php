@@ -62,11 +62,11 @@ class fAuthorization
 	/**
 	 * Adds a named IP address or range, or array of addresses and/or ranges
 	 * 
-	 * This method allows {@link checkIP()} to be called with a name instead
-	 * of the actual IPs.
+	 * This method allows ::checkIP() to be called with a name instead of the
+	 * actual IPs.
 	 * 
-	 * @param  string $name       The name to give the IP address(es)/range(s)
-	 * @param  mixed  $ip_ranges  This can be string (or array of strings) of the IP(s) or IP range(s) to restrict to. Please see the {@link checkIP()} method description for details on the allowable formats.
+	 * @param  string $name       The name to give the IP addresses/ranges
+	 * @param  mixed  $ip_ranges  This can be string (or array of strings) of the IPs or IP ranges to restrict to - please see ::checkIP() for format details
 	 * @return void
 	 */
 	static public function addNamedIPRange($name, $ip_ranges)
@@ -138,19 +138,20 @@ class fAuthorization
 	/**
 	 * Checks to see if the user is from the IPs or IP ranges specified
 	 * 
-	 * The $ip_ranges parameter can be either a single string, or an array of
+	 * The `$ip_ranges` parameter can be either a single string, or an array of
 	 * strings, each of which should be in one of the following formats:
-	 *   - A single IP address:
-	 *     - 192.168.1.1
-	 *     - 208.77.188.166
-	 *   - A CIDR range
-	 *     - 192.168.1.0/24
-	 *     - 208.77.188.160/28
-	 *   - An IP/subnet mask combination
-	 *     - 192.168.1.0/255.255.255.0
-	 *     - 208.77.188.160/255.255.255.240
+	 *  
+	 *  - A single IP address:
+	 *   - 192.168.1.1
+	 *   - 208.77.188.166
+	 *  - A CIDR range
+	 *   - 192.168.1.0/24
+	 *   - 208.77.188.160/28
+	 *  - An IP/subnet mask combination
+	 *   - 192.168.1.0/255.255.255.0
+	 *   - 208.77.188.160/255.255.255.240
 	 * 
-	 * @param  mixed $ip_ranges  This can be string (or array of strings) of the IPs or IP ranges to restrict to. See method description for details.
+	 * @param  mixed $ip_ranges  A string (or array of strings) of the IPs or IP ranges to restrict to - see method description for details
 	 * @return boolean  If the user is coming from (one of) the IPs or ranges specified
 	 */
 	static public function checkIP($ip_ranges)
@@ -273,9 +274,9 @@ class fAuthorization
 	
 	
 	/**
-	 * Gets the value that was set as the user token, NULL if no token has been set
+	 * Gets the value that was set as the user token, `NULL` if no token has been set
 	 * 
-	 * @return mixed  The user token that had been set, NULL if none
+	 * @return mixed  The user token that had been set, `NULL` if none
 	 */
 	static public function getUserToken()
 	{
@@ -367,7 +368,7 @@ class fAuthorization
 	/**
 	 * Sets the authorization levels to use for level checking
 	 * 
-	 * @param  array $levels  An associative array of (string) {level} => (integer), for each level
+	 * @param  array $levels  An associative array of `(string) {level} => (integer) {value}`, for each level
 	 * @return void
 	 */
 	static public function setAuthLevels($levels)
@@ -405,16 +406,18 @@ class fAuthorization
 	 * 
 	 * Array should be formatted like:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array (
-	 *     (string) {resource name} => array((mixed) {permission}, ... ), ...
+	 *     (string) {resource name} => array(
+	 *         (mixed) {permission}, ...
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
-	 * The resource name or the permission may be the single character '*'
+	 * The resource name or the permission may be the single character `'*'`
 	 * which acts as a wildcard.
 	 * 
-	 * @param  array $acls  The logged in user's ACLs (see method description for format)
+	 * @param  array $acls  The logged in user's ACLs - see method description for format
 	 * @return void
 	 */
 	static public function setUserACLs($acls)

@@ -62,7 +62,7 @@ class fCookie
 	
 	
 	/**
-	 * Gets a cookie value from $_COOKIE, while allowing a default value to be provided
+	 * Gets a cookie value from `$_COOKIE`, while allowing a default value to be provided
 	 * 
 	 * @param  string $name           The name of the cookie to retrieve
 	 * @param  mixed  $default_value  If there is no cookie with the name provided, return this value instead
@@ -102,15 +102,16 @@ class fCookie
 	 * Sets a cookie to be sent back to the browser - uses default parameters set by the other set methods of this class
 	 * 
 	 * The following methods allow for setting default parameters for this method:
-	 *   - {@link setDefaultExpires()}:  Sets the default for the $expires parameter
-	 *   - {@link setDefaultPath()}:     Sets the default for the $path parameter
-	 *   - {@link setDefaultDomain()}:   Sets the default for the $domain parameter
-	 *   - {@link setDefaultSecure()}:   Sets the default for the $secure parameter
-	 *   - {@link setDefaultHTTPOnly()}: Sets the default for the $httponly parameter
+	 *   
+	 *  - ::setDefaultExpires():  Sets the default for the `$expires` parameter
+	 *  - ::setDefaultPath():     Sets the default for the `$path` parameter
+	 *  - ::setDefaultDomain():   Sets the default for the `$domain` parameter
+	 *  - ::setDefaultSecure():   Sets the default for the `$secure` parameter
+	 *  - ::setDefaultHTTPOnly(): Sets the default for the `$httponly` parameter
 	 * 
 	 * @param  string         $name      The name of the cookie to set
 	 * @param  mixed          $value     The value of the cookie to set
-	 * @param  string|integer $expires   A relative string to be interpreted by {@link http://php.net/strtotime strtotime()} or an integer unix timestamp
+	 * @param  string|integer $expires   A relative string to be interpreted by [http://php.net/strtotime strtotime()] or an integer unix timestamp
 	 * @param  string         $path      The path this cookie applies to
 	 * @param  string         $domain    The domain this cookie applies to
 	 * @param  boolean        $secure    If the cookie should only be transmitted over a secure connectino
@@ -175,8 +176,8 @@ class fCookie
 	/**
 	 * Sets the default domain to use for cookies
 	 * 
-	 * This value will be used when the $domain parameter of the {@link set()}
-	 * method is not specified or is set to NULL.
+	 * This value will be used when the `$domain` parameter of the ::set()
+	 * method is not specified or is set to `NULL`.
 	 * 
 	 * @param  string $domain  The default domain to use for cookies
 	 * @return void
@@ -190,8 +191,8 @@ class fCookie
 	/**
 	 * Sets the default expiration date to use for cookies
 	 * 
-	 * This value will be used when the $expires parameter of the {@link set()}
-	 * method is not specified or is set to NULL.
+	 * This value will be used when the `$expires` parameter of the ::set()
+	 * method is not specified or is set to `NULL`.
 	 * 
 	 * @param  string|integer $expires  The default expiration date to use for cookies
 	 * @return void
@@ -205,8 +206,8 @@ class fCookie
 	/**
 	 * Sets the default httponly flag to use for cookies
 	 * 
-	 * This value will be used when the $httponly parameter of the {@link set()}
-	 * method is not specified or is set to NULL.
+	 * This value will be used when the `$httponly` parameter of the ::set()
+	 * method is not specified or is set to `NULL`.
 	 * 
 	 * @param  boolean $httponly  The default httponly flag to use for cookies
 	 * @return void
@@ -220,8 +221,8 @@ class fCookie
 	/**
 	 * Sets the default path to use for cookies
 	 * 
-	 * This value will be used when the $path parameter of the {@link set()}
-	 * method is not specified or is set to NULL.
+	 * This value will be used when the `$path` parameter of the ::set()
+	 * method is not specified or is set to `NULL`.
 	 * 
 	 * @param  string $path  The default path to use for cookies
 	 * @return void
@@ -233,9 +234,12 @@ class fCookie
 	
 	
 	/**
-	 * Sets the default httponly flag to use for cookies
+	 * Sets the default secure flag to use for cookies
 	 * 
-	 * @param  boolean $httponly  The default secure flag to use for cookies
+	 * This value will be used when the `$secure` parameter of the ::set()
+	 * method is not specified or is set to `NULL`.
+	 * 
+	 * @param  boolean $secure  The default secure flag to use for cookies
 	 * @return void
 	 */
 	static public function setDefaultSecure($secure)
