@@ -661,7 +661,7 @@ class fDatabase
 	 * @param  mixed  ...
 	 * @return string  The escaped value/SQL
 	 */
-	public function escape($sql_or_type)
+	public function escape($sql_or_type, $value)
 	{
 		$values = array_slice(func_get_args(), 1);
 		
@@ -722,18 +722,16 @@ class fDatabase
 		// Handle SQL escaping
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]+)*')|(?:[^']+)#", $sql_or_type, $matches);
 		
+		$temp_sql = '';
+		$strings = array();
+		
+		// Replace strings with a placeholder so they don't mess use the regex parsing
 		foreach ($matches[0] as $match) {
-			$temp_sql = '';
-			$strings = array();
-			
-			// Replace strings with a placeholder so they don't mess use the regex parsing
-			foreach ($matches[0] as $match) {
-				if ($match[0] == "'") {
-					$strings[] = $match;
-					$match = ':string_' . (sizeof($strings)-1);
-				}
-				$temp_sql .= $match;
-			} 		
+			if ($match[0] == "'") {
+				$strings[] = $match;
+				$match = ':string_' . (sizeof($strings)-1);
+			}
+			$temp_sql .= $match;
 		}
 		
 		$pieces = preg_split('#(%[lbdfistp])\b#', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
