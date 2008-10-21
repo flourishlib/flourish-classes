@@ -1,6 +1,6 @@
 <?php
 /**
- * Gets information about the selected database
+ * Gets schema information for the selected database
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -36,7 +36,7 @@ class fSchema implements fISchema
 	private $column_info_override = array();
 	
 	/**
-	 * A reference to an instance of the {@link fDatabase} class
+	 * A reference to an instance of the fDatabase class
 	 * 
 	 * @var fDatabase
 	 */
@@ -102,7 +102,7 @@ class fSchema implements fISchema
 	/**
 	 * Sets the database
 	 * 
-	 * @param  fDatabase $database  The {@link fDatabase} instance
+	 * @param  fDatabase $database  The fDatabase instance
 	 * @return fSchema
 	 */
 	public function __construct(fDatabase $database)
@@ -139,7 +139,7 @@ class fSchema implements fISchema
 	
 	
 	/**
-	 * Checks to see if a column is part of a single-column unique key
+	 * Checks to see if a column is part of a single-column `UNIQUE` key
 	 * 
 	 * @param  string $table   The table the column is located in
 	 * @param  string $column  The column to check
@@ -192,7 +192,7 @@ class fSchema implements fISchema
 	
 	
 	/**
-	 * Gets the primary key, foreign key and unique key constraints from the database
+	 * Gets the `PRIMARY KEY`, `FOREIGN KEY` and `UNIQUE` key constraints from the database
 	 * 
 	 * @return void
 	 */
@@ -226,7 +226,7 @@ class fSchema implements fISchema
 	 * 
 	 * The returned array is in the format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -236,12 +236,12 @@ class fSchema implements fISchema
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *         'auto_increment' => (boolean) {if the integer primary key column is an identity column}
-	 *     ),...
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified (see method description for details)
+	 * @return array  The column info for the table specified - see method description for details
 	 */
 	private function fetchMSSQLColumnInfo($table)
 	{
@@ -365,15 +365,15 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -382,12 +382,12 @@ class fSchema implements fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
-	 * @return array  The key info arrays for every table in the database (see method description for details)
+	 * @return array  The key info arrays for every table in the database - see method description for details
 	 */
 	private function fetchMSSQLKeys()
 	{
@@ -481,7 +481,7 @@ class fSchema implements fISchema
 	 * 
 	 * The returned array is in the format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -491,12 +491,12 @@ class fSchema implements fISchema
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
 	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
-	 *     ),...
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified (see method description for details)
+	 * @return array  The column info for the table specified - see method description for details
 	 */
 	private function fetchMySQLColumnInfo($table)
 	{
@@ -601,15 +601,15 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -618,12 +618,12 @@ class fSchema implements fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
-	 * @return array  The keys arrays for every table in the database (see method description for details)
+	 * @return array  The keys arrays for every table in the database - see method description for details
 	 */
 	private function fetchMySQLKeys()
 	{
@@ -675,7 +675,7 @@ class fSchema implements fISchema
 	 * 
 	 * The returned array is in the format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -683,14 +683,14 @@ class fSchema implements fISchema
 	 *         'default'        => (mixed)   {the default value},
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial}
-	 *     ),...
+	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
+	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified (see method description for details)
+	 * @return array  The column info for the table specified - see method description for details
 	 */
 	private function fetchPostgreSQLColumnInfo($table)
 	{
@@ -803,15 +803,15 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -820,12 +820,12 @@ class fSchema implements fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
-	 * @return array  The key info arrays for every table in the database (see method description for details)
+	 * @return array  The keys arrays for every table in the database - see method description for details
 	 */
 	private function fetchPostgreSQLKeys()
 	{
@@ -937,7 +937,7 @@ class fSchema implements fISchema
 	 * 
 	 * The returned array is in the format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -946,13 +946,13 @@ class fSchema implements fISchema
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is autoincrement}
-	 *     ),...
+	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified (see method description for details)
+	 * @return array  The column info for the table specified - see method description for details
 	 */
 	private function fetchSQLiteColumnInfo($table)
 	{
@@ -1043,15 +1043,15 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -1060,12 +1060,12 @@ class fSchema implements fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
-	 * @return array  The key info arrays for every table in the database (see method description for details)
+	 * @return array  The keys arrays for every table in the database - see method description for details
 	 */
 	private function fetchSQLiteKeys()
 	{
@@ -1285,7 +1285,7 @@ class fSchema implements fISchema
 	 * 
 	 * If only a table is specified, column info is in the following format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -1295,42 +1295,43 @@ class fSchema implements fISchema
 	 *         'max_length'     => (integer) {the maximum length in a varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
-	 *     ),...
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * If a table and column are specified, column info is in the following format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
 	 *     'default'        => (mixed)   {the default value},
-	 *     'valid_values'   => (array)   {the valid values for a char/varchar field},
+	 *     'valid_values'   => (array)   {the valid values for a varchar field},
 	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * If a table, column and element are specified, returned value is the single element specified.
 	 * 
-	 * The 'type' element is homogenized to a value from the following list:
-	 *   - varchar
-	 *   - char
-	 *   - text
-	 *   - integer
-	 *   - float
-	 *   - timestamp
-	 *   - date
-	 *   - time
-	 *   - boolean
-	 *   - blob
+	 * The `'type'` element is homogenized to a value from the following list:
+	 * 
+	 *  - `'varchar'`
+	 *  - `'char'`
+	 *  - `'text'`
+	 *  - `'integer'`
+	 *  - `'float'`
+	 *  - `'timestamp'`
+	 *  - `'date'`
+	 *  - `'time'`
+	 *  - `'boolean'`
+	 *  - `'blob'`
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment')
-	 * @return array  The column info for the table/column/element specified (see method description for format)
+	 * @param  string $element  The element to return: `'type'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
+	 * @return mixed  The column info for the table/column/element specified - see method description for format
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
 	{
@@ -1396,15 +1397,15 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -1413,14 +1414,14 @@ class fSchema implements fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table     The table to return the keys for
-	 * @param  string $key_type  The type of key to return ('primary', 'foreign', 'unique')
-	 * @return array  An array of all keys, or just the type specified (see method description for format)
+	 * @param  string $key_type  The type of key to return: `'primary'`, `'foreign'`, `'unique'`
+	 * @return array  An array of all keys, or just the type specified - see method description for format
 	 */
 	public function getKeys($table, $key_type=NULL)
 	{
@@ -1470,7 +1471,7 @@ class fSchema implements fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     'one-to-one' => array(
 	 *         array(
@@ -1478,7 +1479,7 @@ class fSchema implements fISchema
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'many-to-one' => array(
 	 *         array(
@@ -1486,7 +1487,7 @@ class fSchema implements fISchema
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'one-to-many' => array(
 	 *         array(
@@ -1496,7 +1497,7 @@ class fSchema implements fISchema
 	 *             'related_column' => (string) {the related column},
 	 *             'on_delete'      => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *             'on_update'      => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'many-to-many' => array(
 	 *         array(
@@ -1509,14 +1510,14 @@ class fSchema implements fISchema
 	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'},
 	 *             'on_delete'           => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *             'on_update'           => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *         ),...
+	 *         ), ...
 	 *     )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table              The table to return the relationships for
-	 * @param  string $relationship_type  The type of relationship to return ('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many')
-	 * @return array  An array of all relationships, or just the type specified (see method description for format)
+	 * @param  string $relationship_type  The type of relationship to return: `'one-to-one'`, `'many-to-one'`, `'one-to-many'`, `'many-to-many'`
+	 * @return array  An array of all relationships, or just the type specified - see method description for format
 	 */
 	public function getRelationships($table, $relationship_type=NULL)
 	{
@@ -1688,7 +1689,7 @@ class fSchema implements fISchema
 	
 	
 	/**
-	 * Sets a file to cache the info to
+	 * Sets a file to cache the schema info to
 	 * 
 	 * @param  string $file  The cache file
 	 * @return void
@@ -1735,9 +1736,9 @@ class fSchema implements fISchema
 	
 	
 	/**
-	 * Allows overriding of column info. Performs an array merge, so to erase a column set values to null.
+	 * Allows overriding of column info. Performs an array merge - to erase a column set values to `NULL`
 	 * 
-	 * @param  array  $column_info  The modified column info (see {@link fSchema::getColumnInfo()} for format)
+	 * @param  array  $column_info  The modified column info - see ::getColumnInfo() for format
 	 * @param  string $table        The table to override
 	 * @param  string $column       The column to override
 	 * @return void
@@ -1757,11 +1758,11 @@ class fSchema implements fISchema
 	
 	
 	/**
-	 * Allows overriding of key info. Replaces existing info, so provide full key info for type selected (or all).
+	 * Allows overriding of key info. Replaces existing info, so be sure to provide full key info for type selected or all types.
 	 * 
-	 * @param  array  $keys      The modified keys (see {@link fSchema::getKeys()} for format)
+	 * @param  array  $keys      The modified keys - see ::getKeys() for format
 	 * @param  string $table     The table to override
-	 * @param  string $key_type  The key type to override ('primary', 'foreign', 'unique')
+	 * @param  string $key_type  The key type to override: `'primary'`, `'foreign'`, `'unique'`
 	 * @return void
 	 */
 	public function setKeysOverride($keys, $table, $key_type=NULL)

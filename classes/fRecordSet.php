@@ -1,6 +1,6 @@
 <?php
 /**
- * A lightweight, iterable set of {@link fActiveRecord}-based objects
+ * A lightweight, iterable set of fActiveRecord-based objects
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -33,49 +33,69 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet by specifying the class to create plus the where conditions and order by rules
 	 * 
-	 * The where conditions array can contain key => value entries in any of the following formats (where VALUE/VALUE2 can be of any data type):
+	 * The where conditions array can contain key => value entries in any of the following formats:
 	 * 
 	 * {{{
-	 * '%column%='                       => VALUE,                        // column = VALUE
-	 * '%column%!'                       => VALUE,                        // column <> VALUE
-	 * '%column%~'                       => VALUE,                        // column LIKE '%VALUE%'
-	 * '%column%<'                       => VALUE,                        // column < VALUE
-	 * '%column%<='                      => VALUE,                        // column <= VALUE
-	 * '%column%>'                       => VALUE,                        // column > VALUE
-	 * '%column%>='                      => VALUE,                        // column >= VALUE
-	 * '%column%='                       => array(VALUE, VALUE2,...),     // column IN (VALUE, VALUE2, ...)
-	 * '%column%!'                       => array(VALUE, VALUE2,...),     // column NOT IN (VALUE, VALUE2, ...)
-	 * '%column%~'                       => array(VALUE, VALUE2,...),     // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
-	 * '%column%!|%column2%<|%column3%=' => array(VALUE, VALUE2, VALUE3), // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
-	 * '%column%|%column2%|%column3%~'   => VALUE,                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
-	 * '%column%|%column2%|%column3%~'   => array(VALUE, VALUE2,...)      // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
+	 * #!php
+	 * array(
+	 *     'column='                    => $value,                         // column = VALUE
+	 *     'column!'                    => $value,                         // column <> VALUE
+	 *     'column~'                    => $value,                         // column LIKE '%VALUE%'
+	 *     'column<'                    => $value,                         // column < VALUE
+	 *     'column<='                   => $value,                         // column <= VALUE
+	 *     'column>'                    => $value,                         // column > VALUE
+	 *     'column>='                   => $value,                         // column >= VALUE
+	 *     'column='                    => array($value, $value2, ...),    // column IN (VALUE, VALUE2, ...)
+	 *     'column!'                    => array($value, $value2, ...),    // column NOT IN (VALUE, VALUE2, ...)
+	 *     'column~'                    => array($value, $value2, ...),    // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
+	 *     'column!|column2<|column3='  => array(VALUE, $value2, $value3), // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
+	 *     'column|column2|column3~'    => VALUE,                          // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
+	 *     'column|column2|column3~'    => array(VALUE, $value2, ...)      // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
 	 * }}}
 	 * 
-	 * The order bys array can contain key => value entries in any of the following formats:
+	 * The order bys array can contain `key => value` entries in any of the following formats:
 	 * 
 	 * {{{
-	 * '%column%'     => 'asc'      // 'first_name' => 'asc'
-	 * '%column%'     => 'desc'     // 'last_name'  => 'desc'
-	 * '%expression%' => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
-	 * '%expression%' => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
+	 * 'column'     => 'asc'      // 'first_name' => 'asc'
+	 * 'column'     => 'desc'     // 'last_name'  => 'desc'
+	 * 'expression' => 'asc'      // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'asc'
+	 * 'expression' => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
 	 * }}}
 	 * 
-	 * The %column% in both the where conditions and order bys can be in any of the formats:
+	 * The column in both the where conditions and order bys can be in any of the formats:
 	 * 
 	 * {{{
-	 * '%column%'                                                                 // e.g. 'first_name'
-	 * '%current_table%.%column%'                                                 // e.g. 'users.first_name'
-	 * '%related_table%.%column%'                                                 // e.g. 'user_groups.name'
-	 * '%related_table%{%route%}.%column%'                                        // e.g. 'user_groups{user_group_id}.name'
-	 * '%related_table%=>%once_removed_related_table%.%column%'                   // e.g. 'user_groups=>permissions.level'
-	 * '%related_table%{%route%}=>%once_removed_related_table%.%column%'          // e.g. 'user_groups{user_group_id}=>permissions.level'
-	 * '%related_table%=>%once_removed_related_table%{%route%}.%column%'          // e.g. 'user_groups=>permissions{read}.level'
-	 * '%related_table%{%route%}=>%once_removed_related_table%{%route%}.%column%' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
+	 * 'column'                                                         // e.g. 'first_name'
+	 * 'current_table.column'                                           // e.g. 'users.first_name'
+	 * 'related_table.column'                                           // e.g. 'user_groups.name'
+	 * 'related_table{route}.column'                                    // e.g. 'user_groups{user_group_id}.name'
+	 * 'related_table=>once_removed_related_table.column'               // e.g. 'user_groups=>permissions.level'
+	 * 'related_table{route}=>once_removed_related_table.column'        // e.g. 'user_groups{user_group_id}=>permissions.level'
+	 * 'related_table=>once_removed_related_table{route}.column'        // e.g. 'user_groups=>permissions{read}.level'
+	 * 'related_table{route}=>once_removed_related_table{route}.column' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
+	 * }}}
+	 * 
+	 * Below is an example of using where conditions and order bys:
+	 * 
+	 * {{{
+	 * #!php
+	 * return fRecordSet::build(
+	 *     'User',
+	 *     array(
+	 *         'first_name='      => 'John',
+	 *         'status!'          => 'Inactive',
+	 *         'groups.group_id=' => 2
+	 *     ),
+	 *     array(
+	 *         'last_name'   => 'asc',
+	 *         'date_joined' => 'desc'
+	 *     )
+	 * );
 	 * }}}
 	 * 
 	 * @param  string  $class             The class to create the fRecordSet of
-	 * @param  array   $where_conditions  The column => value comparisons for the where clause
-	 * @param  array   $order_bys         The column => direction values to use for sorting
+	 * @param  array   $where_conditions  The `column => value` comparisons for the `WHERE` clause
+	 * @param  array   $order_bys         The `column => direction` values to use for the `ORDER BY` clause
 	 * @param  integer $limit             The number of records to fetch
 	 * @param  integer $page              The page offset to use when limiting records
 	 * @return fRecordSet  A set of fActiveRecord objects
@@ -151,7 +171,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @param  string $class    The type of object to create
 	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
-	 * @return fRecordSet  A set of {@link fActiveRecord} objects
+	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
 	static public function buildFromRecords($class, $records)
 	{
@@ -166,8 +186,8 @@ class fRecordSet implements Iterator
 	 * 
 	 * @param  string $class                  The type of object to create
 	 * @param  string $sql                    The SQL to create the set from
-	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a LIMIT clause had not been used. Should only be passed if a LIMIT clause is used.
-	 * @return fRecordSet  A set of {@link fActiveRecord} objects
+	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a `LIMIT` clause had not been used. Should only be passed if a `LIMIT` clause is used.
+	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
@@ -257,9 +277,15 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Allows for preloading of related records for all records in record set
+	 * Allows for preloading various data related to the record set in single database queries, as opposed to one query per record
 	 * 
+	 * This method will handle methods in the format `verbRelatedRecords()` for
+	 * the verbs `prebuild`, `precount` and `precreate`.
 	 * 
+	 * `prebuild` builds *-to-many record sets for all records in the record
+	 * set. `precount` will count records in *-to-many record sets for every
+	 * record in the record set. `precreate` will create a *-to-one record
+	 * for every record in the record set.
 	 *  
 	 * @throws fValidationException
 	 * 
@@ -373,10 +399,10 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates an order by clause for the primary keys of this record set
+	 * Creates an `ORDER BY` clause for the primary keys of this record set
 	 * 
 	 * @param  string $route  The route to this table from another table
-	 * @return string  The order by clause
+	 * @return string  The `ORDER BY` clause
 	 */
 	private function constructOrderByClause($route=NULL)
 	{
@@ -412,10 +438,10 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Creates a where clause for the primary keys of this record set
+	 * Creates a `WHERE` clause for the primary keys of this record set
 	 * 
 	 * @param  string $route  The route to this table from another table
-	 * @return string  The where clause
+	 * @return string  The `WHERE` clause
 	 */
 	private function constructWhereClause($route=NULL)
 	{
@@ -484,7 +510,7 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @return object  The current record
+	 * @return fActiveRecord  The current record
 	 */
 	public function current()
 	{
@@ -500,7 +526,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Filters the record set via a callback
+	 * Filters the records in the record set via a callback
 	 * 
 	 * @param  callback $callback  The callback can be either a callback that accepts a single parameter and returns a boolean, or a string like `'{record}::methodName'` to filter based on the output of `$record->methodName()`
 	 * @return fRecordSet  A new fRecordSet with the filtered records
@@ -649,7 +675,7 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Performs an array_map on the record in the set
+	 * Performs an [http://php.net/array_map array_map()] on the record in the set
 	 * 
 	 * The record will be passed to the callback as the first parameter unless
 	 * it's position is specified by the placeholder string `'{record}'`. More

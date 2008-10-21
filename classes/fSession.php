@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles session-related data
+ * Wraps the session control functions and the `$_SESSION` superglobal for a more consistent and safer API
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -34,7 +34,7 @@ class fSession
 	
 	
 	/**
-	 * Unsets a key from the session superglobal using the prefix provided
+	 * Unsets a key from the `$_SESSION` superglobal using the prefix provided
 	 * 
 	 * @param  string $key     The key to unset, if no key is specified all keys with the prefix will be removed
 	 * @param  string $prefix  The prefix to stick before the key
@@ -94,7 +94,7 @@ class fSession
 	
 	
 	/**
-	 * Gets data from the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
+	 * Gets data from the `$_SESSION` superglobal, prefixing it with `fSession::` to prevent issues with `$_REQUEST`
 	 * 
 	 * @param  string $key            The name to get the value for
 	 * @param  mixed  $default_value  The default value to use if the requested key is not set
@@ -160,7 +160,7 @@ class fSession
 	
 	
 	/**
-	 * Sets data to the session superglobal, prefixing it with fSession:: to prevent issues with $_REQUEST
+	 * Sets data to the `$_SESSION` superglobal, prefixing it with `fSession::` to prevent issues with `$_REQUEST`
 	 * 
 	 * @param  string $key     The name to save the value under
 	 * @param  mixed  $value   The value to store
@@ -177,7 +177,7 @@ class fSession
 	/**
 	 * Sets the minimum length of a session - PHP might not clean up the session data right away once this timespan has elapsed
 	 * 
-	 * @param  string $timespan  An english description of a timespan (e.g. '30 minutes', '1 hour', '1 day 2 hours')
+	 * @param  string $timespan  An english description of a timespan (e.g. `'30 minutes'`, `'1 hour'`, `'1 day 2 hours'`)
 	 * @return void
 	 */
 	static public function setLength($timespan)
@@ -201,7 +201,7 @@ class fSession
 	
 	
 	/**
-	 * Prevent instantiation
+	 * Forces use as a static class
 	 * 
 	 * @return fSession
 	 */

@@ -23,10 +23,11 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Takes a Flourish SQL SELECT query and parses it into clauses.
+	 * Takes a Flourish SQL `SELECT` query and parses it into clauses.
 	 * 
 	 * The select statement must be of the format:
 	 * 
+	 * {{{
 	 * SELECT [ table_name. | alias. ]*
 	 * FROM table [ AS alias ] [ [ INNER | OUTER ] [ LEFT | RIGHT ] JOIN other_table ON condition | , ] ...
 	 * [ WHERE condition [ , condition ]... ]
@@ -34,18 +35,20 @@ class fSQLTranslation
 	 * [ HAVING conditions ]
 	 * [ ORDER BY [ column | expression ] [ ASC | DESC ] [ , [ column | expression ] [ ASC | DESC ] ] ... ]
 	 * [ LIMIT integer [ OFFSET integer ] ]
+	 * }}}
 	 * 
-	 * The returned array will contain the following keys, which may have a NULL or non-empty string value:
-	 *  - 'SELECT'
-	 *  - 'FROM'
-	 *  - 'WHERE'
-	 *  - 'GROUP BY'
-	 *  - 'HAVING'
-	 *  - 'ORDER BY'
-	 *  - 'LIMIT'
+	 * The returned array will contain the following keys, which may have a `NULL` or non-empty string value:
+	 * 
+	 *  - `'SELECT'`
+	 *  - `'FROM'`
+	 *  - `'WHERE'`
+	 *  - `'GROUP BY'`
+	 *  - `'HAVING'`
+	 *  - `'ORDER BY'`
+	 *  - `'LIMIT'`
 	 * 
 	 * @param  string $sql  The SQL to parse
-	 * @return array  The various clauses of the SELECT statement (see method descript for details)
+	 * @return array  The various clauses of the `SELECT` statement - see method description for details
 	 */
 	static private function parseSelectSQL($sql)
 	{
@@ -94,10 +97,10 @@ class fSQLTranslation
 	
 		
 	/**
-	 * Takes the FROM clause from {@link parseSelectSQL()} and returns all of the tables and each one's alias
+	 * Takes the `FROM` clause from ::parseSelectSQL() and returns all of the tables and each one's alias
 	 * 
-	 * @param  string $clause  The SQL clause to parse
-	 * @return array  The tables in the from clause, with the table alias being the key and value being the name
+	 * @param  string $clause  The SQL `FROM` clause to parse
+	 * @return array  The tables in the `FROM` clause, in the format `{table_alias} => {table_name}`
 	 */
 	static private function parseTableAliases($sql)
 	{
@@ -151,7 +154,7 @@ class fSQLTranslation
 	 * @internal
 	 * 
 	 * @param  numeric $x  The number to calculate the cotangent of
-	 * @return numeric  The contangent of $x
+	 * @return numeric  The contangent of `$x`
 	 */
 	static public function sqliteCotangent($x)
 	{
@@ -166,7 +169,7 @@ class fSQLTranslation
 	 * 
 	 * @param  integer $base  The base for the log calculation
 	 * @param  numeric $num   The number to calculate the logarithm of
-	 * @return numeric  The logarithm of $num to $base
+	 * @return numeric  The logarithm of `$num` to `$base`
 	 */
 	static public function sqliteLogBaseFirst($base, $num)
 	{
@@ -180,7 +183,7 @@ class fSQLTranslation
 	 * @internal
 	 * 
 	 * @param  numeric $x  The number to change the sign of
-	 * @return numeric  -1 if a negative sign, 0 if 0, 1 if positive sign
+	 * @return numeric  `-1` if a negative sign, `0` if zero, `1` if positive sign
 	 */
 	static public function sqliteSign($x)
 	{
@@ -333,7 +336,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Creates a trigger for SQLite that prevents inserting or updating to values the violate a foreign key constraint
+	 * Creates a trigger for SQLite that prevents inserting or updating to values the violate a `FOREIGN KEY` constraint
 	 * 
 	 * @param  string  $referencing_table     The table that contains the foreign key
 	 * @param  string  $referencing_column    The column the foriegn key constraint is on
@@ -611,7 +614,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates FlourishSQL into the dialect for the current database
+	 * Translates Flourish SQL into the dialect for the current database
 	 * 
 	 * @internal
 	 * 
@@ -775,7 +778,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates the structure of create table statements to the database specific syntax
+	 * Translates the structure of `CREATE TABLE` statements to the database specific syntax
 	 * 
 	 * @param  string $sql  The SQL to translate
 	 * @return string  The translated SQL
@@ -933,7 +936,7 @@ class fSQLTranslation
 	
 	
 	/**
-	 * Translates limit x offset x to row_number() over (order by) syntax
+	 * Translates `LIMIT x OFFSET x` to `ROW_NUMBER() OVER (ORDER BY)` syntax
 	 * 
 	 * @param  string $sql  The SQL to translate
 	 * @return string  The translated SQL

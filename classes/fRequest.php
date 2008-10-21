@@ -3,7 +3,7 @@
  * Provides request-related methods
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/docs/UTF-8} for more information.
+ * http://flourishlib.com/docs/UTF-8 for more information.
  * 
  * Please also note that using this class in a PUT or DELETE request will
  * cause the php://input stream to be consumed, and thus no longer available.
@@ -40,35 +40,35 @@ class fRequest
 	
 	
 	/**
-	 * A backup copy of $_FILES for unfilter()
+	 * A backup copy of `$_FILES` for ::unfilter()
 	 * 
 	 * @var array
 	 */
 	static private $backup_files = NULL;
 	
 	/**
-	 * A backup copy of $_GET for unfilter()
+	 * A backup copy of `$_GET` for ::unfilter()
 	 * 
 	 * @var array
 	 */
 	static private $backup_get = NULL;
 	
 	/**
-	 * A backup copy of $_POST for unfilter()
+	 * A backup copy of `$_POST` for unfilter()
 	 * 
 	 * @var array
 	 */
 	static private $backup_post = NULL;
 	
 	/**
-	 * A backup copy of the local $_PUT for unfilter()
+	 * A backup copy of the local `PUT`/`DELETE` post data for ::unfilter()
 	 * 
 	 * @var array
 	 */
 	static private $backup_put_delete = NULL;
 	
 	/**
-	 * The key/value pairs from the post data of a PUT/DELETE request
+	 * The key/value pairs from the post data of a `PUT`/`DELETE` request
 	 * 
 	 * @var array
 	 */
@@ -76,7 +76,7 @@ class fRequest
 	
 	
 	/**
-	 * Indicated if the parameter specified is set in the $_GET or $_POST superglobals or in the post data of a PUT or DELETE request
+	 * Indicated if the parameter specified is set in the `$_GET` or `$_POST` superglobals or in the post data of a `PUT` or `DELETE` request
 	 * 
 	 * @param  string $key  The key to check
 	 * @return boolean  If the parameter is set
@@ -90,7 +90,7 @@ class fRequest
 	
 	
 	/**
-	 * Parses through $_FILES, $_GET, $_POST and the PUT/DELETE post data and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
+	 * Parses through `$_FILES`, `$_GET`, `$_POST` and the `PUT`/`DELETE` post data and filters out everything that doesn't match the prefix and key, also removes the prefix from the field name
 	 * 
 	 * @internal
 	 * 
@@ -138,16 +138,16 @@ class fRequest
 	
 	
 	/**
-	 * Gets a value from the DELETE/PUT post data, $_POST or $_GET superglobals (in that order)
+	 * Gets a value from the `DELETE`/`PUT` post data, `$_POST` or `$_GET` superglobals (in that order)
 	 * 
-	 * A value that === '' and is not cast to a specific type will become NULL.
+	 * A value that exactly equals `''` and is not cast to a specific type will become `NULL`.
 	 *  
 	 * All text values are interpreted as UTF-8 string and appropriately
 	 * cleaned.
 	 * 
 	 * @param  string $key            The key to get the value of
 	 * @param  string $cast_to        Cast the value to this data type
-	 * @param  mixed  $default_value  If the parameter is not set in $_POST or $_GET, use this value instead
+	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead
 	 * @return mixed  The value
 	 */
 	static public function get($key, $cast_to=NULL, $default_value=NULL)
@@ -201,9 +201,9 @@ class fRequest
 	
 	
 	/**
-	 * Returns the HTTP accept languages sorted by their q values (from high to low)
+	 * Returns the HTTP `Accept-Language`s sorted by their `q` values (from high to low)
 	 * 
-	 * @return array  An associative array of {language} => {q value} sorted (in a stable-fashion) from highest to lowest q
+	 * @return array  An associative array of `{language} => {q value}` sorted (in a stable-fashion) from highest to lowest `q`
 	 */
 	static public function getAcceptLanguages()
 	{
@@ -212,9 +212,9 @@ class fRequest
 	
 	
 	/**
-	 * Returns the HTTP accept types sorted by their q values (from high to low)
+	 * Returns the HTTP `Accept` types sorted by their `q` values (from high to low)
 	 * 
-	 * @return array  An associative array of {type} => {q value} sorted (in a stable-fashion) from highest to lowest q
+	 * @return array  An associative array of `{type} => {q value}` sorted (in a stable-fashion) from highest to lowest `q`
 	 */
 	static public function getAcceptTypes()
 	{
@@ -223,10 +223,10 @@ class fRequest
 	
 	
 	/**
-	 * Returns the best HTTP accept language (based on q value) - can be filtered to only allow certain languages
+	 * Returns the best HTTP `Accept-Language` (based on `q` value) - can be filtered to only allow certain languages
 	 * 
 	 * @param  array $filter  An array of languages that are valid to return
-	 * @return string  The best language listed in the accept header
+	 * @return string  The best language listed in the `Accept-Language` header
 	 */
 	static public function getBestAcceptLanguage($filter=array())
 	{
@@ -235,10 +235,10 @@ class fRequest
 	
 	
 	/**
-	 * Returns the best HTTP accept type (based on q value) - can be filtered to only allow certain types
+	 * Returns the best HTTP `Accept` type (based on `q` value) - can be filtered to only allow certain types
 	 * 
 	 * @param  array $filter  An array of types that are valid to return
-	 * @return string  The best type listed in the accept header
+	 * @return string  The best type listed in the `Accept` header
 	 */
 	static public function getBestAcceptType($filter=array())
 	{
@@ -247,7 +247,7 @@ class fRequest
 	
 	
 	/**
-	 * Gets a value from the $_POST or $_GET superglobals (in that order), restricting to a specific set of values
+	 * Gets a value from the `DELETE`/`PUT` post data, `$_POST` or `$_GET` superglobals (in that order), restricting to a specific set of values
 	 * 
 	 * @param  string $key           The key to get the value of
 	 * @param  array  $valid_values  The array of values that are permissible, if one is not selected, picks first
@@ -266,7 +266,7 @@ class fRequest
 	
 	
 	/**
-	 * Parses post data for PUT and DELETE HTTP methods
+	 * Parses post data for `PUT` and `DELETE` HTTP methods
 	 * 
 	 * @return void
 	 */
@@ -285,9 +285,9 @@ class fRequest
 	
 	
 	/**
-	 * Indicates if the URL was accessed via the DELETE HTTP method
+	 * Indicates if the URL was accessed via the `DELETE` HTTP method
 	 * 
-	 * @return boolean  If the URL was accessed via the DELETE HTTP method
+	 * @return boolean  If the URL was accessed via the `DELETE` HTTP method
 	 */
 	static public function isDelete()
 	{
@@ -296,9 +296,9 @@ class fRequest
 	
 	
 	/**
-	 * Indicates if the URL was accessed via the GET HTTP method
+	 * Indicates if the URL was accessed via the `GET` HTTP method
 	 * 
-	 * @return boolean  If the URL was accessed via the GET HTTP method
+	 * @return boolean  If the URL was accessed via the `GET` HTTP method
 	 */
 	static public function isGet()
 	{
@@ -307,9 +307,9 @@ class fRequest
 	
 	
 	/**
-	 * Indicates if the URL was accessed via the POST HTTP method
+	 * Indicates if the URL was accessed via the `POST` HTTP method
 	 * 
-	 * @return boolean  If the URL was accessed via the POST HTTP method
+	 * @return boolean  If the URL was accessed via the `POST` HTTP method
 	 */
 	static public function isPost()
 	{
@@ -318,9 +318,9 @@ class fRequest
 	
 	
 	/**
-	 * Indicates if the URL was accessed via the PUT HTTP method
+	 * Indicates if the URL was accessed via the `PUT` HTTP method
 	 * 
-	 * @return boolean  If the URL was accessed via the PUT HTTP method
+	 * @return boolean  If the URL was accessed via the `PUT` HTTP method
 	 */
 	static public function isPut()
 	{
@@ -329,12 +329,12 @@ class fRequest
 	
 	
 	/**
-	 * Overrides the value of 'action' in $_GET and $_POST based on the 'action::ACTION_NAME' value in $_GET and $_POST
+	 * Overrides the value of `'action'` in the `DELETE`/`PUT` post data, `$_POST` or `$_GET` superglobals based on the `'action::{action_name}'` value
 	 * 
 	 * This method is primarily intended to be used for hanlding multiple
 	 * submit buttons.
 	 * 
-	 * @param  string $redirect  The url to redirect to if the action is overriden. %action% will be replaced with the overridden action.
+	 * @param  string $redirect  The url to redirect to if the action is overriden. `%action%` will be replaced with the overridden action.
 	 * @return void
 	 */
 	static public function overrideAction($redirect=NULL)
@@ -361,11 +361,11 @@ class fRequest
 	
 	
 	/**
-	 * Returns the best HTTP accept header item match (based on q value), optionally filtered by an array of options
+	 * Returns the best HTTP `Accept-*` header item match (based on `q` value), optionally filtered by an array of options
 	 * 
-	 * @param  string $header   The accept header to pick the best item from
+	 * @param  string $header   The `Accept-*` header to pick the best item from
 	 * @param  array  $options  A list of supported options to pick the best from
-	 * @return string  The best accept item, NULL if an options array is specified and none are valid
+	 * @return string  The best accept item, `NULL` if an options array is specified and none are valid
 	 */
 	static private function pickBestAcceptItem($header, $options)
 	{
@@ -411,9 +411,9 @@ class fRequest
 	
 	
 	/**
-	 * Returns an array of values from one of the HTTP Accept-* headers
+	 * Returns an array of values from one of the HTTP `Accept-*` headers
 	 * 
-	 * @return array  An associative array of {value} => {quality} sorted (in a stable-fashion) from highest to lowest quality
+	 * @return array  An associative array of `{value} => {quality}` sorted (in a stable-fashion) from highest to lowest `q`
 	 */
 	static private function processAcceptHeader($header)
 	{
@@ -464,7 +464,7 @@ class fRequest
 	
 	
 	/**
-	 * Sets a value into the appropriate superglobal ($_GET or $_POST) based on what HTTP method was used for the request
+	 * Sets a value into the appropriate `$_GET` or `$_POST` superglobal, or the local `PUT`/`DELETE` post data based on what HTTP method was used for the request
 	 * 
 	 * @param  string $key    The key to set the value to
 	 * @param  mixed  $value  The value to set
@@ -491,7 +491,7 @@ class fRequest
 	
 	
 	/**
-	 * Returns $_GET, $_POST and $_FILES and the PUT/DELTE post data to the state they were at before filter() was called
+	 * Returns `$_GET`, `$_POST` and `$_FILES` and the `PUT`/`DELTE` post data to the state they were at before ::filter() was called
 	 * 
 	 * @internal
 	 * 

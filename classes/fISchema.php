@@ -67,7 +67,7 @@ interface fISchema
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
 	 * @param  string $element  The element to return: `'type'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
-	 * @return mixed  The column info for the table/column/element specified (see method description for format)
+	 * @return mixed  The column info for the table/column/element specified - see method description for format
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL);
 	
@@ -101,7 +101,7 @@ interface fISchema
 	 * 
 	 * @param  string $table     The table to return the keys for
 	 * @param  string $key_type  The type of key to return: `'primary'`, `'foreign'`, `'unique'`
-	 * @return array  An array of all keys, or just the type specified (see method description for format)
+	 * @return array  An array of all keys, or just the type specified - see method description for format
 	 */
 	public function getKeys($table, $key_type=NULL);
 	
@@ -157,7 +157,7 @@ interface fISchema
 	 * 
 	 * @param  string $table              The table to return the relationships for
 	 * @param  string $relationship_type  The type of relationship to return: `'one-to-one'`, `'many-to-one'`, `'one-to-many'`, `'many-to-many'`
-	 * @return array  An array of all relationships, or just the type specified (see method description for format)
+	 * @return array  An array of all relationships, or just the type specified - see method description for format
 	 */
 	public function getRelationships($table, $relationship_type=NULL);
 	

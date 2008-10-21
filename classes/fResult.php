@@ -1,6 +1,6 @@
 <?php
 /**
- * Representation of a result from a query against the {@link fDatabase} class
+ * Representation of a result from a query against the fDatabase class
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -15,7 +15,7 @@
 class fResult implements Iterator
 {
 	/**
-	 * The number of rows affected by an insert, update, delete, etc
+	 * The number of rows affected by an `INSERT`, `UPDATE`, `DELETE`, etc
 	 * 
 	 * @var integer
 	 */
@@ -71,7 +71,7 @@ class fResult implements Iterator
 	private $returned_rows = 0;
 	
 	/**
-	 * The sql query
+	 * The SQL query
 	 * 
 	 * @var string
 	 */
@@ -85,7 +85,7 @@ class fResult implements Iterator
 	private $type = NULL;
 	
 	/**
-	 * The sql from before translation
+	 * The SQL from before translation - only applicable to translated queries
 	 * 
 	 * @var string
 	 */
@@ -97,8 +97,8 @@ class fResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type           The type of database (valid: 'mssql', 'mysql', 'postgresql', 'sqlite')
-	 * @param  string $extension      The database extension used (valid: 'array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite')
+	 * @param  string $type           The type of database: `'mssql'`, `'mysql'`, `'postgresql'`, `'sqlite'`
+	 * @param  string $extension      The database extension used: `'array'`, `'mssql'`, `'mysql'`, `'mysqli'`, `'pgsql'`, `'sqlite'`
 	 * @param  string $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
 	 * @return fResult
 	 */
@@ -231,7 +231,7 @@ class fResult implements Iterator
 	 * @throws fNoRemainingException
 	 * @internal
 	 * 
-	 * @return array  The current Row
+	 * @return array  The current row
 	 */
 	public function current()
 	{
@@ -311,7 +311,7 @@ class fResult implements Iterator
 	 * @throws fNoResultsException
 	 * @throws fNoRemainingException
 	 * 
-	 * @return array|false  The associative array of the row or FALSE if no remaining records
+	 * @return array  The associative array of the row
 	 */
 	public function fetchRow()
 	{
@@ -322,12 +322,12 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Wraps around {@link fetchRow()} and returns the first field from the row instead of the whole row.
+	 * Wraps around ::fetchRow() and returns the first field from the row instead of the whole row
 	 * 
 	 * @throws fNoResultsException
 	 * @throws fNoRemainingException
 	 * 
-	 * @return string|number  The first scalar value from {@link fetchRow()}
+	 * @return string|number  The first scalar value from ::fetchRow()
 	 */
 	public function fetchScalar()
 	{
@@ -337,7 +337,7 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Warns the user about bugs in the dblib driver for mssql, fixes some bugs
+	 * Warns the user about bugs in the DBLib driver for MSSQL, fixes some bugs
 	 * 
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
@@ -494,7 +494,7 @@ class fResult implements Iterator
 	 * @throws fNoResultsException
 	 * @internal
 	 * 
-	 * @return array|null  The next row or null
+	 * @return void
 	 */
 	public function next()
 	{
@@ -670,7 +670,7 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Throws an {@link fNoResultException} if the query did not return any rows
+	 * Throws an fNoResultException if the query did not return any rows
 	 * 
 	 * @throws fNoResultsException
 	 * 
