@@ -24,7 +24,7 @@ class fImage extends fFile
 	
 	
 	/**
-	 * If we are using the imagemagick processor, this stores the path to the binaries
+	 * If we are using the ImageMagick processor, this stores the path to the binaries
 	 * 
 	 * @var string
 	 */
@@ -237,11 +237,11 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Returns an array of acceptable mimetype for the processor installed
+	 * Returns an array of acceptable mime types for the processor that was detected
 	 * 
 	 * @internal
 	 * 
-	 * @return array  The mimetypes that the installed processor can manipulate
+	 * @return array  The mime types that the detected image processor can manipulate
 	 */
 	static public function getCompatibleMimetypes()
 	{
@@ -260,18 +260,19 @@ class fImage extends fFile
 	/**
 	 * Gets the dimensions and type of an image stored on the filesystem
 	 * 
-	 * The 'type' element will be one of the following:
-	 *  - {null} (File type is not supported)
-	 *  - 'jpg'
-	 *  - 'gif'
-	 *  - 'png'
-	 *  - 'tif'
+	 * The `'type'` key will have one of the following values:
+	 * 
+	 *  - `{null}` (File type is not supported)
+	 *  - `'jpg'`
+	 *  - `'gif'`
+	 *  - `'png'`
+	 *  - `'tif'`
 	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string $image_path  The path to the image to get stats for
-	 * @param  string $element     The element to retrieve ('type', 'width', 'height')
-	 * @return array  An associative array: 'type' => {mixed}, 'width' => {integer}, 'height' => {integer}
+	 * @param  string $element     The element to retrieve: `'type'`, `'width'`, `'height'`
+	 * @return mixed  An associative array: `'type' => {mixed}, 'width' => {integer}, 'height' => {integer}`, or the element specified
 	 */
 	static protected function getInfo($image_path, $element=NULL)
 	{
@@ -338,7 +339,7 @@ class fImage extends fFile
 	 * @internal
 	 * 
 	 * @param  string $image  The image to check for incompatibility
-	 * @return boolean  If the image is compatible with the image manipulation facility on the server
+	 * @return boolean  If the image is compatible with the detected image processor
 	 */
 	static public function isImageCompatible($image)
 	{
@@ -372,7 +373,7 @@ class fImage extends fFile
 	 * Checks if the path specified is restricted by open basedir
 	 * 
 	 * @param  string $path  The path to check
-	 * @return boolean  If the path is restricted by open_basedir
+	 * @return boolean  If the path is restricted by the `open_basedir` ini setting
 	 */
 	static private function isOpenBaseDirRestricted($path)
 	{
@@ -399,7 +400,7 @@ class fImage extends fFile
 	 * Checks if the path specified is restricted by the safe mode exec dir restriction
 	 * 
 	 * @param  string $path  The path to check
-	 * @return boolean  If the path is restricted by safe_mode_exec_dir
+	 * @return boolean  If the path is restricted by the `safe_mode_exec_dir` ini setting
 	 */
 	static private function isSafeModeExecDirRestricted($path)
 	{
@@ -515,10 +516,10 @@ class fImage extends fFile
 	/**
 	 * Crops the biggest area possible from the center of the image that matches the ratio provided
 	 * 
-	 * Crop does not occur until {@link fImage::saveChanges()} is called.
+	 * The crop does not occur until ::saveChanges() is called.
 	 * 
-	 * @param  numeric $ratio_width   The width to crop the image to
-	 * @param  numeric $ratio_height  The height to crop the image to
+	 * @param  numeric $ratio_width   The width ratio to crop the image to
+	 * @param  numeric $ratio_height  The height ratio to crop the image to
 	 * @return void
 	 */
 	public function cropToRatio($ratio_width, $ratio_height)
@@ -589,7 +590,7 @@ class fImage extends fFile
 	/**
 	 * Converts the image to grayscale
 	 * 
-	 * Desaturation does not occur until {@link fImage::saveChanges()} is called.
+	 * Desaturation does not occur until ::saveChanges() is called.
 	 * 
 	 * @return void
 	 */
@@ -611,7 +612,7 @@ class fImage extends fFile
 	/**
 	 * Gets the dimensions of the image as of the last modification
 	 * 
-	 * @return array  An associative array: 'width' => {integer}, 'height' => {integer}
+	 * @return array  An associative array: `'width' => {integer}, 'height' => {integer}`
 	 */
 	private function getCurrentDimensions()
 	{
@@ -643,7 +644,7 @@ class fImage extends fFile
 	/**
 	 * Returns the type of the image
 	 * 
-	 * @return string  The type of the image - 'jpg', 'gif', 'png' or 'tif'
+	 * @return string  The type of the image: `'jpg'`, `'gif'`, `'png'`, `'tif'`
 	 */
 	public function getType()
 	{
@@ -850,13 +851,13 @@ class fImage extends fFile
 	
 	
 	/**
-	 * Sets the image to be resized proportionally to a specific sized canvas
+	 * Sets the image to be resized proportionally to a specific size canvas
 	 * 
-	 * Will only size down an image. Resize does not occur until
-	 * {@link fImage::saveChanges()} is called.
+	 * Will only size down an image. Resize does not occur until ::saveChanges()
+	 * is called.
 	 * 
-	 * @param  integer $canvas_width   The width of the canvas to fit the image on, 0 for no constraint
-	 * @param  integer $canvas_height  The height of the canvas to fit the image on, 0 for no constraint
+	 * @param  integer $canvas_width   The width of the canvas to fit the image on, `0` for no constraint
+	 * @param  integer $canvas_height  The height of the canvas to fit the image on, `0` for no constraint
 	 * @return void
 	 */
 	public function resize($canvas_width, $canvas_height)
@@ -939,12 +940,12 @@ class fImage extends fFile
 	 * If the file type is different than the current one, removes the current
 	 * file once the new one is created.
 	 * 
-	 * This operation will be reverted by a filesystem transaction being rolled back.
-	 * If a transaction is in progress and the new image type causes a new file
-	 * to be created, the old file will not be deleted until the transaction is
-	 * committed.
+	 * This operation will be reverted by a filesystem transaction being rolled
+	 * back. If a transaction is in progress and the new image type causes a
+	 * new file to be created, the old file will not be deleted until the
+	 * transaction is committed.
 	 * 
-	 * @param  string $new_image_type  The new file type for the image, can be 'jpg', 'gif' or 'png'
+	 * @param  string $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
 	 * @return void
 	 */
 	public function saveChanges($new_image_type=NULL)

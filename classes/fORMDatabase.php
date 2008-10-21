@@ -1,6 +1,6 @@
 <?php
 /**
- * Performs database manipulations for ORM-related code
+ * Holds a single instance of the fDatabase class and provides database manipulation functionality for ORM code
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -83,7 +83,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Allows attaching a class that is or extends {@link fDatabase} instead of just using the provided implementation
+	 * Allows attaching a class that is or extends fDatabase
 	 * 
 	 * @param  fDatabase $database  An object that is or extends the fDatabase class
 	 * @return void
@@ -95,12 +95,12 @@ class fORMDatabase
 	
 	
 	/**
-	 * Creates a FROM clause from a join array
+	 * Creates a `FROM` clause from a join array
 	 * 
 	 * @internal
 	 * 
-	 * @param  array $joins  The joins to create the FROM clause out of
-	 * @return string  The from clause (does not include the word 'FROM')
+	 * @param  array $joins  The joins to create the `FROM` clause out of
+	 * @return string  The from clause (does not include the word `'FROM'`)
 	 */
 	static public function createFromClauseFromJoins($joins)
 	{
@@ -248,13 +248,13 @@ class fORMDatabase
 	
 	
 	/**
-	 * Creates an order by clause from an array of columns/expressions and directions
+	 * Creates an `ORDER BY` clause from an array of columns/expressions and directions
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $table      The table any ambigious column references will refer to
-	 * @param  array  $order_bys  The array of order bys to use (see {@link fRecordSet::build()} for format)
-	 * @return string  The SQL ORDER BY clause
+	 * @param  array  $order_bys  The array of order bys to use - see fRecordSet::build() for format
+	 * @return string  The SQL `ORDER BY` clause
 	 */
 	static public function createOrderByClause($table, $order_bys)
 	{
@@ -300,26 +300,26 @@ class fORMDatabase
 	
 	
 	/**
-	 * Creates a where clause condition for primary keys of the table specified
+	 * Creates a `WHERE` clause condition for primary keys of the table specified
 	 * 
-	 * This method requires the $primary_keys parameter to be one of:
+	 * This method requires the `$primary_keys` parameter to be one of:
 	 * 
 	 *  - A scalar value for a single-column primary key
 	 *  - An array of values for a single-column primary key
-	 *  - An associative array of values for a multi-column primary key (column => value)
-	 *  - An array of associative arrays of values for a multi-column primary key (key => array(column => value)
+	 *  - An associative array of values for a multi-column primary key (`column => value`)
+	 *  - An array of associative arrays of values for a multi-column primary key (`key => array(column => value)`)
 	 * 
-	 * If you are looking to build a primary key where clause from the $values
-	 * and $old_values arrays, please see {@link createPrimaryKeyWhereClause()}
+	 * If you are looking to build a primary key where clause from the `$values`
+	 * and `$old_values` arrays, please see ::createPrimaryKeyWhereClause()
 	 * 
 	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $table         The table to build the where clause for
 	 * @param  string $table_alias   The alias for the table
-	 * @param  array  &$values       The values array for the {@link fActiveRecord} object
-	 * @param  array  &$old_values   The values array for the {@link fActiveRecord} object
-	 * @return string  The WHERE clause that will specify the {@link fActiveRecord} as it currently exists in the database
+	 * @param  array  &$values       The values array for the fActiveRecord object
+	 * @param  array  &$old_values   The values array for the fActiveRecord object
+	 * @return string  The `WHERE` clause that will specify the fActiveRecord as it currently exists in the database
 	 */
 	static public function createPrimaryKeyWhereClause($table, $table_alias, &$values, &$old_values)
 	{
@@ -339,13 +339,13 @@ class fORMDatabase
 	
 	
 	/**
-	 * Creates a where clause from an array of conditions
+	 * Creates a `WHERE` clause from an array of conditions
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $table       The table any ambigious column references will refer to
-	 * @param  array  $conditions  The array of conditions  (see {@link fRecordSet::build()} for format)
-	 * @return string  The SQL WHERE clause
+	 * @param  array  $conditions  The array of conditions - see fRecordSet::build() for format
+	 * @return string  The SQL `WHERE` clause
 	 */
 	static public function createWhereClause($table, $conditions)
 	{
@@ -539,9 +539,9 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string $table                The table to store the value
-	 * @param  string $column               The column to store the value in, may also be shorthand column name like table.column or table=>related_table.column
+	 * @param  string $column               The column to store the value in, may also be shorthand column name like `table.column` or `table=>related_table.column`
 	 * @param  mixed  $value                The value to escape
-	 * @param  string $comparison_operator  Optional: should be '=', '!=', '!', '<>', '<', '<=', '>', '>=', 'IN', 'NOT IN'
+	 * @param  string $comparison_operator  Optional: should be `'='`, `'!='`, `'!'`, `'<>'`, `'<'`, `'<='`, `'>'`, `'>='`, `'IN'`, `'NOT IN'`
 	 * @return string  The SQL-ready representation of the value
 	 */
 	static public function escapeBySchema($table, $column, $value, $comparison_operator=NULL)
@@ -598,22 +598,22 @@ class fORMDatabase
 	
 	
 	/**
-	 * Finds all of the table names in the SQL and creates the appropriate from and group clauses with all necessary joins
+	 * Finds all of the table names in the SQL and creates the appropriate `FROM` and `GROUP BY` clauses with all necessary joins
 	 * 
-	 * The SQL string should contain two placeholders, :from_clause and
-	 * :group_by_clause. All columns should be qualified with their full table
+	 * The SQL string should contain two placeholders, `:from_clause` and
+	 * `:group_by_clause`. All columns should be qualified with their full table
 	 * name. Here is an example SQL string to pass in presumming that the
 	 * tables users and groups are in a relationship:
 	 * 
-	 * <pre>
+	 * {{{
 	 * SELECT users.* FROM :from_clause WHERE groups.group_id = 5 :group_by_clause ORDER BY lower(users.first_name) ASC
-	 * </pre>
+	 * <}}}
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $table  The main table to be queried
-	 * @param  string $sql    The SQL to insert the from clause into
-	 * @return string  The from SQL clause
+	 * @param  string $sql    The SQL to insert the `FROM` clause into
+	 * @return string  The SQL `FROM` clause
 	 */
 	static public function insertFromAndGroupByClauses($table, $sql)
 	{
@@ -789,7 +789,7 @@ class fORMDatabase
 	
 	
 	/**
-	 * Return the instance of the {@link fDatabase} class
+	 * Return the instance of the fDatabase class
 	 * 
 	 * @return fDatabase  The database instance
 	 */

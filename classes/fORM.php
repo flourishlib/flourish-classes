@@ -70,28 +70,28 @@ class fORM
 	static private $identity_map = array();
 	
 	/**
-	 * Callbacks for objectify()
+	 * Callbacks for ::objectify()
 	 * 
 	 * @var array
 	 */
 	static private $objectify_callbacks = array();
 	
 	/**
-	 * Custom record names for {@link fActiveRecord} classes
+	 * Custom record names for fActiveRecord classes
 	 * 
 	 * @var array
 	 */
 	static private $record_names = array();
 	
 	/**
-	 * Callbacks for reflect()
+	 * Callbacks for ::reflect()
 	 * 
 	 * @var array
 	 */
 	static private $reflect_callbacks = array();
 	
 	/**
-	 * Callbacks for scalarize()
+	 * Callbacks for ::scalarize()
 	 * 
 	 * @var array
 	 */
@@ -106,7 +106,12 @@ class fORM
 	
 	
 	/**
-	 * Allows non-standard (plural, underscore notation table name <-> singular, upper-camel case class name) table to class mapping
+	 * Allows non-standard table to class mapping
+	 * 
+	 * By default, all database tables are assumed to be plural nouns in
+	 * `underscore_notation` and all class names are assumed to be singular
+	 * nouns in `UpperCamelCase`. This method allows arbitrary table to 
+	 * class mapping.
 	 * 
 	 * @param  string $table  The name of the database table
 	 * @param  string $class  The name of the class
@@ -121,7 +126,7 @@ class fORM
 	/**
 	 * Calls a hook callback and returns the result
 	 * 
-	 * The return value should only be used by replace:: callbacks.
+	 * The return value should only be used by `replace::` callbacks.
 	 * 
 	 * @internal
 	 * 
@@ -132,7 +137,7 @@ class fORM
 	 * @param  array         &$related_records   Records related to the current record
 	 * @param  mixed         &$first_parameter   The first parameter to send the callback
 	 * @param  mixed         &$second_parameter  The second parameter to send the callback
-	 * @return mixed  The return value from the callback. Will be NULL unless it is a replace:: callback.
+	 * @return mixed  The return value from the callback. Will be `NULL` unless it is a `replace::` callback.
 	 */
 	static public function callHookCallback(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
 	{
@@ -187,14 +192,12 @@ class fORM
 	
 	
 	/**
-	 * Calls a hook callback and returns the result
-	 * 
-	 * The return value should only be used by replace:: callbacks.
+	 * Calls all reflect callbacks for the object passed
 	 * 
 	 * @internal
 	 * 
 	 * @param  fActiveRecord $object                The instance of the class to call the hook for
-	 * @param  array         &$signatures           The associative array of {method_name} => {signature}
+	 * @param  array         &$signatures           The associative array of `{method_name} => {signature}`
 	 * @param  boolean       $include_doc_comments  If the doc comments should be included in the signature
 	 * @return void
 	 */
@@ -274,7 +277,7 @@ class fORM
 	 * 
 	 * @param  mixed $class             The name of the class, or an instance of it
 	 * @param  array $primary_key_data  The primary key(s) for the instance
-	 * @return mixed  Will return FALSE if no match, or the instance of the object if a match occurs
+	 * @return mixed  Will return `FALSE` if no match, or the fActiveRecord object if a match occurs
 	 */
 	static public function checkIdentityMap($class, $primary_key_data)
 	{
@@ -310,7 +313,7 @@ class fORM
 	
 	
 	/**
-	 * Turns a primary key array into a hash key using md5
+	 * Turns a primary key array into a hash key using [http://php.net/md5 md5()]
 	 * 
 	 * @param  array $primary_key_data  The primary key data to hash
 	 * @return string  An md5 of the sorted, serialized primary key data
@@ -329,9 +332,9 @@ class fORM
 	
 	
 	/**
-	 * Will dynamically create an {@link fActiveRecord}-based class for a database table
+	 * Will dynamically create an fActiveRecord-based class for a database table
 	 * 
-	 * Normally this would be called from an __autoload() function
+	 * Normally this would be called from an `__autoload()` function
 	 * 
 	 * @param  string $class  The name of the class to create
 	 * @return void
@@ -389,7 +392,10 @@ class fORM
 	
 	
 	/**
-	 * Returns the column name. The default column name is a humanize-d version of the column.
+	 * Returns the column name
+	 * 
+	 * The default column name is the result of calling fGrammar::humanize()
+	 * on the column.
 	 * 
 	 * @internal
 	 * 
@@ -414,7 +420,10 @@ class fORM
 	
 	
 	/**
-	 * Returns the record name for a class. The default record name is a humanized version of the class name.
+	 * Returns the record name for a class
+	 * 
+	 * The default record name is the result of calling fGrammar::humanize()
+	 * on the class.
 	 * 
 	 * @internal
 	 * 
@@ -491,7 +500,10 @@ class fORM
 	
 	
 	/**
-	 * Allows overriding of default (humanize-d column) column names
+	 * Allows overriding of default column names
+	 * 
+	 * By default a column name is the result of fGrammar::humanize() called
+	 * on the column.
 	 * 
 	 * @param  mixed  $class        The class name or instance of the class the column is located in
 	 * @param  string $column       The database column
@@ -511,7 +523,10 @@ class fORM
 	
 	
 	/**
-	 * Allows overriding of default (humanize-d class name) record names
+	 * Allows overriding of default record names
+	 * 
+	 * By default a record name is the result of fGrammar::humanize() called
+	 * on the class.
 	 * 
 	 * @param  mixed  $class        The class name or instance of the class to override the name of
 	 * @param  string $record_name  The human version of the record
@@ -525,12 +540,12 @@ class fORM
 	
 	
 	/**
-	 * Parses a camelCase method name for an action and subject in the form actionSubject
+	 * Parses a `camelCase` method name for an action and subject in the form `actionSubject()`
 	 *
 	 * @internal
 	 * 
 	 * @param  string $method  The method name to parse
-	 * @return array  An array of 0 => {action}, 1 => {subject}
+	 * @return array  An array of `0 => {action}, 1 => {subject}`
 	 */
 	static public function parseMethod($method)
 	{
@@ -548,10 +563,10 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for one of the various {@link fActiveRecord} hooks
+	 * Registers a callback for one of the various fActiveRecord hooks
 	 * 
-	 * Any hook that does not begin with replace:: can have multiple callbacks.
-	 * replace:: hooks can only have one, the most recently registered.
+	 * Any hook that does not begin with `replace::` can have multiple callbacks.
+	 * `replace::` hooks can only have one, the most recently registered.
 	 * 
 	 * The method signature should include the follow parameters:
 	 * 
@@ -561,13 +576,41 @@ class fORM
 	 *  4. &$related_records
 	 * 
 	 * Below is a list of other parameters passed to specific hooks:
-	 *   - 'replace::validate()': $return messages - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
-	 *   - 'pre::validate()' and 'post::validate()': &$validation_messages - an ordered array of validation errors that will be returned or tossed as an fValidationException
-	 *   - 'replace::{someMethod}()' (where {someMethod} is anything routed to __call()): &$method_name - the name of the method called, &$parameters - the parameters the method was called with
 	 * 
-	 * @param  mixed    $class     The class name or instance of the class to hook, '*' will hook all classes
+	 *  - **`'replace::validate()'`**: `$return_messages` - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
+	 *  - **`'pre::validate()'`** and **`'post::validate()'`**: `&$validation_messages` - an ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *  - **`'replace::{methodName}()'`**: `&$method_name` - the name of the method called, `&$parameters` - the parameters the method was called with
+	 * 
+	 * Below is a list of all valid non-`replace::` hooks:
+	 * 
+	 *  - `'post::__construct()'`
+	 *  - `'replace::delete()'`
+	 *  - `'pre::delete()'`
+	 *  - `'post-begin::delete()'`
+	 *  - `'pre-commit::delete()'`
+	 *  - `'post-commit::delete()'`
+	 *  - `'post-rollback::delete()'`
+	 *  - `'post::delete()'`
+	 *  - `'post::inspect()'`
+	 *  - `'post::loadFromResult()'`
+	 *  - `'replace::populate()'`
+	 *  - `'pre::populate()'`
+	 *  - `'post::populate()'`
+	 *  - `'replace::store()'`
+	 *  - `'pre::store()'`
+	 *  - `'post-begin::store()'`
+	 *  - `'post-validate::store()'`
+	 *  - `'pre-commit::store()'`
+	 *  - `'post-commit::store()'`
+	 *  - `'post-rollback::store()'`
+	 *  - `'post::store()'`
+	 *  - `'replace::validate()'`
+	 *  - `'pre::validate()'`
+	 *  - `'post::validate()'`
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to hook, `'*'` will hook all classes
 	 * @param  string   $hook      The hook to register for
-	 * @param  callback $callback  The callback to register. See the method description for details about the method signature.
+	 * @param  callback $callback  The callback to register - see the method description for details about the method signature
 	 * @return void
 	 */
 	static public function registerHookCallback($class, $hook, $callback)
@@ -657,7 +700,7 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for when objectify() is called on a specific column
+	 * Registers a callback for when ::objectify() is called on a specific column
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
@@ -677,18 +720,19 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback to modify the results of {@link fActiveRecord::reflect()}
+	 * Registers a callback to modify the results of fActiveRecord::reflect()
 	 * 
 	 * Callbacks registered here can override default method signatures and add
 	 * method signatures, however any methods that are defined in the actual class
 	 * will override these signatures.
 	 * 
 	 * The callback should accept three parameters:
-	 *  - $class: the class name
-	 *  - &$signatures: an associative array of {method_name} => {signature}
-	 *  - $include_doc_comments: a boolean indicating if the signature should include the doc comment for the method, or just the signature
 	 * 
-	 * @param  mixed    $class     The class name or instance of the class to register for ,'*' will register for all classes
+	 *  - **`$class`**: the class name
+	 *  - **`&$signatures`**: an associative array of `{method_name} => {signature}`
+	 *  - **`$include_doc_comments`**: a boolean indicating if the signature should include the doc comment for the method, or just the signature
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
 	 * @param  callback $callback  The callback to register. Callback should accept a three parameters - see method description for details.
 	 * @return void
 	 */
@@ -707,7 +751,7 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for when scalarize() is called on a specific column
+	 * Registers a callback for when ::scalarize() is called on a specific column
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
@@ -771,7 +815,7 @@ class fORM
 	
 	
 	/**
-	 * If the value passed is an object, calls __toString() on it
+	 * If the value passed is an object, calls `__toString()` on it
 	 *
 	 * @internal
 	 * 
@@ -799,7 +843,7 @@ class fORM
 	
 	
 	/**
-	 * Takes a class name (or class) and turns it into a table name. Uses custom mapping if set.
+	 * Takes a class name (or class) and turns it into a table name - Uses custom mapping if set
 	 * 
 	 * @param  mixed $class  he class name or instance of the class
 	 * @return string  The table name

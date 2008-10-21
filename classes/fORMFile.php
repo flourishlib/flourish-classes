@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides file manipulation functionality for {@link fActiveRecord} classes
+ * Provides file manipulation functionality for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -93,7 +93,7 @@ class fORMFile
 	
 	
 	/**
-	 * Adds an {@link fImage} method call to the image manipulation for a column if an image file is uploaded
+	 * Adds an fImage method call to the image manipulation for a column if an image file is uploaded
 	 * 
 	 * @param  mixed  $class       The class name or instance of the class
 	 * @param  string $column      The column to call the method for
@@ -130,7 +130,7 @@ class fORMFile
 	
 	
 	/**
-	 * Adds an {@link fUpload} method call to the {@link fUpload} initialization for a column
+	 * Adds an fUpload method call to the fUpload initialization for a column
 	 * 
 	 * @param  mixed  $class       The class name or instance of the class
 	 * @param  string $column      The column to call the method for
@@ -213,9 +213,17 @@ class fORMFile
 	/**
 	 * Sets a column to be a file upload column
 	 * 
+	 * Configuring a column to be a file upload column means that whenever
+	 * fActiveRecord::populate() is called for an fActiveRecord object, any
+	 * appropriately named file uploads (via `$_FILES`) will be moved into
+	 * the directory for this column.
+	 * 
+	 * Setting the column to a file path will cause the specified file to
+	 * be copied into the directory for this column.
+	 * 
 	 * @param  mixed             $class      The class name or instance of the class
 	 * @param  string            $column     The column to set as a file upload column
-	 * @param  fDirectory|string $directory  The directory to upload to
+	 * @param  fDirectory|string $directory  The directory to upload/move to
 	 * @return void
 	 */
 	static public function configureFileUploadColumn($class, $column, $directory)
@@ -323,7 +331,7 @@ class fORMFile
 	
 	
 	/**
-	 * Takes one file or image upload columns and sets it to inherit any uploaded files from another column
+	 * Takes one file or image upload columns and sets it to inherit any uploaded/set files from another column
 	 * 
 	 * @param  mixed  $class                The class name or instance of the class
 	 * @param  string $column               The column that will inherit the uploaded file
@@ -347,12 +355,15 @@ class fORMFile
 	
 	
 	/**
-	 * Sets a column to be a date created column
+	 * Sets a column to be an image upload column
+	 * 
+	 * This method works exactly the same as ::configureFileUploadColumn()
+	 * except that only image files are accepted.
 	 * 
 	 * @param  mixed             $class       The class name or instance of the class
 	 * @param  string            $column      The column to set as a file upload column
 	 * @param  fDirectory|string $directory   The directory to upload to
-	 * @param  string            $image_type  The image type to save the image as. Valid: {null}, 'gif', 'jpg', 'png'
+	 * @param  string            $image_type  The image type to save the image as: `NULL`, `'gif'`, `'jpg'`, `'png'`
 	 * @return void
 	 */
 	static public function configureImageUploadColumn($class, $column, $directory, $image_type=NULL)
@@ -430,7 +441,7 @@ class fORMFile
 	
 	
 	/**
-	 * Deletes old files for this record that have been replaced
+	 * Deletes old files for this record that have been replaced by new ones
 	 * 
 	 * @internal
 	 * 
@@ -456,7 +467,7 @@ class fORMFile
 	
 	
 	/**
-	 * Encodes a file for output into an HTML input tag
+	 * Encodes a file for output into an HTML `input` tag
 	 * 
 	 * @internal
 	 * 
@@ -520,7 +531,7 @@ class fORMFile
 	
 	
 	/**
-	 * Moves uploaded file from the temporary directory to the permanent directory
+	 * Moves uploaded files from the temporary directory to the permanent directory
 	 * 
 	 * @internal
 	 * 
@@ -548,14 +559,14 @@ class fORMFile
 	
 	
 	/**
-	 * Turns a filename into an {@link fFile} or {@link fImage} object
+	 * Turns a filename into an fFile or fImage object
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $class   The class this value is for
 	 * @param  string $column  The column the value is in
 	 * @param  mixed  $value   The value
-	 * @return mixed  The {@link fFile}, {@link fImage} or raw value
+	 * @return mixed  The fFile, fImage or raw value
 	 */
 	static public function objectify($class, $column, $value)
 	{
@@ -581,7 +592,7 @@ class fORMFile
 	
 	
 	/**
-	 * Performs the upload action for file uploads during {@link fActiveRecord::populate()}
+	 * Performs the upload action for file uploads during fActiveRecord::populate()
 	 * 
 	 * @internal
 	 * 
@@ -605,7 +616,7 @@ class fORMFile
 	
 	
 	/**
-	 * Prepares a file for output into HTML by returning the web server path to the file
+	 * Prepares a file for output into HTML by returning filename or the web server path to the file
 	 * 
 	 * @internal
 	 * 
@@ -645,7 +656,7 @@ class fORMFile
 	
 	
 	/**
-	 * Performs image manipulation on an uploaded image
+	 * Performs image manipulation on an uploaded/set image
 	 * 
 	 * @internal
 	 * 
@@ -687,12 +698,12 @@ class fORMFile
 	
 	
 	/**
-	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * Adjusts the fActiveRecord::reflect() signatures of columns that have been configured in this class
 	 * 
 	 * @internal
 	 * 
 	 * @param  string  $class                 The class to reflect
-	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method name} => {signature}`
 	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
 	 * @return void
 	 */
@@ -912,11 +923,11 @@ class fORMFile
 	
 	
 	/**
-	 * Sets up the {@link fUpload} class for a specific column
+	 * Sets up an fUpload object for a specific column
 	 * 
 	 * @param  string $class   The class to set up for
 	 * @param  string $column  The column to set up for
-	 * @return void
+	 * @return fUpload  The configured fUpload object
 	 */
 	static private function setUpFUpload($class, $column)
 	{
@@ -1053,7 +1064,7 @@ class fORMFile
 	
 	
 	/**
-	 * Moves uploaded file from the temporary directory to the permanent directory
+	 * Validates uploaded files to ensure they match all of the criteria defined
 	 * 
 	 * @internal
 	 * 

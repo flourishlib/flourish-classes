@@ -1,8 +1,9 @@
 <?php
 /**
- * Handles related record tasks for (@link fActiveRecord} classes
+ * Handles related record tasks for fActiveRecord classes
  * 
- * The functionality only works with single-field foreign keys.
+ * The functionality of this class only works with single-field `FOREIGN KEY`
+ * constraints.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -57,7 +58,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed       $class                 The class name or instance of the class to get the related values for
-	 * @param  array       &$related_records      The related records existing for the {@link fActiveRecord} class
+	 * @param  array       &$related_records      The related records existing for the fActiveRecord class
 	 * @param  string      $related_class         The class we are associating with the current record
 	 * @param  fRecordSet  $records_to_associate  An fRecordSet of the records to be associated
 	 * @param  string      $route                 The route to use between the current class and the related class
@@ -77,11 +78,11 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$values           The values for the {@link fActiveRecord} class
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array  &$values           The values for the fActiveRecord class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class that is related to the current record
 	 * @param  string $route             The route to follow for the class specified
-	 * @return array  An array of the related column values
+	 * @return fRecordSet  A record set of the related records
 	 */
 	static public function buildRecords($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
@@ -129,8 +130,8 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$values           The values for the {@link fActiveRecord} class
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array  &$values           The values for the fActiveRecord class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class that is related to the current record
 	 * @param  string $route             The route to follow for the class specified
 	 * @return integer  The number of related records
@@ -185,7 +186,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class          The class name or instance of the class to get the related values for
-	 * @param  array  $values         The values existing in the {@link fActiveRecord} class
+	 * @param  array  $values         The values existing in the fActiveRecord class
 	 * @param  string $related_class  The related class name
 	 * @param  string $route          The route to the related class
 	 * @return fActiveRecord  An instace of the class specified
@@ -203,7 +204,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Figures out what filter to pass to {@link fRequest::filter()} for the specified related class
+	 * Figures out what filter to pass to fRequest::filter() for the specified related class
 	 *
 	 * @internal
 	 * 
@@ -238,14 +239,14 @@ class fORMRelated
 	
 	
 	/**
-	 * Gets the ordering to use when returning {@link fRecordSet fRecordSets} of related objects
+	 * Gets the ordering to use when returning an fRecordSet of related objects
 	 *
 	 * @internal
 	 * 
 	 * @param  mixed  $class          The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class  The related class the ordering rules apply to
 	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
-	 * @return array  An array of the order bys (see {@link fRecordSet::build()} for format)
+	 * @return array  An array of the order bys - see fRecordSet::build() for format
 	 */
 	static public function getOrderBys($class, $related_class, $route)
 	{
@@ -263,7 +264,10 @@ class fORMRelated
 	
 	
 	/**
-	 * Returns the record name for a related class - default is a humanized version of the class name
+	 * Returns the record name for a related class
+	 * 
+	 * The default record name of a related class is the result of
+	 * fGrammar::humanize() called on the class.
 	 * 
 	 * @internal
 	 * 
@@ -296,7 +300,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The related class to populate
 	 * @param  string $route             The route to the related class
 	 * @return void
@@ -332,11 +336,11 @@ class fORMRelated
 	
 	
 	/**
-	 * Does an array_diff() for two arrays that have arrays as values
+	 * Does an [http://php.net/array_diff array_diff()] for two arrays that have arrays as values
 	 * 
 	 * @param  array $array1  The array to remove items from
 	 * @param  array $array2  The array of items to remove
-	 * @return array  The items in $array1 that were not also in $array2
+	 * @return array  The items in `$array1` that were not also in `$array2`
 	 */
 	static private function multidimensionArrayDiff($array1, $array2)
 	{
@@ -357,7 +361,10 @@ class fORMRelated
 	
 	
 	/**
-	 * Allows overriding of default (humanize-d class name) record names or related records
+	 * Allows overriding of default record names or related records
+	 * 
+	 * The default record name of a related record is the result of
+	 * fGrammar::humanize() called on the class name.
 	 * 
 	 * @param  mixed  $class          The class name or instance of the class to set the related record name for
 	 * @param  mixed  $related_class  The name of the related class, or an instance of it
@@ -393,7 +400,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The related class to populate
 	 * @param  string $route             The route to the related class
 	 * @return void
@@ -465,12 +472,12 @@ class fORMRelated
 	
 	
 	/**
-	 * Adds information about methods provided by this class to {@link fActiveRecord}
+	 * Adds information about methods provided by this class to fActiveRecord
 	 * 
 	 * @internal
 	 * 
 	 * @param  mixed   $class                 The class name or instance of the class this ordering rule applies to
-	 * @param  array   &$signatures           The associative array of {method_name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method_name} => {signature}`
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
 	 * @return void
 	 */
@@ -607,12 +614,12 @@ class fORMRelated
 	
 	
 	/**
-	 * Sets the ordering to use when returning an {@link fRecordSet} of related objects
+	 * Sets the ordering to use when returning an fRecordSet of related objects
 	 *
 	 * @param  mixed  $class           The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class   The related class we are getting info from
 	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
-	 * @param  array  $order_bys       An array of the order bys for this table.column combination (see {@link fRecordSet::build()} for format)
+	 * @param  array  $order_bys       An array of the order bys for this table.column combination - see fRecordSet::build() for format
 	 * @return void
 	 */
 	static public function setOrderBys($class, $related_class, $route, $order_bys)
@@ -640,7 +647,7 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
-	 * @param  array  &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class we are associating with the current record
 	 * @param  fRecordSet $records       The records are associating
 	 * @param  string $route             The route to use between the current class and the related class
@@ -759,8 +766,8 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  mixed   $class             The class name or instance of the class to get the related values for
-	 * @param  array   &$values           The values for the {@link fActiveRecord} class
-	 * @param  array   &$related_records  The related records existing for the {@link fActiveRecord} class
+	 * @param  array   &$values           The values for the fActiveRecord class
+	 * @param  array   &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string  $related_class     The class that is related to the current record
 	 * @param  integer $count             The number of records
 	 * @param  string  $route             The route to follow for the class specified

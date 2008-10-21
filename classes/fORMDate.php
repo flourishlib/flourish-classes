@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides additional date/time functionality for {@link fActiveRecord} classes
+ * Provides additional date/time functionality for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -61,6 +61,9 @@ class fORMDate
 	/**
 	 * Sets a column to be a date created column
 	 * 
+	 * When a new record is stored in the database, date created columns will
+	 * be filled with the timestamp of the store operation.
+	 * 
 	 * @param  mixed  $class   The class name or instance of the class
 	 * @param  string $column  The column to set as a date created column
 	 * @return void
@@ -109,6 +112,9 @@ class fORMDate
 	/**
 	 * Sets a column to be a date updated column
 	 * 
+	 * Whenever a record is stored in the database, a date updated column will
+	 * be set to the timestamp of the operation.
+	 * 
 	 * @param  mixed  $class   The class name or instance of the class
 	 * @param  string $column  The column to set as a date updated column
 	 * @return void
@@ -156,6 +162,11 @@ class fORMDate
 	
 	/**
 	 * Sets a timestamp column to store the timezone in another column
+	 * 
+	 * Since not all databases support timezone information in timestamp 
+	 * columns, this method allows storing the timezone in another columns. 
+	 * When the timestamp and timezone are retrieved from the database, they
+	 * will be automatically combined together into an fTimestamp object.
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to set the column format
 	 * @param  string $timestamp_column  The timestamp column to store the timezone for
@@ -304,7 +315,7 @@ class fORMDate
 	
 	
 	/**
-	 * Turns a timestamp value into an {@link fTimestamp} object with a timezone specified by another column
+	 * Creates fTimestamp objects for every timestamp/timezone combination in the object
 	 * 
 	 * @internal
 	 * 
@@ -329,7 +340,7 @@ class fORMDate
 	
 	
 	/**
-	 * Turns a timestamp value into an {@link fTimestamp} object with a timezone specified by another column
+	 * Turns a timestamp value into an fTimestamp object with a timezone specified by another column
 	 * 
 	 * @internal
 	 * 
@@ -398,7 +409,7 @@ class fORMDate
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
+	 * @return void
 	 */
 	static public function setDateCreated($object, &$values, &$old_values, &$related_records)
 	{
@@ -437,7 +448,7 @@ class fORMDate
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
+	 * @return void
 	 */
 	static public function setDateUpdated($object, &$values, &$old_values, &$related_records)
 	{

@@ -3,7 +3,7 @@
  * Provides HTML-related methods
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
- * {@link http://flourishlib.com/docs/UTF-8} for more information.
+ * http://flourishlib.com/docs/UTF-8 for more information.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -42,7 +42,7 @@ class fHTML
 	
 	
 	/**
-	 * Prints text, turning newlines into breaks as long as there aren't any block-level html tags
+	 * Converts newlines into `br` tags as long as there aren't any block-level HTML tags present
 	 * 
 	 * @param  string $content  The content to display
 	 * @return void
@@ -55,7 +55,7 @@ class fHTML
 	
 	
 	/**
-	 * Converts all html entities to normal characters, using UTF-8
+	 * Converts all HTML entities to normal characters, using UTF-8
 	 * 
 	 * @param  string $content  The content to decode
 	 * @return string  The decoded content
@@ -184,10 +184,10 @@ class fHTML
 	
 	
 	/**
-	 * Prints a paragraph (or div if the content has block-level html) with the contents and the class specified - will not print if no content
+	 * Prints a `p` (or `div` if the content has block-level HTML) tag with the contents and the class specified - will not print if no content
 	 * 
 	 * @param  string $content    The content to display
-	 * @param  string $css_class  The css class to apply
+	 * @param  string $css_class  The CSS class to apply
 	 * @return boolean  If the content was shown
 	 */
 	static public function show($content, $css_class='')

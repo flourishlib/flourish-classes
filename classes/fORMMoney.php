@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides money functionality for {@link fActiveRecord} classes
+ * Provides money functionality for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -163,7 +163,7 @@ class fORMMoney
 	
 	
 	/**
-	 * Encodes a money column by calling {@link fMoney::__toString()}
+	 * Encodes a money column by calling fMoney::__toString()
 	 * 
 	 * @internal
 	 * 
@@ -235,7 +235,7 @@ class fORMMoney
 	
 	
 	/**
-	 * Turns a float value into an {@link fMoney} object with a currency specified by another column
+	 * Makes fMoney objects for all money columns in the object that also have a currency column
 	 * 
 	 * @internal
 	 * 
@@ -260,14 +260,14 @@ class fORMMoney
 	
 	
 	/**
-	 * Turns a monetary value into an {@link fMoney} object
+	 * Turns a monetary value into an fMoney object
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $class   The class this value is for
 	 * @param  string $column  The column the value is in
 	 * @param  mixed  $value   The value
-	 * @return mixed  The {@link fMoney} object or raw value
+	 * @return mixed  The fMoney object or raw value
 	 */
 	static public function objectifyMoney($class, $column, $value)
 	{
@@ -286,7 +286,7 @@ class fORMMoney
 	
 	
 	/**
-	 * Turns a monetary value into an {@link fMoney} object with a currency specified by another column
+	 * Turns a monetary value into an fMoney object with a currency specified by another column
 	 * 
 	 * @internal
 	 * 
@@ -331,7 +331,7 @@ class fORMMoney
 	
 	
 	/**
-	 * Prepares a money column by calling {@link fMoney::format()}
+	 * Prepares a money column by calling fMoney::format()
 	 * 
 	 * @internal
 	 * 
@@ -341,7 +341,7 @@ class fORMMoney
 	 * @param  array         &$related_records  Any records related to this record
 	 * @param  string        &$method_name      The method that was called
 	 * @param  array         &$parameters       The parameters passed to the method
-	 * @return string  The formatted link
+	 * @return string  The formatted monetary value
 	 */
 	static public function prepareMoneyColumn($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
 	{
@@ -361,12 +361,12 @@ class fORMMoney
 	
 	
 	/**
-	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * Adjusts the fActiveRecord::reflect() signatures of columns that have been configured in this class
 	 * 
 	 * @internal
 	 * 
 	 * @param  string  $class                 The class to reflect
-	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method name} => {signature}`
 	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
 	 * @return void
 	 */

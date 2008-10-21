@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides special column functionality for {@link fActiveRecord} classes
+ * Provides special column functionality for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -164,7 +164,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Sets a column to be returned as an fNumber object from calls to get{Column}()
+	 * Sets a column to be returned as an fNumber object from calls to `get{ColumnName}()`
 	 * 
 	 * @param  mixed  $class   The class name or instance of the class to set the column format
 	 * @param  string $column  The column to return as an fNumber object
@@ -233,7 +233,7 @@ class fORMColumn
 	 * 
 	 * @param  mixed   $class   The class name or instance of the class
 	 * @param  string  $column  The column to set as a random column
-	 * @param  string  $type    The type of random string, must be one of: 'alphanumeric', 'alpha', 'numeric', 'hexadecimal'
+	 * @param  string  $type    The type of random string, must be one of: `'alphanumeric'`, `'alpha'`, `'numeric'`, `'hexadecimal'`
 	 * @param  integer $length  The length of the random string
 	 * @return void
 	 */
@@ -299,7 +299,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Encodes a number column by calling {@link fNumber::__toString()}
+	 * Encodes a number column by calling fNumber::__toString()
 	 * 
 	 * @internal
 	 * 
@@ -400,14 +400,14 @@ class fORMColumn
 	
 	
 	/**
-	 * Turns a monetary value into an {@link fNumber} object
+	 * Turns a numeric value into an fNumber object
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $class   The class this value is for
 	 * @param  string $column  The column the value is in
 	 * @param  mixed  $value   The value
-	 * @return mixed  The {@link fNumber} object or raw value
+	 * @return mixed  The fNumber object or raw value
 	 */
 	static public function objectifyNumber($class, $column, $value)
 	{
@@ -426,7 +426,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Prepares a link column so that the link will work properly in an A tag
+	 * Prepares a link column so that the link will work properly in an `a` tag
 	 * 
 	 * @internal
 	 * 
@@ -454,7 +454,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Prepares a number column by calling {@link fNumber::format()}
+	 * Prepares a number column by calling fNumber::format()
 	 * 
 	 * @internal
 	 * 
@@ -491,12 +491,12 @@ class fORMColumn
 	
 	
 	/**
-	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * Adjusts the fActiveRecord::reflect() signatures of columns that have been configured in this class
 	 * 
 	 * @internal
 	 * 
 	 * @param  string  $class                 The class to reflect
-	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method name} => {signature}`
 	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
 	 * @return void
 	 */

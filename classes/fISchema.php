@@ -21,7 +21,7 @@ interface fISchema
 	 * 
 	 * If only a table is specified, column info is in the following format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
@@ -31,13 +31,13 @@ interface fISchema
 	 *         'max_length'     => (integer) {the maximum length in a varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
-	 *     ),...
+	 *     ), ...
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * If a table and column are specified, column info is in the following format:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
@@ -47,26 +47,27 @@ interface fISchema
 	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * If a table, column and element are specified, returned value is the single element specified.
 	 * 
-	 * The 'type' element is homogenized to a value from the following list:
-	 *   - varchar
-	 *   - char
-	 *   - text
-	 *   - integer
-	 *   - float
-	 *   - timestamp
-	 *   - date
-	 *   - time
-	 *   - boolean
-	 *   - blob
+	 * The `'type'` element is homogenized to a value from the following list:
+	 * 
+	 *  - `'varchar'`
+	 *  - `'char'`
+	 *  - `'text'`
+	 *  - `'integer'`
+	 *  - `'float'`
+	 *  - `'timestamp'`
+	 *  - `'date'`
+	 *  - `'time'`
+	 *  - `'boolean'`
+	 *  - `'blob'`
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return ('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment')
-	 * @return array  The column info for the table/column/element specified (see method description for format)
+	 * @param  string $element  The element to return: `'type'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
+	 * @return mixed  The column info for the table/column/element specified (see method description for format)
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL);
 	
@@ -76,15 +77,15 @@ interface fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *      'primary' => array(
-	 *          {column name},...
+	 *          {column name}, ...
 	 *      ),
 	 *      'unique'  => array(
 	 *          array(
-	 *              {column name},...
-	 *          ),...
+	 *              {column name}, ...
+	 *          ), ...
 	 *      ),
 	 *      'foreign' => array(
 	 *          array(
@@ -93,13 +94,13 @@ interface fISchema
 	 *              'foreign_column' => {foreign column name},
 	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ),...
+	 *          ), ...
 	 *      )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table     The table to return the keys for
-	 * @param  string $key_type  The type of key to return ('primary', 'foreign', 'unique')
+	 * @param  string $key_type  The type of key to return: `'primary'`, `'foreign'`, `'unique'`
 	 * @return array  An array of all keys, or just the type specified (see method description for format)
 	 */
 	public function getKeys($table, $key_type=NULL);
@@ -110,7 +111,7 @@ interface fISchema
 	 * 
 	 * The structure of the returned array is:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     'one-to-one' => array(
 	 *         array(
@@ -118,7 +119,7 @@ interface fISchema
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'many-to-one' => array(
 	 *         array(
@@ -126,7 +127,7 @@ interface fISchema
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
 	 *             'related_column' => (string) {the related column}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'one-to-many' => array(
 	 *         array(
@@ -136,7 +137,7 @@ interface fISchema
 	 *             'related_column' => (string) {the related column},
 	 *             'on_delete'      => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *             'on_update'      => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *         ),...
+	 *         ), ...
 	 *     ),
 	 *     'many-to-many' => array(
 	 *         array(
@@ -149,13 +150,13 @@ interface fISchema
 	 *             'join_related_column' => (string) {the column in the join table that references 'related_column'},
 	 *             'on_delete'           => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
 	 *             'on_update'           => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *         ),...
+	 *         ), ...
 	 *     )
 	 * )
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $table              The table to return the relationships for
-	 * @param  string $relationship_type  The type of relationship to return ('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many')
+	 * @param  string $relationship_type  The type of relationship to return: `'one-to-one'`, `'many-to-one'`, `'one-to-many'`, `'many-to-many'`
 	 * @return array  An array of all relationships, or just the type specified (see method description for format)
 	 */
 	public function getRelationships($table, $relationship_type=NULL);

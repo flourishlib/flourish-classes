@@ -22,7 +22,7 @@ class fORMJSON
 	
 	
 	/**
-	 * Adds the method toJSON() to fActiveRecord and fRecordSet instances
+	 * Adds the method `toJSON()` to fActiveRecord and fRecordSet instances
 	 * 
 	 * @return void
 	 */
@@ -47,12 +47,12 @@ class fORMJSON
 	
 	
 	/**
-	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been added by this class
+	 * Adjusts the fActiveRecord::reflect() signatures of columns that have been added by this class
 	 * 
 	 * @internal
 	 * 
 	 * @param  string  $class                 The class to reflect
-	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method name} => {signature}`
 	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
 	 * @return void
 	 */

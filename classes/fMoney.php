@@ -1,6 +1,6 @@
 <?php
 /**
- * Represents a monetary value - USD are supported by default and others can be added via {@link defineCurrency()}
+ * Represents a monetary value - USD are supported by default and others can be added via ::defineCurrency()
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -64,7 +64,7 @@ class fMoney
 	/**
 	 * Allows adding a new currency, or modifying an existing one
 	 * 
-	 * @param string  $iso_code   The ISO code (three letters, e.g. 'USD') for the currency
+	 * @param string  $iso_code   The ISO code (three letters, e.g. `'USD'`) for the currency
 	 * @param string  $name       The name of the currency
 	 * @param string  $symbol     The symbol for the currency
 	 * @param integer $precision  The number of digits after the decimal separator to store
@@ -96,9 +96,9 @@ class fMoney
 	/**
 	 * Allows retrieving information about a currency
 	 * 
-	 * @param string  $iso_code  The ISO code (three letters, e.g. 'USD') for the currency
-	 * @param string  $element   The element to retrieve: 'name', 'symbol', 'precision', 'value'
-	 * @return void
+	 * @param string  $iso_code  The ISO code (three letters, e.g. `'USD'`) for the currency
+	 * @param string  $element   The element to retrieve: `'name'`, `'symbol'`, `'precision'`, `'value'`
+	 * @return mixed  An associative array of the currency info, or the element specified
 	 */
 	static public function getCurrencyInfo($iso_code, $element=NULL)
 	{
@@ -144,9 +144,9 @@ class fMoney
 	
 	
 	/**
-	 * Allows setting a callback to translate or modify any return values from {@link format()}
+	 * Allows setting a callback to translate or modify any return values from ::format()
 	 * 
-	 * @param  callback $callback  The callback to pass all fNumber objects to. Should accept an fNumber object and a string currency abbreviation and return a single string.
+	 * @param  callback $callback  The callback to pass all fNumber objects to. Should accept an fNumber object and a string currency abbreviation and return a formatted string.
 	 * @return void
 	 */
 	static public function registerFormatCallback($callback)
@@ -156,7 +156,7 @@ class fMoney
 	
 	
 	/**
-	 * Allows setting a callback to clean any formatted values so they can be passed to {@link fNumber}
+	 * Allows setting a callback to clean any formatted values so they can be passed to fNumber
 	 * 
 	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and a currency code and return a string suitable to passing to the fNumber constructor.
 	 * @return void
@@ -193,7 +193,7 @@ class fMoney
 	/**
 	 * Sets the default currency to use when creating fMoney objects
 	 * 
-	 * @param string  $iso_code  The ISO code (three letters, e.g. 'USD') for the new default currency
+	 * @param string  $iso_code  The ISO code (three letters, e.g. `'USD'`) for the new default currency
 	 * @return void
 	 */
 	static public function setDefaultCurrency($iso_code)
@@ -234,7 +234,7 @@ class fMoney
 	 * @throws fValidationException
 	 * 
 	 * @param  fNumber|string $amount    The monetary value to represent, should never be a float since those are imprecise
-	 * @param  string         $currency  The currency ISO code (three letters, e.g. 'USD') for this value
+	 * @param  string         $currency  The currency ISO code (three letters, e.g. `'USD'`) for this value
 	 * @return fMoney
 	 */
 	public function __construct($amount, $currency=NULL)
@@ -295,7 +295,7 @@ class fMoney
 	
 	
 	/**
-	 * Returns the monetary value without a currency symbol or thousand separator (e.g. 2000.12)
+	 * Returns the monetary value without a currency symbol or thousand separator (e.g. `2000.12`)
 	 * 
 	 * @return string  The monetary value without currency symbol or thousands separator
 	 */
@@ -332,6 +332,7 @@ class fMoney
 	 * 
 	 * @param  fNumber|string $ratio1  The ratio of the first amount to this amount
 	 * @param  fNumber|string $ratio2  The ratio of the second amount to this amount
+	 * @param  fNumber|string ...
 	 * @return array  fMoney objects each with the appropriate ratio of the current amount
 	 */
 	public function allocate($ratio1, $ratio2)
@@ -395,7 +396,7 @@ class fMoney
 	/**
 	 * Converts this money amount to another currency
 	 * 
-	 * @param  string $new_currency  The ISO code (three letters, e.g. 'USD') for the new currency
+	 * @param  string $new_currency  The ISO code (three letters, e.g. `'USD'`) for the new currency
 	 * @return fMoney  A new fMoney object representing this amount in the new currency
 	 */
 	public function convert($new_currency)
@@ -441,7 +442,7 @@ class fMoney
 	
 	
 	/**
-	 * Formats the amount
+	 * Formats the amount by preceeding the amount with the currency symbol and adding thousands separators
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -495,7 +496,7 @@ class fMoney
 	/**
 	 * Returns the currency ISO code
 	 * 
-	 * @return string  The currency ISO code (three letters, e.g. 'USD')
+	 * @return string  The currency ISO code (three letters, e.g. `'USD'`)
 	 */
 	public function getCurrency()
 	{

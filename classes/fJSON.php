@@ -2,10 +2,13 @@
 /**
  * Provides encoding and decoding for JSON
  * 
- * This class is a compatibility class for the json_* functions on servers with
- * PHP < v5.2 or with the json_* functions left out. It also will handle JSON
- * values that are not contained in an array or object - like the json_* 
- * functions from PHP v5.2 on.
+ * This class is a compatibility class for the
+ * [http://php.net/json json extension] on servers with PHP 5.0 or 5.1, or 
+ * servers with the json extension compiled out.
+ * 
+ * This class will handle JSON values that are not contained in an array or
+ * object - such values are not valid according to the JSON spec, but the
+ * functionality is included for compatiblity with the json extension.
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -266,10 +269,10 @@ class fJSON
 	 * Decodes a JSON string into native PHP data types
 	 * 
 	 * This function is very strict about the format of JSON. If the string is
-	 * not a valid JSON string, an exception will be thrown.
+	 * not a valid JSON string, `NULL` will be returned.
 	 *  
 	 * @param  string  $json   This should be the name of a related class
-	 * @param  boolean $assoc  If this is TRUE, JSON objects will be represented as an assocative array instead of a stdClass object
+	 * @param  boolean $assoc  If this is TRUE, JSON objects will be represented as an assocative array instead of a `stdClass` object
 	 * @return array|stdClass  A PHP equivalent of the JSON string
 	 */
 	static public function decode($json, $assoc=FALSE)
@@ -479,12 +482,6 @@ class fJSON
 		}
 		
 		if (is_float($value)) {
-			//if (self::$fix) {
-			//	// Make sure a float always has a decimal place
-			//	if ((string) $value === (string) (int) $value) {
-			//		return $value . '.0';
-			//	}
-			//}
 			return (string) $value;
 		}
 		
@@ -501,12 +498,7 @@ class fJSON
 		}
 		
 		if (is_string($value)) {
-			//if (self::$fix) {
-			//	$value = fUTF8::clean($value);
-			//} else {
-				// strip any bad characters
-				$value = iconv('utf-8', 'utf-8', $value);
-			//}
+			$value = iconv('utf-8', 'utf-8', $value);
 			
 			$char_array = fUTF8::explode($value);
 			
@@ -670,7 +662,7 @@ class fJSON
 	
 	
 	/**
-	 * Sets the proper Content-Type header for UTF-8 encoded JSON
+	 * Sets the proper `Content-Type` header for UTF-8 encoded JSON
 	 * 
 	 * @return void
 	 */

@@ -233,7 +233,7 @@ class fCRUD
 	
 	
 	/**
-	 * Prints an option tag with the provided value, using the selected value to determine if the option should be marked as selected
+	 * Prints an `option` tag with the provided value, using the selected value to determine if the option should be marked as selected
 	 * 
 	 * @param  string $text            The text to display in the option tag
 	 * @param  string $value           The value for the option
@@ -256,7 +256,7 @@ class fCRUD
 	
 	
 	/**
-	 * Prints a sortable column header a tag
+	 * Prints a sortable column header `a` tag
 	 * 
 	 * The a tag will include the CSS class `'sortable_column'` and the
 	 * direction being sorted, `'asc'` or `'desc'`.

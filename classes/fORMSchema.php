@@ -34,9 +34,9 @@ class fORMSchema
 	
 	
 	/**
-	 * Allows attaching an {@link fSchema}-compatible object as the schema singleton for ORM code
+	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
 	 * 
-	 * @param  fISchema $schema  An object that implements the {@link fISchema} interface
+	 * @param  fISchema $schema  An object that implements the fISchema interface
 	 * @return void
 	 */
 	static public function attach(fISchema $schema)
@@ -72,7 +72,7 @@ class fORMSchema
 	 * @param  string $table              The main table we are searching on behalf of
 	 * @param  string $related_table      The related table we are searching under
 	 * @param  string $route              The route to get info about
-	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
+	 * @param  string $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
 	 * @return void
 	 */
 	static public function getRoute($table, $related_table, $route, $relationship_type=NULL)
@@ -130,7 +130,7 @@ class fORMSchema
 	 * @param  string $table              The main table we are searching on behalf of
 	 * @param  string $related_table      The related table we are trying to find the routes for
 	 * @param  string $route              The route that was preselected, will be verified if present
-	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
+	 * @param  string $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
 	 * @return string  The only route from the main table to the related table
 	 */
 	static public function getRouteName($table, $related_table, $route=NULL, $relationship_type=NULL)
@@ -198,8 +198,8 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type          The type of relationship: 'one-to-one', 'one-to-many', 'many-to-one', 'many-to-many'
-	 * @param  array  $relationship  The relationship array from {@link fISchema::getKeys()}
+	 * @param  string $type          The type of relationship: `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
+	 * @param  array  $relationship  The relationship array from fISchema::getKeys()
 	 * @return string  The name of the route
 	 */
 	static public function getRouteNameFromRelationship($type, $relationship)
@@ -235,8 +235,8 @@ class fORMSchema
 	 * 
 	 * @param  string $table              The main table we are searching on behalf of
 	 * @param  string $related_table      The related table we are trying to find the routes for
-	 * @param  string $relationship_type  The relationship type: NULL, '*-to-many', '*-to-one', 'one-to-one', 'one-to-meny', 'many-to-one', 'many-to-many'
-	 * @return void
+	 * @param  string $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
+	 * @return array  All of the routes from the main table to the related table
 	 */
 	static public function getRoutes($table, $related_table, $relationship_type=NULL)
 	{
@@ -306,7 +306,7 @@ class fORMSchema
 	
 	
 	/**
-	 * Return the instance of the {@link fSchema} class
+	 * Return the instance of the fSchema class
 	 * 
 	 * @return fSchema  The schema instance
 	 */

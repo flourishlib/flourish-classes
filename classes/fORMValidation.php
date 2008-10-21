@@ -1,6 +1,6 @@
 <?php
 /**
- * Handles validation for (@link fActiveRecord} classes
+ * Handles validation for fActiveRecord classes
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -65,6 +65,10 @@ class fORMValidation
 	
 	/**
 	 * Adds a conditional validation rule
+	 * 
+	 * If a non-empty value is found in the `$main_column`, or if specified, a 
+	 * value from the `$conditional_values` array, all of the
+	 * `$conditional_columns` will also be required to have a value.
 	 *
 	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
@@ -117,7 +121,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Adds a one-or-more validation rule
+	 * Adds a one-or-more validation rule that requires at least one of the columns specified has a value
 	 *
 	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
@@ -168,7 +172,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Add an only-one validation rule
+	 * Add an only-one validation rule that requires exactly one of the columns must have a value
 	 *
 	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
@@ -689,7 +693,7 @@ class fORMValidation
 	 *
 	 * @param  string $a  The first string to compare
 	 * @param  string $b  The second string to compare
-	 * @return integer  -1 if $a is long than $b, 0 if they are equal length, 1 if $a is shorted than $b
+	 * @return integer  `-1` if `$a` is longer than `$b`, `0` if they are equal length, `1` if `$a` is shorter than `$b`
 	 */
 	static private function sortMessageMatches($a, $b)
 	{
@@ -704,7 +708,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates values for an {@link fActiveRecord} object
+	 * Validates values for an fActiveRecord object against the database schema and any additional validation rules that have been added
 	 *
 	 * @internal
 	 * 
@@ -768,7 +772,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates related records for an {@link fActiveRecord} object
+	 * Validates related records for an fActiveRecord object
 	 *
 	 * @internal
 	 * 

@@ -124,7 +124,7 @@ class fGrammar
 	
 	
 	/**
-	 * Adds a custom mapping of a non-humanized string to a humanized string for {@link humanize()}
+	 * Adds a custom mapping of a non-humanized string to a humanized string for ::humanize()
 	 * 
 	 * @param  string $non_humanized_string  The non-humanized string
 	 * @param  string $humanized_string      The humanized string
@@ -137,10 +137,10 @@ class fGrammar
 	
 	
 	/**
-	 * Adds a custom camelCase->underscore_notation and underscore_notation->camelCase rule
+	 * Adds a custom `camelCase` to `underscore_notation` and `underscore_notation` to `camelCase` rule
 	 * 
-	 * @param  string $camel_case           The lower camelCase version of the string
-	 * @param  string $underscore_notation  The underscore_notation version of the string
+	 * @param  string $camel_case           The lower `camelCase` version of the string
+	 * @param  string $underscore_notation  The `underscore_notation` version of the string
 	 * @return void
 	 */
 	static public function addCamelUnderscoreRule($camel_case, $underscore_notation)
@@ -152,7 +152,7 @@ class fGrammar
 	
 	
 	/**
-	 * Adds a custom singular->plural and plural->singular rule
+	 * Adds a custom singular to plural and plural to singular rule for ::pluralize() and ::singularize()
 	 * 
 	 * @param  string $singular  The singular version of the noun
 	 * @param  string $plural    The plural version of the noun
@@ -172,10 +172,10 @@ class fGrammar
 	
 	
 	/**
-	 * Converts an underscore notation, human-friendly or camelCase string to camelCase
+	 * Converts an `underscore_notation`, human-friendly or `camelCase` string to `camelCase`
 	 * 
 	 * @param  string  $string  The string to convert
-	 * @param  boolean $upper   If the camel case should be upper camel case
+	 * @param  boolean $upper   If the camel case should be `UpperCamelCase`
 	 * @return string  The converted string
 	 */
 	static public function camelize($string, $upper)
@@ -212,13 +212,14 @@ class fGrammar
 	
 	
 	/**
-	 * Performs an {@link http://php.net/sprintf sprintf()} on a string and provides a hook for modifications such as internationalization
+	 * Performs an [http://php.net/sprintf sprintf()] on a string and provides a hook for modifications such as internationalization
 	 * 
-	 * @param  string  $message        A message to compose
-	 * @param  mixed   $component,...  A string or number to insert into the message
+	 * @param  string  $message    A message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
 	 * @return void
 	 */
-	static public function compose($message)
+	static public function compose($message, $component)
 	{
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['pre'] as $callback) {
@@ -240,7 +241,7 @@ class fGrammar
 	
 	
 	/**
-	 * Makes an underscore notation, camelCase, or human-friendly string into a human-friendly string
+	 * Makes an `underscore_notation`, `camelCase`, or human-friendly string into a human-friendly string
 	 * 
 	 * @param  string $string  The string to humanize
 	 * @return string  The converted string
@@ -273,8 +274,8 @@ class fGrammar
 	 * Returns the singular or plural form of the word or based on the quantity specified
 	 * 
 	 * @param  mixed   $quantity                     The quantity (integer) or an array of objects to count
-	 * @param  string  $singular_form                The string to be returned for when $quantity = 1
-	 * @param  string  $plural_form                  The string to be returned for when $quantity != 1, use %d to place the quantity in the string
+	 * @param  string  $singular_form                The string to be returned for when `$quantity = 1`
+	 * @param  string  $plural_form                  The string to be returned for when `$quantity != 1`, use `%d` to place the quantity in the string
 	 * @param  boolean $use_words_for_single_digits  If the numbers 0 to 9 should be written out as words
 	 * @return string
 	 */
@@ -328,7 +329,7 @@ class fGrammar
 	 * Returns the passed terms joined together using rule 2 from Strunk & White's 'The Elements of Style'
 	 * 
 	 * @param  array  $strings  An array of strings to be joined together
-	 * @param  string $type     The type of join to perform, 'and' or 'or'
+	 * @param  string $type     The type of join to perform, `'and'` or `'or'`
 	 * @return string  The terms joined together
 	 */
 	static public function joinArray($strings, $type)
@@ -373,7 +374,7 @@ class fGrammar
 	
 	
 	/**
-	 * Returns the plural version of the singular noun
+	 * Returns the plural version of a singular noun
 	 * 
 	 * @param  string $singular_noun  The singular noun to pluralize
 	 * @return string  The pluralized noun
@@ -394,7 +395,7 @@ class fGrammar
 	
 	
 	/**
-	 * Adds a callback for when a message is created using {@link compose()}
+	 * Adds a callback for when a message is created using ::compose()
 	 * 
 	 * The primary purpose of these callbacks is for internationalization of
 	 * error messaging in Flourish. The callback should accept a single
@@ -403,12 +404,12 @@ class fGrammar
 	 * 
 	 * The timing parameter controls if the callback happens before or after
 	 * the actual composition takes place, which is simply a call to
-	 * {@link http://php.net/sprintf sprintf()}. Thus the message passed 'pre'
-	 * will always be exactly the same, while the message 'post' will include
-	 * the interpolated variables. Because of this, most of the time the 'pre'
+	 * [http://php.net/sprintf sprintf()]. Thus the message passed `'pre'`
+	 * will always be exactly the same, while the message `'post'` will include
+	 * the interpolated variables. Because of this, most of the time the `'pre'`
 	 * timing should be chosen.
 	 * 
-	 * @param  string   $timing    When the callback should be executed, 'pre' or 'post' performing the actual composition
+	 * @param  string   $timing    When the callback should be executed - `'pre'` or `'post'` performing the actual composition
 	 * @param  callback $callback  The callback
 	 * @return void
 	 */
@@ -431,12 +432,12 @@ class fGrammar
 	
 	
 	/**
-	 * Allows replacing the {@link joinArray()} function with a user defined function
+	 * Allows replacing the ::joinArray() function with a user defined function
 	 * 
-	 * This would be most useful for changing {@link joinArray()} to work with
+	 * This would be most useful for changing ::joinArray() to work with
 	 * languages other than English.
 	 * 
-	 * @param  callback $callback  The function to replace {@link joinArray()} with. This function should accept the same parameters and return the same type as {@link joinArray()}.
+	 * @param  callback $callback  The function to replace ::joinArray() with - should accept the same parameters and return the same type
 	 * @return void
 	 */
 	static public function registerJoinArrayCallback($callback)
@@ -506,7 +507,7 @@ class fGrammar
 	
 	
 	/**
-	 * Returns the singular version of the plural noun
+	 * Returns the singular version of a plural noun
 	 * 
 	 * @param  string $plural_noun  The plural noun to singularize
 	 * @return string  The singularized noun
@@ -527,7 +528,7 @@ class fGrammar
 	
 	
 	/**
-	 * Splits the last word off of a camel case or unscore notation string
+	 * Splits the last word off of a `camelCase` or `underscore_notation` string
 	 * 
 	 * @param  string $string  The string to split the word from
 	 * @return array  The first element is the beginning part of the string, the second element is the last word
@@ -555,7 +556,7 @@ class fGrammar
 	
 	
 	/**
-	 * Converts a camelCase, human-friendly or underscorized string to underscore notation
+	 * Converts a `camelCase`, human-friendly or `underscore_notation` string to `underscore_notation`
 	 * 
 	 * @param  string $string  The string to convert
 	 * @return string  The converted string

@@ -1,6 +1,6 @@
 <?php
 /**
- * Allows a column in an {@link fActiveRecord} class to be a relative sort order column
+ * Allows a column in an fActiveRecord class to be a relative sort order column
  * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -36,7 +36,7 @@ class fORMOrdering
 	 * Sets a column to be an ordering column
 	 * 
 	 * There can only be one ordering column per class/table and it must be
-	 * part of a single or multi-column unique constraint.
+	 * part of a single or multi-column `UNIQUE` constraint.
 	 * 
 	 * @param  mixed  $class   The class name or instance of the class
 	 * @param  string $column  The column to set as an ordering column
@@ -118,13 +118,13 @@ class fORMOrdering
 	
 	
 	/**
-	 * Creates a WHERE clause for the OLD multi-column set a record was part of
+	 * Creates a `WHERE` clause for the //old// multi-column set a record was part of
 	 * 
-	 * @param  string $table          The table the WHERE clause is for
+	 * @param  string $table          The table the `WHERE` clause is for
 	 * @param  array  $other_columns  The other columns in the multi-column unique constraint
 	 * @param  array  &$values        The record's current values
 	 * @param  array  &$old_values    The record's old values
-	 * @return string  An SQL WHERE clause for the other columns in a multi-column unique constraint
+	 * @return string  An SQL `WHERE` clause for the //old// other columns in a multi-column `UNIQUE` constraint
 	 */
 	static private function createOldOtherFieldsWhereClause($table, $other_columns, &$values, &$old_values)
 	{
@@ -139,12 +139,12 @@ class fORMOrdering
 	
 	
 	/**
-	 * Creates a WHERE clause to ensure a database call is only selecting from rows that are part of the same set when an ordering field is in multi-column unique constraint.
+	 * Creates a `WHERE` clause to ensure a database call is only selecting from rows that are part of the same set when an ordering field is in multi-column `UNIQUE` constraint.
 	 * 
-	 * @param  string $table          The table the WHERE clause is for
+	 * @param  string $table          The table the `WHERE` clause is for
 	 * @param  array  $other_columns  The other columns in the multi-column unique constraint
 	 * @param  array  &$values        The values to match with
-	 * @return string  An SQL WHERE clause for the other columns in a multi-column unique constraint
+	 * @return string  An SQL `WHERE` clause for the other columns in a multi-column `UNIQUE` constraint
 	 */
 	static private function createOtherFieldsWhereClause($table, $other_columns, &$values)
 	{
@@ -158,7 +158,7 @@ class fORMOrdering
 	
 	
 	/**
-	 * Re-orders other recrods in the set when the record specified is deleted
+	 * Re-orders other records in the set when the record specified is deleted
 	 * 
 	 * @internal
 	 * 
@@ -166,7 +166,7 @@ class fORMOrdering
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
+	 * @return void
 	 */
 	static public function delete($object, &$values, &$old_values, &$related_records)
 	{
@@ -300,12 +300,12 @@ class fORMOrdering
 	
 	
 	/**
-	 * Adjusts the {@link fActiveRecord::reflect()} signatures of columns that have been configured in this class
+	 * Adjusts the fActiveRecord::reflect() signatures of columns that have been configured in this class
 	 * 
 	 * @internal
 	 * 
 	 * @param  string  $class                 The class to reflect
-	 * @param  array   &$signatures           The associative array of {method name} => {signature}
+	 * @param  array   &$signatures           The associative array of `{method name} => {signature}`
 	 * @param  boolean $include_doc_comments  If doc comments should be included with the signature
 	 * @return void
 	 */
@@ -344,7 +344,7 @@ class fORMOrdering
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @return string  The formatted link
+	 * @return void
 	 */
 	static public function reorder($object, &$values, &$old_values, &$related_records)
 	{

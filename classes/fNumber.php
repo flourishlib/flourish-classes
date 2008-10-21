@@ -38,11 +38,11 @@ class fNumber
 	
 	
 	/**
-	 * Converts any positive integer between any two bases ranging from 2 to 16
+	 * Converts any positive integer between any two bases ranging from `2` to `16`
 	 * 
 	 * @param  fNumber|string $number     The positive integer to convert
-	 * @param  integer        $from_base  The base to convert from - must be between 2 and 16
-	 * @param  integer        $to_base    The base to convert to - must be between 2 and 16
+	 * @param  integer        $from_base  The base to convert from - must be between `2` and `16`
+	 * @param  integer        $to_base    The base to convert to - must be between `2` and `16`
 	 * @return string  The number converted to the new base
 	 */
 	static public function baseConvert($number, $from_base, $to_base)
@@ -143,7 +143,7 @@ class fNumber
 	 * 
 	 * @param  string $number1  The first number to compare
 	 * @param  string $number2  The second number to compare
-	 * @return integer  < 0 if number1 is less than number2, 0 if equal, > 0 if number1 is greater than number2
+	 * @return integer  Less than `0` if `$number1` is less than `$number2`, `0` if equal, greater than `0` if `$number1` is greater than `$number2`
 	 */
 	static private function cmp($number1, $number2)
 	{
@@ -246,7 +246,7 @@ class fNumber
 	 * @throws fValidationException
 	 * 
 	 * @param  object|string $number   The number to parse
-	 * @param  string        $element  The element to return: 'number', 'integer', 'fraction', 'array'
+	 * @param  string        $element  The element to return: `'number'`, `'integer'`, `'fraction'`, `'array'`
 	 * @return mixed  The requested parsed element
 	 */
 	static private function parse($number, $element)
@@ -343,14 +343,14 @@ class fNumber
 	
 	
 	/**
-	 * Adds two positive normalized (same length) numbers together
+	 * Adds two numbers together
 	 * 
 	 * @throws fValidationException
 	 * 
 	 * @param  string  $number1  The first addend
 	 * @param  string  $number2  The second addend
 	 * @param  integer $scale    The number of digits after the decimal
-	 * @return string  The sum
+	 * @return string  The sum of the two numbers
 	 */
 	static private function performAdd($number1, $number2, $scale=NULL)
 	{
@@ -559,7 +559,7 @@ class fNumber
 	
 	
 	/**
-	 * Multiplies the two numbers together
+	 * Multiplies two numbers
 	 * 
 	 * @param  string  $multiplicand  The number to be multiplied
 	 * @param  string  $multiplier    The number of times to multiply the multiplicand
@@ -637,7 +637,7 @@ class fNumber
 	 * @throws fValidationException
 	 * 
 	 * @param  string $number     The number to raise to the power
-	 * @param  string $power      The power to raise to, must be between −2,147,483,648 and +2,147,483,647
+	 * @param  string $power      The power to raise to, must be between `−2,147,483,648` and `2,147,483,647`
 	 * @return string  The product
 	 */
 	static private function performPow($number, $power, $scale=NULL)
@@ -772,7 +772,7 @@ class fNumber
 	
 	
 	/**
-	 * Allows setting a callback to translate or modify any return values from {@link format()}
+	 * Allows setting a callback to translate or modify any return values from ::format()
 	 * 
 	 * @param  callback $callback  The callback to pass the fNumber value to. Should accept a string value and return a single string.
 	 * @return void
@@ -784,9 +784,9 @@ class fNumber
 	
 	
 	/**
-	 * Allows setting a callback to clean any formatted values so they can be properly parsed - useful for languages where , is used as the decimal point
+	 * Allows setting a callback to clean any formatted values so they can be properly parsed - useful for languages where `,` is used as the decimal point
 	 * 
-	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and return a string the is a valid number using . as the decimal point.
+	 * @param  callback $callback  The callback to pass formatted strings to. Should accept a formatted string and return a string the is a valid number using `.` as the decimal point.
 	 * @return void
 	 */
 	static public function registerUnformatCallback($callback)
@@ -883,8 +883,8 @@ class fNumber
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string  $value  The value for the number - any valid PHP integer or float format including values with e exponents
-	 * @param  integer $scale  The number of digits after the decimal place, defaults to number of digits in $value
+	 * @param  string  $value  The value for the number - any valid PHP integer or float format including values with `e` exponents
+	 * @param  integer $scale  The number of digits after the decimal place, defaults to number of digits in `$value`
 	 * @return fNumber
 	 */
 	public function __construct($value, $scale=NULL)
@@ -945,7 +945,7 @@ class fNumber
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fNumber|string $addend  The divisor
+	 * @param  fNumber|string $addend  The addend
 	 * @param  integer        $scale   The number of places after the decimal - overrides the scale for this number
 	 * @return fNumber  The sum
 	 */
@@ -1144,7 +1144,7 @@ class fNumber
 	
 	
 	/**
-	 * Makes sure the scale is an int greater than -1 - will return the current scale if the one passed is NULL
+	 * Makes sure the scale is an int greater than `-1` - will return the current scale if the one passed is `NULL`
 	 * 
 	 * @param  integer $scale  The scale to check
 	 * @return integer  The number of digits after the decimal place
@@ -1256,7 +1256,7 @@ class fNumber
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fNumber|string $divisor  The divisor
+	 * @param  fNumber|string $divisor  The divisor - will be converted to an integer if it is a float
 	 * @return fNumber  The remainder
 	 */
 	public function mod($divisor)
@@ -1339,12 +1339,12 @@ class fNumber
 	
 	
 	/**
-	 * Gets the remainder of this integer number raised to the integer $exponent, divided by the integer $modulus
+	 * Gets the remainder of this integer number raised to the integer `$exponent`, divided by the integer `$modulus`
+	 * 
+	 * This method is faster than doing `$num->pow($exponent)->mod($modulus)`
+	 * and is primarily useful for cryptographic functionality.
 	 * 
 	 * @throws fValidationException
-	 * 
-	 * This method is faster than doing $num->pow($exponent)->mod($modulus)
-	 * and is primarily useful for cryptographic functionality.
 	 * 
 	 * @param  fNumber|string $exponent  The power to raise to - all non integer values will be truncated to integers
 	 * @param  fNumber|string $modulus   The value to divide by - all non integer values will be truncated to integers
@@ -1464,7 +1464,7 @@ class fNumber
 	/**
 	 * Returns the sign of the number
 	 * 
-	 * @return integer  -1 if negative, 0 if 0, 1 if positive
+	 * @return integer  `-1` if negative, `0` if zero, `1` if positive
 	 */
 	public function sign()
 	{

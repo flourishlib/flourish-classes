@@ -186,7 +186,7 @@ class fCore
 	
 	
 	/**
-	 * Performs a call_user_func, while translating PHP 5.2 static callback syntax for PHP 5.1 and 5.0
+	 * Performs a [http://php.net/call_user_func call_user_func()], while translating PHP 5.2 static callback syntax for PHP 5.1 and 5.0
 	 * 
 	 * Parameters can be passed either as a single array of parameters or as
 	 * multiple parameters.

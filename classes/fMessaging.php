@@ -81,12 +81,12 @@ class fMessaging
 	/**
 	 * Retrieves a message, removes it from the session and prints it with the CSS class specified - will not print if no content
 	 * 
-	 * The message will be printed in a paragraph tag if it does not contain
-	 * any block level HTML. Otherwise it will be printed in a div tag.
+	 * The message will be printed in a `p` tag if it does not contain
+	 * any block level HTML, otherwise it will be printed in a `div` tag.
 	 * 
 	 * @param  string $name       The name of the message to retrieve
 	 * @param  string $recipient  The intended recipient
-	 * @param  string $css_class  The CSS class to use when displaying the message - if NULL is passed or the parameter is ommitted, $name will be used instead
+	 * @param  string $css_class  The CSS class to use when displaying the message - if `NULL` is passed or the parameter is ommitted, `$name` will be used instead
 	 * @return boolean  If a message was shown
 	 */
 	static public function show($name, $recipient, $css_class=NULL)
