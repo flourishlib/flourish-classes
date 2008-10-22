@@ -1,6 +1,6 @@
 <?php
 /**
- * Represents a date and time
+ * Represents a date and time as a value object
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -80,10 +80,10 @@ class fTimestamp
 	
 	
 	/**
-	 * Creates a reusable format for formatting fDate/fTime/fTimestamp
+	 * Creates a reusable format for formatting fDate, fTime, and fTimestamp objects
 	 * 
 	 * @param  string $name               The name of the format
-	 * @param  string $formatting_string  The format string compatible with the {@link http://php.net/date date()} function
+	 * @param  string $formatting_string  The format string compatible with the [http://php.net/date date()] function
 	 * @return void
 	 */
 	static public function defineFormat($name, $formatting_string)
@@ -93,7 +93,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Fixes an ISO week format into a Y-m-d so strtotime will accept it
+	 * Fixes an ISO week format into `'Y-m-d'` so [http://php.net/strtotime strtotime()] will accept it
 	 * 
 	 * @internal
 	 * 
@@ -121,7 +121,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Provides a consistent interface to getting the default timezone. Wraps the {@link http://php.net/date_default_timezone_get date_default_timezone_get()} function.
+	 * Provides a consistent interface to getting the default timezone. Wraps the [http://php.net/date_default_timezone_get date_default_timezone_get()] function.
 	 * 
 	 * @return string  The default timezone used for all date/time calculations
 	 */
@@ -134,7 +134,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns the number of seconds in a given timespan (e.g. '30 minutes', '1 hour', '5 days', etc). Useful for comparing with {@link fTime::getSecondsDifference()} and {@link fTimestamp::getSecondsDifference()}.
+	 * Returns the number of seconds in a given timespan (e.g. `'30 minutes'`, `'1 hour'`, `'5 days'`, etc). Useful for comparing with `getSecondsDifference()` methods in fDate, fTime and fTimestamp.
 	 * 
 	 * @param  string $timespan  The timespan to calculate the number of seconds in
 	 * @return integer  The number of seconds in the timestamp specified
@@ -609,7 +609,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Allows setting a callback to translate or modify any return values from {@link format()}, {@link fDate::format()} and {@link fTime::format()}
+	 * Allows setting a callback to translate or modify any return values from ::format(), fDate::format() and fTime::format()
 	 * 
 	 * @param  callback $callback  The callback to pass all formatted dates/times/timestamps through. Should accept a single string and return a single string.
 	 * @return void
@@ -635,7 +635,7 @@ class fTimestamp
 	
 	
 	/**
-	 * Provides a consistent interface to setting the default timezone. Wraps the {@link http://php.net/date_default_timezone_set date_default_timezone_set()} function.
+	 * Provides a consistent interface to setting the default timezone. Wraps the [http://php.net/date_default_timezone_set date_default_timezone_set()] function.
 	 * 
 	 * @param  string $timezone  The default timezone to use for all date/time calculations
 	 * @return void
@@ -658,12 +658,12 @@ class fTimestamp
 	
 	
 	/**
-	 * Takes a format name set via {@link fTimestamp::defineFormat()} and returns the {@link http://php.net/date date()} function formatting string
+	 * Takes a format name set via ::defineFormat() and returns the [http://php.net/date date()] function formatting string
 	 * 
 	 * @internal
 	 * 
 	 * @param  string $format  The format to translate
-	 * @return string  The formatting string. If no matching format was found, this will be the same as the $format parameter.
+	 * @return string  The formatting string. If no matching format was found, this will be the same as the `$format` parameter.
 	 */
 	static public function translateFormat($format)
 	{
@@ -694,8 +694,8 @@ class fTimestamp
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fTimestamp|object|string|integer $datetime  The date/time to represent, NULL is interpreted as now
-	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. If not specified, will default to timezone set by {@link fTimestamp::setDefaultTimezone()}.
+	 * @param  fTimestamp|object|string|integer $datetime  The date/time to represent, `NULL` is interpreted as now
+	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. If not specified, will default to timezone set by ::setDefaultTimezone().
 	 * @return fTimestamp
 	 */
 	public function __construct($datetime=NULL, $timezone=NULL)
@@ -766,7 +766,7 @@ class fTimestamp
 	/**
 	 * Returns this date/time
 	 * 
-	 * @return string  The 'Y-m-d H:i:s' format of this date/time
+	 * @return string  The `'Y-m-d H:i:s'` format of this date/time
 	 */
 	public function __toString()
 	{
@@ -810,9 +810,7 @@ class fTimestamp
 	/**
 	 * Formats the date/time
 	 * 
-	 * @throws fValidationException
-	 * 
-	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::defineFormat()}
+	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from ::defineFormat()
 	 * @return string  The formatted date/time
 	 */
 	public function format($format)
@@ -834,31 +832,36 @@ class fTimestamp
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This timestamp is {return value} the provided one" when a timestamp it passed
-	 *  - "This timestamp is {return value}" when no timestamp is passed and comparing with the current timestamp
+	 * 
+	 *  - "This timestamp is `{return value}` the provided one" when a timestamp it passed
+	 *  - "This timestamp is `{return value}`" when no timestamp is passed and comparing with the current timestamp
 	 * 
 	 * Examples of output for a timestamp passed might be:
-	 *  - 5 minutes after
-	 *  - 2 hours before
-	 *  - 2 days after
-	 *  - at the same time
+	 * 
+	 *  - `'5 minutes after'`
+	 *  - `'2 hours before'`
+	 *  - `'2 days after'`
+	 *  - `'at the same time'`
 	 * 
 	 * Examples of output for no timestamp passed might be:
-	 *  - 5 minutes ago
-	 *  - 2 hours ago
-	 *  - 2 days from now
-	 *  - 1 year ago
-	 *  - right now
+	 * 
+	 *  - `'5 minutes ago'`
+	 *  - `'2 hours ago'`
+	 *  - `'2 days from now'`
+	 *  - `'1 year ago'`
+	 *  - `'right now'`
 	 * 
 	 * You would never get the following output since it includes more than one unit of time measurement:
-	 *  - 5 minutes and 28 seconds
-	 *  - 3 weeks, 1 day and 4 hours
+	 * 
+	 *  - `'5 minutes and 28 seconds'`
+	 *  - `'3 weeks, 1 day and 4 hours'`
 	 * 
 	 * Values that are close to the next largest unit of measure will be rounded up:
-	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
-	 *  - 29 days would be represented as 1 month, but 21 days would be shown as 3 weeks
 	 * 
-	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to create the difference with, NULL is interpreted as now
+	 *  - `'55 minutes'` would be represented as `'1 hour'`, however `'45 minutes'` would not
+	 *  - `'29 days'` would be represented as `'1 month'`, but `'21 days'` would be shown as `'3 weeks'`
+	 * 
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to create the difference with, `NULL` is interpreted as now
 	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
 	 */
 	public function getFuzzyDifference($other_timestamp=NULL)
@@ -938,8 +941,8 @@ class fTimestamp
 	/**
 	 * Returns the difference between the two timestamps in seconds
 	 * 
-	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to calculate the difference with, NULL is interpreted as now
-	 * @return integer  The difference between the two timestamps in seconds, positive if $other_timestamp is before this time or negative if after
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to calculate the difference with, `NULL` is interpreted as now
+	 * @return integer  The difference between the two timestamps in seconds, positive if the other timestamp is before this time or negative if after
 	 */
 	public function getSecondsDifference($other_timestamp=NULL)
 	{
@@ -955,25 +958,11 @@ class fTimestamp
 	 * based on this timestamp. Below are some examples of formats to
 	 * modify the current timestamp:
 	 * 
-	 * To change the date of the timestamp to the first of the month:
+	 *  - `'Y-m-01 H:i:s'` to change the date of the timestamp to the first of the month:
+	 *  - `'Y-m-t H:i:s'` to change the date of the timestamp to the last of the month:
+	 *  - `'Y-m-d 17:i:s'` to set the hour of the timestamp to 5 PM:
 	 * 
-	 * <pre>
-	 * Y-m-01 H:i:s
-	 * </pre>
-	 * 
-	 * To change the date of the timestamp to the last of the month:
-	 * 
-	 * <pre>
-	 * Y-m-t H:i:s
-	 * </pre>
-	 * 
-	 * To set the hour of the timestamp to 5 PM:
-	 * 
-	 * <pre>
-	 * Y-m-d 17:i:s
-	 * </pre>
-	 * 
-	 * @param  string $format    The current timestamp will be formatted with this string, and the output used to create a new object. The format should NOT include the timezone (character e).
+	 * @param  string $format    The current timestamp will be formatted with this string, and the output used to create a new object. The format should **not** include the timezone (character `e`).
 	 * @param  string $timezone  The timezone for the new object if different from the current timezone
 	 * @return fTimestamp  The new timestamp
 	 */

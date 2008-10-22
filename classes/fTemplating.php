@@ -39,7 +39,7 @@ class fTemplating
 	/**
 	 * Initializes this templating engine
 	 * 
-	 * @param  string $root  The filesystem path to use when accessing relative files, defaults to $_SERVER['DOCUMENT_ROOT']
+	 * @param  string $root  The filesystem path to use when accessing relative files, defaults to `$_SERVER['DOCUMENT_ROOT']`
 	 * @return fTemplating
 	 */
 	public function __construct($root=NULL)
@@ -132,13 +132,14 @@ class fTemplating
 	
 	
 	/**
-	 * Enables buffered output, allowing set() and add() to happen after a place() but act as if they were done before
+	 * Enables buffered output, allowing ::set() and ::add() to happen after a ::place() but act as if they were done before
 	 * 
 	 * Please note that using buffered output will affect the order in which
-	 * code is executed since the elements are not actually place()'ed until
-	 * the destructor is called. If the non-template code depends on template
-	 * code being executed sequentially before it, you may not want to use
-	 * output buffering.
+	 * code is executed since the elements are not actually ::place()'ed until
+	 * the destructor is called.
+	 * 
+	 * If the non-template code depends on template code being executed
+	 * sequentially before it, you may not want to use output buffering.
 	 * 
 	 * @return void
 	 */
@@ -202,36 +203,34 @@ class fTemplating
 	
 	
 	/**
-	 * Includes the element specified (element must be set through setElement() first)
+	 * Includes the element specified - element must be set through ::set() first
 	 * 
-	 * If the element is a file path ending in .css, .js, .rss or .xml an
-	 * appropriate HTML tag will be printed (files ending in .xml will be
-	 * treated as an RSS feed). If the element is a file path ending in .inc,
-	 * .php or .php5 it will be included.
+	 * If the element is a file path ending in `.css`, `.js`, `.rss` or `.xml`
+	 * an appropriate HTML tag will be printed (files ending in `.xml` will be
+	 * treated as an RSS feed). If the element is a file path ending in `.inc`,
+	 * `.php` or `.php5` it will be included.
 	 * 
-	 * Paths that start with './' will be loaded relative to the current script.
+	 * Paths that start with `./` will be loaded relative to the current script.
 	 * Paths that start with a file or directory name will be loaded relative
-	 * to the root passed in the constructor. Paths that start with '/' will
+	 * to the `$root` passed in the constructor. Paths that start with `/` will
 	 * be loaded from the root of the filesystem.
 	 * 
-	 * You can pass the media attribute of a CSS file or the title attribute
+	 * You can pass the `media` attribute of a CSS file or the `title` attribute
 	 * of an RSS feed by adding an associative array with the following formats:
 	 * 
-	 * <pre>
+	 * {{{
 	 * array(
 	 *     'path'  => (string) {css file path},
 	 *     'media' => (string) {media type}
 	 * );
-	 * </pre>
-	 * <pre>
 	 * array(
 	 *     'path'  => (string) {rss file path},
 	 *     'title' => (string) {feed title}
 	 * );
-	 * </pre>
+	 * }}}
 	 * 
 	 * @param  string $element    The element to place
-	 * @param  string $file_type  Will force the element to be placed as this type of file instead of auto-detecting the file type. Valid types include: 'css', 'js', 'php' and 'rss'.
+	 * @param  string $file_type  Will force the element to be placed as this type of file instead of auto-detecting the file type. Valid types include: `'css'`, `'js'`, `'php'` and `'rss'`.
 	 * @return void
 	 */
 	public function place($element, $file_type=NULL)
@@ -251,9 +250,9 @@ class fTemplating
 	
 	
 	/**
-	 * Prints a CSS link HTML tag to the output
+	 * Prints a CSS `link` HTML tag to the output
 	 * 
-	 * @param  mixed $info  The path or array containing the 'path' to the css file. Array can also contain a key 'media'.
+	 * @param  mixed $info  The path or array containing the `'path'` to the CSS file. Array can also contain a key `'media'`.
 	 * @return void
 	 */
 	protected function placeCSS($info)
@@ -319,9 +318,9 @@ class fTemplating
 	
 	
 	/**
-	 * Prints a javascript HTML tag to the output
+	 * Prints a java`script` HTML tag to the output
 	 * 
-	 * @param  mixed $info  The path or array containing the 'path' to the javascript file
+	 * @param  mixed $info  The path or array containing the `'path'` to the javascript file
 	 * @return void
 	 */
 	protected function placeJS($info)
@@ -379,9 +378,9 @@ class fTemplating
 	
 	
 	/**
-	 * Prints an RSS link HTML tag to the output
+	 * Prints an RSS `link` HTML tag to the output
 	 * 
-	 * @param  mixed $info  The path or array containing the 'path' to the RSS xml file. May also contain a 'title' key for the title of the RSS feed.
+	 * @param  mixed $info  The path or array containing the `'path'` to the RSS xml file. May also contain a `'title'` key for the title of the RSS feed.
 	 * @return void
 	 */
 	protected function placeRSS($info)
@@ -435,11 +434,11 @@ class fTemplating
 	
 	
 	/**
-	 * Gets the value of an element and runs it through {@link fHTML::prepare()}
+	 * Gets the value of an element and runs it through fHTML::prepare()
 	 * 
 	 * @param  string $element        The element to get
 	 * @param  mixed  $default_value  The value to return if the element has not been set
-	 * @return mixed  The value of the element specified run through {@link fHTML::prepare()}, or the default value if it has not been set
+	 * @return mixed  The value of the element specified run through fHTML::prepare(), or the default value if it has not been set
 	 */
 	public function prepare($element, $default_value=NULL)
 	{

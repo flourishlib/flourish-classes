@@ -1,6 +1,10 @@
 <?php
 /**
- * Provides URL related functionality
+ * Provides functionality to retrieve and manipulate URL information
+ * 
+ * This class uses `$_SERVER['REQUEST_URI']` for all operations, meaning that
+ * the original URL entered by the user will be used, or that any rewrites
+ * will **not** be reflected by this class.
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -26,7 +30,10 @@ class fURL
 	
 	
 	/**
-	 * Returns the requested url, does no include the domain name or query string
+	 * Returns the requested URL, does no include the domain name or query string
+	 * 
+	 * This will return the original URL requested by the user - ignores all
+	 * rewrites.
 	 * 
 	 * @return string  The requested URL without the query string
 	 */
@@ -39,7 +46,7 @@ class fURL
 	/**
 	 * Returns the current domain name, with protcol prefix
 	 * 
-	 * @return string  The current domain name (with protocol prefix)
+	 * @return string  The current domain name, prefixed by `http://` or `https://`
 	 */
 	static public function getDomain()
 	{
@@ -48,7 +55,7 @@ class fURL
 	
 	
 	/**
-	 * Returns the current query string, does not include parameters added by a rewrite
+	 * Returns the current query string, does not include parameters added by rewrites
 	 * 
 	 * @return string  The query string
 	 */
@@ -59,9 +66,9 @@ class fURL
 	
 	
 	/**
-	 * Returns the current url including query string, but without domain name - does not include query string parameters from a rewrite
+	 * Returns the current URL including query string, but without domain name - does not include query string parameters from rewrites
 	 * 
-	 * @return string  The url with query string
+	 * @return string  The URL with query string
 	 */
 	static public function getWithQueryString()
 	{
@@ -87,7 +94,7 @@ class fURL
 	
 	
 	/**
-	 * Redirects to the url specified, if the url does not start with http:// or https://, redirects to current site
+	 * Redirects to the URL specified, if the URL does not start with `http://` or `https://` it redirects to current site
 	 * 
 	 * @param  string $url  The url to redirect to
 	 * @return void
@@ -114,11 +121,11 @@ class fURL
 	 * Removes one or more parameters from the query string
 	 * 
 	 * This method uses the query string from the original URL and will not
-	 * contain any parameters that are rewritten by the web server (such as
-	 * Apache's mod_rewrite).
+	 * contain any parameters that are from rewrites.
 	 * 
-	 * @param  string $parameter,...  A parameter to remove from the query string
-	 * @return string  The query string with the parameter(s) specified removed, first char is '?'
+	 * @param  string $parameter  A parameter to remove from the query string
+	 * @param  string ...
+	 * @return string  The query string with the parameter(s) specified removed, first character is `?`
 	 */
 	static public function removeFromQueryString()
 	{
@@ -138,15 +145,14 @@ class fURL
 	
 	
 	/**
-	 * Replaces a value in the querystring
+	 * Replaces a value in the query string
 	 * 
 	 * This method uses the query string from the original URL and will not
-	 * contain any parameters that are rewritten by the web server (such as
-	 * Apache's mod_rewrite).
+	 * contain any parameters that are from rewrites.
 	 * 
 	 * @param  string|array  $parameter  The query string parameter
 	 * @param  string|array  $value      The value to set the parameter to
-	 * @return string  The full query string with the parameter replaced, first char is '?'
+	 * @return string  The full query string with the parameter replaced, first char is `?`
 	 */
 	static public function replaceInQueryString($parameter, $value)
 	{

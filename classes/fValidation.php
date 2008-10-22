@@ -51,9 +51,10 @@ class fValidation
 	/**
 	 * Adds form fields to be required to be blank or a valid email address
 	 * 
-	 * Use {@link fValidation::addRequiredFields()} to not allow blank values.
+	 * Use ::addRequiredFields() to not allow blank values.
 	 * 
-	 * @param  string $field,...  Any number of fields to required valid email addresses for
+	 * @param  string $field  Any number of fields to required valid email addresses for
+	 * @param  string ...
 	 * @return void
 	 */
 	public function addEmailFields()
@@ -80,7 +81,8 @@ class fValidation
 	 * Every field that is included in email headers should be passed to this
 	 * method.
 	 * 
-	 * @param  string $field,...  Any number of fields to be checked for email injection
+	 * @param  string $field  Any number of fields to be checked for email injection
+	 * @param  string ...
 	 * @return void
 	 */
 	public function addEmailHeaderFields()
@@ -108,16 +110,19 @@ class fValidation
 	 * 
 	 * To conditionally require fields, pass an associative array of with the
 	 * key being the field that will trigger the other fields to be required:
-	 * <pre>
+	 * 
+	 * {{{
+	 * #!php
 	 * array(
 	 *     'trigger_field' => array(
 	 *         'conditionally_required_field',
 	 *         'second_conditionally_required_field'
 	 *     )
-	 * )
-	 * </pre>
+	 * );
+	 * }}}
 	 * 
-	 * @param  mixed $field,...  Any number of fields to check
+	 * @param  mixed $field  Any number of fields to check
+	 * @param  mixed ...
 	 * @return void
 	 */
 	public function addRequiredFields()

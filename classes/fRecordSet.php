@@ -36,21 +36,19 @@ class fRecordSet implements Iterator
 	 * The where conditions array can contain key => value entries in any of the following formats:
 	 * 
 	 * {{{
-	 * #!php
-	 * array(
-	 *     'column='                    => $value,                         // column = VALUE
-	 *     'column!'                    => $value,                         // column <> VALUE
-	 *     'column~'                    => $value,                         // column LIKE '%VALUE%'
-	 *     'column<'                    => $value,                         // column < VALUE
-	 *     'column<='                   => $value,                         // column <= VALUE
-	 *     'column>'                    => $value,                         // column > VALUE
-	 *     'column>='                   => $value,                         // column >= VALUE
-	 *     'column='                    => array($value, $value2, ...),    // column IN (VALUE, VALUE2, ...)
-	 *     'column!'                    => array($value, $value2, ...),    // column NOT IN (VALUE, VALUE2, ...)
-	 *     'column~'                    => array($value, $value2, ...),    // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ...)
-	 *     'column!|column2<|column3='  => array(VALUE, $value2, $value3), // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
-	 *     'column|column2|column3~'    => VALUE,                          // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
-	 *     'column|column2|column3~'    => array(VALUE, $value2, ...)      // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ...)
+	 * 'column='                    => VALUE,                       // column = VALUE
+	 * 'column!'                    => VALUE                        // column <> VALUE
+	 * 'column~'                    => VALUE                        // column LIKE '%VALUE%'
+	 * 'column<'                    => VALUE                        // column < VALUE
+	 * 'column<='                   => VALUE                        // column <= VALUE
+	 * 'column>'                    => VALUE                        // column > VALUE
+	 * 'column>='                   => VALUE                        // column >= VALUE
+	 * 'column='                    => array(VALUE, VALUE2, ... )   // column IN (VALUE, VALUE2, ... )
+	 * 'column!'                    => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
+	 * 'column~'                    => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ... )
+	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
+	 * 'column|column2|column3~'    => VALUE                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE%')
+	 * 'column|column2|column3~'    => array(VALUE, VALUE2, ... )   // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ... )
 	 * }}}
 	 * 
 	 * The order bys array can contain `key => value` entries in any of the following formats:
@@ -75,7 +73,9 @@ class fRecordSet implements Iterator
 	 * 'related_table{route}=>once_removed_related_table{route}.column' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * }}}
 	 * 
-	 * Below is an example of using where conditions and order bys:
+	 * Below is an example of using where conditions and order bys. Please note
+	 * that values should **not** be escaped for the database, but should just
+	 * be normal PHP values.
 	 * 
 	 * {{{
 	 * #!php

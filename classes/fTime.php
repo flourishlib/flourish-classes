@@ -1,6 +1,6 @@
 <?php
 /**
- * Represents a time of day
+ * Represents a time of day as a value object
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -27,7 +27,7 @@ class fTime
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  fTime|object|string|integer $time  The time to represent, NULL is interpreted as now
+	 * @param  fTime|object|string|integer $time  The time to represent, `NULL` is interpreted as now
 	 * @return fTime
 	 */
 	public function __construct($time=NULL)
@@ -72,9 +72,9 @@ class fTime
 	
 	
 	/**
-	 * Returns this time in 'H:i:s' format
+	 * Returns this time in `'H:i:s'` format
 	 * 
-	 * @return string  The 'H:i:s' format of this time
+	 * @return string  The `'H:i:s'` format of this time
 	 */
 	public function __toString()
 	{
@@ -83,7 +83,7 @@ class fTime
 	
 	
 	/**
-	 * Changes the time by the adjustment specified, only asjustments of 'hours', 'minutes', 'seconds' are allowed
+	 * Changes the time by the adjustment specified, only asjustments of `'hours'`, `'minutes'`, and `'seconds'` are allowed
 	 * 
 	 * @throws fValidationException
 	 * 
@@ -123,7 +123,7 @@ class fTime
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @param  string $format  The {@link http://php.net/date date()} function compatible formatting string, or a format name from {@link fTimestamp::defineFormat()}
+	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from fTimestamp::defineFormat()
 	 * @return string  The formatted time
 	 */
 	public function format($format)
@@ -150,27 +150,32 @@ class fTime
 	 * Returns the approximate difference in time, discarding any unit of measure but the least specific.
 	 * 
 	 * The output will read like:
-	 *  - "This time is {return value} the provided one" when a time it passed
-	 *  - "This time is {return value}" when no time is passed and comparing with the current time
+	 * 
+	 *  - "This time is `{return value}` the provided one" when a time it passed
+	 *  - "This time is `{return value}`" when no time is passed and comparing with the current time
 	 * 
 	 * Examples of output for a time passed might be:
-	 *  - 5 minutes after
-	 *  - 2 hours before
-	 *  - at the same time
+	 * 
+	 *  - `'5 minutes after'`
+	 *  - `'2 hours before'`
+	 *  - `'at the same time'`
 	 * 
 	 * Examples of output for no time passed might be:
-	 *  - 5 minutes ago
-	 *  - 2 hours ago
-	 *  - right now
+	 * 
+	 *  - `'5 minutes ago'`
+	 *  - `'2 hours ago'`
+	 *  - `'right now'`
 	 * 
 	 * You would never get the following output since it includes more than one unit of time measurement:
-	 *  - 5 minutes and 28 seconds
-	 *  - 1 hour, 15 minutes
+	 * 
+	 *  - `'5 minutes and 28 seconds'`
+	 *  - `'1 hour, 15 minutes'`
 	 * 
 	 * Values that are close to the next largest unit of measure will be rounded up:
-	 *  - 55 minutes would be represented as 1 hour, however 45 minutes would not
 	 * 
-	 * @param  fTime|object|string|integer $other_time  The time to create the difference with, NULL is interpreted as now
+	 *  - `'55 minutes'` would be represented as `'1 hour'`, however `'45 minutes'` would not
+	 * 
+	 * @param  fTime|object|string|integer $other_time  The time to create the difference with, `NULL` is interpreted as now
 	 * @return string  The fuzzy difference in time between the this time and the one provided
 	 */
 	public function getFuzzyDifference($other_time=NULL)
@@ -232,7 +237,7 @@ class fTime
 	/**
 	 * Returns the difference between the two times in seconds
 	 * 
-	 * @param  fTime|object|string|integer $other_time  The time to calculate the difference with, NULL is interpreted as now
+	 * @param  fTime|object|string|integer $other_time  The time to calculate the difference with, `NULL` is interpreted as now
 	 * @return integer  The difference between the two times in seconds, positive if $other_time is before this time or negative if after
 	 */
 	public function getSecondsDifference($other_time=NULL)
@@ -249,17 +254,8 @@ class fTime
 	 * based on this time. Below are some examples of formats to
 	 * modify the current time:
 	 * 
-	 * To set the hour of the time to 5 PM:
-	 * 
-	 * <pre>
-	 * 17:i:s
-	 * </pre>
-	 * 
-	 * To set the time to the beginning of the current hour:
-	 * 
-	 * <pre>
-	 * H:00:00
-	 * </pre>
+	 *  - `'17:i:s'` to set the hour of the time to 5 PM
+	 *  - 'H:00:00'` to set the time to the beginning of the current hour
 	 * 
 	 * @param  string $format  The current time will be formatted with this string, and the output used to create a new object
 	 * @return fTime  The new time

@@ -152,11 +152,11 @@ class fUpload
 	
 	
 	/**
-	 * Returns the $_FILES array for the field specified.
+	 * Returns the `$_FILES` array for the field specified.
 	 * 
 	 * @param  string  $field  The field to get the file array for
 	 * @param  integer $index  If the field is an array file upload field, use this to specify which array index to return
-	 * @return array  The file info array from $_FILES
+	 * @return array  The file info array from `$_FILES`
 	 */
 	private function extractFileUploadArray($field, $index=NULL)
 	{
@@ -203,7 +203,7 @@ class fUpload
 	 * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @param  string            $field      The file upload field to get the file from
 	 * @param  integer           $index      If the field was an array file upload field, upload the file corresponding to this index
-	 * @return fFile  An fFile object
+	 * @return fFile  An fFile (or fImage) object
 	 */
 	public function move($directory, $field, $index=NULL)
 	{
@@ -265,7 +265,7 @@ class fUpload
 	/**
 	 * Sets the file mime types accepted, one per parameter
 	 * 
-	 * @param  string $size  The maximum file size (ex: 1MB, 200K, 10.5M), 0 for no limit
+	 * @param  string $size  The maximum file size (e.g. `1MB`, `200K`, `10.5M`) - `0` for no limit
 	 * @return void
 	 */
 	public function setMaxFileSize($size)
@@ -295,7 +295,7 @@ class fUpload
 	 * 
 	 * @param  string  $field  The field the file was uploaded through
 	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
-	 * @return array  The $_FILES array for the field and index specified
+	 * @return void
 	 */
 	public function validate($field, $index=NULL)
 	{

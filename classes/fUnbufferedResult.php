@@ -1,6 +1,6 @@
 <?php
 /**
- * Representation of an unbuffered result from a query against the {@link fDatabase} class
+ * Representation of an unbuffered result from a query against the fDatabase class
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
@@ -76,8 +76,8 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type           The type of database (valid: 'mssql', 'mysql', 'postgresql', 'sqlite')
-	 * @param  string $extension      The database extension used (valid: 'mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv')
+	 * @param  string $type           The type of database: `'mssql'`, `'mysql'`, `'postgresql'`, `'sqlite'`
+	 * @param  string $extension      The database extension used: `'mssql'`, `'mysql'`, `'mysqli'`, `'odbc'`, `'pdo'`, `'pgsql'`, `'sqlite', 'sqlsrv'`
 	 * @param  string $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
 	 * @return fUnbufferedResult
 	 */
@@ -221,7 +221,7 @@ class fUnbufferedResult implements Iterator
 	 * @throws fNoRemainingException
 	 * @internal
 	 * 
-	 * @return array  The current Row
+	 * @return array  The current row
 	 */
 	public function current()
 	{
@@ -283,7 +283,7 @@ class fUnbufferedResult implements Iterator
 	 * @throws fNoResultsException
 	 * @throws fNoRemainingException
 	 * 
-	 * @return array|false  The associative array of the row or FALSE if no remaining rows
+	 * @return array  The associative array of the row
 	 */
 	public function fetchRow()
 	{
@@ -294,7 +294,7 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Warns the user about bugs in the dblib driver for mssql, fixes some bugs
+	 * Warns the user about bugs in the DBLib driver for MSSQL, fixes some bugs
 	 * 
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
@@ -373,9 +373,9 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Returns the sql used in the query
+	 * Returns the SQL used in the query
 	 * 
-	 * @return string  The sql used in the query
+	 * @return string  The SQL used in the query
 	 */
 	public function getSQL()
 	{
@@ -384,9 +384,9 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Returns the sql as it was before translation
+	 * Returns the SQL as it was before translation
 	 * 
-	 * @return string  The sql from before translation
+	 * @return string  The SQL from before translation
 	 */
 	public function getUntranslatedSQL()
 	{
@@ -418,7 +418,7 @@ class fUnbufferedResult implements Iterator
 	 * @throws fNoResultsException
 	 * @internal
 	 * 
-	 * @return array|null  The next row or null
+	 * @return void
 	 */
 	public function next()
 	{
@@ -494,7 +494,7 @@ class fUnbufferedResult implements Iterator
 	
 	
 	/**
-	 * Throws an {@link fNoResultException} if the query did not return any rows
+	 * Throws an fNoResultException if the query did not return any rows
 	 * 
 	 * @throws fNoResultsException
 	 * 
