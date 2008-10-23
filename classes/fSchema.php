@@ -889,6 +889,7 @@ class fSchema implements fISchema
 		$last_table = '';
 		$last_type  = '';
 		foreach ($result as $row) {
+			fCore::expose($row);
 			if ($row['constraint_name'] != $last_name) {
 				if ($last_name) {
 					if ($last_type == 'foreign' || $last_type == 'unique') {
@@ -921,7 +922,7 @@ class fSchema implements fISchema
 			}
 		}
 		if (isset($temp)) {
-			if ($last_type == 'foreign') {
+			if ($last_type == 'foreign' || $last_type == 'unique') {
 				$keys[$last_table][$last_type][] = $temp;
 			} else {
 				$keys[$last_table][$last_type] = $temp;
