@@ -889,7 +889,6 @@ class fSchema implements fISchema
 		$last_table = '';
 		$last_type  = '';
 		foreach ($result as $row) {
-			fCore::expose($row);
 			if ($row['constraint_name'] != $last_name) {
 				if ($last_name) {
 					if ($last_type == 'foreign' || $last_type == 'unique') {
