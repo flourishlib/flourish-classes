@@ -22,10 +22,18 @@ class fORMValidation
 	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
 	const reorderMessages              = 'fORMValidation::reorderMessages';
 	const reset                        = 'fORMValidation::reset';
+	const setColumnCaseInsensitive     = 'fORMValidation::setColumnCaseInsensitive';
 	const setMessageOrder              = 'fORMValidation::setMessageOrder';
 	const validate                     = 'fORMValidation::validate';
 	const validateRelated              = 'fORMValidation::validateRelated';	
 	
+	
+	/**
+	 * Columns that should be treated as case insensitive when checking uniqueness
+	 * 
+	 * @var array
+	 */
+	static private $case_insensitive_columns = array();
 	
 	/**
 	 * Conditional validation rules
@@ -469,26 +477,55 @@ class fORMValidation
 		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);
 		
-		// We don't need to check if the record is existing
-		if ($object->exists()) {
-			return;
-		}
-		
 		$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
 		$columns      = array();
+		
+		$found_value  = FALSE;
 		foreach ($primary_keys as $primary_key) {
 			$columns[] = fORM::getColumnName($class, $primary_key);
+			if ($values[$primary_key]) {
+				$found_value = TRUE;	
+			}
+		}
+		
+		if (!$found_value) {
+			return;	
+		}
+		
+		$different = FALSE;
+		foreach ($primary_keys as $primary_key) {
+			$old_value = fActiveRecord::retrieve($old_values, $primary_key);
+			$value     = $values[$primary_key];
+			if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($value) && fCore::stringlike($old_value)) {
+				if (strtolower($value) != strtolower($old_value)) {
+					$different = TRUE;
+				}	
+			} elseif ($old_value != $value) {
+				$different = TRUE;	
+			}
+		}
+		
+		if (!$different) {
+			return;	
 		}
 		
 		try {
-			$sql    = "SELECT " . $table . ".* FROM " . $table . " WHERE ";
-			$sql   .= fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values);
+			$sql    = "SELECT " . join(', ', $primary_keys) . " FROM " . $table . " WHERE ";
+			$conditions = array();
+			foreach ($primary_keys as $primary_key) {
+				if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($values[$primary_key])) {
+					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
+				} else {
+					$conditions[] = $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
+				} 
+			}
+			$sql .= join(' AND ', $conditions);
 			
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			$result->tossIfNoResults();
 			
 			return fGrammar::compose(
-				'A %1$s with the same %2$s already exists',
+				'Another %1$s with the same %2$s already exists',
 				fORM::getRecordName($class),
 				fGrammar::joinArray($columns, 'and')
 			);
@@ -553,22 +590,21 @@ class fORMValidation
 				}
 				
 				$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
-				$column_num = 0;
+				$first = TRUE;
 				foreach ($unique_columns as $unique_column) {
-					if ($column_num) { $sql .= " AND "; }
-					$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $values[$unique_column], '=');
-					$column_num++;
+					if ($first) { $first = FALSE; } else { $sql .= " AND "; }
+					if (self::isCaseInsensitive($class, $column) && (is_string($values[$unique_column]) || is_numeric($values[$unique_column]))) {
+						$sql .= 'LOWER(' . $unique_column . ')' . fORMDatabase::escapeBySchema($table, $unique_column, strtolower($value), '=');
+					} else {
+						$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $values[$unique_column], '=');
+					}
 				}
 				
 				if ($object->exists()) {
-					$sql .= ' AND (';
-					$first = TRUE;
 					foreach ($primary_keys as $primary_key) {
-						$sql  .= ($first && !$first = FALSE) ? '' : ' AND ';
 						$value = fActiveRecord::retrieve($old_values, $primary_key, $values[$primary_key]);
-						$sql  .= $table . '.' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
+						$sql  .= ' AND ' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
 					}
-					$sql .= ')';
 				}
 				
 				try {
@@ -612,6 +648,24 @@ class fORMValidation
 		self::$one_or_more_validation_rules[$class]         = (isset(self::$one_or_more_validation_rules[$class]))         ? self::$one_or_more_validation_rules[$class]         : array();
 		self::$only_one_validation_rules[$class]            = (isset(self::$only_one_validation_rules[$class]))            ? self::$only_one_validation_rules[$class]            : array();
 		self::$related_one_or_more_validation_rules[$class] = (isset(self::$related_one_or_more_validation_rules[$class])) ? self::$related_one_or_more_validation_rules[$class] : array();
+	}
+	
+	
+	/**
+	 * Checks to see if a column has been set as case insensitive
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $class   The class to check
+	 * @param  string $column  The column to check
+	 * @return boolean  If the column is set to be case insensitive
+	 */
+	static private function isCaseInsensitive($class, $column)
+	{
+		if (!isset(self::$case_insensitive_columns[$class][$column])) {
+			return FALSE;
+		}	
+		return TRUE;
 	}
 	
 	
@@ -665,11 +719,46 @@ class fORMValidation
 	 */
 	static public function reset()
 	{
+		self::$case_insensitive_columns             = array();
 		self::$conditional_validation_rules         = array();
 		self::$message_orders                       = array();
 		self::$one_or_more_validation_rules         = array();
 		self::$only_one_validation_rules            = array();
 		self::$related_one_or_more_validation_rules = array();
+	}
+	
+	
+	/**
+	 * Sets a column to be compared in a case-insensitive manner when checking `UNIQUE` and `PRIMARY KEY` constraints
+	 *
+	 * @param  mixed  $class   The class name or instance of the class the column is located in
+	 * @param  string $column  The column to set as case-insensitive
+	 * @return void
+	 */
+	static public function setColumnCaseInsensitive($class, $column)
+	{
+		$class = fORM::getClass($class);
+		$table = fORM::tablize($class);
+		
+		$type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$valid_types = array('varchar', 'char', 'text');
+		if (!in_array($type, $valid_types)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The column specified, %1$s, is of the data type %2$s. Must be one of %3$s to be treated as case insensitive.',
+					fCore::dump($column),
+					fCore::dump($type),
+					join(', ', $valid_types)
+				)
+			);
+		}
+		
+		if (!isset(self::$case_insensitive_columns[$class])) {
+			self::$case_insensitive_columns[$class] = array();
+		}
+		
+		self::$case_insensitive_columns[$class][$column] = TRUE;
 	}
 	
 	
