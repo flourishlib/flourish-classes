@@ -329,7 +329,7 @@ class fORMDatabase
 		foreach ($primary_keys as $primary_key) {
 			if ($sql) { $sql .= " AND "; }
 			
-			$value = (!empty($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
+			$value = (isset($old_values[$primary_key])) ? $old_values[$primary_key][0] : $values[$primary_key];
 			
 			$sql  .= $table . '.' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '=');
 		}
