@@ -494,6 +494,9 @@ class fORMValidation
 		
 		$different = FALSE;
 		foreach ($primary_keys as $primary_key) {
+			if (!fActiveRecord::has($old_values, $primary_key)) {
+				continue;	
+			}
 			$old_value = fActiveRecord::retrieve($old_values, $primary_key);
 			$value     = $values[$primary_key];
 			if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($value) && fCore::stringlike($old_value)) {
@@ -514,7 +517,7 @@ class fORMValidation
 			$conditions = array();
 			foreach ($primary_keys as $primary_key) {
 				if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($values[$primary_key])) {
-					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
+					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, strtolower($values[$primary_key]), '=');
 				} else {
 					$conditions[] = $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
 				} 

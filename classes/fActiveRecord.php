@@ -79,7 +79,7 @@ abstract class fActiveRecord
 	 */
 	static public function has(&$old_values, $column)
 	{
-		return isset($old_values[$column]);
+		return array_key_exists($column, $old_values);
 	}
 	
 	
