@@ -630,7 +630,7 @@ class fORMDatabase
 			);
 		}
 		
-		if (strpos($sql, ':group_by_clause') === FALSE) {
+		if (strpos($sql, ':group_by_clause') === FALSE && !preg_match('#group\s+by#i', $sql)) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
@@ -640,6 +640,8 @@ class fORMDatabase
 				)
 			);
 		}
+		
+		$has_group_by_placeholder = (strpos($sql, ':group_by_clause') !== FALSE) ? TRUE : FALSE;
 		
 		// Separate the SQL from quoted values
 		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
@@ -734,9 +736,11 @@ class fORMDatabase
 			foreach ($column_info as $column => $info) {
 				$columns[] = $table . '.' . $column;
 			}
-			$group_by_clause .= join(', ', $columns) . ' ';
+			$group_by_columns = join(', ', $columns) . ' ';
+			$group_by_clause .= $group_by_columns;
 		} else {
 			$group_by_clause = ' ';
+			$group_by_columns = '';
 		}
 		
 		// Put the SQL back together
@@ -765,7 +769,11 @@ class fORMDatabase
 				}
 				
 				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
-				$temp_sql = preg_replace('#\s:group_by_clause\s#', $group_by_clause, $temp_sql);
+				if ($has_group_by_placeholder) {
+					$temp_sql = preg_replace('#\s:group_by_clause\s#', $group_by_clause, $temp_sql);
+				} elseif ($group_by_columns) {
+					$temp_sql = preg_replace('#(\sGROUP\s+BY\s((?!HAVING|ORDER\s+BY).)*)\s#i', '\1, ' . $group_by_columns, $temp_sql);
+				}
 			}
 			
 			$new_sql .= $temp_sql;
