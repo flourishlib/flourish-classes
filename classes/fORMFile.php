@@ -1006,7 +1006,12 @@ class fORMFile
 				
 			} elseif ($existing_file) {
 				
-				$file = new fFile($upload_dir->getPath() . $existing_file);
+				$file_path = $upload_dir->getPath() . $existing_file;
+				if (fImage::isImageCompatible($file_path)) {
+					$file = new fImage($file_path);
+				} else {
+					$file = new fFile($file_path);
+				}
 				
 				$current_file = $values[$column];
 				if (!$current_file || ($current_file && $file->getPath() != $current_file->getPath())) {
