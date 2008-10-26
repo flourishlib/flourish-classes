@@ -431,7 +431,7 @@ class fORMFile
 			}
 			
 			// Remove the old files for the column
-			foreach (fActiveRecord::retrieve($old_values, $column, array(), TRUE) as $file) {
+			foreach (fActiveRecord::retrieveOld($old_values, $column, array(), TRUE) as $file) {
 				if ($file instanceof fFile) {
 					$file->delete();
 				}
@@ -457,7 +457,7 @@ class fORMFile
 		
 		// Remove the old files for the column
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
-			foreach (fActiveRecord::retrieve($old_values, $column, array(), TRUE) as $file) {
+			foreach (fActiveRecord::retrieveOld($old_values, $column, array(), TRUE) as $file) {
 				if ($file instanceof fFile) {
 					$file->delete();
 				}

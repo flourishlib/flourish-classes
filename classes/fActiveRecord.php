@@ -23,8 +23,8 @@ abstract class fActiveRecord
 	const assign         = 'fActiveRecord::assign';
 	const changed        = 'fActiveRecord::changed';
 	const forceConfigure = 'fActiveRecord::forceConfigure';
-	const has            = 'fActiveRecord::has';
-	const retrieve       = 'fActiveRecord::retrieve';
+	const hasOld         = 'fActiveRecord::hasOld';
+	const retrieveOld    = 'fActiveRecord::retrieveOld';
 	
 	
 	/**
@@ -111,7 +111,7 @@ abstract class fActiveRecord
 	 * @param  string $column       The column to set
 	 * @return boolean  If an old value for that column exists
 	 */
-	static public function has(&$old_values, $column)
+	static public function hasOld(&$old_values, $column)
 	{
 		return array_key_exists($column, $old_values);
 	}
@@ -128,7 +128,7 @@ abstract class fActiveRecord
 	 * @param  boolean $return_all   Return the array of all old values for this column instead of just the oldest
 	 * @return mixed  The old value for the column
 	 */
-	static public function retrieve(&$old_values, $column, $default=NULL, $return_all=FALSE)
+	static public function retrieveOld(&$old_values, $column, $default=NULL, $return_all=FALSE)
 	{
 		if (!isset($old_values[$column])) {
 			return $default;	
@@ -805,7 +805,7 @@ abstract class fActiveRecord
 		
 		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 		foreach ($pk_columns as $pk_column) {
-			if ((self::has($this->old_values, $pk_column) && self::retrieve($this->old_values, $pk_column) === NULL) || $this->values[$pk_column] === NULL) {
+			if ((self::hasOld($this->old_values, $pk_column) && self::retrieveOld($this->old_values, $pk_column) === NULL) || $this->values[$pk_column] === NULL) {
 				return FALSE;
 			}
 		}
@@ -1599,8 +1599,8 @@ abstract class fActiveRecord
 				$this->related_records
 			);
 			
-			if ($new_autoincrementing_record && self::has($this->old_values, $pk_column)) {
-				$this->values[$pk_column] = self::retrieve($this->old_values, $pk_column);
+			if ($new_autoincrementing_record && self::hasOld($this->old_values, $pk_column)) {
+				$this->values[$pk_column] = self::retrieveOld($this->old_values, $pk_column);
 				unset($this->old_values[$pk_column]);
 			}
 			

@@ -369,7 +369,7 @@ class fORMDate
 			
 			$value = new fTimestamp($value, $timezone);
 			 
-			if (fActiveRecord::has($old_values, $timezone_column) && !fActiveRecord::has($old_values, $timestamp_column)) {
+			if (fActiveRecord::hasOld($old_values, $timezone_column) && !fActiveRecord::hasOld($old_values, $timestamp_column)) {
 				fActiveRecord::assign($values, $old_values, $timestamp_column, $value);		
 			} else {
 				$values[$timestamp_column] = $value;

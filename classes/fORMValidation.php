@@ -502,10 +502,10 @@ class fORMValidation
 		
 		$different = FALSE;
 		foreach ($primary_keys as $primary_key) {
-			if (!fActiveRecord::has($old_values, $primary_key)) {
+			if (!fActiveRecord::hasOld($old_values, $primary_key)) {
 				continue;	
 			}
-			$old_value = fActiveRecord::retrieve($old_values, $primary_key);
+			$old_value = fActiveRecord::retrieveOld($old_values, $primary_key);
 			$value     = $values[$primary_key];
 			if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($value) && fCore::stringlike($old_value)) {
 				if (strtolower($value) != strtolower($old_value)) {
@@ -614,7 +614,7 @@ class fORMValidation
 				
 				if ($object->exists()) {
 					foreach ($primary_keys as $primary_key) {
-						$value = fActiveRecord::retrieve($old_values, $primary_key, $values[$primary_key]);
+						$value = fActiveRecord::retrieveOld($old_values, $primary_key, $values[$primary_key]);
 						$sql  .= ' AND ' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
 					}
 				}

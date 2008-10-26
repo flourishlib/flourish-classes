@@ -130,7 +130,7 @@ class fORMOrdering
 	{
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
-			$other_value  = fActiveRecord::retrieve($old_values, $other_column, $values[$other_column]);
+			$other_value  = fActiveRecord::retrieveOld($old_values, $other_column, $values[$other_column]);
 			$conditions[] = $other_column . fORMDatabase::escapeBySchema($table, $other_column, $other_value, '=');
 		}
 		
@@ -177,7 +177,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = fActiveRecord::retrieve($old_values, $column, $current_value);
+		$old_value     = fActiveRecord::retrieveOld($old_values, $column, $current_value);
 		
 		// Figure out the range we are dealing with
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -271,8 +271,8 @@ class fORMOrdering
 	static private function isInNewSet($ordering_column, $other_columns, &$values, &$old_values)
 	{
 		$value_empty      = !$values[$ordering_column];
-		$old_value_empty  = !fActiveRecord::retrieve($old_values, $ordering_column, TRUE);
-		$no_old_value_set = !fActiveRecord::has($old_values, $ordering_column);
+		$old_value_empty  = !fActiveRecord::retrieveOld($old_values, $ordering_column, TRUE);
+		$no_old_value_set = !fActiveRecord::hasOld($old_values, $ordering_column);
 		
 		// If the value appears to be new, the record must be new to the order
 		if ($old_value_empty || ($value_empty && $no_old_value_set)) {
@@ -355,7 +355,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = fActiveRecord::retrieve($old_values, $column);
+		$old_value     = fActiveRecord::retrieveOld($old_values, $column);
 		
 		// Figure out the range we are dealing with
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -518,7 +518,7 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = fActiveRecord::retrieve($old_values, $column);
+		$old_value     = fActiveRecord::retrieveOld($old_values, $column);
 		
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
 		if ($other_columns) {
