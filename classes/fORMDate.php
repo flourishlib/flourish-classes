@@ -89,9 +89,9 @@ class fORMDate
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
@@ -140,9 +140,9 @@ class fORMDate
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
@@ -208,9 +208,9 @@ class fORMDate
 		$camelized_timestamp_column = fGrammar::camelize($timestamp_column, TRUE);
 		$camelized_timezone_column  = fGrammar::camelize($timezone_column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_timezone_column . '()',
+			'inspect' . $camelized_timezone_column,
 			self::inspect
 		);
 		
@@ -226,15 +226,15 @@ class fORMDate
 			fORM::registerHookCallback($class, 'pre::validate()', self::makeTimestampObjects);
 		}
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::set' . $camelized_timestamp_column . '()',
+			'set' . $camelized_timestamp_column,
 			self::setTimestampColumn
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::set' . $camelized_timezone_column . '()',
+			'set' . $camelized_timezone_column,
 			self::setTimezoneColumn
 		);
 		

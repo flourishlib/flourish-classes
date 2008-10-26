@@ -16,26 +16,37 @@ class fORM
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const addCustomTableClassMapping = 'fORM::addCustomTableClassMapping';
-	const callHookCallback           = 'fORM::callHookCallback';
+	const callHookCallbacks          = 'fORM::callHookCallbacks';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
 	const checkHookCallback          = 'fORM::checkHookCallback';
 	const classize                   = 'fORM::classize';
 	const defineActiveRecordClass    = 'fORM::defineActiveRecordClass';
+	const getActiveRecordMethod      = 'fORM::getActiveRecordMethod';
 	const getClass                   = 'fORM::getClass';
 	const getColumnName              = 'fORM::getColumnName';
 	const getRecordName              = 'fORM::getRecordName';
+	const getRecordSetMethod         = 'fORM::getRecordSetMethod';
 	const objectify                  = 'fORM::objectify';
 	const overrideColumnName         = 'fORM::overrideColumnName';
 	const overrideRecordName         = 'fORM::overrideRecordName';
 	const parseMethod                = 'fORM::parseMethod';
+	const registerActiveRecordMethod = 'fORM::registerActiveRecordMethod';
 	const registerHookCallback       = 'fORM::registerHookCallback';
 	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
+	const registerRecordSetMethod    = 'fORM::registerRecordSetMethod';
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
 	const reset                      = 'fORM::reset';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
 	
+	
+	/**
+	 * An array of `{method} => {callback}` mappings for fActiveRecord
+	 * 
+	 * @var array
+	 */
+	static private $active_record_method_callbacks = array();
 	
 	/**
 	 * Custom column names for columns in fActiveRecord classes
@@ -64,6 +75,13 @@ class fORM
 	 * @var array
 	 */
 	static private $record_names = array();
+	
+	/**
+	 * An array of `{method} => {callback}` mappings for fRecordSet
+	 * 
+	 * @var array
+	 */
+	static private $record_set_method_callbacks = array();
 	
 	/**
 	 * Callbacks for ::reflect()
@@ -106,9 +124,7 @@ class fORM
 	
 	
 	/**
-	 * Calls a hook callback and returns the result
-	 * 
-	 * The return value should only be used by `replace::` callbacks.
+	 * Calls the hook callbacks for the class and hook specified
 	 * 
 	 * @internal
 	 * 
@@ -118,57 +134,39 @@ class fORM
 	 * @param  array         &$old_values        The old values of the record
 	 * @param  array         &$related_records   Records related to the current record
 	 * @param  mixed         &$first_parameter   The first parameter to send the callback
-	 * @param  mixed         &$second_parameter  The second parameter to send the callback
-	 * @return mixed  The return value from the callback. Will be `NULL` unless it is a `replace::` callback.
+	 * @return void
 	 */
-	static public function callHookCallback(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL, &$second_parameter=NULL)
+	static public function callHookCallbacks(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL)
 	{
 		$class = self::getClass($object);
 		
-		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
-			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
+		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return;
 		}
 		
-		// replace:: hooks are always singular and return a value
-		if (preg_match('#^replace::[\w_]+\(\)$#', $hook)) {
-			
-			if (isset(self::$hook_callbacks[$class][$hook])) {
-				$callback = self::$hook_callbacks[$class][$hook];
-			} else {
-				$callback = self::$hook_callbacks['*'][$hook];
-			}
-			
-			// This is the only way to pass by reference
-			$parameters = array(
-				$object,
-				&$values,
-				&$old_values,
-				&$related_records,
-				&$first_parameter,
-				&$second_parameter
-			);
-			return fCore::call($callback, $parameters);
+		// Get all of the callbacks for this hook, both for this class or all classes
+		$callbacks = array();
+		
+		if (isset(self::$hook_callbacks[$class][$hook])) {
+			$callbacks = array_merge($callbacks, self::$hook_callbacks[$class][$hook]);
 		}
 		
-		// There can be more than one non-replace:: hook so we can't return a value
-		if (isset(self::$hook_callbacks[$class][$hook])) {
-			$callbacks = self::$hook_callbacks[$class][$hook];
-		} else {
-			$callbacks = self::$hook_callbacks['*'][$hook];
+		if (isset(self::$hook_callbacks['*'][$hook])) {
+			$callbacks = array_merge($callbacks, self::$hook_callbacks['*'][$hook]);
 		}
 		
 		foreach ($callbacks as $callback) {
-			// This is the only way to pass by reference
-			$parameters = array(
-				$object,
-				&$values,
-				&$old_values,
-				&$related_records,
-				&$first_parameter,
-				&$second_parameter
+			fCore::call(
+				$callback,
+				// This is the only way to pass by reference
+				array(
+					$object,
+					&$values,
+					&$old_values,
+					&$related_records,
+					&$first_parameter
+				)
 			);
-			fCore::call($callback, $parameters);
 		}
 	}
 	
@@ -231,8 +229,7 @@ class fORM
 	{
 		$class = self::getClass($class);
 		
-		if ((!isset(self::$hook_callbacks[$class]) && !isset(self::$hook_callbacks['*'])) ||
-			  (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook]))) {
+		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return FALSE;
 		}
 		
@@ -294,6 +291,40 @@ class fORM
 				fCore::dump($class)
 			)
 		);
+	}
+	
+	
+	/**
+	 * Returns a matching callback for the class and method specified
+	 * 
+	 * The callback returned will be determined by the following logic:
+	 * 
+	 *  1. If an exact callback has been defined for the method, it will be returned
+	 *  2. If a callback in the form `{action}*` has been defined that matches the method, it will be returned
+	 *  3. `NULL` will be returned
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class   The name of the class, or an instance of it
+	 * @param  string $method  The method to get the callback for
+	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
+	 */
+	static public function getActiveRecordMethod($class, $method)
+	{
+		$class = self::getClass($class);
+		
+		if (isset(self::$active_record_method_callbacks[$class][$method])) {
+			return self::$active_record_method_callbacks[$class][$method];	
+		}
+		
+		if (preg_match('#[A-Z0-9]#', $method)) {
+			list($action, $subject) = self::parseMethod($method);
+			if (isset(self::$active_record_method_callbacks[$class][$action . '*'])) {
+				return self::$active_record_method_callbacks[$class][$action . '*'];	
+			}	
+		}
+		
+		return NULL;	
 	}
 	
 	
@@ -360,6 +391,37 @@ class fORM
 		}
 		
 		return self::$record_names[$class];
+	}
+	
+	
+	/**
+	 * Returns a matching callback for the method specified
+	 * 
+	 * The callback returned will be determined by the following logic:
+	 * 
+	 *  1. If an exact callback has been defined for the method, it will be returned
+	 *  2. If a callback in the form `{action}*` has been defined that matches the method, it will be returned
+	 *  3. `NULL` will be returned
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $method  The method to get the callback for
+	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
+	 */
+	static public function getRecordSetMethod($method)
+	{
+		if (isset(self::$record_set_method_callbacks[$method])) {
+			return self::$record_set_method_callbacks[$method];	
+		}
+		
+		if (preg_match('#[A-Z0-9]#', $method)) {
+			list($action, $subject) = self::parseMethod($method);
+			if (isset(self::$record_set_method_callbacks[$action . '*'])) {
+				return self::$record_set_method_callbacks[$action . '*'];	
+			}	
+		}
+		
+		return NULL;	
 	}
 	
 	
@@ -469,28 +531,51 @@ class fORM
 	
 	
 	/**
-	 * Registers a callback for one of the various fActiveRecord hooks
+	 * Registers a callback for an fActiveRecord method that falls through to fActiveRecord::__call() or hits a predefined method hook
+	 *  
+	 * The callback should accept the following parameters:
 	 * 
-	 * Any hook that does not begin with `replace::` can have multiple callbacks.
-	 * `replace::` hooks can only have one, the most recently registered.
+	 *  - **`$object`**:           The fActiveRecord instance
+	 *  - **`&$values`**:          The values array for the record
+	 *  - **`&$old_values`**:      The old values array for the record
+	 *  - **`&$related_records`**: The related records array for the record
+	 *  - **`$method_name`**:      The method that was called
+	 *  - **`&$parameters`**:      The parameters passed to the method
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
+	 * @param  string   $method    The method to hook for
+	 * @param  callback $callback  The callback to execute - see method description for parameter list
+	 * @return void
+	 */
+	static public function registerActiveRecordMethod($class, $method, $callback)
+	{
+		$class = self::getClass($class);
+		
+		if (!isset(self::$active_record_method_callbacks[$class])) {
+			self::$active_record_method_callbacks[$class] = array();	
+		}
+		
+		self::$active_record_method_callbacks[$class][$method] = $callback;
+	}
+	
+	
+	/**
+	 * Registers a callback for one of the various fActiveRecord hooks - multiple callbacks can be registered for each hook
 	 * 
 	 * The method signature should include the follow parameters:
 	 * 
-	 *  1. $class
-	 *  2. &$values
-	 *  3. &$old_values
-	 *  4. &$related_records
+	 *  - **`$object`**:           The fActiveRecord instance
+	 *  - **`&$values`**:          The values array for the record
+	 *  - **`&$old_values`**:      The old values array for the record
+	 *  - **`&$related_records`**: The related records array for the record
 	 * 
-	 * Below is a list of other parameters passed to specific hooks:
+	 * The `'pre::validate()'` and `'post::validate()'` hooks have an extra parameter:
 	 * 
-	 *  - **`'replace::validate()'`**: `$return_messages` - a boolean flag indicating if the validation messages should be returned as an array instead of thrown as an exception
-	 *  - **`'pre::validate()'`** and **`'post::validate()'`**: `&$validation_messages` - an ordered array of validation errors that will be returned or tossed as an fValidationException
-	 *  - **`'replace::{methodName}()'`**: `&$method_name` - the name of the method called, `&$parameters` - the parameters the method was called with
-	 * 
-	 * Below is a list of all valid non-`replace::` hooks:
+	 *  - **`&$validation_messages`**: An ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *  
+	 * Below is a list of all valid hooks:
 	 * 
 	 *  - `'post::__construct()'`
-	 *  - `'replace::delete()'`
 	 *  - `'pre::delete()'`
 	 *  - `'post-begin::delete()'`
 	 *  - `'pre-commit::delete()'`
@@ -499,10 +584,8 @@ class fORM
 	 *  - `'post::delete()'`
 	 *  - `'post::inspect()'`
 	 *  - `'post::loadFromResult()'`
-	 *  - `'replace::populate()'`
 	 *  - `'pre::populate()'`
 	 *  - `'post::populate()'`
-	 *  - `'replace::store()'`
 	 *  - `'pre::store()'`
 	 *  - `'post-begin::store()'`
 	 *  - `'post-validate::store()'`
@@ -510,7 +593,6 @@ class fORM
 	 *  - `'post-commit::store()'`
 	 *  - `'post-rollback::store()'`
 	 *  - `'post::store()'`
-	 *  - `'replace::validate()'`
 	 *  - `'pre::validate()'`
 	 *  - `'post::validate()'`
 	 * 
@@ -522,11 +604,9 @@ class fORM
 	static public function registerHookCallback($class, $hook, $callback)
 	{
 		$class = self::getClass($class);
-		$replace_hook = preg_match('#^replace::[\w_]+\(\)$#', $hook);
 		
 		static $valid_hooks = array(
 			'post::__construct()',
-			'replace::delete()',
 			'pre::delete()',
 			'post-begin::delete()',
 			'pre-commit::delete()',
@@ -535,10 +615,8 @@ class fORM
 			'post::delete()',
 			'post::inspect()',
 			'post::loadFromResult()',
-			'replace::populate()',
 			'pre::populate()',
 			'post::populate()',
-			'replace::store()',
 			'pre::store()',
 			'post-begin::store()',
 			'post-validate::store()',
@@ -546,43 +624,17 @@ class fORM
 			'post-commit::store()',
 			'post-rollback::store()',
 			'post::store()',
-			'replace::validate()',
 			'pre::validate()',
 			'post::validate()'
 		);
 		
-		static $invalid_replace_hooks = array(
-			'replace::configure()',
-			'replace::constructInsertSQL()',
-			'replace::constructUpdateSQL()',
-			'replace::encode()',
-			'replace::get()',
-			'replace::loadFromIdentityMap()',
-			'replace::loadFromResult()',
-			'replace::prepare()',
-			'replace::set()'
-		);
-		
-		if (!in_array($hook, $valid_hooks) && !$replace_hook) {
+		if (!in_array($hook, $valid_hooks)) {
 			fCore::toss(
 				'fProgrammerException',
 				fGrammar::compose(
-					'The hook specified, %1$s, should be one of: %2$s or %3$s.',
+					'The hook specified, %1$s, should be one of: %2$s.',
 					fCore::dump($hook),
-					join(', ', $valid_hooks),
-					'replace::{methodName}()'
-				)
-			);
-		}
-		
-		if ($replace_hook && in_array($hook, $invalid_replace_hooks)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The hook specified, %1$s, is an invalid %2$s hook. Can not be one of: %3$s.',
-					fCore::dump($hook),
-					'replace::',
-					join(', ', $invalid_replace_hooks)
+					join(', ', $valid_hooks)
 				)
 			);
 		}
@@ -591,17 +643,11 @@ class fORM
 			self::$hook_callbacks[$class] = array();
 		}
 		
-		// We only allow a single replace:: callback
-		if ($replace_hook) {
-			self::$hook_callbacks[$class][$hook] = $callback;
-		
-		// If it is not a replace:: callback, we can have unlimited callbacks
-		} else {
-			if (!isset(self::$hook_callbacks[$class][$hook])) {
-				self::$hook_callbacks[$class][$hook] = array();
-			}
-			self::$hook_callbacks[$class][$hook][] = $callback;
+		if (!isset(self::$hook_callbacks[$class][$hook])) {
+			self::$hook_callbacks[$class][$hook] = array();
 		}
+		
+		self::$hook_callbacks[$class][$hook][] = $callback;
 	}
 	
 	
@@ -622,6 +668,27 @@ class fORM
 		}
 		
 		self::$objectify_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
+	 * Registers a callback for an fRecordSet method that fall through to fRecordSet::__call()
+	 *  
+	 * The callback should accept the following parameters:
+	 * 
+	 *  - **`$object`**:      The actual record set
+	 *  - **`$class`**:       The class of each record
+	 *  - **`&$records`**:    The ordered array of fActiveRecords
+	 *  - **`&$pointer`**:    The current array pointer for the records array
+	 *  - **`&$associate`**:  If the record should be associated with an fActiveRecord holding it
+	 * 
+	 * @param  string   $method    The method to hook for
+	 * @param  callback $callback  The callback to execute - see method description for parameter list
+	 * @return void
+	 */
+	static public function registerRecordSetMethod($method, $callback)
+	{
+		self::$record_set_method_callbacks[$method] = $callback;
 	}
 	
 	
@@ -685,15 +752,17 @@ class fORM
 	 */
 	static public function reset()
 	{
-		self::$column_names        = array();
-		self::$configured          = array();
-		self::$hook_callbacks      = array();
-		self::$identity_map        = array();
-		self::$objectify_callbacks = array();
-		self::$record_names        = array();
-		self::$reflect_callbacks   = array();
-		self::$scalarize_callbacks = array();
-		self::$table_class_map     = array();
+		self::$active_record_method_callbacks = array();
+		self::$column_names                   = array();
+		self::$configured                     = array();
+		self::$hook_callbacks                 = array();
+		self::$identity_map                   = array();
+		self::$objectify_callbacks            = array();
+		self::$record_names                   = array();
+		self::$record_set_method_callbacks    = array();
+		self::$reflect_callbacks              = array();
+		self::$scalarize_callbacks            = array();
+		self::$table_class_map                = array();
 	}
 	
 	

@@ -20,10 +20,11 @@
 abstract class fActiveRecord
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const assign   = 'fActiveRecord::assign';
-	const changed  = 'fActiveRecord::changed';
-	const has      = 'fActiveRecord::has';
-	const retrieve = 'fActiveRecord::retrieve';
+	const assign         = 'fActiveRecord::assign';
+	const changed        = 'fActiveRecord::changed';
+	const forceConfigure = 'fActiveRecord::forceConfigure';
+	const has            = 'fActiveRecord::has';
+	const retrieve       = 'fActiveRecord::retrieve';
 	
 	
 	/**
@@ -195,10 +196,8 @@ abstract class fActiveRecord
 	 * `populate` verbs for all related records in one-to-many relationships
 	 * and the `create` verb for all related records in *-to-one relationships.
 	 * 
-	 * `replace::` hook callbacks registered through
-	 * fORM::registerHookCallback() will be delegated via this method.
-	 * 
-	 * @throws fValidationException
+	 * Method callbacks registered through fORM::registerActiveRecordMethod()
+	 * will be delegated via this method.
 	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
@@ -206,19 +205,21 @@ abstract class fActiveRecord
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list ($action, $subject) = fORM::parseMethod($method_name);
-		
-		if (fORM::checkHookCallback($this, 'replace::' . $method_name . '()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::' . $method_name . '()',
-				$this->values,
-				$this->old_values,
-				$this->related_records,
-				$method_name,
-				$parameters
+		if ($callback = fORM::getActiveRecordMethod($this, $method_name)) {
+			return fCore::call(
+				$callback,
+				array(
+					$this,
+					&$this->values,
+					&$this->old_values,
+					&$this->related_records,
+					$method_name,
+					$parameters
+				)
 			);
 		}
+		
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
 		// This will prevent quiet failure
 		if (in_array($action, array('set', 'associate', 'inject', 'tally')) && sizeof($parameters) < 1) {
@@ -361,15 +362,8 @@ abstract class fActiveRecord
 			self::$configured[$class] = TRUE;
 		}
 		
-		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::__construct()',
-				$this->values,
-				$this->old_values,
-				$this->related_records,
-				$primary_key
-			);
+		if (fORM::getActiveRecordMethod($this, '__construct')) {
+			return $this->__call('__construct', array($primary_key));
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
@@ -420,7 +414,7 @@ abstract class fActiveRecord
 			}
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::__construct()',
 			$this->values,
@@ -512,14 +506,8 @@ abstract class fActiveRecord
 	 */
 	public function delete()
 	{
-		if (fORM::checkHookCallback($this, 'replace::delete()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::delete()',
-				$this->values,
-				$this->old_values,
-				$this->related_records
-			);
+		if (fORM::getActiveRecordMethod($this, 'delete')) {
+			return $this->__call('delete', array());
 		}
 		
 		if (!$this->exists()) {
@@ -532,7 +520,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this, 'pre::delete()',
 			$this->values,
 			$this->old_values,
@@ -549,7 +537,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('BEGIN');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-begin::delete()',
 				$this->values,
@@ -625,7 +613,7 @@ abstract class fActiveRecord
 				}
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'pre-commit::delete()',
 				$this->values,
@@ -637,7 +625,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('COMMIT');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-commit::delete()',
 				$this->values,
@@ -659,7 +647,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-rollback::delete()',
 				$this->values,
@@ -694,7 +682,7 @@ abstract class fActiveRecord
 			throw $e;
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::delete()',
 			$this->values,
@@ -811,14 +799,8 @@ abstract class fActiveRecord
 	 */
 	public function exists()
 	{
-		if (fORM::checkHookCallback($this, 'replace::exists()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::exists()',
-				$this->values,
-				$this->old_values,
-				$this->related_records
-			);
+		if (fORM::getActiveRecordMethod($this, 'exists')) {
+			return $this->__call('exists', array());
 		}
 		
 		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
@@ -942,14 +924,8 @@ abstract class fActiveRecord
 	 */
 	public function load()
 	{
-		if (fORM::checkHookCallback($this, 'replace::load()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::load()',
-				$this->values,
-				$this->old_values,
-				$this->related_records
-			);
+		if (fORM::getActiveRecordMethod($this, 'load')) {
+			return $this->__call('load', array());
 		}
 		
 		try {
@@ -1003,7 +979,7 @@ abstract class fActiveRecord
 		}
 		self::$identity_map[$class][$hash] = $this;
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::loadFromResult()',
 			$this->values,
@@ -1057,17 +1033,11 @@ abstract class fActiveRecord
 	 */
 	public function populate()
 	{
-		if (fORM::checkHookCallback($this, 'replace::populate()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::populate()',
-				$this->values,
-				$this->old_values,
-				$this->related_records
-			);
+		if (fORM::getActiveRecordMethod($this, 'populate')) {
+			return $this->__call('populate', array());
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'pre::populate()',
 			$this->values,
@@ -1085,7 +1055,7 @@ abstract class fActiveRecord
 			}
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::populate()',
 			$this->values,
@@ -1496,17 +1466,11 @@ abstract class fActiveRecord
 	 */
 	public function store()
 	{
-		if (fORM::checkHookCallback($this, 'replace::store()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::store()',
-				$this->values,
-				$this->old_values,
-				$this->related_records
-			);
+		if (fORM::getActiveRecordMethod($this, 'store')) {
+			return $this->__call('store', array());
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'pre::store()',
 			$this->values,
@@ -1535,7 +1499,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('BEGIN');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-begin::store()',
 				$this->values,
@@ -1545,7 +1509,7 @@ abstract class fActiveRecord
 			
 			$this->validate();
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-validate::store()',
 				$this->values,
@@ -1601,7 +1565,7 @@ abstract class fActiveRecord
 				}
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'pre-commit::store()',
 				$this->values,
@@ -1613,7 +1577,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('COMMIT');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-commit::store()',
 				$this->values,
@@ -1627,7 +1591,7 @@ abstract class fActiveRecord
 				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
 			
-			fORM::callHookCallback(
+			fORM::callHookCallbacks(
 				$this,
 				'post-rollback::store()',
 				$this->values,
@@ -1643,7 +1607,7 @@ abstract class fActiveRecord
 			throw $e;
 		}
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::store()',
 			$this->values,
@@ -1668,20 +1632,13 @@ abstract class fActiveRecord
 	 */
 	public function validate($return_messages=FALSE)
 	{
-		if (fORM::checkHookCallback($this, 'replace::validate()')) {
-			return fORM::callHookCallback(
-				$this,
-				'replace::validate()',
-				$this->values,
-				$this->old_values,
-				$this->related_records,
-				$return_messages
-			);
+		if (fORM::getActiveRecordMethod($this, 'validate')) {
+			return $this->__call('validate', array($return_messages));
 		}
 		
 		$validation_messages = array();
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'pre::validate()',
 			$this->values,
@@ -1698,7 +1655,7 @@ abstract class fActiveRecord
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		
-		fORM::callHookCallback(
+		fORM::callHookCallbacks(
 			$this,
 			'post::validate()',
 			$this->values,

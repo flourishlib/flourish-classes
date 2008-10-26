@@ -88,9 +88,9 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
@@ -134,15 +134,15 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::prepare' . $camelized_column . '()',
+			'prepare' . $camelized_column,
 			self::prepareLinkColumn
 		);
 		
@@ -191,21 +191,21 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::encode' . $camelized_column . '()',
+			'encode' . $camelized_column,
 			self::encodeNumberColumn
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::prepare' . $camelized_column . '()',
+			'prepare' . $camelized_column,
 			self::prepareNumberColumn
 		);
 		
@@ -280,9 +280,9 @@ class fORMColumn
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		

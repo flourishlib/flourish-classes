@@ -261,33 +261,33 @@ class fORMFile
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::upload' . $camelized_column . '()',
+			'upload' . $camelized_column,
 			self::upload
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::set' . $camelized_column . '()',
+			'set' . $camelized_column,
 			self::set
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::encode' . $camelized_column . '()',
+			'encode' . $camelized_column,
 			self::encode
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::prepare' . $camelized_column . '()',
+			'prepare' . $camelized_column,
 			self::prepare
 		);
 		

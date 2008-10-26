@@ -82,9 +82,9 @@ class fORMOrdering
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		

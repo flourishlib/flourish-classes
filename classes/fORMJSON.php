@@ -33,13 +33,13 @@ class fORMJSON
 			self::reflect
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			'*',
-			'replace::toJSON()',
+			'toJSON',
 			self::toJSON
 		);
 		
-		fRecordSet::registerMethodCallback(
+		fRecordSet::registerRecordSetMethod(
 			'toJSON',
 			self::toJSONRecordSet
 		);

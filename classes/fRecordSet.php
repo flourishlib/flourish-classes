@@ -18,16 +18,6 @@ class fRecordSet implements Iterator
 	const build                  = 'fRecordSet::build';
 	const buildFromRecords       = 'fRecordSet::buildFromRecords';
 	const buildFromSQL           = 'fRecordSet::buildFromSQL';
-	const registerMethodCallback = 'fRecordSet::registerMethodCallback';
-	const reset                  = 'fRecordSet::reset';
-	
-	
-	/**
-	 * Callbacks registered for the ::__call() handler
-	 * 
-	 * @var array
-	 */
-	static private $method_callbacks = array();
 	
 	
 	/**
@@ -204,40 +194,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Registers a callback to be called when a specific method is handled by ::__call()
-	 *  
-	 * The callback should accept the following parameters:
-	 * 
-	 *  - **`$record_set`**:  The actual record set
-	 *  - **`$class`**:       The class of each record
-	 *  - **`&$records`**:    The ordered array of fActiveRecords
-	 *  - **`&$pointer`**:    The current array pointer for the records array
-	 *  - **`&$associate`**:  If the record should be associated with an fActiveRecord holding it
-	 * 
-	 * @param  string   $method    The method to hook for
-	 * @param  callback $callback  The callback to execute - see method description for parameter list
-	 * @return void
-	 */
-	static public function registerMethodCallback($method, $callback)
-	{
-		self::$method_callbacks[$method] = $callback;
-	}
-	
-	
-	/**
-	 * Resets the configuration of the class
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	static public function reset()
-	{
-		self::$method_callbacks = array();
-	}
-	
-	
-	/**
 	 * Ensures a class extends fActiveRecord
 	 * 
 	 * @param  string $class  The class to verify
@@ -320,11 +276,9 @@ class fRecordSet implements Iterator
 	 */
 	public function __call($method_name, $parameters)
 	{
-		list($action, $element) = fORM::parseMethod($method_name);
-		
-		if (isset(self::$method_callbacks[$method_name])) {
+		if ($callback = fORM::getRecordSetMethod($method_name)) {
 			return fCore::call(
-				self::$method_callbacks[$method_name],
+				$callback,
 				array(
 					$this,
 					$this->class,
@@ -334,6 +288,8 @@ class fRecordSet implements Iterator
 				)
 			);	
 		}
+		
+		list($action, $element) = fORM::parseMethod($method_name);
 		
 		$route         = ($parameters) ? $parameters[0] : NULL;
 		$related_class = fGrammar::singularize(fGrammar::camelize($element, TRUE));

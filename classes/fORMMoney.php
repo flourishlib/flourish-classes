@@ -89,21 +89,21 @@ class fORMMoney
 		
 		$camelized_column = fGrammar::camelize($column, TRUE);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::inspect' . $camelized_column . '()',
+			'inspect' . $camelized_column,
 			self::inspect
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::encode' . $camelized_column . '()',
+			'encode' . $camelized_column,
 			self::encodeMoneyColumn
 		);
 		
-		fORM::registerHookCallback(
+		fORM::registerActiveRecordMethod(
 			$class,
-			'replace::prepare' . $camelized_column . '()',
+			'prepare' . $camelized_column,
 			self::prepareMoneyColumn
 		);
 		
@@ -134,15 +134,15 @@ class fORMMoney
 				fORM::registerHookCallback($class, 'pre::validate()', self::makeMoneyObjects);
 			}
 			
-			fORM::registerHookCallback(
+			fORM::registerActiveRecordMethod(
 				$class,
-				'replace::set' . $camelized_column . '()',
+				'set' . $camelized_column,
 				self::setMoneyColumn
 			);
 			
-			fORM::registerHookCallback(
+			fORM::registerActiveRecordMethod(
 				$class,
-				'replace::set' . fGrammar::camelize($currency_column, TRUE) . '()',
+				'set' . fGrammar::camelize($currency_column, TRUE),
 				self::setCurrencyColumn
 			);
 		
