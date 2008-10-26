@@ -19,14 +19,11 @@ class fORM
 	const callHookCallback           = 'fORM::callHookCallback';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
 	const checkHookCallback          = 'fORM::checkHookCallback';
-	const checkIdentityMap           = 'fORM::checkIdentityMap';
 	const classize                   = 'fORM::classize';
 	const defineActiveRecordClass    = 'fORM::defineActiveRecordClass';
-	const flagConfigured             = 'fORM::flagConfigured';
 	const getClass                   = 'fORM::getClass';
 	const getColumnName              = 'fORM::getColumnName';
 	const getRecordName              = 'fORM::getRecordName';
-	const isConfigured               = 'fORM::isConfigured';
 	const objectify                  = 'fORM::objectify';
 	const overrideColumnName         = 'fORM::overrideColumnName';
 	const overrideRecordName         = 'fORM::overrideRecordName';
@@ -36,7 +33,6 @@ class fORM
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
 	const reset                      = 'fORM::reset';
-	const saveToIdentityMap          = 'fORM::saveToIdentityMap';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
 	
@@ -49,25 +45,11 @@ class fORM
 	static private $column_names = array();
 	
 	/**
-	 * An array of flags indicating a class has been configured
-	 * 
-	 * @var array
-	 */
-	static private $configured = array();
-	
-	/**
 	 * Tracks callbacks registered for various fActiveRecord hooks
 	 * 
 	 * @var array
 	 */
 	static private $hook_callbacks = array();
-	
-	/**
-	 * Maps objects via their primary key
-	 * 
-	 * @var array
-	 */
-	static private $identity_map = array();
 	
 	/**
 	 * Callbacks for ::objectify()
@@ -271,33 +253,6 @@ class fORM
 	
 	
 	/**
-	 * Checks to see if an object has been saved to the identity map
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed $class             The name of the class, or an instance of it
-	 * @param  array $primary_key_data  The primary key(s) for the instance
-	 * @return mixed  Will return `FALSE` if no match, or the fActiveRecord object if a match occurs
-	 */
-	static public function checkIdentityMap($class, $primary_key_data)
-	{
-		$class = self::getClass($class);
-		
-		if (!isset(self::$identity_map[$class])) {
-			return FALSE;
-		}
-		
-		$hash_key = self::createPrimaryKeyHash($primary_key_data);
-		
-		if (!isset(self::$identity_map[$class][$hash_key])) {
-			return FALSE;
-		}
-		
-		return self::$identity_map[$class][$hash_key];
-	}
-	
-	
-	/**
 	 * Takes a table and turns it into a class name - uses custom mapping if set
 	 * 
 	 * @param  string $table  The table name
@@ -309,25 +264,6 @@ class fORM
 			self::$table_class_map[$table] = fGrammar::camelize(fGrammar::singularize($table), TRUE);
 		}
 		return self::$table_class_map[$table];
-	}
-	
-	
-	/**
-	 * Turns a primary key array into a hash key using [http://php.net/md5 md5()]
-	 * 
-	 * @param  array $primary_key_data  The primary key data to hash
-	 * @return string  An md5 of the sorted, serialized primary key data
-	 */
-	static private function createPrimaryKeyHash($primary_key_data)
-	{
-		sort($primary_key_data);
-		foreach ($primary_key_data as $primary_key => $data) {
-			if (is_object($data) && is_callable(array($data, '__toString'))) {
-				$data = $data->__toString();
-			}
-			$primary_key_data[$primary_key] = $data;
-		}
-		return md5(serialize($primary_key_data));
 	}
 	
 	
@@ -358,21 +294,6 @@ class fORM
 				fCore::dump($class)
 			)
 		);
-	}
-	
-	
-	/**
-	 * Sets a flag indicating a class has been configured
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed $class  The class name or an instance of the class to flag
-	 * @return void
-	 */
-	static public function flagConfigured($class)
-	{
-		$class = self::getClass($class);
-		self::$configured[$class] = TRUE;
 	}
 	
 	
@@ -439,21 +360,6 @@ class fORM
 		}
 		
 		return self::$record_names[$class];
-	}
-	
-	
-	/**
-	 * Checks to see if the class has been configured yet
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed $class  The class name or an instance of the class to check
-	 * @return boolean
-	 */
-	static public function isConfigured($class)
-	{
-		$class = self::getClass($class);
-		return !empty(self::$configured[$class]);
 	}
 	
 	
@@ -788,29 +694,6 @@ class fORM
 		self::$reflect_callbacks   = array();
 		self::$scalarize_callbacks = array();
 		self::$table_class_map     = array();
-	}
-	
-	
-	/**
-	 * Saves an object to the identity map
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed $object            An instance of an fActiveRecord class
-	 * @param  array $primary_key_data  The primary key(s) for the instance
-	 * @return void
-	 */
-	static public function saveToIdentityMap($object, $primary_key_data)
-	{
-		$class = self::getClass($object);
-		
-		if (!isset(self::$identity_map[$class])) {
-			self::$identity_map[$class] = array();
-		}
-		
-		$hash_key = self::createPrimaryKeyHash($primary_key_data);
-		
-		self::$identity_map[$class][$hash_key] = $object;
 	}
 	
 	

@@ -102,10 +102,10 @@ class fRecordSet implements Iterator
 	 */
 	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
+		self::verifyClass($class);
+		
 		// Ensure that the class has been configured
-		if (!fORM::isConfigured($class)) {
-			new $class();
-		}
+		fActiveRecord::forceConfigure($class);
 		
 		$table = fORM::tablize($class);
 		
@@ -175,6 +175,8 @@ class fRecordSet implements Iterator
 	 */
 	static public function buildFromRecords($class, $records)
 	{
+		self::verifyClass($class);
+		
 		$record_set = new fRecordSet($class);
 		$record_set->records = $records;
 		return $record_set;
@@ -191,6 +193,8 @@ class fRecordSet implements Iterator
 	 */
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
+		self::verifyClass($class);
+		
 		return new fRecordSet(
 			$class,
 			fORMDatabase::retrieve()->translatedQuery($sql),
@@ -230,6 +234,27 @@ class fRecordSet implements Iterator
 	static public function reset()
 	{
 		self::$method_callbacks = array();
+	}
+	
+	
+	/**
+	 * Ensures a class extends fActiveRecord
+	 * 
+	 * @param  string $class  The class to verify
+	 * @return void
+	 */
+	static private function verifyClass($class)
+	{
+		if (!is_string($class) || !$class || !class_exists($class) || !is_subclass_of($class, 'fActiveRecord')) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The class specified, %1$s, does not appear to be a valid %2$s class',
+					fCore::dump($class),
+					'fActiveRecord'
+				)
+			);	
+		}	
 	}
 	
 	

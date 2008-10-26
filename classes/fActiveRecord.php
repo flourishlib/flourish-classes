@@ -27,6 +27,22 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * An array of flags indicating a class has been configured
+	 * 
+	 * @var array
+	 */
+	static protected $configured = array();
+	
+	
+	/**
+	 * Maps objects via their primary key
+	 * 
+	 * @var array
+	 */
+	static protected $identity_map = array();
+	
+	
+	/**
 	 * Sets a value to the `$values` array, preserving the old value in `$old_values`
 	 *
 	 * @internal
@@ -65,6 +81,23 @@ abstract class fActiveRecord
 		}
 		
 		return $old_values[$column][0] != $values[$column];	
+	}
+	
+	
+	/**
+	 * Ensures that ::configure() has been called for the class
+	 *
+	 * @internal
+	 * 
+	 * @param  string $class  The class to configure
+	 * @return void
+	 */
+	static public function forceConfigure($class)
+	{
+		if (isset(self::$configured[$class])) {
+			return;	
+		}
+		new $class();
 	}
 	
 	
@@ -320,10 +353,12 @@ abstract class fActiveRecord
 	 */
 	public function __construct($primary_key=NULL)
 	{
+		$class = get_class($this);
+		
 		// If the features of this class haven't been set yet, do it
-		if (!fORM::isConfigured($this)) {
+		if (!isset(self::$configured[$class])) {
 			$this->configure();
-			fORM::flagConfigured($this);
+			self::$configured[$class] = TRUE;
 		}
 		
 		if (fORM::checkHookCallback($this, 'replace::__construct()')) {
@@ -350,10 +385,6 @@ abstract class fActiveRecord
 		// Handle loading an object from the database
 		if ($primary_key !== NULL) {
 			
-			if ($this->loadFromIdentityMap($primary_key)) {
-				return;
-			}
-			
 			// Check the primary keys
 			$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
@@ -364,6 +395,10 @@ abstract class fActiveRecord
 						fORM::getRecordName($this)
 					)
 				);
+			}
+			
+			if ($this->loadFromIdentityMap($primary_key)) {
+				return;
 			}
 			
 			// Assign the primary key values
@@ -818,6 +853,33 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Takes a row of data or a primary key and makes a hash from the primary key
+	 * 
+	 * @param  mixed $data   An array of the records data, an array of primary key data or a scalar primary key value
+	 * @return string  A hash of the record's primary key value
+	 */
+	protected function hash($data)
+	{
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		
+		// Build an array of just the primary key data
+		$pk_data = array();
+		foreach ($pk_columns as $pk_column) {
+			$pk_data[$pk_column] = fORM::scalarize(
+				$this,
+				$pk_column,
+				is_array($data) ? $data[$pk_column] : $data
+			);
+			if (fCore::stringlike($pk_data[$pk_column])) {
+				$pk_data[$pk_column] = (string) $pk_data[$pk_column];	
+			}
+		}
+		
+		return md5(serialize($pk_data));
+	}
+	
+	
+	/**
 	 * Retrieves information about a column
 	 * 
 	 * @param  string $column   The name of the column to inspect
@@ -919,7 +981,7 @@ abstract class fActiveRecord
 	 */
 	protected function loadFromResult(fResult $result)
 	{
-		$row = $result->current();
+		$row         = $result->current();
 		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
 		
 		foreach ($row as $column => $value) {
@@ -933,14 +995,13 @@ abstract class fActiveRecord
 		}
 		
 		// Save this object to the identity map
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		$class = get_class($this);
+		$hash  = $this->hash($row);
 		
-		$pk_data = array();
-		foreach ($pk_columns as $pk_column) {
-			$pk_data[$pk_column] = $row[$pk_column];
+		if (!isset(self::$identity_map[$class])) {
+			self::$identity_map[$class] = array(); 		
 		}
-		
-		fORM::saveToIdentityMap($this, $pk_data);
+		self::$identity_map[$class][$hash] = $this;
 		
 		fORM::callHookCallback(
 			$this,
@@ -966,25 +1027,19 @@ abstract class fActiveRecord
 			$row = $source;
 		}
 		
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		$class = get_class($this);
 		
-		// If we don't have a value for each primary key, we can't load
-		if (is_array($row) && array_diff($pk_columns, array_keys($row))) {
+		if (!isset(self::$identity_map[$class])) {
 			return FALSE;
 		}
 		
-		// Build an array of just the primary key data
-		$pk_data = array();
-		foreach ($pk_columns as $pk_column) {
-			$pk_data[$pk_column] = (is_array($row)) ? $row[$pk_column] : $row;
-		}
+		$hash = $this->hash($row);
 		
-		$object = fORM::checkIdentityMap($this, $pk_data);
-		
-		// A negative result implies this object has not been added to the indentity map yet
-		if(!$object) {
+		if (!isset(self::$identity_map[$class][$hash])) {
 			return FALSE;
 		}
+		
+		$object = self::$identity_map[$class][$hash];
 		
 		// If we got a result back, it is the object we are creating
 		$this->cache           = &$object->cache;
