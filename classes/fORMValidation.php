@@ -121,8 +121,12 @@ class fORMValidation
 			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
 		}
 		
-		$table = fORM::tablize($class);
-		$route = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
+		$route = fORMSchema::getRouteName(
+			fORM::tablize($class),
+			fORM::tablize($related_class),
+			$route,
+			'many-to-many'
+		);
 		
 		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
 	}
@@ -172,8 +176,12 @@ class fORMValidation
 			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
 		}
 		
-		$table = fORM::tablize($class);
-		$route = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-many');
+		$route = fORMSchema::getRouteName(
+			fORM::tablize($class),
+			fORM::tablize($related_class),
+			$route,
+			'one-to-many'
+		);
 		
 		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
 	}
@@ -548,13 +556,14 @@ class fORMValidation
 	 */
 	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
 	{
-		if (!empty($related_records[$related_class][$route]['record_set']) && $related_records[$related_class][$route]['record_set']->isFlaggedForAssociation()) {
+		$related_table = fORM::tablize($related_class);
+		if (!empty($related_records[$related_table][$route]['record_set']) && $related_records[$related_table][$route]['record_set']->isFlaggedForAssociation()) {
 			return;
 		}
 		
 		return fGrammar::compose(
 			'%s: Please select at least one',
-			fORMRelated::getRelatedRecordName($class, $related_class, $route)
+			fGrammar::pluralize(fORMRelated::getRelatedRecordName($class, $related_class, $route))
 		);
 	}
 	
@@ -852,13 +861,6 @@ class fORMValidation
 			if ($message) { $validation_messages[] = $message; }
 		}
 		
-		foreach (self::$related_one_or_more_validation_rules[$class] as $related_class => $routes) {
-			foreach ($routes as $route) {
-				$message = self::checkRelatedOneOrMoreRule($class, $related_records, $related_class, $route);
-				if ($message) { $validation_messages[] = $message; }
-			}
-		}
-		
 		return $validation_messages;
 	}
 	
@@ -874,9 +876,18 @@ class fORMValidation
 	 */
 	static public function validateRelated($class, &$related_records)
 	{
+		$class = fORM::getClass($class);
 		$table = fORM::tablize($class);
 		
 		$validation_messages = array();
+		
+		// Check related validation rules 
+		foreach (self::$related_one_or_more_validation_rules[$class] as $related_class => $routes) {
+			foreach ($routes as $route => $enabled) {
+				$message = self::checkRelatedOneOrMoreRule($class, $related_records, $related_class, $route);
+				if ($message) { $validation_messages[] = $message; }
+			}
+		}
 		
 		// Find the record sets to validate
 		foreach ($related_records as $related_table => $routes) {
