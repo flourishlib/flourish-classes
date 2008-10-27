@@ -12,7 +12,7 @@
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
  */
-class fSchema implements fISchema
+class fSchema
 {
 	/**
 	 * The file to cache the info to

@@ -26,9 +26,9 @@ class fORMSchema
 	
 	
 	/**
-	 * An object that implements the fISchema interface
+	 * The schema object to use for all ORM functionality
 	 * 
-	 * @var fISchema
+	 * @var fSchema
 	 */
 	static private $schema_object = NULL;
 	
@@ -36,10 +36,10 @@ class fORMSchema
 	/**
 	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
 	 * 
-	 * @param  fISchema $schema  An object that implements the fISchema interface
+	 * @param  fSchema $schema  An object that is compatible with fSchema
 	 * @return void
 	 */
-	static public function attach(fISchema $schema)
+	static public function attach($schema)
 	{
 		self::$schema_object = $schema;
 	}
@@ -199,7 +199,7 @@ class fORMSchema
 	 * @internal
 	 * 
 	 * @param  string $type          The type of relationship: `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
-	 * @param  array  $relationship  The relationship array from fISchema::getKeys()
+	 * @param  array  $relationship  The relationship array from fSchema::getKeys()
 	 * @return string  The name of the route
 	 */
 	static public function getRouteNameFromRelationship($type, $relationship)
