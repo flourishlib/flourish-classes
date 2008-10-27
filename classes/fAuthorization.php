@@ -213,7 +213,8 @@ class fAuthorization
 	static public function checkLoggedIn()
 	{
 		if (fSession::get('user_auth_level', NULL, __CLASS__ . '::') !== NULL ||
-			fSession::get('user_acls', NULL, __CLASS__ . '::') !== NULL) {
+			fSession::get('user_acls', NULL, __CLASS__ . '::') !== NULL ||
+			fSession::get('user_token', NULL, __CLASS__ . '::') !== NULL) {
 			return TRUE;
 		}
 		return FALSE;
