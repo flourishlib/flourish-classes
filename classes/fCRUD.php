@@ -334,7 +334,7 @@ class fCRUD
 	 * @param  array               $filters    An array of strings to search for, if a string is found in a list item, the list item will be removed
 	 * @return void
 	 */
-	static public function removeListItems(fPrintableException $exception, $filters)
+	static public function removeListItems($exception, $filters)
 	{
 		$message = $exception->getMessage();
 		
@@ -371,7 +371,7 @@ class fCRUD
 	 * @param  array               $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
 	 */
-	static public function reorderListItems(fPrintableException $exception, $matches)
+	static public function reorderListItems($exception, $matches)
 	{
 		$message = $exception->getMessage();
 		

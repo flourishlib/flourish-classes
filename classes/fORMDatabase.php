@@ -83,12 +83,12 @@ class fORMDatabase
 	
 	
 	/**
-	 * Allows attaching a class that is or extends fDatabase
+	 * Allows attaching an fDatabase-compatible object as the database singleton for ORM code
 	 * 
-	 * @param  fDatabase $database  An object that is or extends the fDatabase class
+	 * @param  fDatabase $database  An object that is compatible with fDatabase
 	 * @return void
 	 */
-	static public function attach(fDatabase $database)
+	static public function attach($database)
 	{
 		self::$database_object = $database;
 	}

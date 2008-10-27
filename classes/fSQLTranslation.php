@@ -228,7 +228,7 @@ class fSQLTranslation
 	 * @param  mixed     $connection  The connection resource or PDO object
 	 * @return fSQLTranslation
 	 */
-	public function __construct(fDatabase $database, $connection)
+	public function __construct($database, $connection)
 	{
 		if (!is_resource($connection) && !is_object($connection)) {
 			fCore::toss(

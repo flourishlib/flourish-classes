@@ -1051,7 +1051,7 @@ class fDatabase
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
-	private function executeQuery(fResult $result)
+	private function executeQuery($result)
 	{
 		if ($this->extension == 'mssql') {
 			$result->setResult(@mssql_query($result->getSQL(), $this->connection));
@@ -1125,7 +1125,7 @@ class fDatabase
 	 * @param  fUnbufferedResult $result  The result object for the query
 	 * @return void
 	 */
-	private function executeUnbufferedQuery(fUnbufferedResult $result)
+	private function executeUnbufferedQuery($result)
 	{
 		if ($this->extension == 'mssql') {
 			$result->setResult(@mssql_query($result->getSQL(), $this->connection, 20));
@@ -1243,7 +1243,7 @@ class fDatabase
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
-	private function handleAutoIncrementedValue(fResult $result)
+	private function handleAutoIncrementedValue($result)
 	{
 		if (!preg_match('#^\s*INSERT#i', $result->getSQL())) {
 			$result->setAutoIncrementedValue(NULL);
@@ -1520,7 +1520,7 @@ class fDatabase
 	 * @param  mixed   $resource  Only applicable for `pdo`, `odbc` and `sqlsrv` extentions, this is either the `PDOStatement` object or `odbc` or `sqlsrv` resource
 	 * @return void
 	 */
-	private function setAffectedRows(fResult $result, $resource=NULL)
+	private function setAffectedRows($result, $resource=NULL)
 	{
 		if ($this->extension == 'mssql') {
 			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
@@ -1557,7 +1557,7 @@ class fDatabase
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
-	private function setReturnedRows(fResult $result)
+	private function setReturnedRows($result)
 	{
 		if (is_resource($result->getResult()) || is_object($result->getResult())) {
 			if ($this->extension == 'mssql') {

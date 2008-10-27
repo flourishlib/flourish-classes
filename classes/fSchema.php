@@ -105,7 +105,7 @@ class fSchema
 	 * @param  fDatabase $database  The fDatabase instance
 	 * @return fSchema
 	 */
-	public function __construct(fDatabase $database)
+	public function __construct($database)
 	{
 		$this->database = $database;
 	}

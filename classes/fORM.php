@@ -136,7 +136,7 @@ class fORM
 	 * @param  mixed         &$first_parameter   The first parameter to send the callback
 	 * @return void
 	 */
-	static public function callHookCallbacks(fActiveRecord $object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL)
+	static public function callHookCallbacks($object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL)
 	{
 		$class = self::getClass($object);
 		
@@ -181,7 +181,7 @@ class fORM
 	 * @param  boolean       $include_doc_comments  If the doc comments should be included in the signature
 	 * @return void
 	 */
-	static public function callReflectCallbacks(fActiveRecord $object, &$signatures, $include_doc_comments)
+	static public function callReflectCallbacks($object, &$signatures, $include_doc_comments)
 	{
 		$class = self::getClass($object);
 		

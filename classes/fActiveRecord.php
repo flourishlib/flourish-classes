@@ -955,7 +955,7 @@ abstract class fActiveRecord
 	 * @param  fResult $result  The result object to use for loading the current object
 	 * @return void
 	 */
-	protected function loadFromResult(fResult $result)
+	protected function loadFromResult($result)
 	{
 		$row         = $result->current();
 		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));

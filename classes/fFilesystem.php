@@ -463,7 +463,7 @@ class fFilesystem
 	 * @param  fFile $file  The duplicate file to get rid of on rollback
 	 * @return void
 	 */
-	static public function recordDuplicate(fFile $file)
+	static public function recordDuplicate($file)
 	{
 		self::$rollback_operations[] = array(
 			'action'   => 'delete',
@@ -507,7 +507,7 @@ class fFilesystem
 	 * @param  fFile $file  The file that is being written to
 	 * @return void
 	 */
-	static public function recordWrite(fFile $file)
+	static public function recordWrite($file)
 	{
 		self::$rollback_operations[] = array(
 			'action'   => 'write',
