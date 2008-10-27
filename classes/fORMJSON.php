@@ -39,7 +39,7 @@ class fORMJSON
 			self::toJSON
 		);
 		
-		fRecordSet::registerRecordSetMethod(
+		fORM::registerRecordSetMethod(
 			'toJSON',
 			self::toJSONRecordSet
 		);
