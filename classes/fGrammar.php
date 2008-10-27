@@ -219,7 +219,7 @@ class fGrammar
 	 * @param  mixed   ...
 	 * @return void
 	 */
-	static public function compose($message, $component=NULL)
+	static public function compose($message)
 	{
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['pre'] as $callback) {
