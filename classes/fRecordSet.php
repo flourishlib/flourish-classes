@@ -367,13 +367,21 @@ class fRecordSet implements Iterator
 	/**
 	 * Calls a specific method on each object, returning an array of the results
 	 * 
+	 * @param  string $method     The method to call
+	 * @param  mixed  $parameter  A parameter to pass for each call to the method
+	 * @param  mixed  ...
 	 * @return array  An array the size of the record set with one result from each record/method
 	 */
 	public function call($method)
 	{
+		$parameters = array_slice(func_get_args(), 1);
+		
 		$output = array();
 		foreach ($this->records as $record) {
-			$output[] = $record->$method();
+			$output[] = fCore::call(
+				$record->$method,
+				$parameters
+			);
 		}
 		return $output;
 	}
@@ -659,8 +667,7 @@ class fRecordSet implements Iterator
 	 * Performs an [http://php.net/array_map array_map()] on the record in the set
 	 * 
 	 * The record will be passed to the callback as the first parameter unless
-	 * it's position is specified by the placeholder string `'{record}'`. More
-	 * details further down.
+	 * it's position is specified by the placeholder string `'{record}'`.
 	 * 
 	 * Additional parameters can be passed to the callback in one of two
 	 * different ways:
@@ -670,19 +677,22 @@ class fRecordSet implements Iterator
 	 *  
 	 * If an array parameter is too long (more items than records in the set)
 	 * it will be truncated. If an array parameter is too short (less items
-	 * than records in the set) it will be padded with NULL values.
+	 * than records in the set) it will be padded with `NULL` values.
 	 * 
 	 * To allow passing the record as a specific parameter to the callback, a
-	 * placeholder string `'{record}'` will be replaced with a the record. You
-	 * can also specify `'{record}::methodName'` to cause the output of a method
-	 * from the record to be passed instead of the whole record.
+	 * placeholder string `'{record}'` will be replaced with a the record. It
+	 * is also possible to specify `'{record}::methodName'` to cause the output
+	 * of a method from the record to be passed instead of the whole record.
+	 * 
+	 * It is also possible to pass the zero-based record index to the callback
+	 * by passing a parameter that contains `'{index}'`.
 	 * 
 	 * @param  callback $callback   The callback to pass the values to
 	 * @param  mixed    $parameter  The parameter to pass to the callback - see method description for details
 	 * @param  mixed    ...
 	 * @return array  An array of the results from the callback
 	 */
-	public function map($callback, $parameter)
+	public function map($callback)
 	{
 		$parameters = array_slice(func_get_args(), 1);
 		
@@ -699,9 +709,11 @@ class fRecordSet implements Iterator
 				if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $parameter, $matches)) {
 					$parameters_array[] = $this->call($matches[1]);
 					$found_record = TRUE;
-				} elseif ($parameter == '{record}') {
+				} elseif ($parameter === '{record}') {
 					$parameters_array[] = $this->records;
 					$found_record = TRUE;
+				} elseif ($parameter === '{index}') {
+					$parameters_array[] = array_keys($this->records);
 				} else {
 					$parameters_array[] = array_pad(array(), $total_records, $parameter);
 				}
@@ -722,6 +734,35 @@ class fRecordSet implements Iterator
 		array_unshift($parameters_array, $callback);
 		
 		return call_user_func_array('array_map', $parameters_array);
+	}
+	
+	
+	/**
+	 * Merges two fRecordSet objects together
+	 * 
+	 * @param  fRecordSet  The record set to merge with the current record set, duplicates will **not** be removed
+	 * @return fRecordSet  The merged record sets
+	 */
+	public function merge($record_set)
+	{
+		if ($this->class != $record_set->class) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The class contained in the record set specified, %1$s, is not compatible with the current record set. Must be %2$s.',
+					fCore::dump($record_set->class),
+					fCore::dump($this->class)
+				)
+			);	
+		}
+		
+		return self::buildFromRecords(
+			$this->class,
+			array_merge(
+				$this->records,
+				$record_set->records
+			)
+		);
 	}
 	
 	
