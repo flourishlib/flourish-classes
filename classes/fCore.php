@@ -489,7 +489,11 @@ class fCore
 		}
 		self::$exception_destination        = $destination;
 		self::$exception_handler_callback   = $closing_code;
-		settype($parameters, 'array');
+		if (!is_object($parameters)) {
+			settype($parameters, 'array');
+		} else {
+			$parameters = array($parameters);	
+		}
 		self::$exception_handler_parameters = $parameters;
 		set_exception_handler(self::callback(self::handleException));
 	}

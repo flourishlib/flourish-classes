@@ -360,7 +360,11 @@ class fORMDatabase
 				$column   = substr($column, 0, -1);
 			}
 			
-			settype($values, 'array');
+			if (!is_object($values)) {
+				settype($values, 'array');
+			} else {
+				$values = array($values);	
+			}
 			if (!$values) { $values = array(NULL); }
 			
 			$new_values = array();

@@ -279,7 +279,11 @@ class fTemplating
 	protected function placeElement($element, $file_type)
 	{
 		$values = $this->elements[$element];
-		settype($values, 'array');
+		if (!is_object($values)) {
+			settype($values, 'array');
+		} else {
+			$values = array($values);	
+		}
 		$values = array_values($values);
 		
 		foreach ($values as $value) {
