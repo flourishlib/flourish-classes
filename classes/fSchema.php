@@ -296,6 +296,7 @@ class fSchema
 		$result = $this->database->query($sql);
 		
 		foreach ($result as $row) {
+			
 			$info = array();
 			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
@@ -304,6 +305,7 @@ class fSchema
 					break;
 				}
 			}
+			
 			if (!isset($info['type'])) {
 				$info['type'] = $row['type'];
 			}
@@ -433,7 +435,9 @@ class fSchema
 		$last_table = '';
 		$last_type  = '';
 		foreach ($result as $row) {
+			
 			if ($row['constraint_name'] != $last_name) {
+				
 				if ($last_name) {
 					if ($last_type == 'foreign' || $last_type == 'unique') {
 						$keys[$last_table][$last_type][] = $temp;
@@ -441,8 +445,10 @@ class fSchema
 						$keys[$last_table][$last_type] = $temp;
 					}
 				}
+				
 				$temp = array();
 				if ($row['type'] == 'foreign') {
+					
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
 					$temp['foreign_column'] = $row['foreign_column'];
@@ -454,16 +460,20 @@ class fSchema
 					if (!empty($row['on_update'])) {
 						$temp['on_update'] = $row['on_update'];
 					}
+					
 				} else {
 					$temp[] = $row['column'];
 				}
+				
 				$last_table = $row['table'];
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
+				
 			} else {
 				$temp[] = $row['column'];
 			}
 		}
+		
 		if (isset($temp)) {
 			if ($last_type == 'foreign') {
 				$keys[$last_table][$last_type][] = $temp;
@@ -539,6 +549,7 @@ class fSchema
 		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?)( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
+			
 			$info = array();
 			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
@@ -580,6 +591,7 @@ class fSchema
 			if (!empty($match[5]) && $match[5] != 'NULL') {
 				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);
 			}
+			
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
 				$info['default'] = (boolean) $info['default'];
 			}
@@ -631,6 +643,7 @@ class fSchema
 		$keys = array();
 		
 		foreach ($tables as $table) {
+			
 			$keys[$table] = array();
 			$keys[$table]['primary'] = array();
 			$keys[$table]['foreign'] = array();
@@ -638,16 +651,19 @@ class fSchema
 			
 			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escape('string', $table), 1, -1) . '`');
 			$row    = $result->fetchRow();
+			
 			// Primary keys
 			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			if (!empty($matches)) {
 				$keys[$table]['primary'] = explode('","', $matches[0][1]);
 			}
+			
 			// Unique keys
 			preg_match_all('/UNIQUE KEY\s+"([^"]+)"\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
 				$keys[$table]['unique'][] = explode('","', $match[2]);
 			}
+			
 			// Foreign keys
 			preg_match_all('#FOREIGN KEY \("([^"]+)"\) REFERENCES "([^"]+)" \("([^"]+)"\)(?:\sON\sDELETE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?(?:\sON\sUPDATE\s(SET\sNULL|SET\sDEFAULT|CASCADE|NO\sACTION|RESTRICT))?#', $row['Create Table'], $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
@@ -744,6 +760,7 @@ class fSchema
 		$result = $this->database->query($sql, $table);
 		
 		foreach ($result as $row) {
+			
 			$info = array();
 			
 			// Get the column type
@@ -755,6 +772,7 @@ class fSchema
 					break;
 				}
 			}
+			
 			if (!isset($info['type'])) {
 				$info['type'] = $column_data_type[1];
 			}
@@ -781,6 +799,7 @@ class fSchema
 			// Handle default values and serial data types
 			if ($info['type'] == 'integer' && stripos($row['default'], 'nextval(') !== FALSE) {
 				$info['auto_increment'] = TRUE;
+				
 			} elseif ($row['default'] !== NULL) {
 				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+$/i", '\1', $row['default']));
 				if ($info['type'] == 'boolean') {
@@ -889,7 +908,9 @@ class fSchema
 		$last_table = '';
 		$last_type  = '';
 		foreach ($result as $row) {
+			
 			if ($row['constraint_name'] != $last_name) {
+				
 				if ($last_name) {
 					if ($last_type == 'foreign' || $last_type == 'unique') {
 						$keys[$last_table][$last_type][] = $temp;
@@ -897,29 +918,37 @@ class fSchema
 						$keys[$last_table][$last_type] = $temp;
 					}
 				}
+				
 				$temp = array();
 				if ($row['type'] == 'foreign') {
+					
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
 					$temp['foreign_column'] = $row['foreign_column'];
 					$temp['on_delete']      = 'no_action';
 					$temp['on_update']      = 'no_action';
+					
 					if (!empty($row['on_delete'])) {
 						$temp['on_delete'] = $row['on_delete'];
 					}
+					
 					if (!empty($row['on_update'])) {
 						$temp['on_update'] = $row['on_update'];
 					}
+					
 				} else {
 					$temp[] = $row['column'];
 				}
+				
 				$last_table = $row['table'];
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
+				
 			} else {
 				$temp[] = $row['column'];
 			}
 		}
+		
 		if (isset($temp)) {
 			if ($last_type == 'foreign' || $last_type == 'unique') {
 				$keys[$last_table][$last_type][] = $temp;
@@ -1252,6 +1281,7 @@ class fSchema
 			if ($this->isJoiningTable($table)) {
 				continue;
 			}
+			
 			$this->findStarToOneRelationships($table);
 			$this->findOneToManyRelationships($table);
 		}
@@ -1386,8 +1416,10 @@ class fSchema
 			if ($element) {
 				return $this->merged_column_info[$table][$column][$element];
 			}
+			
 			return $this->merged_column_info[$table][$column];
 		}
+		
 		return $this->merged_column_info[$table];
 	}
 	
@@ -1462,6 +1494,7 @@ class fSchema
 		if ($key_type) {
 			return $this->merged_keys[$table][$key_type];
 		}
+		
 		return $this->merged_keys[$table];
 	}
 	
@@ -1558,6 +1591,7 @@ class fSchema
 		if ($relationship_type) {
 			return $this->relationships[$table][$relationship_type];
 		}
+		
 		return $this->relationships[$table];
 	}
 	
@@ -1619,6 +1653,7 @@ class fSchema
 			$keys = array_keys($row);
 			$this->tables[] = $row[$keys[0]];
 		}
+		
 		return $this->tables;
 	}
 		
@@ -1632,12 +1667,24 @@ class fSchema
 	private function isJoiningTable($table)
 	{
 		$primary_key_columns = $this->merged_keys[$table]['primary'];
+		
+		if (sizeof($primary_key_columns) != 2) {
+			return FALSE;	
+		}
+		
+		if (empty($this->merged_column_info[$table])) {
+			$this->getColumnInfo($table);	
+		}
+		if (sizeof($this->merged_column_info[$table]) != 2) {
+			return FALSE;	
+		}
+		
 		$foreign_key_columns = array();
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$foreign_key_columns[] = $key['column'];
 		}
-		$diff = array_diff($foreign_key_columns, $primary_key_columns);
-		return sizeof($primary_key_columns) == 2 && sizeof($foreign_key_columns) == 2 && !$diff;
+		
+		return sizeof($foreign_key_columns) == 2 && !array_diff($foreign_key_columns, $primary_key_columns);
 	}
 	
 	
@@ -1649,13 +1696,16 @@ class fSchema
 	private function mergeColumnInfo()
 	{
 		$this->merged_column_info = $this->column_info;
+		
 		foreach ($this->column_info_override as $table => $info) {
 			if (!isset($this->merge_column_info[$table])) {
 				$this->merged_column_info[$table] = array();
 			}
 			$this->merged_column_info[$table] = array_merge($this->merged_column_info[$table], $info);
 		}
+		
 		$optional_elements = array('default', 'not_null', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
+		
 		foreach ($this->merged_column_info as $table => $column_array) {
 			foreach ($column_array as $column => $info) {
 				foreach ($optional_elements as $element) {
@@ -1677,6 +1727,7 @@ class fSchema
 	{
 		// Handle the database and override key info
 		$this->merged_keys = $this->keys;
+		
 		foreach ($this->keys_override as $table => $info) {
 			if (!isset($this->merge_keys[$table])) {
 				$this->merged_keys[$table] = array();
@@ -1748,11 +1799,13 @@ class fSchema
 		if (!isset($this->column_info_override[$table])) {
 			$this->column_info_override[$table] = array();
 		}
+		
 		if (!empty($column)) {
 			$this->column_info_override[$table][$column] = $column_info;
 		} else {
 			$this->column_info_override[$table] = $column_info;
 		}
+		
 		$this->mergeColumnInfo();
 	}
 	
@@ -1782,11 +1835,13 @@ class fSchema
 		if (!isset($this->keys_override[$table])) {
 			$this->keys_override[$table] = array();
 		}
+		
 		if (!empty($key_type)) {
 			$this->keys_override[$table][$key_type] = $keys;
 		} else {
 			$this->keys_override[$table] = $keys;
 		}
+		
 		$this->mergeKeys();
 	}
 }
