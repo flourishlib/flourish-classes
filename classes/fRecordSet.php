@@ -92,7 +92,7 @@ class fRecordSet implements Iterator
 	 */
 	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
-		self::verifyClass($class);
+		self::validateClass($class);
 		
 		// Ensure that the class has been configured
 		fActiveRecord::forceConfigure($class);
@@ -156,16 +156,21 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet from an array of records
 	 * 
-	 * @throws fValidationException
 	 * @internal
 	 * 
-	 * @param  string $class    The type of object to create
-	 * @param  array  $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  string|array $class    The class or classes of the records
+	 * @param  array        $records  The records to create the set from, the order of the record set will be the same as the order of the array.
 	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
 	static public function buildFromRecords($class, $records)
 	{
-		self::verifyClass($class);
+		if (is_array($class)) {
+			foreach ($class as $_class) {
+				self::validateClass($_class);	
+			}
+		} else {
+			self::validateClass($class);	
+		}
 		
 		$record_set = new fRecordSet($class);
 		$record_set->records = $records;
@@ -183,7 +188,7 @@ class fRecordSet implements Iterator
 	 */
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
-		self::verifyClass($class);
+		self::validateClass($class);
 		
 		return new fRecordSet(
 			$class,
@@ -199,7 +204,7 @@ class fRecordSet implements Iterator
 	 * @param  string $class  The class to verify
 	 * @return void
 	 */
-	static private function verifyClass($class)
+	static private function validateClass($class)
 	{
 		if (!is_string($class) || !$class || !class_exists($class) || !is_subclass_of($class, 'fActiveRecord')) {
 			fCore::toss(
@@ -319,29 +324,6 @@ class fRecordSet implements Iterator
 	 */
 	protected function __construct($class, fResult $result_object=NULL, $non_limited_count_sql=NULL)
 	{
-		if (!class_exists($class)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The class specified, %s, could not be loaded',
-					fCore::dump($class)
-				)
-			);
-		}
-		
-		if (!is_subclass_of($class, 'fActiveRecord')) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The class specified, %1$s, does not extend %2$s. All classes used with %3$s must extend %4$s.',
-					fCore::dump($class),
-					'fActiveRecord',
-					'fRecordSet',
-					'fActiveRecord'
-				)
-			);
-		}
-		
 		$this->class                 = $class;
 		$this->non_limited_count_sql = $non_limited_count_sql;
 		
@@ -557,6 +539,8 @@ class fRecordSet implements Iterator
 	 */
 	public function flagAssociate()
 	{
+		$this->validateSingleClass('associate');
+		
 		$this->associate = TRUE;
 	}
 	
@@ -588,7 +572,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the class name of the record being stored
 	 * 
-	 * @return string  The class name of the records in the set
+	 * @return string|array  The class name(s) of the records in the set
 	 */
 	public function getClass()
 	{
@@ -616,6 +600,8 @@ class fRecordSet implements Iterator
 	 */
 	public function getPrimaryKeys()
 	{
+		$this->validateSingleClass('get primary key');
+		
 		$table           = fORM::tablize($this->class);
 		$pk_columns      = fORMSchema::retrieve()->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
@@ -746,18 +732,16 @@ class fRecordSet implements Iterator
 	public function merge($record_set)
 	{
 		if ($this->class != $record_set->class) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The class contained in the record set specified, %1$s, is not compatible with the current record set. Must be %2$s.',
-					fCore::dump($record_set->class),
-					fCore::dump($this->class)
-				)
-			);	
+			$class = array_unique(array_merge(
+				(is_array($this->class))       ? $this->class       : array($this->class),
+				(is_array($record_set->class)) ? $record_set->class : array($record_set->class)	
+			));
+		} else {
+			$class = $this->class;	
 		}
 		
 		return self::buildFromRecords(
-			$this->class,
+			$class,
 			array_merge(
 				$this->records,
 				$record_set->records
@@ -788,6 +772,8 @@ class fRecordSet implements Iterator
 	 */
 	private function prebuild($related_class, $route=NULL)
 	{
+		$this->validateSingleClass('prebuild');
+		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
 			return;
@@ -918,6 +904,8 @@ class fRecordSet implements Iterator
 	 */
 	private function precount($related_class, $route=NULL)
 	{
+		$this->validateSingleClass('precount');
+		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
 			return;
@@ -980,6 +968,8 @@ class fRecordSet implements Iterator
 	 */
 	private function precreate($related_class, $route=NULL)
 	{
+		$this->validateSingleClass('precreate');
+		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
 			return;
@@ -1123,17 +1113,30 @@ class fRecordSet implements Iterator
 	 * 
 	 * @throws fEmptySetException
 	 * 
+	 * @param  string $message  The message to use for the exception if there are no records in this set
 	 * @return void
 	 */
-	public function tossIfEmpty()
+	public function tossIfEmpty($message=NULL)
 	{
 		if (!$this->count()) {
+			if ($message === NULL) {
+				if (is_array($this->class)) {
+					$names = array_map(fCore::callback(fORM::getRecordName), $this->class);
+					$names = array_map(fCore::callback(fGrammar::pluralize), $names);
+					$name  = join(', ', $names);	
+				} else {
+					$name = fGrammar::pluralize(fORM::getRecordName($this->class));
+				}
+				
+				$message = fGrammar::compose(
+					'No %s could be found',
+					$name
+				);	
+			}
+			
 			fCore::toss(
 				'fEmptySetException',
-				fGrammar::compose(
-					'No %s could be found',
-					fGrammar::pluralize(fORM::getRecordName($this->class))
-				)
+				$message
 			);
 		}
 	}
@@ -1149,6 +1152,29 @@ class fRecordSet implements Iterator
 	public function valid()
 	{
 		return $this->pointer < $this->count();
+	}
+	
+	
+	/**
+	 * Ensures the record set only contains a single kind of record to prevent issues with certain operations
+	 * 
+	 * @param  string $operation  The operation being performed - used in the exception thrown
+	 * @return void
+	 */
+	private function validateSingleClass($operation)
+	{
+		if (!is_array($this->class)) {
+			return;
+		}			
+		
+		fCore::toss(
+			'fProgrammerException',
+			fGrammar::compose(
+				'The %1$s operation can not be performed on a record set with multiple types (%2$s) of records',
+				$operation,
+				join(', ', $this->class)	
+			)
+		);
 	}
 }
 
