@@ -407,7 +407,12 @@ class fORMDatabase
 							)
 						);
 					}
-				
+					
+					// If the value to search is a single string value, parse it for search terms
+					if (sizeof($values) == 1 && is_string($values[0])) {
+						$values = self::parseSearchTerms($values[0], TRUE);	
+					}
+					
 					$condition = array();
 					foreach ($values as $value) {
 						$sub_condition = array();
@@ -784,6 +789,48 @@ class fORMDatabase
 		}
 			
 		return $new_sql;
+	}
+	
+	
+	/**
+	 * Parses a search string into search terms, supports quoted phrases and removes extra punctuation
+	 * 
+	 * @internal
+	 * 
+	 * @param  string  $terms              A text string from a form input to parse into search terms
+	 * @param  boolean $ignore_stop_words  If stop words should be ignored
+	 * @return void
+	 */
+	static public function parseSearchTerms($terms, $ignore_stop_words=FALSE)
+	{
+		$stopwords = array(
+			'i',     'a',     'an',    'are',   'as',    'at',    'be',    
+			'by',    'de',    'en',    'en',    'for',   'from',  'how',   
+			'in',    'is',    'it',    'la',    'of',    'on',    'or',    
+			'that',  'the',   'this',  'to',    'was',   'what',  'when',  
+			'where', 'who',   'will'
+		);
+		
+		preg_match_all('#(?:"[^"]+"|[^\s]+)#', $terms, $matches);
+		
+		$terms = array();
+		foreach ($matches[0] as $match) {
+			// Remove phrases from quotes
+			if ($match[0] == '"' && substr($match, -1)) {
+				$match = substr($match, 1, -1);	
+			
+			// Trim any punctuation off of the beginning and end of terms
+			} else {
+				$match = preg_replace('#(^[^a-z0-9]+|[^a-z0-9]+$)#i', '', $match);	
+			}
+			
+			if ($ignore_stop_words && in_array(strtolower($match), $stopwords)) {
+				continue;	
+			}
+			$terms[] = $match;
+		}	
+		
+		return $terms;
 	}
 	
 	
