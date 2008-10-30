@@ -23,7 +23,8 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet by specifying the class to create plus the where conditions and order by rules
 	 * 
-	 * The where conditions array can contain key => value entries in any of the following formats:
+	 * The where conditions array can contain `key => value` entries in any of
+	 * the following formats:
 	 * 
 	 * {{{
 	 * 'column='                    => VALUE,                       // column = VALUE
@@ -47,7 +48,8 @@ class fRecordSet implements Iterator
 	 * handle quoted phrases and normal words and will strip punctuation and
 	 * stop words (such as "the" and "a").
 	 * 
-	 * The order bys array can contain `key => value` entries in any of the following formats:
+	 * The order bys array can contain `key => value` entries in any of the
+	 * following formats:
 	 * 
 	 * {{{
 	 * 'column'     => 'asc'      // 'first_name' => 'asc'
@@ -56,7 +58,8 @@ class fRecordSet implements Iterator
 	 * 'expression' => 'desc'     // "CASE first_name WHEN 'smith' THEN 1 ELSE 2 END" => 'desc'
 	 * }}}
 	 * 
-	 * The column in both the where conditions and order bys can be in any of the formats:
+	 * The column in both the where conditions and order bys can be in any of
+	 * the formats:
 	 * 
 	 * {{{
 	 * 'column'                                                         // e.g. 'first_name'
@@ -68,6 +71,25 @@ class fRecordSet implements Iterator
 	 * 'related_table=>once_removed_related_table{route}.column'        // e.g. 'user_groups=>permissions{read}.level'
 	 * 'related_table{route}=>once_removed_related_table{route}.column' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
 	 * }}}
+	 * 
+	 * In addition to using plain column names for where conditions, it is also
+	 * possible to pass an aggregate function wrapped around a column in place
+	 * of a column name, but only for certain comparison types:
+	 * 
+	 * {{{
+	 * 'function(column)='   => VALUE,                       // function(column) = VALUE
+	 * 'function(column)!'   => VALUE                        // function(column) <> VALUE
+	 * 'function(column)~'   => VALUE                        // function(column) LIKE '%VALUE%'
+	 * 'function(column)<'   => VALUE                        // function(column) < VALUE
+	 * 'function(column)<='  => VALUE                        // function(column) <= VALUE
+	 * 'function(column)>'   => VALUE                        // function(column) > VALUE
+	 * 'function(column)>='  => VALUE                        // function(column) >= VALUE
+	 * 'function(column)='   => array(VALUE, VALUE2, ... )   // function(column) IN (VALUE, VALUE2, ... )
+	 * 'function(column)!'   => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )
+	 * }}}
+	 * 
+	 * The aggregate functions `AVG()`, `COUNT()`, `MAX()`, `MIN()` and
+	 * `SUM()` are supported across all database types.
 	 * 
 	 * Below is an example of using where conditions and order bys. Please note
 	 * that values should **not** be escaped for the database, but should just
@@ -107,14 +129,20 @@ class fRecordSet implements Iterator
 		
 		$sql = "SELECT " . $table . ".* FROM :from_clause";
 		
+		$having_conditions = fORMDatabase::splitHavingConditions($where_conditions);
+		
 		if ($where_conditions) {
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table, $where_conditions);
 		}
 		
 		$sql .= ' :group_by_clause ';
 		
+		if ($having_conditions) {
+			$sql .= ' HAVING ' . fORMDatabase::createHavingClause($having_conditions);	
+		}
+		
 		if ($order_bys) {
-			$sql .= 'ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
+			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
 		
 		// If no ordering is specified, order by the primary key
 		} else {
@@ -123,7 +151,7 @@ class fRecordSet implements Iterator
 			foreach ($primary_keys as $primary_key) {
 				$expressions[] = $table . '.' . $primary_key . ' ASC';
 			}
-			$sql .= 'ORDER BY ' . join(', ', $expressions);
+			$sql .= ' ORDER BY ' . join(', ', $expressions);
 		}
 		
 		$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
@@ -985,17 +1013,14 @@ class fRecordSet implements Iterator
 			fORM::tablize($this->class),
 			fORM::tablize($related_class),
 			$route,
-			'*-to-many'
+			'*-to-one'
 		);
 		
 		self::build(
 			$related_class,
 			array(
 				$relationship['related_column'] . '=' => $this->call(
-					fGrammar::camelize(
-						$relatioship['column'],
-						TRUE
-					)
+					'get' . fGrammar::camelize($relationship['column'], TRUE)
 				)
 			)
 		);

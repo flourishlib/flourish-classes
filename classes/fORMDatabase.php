@@ -19,13 +19,16 @@ class fORMDatabase
 	const addTableToValues            = 'fORMDatabase::addTableToValues';
 	const attach                      = 'fORMDatabase::attach';
 	const createFromClauseFromJoins   = 'fORMDatabase::createFromClauseFromJoins';
+	const createHavingClause          = 'fORMDatabase::createHavingClause';
 	const createOrderByClause         = 'fORMDatabase::createOrderByClause';
 	const createPrimaryKeyWhereClause = 'fORMDatabase::createPrimaryKeyWhereClause';
 	const createWhereClause           = 'fORMDatabase::createWhereClause';
 	const escapeBySchema              = 'fORMDatabase::escapeBySchema';
+	const escapeByType                = 'fORMDatabase::escapeByType';
 	const insertFromAndGroupByClauses = 'fORMDatabase::insertFromAndGroupByClauses';
 	const reset                       = 'fORMDatabase::reset';
 	const retrieve                    = 'fORMDatabase::retrieve';
+	const splitHavingConditions       = 'fORMDatabase::splitHavingConditions';
 	
 	
 	/**
@@ -133,6 +136,85 @@ class fORMDatabase
 		
 		return $sql;
 	}
+	
+	
+	/**
+	 * Creates a `HAVING` clause from an array of conditions
+	 * 
+	 * @internal
+	 * 
+	 * @param  array  $conditions  The array of conditions - see fRecordSet::build() for format
+	 * @return string  The SQL `HAVING` clause
+	 */
+	static public function createHavingClause($conditions)
+	{
+		$sql = array();
+		
+		foreach ($conditions as $expression => $value) {
+			if (substr($expression, -2) == '<=' || substr($expression, -2) == '>=') {
+				$operator   = substr($expression, -2);
+				$expression = substr($expression, 0, -2);
+			} else {
+				$operator   = substr($expression, -1);
+				$expression = substr($expression, 0, -1);
+			}
+			
+			if (is_object($value)) {
+				if (is_callable(array($value, '__toString'))) {
+					$value = $value->__toString();	
+				} else {
+					$value = (string) $value;
+				}
+			}
+			
+			if (is_array($value)) {
+				
+				switch ($operator) {
+					case '=':
+						$condition = array();
+						foreach ($values as $value) {
+							$condition[] = self::escapeByType($value);
+						}
+						$sql[] = $expression . ' IN (' . join(', ', $condition) . ')';
+						break;
+						
+					case '!':
+						$condition = array();
+						foreach ($values as $value) {
+							$condition[] = self::escapeByType($value);
+						}
+						$sql[] = $expression . ' NOT IN (' . join(', ', $condition) . ')';
+						break;
+
+					default:
+						fCore::toss(
+							'fProgrammerException',
+							fGrammar::compose(
+								'An invalid array comparison operator, %s, was specified',
+								fCore::dump($operator)
+							)
+						);
+						break;
+				}
+					
+			} else {
+				
+				if (!in_array($operator, array('=', '!', '~', '<', '<=', '>', '>='))) {
+					fCore::toss(
+						'fProgrammerException',
+						fGrammar::compose(
+							'An invalid comparison operator, %s, was specified',
+							fCore::dump($operator)
+						)
+					); 		
+				}
+				
+				$sql[] = $expression . self::escapeByType($value, $operator);	
+			}
+		}
+		
+		return join(' AND ', $sql);
+	}	
 	
 	
 	/**
@@ -473,6 +555,7 @@ class fORMDatabase
 							}
 							$sql[] = $column . ' IN (' . join(', ', $condition) . ')';
 							break;
+							
 						case '!':
 							$condition = array();
 							foreach ($values as $value) {
@@ -480,6 +563,7 @@ class fORMDatabase
 							}
 							$sql[] = $column . ' NOT IN (' . join(', ', $condition) . ')';
 							break;
+							
 						case '~':
 							$condition = array();
 							foreach ($values as $value) {
@@ -487,11 +571,12 @@ class fORMDatabase
 							}
 							$sql[] = '(' . join(' OR ', $condition) . ')';
 							break;
+							
 						default:
 							fCore::toss(
 								'fProgrammerException',
 								fGrammar::compose(
-									'An invalid comparison operator, %s, was specified',
+									'An invalid array comparison operator, %s, was specified',
 									fCore::dump($operator)
 								)
 							);
@@ -561,10 +646,16 @@ class fORMDatabase
 			$column = $match[2];
 		}
 		
+		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);	
+		
 		// Some of the tables being escaped for are linking tables that might break with classize()
 		if (is_object($value)) {
 			$class = fORM::classize($table);
 			$value = fORM::scalarize($class, $column, $value);
+		}
+		
+		if ($comparison_operator !== NULL) {
+			$comparison_operator = strtr($comparison_operator, array('!' => '<>', '!=' => '<>'));
 		}
 		
 		$valid_comparison_operators = array('=', '!=', '!', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
@@ -581,7 +672,6 @@ class fORMDatabase
 		
 		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		if ($column_info['not_null'] && $value === NULL && $column_info['default'] !== NULL) {
 			$value = $column_info['default'];
 		}
@@ -596,10 +686,62 @@ class fORMDatabase
 			if ($co) {
 				if (in_array(trim($co), array('=', 'IN'))) {
 					$co = ' IS ';
-				} elseif (in_array(trim($co), array('<>', '!=', '!', 'NOT IN'))) {
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
 					$co = ' IS NOT ';
 				}
 			}
+		}
+		
+		return $co . $prepared_value;
+	}
+	
+	
+	/**
+	 * Escapes a value for a DB call based on variable type
+	 *
+	 * @internal
+	 *
+	 * @param  mixed  $value                The value to escape
+	 * @param  string $comparison_operator  Optional: should be `'='`, `'!='`, `'!'`, `'<>'`, `'<'`, `'<='`, `'>'`, `'>='`, `'IN'`, `'NOT IN'`
+	 * @return string  The SQL-ready representation of the value
+	 */
+	static public function escapeByType($value, $comparison_operator=NULL)
+	{
+		if ($comparison_operator !== NULL) {
+			$comparison_operator = strtr($comparison_operator, array('!' => '<>', '!=' => '<>'));
+		}
+		
+		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
+		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
+					fCore::dump($comparison_operator),
+					join(', ', $valid_comparison_operators)
+				)
+			);
+		}
+		
+		$co = (is_null($comparison_operator)) ? '' : ' ' . strtoupper($comparison_operator) . ' ';
+		
+		if (is_int($value)) {
+			$prepared_value = self::retrieve()->escape('integer', $value);
+		} elseif (is_float($value)) {
+			$prepared_value = self::retrieve()->escape('float', $value);
+		} elseif (is_bool($value)) {
+			$prepared_value = self::retrieve()->escape('boolean', $value);
+		} elseif (is_null($value)) {
+			if ($co) {
+				if (in_array(trim($co), array('=', 'IN'))) {
+					$co = ' IS ';
+				} elseif (in_array(trim($co), array('<>', 'NOT IN'))) {
+					$co = ' IS NOT ';
+				}
+			}
+			$prepared_value = 'NULL';
+		} else {
+			$prepared_value = self::retrieve()->escape('string', $value);
 		}
 		
 		return $co . $prepared_value;
@@ -831,6 +973,30 @@ class fORMDatabase
 		}	
 		
 		return $terms;
+	}
+	
+	
+	/**
+	 * Removed aggregate function calls from where conditions array and puts them in a having conditions array
+	 * 
+	 * @internal
+	 * 
+	 * @param  array &$where_conditions  The where conditions to look through for aggregate functions
+	 * @return array  The conditions to be put in a `HAVING` clause
+	 */
+	static public function splitHavingConditions(&$where_conditions)
+	{
+		$having_conditions    = array();
+		
+		foreach ($where_conditions as $column => $value)
+		{
+			if (preg_match('#^(count\(|max\(|avg\(|min\(|sum\()#i', $column)) {
+				$having_conditions[$column] = $value;
+				unset($where_conditions[$column]);
+			}	
+		}
+		
+		return $having_conditions;	
 	}
 	
 	
