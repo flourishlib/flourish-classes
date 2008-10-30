@@ -217,7 +217,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @throws fNoRemainingException
 	 * @internal
 	 * 
@@ -233,7 +233,7 @@ class fUnbufferedResult implements Iterator
 		
 		if(!$this->current_row && $this->pointer == 0) {
 			fCore::toss(
-				'fNoResultsException',
+				'fNoRowsException',
 				fGrammar::compose('The query did not return any rows')
 			);
 			
@@ -280,7 +280,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @throws fNoRemainingException
 	 * 
 	 * @return array  The associative array of the row
@@ -397,7 +397,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the current row number (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @internal
 	 * 
 	 * @return integer  The current row number
@@ -415,7 +415,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Advances to the next row in the result (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @internal
 	 * 
 	 * @return void
@@ -496,16 +496,16 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Throws an fNoResultException if the query did not return any rows
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no rows in this result set
 	 * @return void
 	 */
-	public function tossIfNoResults($message=NULL)
+	public function tossIfNoRows($message=NULL)
 	{
 		try {
 			$this->current();
-		} catch (fNoResultsException $e) {
+		} catch (fNoRowsException $e) {
 			if ($message !== NULL) {
 				$e->getMessage($message);
 			}	

@@ -171,7 +171,7 @@ class fORMRelated
 			
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			
-			$count = ($result->getReturnedRows()) ? (int) $result->fetchScalar() : 0;
+			$count = ($result->valid()) ? (int) $result->fetchScalar() : 0;
 		}
 		
 		self::tallyRecords($class, $related_records, $related_class, $count, $route);

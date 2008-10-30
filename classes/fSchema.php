@@ -542,7 +542,7 @@ class fSchema
 		try {
 			$row        = $result->fetchRow();
 			$create_sql = $row['Create Table'];
-		} catch (fNoResultsException $e) {
+		} catch (fNoRowsException $e) {
 			return array();			
 		}
 		
@@ -1013,7 +1013,7 @@ class fSchema
 		try {
 			$row        = $result->fetchRow();
 			$create_sql = $row['sql'];
-		} catch (fNoResultsException $e) {
+		} catch (fNoRowsException $e) {
 			return array();			
 		}
 		

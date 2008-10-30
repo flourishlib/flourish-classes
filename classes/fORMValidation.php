@@ -397,8 +397,8 @@ class fORMValidation
 					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
 					$result = fORMDatabase::retrieve()->translatedQuery($sql);
-					$result->tossIfNoResults();
-				} catch (fNoResultsException $e) {
+					$result->tossIfNoRows();
+				} catch (fNoRowsException $e) {
 					return fGrammar::compose(
 						'%s: The value specified is invalid',
 						fORM::getColumnName($class, $column)
@@ -533,7 +533,7 @@ class fORMValidation
 			$sql .= join(' AND ', $conditions);
 			
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
-			$result->tossIfNoResults();
+			$result->tossIfNoRows();
 			
 			return fGrammar::compose(
 				'Another %1$s with the same %2$s already exists',
@@ -541,7 +541,7 @@ class fORMValidation
 				fGrammar::joinArray($columns, 'and')
 			);
 			
-		} catch (fNoResultsException $e) { }
+		} catch (fNoRowsException $e) { }
 	}
 	
 	
@@ -621,7 +621,7 @@ class fORMValidation
 				
 				try {
 					$result = fORMDatabase::retrieve()->translatedQuery($sql);
-					$result->tossIfNoResults();
+					$result->tossIfNoRows();
 				
 					// If an exception was not throw, we have existing values
 					$column_names = array();
@@ -640,7 +640,7 @@ class fORMValidation
 						);
 					}
 				
-				} catch (fNoResultsException $e) { }
+				} catch (fNoRowsException $e) { }
 			}
 		}
 	}

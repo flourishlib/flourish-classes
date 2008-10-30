@@ -1,18 +1,18 @@
 <?php
 /**
- * An exception when no results are returned
+ * An exception when no rows are returned from a SQL query
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
- * @link       http://flourishlib.com/fNoResultsException
+ * @link       http://flourishlib.com/fNoRowsException
  * 
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
  */
-class fNoResultsException extends fExpectedException
+class fNoRowsException extends fExpectedException
 {
 }
 

@@ -225,9 +225,31 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Returns the number of rows affected by the query
+	 * 
+	 * @return integer  The number of rows affected by the query
+	 */
+	public function countAffectedRows()
+	{
+		return $this->affected_rows;
+	}
+	
+	
+	/**
+	 * Returns the number of rows returned by the query
+	 * 
+	 * @return integer  The number of rows returned by the query
+	 */
+	public function countReturnedRows()
+	{
+		return $this->returned_rows;
+	}
+	
+	
+	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @throws fNoRemainingException
 	 * @internal
 	 * 
@@ -237,7 +259,7 @@ class fResult implements Iterator
 	{
 		if(!$this->returned_rows) {
 			fCore::toss(
-				'fNoResultsException',
+				'fNoRowsException',
 				fGrammar::compose('The query did not return any rows')
 			);
 		}
@@ -308,7 +330,7 @@ class fResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @throws fNoRemainingException
 	 * 
 	 * @return array  The associative array of the row
@@ -324,7 +346,7 @@ class fResult implements Iterator
 	/**
 	 * Wraps around ::fetchRow() and returns the first field from the row instead of the whole row
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @throws fNoRemainingException
 	 * 
 	 * @return string|number  The first scalar value from ::fetchRow()
@@ -403,17 +425,6 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Returns the number of rows affected by the query
-	 * 
-	 * @return integer  The number of rows affected by the query
-	 */
-	public function getAffectedRows()
-	{
-		return $this->affected_rows;
-	}
-	
-	
-	/**
 	 * Returns the last auto incremented value for this database connection. This may or may not be from the current query.
 	 * 
 	 * @return integer  The auto incremented value
@@ -434,17 +445,6 @@ class fResult implements Iterator
 	public function getResult()
 	{
 		return $this->result;
-	}
-	
-	
-	/**
-	 * Returns the number of rows returned by the query
-	 * 
-	 * @return integer  The number of rows returned by the query
-	 */
-	public function getReturnedRows()
-	{
-		return $this->returned_rows;
 	}
 	
 	
@@ -473,7 +473,7 @@ class fResult implements Iterator
 	/**
 	 * Returns the current row number (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @internal
 	 * 
 	 * @return integer  The current row number
@@ -491,7 +491,7 @@ class fResult implements Iterator
 	/**
 	 * Advances to the next row in the result (required by iterator interface)
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * @internal
 	 * 
 	 * @return void
@@ -530,7 +530,7 @@ class fResult implements Iterator
 	/** 
 	 * Seeks to the specified zero-based row for the specified SQL query
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * 
 	 * @param  integer $row  The row number to seek to (zero-based)
 	 * @return void
@@ -539,7 +539,7 @@ class fResult implements Iterator
 	{
 		if(!$this->returned_rows) {
 			fCore::toss(
-				'fNoResultsException',
+				'fNoRowsException',
 				fGrammar::compose('The query did not return any rows')
 			);
 		}
@@ -672,18 +672,18 @@ class fResult implements Iterator
 	/**
 	 * Throws an fNoResultException if the query did not return any rows
 	 * 
-	 * @throws fNoResultsException
+	 * @throws fNoRowsException
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no rows in this result set
 	 * @return void
 	 */
-	public function tossIfNoResults($message=NULL)
+	public function tossIfNoRows($message=NULL)
 	{
 		if (!$this->returned_rows && !$this->affected_rows) {
 			if ($message === NULL) {
 				$message = fGrammar::compose('No rows were returned or affected by the query');	
 			}
-			fCore::toss('fNoResultsException', $message);
+			fCore::toss('fNoRowsException', $message);
 		}
 	}
 	

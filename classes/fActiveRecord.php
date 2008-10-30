@@ -933,7 +933,7 @@ abstract class fActiveRecord
 			$sql = 'SELECT * FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
 		
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
-			$result->tossIfNoResults();
+			$result->tossIfNoRows();
 			
 		} catch (fExpectedException $e) {
 			fCore::toss(

@@ -648,7 +648,7 @@ class fORMColumn
 						// See if this is unique
 						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::retrieve()->escape('string', $value);
 					
-					} while (fORMDatabase::retrieve()->query($sql)->getReturnedRows());
+					} while (fORMDatabase::retrieve()->query($sql)->countReturnedRows());
 				}
 			}
 			
