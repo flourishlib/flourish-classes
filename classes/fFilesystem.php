@@ -300,6 +300,18 @@ class fFilesystem
 	
 	
 	/**
+	 * Changes a filename to be safe for URLs by making it all lower case and changing everything but letters, numers, - and . to _
+	 * 
+	 * @param  string $filename  The filename to clean up
+	 * @return string  The cleaned up filename
+	 */
+	static public function makeURLSafe($filename)
+	{
+		return preg_replace('#[^a-z0-9\-\.]+#', '_', strtolower(trim($filename)));	
+	}
+	
+	
+	/**
 	 * Returns a unique name for a file
 	 * 
 	 * @param  string $file           The filename to check

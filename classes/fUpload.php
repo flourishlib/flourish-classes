@@ -232,9 +232,7 @@ class fUpload
 		}
 		
 		$file_array = $this->validate($field, $index);
-		$file_name  = strtolower($file_array['name']);
-		$file_name  = preg_replace('#\s+#', '_', $file_name);
-		$file_name  = preg_replace('#[^a-z0-9_\.-]#', '', $file_name);
+		$file_name  = fFilesystem::makeURLSafe($file_array['name']);
 		
 		$file_name = $directory->getPath() . $file_name;
 		if (!$this->enable_overwrite) {
