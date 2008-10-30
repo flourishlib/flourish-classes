@@ -307,7 +307,9 @@ class fFilesystem
 	 */
 	static public function makeURLSafe($filename)
 	{
-		return preg_replace('#[^a-z0-9\-\.]+#', '_', strtolower(trim($filename)));	
+		$filename = strtolower(trim($filename));
+		$filename = str_replace("'", '', $filename);
+		return preg_replace('#[^a-z0-9\-\.]+#', '_', $filename);	
 	}
 	
 	

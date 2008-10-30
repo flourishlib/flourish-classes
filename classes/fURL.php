@@ -86,6 +86,7 @@ class fURL
 	{
 		$string = fHTML::decode(fUTF8::ascii($string));
 		$string = strtolower(trim($string));
+		$string = str_replace("'", '', $string);
 		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
 		return preg_replace('#_+$#', '', $string);
 	}
