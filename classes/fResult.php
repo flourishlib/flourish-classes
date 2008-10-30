@@ -674,15 +674,16 @@ class fResult implements Iterator
 	 * 
 	 * @throws fNoResultsException
 	 * 
+	 * @param  string $message  The message to use for the exception if there are no rows in this result set
 	 * @return void
 	 */
-	public function tossIfNoResults()
+	public function tossIfNoResults($message=NULL)
 	{
 		if (!$this->returned_rows && !$this->affected_rows) {
-			fCore::toss(
-				'fNoResultsException',
-				fGrammar::compose('No rows were returned or affected by the query')
-			);
+			if ($message === NULL) {
+				$message = fGrammar::compose('No rows were returned or affected by the query');	
+			}
+			fCore::toss('fNoResultsException', $message);
 		}
 	}
 	

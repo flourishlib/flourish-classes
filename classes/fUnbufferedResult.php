@@ -498,11 +498,19 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @throws fNoResultsException
 	 * 
+	 * @param  string $message  The message to use for the exception if there are no rows in this result set
 	 * @return void
 	 */
-	public function tossIfNoResults()
+	public function tossIfNoResults($message=NULL)
 	{
-		$this->current();
+		try {
+			$this->current();
+		} catch (fNoResultsException $e) {
+			if ($message !== NULL) {
+				$e->getMessage($message);
+			}	
+			throw $e;
+		}
 	}
 	
 	
