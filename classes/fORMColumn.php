@@ -449,7 +449,13 @@ class fORMColumn
 			$value = 'http://' . $value;
 		}
 		
-		return fHTML::prepare($value);
+		$value = fHTML::prepare($value);
+		
+		if (isset($parameters[0]) && $parameters[0] === TRUE) {
+			return '<a href="' . $value . '">' . $value . '</a>';	
+		}
+		
+		return $value;
 	}
 	
 	
