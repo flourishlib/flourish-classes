@@ -1297,7 +1297,7 @@ abstract class fActiveRecord
 					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";
 				}
 				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
-					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";;
+					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";
 				}
 				
 				$signature .= " * @return string  The HTML-ready value\n";

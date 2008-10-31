@@ -518,6 +518,7 @@ class fORMColumn
 					$signature .= " * \n";
 					$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
 					$signature .= " * \n";
+					$signature .= " * @param  boolean \$create_link  Will cause link to be automatically converted into an [a] tag\n";
 					$signature .= " * @return string  The HTML-ready value\n";
 					$signature .= " */\n";
 				}
