@@ -233,6 +233,77 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Checks to see if a record matches all of the conditions
+	 * 
+	 * @param  fActiveRecord $record      The record to check
+	 * @param  array         $conditions  The conditions to check - see ::filter() for format details
+	 * @return boolean  If the record meets all conditions
+	 */
+	static private function checkConditions($record, $conditions)
+	{
+		foreach ($conditions as $method => $value) {
+			
+			// Split the operator off of the end of the method name
+			if (substr($method, -2) == '<=' || substr($method, -2) == '>=') {
+				$operator = substr($method, -2);
+				$method   = substr($method, 0, -2);
+			} else {
+				$operator = substr($method, -1);
+				$method   = substr($method, 0, -1);
+			}
+			
+			$result = $record->$method();
+			
+			switch ($operator) {
+				case '=':
+					if (is_array($value) && !in_array($result, $value)) {
+						return FALSE;	
+					}
+					if ($result != $value) {
+						return FALSE;	
+					}
+					break;
+					
+				case '!':
+					if (is_array($value) && in_array($result, $value)) {
+						return FALSE;	
+					}
+					if ($result == $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '<':
+					if ($result >= $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '<=':
+					if ($result > $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '>':
+					if ($result <= $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '>=':
+					if ($result < $value) {
+						return FALSE;	
+					}
+					break;
+			}	
+		}
+		
+		return TRUE;
+	}
+	
+	
+	/**
 	 * Ensures a class extends fActiveRecord
 	 * 
 	 * @param  string $class  The class to verify
@@ -533,34 +604,86 @@ class fRecordSet implements Iterator
 	/**
 	 * Filters the records in the record set via a callback
 	 * 
-	 * @param  callback $callback  The callback can be either a callback that accepts a single parameter and returns a boolean, or a string like `'{record}::methodName'` to filter based on the output of `$record->methodName()`
+	 * The `$callback` parameter can be one of three different forms to filter
+	 * the records in the set:
+	 * 
+	 *  - A callback that accepts a single record and returns `FALSE` if it should be removed
+	 *  - A psuedo-callback in the form `'{record}::methodName'` to filter out any records where the output of `$record->methodName()` is equivalent to `FALSE`
+	 *  - A conditions array that will remove any records that don't meet all of the conditions
+	 * 
+	 * The conditions array can use one or more of the following `key => value`
+	 * syntaxes to perform various comparisons. The array keys are method
+	 * names followed by a comparison operator.
+	 * 
+	 * {{{
+	 * // The following forms work for any $value that is not an array
+	 * 'methodName='  => $value     // If the output is equal to $value
+	 * 'methodName!'  => $value     // If the output is not equal to $value
+	 * 'methodName<'  => $value     // If the output is less than $value
+	 * 'methodName<=' => $value     // If the output is less than or equal to $value
+	 * 'methodName>'  => $value     // If the output is greater than $value
+	 * 'methodName>=' => $value     // If the output is greater than or equal to $value
+	 * 
+	 * // The following forms work for any $array that is an array
+	 * 'methodName='  => $array     // If the output is equal to at least one value in $array
+	 * 'methodName!'  => $array     // If the output is not equal to any value in $array
+	 * }}} 
+	 * 
+	 * @param  callback|string|array $procedure  The way in which to filter the records - see method description for possible forms
 	 * @return fRecordSet  A new fRecordSet with the filtered records
 	 */
-	public function filter($callback)
+	public function filter($procedure)
 	{
 		if (!$this->records) {
 			return clone $this;
 		}
 		
-		$call_filter = FALSE;
-		if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $callback, $matches)) {
-			$call_filter = TRUE;
-			$method      = $matches[1];
+		if (is_array($procedure) && is_string(key($procedure))) {
+			$type       = 'conditions';
+			$conditions = $procedure;
+			
+		} elseif (is_string($procedure) && preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $procedure, $matches)) {
+			$type   = 'psuedo-callback';
+			$method = $matches[1];
+			
+		} else {
+			$type     = 'callback';
+			$callback = $procedure;
 		}
 			
 		$new_records = array();
+		$classes     = (!is_array($this->class)) ? array($this->class) : array();
+		
 		foreach ($this->records as $record) {
-			if ($call_filter) {
-				$value = $record->$method();
-			} else {
-				$value = fCore::call($callback, $record);
+			switch ($type) {
+				case 'conditions':
+					$value = self::checkConditions($record, $conditions);
+					break;
+					
+				case 'psuedo-callback':
+					$value = $record->$method();
+					break;
+					
+				case 'callback':
+					$value = fCore::call($callback, $record);
+					break;
 			}
+			
 			if ($value) {
+				// If we are filtering a multi-class set, only grab classes for records that are being copied
+				if (is_array($this->class) && !in_array(get_class($record), $classes)) {
+					$classes[] = get_class($record); 		
+				}
+				
 				$new_records[] = $record;
 			}
 		}
 		
-		return self::buildFromRecords($this->class, $new_records);
+		if (sizeof($classes) == 1) {
+			$classes = $classes[0];	
+		}
+		
+		return self::buildFromRecords($classes, $new_records);
 	}
 	
 	
