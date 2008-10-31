@@ -30,6 +30,7 @@ class fORMFile
 	const objectify                  = 'fORMFile::objectify';
 	const populate                   = 'fORMFile::populate';
 	const prepare                    = 'fORMFile::prepare';
+	const process                    = 'fORMFile::process';
 	const processImage               = 'fORMFile::processImage';
 	const reflect                    = 'fORMFile::reflect';
 	const reset                      = 'fORMFile::reset';
@@ -385,6 +386,12 @@ class fORMFile
 		
 		$class = fORM::getClass($class);
 		
+		fORM::registerActiveRecordMethod(
+			$class,
+			'process' . $camelized_column,
+			self::process
+		);
+		
 		if (empty(self::$image_upload_columns[$class])) {
 			self::$image_upload_columns[$class] = array();
 		}
@@ -656,6 +663,29 @@ class fORMFile
 	
 	
 	/**
+	 * Handles re-processing an existing image file 
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return void
+	 */
+	static public function process($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = fORM::parseMethod($method_name);
+		
+		$class = fORM::getClass($object);
+		
+		self::processImage($class, $column, $values[$column]);
+	}
+	
+	
+	/**
 	 * Performs image manipulation on an uploaded/set image
 	 * 
 	 * @internal
@@ -712,23 +742,6 @@ class fORMFile
 		$image_columns = (isset(self::$image_upload_columns[$class])) ? array_keys(self::$image_upload_columns[$class]) : array();
 		$file_columns  = (isset(self::$file_upload_columns[$class]))  ? array_keys(self::$file_upload_columns[$class])  : array();
 		
-		foreach(self::$link_columns[$class] as $column => $enabled) {
-			$signature = '';
-			if ($include_doc_comments) {
-				$signature .= "/**\n";
-				$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
-				$signature .= " * \n";
-				$signature .= " * This method will ensure all links that start with a domain name are preceeded by http://\n";
-				$signature .= " * \n";
-				$signature .= " * @return string  The HTML-ready value\n";
-				$signature .= " */\n";
-			}
-			$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
-			$signature .= 'public function prepare' . $prepare_method . '()';
-			
-			$signatures[$prepare_method] = $signature;
-		}
-		
 		foreach($file_columns as $column) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
 			
@@ -751,6 +764,21 @@ class fORMFile
 			$signature .= 'public function ' . $encode_method . '()';
 			
 			$signatures[$encode_method] = $signature;
+			
+			if (in_array($column, $image_columns)) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Takes the existing image and runs it through the prescribed fImage method calls\n";
+					$signature .= " * \n";
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$process_method = 'process' . $camelized_column;
+				$signature .= 'public function ' . $process_method . '()';
+				
+				$signatures[$process_method] = $signature;
+			}
 			
 			$signature = '';
 			if ($include_doc_comments) {
