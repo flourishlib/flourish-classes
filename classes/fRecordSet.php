@@ -1195,11 +1195,18 @@ class fRecordSet implements Iterator
 	 * Slices a section of records from the set and returns a new set containing those
 	 * 
 	 * @param  integer $offset  The index to start at, negative indexes will slice that many records from the end
-	 * @param  integer $length  The number of records to return, `NULL` will return all records to the end of the set - if there are not enough records, less than `$length` will be returned
-	 * @return fRecordSet  The record set of sliced records
+	 * @param  integer $length  The number of records to return, negative values will stop that many records before the end, `NULL` will return all records to the end of the set - if there are not enough records, less than `$length` will be returned
+	 * @return fRecordSet  The new slice of records
 	 */
-	public function slice($offset, $length)
+	public function slice($offset, $length=NULL)
 	{
+		if ($length === NULL) {
+			if ($offset >= 0) {
+				$length = sizeof($this->records) - $offset;	
+			} else {
+				$length = abs($offset);	
+			}
+		}
 		return self::buildFromRecords($this->class, array_slice($this->records, $offset, $length));
 	}
 	
