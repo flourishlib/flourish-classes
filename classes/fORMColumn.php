@@ -21,6 +21,7 @@ class fORMColumn
 	const configureRandomColumn = 'fORMColumn::configureRandomColumn';
 	const encodeNumberColumn    = 'fORMColumn::encodeNumberColumn';
 	const inspect               = 'fORMColumn::inspect';
+	const generate              = 'fORMColumn::generate';
 	const objectifyNumber       = 'fORMColumn::objectifyNumber';
 	const prepareLinkColumn     = 'fORMColumn::prepareLinkColumn';
 	const prepareNumberColumn   = 'fORMColumn::prepareNumberColumn';
@@ -286,6 +287,12 @@ class fORMColumn
 			self::inspect
 		);
 		
+		fORM::registerActiveRecordMethod(
+			$class,
+			'generate' . $camelized_column,
+			self::generate
+		);
+		
 		if (!fORM::checkHookCallback($class, 'pre::validate()', self::setRandomStrings)) {
 			fORM::registerHookCallback($class, 'pre::validate()', self::setRandomStrings);
 		}
@@ -328,6 +335,53 @@ class fORMColumn
 		}
 		
 		return fHTML::prepare($value);
+	}
+	
+	
+	/**
+	 * Generates a new random value for the 
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  string        &$method_name      The method that was called
+	 * @param  array         &$parameters       The parameters passed to the method
+	 * @return string  The encoded number
+	 */
+	static public function generate($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	{
+		list ($action, $column) = fORM::parseMethod($method_name);
+		
+		$class = fORM::getClass($object);
+		$table = fORM::tablize($class);
+		
+		$settings = self::$random_columns[$class][$column];
+		
+		// Check to see if this is a unique column
+		$unique_keys      = fORMSchema::retrieve()->getKeys($table, 'unique');
+		$is_unique_column = FALSE;
+		foreach ($unique_keys as $unique_key) {
+			if ($unique_key == array($column)) {
+				$is_unique_column = TRUE;
+				do {
+					$value = fCryptography::randomString($settings['length'], $settings['type']);
+					
+					// See if this is unique
+					$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::retrieve()->escape('string', $value);
+				
+				} while (fORMDatabase::retrieve()->query($sql)->countReturnedRows());
+			}
+		}
+		
+		// If is is not a unique column, just generate a value
+		if (!$is_unique_column) {
+			$value = fCryptography::randomString($settings['length'], $settings['type']);
+		}
+		
+		fActiveRecord::assign($values, $old_values, $column, $value);
 	}
 	
 	
@@ -523,7 +577,7 @@ class fORMColumn
 					$signature .= " */\n";
 				}
 				$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
-				$signature .= 'public function prepare' . $prepare_method . '()';
+				$signature .= 'public function ' . $prepare_method . '()';
 				
 				$signatures[$prepare_method] = $signature;
 			}
@@ -602,6 +656,25 @@ class fORMColumn
 				$signatures[$prepare_method] = $signature;
 			}
 		}
+		
+		if (isset(self::$random_columns[$class])) {
+			foreach(self::$random_columns[$class] as $column => $settings) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Generates a new random " . $settings['type'] . " character " . $settings['type'] . " string for " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * If there is a UNIQUE constraint on the column and the value is not unique it will be regenerated until unique\n";
+					$signature .= " * \n";
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$generate_method = 'generate' . fGrammar::camelize($column, TRUE);
+				$signature .= 'public function ' . $generate_method . '()';
+				
+				$signatures[$generate_method] = $signature;
+			}
+		}
 	}
 	
 	
@@ -642,29 +715,14 @@ class fORMColumn
 		$table = fORM::tablize($class);
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
-			
-			// Check to see if this is a unique column
-			$unique_keys      = fORMSchema::retrieve()->getKeys($table, 'unique');
-			$is_unique_column = FALSE;
-			foreach ($unique_keys as $unique_key) {
-				if ($unique_key == array($column)) {
-					$is_unique_column = TRUE;
-					do {
-						$value = fCryptography::randomString($settings['length'], $settings['type']);
-						
-						// See if this is unique
-						$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::retrieve()->escape('string', $value);
-					
-					} while (fORMDatabase::retrieve()->query($sql)->countReturnedRows());
-				}
-			}
-			
-			// If is is not a unique column, just generate a value
-			if (!$is_unique_column) {
-				$value = fCryptography::randomString($settings['length'], $settings['type']);
-			}
-			
-			fActiveRecord::assign($values, $old_values, $column, $value);
+			self::generate(
+				$object,
+				$values,
+				$old_values,
+				$related_records,
+				'generate' . fGrammar::camelize($column, TRUE),
+				array()
+			);
 		}
 	}
 	
