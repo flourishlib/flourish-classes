@@ -1153,10 +1153,9 @@ class fRecordSet implements Iterator
 	/**
 	 * Reduces the record set to a single value via a callback
 	 * 
-	 * The callback should take two parameters:
+	 * The callback should take two parameters and return a single value:
 	 * 
-	 *  - The first two records on the first call if no `$inital_value` is specified
-	 *  - The initial value and the first record for the first call if an `$initial_value` is specified
+	 *  - The initial value and the first record for the first call
 	 *  - The result of the last call plus the next record for the second and subsequent calls
 	 * 
 	 * @param  callback $callback      The callback to pass the records to - see method description for details
@@ -1169,16 +1168,10 @@ class fRecordSet implements Iterator
 			return $initial_value;
 		}
 		
-		$values = $this->records;
-		if ($inital_value === NULL) {
-			$result = $values[0];
-			$values = array_slice($values, 1);
-		} else {
-			$result = $inital_value;
-		}
+		$result = $inital_value;
 		
-		foreach($values as $value) {
-			$result = fCore::call($callback, $result, $value);
+		foreach($this->records as $record) {
+			$result = fCore::call($callback, $result, $record);
 		}
 		
 		return $result;
