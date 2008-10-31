@@ -252,14 +252,66 @@ class fRecordSet implements Iterator
 				$method   = substr($method, 0, -1);
 			}
 			
-			$result = $record->$method();
+			$multi_method = FALSE;
+			
+			if ($operator == '~' && strpos($method, '|')) {
+				$multi_method = TRUE;
+				$result = array();
+				foreach(explode('|', $method) as $_method) {
+					$result[] = $record->$_method();	
+				}
+					
+			} else {
+				$result = $record->$method();
+			}
 			
 			switch ($operator) {
+				case '~':
+					// This is a fuzzy search type operation since it is using the output of multiple methods
+					if ($multi_method) {
+						if (!is_array($value)) {
+							$value = fORMDatabase::parseSearchTerms($value, TRUE);
+						}	
+						
+						foreach ($value as $_value) {
+							$found = FALSE;
+							foreach ($result as $_result) {
+								if (fUTF8::ipos($_result, $_value) !== FALSE) {
+									$found = TRUE;
+								} 
+							}
+							if (!$found) {
+								return FALSE;
+							}	
+						}
+					
+					// This is a simple LIKE match against one or more values
+					} else {
+						// Ensure the method output is present in at least one value of the array
+						if (is_array($value)) {
+						
+							$found = FALSE;
+							foreach ($value as $_value) {
+								if (fUTF8::ipos($result, $_value) !== FALSE) {
+									$found = TRUE;
+								}	
+							}
+							if (!$found) {
+								return FALSE;	
+							}
+								
+						// Ensure the method is present in the value
+						} elseif (!is_array($value) && fUTF8::ipos($result, $value) === FALSE) {
+							return FALSE;	
+						}	
+					}
+					break;
+				
 				case '=':
 					if (is_array($value) && !in_array($result, $value)) {
 						return FALSE;	
 					}
-					if ($result != $value) {
+					if (!is_array($value) && $result != $value) {
 						return FALSE;	
 					}
 					break;
@@ -268,7 +320,7 @@ class fRecordSet implements Iterator
 					if (is_array($value) && in_array($result, $value)) {
 						return FALSE;	
 					}
-					if ($result == $value) {
+					if (!is_array($value) && $result == $value) {
 						return FALSE;	
 					}
 					break;
@@ -617,16 +669,20 @@ class fRecordSet implements Iterator
 	 * 
 	 * {{{
 	 * // The following forms work for any $value that is not an array
-	 * 'methodName='  => $value     // If the output is equal to $value
-	 * 'methodName!'  => $value     // If the output is not equal to $value
-	 * 'methodName<'  => $value     // If the output is less than $value
-	 * 'methodName<=' => $value     // If the output is less than or equal to $value
-	 * 'methodName>'  => $value     // If the output is greater than $value
-	 * 'methodName>=' => $value     // If the output is greater than or equal to $value
+	 * 'methodName='                         => $value  // If the output is equal to $value
+	 * 'methodName!'                         => $value  // If the output is not equal to $value
+	 * 'methodName<'                         => $value  // If the output is less than $value
+	 * 'methodName<='                        => $value  // If the output is less than or equal to $value
+	 * 'methodName>'                         => $value  // If the output is greater than $value
+	 * 'methodName>='                        => $value  // If the output is greater than or equal to $value
+	 * 'methodName~'                         => $value  // If the output contains the $value (case insensitive)
+	 * 'methodName|methodName2|methodName3~' => $value  // Parses $value as a search string and make sure each term is present in at least one output (case insensitive)
 	 * 
 	 * // The following forms work for any $array that is an array
-	 * 'methodName='  => $array     // If the output is equal to at least one value in $array
-	 * 'methodName!'  => $array     // If the output is not equal to any value in $array
+	 * 'methodName='                         => $array  // If the output is equal to at least one value in $array
+	 * 'methodName!'                         => $array  // If the output is not equal to any value in $array
+	 * 'methodName~'                         => $array  // If the output contains one of the strings in $array (case insensitive)
+	 * 'methodName|methodName2|methodName3~' => $array  // If each value in the array is present in the output of at least one method (case insensitive)
 	 * }}} 
 	 * 
 	 * @param  callback|string|array $procedure  The way in which to filter the records - see method description for possible forms
