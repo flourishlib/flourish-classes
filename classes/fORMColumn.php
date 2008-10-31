@@ -715,6 +715,9 @@ class fORMColumn
 		$table = fORM::tablize($class);
 		
 		foreach (self::$random_columns[$class] as $column => $settings) {
+			if (fActiveRecord::hasOld($old_values, $column) && $values[$column]) {
+				continue;	
+			}
 			self::generate(
 				$object,
 				$values,
