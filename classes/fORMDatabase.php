@@ -940,12 +940,12 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string  $terms              A text string from a form input to parse into search terms
-	 * @param  boolean $ignore_stop_words  If stop words should be ignored
+	 * @param  boolean $ignore_stop_words  If stop words should be ignored, this setting will be ignored if all words are stop words
 	 * @return void
 	 */
 	static public function parseSearchTerms($terms, $ignore_stop_words=FALSE)
 	{
-		$stopwords = array(
+		$stop_words = array(
 			'i',     'a',     'an',    'are',   'as',    'at',    'be',    
 			'by',    'de',    'en',    'en',    'for',   'from',  'how',   
 			'in',    'is',    'it',    'la',    'of',    'on',    'or',    
@@ -955,7 +955,8 @@ class fORMDatabase
 		
 		preg_match_all('#(?:"[^"]+"|[^\s]+)#', $terms, $matches);
 		
-		$terms = array();
+		$good_terms    = array();
+		$ignored_terms = array();
 		foreach ($matches[0] as $match) {
 			// Remove phrases from quotes
 			if ($match[0] == '"' && substr($match, -1)) {
@@ -966,13 +967,18 @@ class fORMDatabase
 				$match = preg_replace('#(^[^a-z0-9]+|[^a-z0-9]+$)#i', '', $match);	
 			}
 			
-			if ($ignore_stop_words && in_array(strtolower($match), $stopwords)) {
+			if ($ignore_stop_words && in_array(strtolower($match), $stop_words)) {
 				continue;	
 			}
-			$terms[] = $match;
+			$good_terms[] = $match;
+		}
+		
+		// If no terms were parsed, that means all words were stop words
+		if ($ignored_terms && !$good_terms) {
+			$good_terms = $ignored_terms;
 		}	
 		
-		return $terms;
+		return $good_terms;
 	}
 	
 	
