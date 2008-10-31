@@ -386,6 +386,8 @@ class fORMFile
 		
 		$class = fORM::getClass($class);
 		
+		$camelized_column = fGrammar::camelize($column, TRUE);
+		
 		fORM::registerActiveRecordMethod(
 			$class,
 			'process' . $camelized_column,
