@@ -141,6 +141,17 @@ class fORMFile
 	 */
 	static public function addFUploadMethodCall($class, $column, $method, $parameters=array())
 	{
+		if ($method == 'enableOverwrite') {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'The method specified, %1$s, is not compatible with how %2$s stores and associates files with records',
+					$method,
+					'fORMFile'
+				)
+			); 		
+		}
+		
 		$class = fORM::getClass($class);
 		
 		if (empty(self::$file_upload_columns[$class][$column])) {
