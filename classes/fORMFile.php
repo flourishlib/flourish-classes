@@ -1027,8 +1027,8 @@ class fORMFile
 		} catch (fExpectedException $e) {
 			
 			// If there is an existing file and none was uploaded, substitute the existing file
-			$existing_file = fRequest::get('__flourish_existing_' . $column);
-			$delete_file   = fRequest::get('__flourish_delete_' . $column, 'boolean');
+			$existing_file = fRequest::get('existing-' . $column);
+			$delete_file   = fRequest::get('delete-' . $column, 'boolean');
 			$no_upload     = $e->getMessage() == fGrammar::compose('Please upload a file');
 			
 			if ($existing_file && $delete_file && $no_upload) {
