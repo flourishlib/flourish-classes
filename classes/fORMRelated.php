@@ -618,11 +618,11 @@ class fORMRelated
 	 *
 	 * @param  mixed  $class           The class name or instance of the class this ordering rule applies to
 	 * @param  string $related_class   The related class we are getting info from
-	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
 	 * @param  array  $order_bys       An array of the order bys for this table.column combination - see fRecordSet::build() for format
+	 * @param  string $route           The route to the related table, this should be a column name in the current table or a join table name
 	 * @return void
 	 */
-	static public function setOrderBys($class, $related_class, $route, $order_bys)
+	static public function setOrderBys($class, $related_class, $order_bys, $route=NULL)
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
