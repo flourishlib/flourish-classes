@@ -407,43 +407,56 @@ class fFile
 	 */
 	private function determineMimeTypeByExtension($extension)
 	{
-		if ($extension == 'css') {
-			return 'text/css';
-		}	
-		
-		if ($extension == 'htm' || $extension == 'html') {
-			return 'text/html';
-		}	
-		
-		if ($extension == 'js') {
-			return 'application/javascript';	
+		switch ($extension) {
+			case 'css':
+				return 'text/css';
+			
+			case 'htm':
+			case 'html':
+				return 'text/html';
+			
+			case 'js':
+				return 'application/javascript';
+			
+			case 'inc':
+			case 'php':
+			case 'php3':
+			case 'php4':
+			case 'php5':
+				return 'application/x-httpd-php';
+				
+			case 'pl':
+			case 'cgi':
+				return 'application/x-perl';
+			
+			case 'rb':
+			case 'rhtml':
+				return 'application/x-ruby';
+			
+			case 'py':
+				return 'application/x-python';
+			
+			case 'rss':
+				return 'application/rss+xml';
+			
+			case 'xml':
+				return 'application/xml';
+			
+			case 'csv':
+				return 'text/csv';
+				
+			case 'vcf':
+				return 'text/x-vcard';
+				
+			case 'ics':
+				return 'text/calendar';
+			
+			case 'tab':
+				return 'text/tab-separated-values';
+			
+			default:
+				return 'text/plain';	
 		}
-		
-		if (in_array($extension, array('inc', 'php', 'php3', 'php4', 'php5'))) {
-			return 'application/x-httpd-php';	
-		}
-		
-		if (in_array($extension, array('pl', 'cgi'))) {
-			return 'application/x-perl';	
-		}
-		
-		if (in_array($extension, array('rb', 'rhtml'))) {
-			return 'application/x-ruby';	
-		}
-		
-		if ($extension == 'py') {
-			return 'application/x-python';	
-		}
-		
-		if ($extension == 'rss') {
-			return 'application/rss+xml';	
-		}
-		
-		if ($extension == 'xml') {
-			return 'application/xml';	
-		}
-		
-		return 'text/plain';
 	}
 	
 	
