@@ -1222,6 +1222,17 @@ class fEmail
 				);
 			}
 		}
+		
+		if ($validation_messages) {
+			fCore::toss(
+				'fValidationException',
+				sprintf(
+					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
+					fGrammar::compose("The email could not be sent because:"),
+					join("</li>\n<li>", $messages)
+				)
+			);	
+		}
 	}
 }
 
