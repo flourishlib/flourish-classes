@@ -200,6 +200,254 @@ class fFile
 	
 	
 	/**
+	 * Looks for specific bytes in a file to determine the mime type of the file
+	 * 
+	 * @param  string $content  The first 4 bytes of the file content to use for byte checking
+	 * @return string  The mime type of the file
+	 */
+	private function determineMimeTypeByContents($content)
+	{
+		$_0_8 = substr($content, 0, 8);
+		$_0_6 = substr($content, 0, 6);
+		$_0_5 = substr($content, 0, 5);
+		$_0_4 = substr($content, 0, 4);
+		$_0_3 = substr($content, 0, 3);
+		$_0_2 = substr($content, 0, 2);
+		
+		if ($_0_5 == '%PDF-') {
+			return 'application/pdf'; 	
+		}
+		
+		if ($_0_5 == '{\rtf') {
+			return 'text/rtf';	
+		}
+		
+		# Quicktime and MP4 audio/video
+		if ($_0_4 == 'MOVI') {
+			if (in_array($_4_4, array('moov', 'mdat'))) {
+				return 'video/quicktime';
+			}	
+		}
+		
+		if (strlen($content) > 8 && substr($content, 4, 4) == 'ftyp') {
+			
+			$_8_4 = substr($content, 8, 4);
+			$_8_3 = substr($content, 8, 3);
+			
+			if (in_array($_8_4, array('isom', 'iso2', 'mp41', 'mp42'))) {
+				return 'video/mp4';
+			}	
+			
+			if ($_8_4 == 'avc1') {
+				return 'video/3gpp';
+			}
+			
+			if ($_8_3 == 'M4A') {
+				return 'audio/mp4';
+			}
+			
+			if ($_8_3 == 'M4V') {
+				return 'video/mp4';
+			}
+			
+			if ($_8_3 == 'M4P' || $_8_3 == 'M4B' || substr($content, 8, 2) == 'qt') {
+				return 'video/quicktime';	
+			}
+		}
+		
+		// MP3
+		if ($_0_2 & "\xFF\xFE" == "\xFF\xFA") {
+			if (in_array($content[2] & "\xF0", array("\x10", "\x20", "\x30", "\x40", "\x50", "\x60", "\x70", "\x80", "\x90", "\xA0", "\xB0", "\xC0", "\xD0", "\xE0"))) {
+				return 'audio/mpeg';
+			}	
+		}
+		if ($_0_3 == 'ID3') {
+			return 'audio/mpeg';	
+		}
+		
+		if (strlen($content) > 257) {
+			if (substr($content, 257, 6) == "ustar\x00") {
+				return 'application/x-tar';	
+			}
+			if (substr($content, 257, 8) == "ustar\x40\x40\x00") {
+				return 'application/x-tar';	
+			}
+		}
+		
+		if ($_0_4 == 'Rar!') {
+			return 'application/x-rar-compressed';	
+		}
+		
+		if ($_0_4 == "PK\x03\x04") {
+			$_14_5 = substr($content, 14, 5);
+			if ($_14_5 == "\xDD\xFC\x95\x37\x66") {
+				return 'application/msword';	
+			}
+			if ($_14_5 == "\x58\x56\xC6\x8F\x60") {
+				return 'application/vnd.ms-excel';
+			}
+			if ($_14_5 == "\x26\x1\xC0\xB1\xE2") {
+				return 'application/vnd.ms-powerpoint';
+			}	
+			return 'application/zip';	
+		}
+		
+		if ($_0_4 == 'RIFF' && $_8_4 == 'WAVE') {
+			return 'audio/x-wav';	
+		}
+		
+		if ($_0_2 == "\x1F\x9D") {
+			return 'application/x-compress';	
+		}
+		
+		if ($_0_2 == "\x1F\x8B") {
+			return 'application/x-gzip';	
+		}
+		
+		if ($_0_3 == 'BZh') {
+			return 'application/x-bzip2';	
+		}
+		
+		if ($_0_3 == 'FWS' || $_0_3 == 'CWS') {
+			return 'application/x-shockwave-flash';	
+		}
+		
+		if ($_0_3 == 'FLV') {
+			return 'video/x-flv';	
+		}
+		
+		if ($_0_4 == "MM\x00\x2A" || $_0_4 == "II\x2A\x00") {
+			return 'image/tiff';	
+		}
+		
+		if ($_0_8 == "\x89PNG\x0D\x0A\x1A\x0A") {
+			return 'image/png';	
+		}
+		
+		if ($_0_4 == 'GIF8') {
+			return 'image/gif';	
+		}
+		
+		if ($_0_2 == 'BM' && strlen($content) > 14 && array($content[14], array("\x0C", "\x28", "\x40", "\x80"))) {
+			return 'image/x-ms-bmp';	
+		}
+		
+		if (strlen($content) > 10 && substr($content, 6, 4) == 'JFIF') {
+			return 'image/jpeg';	
+		}
+		
+		if ($_0_4 == "SIT!" || $_0_4 == "SITD" || substr($content, 0, 7) == 'StuffIt') {
+			return 'application/x-stuffit';	
+		}
+		
+		if ($_0_8 == "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1") {
+			$_513_8 = substr($content, 513, 8);
+			if ($_513_8 == "\x09\x08\x10\x00\x00\x06\x05\x00") {
+				return 'application/vnd.ms-excel';	
+			}
+			if ($_513_8 == "\xEC\xA5\xC1\x00\x3\x60\x9\x4") {
+				return 'application/msword';
+			}
+			if ($_513_8 == "\x52\x00\x6F\x00\x6F\x00\x74\x00") {	
+				return 'application/vnd.ms-powerpoint';
+			}
+		}
+		
+		if ($_0_8 == "\x09\x04\x06\x00\x00\x00\x10\x00") {
+			return 'application/vnd.ms-excel';	
+		}
+		
+		if ($_0_4 == "\x00\x00\x01\x00") {
+			return 'application/vnd.microsoft.icon';	
+		}
+		
+		if ($_0_6 == "\xDB\xA5\x2D\x00\x00\x00" || $_0_5 == "\x50\x4F\x5E\x51\x60" || $_0_4 == "\xFE\x37\x0\x23" || $_0_3 == "\x94\xA6\x2E") {
+			return 'application/msword';	
+		}	
+		
+		if (strpos($content, '<?xml') !== FALSE) {
+			if (stripos($content, '<!DOCTYPE') !== FALSE) {
+				return 'application/xhtml+xml';
+			}
+			if (strpos($content, '<svg') !== FALSE) {
+				return 'image/svg+xml';
+			}
+			if (strpos($content, '<rss') !== FALSE) {
+				return 'application/rss+xml';
+			}
+			return 'application/xml';	
+		}
+		
+		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
+			return 'application/x-httpd-php';	
+		}
+		
+		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $content, $matches)) {
+			switch (strtolower($matches[1])) {
+				case 'php':
+					return 'application/x-httpd-php';
+				case 'python':
+					return 'application/x-python';
+				case 'perl':
+					return 'application/x-perl';
+				case 'ruby':
+					return 'application/x-ruby';
+			}	
+		}
+		
+		return 'application/octet-stream';
+	}
+	
+	
+	/**
+	 * Uses the extension of the all-text file to determine the mime type
+	 * 
+	 * @param  string $extension  The file extension
+	 * @return string  The mime type of the file
+	 */
+	private function determineMimeTypeByExtension($extension)
+	{
+		if ($extension == 'css') {
+			return 'text/css';
+		}	
+		
+		if ($extension == 'htm' || $extension == 'html') {
+			return 'text/html';
+		}	
+		
+		if ($extension == 'js') {
+			return 'application/javascript';	
+		}
+		
+		if (in_array($extension, array('inc', 'php', 'php3', 'php4', 'php5'))) {
+			return 'application/x-httpd-php';	
+		}
+		
+		if (in_array($extension, array('pl', 'cgi'))) {
+			return 'application/x-perl';	
+		}
+		
+		if (in_array($extension, array('rb', 'rhtml'))) {
+			return 'application/x-ruby';	
+		}
+		
+		if ($extension == 'py') {
+			return 'application/x-python';	
+		}
+		
+		if ($extension == 'rss') {
+			return 'application/rss+xml';	
+		}
+		
+		if ($extension == 'xml') {
+			return 'application/xml';	
+		}
+		
+		return 'text/plain';
+	}
+	
+	
+	/**
 	 * Creates a new file object with a copy of this file
 	 * 
 	 * If no directory is specified, the file is created with a new name in
@@ -332,6 +580,28 @@ class fFile
 		}
 		
 		return fFilesystem::formatFilesize($size, $decimal_places);
+	}
+	
+	
+	/**
+	 * Gets the file's mime type, or `application/octet-stream` if it can't be determined
+	 * 
+	 * @return string  The mime type of the file
+	 */
+	public function getMimeType()
+	{
+		$this->tossIfException();
+		
+		$handle  = fopen($this->file, 'r');
+		$content = fread($handle, 4096);
+		fclose($handle);
+		
+		// If there are no low ASCII chars and no easily distinguishable tokens, we need to detect by file extension
+		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|<\?php|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $content)) {
+			return $this->determineMimeTypeByExtension(fFilesystem::getPathInfo($this->file, 'extension'));		
+		}
+		
+		return $this->determineMimeTypeByContents($content);	
 	}
 	
 	
