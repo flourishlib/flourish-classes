@@ -351,7 +351,7 @@ class fORMColumn
 	 * @param  array         &$parameters       The parameters passed to the method
 	 * @return string  The encoded number
 	 */
-	static public function generate($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	static public function generate($object, &$values, &$old_values, &$related_records, $method_name, $parameters)
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
