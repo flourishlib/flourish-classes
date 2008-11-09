@@ -437,6 +437,27 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Hooks itself back into the identity map as the definitive copy
+	 * 
+	 * @return void
+	 */
+	public function __wakeup()
+	{
+		if (!$this->exists()) {
+			return;	
+		}
+		
+		$class = get_class($this);
+		$hash  = $this->hash($this->values);
+		
+		if (!isset(self::$identity_map[$class])) {
+			self::$identity_map[$class] = array(); 		
+		}
+		self::$identity_map[$class][$hash] = $this;		
+	}
+	
+	
+	/**
 	 * Allows the programmer to set features for the class
 	 * 
 	 * This method is only called once per page load for each class.
