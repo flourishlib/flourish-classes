@@ -97,7 +97,7 @@ class fORMDate
 		
 		fORM::registerHookCallback(
 			$class,
-			'post-begin::store()',
+			'pre::validate()',
 			self::setDateCreated
 		);
 		
@@ -148,7 +148,7 @@ class fORMDate
 		
 		fORM::registerHookCallback(
 			$class,
-			'post-begin::store()',
+			'pre::validate()',
 			self::setDateUpdated
 		);
 		
