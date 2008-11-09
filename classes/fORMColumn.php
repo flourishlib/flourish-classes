@@ -347,8 +347,8 @@ class fORMColumn
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
+	 * @param  string        $method_name      The method that was called
+	 * @param  array         $parameters       The parameters passed to the method
 	 * @return string  The encoded number
 	 */
 	static public function generate($object, &$values, &$old_values, &$related_records, $method_name, $parameters)
