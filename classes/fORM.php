@@ -128,15 +128,16 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object             The instance of the class to call the hook for
-	 * @param  string        $hook               The hook to call
-	 * @param  array         &$values            The current values of the record
-	 * @param  array         &$old_values        The old values of the record
-	 * @param  array         &$related_records   Records related to the current record
-	 * @param  mixed         &$first_parameter   The first parameter to send the callback
+	 * @param  fActiveRecord $object            The instance of the class to call the hook for
+	 * @param  string        $hook              The hook to call
+	 * @param  array         &$values           The current values of the record
+	 * @param  array         &$old_values       The old values of the record
+	 * @param  array         &$related_records  Records related to the current record
+	 * @param  array         &$cache            The cache array of the record
+	 * @param  mixed         &$parameter        The parameter to send the callback
 	 * @return void
 	 */
-	static public function callHookCallbacks($object, $hook, &$values, &$old_values, &$related_records, &$first_parameter=NULL)
+	static public function callHookCallbacks($object, $hook, &$values, &$old_values, &$related_records, &$cache, &$parameter=NULL)
 	{
 		$class = self::getClass($object);
 		
@@ -164,7 +165,8 @@ class fORM
 					&$values,
 					&$old_values,
 					&$related_records,
-					&$first_parameter
+					&$cache,
+					&$parameter
 				)
 			);
 		}

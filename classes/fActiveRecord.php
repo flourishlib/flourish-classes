@@ -213,6 +213,7 @@ abstract class fActiveRecord
 					&$this->values,
 					&$this->old_values,
 					&$this->related_records,
+					&$this->cache,
 					$method_name,
 					$parameters
 				)
@@ -419,7 +420,8 @@ abstract class fActiveRecord
 			'post::__construct()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 	}
 	
@@ -545,7 +547,8 @@ abstract class fActiveRecord
 			$this, 'pre::delete()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 		
 		$table  = fORM::tablize($this);
@@ -563,7 +566,8 @@ abstract class fActiveRecord
 				'post-begin::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			// Check to ensure no foreign dependencies prevent deletion
@@ -639,7 +643,8 @@ abstract class fActiveRecord
 				'pre-commit::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			if (!$inside_db_transaction) {
@@ -651,7 +656,8 @@ abstract class fActiveRecord
 				'post-commit::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			// If we just deleted an object that has an auto-incrementing primary key,
@@ -673,7 +679,8 @@ abstract class fActiveRecord
 				'post-rollback::delete()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			// Check to see if the validation exception came from a related record, and fix the message
@@ -708,7 +715,8 @@ abstract class fActiveRecord
 			'post::delete()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 	}
 	
@@ -1005,7 +1013,8 @@ abstract class fActiveRecord
 			'post::loadFromResult()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 	}
 	
@@ -1063,7 +1072,8 @@ abstract class fActiveRecord
 			'pre::populate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 		
 		$table = fORM::tablize($this);
@@ -1081,7 +1091,8 @@ abstract class fActiveRecord
 			'post::populate()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 	}
 	
@@ -1496,7 +1507,8 @@ abstract class fActiveRecord
 			'pre::store()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 		
 		try {
@@ -1525,7 +1537,8 @@ abstract class fActiveRecord
 				'post-begin::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			$this->validate();
@@ -1535,7 +1548,8 @@ abstract class fActiveRecord
 				'post-validate::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			// Storing main table
@@ -1591,7 +1605,8 @@ abstract class fActiveRecord
 				'pre-commit::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			if (!$inside_db_transaction) {
@@ -1603,7 +1618,8 @@ abstract class fActiveRecord
 				'post-commit::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 		} catch (fPrintableException $e) {
@@ -1617,7 +1633,8 @@ abstract class fActiveRecord
 				'post-rollback::store()',
 				$this->values,
 				$this->old_values,
-				$this->related_records
+				$this->related_records,
+				$this->cache
 			);
 			
 			if ($new_autoincrementing_record && self::hasOld($this->old_values, $pk_column)) {
@@ -1633,7 +1650,8 @@ abstract class fActiveRecord
 			'post::store()',
 			$this->values,
 			$this->old_values,
-			$this->related_records
+			$this->related_records,
+			$this->cache
 		);
 		
 		// If we got here we succefully stored, so update old values to make exists() work
@@ -1665,6 +1683,7 @@ abstract class fActiveRecord
 			$this->values,
 			$this->old_values,
 			$this->related_records,
+			$this->cache,
 			$validation_messages
 		);
 		
@@ -1682,6 +1701,7 @@ abstract class fActiveRecord
 			$this->values,
 			$this->old_values,
 			$this->related_records,
+			$this->cache,
 			$validation_messages
 		);
 		

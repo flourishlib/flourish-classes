@@ -166,9 +166,10 @@ class fORMOrdering
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
+	 * @param  array         &$cache            The cache array for the record
 	 * @return void
 	 */
-	static public function delete($object, &$values, &$old_values, &$related_records)
+	static public function delete($object, &$values, &$old_values, &$related_records, &$cache)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -219,11 +220,12 @@ class fORMOrdering
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
+	 * @param  array         &$cache            The cache array for the record
+	 * @param  string        $method_name       The method that was called
+	 * @param  array         $parameters        The parameters passed to the method
 	 * @return mixed  The metadata array or element specified
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
@@ -344,9 +346,10 @@ class fORMOrdering
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
+	 * @param  array         &$cache            The cache array for the record
 	 * @return void
 	 */
-	static public function reorder($object, &$values, &$old_values, &$related_records)
+	static public function reorder($object, &$values, &$old_values, &$related_records, &$cache)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -517,10 +520,11 @@ class fORMOrdering
 	 * @param  array         &$values               The current values
 	 * @param  array         &$old_values           The old values
 	 * @param  array         &$related_records      Any records related to this record
+	 * @param  array         &$cache                The cache array for the record
 	 * @param  array         &$validation_messages  An array of ordered validation messages
 	 * @return void
 	 */
-	static public function validate($object, &$values, &$old_values, &$related_records, &$validation_messages)
+	static public function validate($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
 	{
 		$class = fORM::getClass($object);
 		$table = fORM::tablize($class);

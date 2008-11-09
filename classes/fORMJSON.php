@@ -81,11 +81,12 @@ class fORMJSON
 	 * @param  array         &$values           The current values
 	 * @param  array         &$old_values       The old values
 	 * @param  array         &$related_records  Any records related to this record
-	 * @param  string        &$method_name      The method that was called
-	 * @param  array         &$parameters       The parameters passed to the method
+	 * @param  array         &$cache            The cache array for the record
+	 * @param  string        $method_name       The method that was called
+	 * @param  array         $parameters        The parameters passed to the method
 	 * @return string  The JSON object that represents the values of this record
 	 */
-	static public function toJSON($object, &$values, &$old_values, &$related_records, &$method_name, &$parameters)
+	static public function toJSON($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
 		$output = array();
 		foreach ($values as $column => $value) {
