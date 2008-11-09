@@ -1034,13 +1034,6 @@ class fORMFile
 			$uploader = self::setUpFUpload($class, $column);
 			$file     = $uploader->move($temp_dir, $column);
 			
-			if (isset(self::$image_upload_columns[$class][$column]) && !$file instanceof fImage) {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose('The file uploaded is not an image')
-				);	
-			}
-			
 		// If there was an eror, check to see if we have an existing file
 		} catch (fExpectedException $e) {
 			
@@ -1144,16 +1137,6 @@ class fORMFile
 				if (fUpload::check($column)) {
 					$uploader = self::setUpFUpload($class, $column);
 					$uploader->validate($column);
-					
-					// If we got to this point and there is no new file and it
-					// is an image upload column, the file must not have passed
-					// the server-side image type check
-					if ((!$values[$column] || !fActiveRecord::hasOld($old_values, $column)) && self::$image_upload_columns[$class][$column]) {
-						fCore::toss(
-							'fValidationException',
-							fGrammar::compose('The file uploaded is not an image')
-						);		
-					}
 				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != fGrammar::compose('Please upload a file')) {
