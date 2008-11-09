@@ -459,6 +459,7 @@ class fORMOrdering
 		
 		// If there was an old set, we need to close the gap
 		if ($object->exists() && $new_set) {
+			
 			$sql  = "SELECT max(" . $column . ") FROM " . $table . " WHERE ";
 			$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 			
@@ -474,6 +475,16 @@ class fORMOrdering
 				$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 				$sql .= " AND " . $column . " > " . $db_value;
 				fORMDatabase::retrieve()->translatedQuery($sql);
+				
+				if ($current_value == $new_max_value) {
+					// Put the actual record we are changing in limbo to be updated when the actual update happens
+					$sql  = "UPDATE " . $table . " SET " . $column . " = 0";
+					$sql .= " WHERE " . $column . " = " . $db_value;
+					if ($other_columns) {
+						$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
+					}
+					fORMDatabase::retrieve()->translatedQuery($sql);
+				}
 				
 				$sql  = "UPDATE " . $table . " SET " . $column . ' = ' . $column . ' + ' . $shift_up . " WHERE ";
 				$sql .= self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
