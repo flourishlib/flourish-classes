@@ -541,6 +541,7 @@ class fORM
 	 *  - **`&$values`**:          The values array for the record
 	 *  - **`&$old_values`**:      The old values array for the record
 	 *  - **`&$related_records`**: The related records array for the record
+	 *  - **`&$cache`**:           The cache array for the record
 	 *  - **`$method_name`**:      The method that was called
 	 *  - **`&$parameters`**:      The parameters passed to the method
 	 * 
@@ -570,6 +571,7 @@ class fORM
 	 *  - **`&$values`**:          The values array for the record
 	 *  - **`&$old_values`**:      The old values array for the record
 	 *  - **`&$related_records`**: The related records array for the record
+	 *  - **`&$cache`**:           The cache array for the record
 	 * 
 	 * The `'pre::validate()'` and `'post::validate()'` hooks have an extra parameter:
 	 * 
