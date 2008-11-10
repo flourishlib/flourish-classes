@@ -445,12 +445,18 @@ abstract class fActiveRecord
 	 */
 	public function __wakeup()
 	{
+		$class = get_class($this);
+		
+		if (!isset(self::$configured[$class])) {
+			$this->configure();
+			self::$configured[$class] = TRUE;
+		}
+		
 		if (!$this->exists()) {
 			return;	
 		}
 		
-		$class = get_class($this);
-		$hash  = $this->hash($this->values);
+		$hash = $this->hash($this->values);
 		
 		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array(); 		
