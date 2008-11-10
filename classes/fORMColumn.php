@@ -729,6 +729,7 @@ class fORMColumn
 				$values,
 				$old_values,
 				$related_records,
+				$cache,
 				'generate' . fGrammar::camelize($column, TRUE),
 				array()
 			);
