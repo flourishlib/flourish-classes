@@ -586,7 +586,6 @@ class fORM
 	 *  - `'post-commit::delete()'`
 	 *  - `'post-rollback::delete()'`
 	 *  - `'post::delete()'`
-	 *  - `'post::inspect()'`
 	 *  - `'post::loadFromResult()'`
 	 *  - `'pre::populate()'`
 	 *  - `'post::populate()'`
@@ -617,7 +616,6 @@ class fORM
 			'post-commit::delete()',
 			'post-rollback::delete()',
 			'post::delete()',
-			'post::inspect()',
 			'post::loadFromResult()',
 			'pre::populate()',
 			'post::populate()',
@@ -682,7 +680,7 @@ class fORM
 	 * 
 	 *  - **`$object`**:      The actual record set
 	 *  - **`$class`**:       The class of each record
-	 *  - **`&$records`**:    The ordered array of fActiveRecords
+	 *  - **`&$records`**:    The ordered array of fActiveRecord objects
 	 *  - **`&$pointer`**:    The current array pointer for the records array
 	 *  - **`&$associate`**:  If the record should be associated with an fActiveRecord holding it
 	 * 
