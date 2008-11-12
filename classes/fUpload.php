@@ -331,7 +331,7 @@ class fUpload
 			);
 		}
 		
-		if (!empty($this->mime_types) && !in_array(fFile::determineMimeType($file_array['tmp_name'], $this->mime_types))) {
+		if (!empty($this->mime_types) && file_exists($file_array['tmp_name']) && !in_array(fFile::determineMimeType($file_array['tmp_name']), $this->mime_types)) {
 			fCore::toss('fValidationException', $this->mime_type_message);
 		}
 		
