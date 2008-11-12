@@ -370,7 +370,7 @@ class fCRUD
 		$message = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
-		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $matches)) {
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#is', $message, $matches)) {
 			return;
 		}
 		
@@ -407,7 +407,7 @@ class fCRUD
 		$message = $exception->getMessage();
 		
 		// If we can't find a list, don't bother continuing
-		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#i', $message, $message_parts)) {
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#is', $message, $message_parts)) {
 			return;
 		}
 		
