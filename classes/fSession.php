@@ -194,9 +194,49 @@ class fSession
 				)
 			);
 		}
+		
 		$seconds = strtotime($timespan) - time();
 		ini_set('session.gc_maxlifetime', $seconds);
 		ini_set('session.cookie_lifetime', 0);
+	}
+	
+	
+	/**
+	 * Sets the path to store session files in
+	 * 
+	 * @param  string|fDirectory $directory  The directory to store session files in
+	 * @return void
+	 */
+	static public function setPath($directory)
+	{
+		if (self::$open) {
+			fCore::toss(
+				'fProgrammerException',
+				fGrammar::compose(
+					'%1$s must be called before any of %2$s, %3$s or %4$s',
+					__CLASS__ . '::setPath()',
+					__CLASS__ . '::clear()',
+					__CLASS__ . '::get()',
+					__CLASS__ . '::set()'
+				)
+			);
+		}
+		
+		if (!$directory instanceof fDirectory) {
+			$directory = new fDirectory($directory);	
+		}
+		
+		if (!$directory->isWritable()) {
+			fCore::toss(
+				'fEnvironmentException',
+				fGrammar::compose(
+					'The directory specified, %s, is not writable',
+					fCore::dump($directory->getPath())
+				)
+			);	
+		}
+		
+		session_save_path($directory->getPath());
 	}
 	
 	
