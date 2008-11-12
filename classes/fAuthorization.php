@@ -58,6 +58,13 @@ class fAuthorization
 	 */
 	static private $named_ip_ranges = array();
 	
+	/**
+	 * If the session id has been regenerated
+	 * 
+	 * @var boolen
+	 */
+	static private $regenerated = FALSE;
+	
 	
 	/**
 	 * Adds a named IP address or range, or array of addresses and/or ranges
@@ -298,6 +305,20 @@ class fAuthorization
 	
 	
 	/**
+	 * Regenerates the session id, but only once per script execution
+	 * 
+	 * @return void
+	 */
+	static private function regenerate()
+	{
+		if (!self::$regenerated) {
+			session_regenerate_id();
+			self::$regenerated = TRUE;
+		}	
+	}
+	
+	
+	/**
 	 * Redirect the user to the login page if they do not have the permissions required
 	 * 
 	 * @param  string $resource    The resource we are checking permissions for
@@ -363,6 +384,7 @@ class fAuthorization
 		self::$level           = NULL;
 		self::$login_page      = NULL;
 		self::$named_ip_ranges = array();
+		self::$regenerated     = FALSE;
 	}
 	
 	
@@ -423,6 +445,7 @@ class fAuthorization
 	 */
 	static public function setUserACLs($acls)
 	{
+		self::regenerate();
 		fSession::set('user_acls', $acls, __CLASS__ . '::');
 	}
 	
@@ -435,6 +458,7 @@ class fAuthorization
 	 */
 	static public function setUserAuthLevel($level)
 	{
+		self::regenerage();
 		self::validateAuthLevel($level);
 		fSession::set('user_auth_level', $level, __CLASS__ . '::');
 	}
@@ -448,6 +472,7 @@ class fAuthorization
 	 */
 	static public function setUserToken($token)
 	{
+		self::regenerate();
 		fSession::set('user_token', $token, __CLASS__ . '::');
 	}
 	
