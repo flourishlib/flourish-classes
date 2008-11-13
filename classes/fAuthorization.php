@@ -445,8 +445,8 @@ class fAuthorization
 	 */
 	static public function setUserACLs($acls)
 	{
-		self::regenerate();
 		fSession::set('user_acls', $acls, __CLASS__ . '::');
+		self::regenerate();
 	}
 	
 	
@@ -458,9 +458,9 @@ class fAuthorization
 	 */
 	static public function setUserAuthLevel($level)
 	{
-		self::regenerate();
 		self::validateAuthLevel($level);
 		fSession::set('user_auth_level', $level, __CLASS__ . '::');
+		self::regenerate();
 	}
 	
 	
@@ -472,8 +472,8 @@ class fAuthorization
 	 */
 	static public function setUserToken($token)
 	{
-		self::regenerate();
 		fSession::set('user_token', $token, __CLASS__ . '::');
+		self::regenerate();
 	}
 	
 	
