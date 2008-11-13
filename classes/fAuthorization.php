@@ -458,7 +458,7 @@ class fAuthorization
 	 */
 	static public function setUserAuthLevel($level)
 	{
-		self::regenerage();
+		self::regenerate();
 		self::validateAuthLevel($level);
 		fSession::set('user_auth_level', $level, __CLASS__ . '::');
 	}
