@@ -261,8 +261,7 @@ class fMoney
 		
 		$this->currency = ($currency !== NULL) ? $currency : self::$default_currency;
 		
-		// We use an extra digit of precision with the fNumber object so we can round properly
-		$precision    = self::getCurrencyInfo($this->currency, 'precision') + 1;
+		$precision = self::getCurrencyInfo($this->currency, 'precision');
 		
 		// Unformat any money value
 		if (self::$unformat_callback !== NULL) {
@@ -301,7 +300,7 @@ class fMoney
 	 */
 	public function __toString()
 	{
-		return $this->round()->__toString();
+		return $this->amount->__toString();
 	}
 	
 	
@@ -317,7 +316,8 @@ class fMoney
 	{
 		$addend           = $this->makeMoney($addend);
 		$converted_addend = $addend->convert($this->currency)->amount;
-		$new_amount       = $this->amount->add($converted_addend);
+		$precision        = self::getCurrencyInfo($this->currency, 'precision');
+		$new_amount       = $this->amount->add($converted_addend, $precision+1)->round($precision);
 		return new fMoney($new_amount, $this->currency);
 	}
 	
@@ -359,33 +359,31 @@ class fMoney
 			);
 		}
 		
-		$truncate_precision = self::getCurrencyInfo($this->currency, 'precision');
+		$precision = self::getCurrencyInfo($this->currency, 'precision');
 		
-		if ($truncate_precision == 0) {
+		if ($precision == 0) {
 			$smallest_amount = new fNumber('1');
 		} else {
-			$smallest_amount = new fNumber('0.' . str_pad('', $truncate_precision-1, '0') . '1');
+			$smallest_amount = new fNumber('0.' . str_pad('', $precision-1, '0') . '1');
 		}
 		$smallest_money = new fMoney($smallest_amount, $this->currency);
 		
 		$monies = array();
-		$sum    = new fNumber('0', $truncate_precision);
+		$sum    = new fNumber('0', $precision);
 		
 		foreach ($ratios as $ratio) {
-			$new_amount = $this->amount->mul($ratio)->trunc($truncate_precision);
-			$sum = $sum->add($new_amount);
+			$new_amount = $this->amount->mul($ratio)->trunc($precision);
+			$sum        = $sum->add($new_amount, $precision+1)->round($precision);
 			$monies[] = new fMoney($new_amount, $this->currency);
 		}
 		
-		$rounded_amount = $this->round();
-		
-		while ($sum->lt($rounded_amount)) {
+		while ($sum->lt($this->amount)) {
 			foreach ($monies as &$money) {
-				if ($sum->eq($rounded_amount)) {
+				if ($sum->eq($this->amount)) {
 					break 2;
 				}
 				$money = $money->add($smallest_money);
-				$sum   = $sum->add($smallest_amount);
+				$sum   = $sum->add($smallest_amount, $precision+1)->round($precision);
 			}
 		}
 		
@@ -418,9 +416,9 @@ class fMoney
 		
 		$currency_value     = self::getCurrencyInfo($this->currency, 'value');
 		$new_currency_value = self::getCurrencyInfo($new_currency, 'value');
-		$new_precision      = self::getCurrencyInfo($new_currency, 'precision') + 1;
+		$new_precision      = self::getCurrencyInfo($new_currency, 'precision');
 		
-		$new_amount = $this->amount->mul($currency_value, 8)->div($new_currency_value, $new_precision);
+		$new_amount = $this->amount->mul($currency_value, 8)->div($new_currency_value, $new_precision+1)->round($new_precision);
 		 
 		return new fMoney($new_amount, $new_currency);
 	}
@@ -437,7 +435,7 @@ class fMoney
 	public function eq($money)
 	{
 		$money = $this->makeMoney($money);
-		return $this->round()->eq($money->convert($this->currency)->round());
+		return $this->amount->eq($money->convert($this->currency)->amount);
 	}
 	
 	
@@ -515,7 +513,7 @@ class fMoney
 	public function gt($money)
 	{
 		$money = $this->makeMoney($money);
-		return $this->round()->gt($money->convert($this->currency)->round());
+		return $this->amount->gt($money->convert($this->currency)->amount);
 	}
 	
 	
@@ -530,7 +528,7 @@ class fMoney
 	public function gte($money)
 	{
 		$money = $this->makeMoney($money);
-		return $this->round()->gte($money->convert($this->currency)->round());
+		return $this->amount->gte($money->convert($this->currency)->amount);
 	}
 	
 	
@@ -545,7 +543,7 @@ class fMoney
 	public function lt($money)
 	{
 		$money = $this->makeMoney($money);
-		return $this->round()->lt($money->convert($this->currency)->round());
+		return $this->amount->lt($money->convert($this->currency)->amount);
 	}
 	
 	
@@ -560,7 +558,7 @@ class fMoney
 	public function lte($money)
 	{
 		$money = $this->makeMoney($money);
-		return $this->round()->lte($money->convert($this->currency)->round());
+		return $this->amount->lte($money->convert($this->currency)->amount);
 	}
 	
 	
@@ -617,20 +615,9 @@ class fMoney
 	 */
 	public function mul($multiplicand)
 	{
-		$new_amount = $this->amount->mul($multiplicand);
+		$precision  = self::getCurrencyInfo($this->currency, 'precision');
+		$new_amount = $this->amount->mul($multiplicand, $precision+1)->round($precision);
 		return new fMoney($new_amount, $this->currency);
-	}
-	
-	
-	/**
-	 * Rounds the amount fNumber object to the exact precision for this currency
-	 * 
-	 * @return fNumber  The rounded amount
-	 */
-	protected function round()
-	{
-		$precision = self::getCurrencyInfo($this->currency, 'precision');
-		return $this->amount->round($precision);
 	}
 	
 	
@@ -646,7 +633,8 @@ class fMoney
 	{
 		$subtrahend           = $this->makeMoney($subtrahend);
 		$converted_subtrahend = $subtrahend->convert($this->currency)->amount;
-		$new_amount           = $this->amount->sub($converted_subtrahend);
+		$precision            = self::getCurrencyInfo($this->currency, 'precision');
+		$new_amount           = $this->amount->sub($converted_subtrahend, $precision+1)->round($precision);
 		return new fMoney($new_amount, $this->currency);
 	}
 }
