@@ -935,7 +935,7 @@ class fNumber
 	 */
 	public function abs($scale=NULL)
 	{
-		$scale = $this->getScale($scale);
+		$scale = $this->fixScale($scale);
 		return new fNumber(substr($this->value, 1), $scale);
 	}
 	
@@ -951,7 +951,7 @@ class fNumber
 	 */
 	public function add($addend, $scale=NULL)
 	{
-		$scale  = (int) ($scale !== NULL) ? $scale : $this->scale;
+		$scale = $this->fixScale($scale);
 		$addend = self::parse($addend, 'number');
 		
 		if (function_exists('bcadd')) {
@@ -999,7 +999,7 @@ class fNumber
 	 */
 	public function div($divisor, $scale=NULL)
 	{
-		$scale   = $this->getScale($scale);
+		$scale   = $this->fixScale($scale);
 		$divisor = self::parse($divisor, 'number');
 		
 		if (self::isZero($divisor)) {
@@ -1046,6 +1046,22 @@ class fNumber
 	
 	
 	/**
+	 * Makes sure the scale is an int greater than `-1` - will return the current scale if the one passed is `NULL`
+	 * 
+	 * @param  integer $scale  The scale to check
+	 * @return integer  The number of digits after the decimal place
+	 */
+	private function fixScale($scale)
+	{
+		$scale = ($scale !== NULL) ? (int) $scale : (int) $this->scale;
+		if ($scale < 0) {
+			$scale = 0;
+		}
+		return $scale;
+	}
+	
+	
+	/**
 	 * Rounds the number to the next lowest integer
 	 * 
 	 * @throws fValidationException
@@ -1082,7 +1098,7 @@ class fNumber
 	 */
 	public function fmod($divisor, $scale=NULL)
 	{
-		$scale = $this->getScale($scale);
+		$scale = $this->fixScale($scale);
 		
 		$div_frac = self::parse($divisor, 'fraction');
 		$val_frac = self::parse($this->value, 'fraction');
@@ -1144,18 +1160,13 @@ class fNumber
 	
 	
 	/**
-	 * Makes sure the scale is an int greater than `-1` - will return the current scale if the one passed is `NULL`
+	 * Returns the scale of this number
 	 * 
-	 * @param  integer $scale  The scale to check
-	 * @return integer  The number of digits after the decimal place
+	 * @return integer  The scale of this number
 	 */
-	private function getScale($scale)
+	public function getScale()
 	{
-		$scale = ($scale !== NULL) ? (int) $scale : (int) $this->scale;
-		if ($scale < 0) {
-			$scale = 0;
-		}
-		return $scale;
+		return $this->scale;
 	}
 	
 	
@@ -1287,7 +1298,7 @@ class fNumber
 	 */
 	public function mul($multiplier, $scale=NULL)
 	{
-		$scale      = $this->getScale($scale);
+		$scale      = $this->fixScale($scale);
 		$multiplier = self::parse($multiplier, 'number');
 		
 		if (function_exists('bcmul')) {
@@ -1308,7 +1319,7 @@ class fNumber
 	 */
 	public function neg($scale=NULL)
 	{
-		$scale = $this->getScale($scale);
+		$scale = $this->fixScale($scale);
 		$value = substr($this->value, 1);
 		$value = ($this->value[0] == '-') ? '+' . $value : '-' . $value;
 		return new fNumber($value, $scale);
@@ -1326,7 +1337,7 @@ class fNumber
 	 */
 	public function pow($exponent, $scale=NULL)
 	{
-		$scale = $this->getScale($scale);
+		$scale = $this->fixScale($scale);
 		
 		if (function_exists('bcpow')) {
 			$value = bcpow($this->value, (int) $exponent, $scale);
@@ -1483,7 +1494,7 @@ class fNumber
 	 */
 	public function sqrt($scale=NULL)
 	{
-		$scale = $this->getScale($scale);
+		$scale = $this->fixScale($scale);
 		
 		if ($this->sign() == -1) {
 			fCore::toss(
@@ -1581,7 +1592,7 @@ class fNumber
 	 */
 	public function sub($subtrahend, $scale=NULL)
 	{
-		$scale      = $this->getScale($scale);
+		$scale      = $this->fixScale($scale);
 		$subtrahend = self::parse($subtrahend, 'number');
 		
 		if (function_exists('bcadd')) {
