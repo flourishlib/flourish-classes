@@ -136,6 +136,8 @@ class fSession
 	static private function open()
 	{
 		if (!self::$open) {
+			ini_set('session.use_cookies', 1);
+			ini_set('session.use_only_cookies', 1);
 			session_start();
 			self::$open = TRUE;
 		}
