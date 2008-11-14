@@ -228,7 +228,7 @@ class fORMValidation
 		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
-			return fGrammar::compose(
+			return self::compose(
 				'%s: Please enter a value',
 				fORM::getColumnName($class, $column)
 			);
@@ -239,7 +239,7 @@ class fORMValidation
 		
 		// Make sure a valid value is chosen
 		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
-			return fGrammar::compose(
+			return self::compose(
 				'%1$s: Please choose from one of the following: %2$s',
 				fORM::getColumnName($class, $column),
 				join(', ', $column_info['valid_values'])
@@ -248,7 +248,7 @@ class fORMValidation
 		
 		// Make sure the value isn't too long
 		if ($column_info['type'] == 'varchar' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
-			return fGrammar::compose(
+			return self::compose(
 				'%1$s: Please enter a value no longer than %2$s characters',
 				fORM::getColumnName($class, $column),
 				$column_info['max_length']
@@ -257,7 +257,7 @@ class fORMValidation
 		
 		// Make sure the value is the proper length
 		if ($column_info['type'] == 'char' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) != $column_info['max_length']) {
-			return fGrammar::compose(
+			return self::compose(
 				'%1$s: Please enter exactly %2$s characters',
 				fORM::getColumnName($class, $column),
 				$column_info['max_length']
@@ -292,7 +292,7 @@ class fORMValidation
 			$messages = array();
 			foreach ($conditional_columns as $conditional_column) {
 				if ($values[$conditional_column] === NULL) {
-					$messages[] = fGrammar::compose(
+					$messages[] = self::compose(
 						'%s: Please enter a value',
 						fORM::getColumnName($class, $conditional_column)
 					);
@@ -325,7 +325,7 @@ class fORMValidation
 				case 'text':
 				case 'blob':
 					if (!is_string($value) && !is_numeric($value)) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: Please enter a string',
 							fORM::getColumnName($class, $column)
 						);
@@ -334,7 +334,7 @@ class fORMValidation
 				case 'integer':
 				case 'float':
 					if (!is_numeric($value)) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: Please enter a number',
 							fORM::getColumnName($class, $column)
 						);
@@ -342,7 +342,7 @@ class fORMValidation
 					break;
 				case 'timestamp':
 					if (strtotime($value) === FALSE) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: Please enter a date/time',
 							fORM::getColumnName($class, $column)
 						);
@@ -350,7 +350,7 @@ class fORMValidation
 					break;
 				case 'date':
 					if (strtotime($value) === FALSE) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: Please enter a date',
 							fORM::getColumnName($class, $column)
 						);
@@ -358,7 +358,7 @@ class fORMValidation
 					break;
 				case 'time':
 					if (strtotime($value) === FALSE) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: Please enter a time',
 							fORM::getColumnName($class, $column)
 						);
@@ -399,7 +399,7 @@ class fORMValidation
 					$result = fORMDatabase::retrieve()->translatedQuery($sql);
 					$result->tossIfNoRows();
 				} catch (fNoRowsException $e) {
-					return fGrammar::compose(
+					return self::compose(
 						'%s: The value specified is invalid',
 						fORM::getColumnName($class, $column)
 					);
@@ -433,7 +433,7 @@ class fORMValidation
 			foreach ($columns as $column) {
 				$column_names[] = fORM::getColumnName($class, $column);
 			}
-			return fGrammar::compose(
+			return self::compose(
 				'%s: Please enter a value for at least one',
 				join(', ', $column_names)
 			);
@@ -461,7 +461,7 @@ class fORMValidation
 					foreach ($columns as $column) {
 						$column_names[] = fORM::getColumnName($class, $column);
 					}
-					return fGrammar::compose(
+					return self::compose(
 						'%s: Please enter a value for only one',
 						join(', ', $column_names)
 					);
@@ -535,7 +535,7 @@ class fORMValidation
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
 			$result->tossIfNoRows();
 			
-			return fGrammar::compose(
+			return self::compose(
 				'Another %1$s with the same %2$s already exists',
 				fORM::getRecordName($class),
 				fGrammar::joinArray($columns, 'and')
@@ -561,7 +561,7 @@ class fORMValidation
 			return;
 		}
 		
-		return fGrammar::compose(
+		return self::compose(
 			'%s: Please select at least one',
 			fGrammar::pluralize(fORMRelated::getRelatedRecordName($class, $related_class, $route))
 		);
@@ -629,12 +629,12 @@ class fORMValidation
 						$column_names[] = fORM::getColumnName($class, $unique_column);
 					}
 					if (sizeof($column_names) == 1) {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: The value specified must be unique, however it already exists',
 							join('', $column_names)
 						);
 					} else {
-						return fGrammar::compose(
+						return self::compose(
 							'%s: The values specified must be a unique combination, however the specified combination already exists',
 							join(', ', $column_names)
 						);
@@ -642,6 +642,29 @@ class fORMValidation
 				
 				} catch (fNoRowsException $e) { }
 			}
+		}
+	}
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
 		}
 	}
 	
@@ -755,14 +778,11 @@ class fORMValidation
 		$type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		$valid_types = array('varchar', 'char', 'text');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is of the data type %2$s. Must be one of %3$s to be treated as case insensitive.',
-					fCore::dump($column),
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is of the data type %2$s. Must be one of %3$s to be treated as case insensitive.',
+				$column,
+				$type,
+				join(', ', $valid_types)
 			);
 		}
 		
@@ -945,7 +965,7 @@ class fORMValidation
 				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
 					continue;
 				}
-				$messages[] = fGrammar::compose(
+				$messages[] = self::compose(
 					'%1$s #%2$s %3$s',
 					$related_record_name,
 					$record_number,
@@ -980,7 +1000,7 @@ class fORMValidation
 		
 		foreach ($record_set as $record) {
 			if (!$record->exists()) {
-				$messages[] = fGrammar::compose(
+				$messages[] = self::compose(
 					'%1$s #%2$s: Please select a %3$s',
 					$related_record_name,
 					$record_number,

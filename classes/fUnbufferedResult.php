@@ -15,6 +15,29 @@
 class fUnbufferedResult implements Iterator
 {
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * The character set to transcode from for MSSQL queries
 	 * 
 	 * @var string
@@ -85,25 +108,19 @@ class fUnbufferedResult implements Iterator
 	{
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The database type specified, %1$s, in invalid. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
+			throw new fProgrammerException(
+				'The database type specified, %1$s, in invalid. Must be one of: %2$s.',
+				$type,
+				join(', ', $valid_types)
 			);
 		}
 		
 		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The database extension specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($extension),
-					join(', ', $valid_extensions)
-				)
+			throw new fProgrammerException(
+				'The database extension specified, %1$s, is invalid. Must be one of: %2$s.',
+				$extension,
+				join(', ', $valid_extensions)
 			);
 		}
 		
@@ -232,16 +249,10 @@ class fUnbufferedResult implements Iterator
 		}
 		
 		if(!$this->current_row && $this->pointer == 0) {
-			fCore::toss(
-				'fNoRowsException',
-				fGrammar::compose('The query did not return any rows')
-			);
+			throw new fNoRowsException('The query did not return any rows');
 			
 		} elseif (!$this->current_row) {
-			fCore::toss(
-				'fNoRemainingException',
-				fGrammar::compose('There are no remaining rows')
-			);
+			throw new fNoRemainingException('There are no remaining rows');
 		}
 		
 		return $this->current_row;
@@ -329,7 +340,7 @@ class fUnbufferedResult implements Iterator
 				$row[$key] = '';
 				fCore::trigger(
 					'notice',
-					fGrammar::compose(
+					self::compose(
 						'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
 						'http://bugs.php.net/bug.php?id=26315'
 					)
@@ -338,7 +349,7 @@ class fUnbufferedResult implements Iterator
 			if (strlen($key) == 30) {
 				fCore::trigger(
 					'notice',
-					fGrammar::compose(
+					self::compose(
 						'A column name exactly 30 characters in length was detected coming out of the database - this column name may be truncated, see %s for more information.',
 						'http://bugs.php.net/bug.php?id=23990'
 					)
@@ -347,7 +358,7 @@ class fUnbufferedResult implements Iterator
 			if (strlen($value) == 256) {
 				fCore::trigger(
 					'notice',
-					fGrammar::compose(
+					self::compose(
 						'A value exactly 255 characters in length was detected coming out of the database - this value may be truncated, see %s for more information.',
 						'http://bugs.php.net/bug.php?id=37757'
 					)
@@ -441,11 +452,8 @@ class fUnbufferedResult implements Iterator
 	public function rewind()
 	{
 		if (!empty($this->pointer)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Unbuffered database results can not be iterated through multiple times'
-				)
+			throw new fProgrammerException(
+				'Unbuffered database results can not be iterated through multiple times'
 			);
 		}
 	}
@@ -507,7 +515,7 @@ class fUnbufferedResult implements Iterator
 			$this->current();
 		} catch (fNoRowsException $e) {
 			if ($message !== NULL) {
-				$e->getMessage($message);
+				$e->setMessage($message);
 			}	
 			throw $e;
 		}

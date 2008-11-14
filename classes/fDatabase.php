@@ -45,6 +45,29 @@
 class fDatabase
 {
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * The character set that data is coming back as
 	 * 
 	 * @var string 
@@ -176,29 +199,20 @@ class fDatabase
 	{
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
+			throw new fProgrammerException(
+				'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$type,
+				join(', ', $valid_types)
 			);
 		}
 		
 		if (empty($database)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose('No database was specified')
-			);
+			throw new fProgrammerException('No database was specified');
 		}
 		
 		if ($type != 'sqlite') {
 			if (empty($username)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose('No username was specified')
-				);
+				throw new fProgrammerException('No username was specified');
 			}
 			if ($host === NULL) {
 				$host = 'localhost';
@@ -298,14 +312,11 @@ class fDatabase
 				'sqlite'     => 'SQLite'
 			);
 			
-			fCore::toss(
-				'fSQLException',
-				fGrammar::compose(
-					'%1$s error (%2$s) in %3$s',
-					$db_type_map[$this->type],
-					$message,
-					$result->getSQL()
-				)
+			throw new fSQLException(
+				'%1$s error (%2$s) in %3$s',
+				$db_type_map[$this->type],
+				$message,
+				$result->getSQL()
 			);
 		}
 	}
@@ -416,11 +427,8 @@ class fDatabase
 		
 		// Ensure the connection was established
 		if ($this->connection === FALSE) {
-			fCore::toss(
-				'fConnectivityException',
-				fGrammar::compose(
-					'Unable to connect to database'
-				)
+			throw new fConnectivityException(
+				'Unable to connect to database'
 			);
 		}
 		
@@ -540,13 +548,10 @@ class fDatabase
 					} elseif (strpos($database_version, '** This file contains an SQLite 2.1 database **') !== FALSE) {
 						$sqlite_version = 2;
 					} else {
-						fCore::toss(
-							'fConnectivityException',
-							fGrammar::compose(
-								'The database specified does not appear to be a valid %1$s or %2$s database',
-								'SQLite v2.1',
-								'v3'
-							)
+						throw new fConnectivityException(
+							'The database specified does not appear to be a valid %1$s or %2$s database',
+							'SQLite v2.1',
+							'v3'
 						);
 					}
 				}
@@ -555,28 +560,22 @@ class fDatabase
 					$this->extension = 'pdo';
 					
 				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || !in_array('sqlite', PDO::getAvailableDrivers()))) {
-					fCore::toss(
-						'fEnvironmentException',
-						fGrammar::compose(
-							'The database specified is an %2$s database and the %2$s extension is not installed',
-							'SQLite v3',
-							'pdo_sqlite'
-						)
+					throw new fEnvironmentException(
+						'The database specified is an %2$s database and the %2$s extension is not installed',
+						'SQLite v3',
+						'pdo_sqlite'
 					);
-					
+				
 				} elseif ($sqlite_version == 2 && extension_loaded('sqlite')) {
 					$this->extension = 'sqlite';
 					
 				} elseif ($sqlite_version == 2 && !extension_loaded('sqlite')) {
-					fCore::toss(
-						'fEnvironmentException',
-						fGrammar::compose(
-							'The database specified is an %1$s database and the %2$s extension is not installed',
-							'SQLite v2.1',
-							'sqlite'
-						)
+					throw new fEnvironmentException(
+						'The database specified is an %1$s database and the %2$s extension is not installed',
+						'SQLite v2.1',
+						'sqlite'
 					);
-					
+				
 				} else {
 					$type = 'SQLite';
 					$exts = 'pdo_sqlite, sqlite';
@@ -585,13 +584,10 @@ class fDatabase
 		}
 		
 		if (!$this->extension) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The server does not have any of the following extensions for %2$s support: %2$s',
-					$type,
-					$exts
-				)
+			throw new fEnvironmentException(
+				'The server does not have any of the following extensions for %2$s support: %2$s',
+				$type,
+				$exts
 			);
 		}
 	}
@@ -666,11 +662,8 @@ class fDatabase
 		$values = array_slice(func_get_args(), 1);
 		
 		if (sizeof($values) < 1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'No value was specified to escape'
-				)
+			throw new fProgrammerException(
+				'No value was specified to escape'
 			);	
 		}
 		
@@ -778,25 +771,19 @@ class fDatabase
 		}
 		
 		if ($missing_values > 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s value(s) are missing for the placeholders in: %2$s',
-					$missing_values,
-					fCore::dump($sql_or_type)
-				)
+			throw new fProgrammerException(
+				'%1$s value(s) are missing for the placeholders in: %2$s',
+				$missing_values,
+				$sql_or_type
 			);	
 		}
 		
 		if (sizeof($values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s extra value(s) were passed for the placeholders in: %2$s',
-					sizeof($values),
-					fCore::dump($sql_or_type)
-				)
-			); 		
+			throw new fProgrammerException(
+				'%1$s extra value(s) were passed for the placeholders in: %2$s',
+				sizeof($values),
+				$sql_or_type
+			); 	
 		}
 		
 		$string_number = 0;
@@ -1403,14 +1390,11 @@ class fDatabase
 				'sqlite'     => 'SQLite'
 			);
 			
-			fCore::toss(
-				'fSQLException',
-				fGrammar::compose(
-					'%1$s error (%2$s) in %3$s',
-					$db_type_map[$this->type],
-					$e->getMessage(),
-					$sql
-				)
+			throw new fSQLException(
+				'%1$s error (%2$s) in %3$s',
+				$db_type_map[$this->type],
+				$e->getMessage(),
+				$sql
 			);
 		}
 		
@@ -1450,10 +1434,7 @@ class fDatabase
 		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose('No SQL statement passed')
-			);
+			throw new fProgrammerException('No SQL statement passed');
 		}
 		
 		if (func_num_args() > 1) {
@@ -1481,7 +1462,7 @@ class fDatabase
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
 		fCore::debug(
-			fGrammar::compose(
+			self::compose(
 				'Query time was %1$s seconds for:%2$s',
 				$query_time,
 				"\n" . $result->getSQL()
@@ -1492,7 +1473,7 @@ class fDatabase
 		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
 			fCore::trigger(
 				'warning',
-				fGrammar::compose(
+				self::compose(
 					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
@@ -1587,28 +1568,19 @@ class fDatabase
 	{
 		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
 			if ($this->inside_transaction) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose('A transaction is already in progress')
-				);
+				throw new fProgrammerException('A transaction is already in progress');
 			}
 			$this->inside_transaction = TRUE;
 			
 		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose('There is no transaction in progress')
-				);
+				throw new fProgrammerException('There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 			
 		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
 			if (!$this->inside_transaction) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose('There is no transaction in progress')
-				);
+				throw new fProgrammerException('There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 		}
@@ -1660,10 +1632,7 @@ class fDatabase
 		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose('No SQL statement passed')
-			);
+			throw new fProgrammerException('No SQL statement passed');
 		}
 		
 		if (func_num_args() > 1) {
@@ -1689,7 +1658,7 @@ class fDatabase
 		$query_time = microtime(TRUE) - $start_time;
 		$this->query_time += $query_time;
 		fCore::debug(
-			fGrammar::compose(
+			self::compose(
 				'Query time was %1$s seconds for (unbuffered):%2$s',
 				$query_time,
 				"\n" . $result->getSQL()
@@ -1700,7 +1669,7 @@ class fDatabase
 		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
 			fCore::trigger(
 				'warning',
-				fGrammar::compose(
+				self::compose(
 					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
@@ -1795,13 +1764,10 @@ class fDatabase
 				return $this->unescapeTimestamp($value);
 		}	
 		
-		fCore::toss(
-			'fProgrammerException',
-			fGrammar::compose(
-				'Unknown data type, %1$s, specified. Must be one of: %2$s.',
-				fCore::dump($data_type),
-				'blob, %l, boolean, %b, date, %d, float, %f, integer, %i, string, %s, time, %t, timestamp, %p'
-			)
+		throw new fProgrammerException(
+			'Unknown data type, %1$s, specified. Must be one of: %2$s.',
+			$data_type,
+			'blob, %l, boolean, %b, date, %d, float, %f, integer, %i, string, %s, time, %t, timestamp, %p'
 		);	
 	}
 	

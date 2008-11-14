@@ -15,6 +15,29 @@
 class fTime
 {
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * A timestamp of the time
 	 * 
 	 * @var integer
@@ -46,12 +69,9 @@ class fTime
 		}
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The time specified, %s, does not appear to be a valid time',
-					fCore::dump($time)
-				)
+			throw new fValidationException(
+				'The time specified, %s, does not appear to be a valid time',
+				$time
 			);
 		}
 		
@@ -95,22 +115,16 @@ class fTime
 		$timestamp = strtotime($adjustment, $this->time);
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, does not appear to be a valid relative time measurement',
-					fCore::dump($adjustment)
-				)
+			throw new fValidationException(
+				'The adjustment specified, %s, does not appear to be a valid relative time measurement',
+				$adjustment
 			);
 		}
 		
 		if (!preg_match('#^\s*(([+-])?\d+(\s+(min(untes?)?|sec(onds?)?|hours?))?\s*|now\s*)+\s*$#i', $adjustment)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The adjustment specified, %s, appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.',
-					fCore::dump($adjustment)
-				)
+			throw new fValidationException(
+				'The adjustment specified, %s, appears to be a date or timezone adjustment. Only adjustments of hours, minutes and seconds are allowed for times.',
+				$adjustment
 			);
 		}
 		
@@ -132,13 +146,10 @@ class fTime
 		
 		$restricted_formats = 'cdDeFIjlLmMnNoOPrStTUwWyYzZ';
 		if (preg_match('#(?!\\\\).[' . $restricted_formats . ']#', $format)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The formatting string, %1$s, contains one of the following non-time formatting characters: %2$s',
-					fCore::dump($format),
-					join(', ', str_split($restricted_formats))
-				)
+			throw new fProgrammerException(
+				'The formatting string, %1$s, contains one of the following non-time formatting characters: %2$s',
+				$format,
+				join(', ', str_split($restricted_formats))
 			);
 		}
 		
@@ -190,22 +201,22 @@ class fTime
 		
 		if (abs($diff) < 10) {
 			if ($relative_to_now) {
-				return fGrammar::compose('right now');
+				return self::compose('right now');
 			}
-			return fGrammar::compose('at the same time');
+			return self::compose('at the same time');
 		}
 		
 		static $break_points = array();
 		if (!$break_points) {
 			$break_points = array(
 				/* 45 seconds  */
-				45     => array(1,     fGrammar::compose('second'), fGrammar::compose('seconds')),
+				45     => array(1,     self::compose('second'), self::compose('seconds')),
 				/* 45 minutes  */
-				2700   => array(60,    fGrammar::compose('minute'), fGrammar::compose('minutes')),
+				2700   => array(60,    self::compose('minute'), self::compose('minutes')),
 				/* 18 hours    */
-				64800  => array(3600,  fGrammar::compose('hour'),   fGrammar::compose('hours')),
+				64800  => array(3600,  self::compose('hour'),   self::compose('hours')),
 				/* 5 days      */
-				432000 => array(86400, fGrammar::compose('day'),    fGrammar::compose('days'))
+				432000 => array(86400, self::compose('day'),    self::compose('days'))
 			);
 		}
 		
@@ -219,18 +230,18 @@ class fTime
 		
 		if ($relative_to_now) {
 			if ($diff > 0) {
-				return fGrammar::compose('%1$s %2$s from now', $unit_diff, $units);
+				return self::compose('%1$s %2$s from now', $unit_diff, $units);
 			}
 			
-			return fGrammar::compose('%1$s %2$s ago', $unit_diff, $units);
+			return self::compose('%1$s %2$s ago', $unit_diff, $units);
 		}
 		
 		
 		if ($diff > 0) {
-			return fGrammar::compose('%1$s %2$s after', $unit_diff, $units);
+			return self::compose('%1$s %2$s after', $unit_diff, $units);
 		}
 		
-		return fGrammar::compose('%1$s %2$s before', $unit_diff, $units);
+		return self::compose('%1$s %2$s before', $unit_diff, $units);
 	}
 	
 	

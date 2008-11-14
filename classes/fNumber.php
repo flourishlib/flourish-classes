@@ -48,12 +48,9 @@ class fNumber
 	static public function baseConvert($number, $from_base, $to_base)
 	{
 		if ($number instanceof fNumber && $from_base != 10) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The from base specified, %s, is not valid for an fNumber object',
-					fCore::dump($from_base)
-				)
+			throw new fProgrammerException(
+				'The from base specified, %s, is not valid for an fNumber object',
+				$from_base
 			);
 		}
 		
@@ -62,36 +59,26 @@ class fNumber
 		}
 		
 		if (!ctype_xdigit($number)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The number specified, %s, does not appear to be a positive integer. Negative numbers and fractions are not supported due the different encoding schemes that can be used.',
-					fCore::dump($number)
-				)
+			throw new fProgrammerException(
+				'The number specified, %s, does not appear to be a positive integer. Negative numbers and fractions are not supported due the different encoding schemes that can be used.',
+				$number
 			);
 		}
 		
 		if (!is_numeric($from_base) || $from_base < 2 || $from_base > 16) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The from base specified, %1$s, is not valid base between %2$s and %3$s',
-					fCore::dump($from_base),
-					'2',
-					'16'
-				)
+			throw new fProgrammerException(
+				'The from base specified, %1$s, is not valid base between %2$s and %3$s',
+				$from_base,
+				'2',
+				'16'
 			);
 		}
 		
 		if (!is_numeric($to_base) || $to_base < 2 || $to_base > 16) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The to base specified, %1$s, is not valid base between %2$s and %3$s',
-					fCore::dump($from_base),
-					'2',
-					'16'
-				)
+			throw new fProgrammerException('The to base specified, %1$s, is not valid base between %2$s and %3$s',
+				$from_base,
+				'2',
+				'16'
 			);
 		}
 		
@@ -259,7 +246,7 @@ class fNumber
 		$number = trim($number);
 		
 		if (self::$unformat_callback) {
-			$number = fCore::call(self::$unformat_callback, $number);
+			$number = call_user_func(self::$unformat_callback, $number);
 		} else {
 			$number = str_replace(',', '', $number);	
 		}
@@ -267,11 +254,9 @@ class fNumber
 		$matched = preg_match('#^([+\-]?)((?:\d*\.)?\d+)(?:e([+\-]?)(\d+))?$#i', $number, $matches);
 		
 		if (!$matched) {
-			fCore::toss('fValidationException',
-				fGrammar::compose(
-					'The number specified, %s, is invalid.',
-					fCore::dump($number)
-				)
+			throw new fValidationException(
+				'The number specified, %s, is invalid.',
+				$number
 			);
 		}
 		
@@ -415,12 +400,9 @@ class fNumber
 		}
 		
 		if (self::isZero($divisor)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The divisor specified, %s, is zero, which is an invalid divisor',
-					fCore::dump($divisor)
-				)
+			throw new fValidationException(
+				'The divisor specified, %s, is zero, which is an invalid divisor',
+				$divisor
 			);
 		}
 		
@@ -646,14 +628,11 @@ class fNumber
 		$power  = self::fixSign($power);
 		
 		if (self::cmp($power, '-2147483648') < 0 || self::cmp($power, '+2147483647') > 0) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The power specified, %1$s, is beyond the range of supported powers. Only powers between %2$s and %3$s are supported.',
-					fCore::dump($power),
-					'-2147483648',
-					'2147483647'
-				)
+			throw new fValidationException(
+				'The power specified, %1$s, is beyond the range of supported powers. Only powers between %2$s and %3$s are supported.',
+				$power,
+				'-2147483648',
+				'2147483647'
 			);
 		}
 		
@@ -753,14 +732,11 @@ class fNumber
 			$scale = (int) $scale;
 		}
 		if (!is_numeric($scale) || $scale < 0 || $scale > 500) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The scale specified, %1$s, is outside the valid scale for pi (%2$s to %3$s)',
-					fCore::dump($scale),
-					'0',
-					'500'
-				)
+			throw new fProgrammerException(
+				'The scale specified, %1$s, is outside the valid scale for pi (%2$s to %3$s)',
+				$scale,
+				'0',
+				'500'
 			);
 		}
 		
@@ -779,6 +755,9 @@ class fNumber
 	 */
 	static public function registerFormatCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$format_callback = $callback;
 	}
 	
@@ -791,6 +770,9 @@ class fNumber
 	 */
 	static public function registerUnformatCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$unformat_callback = $callback;
 	}
 	
@@ -1003,12 +985,9 @@ class fNumber
 		$divisor = self::parse($divisor, 'number');
 		
 		if (self::isZero($divisor)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The divisor specified, %s, is zero, which is an invalid divisor',
-					fCore::dump($divisor)
-				)
+			throw new fValidationException(
+				'The divisor specified, %s, is zero, which is an invalid divisor',
+				$divisor
 			);
 		}
 		
@@ -1133,7 +1112,7 @@ class fNumber
 	public function format()
 	{
 		if (self::$format_callback !== NULL) {
-			return fCore::call(self::$format_callback, $this->value);
+			return call_user_func(self::$format_callback, $this->value);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a
@@ -1367,32 +1346,23 @@ class fNumber
 		$mod = self::parse($modulus, 'array');
 		
 		if ($this->value[0] == '-') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method %s can only be called for positive number, however this number is negative',
-					'powmod()'
-				)
+			throw new fProgrammerException(
+				'The method %s can only be called for positive number, however this number is negative',
+				'powmod()'
 			);
 		}
 		
 		if ($exp['integer'][0] == '-') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The exponent specified, %s, must be a positive integer, however it is negative',
-					fCore::dump($exponent)
-				)
+			throw new fProgrammerException(
+				'The exponent specified, %s, must be a positive integer, however it is negative',
+				$exponent
 			);
 		}
 		
 		if ($mod['integer'][0] == '-') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The modulus specified, %s, must be a positive integer, however it is negative',
-					fCore::dump($modulus)
-				)
+			throw new fProgrammerException(
+				'The modulus specified, %s, must be a positive integer, however it is negative',
+				$modulus
 			);
 		}
 		
@@ -1497,12 +1467,9 @@ class fNumber
 		$scale = $this->fixScale($scale);
 		
 		if ($this->sign() == -1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'This number, %s, can not have the square root calculated since it is a negative number',
-					fCore::dump($this->value)
-				)
+			throw new fProgrammerException(
+				'This number, %s, can not have the square root calculated since it is a negative number',
+				$this->value
 			);
 		}
 		

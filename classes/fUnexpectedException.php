@@ -21,11 +21,8 @@ abstract class fUnexpectedException extends fPrintableException
 	 */
 	public function printMessage()
 	{
-		$exception_class = fGrammar::underscorize(preg_replace('#^f#', '', get_class($this)));
-		$css_class       = 'exception ' . $exception_class;
-		
-		echo '<div class="' . $css_class . '"><p>';
-		echo fGrammar::compose(
+		echo '<div class="exception ' . $this->getCSSClass() . '"><p>';
+		echo self::compose(
 			'It appears an error has occured — we apologize for the inconvenience. The problem may be resolved if you try again.'
 		);
 		echo '</p></div>';

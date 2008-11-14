@@ -157,7 +157,7 @@ class fORM
 		}
 		
 		foreach ($callbacks as $callback) {
-			fCore::call(
+			call_user_func_array(
 				$callback,
 				// This is the only way to pass by reference
 				array(
@@ -199,7 +199,7 @@ class fORM
 					&$signatures,
 					$include_doc_comments
 				);
-				fCore::call($callback, $parameters);
+				call_user_func_array($callback, $parameters);
 			}	
 		}
 		
@@ -211,7 +211,7 @@ class fORM
 					&$signatures,
 					$include_doc_comments
 				);
-				fCore::call($callback, $parameters);
+				call_user_func_array($callback, $parameters);
 			}
 		}
 	}
@@ -237,6 +237,10 @@ class fORM
 		
 		if (!$callback) {
 			return TRUE;
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
 		}
 		
 		if (!empty(self::$hook_callbacks[$class][$hook]) && in_array($callback, self::$hook_callbacks[$class][$hook])) {
@@ -286,12 +290,9 @@ class fORM
 			return;
 		}
 		
-		fCore::toss(
-			'fProgrammerException',
-			fGrammar::compose(
-				'The class specified, %s, does not correspond to a database table',
-				fCore::dump($class)
-			)
+		throw new fProgrammerException(
+			'The class specified, %s, does not correspond to a database table',
+			$class
 		);
 	}
 	
@@ -442,7 +443,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
-			return fCore::call(self::$objectify_callbacks[$class][$column], $class, $column, $value);
+			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		$table = self::tablize($class);
@@ -520,12 +521,9 @@ class fORM
 	static public function parseMethod($method)
 	{
 		if (!preg_match('#^([a-z]+)(.*)$#', $method, $matches)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Invalid method, %s(), called',
-					$method
-				)
+			throw new fProgrammerException(
+				'Invalid method, %s(), called',
+				$method
 			);	
 		}
 		return array($matches[1], fGrammar::underscorize($matches[2]));
@@ -556,6 +554,10 @@ class fORM
 		
 		if (!isset(self::$active_record_method_callbacks[$class])) {
 			self::$active_record_method_callbacks[$class] = array();	
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
 		}
 		
 		self::$active_record_method_callbacks[$class][$method] = $callback;
@@ -631,13 +633,10 @@ class fORM
 		);
 		
 		if (!in_array($hook, $valid_hooks)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The hook specified, %1$s, should be one of: %2$s.',
-					fCore::dump($hook),
-					join(', ', $valid_hooks)
-				)
+			throw new fProgrammerException(
+				'The hook specified, %1$s, should be one of: %2$s.',
+				$hook,
+				join(', ', $valid_hooks)
 			);
 		}
 		
@@ -647,6 +646,10 @@ class fORM
 		
 		if (!isset(self::$hook_callbacks[$class][$hook])) {
 			self::$hook_callbacks[$class][$hook] = array();
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
 		}
 		
 		self::$hook_callbacks[$class][$hook][] = $callback;
@@ -667,6 +670,10 @@ class fORM
 		
 		if (!isset(self::$objectify_callbacks[$class])) {
 			self::$objectify_callbacks[$class] = array();
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
 		}
 		
 		self::$objectify_callbacks[$class][$column] = $callback;
@@ -690,6 +697,9 @@ class fORM
 	 */
 	static public function registerRecordSetMethod($method, $callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$record_set_method_callbacks[$method] = $callback;
 	}
 	
@@ -721,6 +731,10 @@ class fORM
 			return;
 		}
 		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		
 		self::$reflect_callbacks[$class][] = $callback;
 	}
 	
@@ -739,6 +753,10 @@ class fORM
 		
 		if (!isset(self::$scalarize_callbacks[$class])) {
 			self::$scalarize_callbacks[$class] = array();
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
 		}
 		
 		self::$scalarize_callbacks[$class][$column] = $callback;
@@ -783,7 +801,7 @@ class fORM
 		$class = self::getClass($class);
 		
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
-			return fCore::call(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
+			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
 		}
 		
 		if (is_object($value) && is_callable(array($value, '__toString'))) {

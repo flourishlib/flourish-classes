@@ -536,11 +536,8 @@ class fCRUD
 		$tokens = fSession::get(fURL::get() . '::request_tokens', array(), __CLASS__ . '::');
 		
 		if (!in_array($token, $tokens)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The form submitted could not be validated as authentic, please try submitting it again'
-				)
+			throw new fValidationException(
+				'The form submitted could not be validated as authentic, please try submitting it again'
 			);	
 		}
 		

@@ -32,30 +32,23 @@ class fFile
 	static public function create($file_path, $contents)
 	{
 		if (empty($file_path)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('No filename was specified')
+			throw new fValidationException(
+				'No filename was specified'
 			);
 		}
 		
 		if (file_exists($file_path)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The file specified, %s, already exists',
-					fCore::dump($file_path)
-				)
+			throw new fValidationException(
+				'The file specified, %s, already exists',
+				$file_path
 			);
 		}
 		
 		$directory = fFilesystem::getPathInfo($file_path, 'dirname');
 		if (!is_writable($directory)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The file path specified, %s, is inside of a directory that is not writable',
-					fCore::dump($file_path)
-				)
+			throw new fEnvironmentException(
+				'The file path specified, %s, is inside of a directory that is not writable',
+				$file_path
 			);
 		}
 		
@@ -83,12 +76,9 @@ class fFile
 	static public function determineMimeType($file)
 	{
 		if (!file_exists($file)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The file specified, %s, does not exist',
-					fCore::dump($file)
-				)
+			throw new fValidationException(
+				'The file specified, %s, does not exist',
+				$file
 			);
 		}
 		
@@ -441,28 +431,21 @@ class fFile
 	public function __construct($file)
 	{
 		if (empty($file)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('No filename was specified')
+			throw new fValidationException(
+				'No filename was specified'
 			);
 		}
 		
 		if (!file_exists($file)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The file specified, %s, does not exist',
-					fCore::dump($file)
-				)
+			throw new fValidationException(
+				'The file specified, %s, does not exist',
+				$file
 			);
 		}
 		if (!is_readable($file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The file specified, %s, is not readable',
-					fCore::dump($file)
-				)
+			throw new fEnvironmentException(
+				'The file specified, %s, is not readable',
+				$file
 			);
 		}
 		
@@ -517,12 +500,9 @@ class fFile
 		}
 		
 		if (!$this->getDirectory()->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The file, %s, can not be deleted because the directory containing it is not writable',
-					fCore::dump($this->file)
-				)
+			throw new fEnvironmentException(
+				'The file, %s, can not be deleted because the directory containing it is not writable',
+				$this->file
 			);
 		}
 		
@@ -534,9 +514,7 @@ class fFile
 		@unlink($this->file);
 		
 		$exception = new fProgrammerException(
-			fGrammar::compose(
-				'The action requested can not be performed because the file has been deleted'
-			)
+			'The action requested can not be performed because the file has been deleted'
 		);
 		fFilesystem::updateExceptionMap($this->file, $exception);
 	}
@@ -570,12 +548,9 @@ class fFile
 		}
 		
 		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"The new directory specified, %s, is the same as the current file's directory",
-					fCore::dump($new_directory->getPath())
-				)
+			throw new fProgrammerException(
+				"The new directory specified, %s, is the same as the current file's directory",
+				$new_directory->getPath()
 			);
 		}
 		
@@ -585,13 +560,10 @@ class fFile
 		
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
-						fCore::dump($new_directory),
-						fCore::dump($this->getFilename())
-					)
+				throw new fEnvironmentException(
+					'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
+					$new_directory,
+					$this->getFilename()
 				);
 			}
 			if (!$overwrite) {
@@ -604,12 +576,9 @@ class fFile
 		
 		if ($check_dir_permissions) {
 			if (!$new_directory->isWritable()) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new directory specified, %s, is not writable',
-						fCore::dump($new_directory)
-					)
+				throw new fEnvironmentException(
+					'The new directory specified, %s, is not writable',
+					$new_directory
 				);
 			}
 		}
@@ -837,24 +806,18 @@ class fFile
 		$this->tossIfException();
 		
 		if (!$this->getDirectory()->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The file, %s, can not be renamed because the directory containing it is not writable',
-					fCore::dump($this->file)
-				)
+			throw new fEnvironmentException(
+				'The file, %s, can not be renamed because the directory containing it is not writable',
+				$this->file
 			);
 		}
 		
 		$info = fFilesystem::getPathInfo($new_filename);
 		
 		if (!file_exists($info['dirname'])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The new filename specified, %s, is inside of a directory that does not exist',
-					fCore::dump($new_filename)
-				)
+			throw new fProgrammerException(
+				'The new filename specified, %s, is inside of a directory that does not exist',
+				$new_filename
 			);
 		}
 		
@@ -863,12 +826,9 @@ class fFile
 		
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new filename specified, %s, already exists, but is not writable',
-						fCore::dump($new_filename)
-					)
+				throw new fEnvironmentException(
+					'The new filename specified, %s, already exists, but is not writable',
+					$new_filename
 				);
 			}
 			if (!$overwrite) {
@@ -877,12 +837,9 @@ class fFile
 		} else {
 			$new_dir = new fDirectory($info['dirname']);
 			if (!$new_dir->isWritable()) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new filename specified, %s, is inside of a directory that is not writable',
-						fCore::dump($new_filename)
-					)
+				throw new fEnvironmentException(
+					'The new filename specified, %s, is inside of a directory that is not writable',
+					$new_filename
 				);
 			}
 		}
@@ -906,7 +863,7 @@ class fFile
 	protected function tossIfException()
 	{
 		if ($this->exception) {
-			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+			throw $this->exception;
 		}
 	}
 	
@@ -928,12 +885,9 @@ class fFile
 		$this->tossIfException();
 		
 		if (!$this->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'This file, %s, can not be written to because it is not writable',
-					fCore::dump($this->file)
-				)
+			throw new fEnvironmentException(
+				'This file, %s, can not be written to because it is not writable',
+				$this->file
 			);
 		}
 		

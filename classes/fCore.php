@@ -27,11 +27,9 @@ class fCore
 	const getPHPVersion           = 'fCore::getPHPVersion';
 	const handleError             = 'fCore::handleError';
 	const handleException         = 'fCore::handleException';
-	const registerTossCallback    = 'fCore::registerTossCallback';
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
 	const stringlike              = 'fCore::stringlike';
-	const toss                    = 'fCore::toss';
 	const trigger                 = 'fCore::trigger';
 	
 	
@@ -97,13 +95,6 @@ class fCore
 	 * @var boolean
 	 */
 	static private $handles_errors = FALSE;
-	
-	/**
-	 * Callbacks for when exceptions are tossed
-	 * 
-	 * @var array
-	 */
-	static private $toss_callbacks = array();
 	
 	
 	/**
@@ -239,16 +230,7 @@ class fCore
 	 */
 	static public function callback($callback)
 	{
-		if (!is_string($callback) || strpos($callback, '::') === FALSE) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Only string static method callbacks can be translated with this method'
-				)
-			);	
-		}
-		
-		if (self::getPHPVersion() < '5.2.0') {
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
 			return explode('::', $callback);	
 		}
 		
@@ -283,6 +265,29 @@ class fCore
 		}
 			
 		return 'file';
+	}
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
 	}
 	
 	
@@ -400,12 +405,9 @@ class fCore
 	static public function enableDynamicConstants()
 	{
 		if (!self::$handles_errors) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Dynamic constants can not be enabled unless error handling has been enabled via %s',
-					__CLASS__ . '::enableErrorHandling()'
-				)
+			throw new fProgrammerException(
+				'Dynamic constants can not be enabled unless error handling has been enabled via %s',
+				__CLASS__ . '::enableErrorHandling()'
 			);
 		}
 		self::$dynamic_constants = TRUE;
@@ -518,7 +520,7 @@ class fCore
 	 */
 	static private function generateContext()
 	{
-		return fGrammar::compose('Context') . "\n-------" .
+		return self::compose('Context') . "\n-------" .
 			"\n\n\$_SERVER\n"  . self::dump($_SERVER) .
 			"\n\n\$_POST\n" . self::dump($_POST) .
 			"\n\n\$_GET\n" . self::dump($_GET) .
@@ -552,7 +554,7 @@ class fCore
 		
 		self::trigger(
 			'warning',
-			fGrammar::compose(
+			self::compose(
 				'Unable to reliably determine the server OS. Defaulting to %s.',
 				"'linux/unix'"
 			)
@@ -614,7 +616,7 @@ class fCore
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
-		$error   = fGrammar::compose('Error') . "\n-----\n" . $backtrace . "\n" . $error_string;
+		$error   = self::compose('Error') . "\n-----\n" . $backtrace . "\n" . $error_string;
 		
 		self::sendMessageToDestination('error', $error);
 	}
@@ -635,7 +637,7 @@ class fCore
 		} else {
 			$message = $exception->getTraceAsString() . "\n" . $exception->getMessage();
 		}
-		$message = fGrammar::compose("Uncaught Exception") . "\n------------------\n" . trim($message);
+		$message = self::compose("Uncaught Exception") . "\n------------------\n" . trim($message);
 		
 		if (self::$exception_destination != 'html' && $exception instanceof fPrintableException) {
 			$exception->printMessage();
@@ -652,33 +654,12 @@ class fCore
 		} catch (Exception $e) {
 			self::trigger(
 				'error',
-				fGrammar::compose(
+				self::compose(
 					'An exception was thrown in the %s closing code callback',
 					'setExceptionHandling()'
 				)
 			);
 		}
-	}
-	
-	
-	/**
-	 * Adds a callback for when certain types of exceptions are [toss() tossed] 
-	 * 
-	 * The callback will be called when any exception of the class, or any
-	 * child class, specified is tossed. A single parameter will be passed
-	 * to the callback, which will be the exception object.
-	 * 
-	 * @param  string   $exception_type  The type of exception to call the callback for
-	 * @param  callback $callback        The callback
-	 * @return void
-	 */
-	static public function registerTossCallback($exception_type, $callback)
-	{
-		if (!isset(self::$toss_callbacks[$exception_type])) {
-			self::$toss_callbacks[$exception_type] = array();
-		}
-		
-		self::$toss_callbacks[$exception_type][] = $callback;
 	}
 	
 	
@@ -719,7 +700,7 @@ class fCore
 	 */
 	static public function sendMessagesOnShutdown()
 	{
-		$subject = fGrammar::compose(
+		$subject = self::compose(
 			'[%1$s] One or more errors or exceptions occured at %2$s',
 			$_SERVER['SERVER_NAME'],
 			date('Y-m-d H:i:s')
@@ -820,30 +801,6 @@ class fCore
 	
 	
 	/**
-	 * Throws an exception of the class specified
-	 * 
-	 * Using this method over the throw keyword allows for callbacks to be
-	 * executed for certain types of exceptions.
-	 * 
-	 * @param  string $exception_class  The class of exception to throw
-	 * @param  string $message          The exception message
-	 * @return void
-	 */
-	static public function toss($exception_class, $message)
-	{
-		$exception = new $exception_class($message);
-		foreach (self::$toss_callbacks as $class => $callbacks) {
-			foreach ($callbacks as $callback) {
-				if ($exception instanceof $class) {
-					self::call($callback, array($exception));
-				}
-			}
-		}
-		throw $exception;
-	}
-	
-	
-	/**
 	 * Triggers a user-level error
 	 * 
 	 * The default error handler in PHP will show the line number of this
@@ -860,7 +817,7 @@ class fCore
 		if (!in_array($error_type, $valid_error_types)) {
 			self::toss(
 				'fProgrammerException',
-				fGrammar::compose(
+				self::compose(
 					'Invalid error type, %1$s, specified. Must be one of: %2$s.',
 					self::dump($error_type),
 					join(', ', $valid_error_types)

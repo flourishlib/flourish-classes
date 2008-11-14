@@ -58,21 +58,15 @@ class fCryptography
 	static private function createPrivateKeyResource($private_key_file, $password)
 	{
 		if (!file_exists($private_key_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The path to the PEM-encoded private key specified, %s, is not valid',
-					fCore::dump($private_key_file)
-				)
+			throw new fProgrammerException(
+				'The path to the PEM-encoded private key specified, %s, is not valid',
+				$private_key_file
 			);
 		}
 		if (!is_readable($private_key_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The PEM-encoded private key specified, %s, is not readable',
-					fCore::dump($private_key_file)
-				)
+			throw new fEnvironmentException(
+				'The PEM-encoded private key specified, %s, is not readable',
+				$private_key_file
 			);
 		}
 		
@@ -80,12 +74,9 @@ class fCryptography
 		$private_key_resource = openssl_pkey_get_private($private_key, $password);
 		
 		if ($private_key_resource === FALSE) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The private key file specified, %s, does not appear to be a valid private key or the password provided is incorrect',
-					fCore::dump($private_key_file)
-				)
+			throw new fValidationException(
+				'The private key file specified, %s, does not appear to be a valid private key or the password provided is incorrect',
+				$private_key_file
 			);
 		}
 		
@@ -102,21 +93,15 @@ class fCryptography
 	static private function createPublicKeyResource($public_key_file)
 	{
 		if (!file_exists($public_key_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The path to the X.509 certificate specified, %s, is not valid',
-					fCore::dump($public_key_file)
-				)
+			throw new fProgrammerException(
+				'The path to the X.509 certificate specified, %s, is not valid',
+				$public_key_file
 			);
 		}
 		if (!is_readable($public_key_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The X.509 certificate specified, %s, can not be read',
-					fCore::dump($public_key_file)
-				)
+			throw new fEnvironmentException(
+				'The X.509 certificate specified, %s, can not be read',
+				$public_key_file
 			);
 		}
 		
@@ -124,12 +109,9 @@ class fCryptography
 		$public_key_resource = openssl_pkey_get_public($public_key);
 		
 		if ($public_key_resource === FALSE) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The public key certificate specified, %s, does not appear to be a valid certificate',
-					fCore::dump($public_key_file)
-				)
+			throw new fProgrammerException(
+				'The public key certificate specified, %s, does not appear to be a valid certificate',
+				$public_key_file
 			);
 		}
 		
@@ -192,12 +174,9 @@ class fCryptography
 		
 		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
 		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::public') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The ciphertext provided does not appear to have been encrypted using %s',
-					__CLASS__ . '::publicKeyEncrypt()'
-				)
+			throw new fProgrammerException(
+				'The ciphertext provided does not appear to have been encrypted using %s',
+				__CLASS__ . '::publicKeyEncrypt()'
 			);
 		}
 		
@@ -210,11 +189,8 @@ class fCryptography
 		openssl_free_key($private_key_resource);
 		
 		if ($result === FALSE) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'There was an unknown error decrypting the ciphertext provided'
-				)
+			throw new fEnvironmentException(
+				'There was an unknown error decrypting the ciphertext provided'
 			);
 		}
 		
@@ -222,11 +198,8 @@ class fCryptography
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The ciphertext provided appears to have been tampered with or corrupted'
-				)
+			throw new fValidationException(
+				'The ciphertext provided appears to have been tampered with or corrupted'
 			);
 		}
 		
@@ -256,11 +229,8 @@ class fCryptography
 		openssl_free_key($public_key_resource);
 		
 		if ($result === FALSE) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'There was an unknown error encrypting the plaintext provided'
-				)
+			throw new fEnvironmentException(
+				'There was an unknown error encrypting the plaintext provided'
 			);
 		}
 		
@@ -293,11 +263,8 @@ class fCryptography
 		openssl_free_key($private_key_resource);
 		
 		if (!$result) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'There was an unknown error signing the plaintext'
-				)
+			throw new fEnvironmentException(
+				'There was an unknown error signing the plaintext'
 			);
 		}
 		
@@ -326,11 +293,8 @@ class fCryptography
 		openssl_free_key($public_key_resource);
 		
 		if ($result === -1) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'There was an unknown error verifying the plaintext and signature against the public key specified'
-				)
+			throw new fEnvironmentException(
+				'There was an unknown error verifying the plaintext and signature against the public key specified'
 			);
 		}
 		
@@ -365,13 +329,10 @@ class fCryptography
 	static public function randomString($length, $type='alphanumeric')
 	{
 		if ($length < 1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The length specified, %1$s, is less than the minimum of %2$s',
-					$length,
-					1
-				)
+			throw new fProgrammerException(
+				'The length specified, %1$s, is less than the minimum of %2$s',
+				$length,
+				1
 			);
 		}
 		
@@ -393,12 +354,9 @@ class fCryptography
 				break;
 				
 			default:
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The type specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($type)
-					)
+				throw new fProgrammerException(
+					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
+					$type
 				);
 		}
 		
@@ -472,12 +430,9 @@ class fCryptography
 		
 		// We need to make sure this ciphertext came from here, otherwise we are gonna have issues decrypting it
 		if (sizeof($elements) != 4 || $elements[0] != 'fCryptography::symmetric') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The ciphertext provided does not appear to have been encrypted using %s',
-					__CLASS__ . '::symmetricKeyEncrypt()'
-				)
+			throw new fProgrammerException(
+				'The ciphertext provided does not appear to have been encrypted using %s',
+				__CLASS__ . '::symmetricKeyEncrypt()'
 			);
 		}
 		
@@ -489,11 +444,8 @@ class fCryptography
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The ciphertext provided appears to have been tampered with or corrupted'
-				)
+			throw new fValidationException(
+				'The ciphertext provided appears to have been tampered with or corrupted'
 			);
 		}
 		
@@ -530,12 +482,9 @@ class fCryptography
 	static public function symmetricKeyEncrypt($plaintext, $secret_key)
 	{
 		if (strlen($secret_key) < 8) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The secret key specified does not meet the minimum requirement of being at least %s characters long',
-					8
-				)
+			throw new fProgrammerException(
+				'The secret key specified does not meet the minimum requirement of being at least %s characters long',
+				8
 			);
 		}
 		
@@ -586,12 +535,9 @@ class fCryptography
 	static private function verifyPublicKeyEnvironment()
 	{
 		if (!extension_loaded('openssl')) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The PHP %s extension is required, however is does not appear to be loaded',
-					'openssl'
-				)
+			throw new fEnvironmentException(
+				'The PHP %s extension is required, however is does not appear to be loaded',
+				'openssl'
 			);
 		}
 	}
@@ -605,41 +551,29 @@ class fCryptography
 	static private function verifySymmetricKeyEnvironment()
 	{
 		if (!extension_loaded('mcrypt')) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The PHP %s extension is required, however is does not appear to be loaded',
-					'mcrypt'
-				)
+			throw new fEnvironmentException(
+				'The PHP %s extension is required, however is does not appear to be loaded',
+				'mcrypt'
 			);
 		}
 		if (!extension_loaded('hash')) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The PHP %s extension is required, however is does not appear to be loaded',
-					'hash'
-				)
+			throw new fEnvironmentException(
+				'The PHP %s extension is required, however is does not appear to be loaded',
+				'hash'
 			);
 		}
 		if (!function_exists('mcrypt_module_open')) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The cipher used, %1$s (also known as %2$s), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.',
-					'AES-192',
-					'rijndael-192'
-				)
+			throw new fEnvironmentException(
+				'The cipher used, %1$s (also known as %2$s), requires libmcrypt version 2.4.x or newer. The version installed does not appear to meet this requirement.',
+				'AES-192',
+				'rijndael-192'
 			);
 		}
 		if (!in_array('rijndael-192', mcrypt_list_algorithms())) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The cipher used, %1$s (also known as %2$s), does not appear to be supported by the installed version of libmcrypt',
-					'AES-192',
-					'rijndael-192'
-				)
+			throw new fEnvironmentException(
+				'The cipher used, %1$s (also known as %2$s), does not appear to be supported by the installed version of libmcrypt',
+				'AES-192',
+				'rijndael-192'
 			);
 		}
 	}

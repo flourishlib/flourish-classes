@@ -116,15 +116,12 @@ class fSession
 	static public function ignoreSubdomain()
 	{
 		if (self::$open) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s must be called before any of %2$s, %3$s or %4$s',
-					__CLASS__ . '::ignoreSubdomain()',
-					__CLASS__ . '::clear()',
-					__CLASS__ . '::get()',
-					__CLASS__ . '::set()'
-				)
+			throw new fProgrammerException(
+				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				__CLASS__ . '::ignoreSubdomain()',
+				__CLASS__ . '::clear()',
+				__CLASS__ . '::get()',
+				__CLASS__ . '::set()'
 			);
 		}
 		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
@@ -183,15 +180,12 @@ class fSession
 	static public function setLength($timespan)
 	{
 		if (self::$open) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s must be called before any of %2$s, %3$s or %4$s',
-					__CLASS__ . '::setLength()',
-					__CLASS__ . '::clear()',
-					__CLASS__ . '::get()',
-					__CLASS__ . '::set()'
-				)
+			throw new fProgrammerException(
+				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				__CLASS__ . '::setLength()',
+				__CLASS__ . '::clear()',
+				__CLASS__ . '::get()',
+				__CLASS__ . '::set()'
 			);
 		}
 		
@@ -210,15 +204,12 @@ class fSession
 	static public function setPath($directory)
 	{
 		if (self::$open) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s must be called before any of %2$s, %3$s or %4$s',
-					__CLASS__ . '::setPath()',
-					__CLASS__ . '::clear()',
-					__CLASS__ . '::get()',
-					__CLASS__ . '::set()'
-				)
+			throw new fProgrammerException(
+				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				__CLASS__ . '::setPath()',
+				__CLASS__ . '::clear()',
+				__CLASS__ . '::get()',
+				__CLASS__ . '::set()'
 			);
 		}
 		
@@ -227,12 +218,9 @@ class fSession
 		}
 		
 		if (!$directory->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The directory specified, %s, is not writable',
-					fCore::dump($directory->getPath())
-				)
+			throw new fEnvironmentException(
+				'The directory specified, %s, is not writable',
+				$directory->getPath()
 			);	
 		}
 		

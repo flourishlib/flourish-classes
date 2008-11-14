@@ -84,6 +84,29 @@ class fEmail
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Sets the class to try and fix broken qmail implementations that add `\r` to `\r\n`
 	 * 
 	 * @return void
@@ -304,12 +327,9 @@ class fEmail
 	public function addAttachment($filename, $mime_type, $contents)
 	{
 		if (!fCore::stringlike($filename)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The filename specified, %s, does not appear to be a valid filename',
-					fCore::dump($filename)
-				)
+			throw new fProgrammerException(
+				'The filename specified, %s, does not appear to be a valid filename',
+				$filename
 			);
 		}
 		
@@ -462,7 +482,7 @@ class fEmail
 	 */
 	private function createBody($boundary)
 	{
-		$mime_notice = fGrammar::compose(
+		$mime_notice = self::compose(
 			"This message has been formatted using MIME. It does not appear that your email client supports MIME."
 		);
 		
@@ -624,12 +644,9 @@ class fEmail
 			);
 			
 			if ($senders_private_key === FALSE) {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose(
-						"The sender's S/MIME private key password specified does not appear to be valid for the private key",
-						fCore::dump($primary_key_file)
-					)
+				throw new fValidationException(
+					"The sender's S/MIME private key password specified does not appear to be valid for the private key",
+					$primary_key_file
 				);
 			}
 		}
@@ -684,12 +701,9 @@ class fEmail
 	public function encrypt($recipients_smime_cert_file)
 	{
 		if (!fCore::stringlike($recipients_smime_cert_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"The recipient's S/MIME certificate filename specified, %s, does not appear to be a valid filename",
-					fCore::dump($recipients_smime_cert_file)
-				)
+			throw new fProgrammerException(
+				"The recipient's S/MIME certificate filename specified, %s, does not appear to be a valid filename",
+				$recipients_smime_cert_file
 			);
 		}
 		
@@ -951,12 +965,9 @@ class fEmail
 		}
 		
 		if ($error) {
-			fCore::toss(
-				'fConnectivityException',
-				fGrammar::compose(
-					'An error occured while trying to send the email entitled %s',
-					fCore::dump($this->subject)
-				)
+			throw new fConnectivityException(
+				'An error occured while trying to send the email entitled %s',
+				$this->subject
 			);
 		}
 	}
@@ -1090,40 +1101,28 @@ class fEmail
 	public function sign($senders_smime_cert_file, $senders_smime_pk_file, $senders_smime_pk_password)
 	{
 		if (!fCore::stringlike($senders_smime_cert_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"The sender's S/MIME certificate file specified, %s, does not appear to be a valid filename",
-					fCore::dump($senders_smime_cert_file)
-				)
+			throw new fProgrammerException(
+				"The sender's S/MIME certificate file specified, %s, does not appear to be a valid filename",
+				$senders_smime_cert_file
 			);
 		}
 		if (!file_exists($senders_smime_cert_file) || !is_readable($senders_smime_cert_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					"The sender's S/MIME certificate file specified, %s, does not exist or could not be read",
-					fCore::dump($senders_smime_cert_file)
-				)
+			throw new fEnvironmentException(
+				"The sender's S/MIME certificate file specified, %s, does not exist or could not be read",
+				$senders_smime_cert_file
 			);
 		}
 		
 		if (!fCore::stringlike($senders_smime_pk_file)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"The sender's S/MIME primary key file specified, %s, does not appear to be a valid filename",
-					fCore::dump($senders_smime_pk_file)
-				)
+			throw new fProgrammerException(
+				"The sender's S/MIME primary key file specified, %s, does not appear to be a valid filename",
+				$senders_smime_pk_file
 			);
 		}
 		if (!file_exists($senders_smime_pk_file) || !is_readable($senders_smime_pk_file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					"The sender's S/MIME primary key file specified, %s, does not exist or could not be read",
-					fCore::dump($senders_smime_pk_file)
-				)
+			throw new fEnvironmentException(
+				"The sender's S/MIME primary key file specified, %s, does not exist or could not be read",
+				$senders_smime_pk_file
 			);
 		}
 		
@@ -1147,18 +1146,18 @@ class fEmail
 		
 		// Check all multi-address email field
 		$multi_address_field_list = array(
-			'to_emails'  => fGrammar::compose('recipient'),
-			'cc_emails'  => fGrammar::compose('CC recipient'),
-			'bcc_emails' => fGrammar::compose('BCC recipient')
+			'to_emails'  => self::compose('recipient'),
+			'cc_emails'  => self::compose('CC recipient'),
+			'bcc_emails' => self::compose('BCC recipient')
 		);
 		
 		foreach ($multi_address_field_list as $field => $name) {
 			foreach ($this->$field as $email) {
 				if ($email && !preg_match(self::NAME_EMAIL_REGEX, $email) && !preg_match(self::EMAIL_REGEX, $email)) {
-					$validation_messages[] = fGrammar::compose(
+					$validation_messages[] = self::compose(
 						'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 						$name,
-						fCore::dump($email)
+						$email
 					);
 				}
 			}
@@ -1166,43 +1165,43 @@ class fEmail
 		
 		// Check all single-address email fields
 		$single_address_field_list = array(
-			'from_email'      => fGrammar::compose('From email address'),
-			'reply_to_email'  => fGrammar::compose('Reply-To email address'),
-			'sender_email'    => fGrammar::compose('Sender email address'),
-			'bounce_to_email' => fGrammar::compose('Bounce-To email address')
+			'from_email'      => self::compose('From email address'),
+			'reply_to_email'  => self::compose('Reply-To email address'),
+			'sender_email'    => self::compose('Sender email address'),
+			'bounce_to_email' => self::compose('Bounce-To email address')
 		);
 		
 		foreach ($single_address_field_list as $field => $name) {
 			if ($this->$field && !preg_match(self::NAME_EMAIL_REGEX, $this->$field) && !preg_match(self::EMAIL_REGEX, $this->$field)) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 					$name,
-					fCore::dump($this->$field)
+					$this->$field
 				);
 			}
 		}
 		
 		// Make sure the required fields are all set
 		if (!$this->to_emails) {
-			$validation_messages[] = fGrammar::compose(
+			$validation_messages[] = self::compose(
 				"Please provide at least on recipient"
 			);
 		}
 		
 		if (!$this->from_email) {
-			$validation_messages[] = fGrammar::compose(
+			$validation_messages[] = self::compose(
 				"Please provide the from email address"
 			);
 		}
 		
 		if (!fCore::stringlike($this->subject)) {
-			$validation_messages[] = fGrammar::compose(
+			$validation_messages[] = self::compose(
 				"Please provide an email subject"
 			);
 		}
 		
 		if (!fCore::stringlike($this->plaintext_body)) {
-			$validation_messages[] = fGrammar::compose(
+			$validation_messages[] = self::compose(
 				"Please provide a plaintext email body"
 			);
 		}
@@ -1210,25 +1209,24 @@ class fEmail
 		// Make sure the attachments look good
 		foreach ($this->attachments as $filename => $file_info) {
 			if (!fCore::stringlike($file_info['mime-type'])) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					"No mime-type was specified for the attachment %s",
-					fCore::dump($filename)
+					$filename
 				);
 			}
 			if (!fCore::stringlike($file_info['contents'])) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					"The attachment %s appears to be a blank file",
-					fCore::dump($filename)
+					$filename
 				);
 			}
 		}
 		
 		if ($validation_messages) {
-			fCore::toss(
-				'fValidationException',
+			throw new fValidationException(
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					fGrammar::compose("The email could not be sent because:"),
+					self::compose("The email could not be sent because:"),
 					join("</li>\n<li>", $messages)
 				)
 			);	

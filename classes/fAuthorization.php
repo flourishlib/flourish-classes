@@ -192,14 +192,11 @@ class fAuthorization
 			
 			if (($range_ip_long & $mask_long) != $range_ip_long) {
 				$proper_range_ip = long2ip($range_ip_long & $mask_long);
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The range base IP address specified, %1$s, is invalid for the CIDR range or subnet mask provided (%2$s). The proper IP is %3$s.',
-						$range_ip,
-						'/' . $range_mask,
-						$proper_range_ip
-					)
+				throw new fProgrammerException(
+					'The range base IP address specified, %1$s, is invalid for the CIDR range or subnet mask provided (%2$s). The proper IP is %3$s.',
+					$range_ip,
+					'/' . $range_mask,
+					$proper_range_ip
 				);
 			}
 			
@@ -486,22 +483,16 @@ class fAuthorization
 	static private function validateAuthLevel($level=NULL)
 	{
 		if (self::$levels === NULL) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'No authorization levels have been set, please call %s',
-					__CLASS__ . '::setAuthLevels()'
-				)
+			throw new fProgrammerException(
+				'No authorization levels have been set, please call %s',
+				__CLASS__ . '::setAuthLevels()'
 			);
 		}
 		if ($level !== NULL && !isset(self::$levels[$level])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The authorization level specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($level),
-					join(', ', array_keys(self::$levels))
-				)
+			throw new fProgrammerException(
+				'The authorization level specified, %1$s, is invalid. Must be one of: %2$s.',
+				$level,
+				join(', ', array_keys(self::$levels))
 			);
 		}
 	}
@@ -515,12 +506,9 @@ class fAuthorization
 	static private function validateLoginPage()
 	{
 		if (self::$login_page === NULL) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'No login page has been set, please call %s',
-					__CLASS__ . '::setLoginPage()'
-				)
+			throw new fProgrammerException(
+				'No login page has been set, please call %s',
+				__CLASS__ . '::setLoginPage()'
 			);
 		}
 	}

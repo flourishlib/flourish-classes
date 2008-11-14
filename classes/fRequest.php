@@ -185,7 +185,7 @@ class fRequest
 		
 		if ($cast_to == 'array' && ($value === NULL || $value === '')) {
 			$value = array();
-		} elseif ($cast_to != 'string' && $value === '') {
+		} elseif ($cast_to === NULL && $value === '') {
 			$value = NULL;
 		} elseif ($cast_to && $value !== NULL) {
 			settype($value, $cast_to);
@@ -500,13 +500,10 @@ class fRequest
 	static public function unfilter()
 	{
 		if (self::$backup_get === NULL) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'%1$s can only be called after %2$s',
-					__CLASS__ . '::unfilter()',
-					__CLASS__ . '::filter()'
-				)
+			throw new fProgrammerException(
+				'%1$s can only be called after %2$s',
+				__CLASS__ . '::unfilter()',
+				__CLASS__ . '::filter()'
 			);
 		}
 		

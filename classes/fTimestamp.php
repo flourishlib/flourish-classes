@@ -54,7 +54,7 @@ class fTimestamp
 	static public function callFormatCallback($formatted_string)
 	{
 		if (self::$format_callback) {
-			return fCore::call(self::$format_callback, $formatted_string);
+			return call_user_func(self::$format_callback, $formatted_string);
 		}
 		return $formatted_string;
 	}
@@ -68,13 +68,33 @@ class fTimestamp
 	static private function checkPHPVersion()
 	{
 		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The %s class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.',
-					__CLASS__
-				)
+			throw new fEnvironmentException(
+				'The %s class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.',
+				__CLASS__
 			);
+		}
+	}
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
 		}
 	}
 	
@@ -616,6 +636,9 @@ class fTimestamp
 	 */
 	static public function registerFormatCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$format_callback = $callback;
 	}
 	
@@ -646,12 +669,9 @@ class fTimestamp
 		
 		$result = date_default_timezone_set($timezone);
 		if (!$result) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The timezone specified, %s, is not a valid timezone',
-					fCore::dump($timezone)
-				)
+			throw new fProgrammerException(
+				'The timezone specified, %s, is not a valid timezone',
+				$timezone
 			);
 		}
 	}
@@ -706,12 +726,9 @@ class fTimestamp
 		
 		if ($timezone) {
 			if (!self::isValidTimezone($timezone)) {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose(
-						'The timezone specified, %s, is not a valid timezone',
-						fCore::dump($timezone)
-					)
+				throw new fValidationException(
+					'The timezone specified, %s, is not a valid timezone',
+					$timezone
 				);
 			}
 			
@@ -738,12 +755,9 @@ class fTimestamp
 		}
 		
 		if ($timestamp === FALSE || $timestamp === -1) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The date/time specified, %s, does not appear to be a valid date/time',
-					fCore::dump($datetime)
-				)
+			throw new fValidationException(
+				'The date/time specified, %s, does not appear to be a valid date/time',
+				$datetime
 			);
 		}
 		
@@ -793,12 +807,9 @@ class fTimestamp
 			$timestamp = strtotime($adjustment, $this->timestamp);
 			
 			if ($timestamp === FALSE || $timestamp === -1) {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose(
-						'The adjustment specified, %s, does not appear to be a valid relative date/time measurement',
-						fCore::dump($adjustment)
-					)
+				throw new fValidationException(
+					'The adjustment specified, %s, does not appear to be a valid relative date/time measurement',
+					$adjustment
 				);
 			}
 		}
@@ -876,26 +887,26 @@ class fTimestamp
 		
 		if (abs($diff) < 10) {
 			if ($relative_to_now) {
-				return fGrammar::compose('right now');
+				return self::compose('right now');
 			}
-			return fGrammar::compose('at the same time');
+			return self::compose('at the same time');
 		}
 		
 		$break_points = array(
 			/* 45 seconds  */
-			45         => array(1,        fGrammar::compose('second'), fGrammar::compose('seconds')),
+			45         => array(1,        self::compose('second'), self::compose('seconds')),
 			/* 45 minutes  */
-			2700       => array(60,       fGrammar::compose('minute'), fGrammar::compose('minutes')),
+			2700       => array(60,       self::compose('minute'), self::compose('minutes')),
 			/* 18 hours    */
-			64800      => array(3600,     fGrammar::compose('hour'),   fGrammar::compose('hours')),
+			64800      => array(3600,     self::compose('hour'),   self::compose('hours')),
 			/* 5 days      */
-			432000     => array(86400,    fGrammar::compose('day'),    fGrammar::compose('days')),
+			432000     => array(86400,    self::compose('day'),    self::compose('days')),
 			/* 3 weeks     */
-			1814400    => array(604800,   fGrammar::compose('week'),   fGrammar::compose('weeks')),
+			1814400    => array(604800,   self::compose('week'),   self::compose('weeks')),
 			/* 9 months    */
-			23328000   => array(2592000,  fGrammar::compose('month'),  fGrammar::compose('months')),
+			23328000   => array(2592000,  self::compose('month'),  self::compose('months')),
 			/* largest int */
-			2147483647 => array(31536000, fGrammar::compose('year'),   fGrammar::compose('years'))
+			2147483647 => array(31536000, self::compose('year'),   self::compose('years'))
 		);
 		
 		foreach ($break_points as $break_point => $unit_info) {
@@ -908,14 +919,14 @@ class fTimestamp
 		
 		if ($relative_to_now) {
 			if ($diff > 0) {
-				return fGrammar::compose(
+				return self::compose(
 					'%1$s %2$s from now',
 					$unit_diff,
 					$units
 				);
 			}
 		
-			return fGrammar::compose(
+			return self::compose(
 				'%1$s %2$s ago',
 				$unit_diff,
 				$units
@@ -923,14 +934,14 @@ class fTimestamp
 		}
 		
 		if ($diff > 0) {
-			return fGrammar::compose(
+			return self::compose(
 				'%1$s %2$s after',
 				$unit_diff,
 				$units
 			);
 		}
 		
-		return fGrammar::compose(
+		return self::compose(
 			'%1$s %2$s before',
 			$unit_diff,
 			$units

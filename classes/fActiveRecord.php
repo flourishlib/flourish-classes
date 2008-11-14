@@ -86,6 +86,29 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Ensures that ::configure() has been called for the class
 	 *
 	 * @internal
@@ -206,7 +229,7 @@ abstract class fActiveRecord
 	public function __call($method_name, $parameters)
 	{
 		if ($callback = fORM::getActiveRecordMethod($this, $method_name)) {
-			return fCore::call(
+			return call_user_func_array(
 				$callback,
 				array(
 					$this,
@@ -224,12 +247,9 @@ abstract class fActiveRecord
 		
 		// This will prevent quiet failure
 		if (in_array($action, array('set', 'associate', 'inject', 'tally')) && sizeof($parameters) < 1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method, %s, requires at least one parameter',
-					$method_name . '()'
-				)
+			throw new fProgrammerException(
+				'The method, %s, requires at least one parameter',
+				$method_name . '()'
 			);
 		}
 		
@@ -337,9 +357,9 @@ abstract class fActiveRecord
 			
 			// Error handler
 			default:
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose('Unknown method, %s, called', $method_name . '()')
+				throw new fProgrammerException(
+					'Unknown method, %s, called',
+					$method_name . '()'
 				);
 		}
 	}
@@ -383,12 +403,9 @@ abstract class fActiveRecord
 			// Check the primary keys
 			$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
 			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'An invalidly formatted primary key was passed to this %s object',
-						fORM::getRecordName($this)
-					)
+				throw new fProgrammerException(
+					'An invalidly formatted primary key was passed to this %s object',
+					fORM::getRecordName($this)
 				);
 			}
 			
@@ -540,12 +557,9 @@ abstract class fActiveRecord
 		}
 		
 		if (!$this->exists()) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'This %s object does not yet exist in the database, and thus can not be deleted',
-					fORM::getRecordName($this)
-				)
+			throw new fProgrammerException(
+				'This %s object does not yet exist in the database, and thus can not be deleted',
+				fORM::getRecordName($this)
 			);
 		}
 		
@@ -614,16 +628,15 @@ abstract class fActiveRecord
 					$related_record_name = fORM::getRecordName($related_class_name);
 					$related_record_name = fGrammar::pluralize($related_record_name);
 					
-					$restriction_messages[] = fGrammar::compose("One or more %s references it", $related_record_name);
+					$restriction_messages[] = self::compose("One or more %s references it", $related_record_name);
 				}
 			}
 			
 			if ($restriction_messages) {
-				fCore::toss(
-					'fValidationException',
+				throw new fValidationException(
 					sprintf(
 						"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-						fGrammar::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
+						self::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
 						join("</li>\n<li>", $restriction_messages)
 					)
 				);
@@ -692,24 +705,24 @@ abstract class fActiveRecord
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
 				$message = $e->getMessage();
-				$search  = fGrammar::compose('This %s can not be deleted because:', fORM::getRecordName($this));
+				$search  = self::compose('This %s can not be deleted because:', fORM::getRecordName($this));
 				if (stripos($message, $search) === FALSE) {
-					$regex       = fGrammar::compose('This %s can not be deleted because:', '__');
+					$regex       = self::compose('This %s can not be deleted because:', '__');
 					$regex_parts = explode('__', $regex);
 					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
 					
 					$message = preg_replace($regex, '\1' . fORM::getRecordName($this) . '\2', $message);
 					
-					$find          = fGrammar::compose("One or more %s references it", '__');
+					$find          = self::compose("One or more %s references it", '__');
 					$find_parts    = explode('__', $find);
 					$find_regex    = '#' . preg_quote($find_parts[0], '#') . '(.*?)' . preg_quote($find_parts[1], '#') . '#';
 					
-					$replace       = fGrammar::compose("One or more %s indirectly references it", '__');
+					$replace       = self::compose("One or more %s indirectly references it", '__');
 					$replace_parts = explode('__', $replace);
 					$replace_regex = $replace_parts[0] . '\1' . $replace_parts[1];
 					
 					$message = preg_replace($find_regex, $replace_regex, $regex);
-					fCore::toss('fValidationException', $message);
+					throw new fValidationException($message);
 				}
 			}
 			
@@ -744,12 +757,9 @@ abstract class fActiveRecord
 	protected function encode($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not exist',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not exist',
+				$column
 			);
 		}
 		
@@ -757,22 +767,16 @@ abstract class fActiveRecord
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not support forming because it is a blob column',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not support forming because it is a blob column',
+				$column
 			);
 		}
 		
 		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text', 'boolean', 'integer'))) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not support any formatting options',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not support any formatting options',
+				$column
 			);
 		}
 		
@@ -783,12 +787,9 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
-						fCore::dump($column)
-					)
+				throw new fProgrammerException(
+					'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
+					$column
 				);
 			}
 			$value = $value->format($formatting);
@@ -857,12 +858,9 @@ abstract class fActiveRecord
 	protected function get($column)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not exist',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not exist',
+				$column
 			);
 		}
 		return $this->values[$column];
@@ -906,12 +904,9 @@ abstract class fActiveRecord
 	protected function inspect($column, $element=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not exist',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not exist',
+				$column
 			);
 		}
 		
@@ -934,13 +929,10 @@ abstract class fActiveRecord
 		
 		if ($element) {
 			if (!isset($info[$element])) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($element),
-						join(', ', array_keys($info))
-					)
+				throw new fProgrammerException(
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+					$element,
+					join(', ', array_keys($info))
 				);
 			}
 			return $info[$element];
@@ -971,12 +963,9 @@ abstract class fActiveRecord
 			$result->tossIfNoRows();
 			
 		} catch (fExpectedException $e) {
-			fCore::toss(
-				'fNotFoundException',
-				fGrammar::compose(
-					'The %s requested could not be found',
-					fORM::getRecordName($this)
-				)
+			throw new fNotFoundException(
+				'The %s requested could not be found',
+				fORM::getRecordName($this)
 			);
 		}
 		
@@ -1122,12 +1111,9 @@ abstract class fActiveRecord
 	protected function prepare($column, $formatting=NULL)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not exist',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not exist',
+				$column
 			);
 		}
 		
@@ -1136,22 +1122,16 @@ abstract class fActiveRecord
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, can not be prepared because it is a blob column',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, can not be prepared because it is a blob column',
+				$column
 			);
 		}
 		
 		if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not support any formatting options',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not support any formatting options',
+				$column
 			);
 		}
 		
@@ -1162,12 +1142,9 @@ abstract class fActiveRecord
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
-						fCore::dump($column)
-					)
+				throw new fProgrammerException(
+					'The column specified, %s, requires one formatting parameter, a valid date() formatting string',
+					$column
 				);
 			}
 			return $value->format($formatting);
@@ -1472,12 +1449,9 @@ abstract class fActiveRecord
 	protected function set($column, $value)
 	{
 		if (!array_key_exists($column, $this->values)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not exist',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not exist',
+				$column
 			);
 		}
 		
@@ -1718,11 +1692,10 @@ abstract class fActiveRecord
 		}
 		
 		if (!empty($validation_messages)) {
-			fCore::toss(
-				'fValidationException',
+			throw new fValidationException(
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					fGrammar::compose("The following problems were found:"),
+					self::compose("The following problems were found:"),
 					join("</li>\n<li>", $validation_messages)
 				)
 			);

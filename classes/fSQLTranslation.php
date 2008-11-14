@@ -23,6 +23,29 @@ class fSQLTranslation
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Takes a Flourish SQL `SELECT` query and parses it into clauses.
 	 * 
 	 * The select statement must be of the format:
@@ -124,11 +147,8 @@ class fSQLTranslation
 		
 		// Error out if we can't figure out the join structure
 		if (!preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#is', $sql)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Unable to parse FROM clause, does not appears to be in comma style or join style'
-				)
+			throw new fProgrammerException(
+				'Unable to parse FROM clause, does not appears to be in comma style or join style'
 			);
 		}
 		
@@ -231,12 +251,9 @@ class fSQLTranslation
 	public function __construct($database, $connection)
 	{
 		if (!is_resource($connection) && !is_object($connection)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The connection specified, %s, is not a valid database connection',
-					fCore::dump($connection)
-				)
+			throw new fProgrammerException(
+				'The connection specified, %s, is not a valid database connection',
+				$connection
 			);
 		}
 		
@@ -390,16 +407,16 @@ class fSQLTranslation
 		$functions[] = array('ceil',     'ceil',                                         1);
 		$functions[] = array('ceiling',  'ceil',                                         1);
 		$functions[] = array('cos',      'cos',                                          1);
-		$functions[] = array('cot',      fCore::callback(self::sqliteCotangent),         1);
+		$functions[] = array('cot',      array('fSQLTranslation', 'sqliteCotangent'),    1);
 		$functions[] = array('degrees',  'rad2deg',                                      1);
 		$functions[] = array('exp',      'exp',                                          1);
 		$functions[] = array('floor',    'floor',                                        1);
 		$functions[] = array('ln',       'log',                                          1);
-		$functions[] = array('log',      fCore::callback(self::sqliteLogBaseFirst),      2);
+		$functions[] = array('log',      array('fSQLTranslation', 'sqliteLogBaseFirst'), 2);
 		$functions[] = array('pi',       'pi',                                           1);
 		$functions[] = array('power',    'pow',                                          1);
 		$functions[] = array('radians',  'deg2rad',                                      1);
-		$functions[] = array('sign',     fCore::callback(self::sqliteSign),              1);
+		$functions[] = array('sign',     array('fSQLTranslation', 'sqliteSign'),         1);
 		$functions[] = array('sqrt',     'sqrt',                                         1);
 		$functions[] = array('sin',      'sin',                                          1);
 		$functions[] = array('tan',      'tan',                                          1);
@@ -649,14 +666,14 @@ class fSQLTranslation
 		
 		if ($sql != $new_sql) {
 			fCore::debug(
-				fGrammar::compose(
+				self::compose(
 					"Original SQL:%s",
 					"\n" .$sql
 				),
 				$this->debug
 			);
 			fCore::debug(
-				fGrammar::compose(
+				self::compose(
 					"Translated SQL:%s",
 					"\n" . $new_sql
 				),

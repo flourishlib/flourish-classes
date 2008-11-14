@@ -6,9 +6,6 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  * 
- * This class is designed to function without requiring the rest of Flourish,
- * however it will use fCore to toss exceptions if fCore has been loaded.
- * 
  * @copyright  Copyright (c) 2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -577,7 +574,7 @@ class fUTF8
 	 * Converts a unicode value into a UTF-8 character
 	 * 
 	 * @param  mixed $unicode_code_point  The character to create, either the `U+hex` or decimal code point
-	 * @return string  The UTF-8 character, or `NULL` if an invalid character
+	 * @return string  The UTF-8 character
 	 */
 	static public function chr($unicode_code_point)
 	{
@@ -616,18 +613,10 @@ class fUTF8
 		
 		$ord = ord($first);
 		if ($digits > 21 || $ord == 0xC0 || $ord == 0xC1 || $ord > 0xF4) {
-			if (class_exists('fCore', FALSE)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The code point specified, %s, is invalid.',
-						fCore::dump($unicode_code_point)
-					)
-				);
-			} else {
-				trigger_error('The code point specified is invalid. NULL returned instead of a UTF-8 character.', E_USER_WARNING);
-				return NULL;
-			}
+			throw new fProgrammerException(
+				'The code point specified, %s, is invalid.',
+				$unicode_code_point
+			);
 		}
 		
 		return $first . $second . $third . $fourth;
@@ -1069,17 +1058,9 @@ class fUTF8
 		}
 		
 		if ($invalid) {
-			if (class_exists('fCore', FALSE)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The UTF-8 character specified is invalid.'
-					)
-				);
-			} else {
-				trigger_error('The UTF-8 character specified is invalid. NULL returned instead of a unicode code point.', E_USER_WARNING);
-			}
-			return NULL;
+			throw new fProgrammerException(
+				'The UTF-8 character specified is invalid.'
+			);
 		}
 		
 		$hex = strtoupper(dechex(bindec($bin)));
@@ -1100,19 +1081,11 @@ class fUTF8
 	{
 		$valid_pad_types = array('right', 'left', 'both');
 		if (!in_array($pad_type, $valid_pad_types)) {
-			if (class_exists('fCore', FALSE)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The pad type specified, %1$s, is not valid. Must be one of: %2$s.',
-						fCore::dump($pad_type),
-						join(', ', $valid_pad_types)
-					)
-				);
-			} else {
-				trigger_error('The pad type specified, ' . $pad_type . ', is not valid. Must be one of: ' . join(', ', $valid_pad_types) . '. Defaulting to right.', E_USER_WARNING);
-				$pad_type = 'right';
-			}
+			throw new fProgrammerException(
+				'The pad type specified, %1$s, is not valid. Must be one of: %2$s.',
+				$pad_type,
+				join(', ', $valid_pad_types)
+			);
 		}
 		
 		// We get better performance falling back for ASCII strings

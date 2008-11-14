@@ -15,6 +15,29 @@
 class fValidation
 {
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Fields that should be formatted as email addresses
 	 * 
 	 * @var array
@@ -62,12 +85,9 @@ class fValidation
 		$args = func_get_args();
 		foreach ($args as $arg) {
 			if (!fCore::stringlike($arg)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The field specified, %s, does not appear to be a valid field name',
-						fCore::dump($arg)
-					)
+				throw new fProgrammerException(
+					'The field specified, %s, does not appear to be a valid field name',
+					$arg
 				);
 			}
 		}
@@ -90,12 +110,9 @@ class fValidation
 		$args = func_get_args();
 		foreach ($args as $arg) {
 			if (!fCore::stringlike($arg)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The field specified, %s, does not appear to be a valid field name',
-						fCore::dump($arg)
-					)
+				throw new fProgrammerException(
+					'The field specified, %s, does not appear to be a valid field name',
+					$arg
 				);
 			}
 		}
@@ -144,12 +161,9 @@ class fValidation
 				$fixed_args[key($arg)] = reset($arg);
 				
 			} else {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The field specified, %s, does not appear to be a valid required field definition',
-						fCore::dump($arg)
-					)
+				throw new fProgrammerException(
+					'The field specified, %s, does not appear to be a valid required field definition',
+					$arg
 				);
 			}
 		}
@@ -169,7 +183,7 @@ class fValidation
 		foreach ($this->email_fields as $email_field) {
 			$value = trim(fRequest::get($email_field));
 			if (fCore::stringlike($value) && !preg_match(fEmail::EMAIL_REGEX, $value)) {
-				$messages[] = fGrammar::compose(
+				$messages[] = self::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fGrammar::humanize($email_field)
 				);
@@ -188,7 +202,7 @@ class fValidation
 	{
 		foreach ($this->email_header_fields as $email_header_field) {
 			if (preg_match('#\r|\n#', fRequest::get($email_header_field))) {
-				$messages[] = fGrammar::compose(
+				$messages[] = self::compose(
 					'%s: Line breaks are not allowed',
 					fGrammar::humanize($email_header_field)
 				);
@@ -209,7 +223,7 @@ class fValidation
 			// Handle single fields
 			if (is_numeric($key) && is_string($required_field)) {
 				if (!self::hasValue($required_field)) {
-					$messages[] = fGrammar::compose(
+					$messages[] = self::compose(
 						'%s: Please enter a value',
 						fGrammar::humanize($required_field)
 					);
@@ -225,8 +239,8 @@ class fValidation
 				}
 				
 				if (!$found) {
-					$required_field = array_map(fCore::callback(fGrammar::humanize), $required_field);
-					$messages[] = fGrammar::compose(
+					$required_field = array_map(array('fGrammar', 'humanize'), $required_field);
+					$messages[] = self::compose(
 						'%s: Please enter at least one',
 						join(', ', $required_field)
 					);
@@ -239,7 +253,7 @@ class fValidation
 				}
 				foreach ($required_field as $individual_field) {
 					if (!self::hasValue($individual_field)) {
-						$messages[] = fGrammar::compose(
+						$messages[] = self::compose(
 							'%s: Please enter a value',
 							fGrammar::humanize($individual_field)
 						);
@@ -283,11 +297,8 @@ class fValidation
 	public function validate()
 	{
 		if (!$this->email_header_fields && !$this->required_fields && !$this->email_fields) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'No fields have been set to be validated'
-				)
+			throw new fProgrammerException(
+				'No fields have been set to be validated'
 			);
 		}
 		
@@ -298,11 +309,16 @@ class fValidation
 		$this->checkEmailHeaderFields($messages);
 		
 		if ($messages) {
-			fCore::toss(
-				'fValidationException',
+			if (class_exists('fText', FALSE)) {
+				$message = fText::compose("The following problems were found:");	
+			} else {
+				$message = "The following problems were found:";
+			}
+			
+			throw new fValidationException(
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					fGrammar::compose("The following problems were found:"),
+					$message,
 					join("</li>\n<li>", $messages)
 				)
 			);

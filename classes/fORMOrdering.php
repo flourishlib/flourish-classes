@@ -33,6 +33,29 @@ class fORMOrdering
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Sets a column to be an ordering column
 	 * 
 	 * There can only be one ordering column per class/table and it must be
@@ -50,13 +73,10 @@ class fORMOrdering
 		$unique_keys = fORMSchema::retrieve()->getKeys($table, 'unique');
 		
 		if ($data_type != 'integer') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. It must be an integer column to be set as an ordering column.',
-					fCore::dump($column),
-					$data_type
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. It must be an integer column to be set as an ordering column.',
+				$column,
+				$data_type
 			);
 		}
 		
@@ -71,12 +91,9 @@ class fORMOrdering
 		}
 		
 		if (!$found) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %s, does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.',
-					fCore::dump($column)
-				)
+			throw new fProgrammerException(
+				'The column specified, %s, does not appear to be part of a unique key. It must be part of a unique key to be set as an ordering column.',
+				$column
 			);
 		}
 		
@@ -565,13 +582,13 @@ class fORMOrdering
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-			$validation_messages[] = fGrammar::compose('%s: Please enter an integer', $column_name);
+			$validation_messages[] = self::compose('%s: Please enter an integer', $column_name);
 		
 		} elseif ($current_value < 1) {
-			$validation_messages[] = fGrammar::compose('%s: The value can not be less than 1', $column_name);
+			$validation_messages[] = self::compose('%s: The value can not be less than 1', $column_name);
 			
 		} elseif ((!$new_set || $new_set_new_value) && $current_value > $new_max_value) {
-			$validation_messages[] = fGrammar::compose('%1$s: The value can not be greater than %2$s', $column_name, $new_max_value);
+			$validation_messages[] = self::compose('%1$s: The value can not be greater than %2$s', $column_name, $new_max_value);
 		}
 	}
 	

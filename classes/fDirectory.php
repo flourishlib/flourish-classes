@@ -36,19 +36,13 @@ class fDirectory
 	static public function create($directory, $mode=0777)
 	{
 		if (empty($directory)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('No directory name was specified')
-			);
+			throw new fValidationException('No directory name was specified');
 		}
 		
 		if (file_exists($directory)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The directory specified, %s, already exists',
-					fCore::dump($directory)
-				)
+			throw new fValidationException(
+				'The directory specified, %s, already exists',
+				$directory
 			);
 		}
 		
@@ -58,12 +52,9 @@ class fDirectory
 		}
 		
 		if (!is_writable($parent_directory)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The directory specified, %s, is inside of a directory that is not writable',
-					fCore::dump($directory)
-				)
+			throw new fEnvironmentException(
+				'The directory specified, %s, is inside of a directory that is not writable',
+				$directory
 			);
 		}
 		
@@ -122,37 +113,25 @@ class fDirectory
 	public function __construct($directory)
 	{
 		if (empty($directory)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('No directory was specified')
-			);
+			throw new fValidationException('No directory was specified');
 		}
 		
 		if (!file_exists($directory)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The directory specified, %s, does not exist',
-					fCore::dump($directory)
-				)
+			throw new fValidationException(
+				'The directory specified, %s, does not exist',
+				$directory
 			);
 		}
 		if (!is_dir($directory)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The directory specified, %s, is not a directory',
-					fCore::dump($directory)
-				)
+			throw new fValidationException(
+				'The directory specified, %s, is not a directory',
+				$directory
 			);
 		}
 		if (!is_readable($directory)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The directory specified, %s, is not readable',
-					fCore::dump($directory)
-				)
+			throw new fEnvironmentException(
+				'The directory specified, %s, is not readable',
+				$directory
 			);
 		}
 		
@@ -214,9 +193,7 @@ class fDirectory
 		rmdir($this->directory);
 		
 		$exception = new fProgrammerException(
-			fGrammar::compose(
-				'The action requested can not be performed because the directory has been deleted'
-			)
+			'The action requested can not be performed because the directory has been deleted'
 		);
 		fFilesystem::updateExceptionMap($this->directory, $exception);
 	}
@@ -263,11 +240,8 @@ class fDirectory
 		$dirname = fFilesystem::getPathInfo($this->directory, 'dirname');
 		
 		if ($dirname == $this->directory) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The current directory does not have a parent directory'
-				)
+			throw new fEnvironmentException(
+				'The current directory does not have a parent directory'
 			);
 		}
 		
@@ -325,24 +299,18 @@ class fDirectory
 		$this->tossIfException();
 		
 		if (!$this->getParent()->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The directory, %s, can not be renamed because the directory containing it is not writable',
-					fCore::dump($this->directory)
-				)
+			throw new fEnvironmentException(
+				'The directory, %s, can not be renamed because the directory containing it is not writable',
+				$this->directory
 			);
 		}
 		
 		$info = fFilesystem::getPathInfo($new_dirname);
 		
 		if (!file_exists($info['dirname'])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The new directory name specified, %s, is inside of a directory that does not exist',
-					fCore::dump($new_dirname)
-				)
+			throw new fProgrammerException(
+				'The new directory name specified, %s, is inside of a directory that does not exist',
+				$new_dirname
 			);
 		}
 		
@@ -351,12 +319,9 @@ class fDirectory
 		
 		if (file_exists($new_dirname)) {
 			if (!is_writable($new_dirname)) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new directory name specified, %s, already exists, but is not writable',
-						fCore::dump($new_dirname)
-					)
+				throw new fEnvironmentException(
+					'The new directory name specified, %s, already exists, but is not writable',
+					$new_dirname
 				);
 			}
 			if (!$overwrite) {
@@ -365,12 +330,9 @@ class fDirectory
 		} else {
 			$parent_dir = new fDirectory($info['dirname']);
 			if (!$parent_dir->isWritable()) {
-				fCore::toss(
-					'fEnvironmentException',
-					fGrammar::compose(
-						'The new directory name specified, %s, is inside of a directory that is not writable',
-						fCore::dump($new_dirname)
-					)
+				throw new fEnvironmentException(
+					'The new directory name specified, %s, is inside of a directory that is not writable',
+					$new_dirname
 				);
 			}
 		}
@@ -445,7 +407,7 @@ class fDirectory
 	protected function tossIfException()
 	{
 		if ($this->exception) {
-			fCore::toss(get_class($this->exception), $this->exception->getMessage());
+			throw $this->exception;
 		}
 	}
 }

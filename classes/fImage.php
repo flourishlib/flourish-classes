@@ -55,12 +55,9 @@ class fImage extends fFile
 	{
 		// Make sure we can execute the convert binary
 		if (self::isSafeModeExecDirRestricted($path)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'Safe mode is turned on and the ImageMagick convert binary is not in the directory defined by the safe_mode_exec_dir ini setting or safe_mode_exec_dir is not set - safe_mode_exec_dir is currently %s.',
-					fCore::dump(ini_get('safe_mode_exec_dir'))
-				)
+			throw new fEnvironmentException(
+				'Safe mode is turned on and the ImageMagick convert binary is not in the directory defined by the safe_mode_exec_dir ini setting or safe_mode_exec_dir is not set - safe_mode_exec_dir is currently %s.',
+				ini_get('safe_mode_exec_dir')
 			);
 		}
 		
@@ -71,12 +68,9 @@ class fImage extends fFile
 		}
 		
 		if (!$executable) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The ImageMagick convert binary located in the directory %s does not exist or is not executable',
-					fCore::dump($path)
-				)
+			throw new fEnvironmentException(
+				'The ImageMagick convert binary located in the directory %s does not exist or is not executable',
+				$path
 			);
 		}
 	}
@@ -97,30 +91,21 @@ class fImage extends fFile
 	static public function create($file_path, $contents)
 	{
 		if (empty($file_path)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('No filename was specified')
-			);
+			throw new fValidationException('No filename was specified');
 		}
 		
 		if (file_exists($file_path)) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The image specified, %s, already exists',
-					fCore::dump($file_path)
-				)
+			throw new fValidationException(
+				'The image specified, %s, already exists',
+				$file_path
 			);
 		}
 		
 		$directory = fFilesystem::getPathInfo($file_path, 'dirname');
 		if (!is_writable($directory)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The file path specified, %s, is inside of a directory that is not writable',
-					fCore::dump($file_path)
-				)
+			throw new fEnvironmentException(
+				'The file path specified, %s, is inside of a directory that is not writable',
+				$file_path
 			);
 		}
 		
@@ -278,35 +263,26 @@ class fImage extends fFile
 	{
 		$extension = strtolower(fFilesystem::getPathInfo($image_path, 'extension'));
 		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'gif', 'tif', 'tiff'))) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The file specified, %s, does not appear to be an image',
-					fCore::dump($image_path)
-				)
+			throw new fValidationException(
+				'The file specified, %s, does not appear to be an image',
+				$image_path
 			);		
 		}
 		
 		$image_info = @getimagesize($image_path);
 		if ($image_info == FALSE) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose(
-					'The file specified, %s, is not an image',
-					fCore::dump($image_path)
-				)
+			throw new fValidationException(
+				'The file specified, %s, is not an image',
+				$image_path
 			);
 		}
 		
 		$valid_elements = array('type', 'width', 'height');
 		if ($element !== NULL && !in_array($element, $valid_elements)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($element),
-					join(', ', $valid_elements)
-				)
+			throw new fProgrammerException(
+				'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+				$element,
+				join(', ', $valid_elements)
 			);
 		}
 		
@@ -346,12 +322,9 @@ class fImage extends fFile
 		self::determineProcessor();
 		
 		if (!file_exists($image)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The image specified, %s, does not exist',
-					fCore::dump($image)
-				)
+			throw new fProgrammerException(
+				'The image specified, %s, does not exist',
+				$image
 			);
 		}
 		
@@ -456,12 +429,9 @@ class fImage extends fFile
 	{
 		$temp_dir = new fDirectory($temp_dir);
 		if (!$temp_dir->isWritable()) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The ImageMagick temp directory specified, %s, does not appear to be writable',
-					$temp_dir->getPath()
-				)
+			throw new fEnvironmentException(
+				'The ImageMagick temp directory specified, %s, does not appear to be writable',
+				$temp_dir->getPath()
 			);
 		}
 		self::$imagemagick_temp_dir = $temp_dir->getPath();
@@ -495,13 +465,10 @@ class fImage extends fFile
 				if (self::$processor == 'imagemagick') {
 					$valid_image_types[] = 'TIF';
 				}
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose(
-						'The image specified, %1$s, is not a valid %2$s file',
-						fCore::dump($file_path),
-						fGrammar::joinArray($valid_image_types, 'or')
-					)
+				throw new fValidationException(
+					'The image specified, %1$s, is not a valid %2$s file',
+					$file_path,
+					fGrammar::joinArray($valid_image_types, 'or')
 				);
 			}
 			parent::__construct($file_path);
@@ -528,21 +495,15 @@ class fImage extends fFile
 		
 		// Make sure the user input is valid
 		if ((!is_numeric($ratio_width) && $ratio_width !== NULL) || $ratio_width < 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The ratio width specified, %s, is not a number or is less than or equal to zero',
-					fCore::dump($ratio_width)
-				)
+			throw new fProgrammerException(
+				'The ratio width specified, %s, is not a number or is less than or equal to zero',
+				$ratio_width
 			);
 		}
 		if ((!is_numeric($ratio_height) && $ratio_height !== NULL) || $ratio_height < 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The ratio height specified, %s, is not a number or is less than or equal to zero',
-					fCore::dump($ratio_height)
-				)
+			throw new fProgrammerException(
+				'The ratio height specified, %s, is not a number or is less than or equal to zero',
+				$ratio_height
 			);
 		}
 		
@@ -866,29 +827,20 @@ class fImage extends fFile
 		
 		// Make sure the user input is valid
 		if ((!is_int($canvas_width) && $canvas_width !== NULL) || $canvas_width < 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The canvas width specified, %s, is not an integer or is less than zero',
-					fCore::dump($canvas_width)
-				)
+			throw new fProgrammerException(
+				'The canvas width specified, %s, is not an integer or is less than zero',
+				$canvas_width
 			);
 		}
 		if ((!is_int($canvas_height) && $canvas_height !== NULL) || $canvas_height < 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The canvas height specified, %s is not an integer or is less than zero',
-					fCore::dump($canvas_height)
-				)
+			throw new fProgrammerException(
+				'The canvas height specified, %s is not an integer or is less than zero',
+				$canvas_height
 			);
 		}
 		if ($canvas_width == 0 && $canvas_height == 0) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The canvas width and canvas height are both zero, so no resizing will occur'
-				)
+			throw new fProgrammerException(
+				'The canvas width and canvas height are both zero, so no resizing will occur'
 			);
 		}
 		
@@ -953,34 +905,25 @@ class fImage extends fFile
 		$this->tossIfException();
 		
 		if (self::$processor == 'none') {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					"The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server"
-				)
+			throw new fEnvironmentException(
+				"The changes to the image can't be saved because neither the GD extension or ImageMagick appears to be installed on the server"
 			);
 		}
 		
 		$info = self::getInfo($this->file);
 		if ($info['type'] == 'tif' && self::$processor == 'gd') {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The image specified, %s, is a TIFF file and the GD extension can not handle TIFF files. Please install ImageMagick if you wish to manipulate TIFF files.',
-					fCore::dump($this->file)
-				)
+			throw new fEnvironmentException(
+				'The image specified, %s, is a TIFF file and the GD extension can not handle TIFF files. Please install ImageMagick if you wish to manipulate TIFF files.',
+				$this->file
 			);
 		}
 		
 		$valid_image_types = array('jpg', 'gif', 'png');
 		if ($new_image_type !== NULL && !in_array($new_image_type, $valid_image_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The new image type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($new_image_type),
-					join(', ', $valid_image_types)
-				)
+			throw new fProgrammerException(
+				'The new image type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$new_image_type,
+				join(', ', $valid_image_types)
 			);
 		}
 		

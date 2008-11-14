@@ -19,7 +19,6 @@ class fGrammar
 	const addHumanizeRule           = 'fGrammar::addHumanizeRule';
 	const addSingularPluralRule     = 'fGrammar::addSingularPluralRule';
 	const camelize                  = 'fGrammar::camelize';
-	const compose                   = 'fGrammar::compose';
 	const humanize                  = 'fGrammar::humanize';
 	const inflectOnQuantity         = 'fGrammar::inflectOnQuantity';
 	const joinArray                 = 'fGrammar::joinArray';
@@ -37,16 +36,6 @@ class fGrammar
 	 * @var array
 	 */
 	static private $camelize_rules = array();
-	
-	/**
-	 * Callbacks for when messages are composed
-	 * 
-	 * @var array
-	 */
-	static private $compose_callbacks = array(
-		'pre'  => array(),
-		'post' => array()
-	);
 	
 	/**
 	 * Custom rules for humanizing a string
@@ -212,35 +201,6 @@ class fGrammar
 	
 	
 	/**
-	 * Performs an [http://php.net/sprintf sprintf()] on a string and provides a hook for modifications such as internationalization
-	 * 
-	 * @param  string  $message    A message to compose
-	 * @param  mixed   $component  A string or number to insert into the message
-	 * @param  mixed   ...
-	 * @return void
-	 */
-	static public function compose($message)
-	{
-		if (self::$compose_callbacks) {
-			foreach (self::$compose_callbacks['pre'] as $callback) {
-				$message = fCore::call($callback, $message);
-			}
-		}
-		
-		$components = array_slice(func_get_args(), 1);
-		$message    = vsprintf($message, $components);
-		
-		if (self::$compose_callbacks) {
-			foreach (self::$compose_callbacks['post'] as $callback) {
-				$message = fCore::call($callback, $message);
-			}
-		}
-		
-		return $message;
-	}
-	
-	
-	/**
 	 * Makes an `underscore_notation`, `camelCase`, or human-friendly string into a human-friendly string
 	 * 
 	 * @param  string $string  The string to humanize
@@ -336,17 +296,15 @@ class fGrammar
 	{
 		$valid_types = array('and', 'or');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				self::compose(
-					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
+			throw new fProgrammerException(
+				'The type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$type,
+				join(', ', $valid_types)
 			);
 		}
 		
 		if (self::$join_array_callback) {
-			return fCore::call(self::$join_array_callback, $strings, $type);
+			return call_user_func(self::$join_array_callback, $strings, $type);
 		}
 		
 		settype($strings, 'array');
@@ -387,47 +345,7 @@ class fGrammar
 				return $beginning . preg_replace('#' . $from . '#i', $to, $singular_noun);
 			}
 		}
-		fCore::toss(
-			'fProgrammerException',
-			self::compose('The noun specified could not be pluralized')
-		);
-	}
-	
-	
-	/**
-	 * Adds a callback for when a message is created using ::compose()
-	 * 
-	 * The primary purpose of these callbacks is for internationalization of
-	 * error messaging in Flourish. The callback should accept a single
-	 * parameter, the message being composed and should return the message
-	 * with any modifications.
-	 * 
-	 * The timing parameter controls if the callback happens before or after
-	 * the actual composition takes place, which is simply a call to
-	 * [http://php.net/sprintf sprintf()]. Thus the message passed `'pre'`
-	 * will always be exactly the same, while the message `'post'` will include
-	 * the interpolated variables. Because of this, most of the time the `'pre'`
-	 * timing should be chosen.
-	 * 
-	 * @param  string   $timing    When the callback should be executed - `'pre'` or `'post'` performing the actual composition
-	 * @param  callback $callback  The callback
-	 * @return void
-	 */
-	static public function registerComposeCallback($timing, $callback)
-	{
-		$valid_timings = array('pre', 'post');
-		if (!in_array($timing, $valid_timings)) {
-			fCore::toss(
-				'fProgrammerException',
-				self::compose(
-					'The timing specified, %1$s, is not a valid timing. Must be one of: %2$s.',
-					fCore::dump($timing),
-					join(', ', $valid_timings)
-				)
-			);
-		}
-		
-		self::$compose_callbacks[$timing][] = $callback;
+		throw new fProgrammerException('The noun specified could not be pluralized');
 	}
 	
 	
@@ -442,6 +360,9 @@ class fGrammar
 	 */
 	static public function registerJoinArrayCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$join_array_callback = $callback;
 	}
 	
@@ -456,10 +377,6 @@ class fGrammar
 	static public function reset()
 	{
 		self::$camelize_rules    = array();
-		self::$compose_callbacks = array(
-			'pre'  => array(),
-			'post' => array()
-		);
 		self::$humanize_rules           = array();
 		self::$join_array_callback      = NULL;
 		self::$plural_to_singular_rules = array(
@@ -520,10 +437,7 @@ class fGrammar
 				return $beginning . preg_replace('#' . $from . '#i', $to, $plural_noun);
 			}
 		}
-		fCore::toss(
-			'fProgrammerException',
-			self::compose('The noun specified could not be singularized')
-		);
+		throw new fProgrammerException('The noun specified could not be singularized');
 	}
 	
 	

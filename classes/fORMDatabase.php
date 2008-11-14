@@ -187,12 +187,9 @@ class fORMDatabase
 						break;
 
 					default:
-						fCore::toss(
-							'fProgrammerException',
-							fGrammar::compose(
-								'An invalid array comparison operator, %s, was specified',
-								fCore::dump($operator)
-							)
+						throw new fProgrammerException(
+							'An invalid array comparison operator, %s, was specified',
+							$operator
 						);
 						break;
 				}
@@ -200,13 +197,10 @@ class fORMDatabase
 			} else {
 				
 				if (!in_array($operator, array('=', '!', '~', '<', '<=', '>', '>='))) {
-					fCore::toss(
-						'fProgrammerException',
-						fGrammar::compose(
-							'An invalid comparison operator, %s, was specified',
-							fCore::dump($operator)
-						)
-					); 		
+					throw new fProgrammerException(
+						'An invalid comparison operator, %s, was specified',
+						$operator
+					); 	
 				}
 				
 				$sql[] = $expression . self::escapeByType($value, $operator);	
@@ -235,14 +229,11 @@ class fORMDatabase
 		$routes = fORMSchema::getRoutes($table, $related_table);
 						
 		if (!isset($routes[$route])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'An invalid route, %1$s, was specified for the relationship from %2$s to %3$s',
-					fCore::dump($route),
-					fCore::dump($table),
-					fCore::dump($related_table)
-				)
+			throw new fProgrammerException(
+				'An invalid route, %1$s, was specified for the relationship from %2$s to %3$s',
+				$route,
+				$table,
+				$related_table
 			);
 		}
 		
@@ -345,23 +336,17 @@ class fORMDatabase
 		
 		foreach ($order_bys as $column => $direction) {
 			if (!fCore::stringlike($column)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'An invalid sort column, %s, was specified',
-						fCore::dump($column)
-					)
+				throw new fProgrammerException(
+					'An invalid sort column, %s, was specified',
+					$column
 				);
 			}
 			
 			$direction = strtoupper($direction);
 			if (!in_array($direction, array('ASC', 'DESC'))) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'An invalid direction, %s, was specified',
-						fCore::dump($direction)
-					)
+				throw new fProgrammerException(
+					'An invalid direction, %s, was specified',
+					$direction
 				);
 			}
 			
@@ -481,12 +466,9 @@ class fORMDatabase
 				// Handle fuzzy searches
 				if (sizeof($operators) == 1) {
 					if ($operator != '~') {
-						fCore::toss(
-							'fProgrammerException',
-							fGrammar::compose(
-								'An invalid comparison operator, %s, was specified',
-								fCore::dump($operator)
-							)
+						throw new fProgrammerException(
+							'An invalid comparison operator, %s, was specified',
+							$operator
 						);
 					}
 					
@@ -509,24 +491,18 @@ class fORMDatabase
 				// Handle OR combos
 				} else {
 					if (sizeof($columns) != sizeof($values)) {
-						fCore::toss(
-							'fProgrammerException',
-							fGrammar::compose(
-								'When creating an %1$s where clause there must be an equal number of columns and values, however there are not',
-								'OR',
-								sizeof($columns),
-								sizeof($values)
-							)
+						throw new fProgrammerException(
+							'When creating an %1$s where clause there must be an equal number of columns and values, however there are not',
+							'OR',
+							sizeof($columns),
+							sizeof($values)
 						);
 					}
 					
 					if (sizeof($columns) != sizeof($operators)) {
-						fCore::toss(
-							'fProgrammerException',
-							fGrammar::compose(
-								'When creating an %s where clause there must be a comparison operator for each column, however one or more is missing',
-								'OR'
-							)
+						throw new fProgrammerException(
+							'When creating an %s where clause there must be a comparison operator for each column, however one or more is missing',
+							'OR'
 						);
 					}
 					
@@ -573,12 +549,9 @@ class fORMDatabase
 							break;
 							
 						default:
-							fCore::toss(
-								'fProgrammerException',
-								fGrammar::compose(
-									'An invalid array comparison operator, %s, was specified',
-									fCore::dump($operator)
-								)
+							throw new fProgrammerException(
+								'An invalid array comparison operator, %s, was specified',
+								$operator
 							);
 							break;
 					}
@@ -609,12 +582,9 @@ class fORMDatabase
 							break;
 							
 						default:
-							fCore::toss(
-								'fProgrammerException',
-								fGrammar::compose(
-									'An invalid comparison operator, %s, was specified',
-									fCore::dump($operator)
-								)
+							throw new fProgrammerException(
+								'An invalid comparison operator, %s, was specified',
+								$operator
 							);
 							break;
 					}
@@ -660,13 +630,10 @@ class fORMDatabase
 		
 		$valid_comparison_operators = array('=', '!=', '!', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($comparison_operator),
-					join(', ', $valid_comparison_operators)
-				)
+			throw new fProgrammerException(
+				'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
+				$comparison_operator,
+				join(', ', $valid_comparison_operators)
 			);
 		}
 		
@@ -713,13 +680,10 @@ class fORMDatabase
 		
 		$valid_comparison_operators = array('=', '<>', '<=', '<', '>=', '>', 'IN', 'NOT IN');
 		if ($comparison_operator !== NULL && !in_array(strtoupper($comparison_operator), $valid_comparison_operators)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($comparison_operator),
-					join(', ', $valid_comparison_operators)
-				)
+			throw new fProgrammerException(
+				'The comparison operator specified, %1$s, is invalid. Must be one of: %2$s.',
+				$comparison_operator,
+				join(', ', $valid_comparison_operators)
 			);
 		}
 		
@@ -771,24 +735,18 @@ class fORMDatabase
 		$joins = array();
 		
 		if (strpos($sql, ':from_clause') === FALSE) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"No %1\$s placeholder was found in:%2\$s",
-					':from_clause',
-					"\n" . $sql
-				)
+			throw new fProgrammerException(
+				"No %1\$s placeholder was found in:%2\$s",
+				':from_clause',
+				"\n" . $sql
 			);
 		}
 		
 		if (strpos($sql, ':group_by_clause') === FALSE && !preg_match('#group\s+by#i', $sql)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"No %1\$s placeholder was found in:%2\$s",
-					':group_by_clause',
-					"\n" . $sql
-				)
+			throw new fProgrammerException(
+				"No %1\$s placeholder was found in:%2\$s",
+				':group_by_clause',
+				"\n" . $sql
 			);
 		}
 		
@@ -1027,13 +985,10 @@ class fORMDatabase
 	static public function retrieve()
 	{
 		if (!self::$database_object) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method %1$s needs to be called before %2$s',
-					'attach()',
-					'retrieve()'
-				)
+			throw new fProgrammerException(
+				'The method %1$s needs to be called before %2$s',
+				'attach()',
+				'retrieve()'
 			);
 		}
 		return self::$database_object;

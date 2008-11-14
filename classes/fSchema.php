@@ -1367,23 +1367,17 @@ class fSchema
 	{
 		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
 		if ($element && !in_array($element, $valid_elements)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($element),
-					join(', ', $valid_elements)
-				)
+			throw new fProgrammerException(
+				'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+				$element,
+				join(', ', $valid_elements)
 			);
 		}
 		
 		if (!in_array($table, $this->getTables())) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The table specified, %s, does not exist in the database',
-					fCore::dump($table)
-				)
+			throw new fProgrammerException(
+				'The table specified, %s, does not exist in the database',
+				$table
 			);
 		}
 		
@@ -1402,13 +1396,10 @@ class fSchema
 		$this->mergeColumnInfo();
 		
 		if ($column && !isset($this->merged_column_info[$table][$column])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, does not exist in the table %2$s',
-					fCore::dump($column),
-					fCore::dump($table)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, does not exist in the table %2$s',
+				$column,
+				$table
 			);
 		}
 		
@@ -1459,13 +1450,10 @@ class fSchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if ($key_type !== NULL && !in_array($key_type, $valid_key_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($key_type),
-					join(', ', $valid_key_types)
-				)
+			throw new fProgrammerException(
+				'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$key_type,
+				join(', ', $valid_key_types)
 			);
 		}
 		
@@ -1479,12 +1467,9 @@ class fSchema
 		}
 		
 		if (!in_array($table, $this->getTables())) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The table specified, %s, does not exist in the database',
-					fCore::dump($table)
-				)
+			throw new fProgrammerException(
+				'The table specified, %s, does not exist in the database',
+				$table
 			);
 		}
 		
@@ -1556,13 +1541,10 @@ class fSchema
 	{
 		$valid_relationship_types = array('one-to-one', 'many-to-one', 'one-to-many', 'many-to-many');
 		if ($relationship_type !== NULL && !in_array($relationship_type, $valid_relationship_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($relationship_type),
-					join(', ', $valid_relationship_types)
-				)
+			throw new fProgrammerException(
+				'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$relationship_type,
+				join(', ', $valid_relationship_types)
 			);
 		}
 		
@@ -1576,12 +1558,9 @@ class fSchema
 		}
 		
 		if (!in_array($table, $this->getTables())) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The table specified, %s, does not exist in the database',
-					fCore::dump($table)
-				)
+			throw new fProgrammerException(
+				'The table specified, %s, does not exist in the database',
+				$table
 			);
 		}
 		
@@ -1750,23 +1729,17 @@ class fSchema
 		$file = realpath($file);
 		
 		if (file_exists($file) && !is_writable($file)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The cache file specified, %s, is not writable',
-					fCore::dump($file)
-				)
+			throw new fEnvironmentException(
+				'The cache file specified, %s, is not writable',
+				$file
 			);
 		}
 		
 		if (!file_exists($file) && !is_writable(dirname($file))) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose(
-					'The cache file specified, %1$s, does not exist and the cache file directory, %2$s, is not writable',
-					fCore::dump($file),
-					fCore::dump(dirname($file) . DIRECTORY_SEPARATOR)
-				)
+			throw new fEnvironmentException(
+				'The cache file specified, %1$s, does not exist and the cache file directory, %2$s, is not writable',
+				$file,
+				dirname($file) . DIRECTORY_SEPARATOR
 			);
 		}
 		
@@ -1822,13 +1795,10 @@ class fSchema
 	{
 		$valid_key_types = array('primary', 'foreign', 'unique');
 		if (!in_array($key_type, $valid_key_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
-					fCore::dump($key_type),
-					join(', ', $valid_key_types)
-				)
+			throw new fProgrammerException(
+				'The key type specified, %1$s, is invalid. Must be one of: %2$s.',
+				$key_type,
+				join(', ', $valid_key_types)
 			);
 		}
 		

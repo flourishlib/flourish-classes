@@ -15,6 +15,186 @@
 abstract class fPrintableException extends Exception
 {
 	/**
+	 * Callbacks for when exceptions are created
+	 * 
+	 * @var array
+	 */
+	static private $callbacks = array();
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
+	 * Creates a string representation of any variable using predefined strings for booleans, `NULL` and empty strings
+	 * 
+	 * The string output format of this method is very similar to the output of
+	 * [http://php.net/print_r print_r()] except that the following values
+	 * are represented as special strings:
+	 *   
+	 *  - `TRUE`: `'{true}'`
+	 *  - `FALSE`: `'{false}'`
+	 *  - `NULL`: `'{null}'`
+	 *  - `''`: `'{empty_string}'`
+	 * 
+	 * @param  mixed $data  The value to dump
+	 * @return string  The string representation of the value
+	 */
+	static protected function dump($data)
+	{
+		if (is_bool($data)) {
+			return ($data) ? '{true}' : '{false}';
+		
+		} elseif (is_null($data)) {
+			return '{null}';
+		
+		} elseif ($data === '') {
+			return '{empty_string}';
+		
+		} elseif (is_array($data) || is_object($data)) {
+			
+			ob_start();
+			var_dump($data);
+			$output = ob_get_contents();
+			ob_end_clean();
+			
+			// Make the var dump more like a print_r
+			$output = preg_replace('#=>\n(  )+(?=[a-zA-Z]|&)#m', ' => ', $output);
+			$output = str_replace('string(0) ""', '{empty_string}', $output);
+			$output = preg_replace('#=> (&)?NULL#', '=> \1{null}', $output);
+			$output = preg_replace('#=> (&)?bool\((false|true)\)#', '=> \1{\2}', $output);
+			$output = preg_replace('#string\(\d+\) "#', '', $output);
+			$output = preg_replace('#"(\n(  )*)(?=\[|\})#', '\1', $output);
+			$output = preg_replace('#(?:float|int)\((-?\d+(?:.\d+)?)\)#', '\1', $output);
+			$output = preg_replace('#((?:  )+)\["(.*?)"\]#', '\1[\2]', $output);
+			$output = preg_replace('#(?:&)?array\(\d+\) \{\n((?:  )*)((?:  )(?=\[)|(?=\}))#', "Array\n\\1(\n\\1\\2", $output);
+			$output = preg_replace('/object\((\w+)\)#\d+ \(\d+\) {\n((?:  )*)((?:  )(?=\[)|(?=\}))/', "\\1 Object\n\\2(\n\\2\\3", $output);
+			$output = preg_replace('#^((?:  )+)}(?=\n|$)#m', "\\1)\n", $output);
+			$output = substr($output, 0, -2) . ')';
+			
+			// Fix indenting issues with the var dump output
+			$output_lines = explode("\n", $output);
+			$new_output = array();
+			$stack = 0;
+			foreach ($output_lines as $line) {
+				if (preg_match('#^((?:  )*)([^ ])#', $line, $match)) {
+					$spaces = strlen($match[1]);
+					if ($spaces && $match[2] == '(') {
+						$stack += 1;
+					}
+					$new_output[] = str_pad('', ($spaces)+(4*$stack)) . $line;
+					if ($spaces && $match[2] == ')') {
+						$stack -= 1;
+					}
+				} else {
+					$new_output[] = str_pad('', ($spaces)+(4*$stack)) . $line;
+				}
+			}
+			
+			return join("\n", $new_output);
+			
+		} else {
+			return (string) $data;
+		}
+	}
+	
+	
+	/**
+	 * Adds a callback for when certain types of exceptions are created 
+	 * 
+	 * The callback will be called when any exception of this class, or any
+	 * child class, specified is tossed. A single parameter will be passed
+	 * to the callback, which will be the exception object.
+	 * 
+	 * @param  callback $callback        The callback
+	 * @param  string   $exception_type  The type of exception to call the callback for
+	 * @return void
+	 */
+	static public function registerCallback($callback, $exception_type=NULL)
+	{
+		if ($exception_type === NULL) {
+			$exception_type = 'fPrintableException';	
+		}
+		
+		if (!isset(self::$callbacks[$exception_type])) {
+			self::$callbacks[$exception_type] = array();
+		}
+		
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		
+		self::$callbacks[$exception_type][] = $callback;
+	}
+	
+	
+	/**
+	 * Sets the message for the exception, allowing for string interpolation and internationalization
+	 * 
+	 * @param  string  $message    The message for the exception
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @param  integer $code       The exception code to set
+	 * @return fPrintableException
+	 */
+	public function __construct($message)
+	{
+		$args          = array_slice(func_get_args(), 1);
+		$required_args = preg_match_all('#%(\d+\$)?[\-+]?( |0|\'.)?-?\d*(\.\d+)?[%bcdeufFosxX]#', $message, $matches);
+		
+		$code = NULL;
+		if ($required_args == sizeof($args) - 1) {
+			$code = array_pop($args);		
+		}
+		
+		if (sizeof($args) != $required_args) {
+			$message = self::compose(
+				'Only %1$d components were passed to the %2$s constructor, while %3$d were specified in the message',
+				sizeof($args),
+				get_class($this),
+				$required_args
+			);
+			throw new Exception($message);	
+		}
+		
+		$args = array_map(array('fPrintableException', 'dump'), $args);
+		
+		parent::__construct(
+			self::compose($message, $args),
+			$code
+		);
+		
+		foreach (self::$callbacks as $class => $callbacks) {
+			foreach ($callbacks as $callback) {
+				if ($this instanceof $class) {
+					call_user_func($callback, $this);
+				}
+			}
+		}		
+	}
+	
+	
+	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
 	 * @param  string $method  The method to create a callback for
@@ -53,7 +233,15 @@ abstract class fPrintableException extends Exception
 	 */
 	protected function getCSSClass()
 	{
-		return fGrammar::underscorize(preg_replace('#^f#', '', get_class($this)));
+		$string = preg_replace('#^f#', '', get_class($this));
+		
+		do {
+			$old_string = $string;
+			$string = preg_replace('/([a-zA-Z])([0-9])/', '\1_\2', $string);
+			$string = preg_replace('/([a-z0-9A-Z])([A-Z])/', '\1_\2', $string);
+		} while ($old_string != $string);
+		
+		return strtolower($string);
 	}
 	
 	

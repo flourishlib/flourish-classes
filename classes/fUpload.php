@@ -28,20 +28,14 @@ class fUpload
 	static public function check($field)
 	{
 		if (fRequest::check($field) && $_SERVER['REQUEST_METHOD'] != 'POST') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Missing method="post" attribute in form tag'
-				)
+			throw new fProgrammerException(
+				'Missing method="post" attribute in form tag'
 			);
 		}
 		
 		if (fRequest::check($field) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'Missing enctype="multipart/form-data" attribute in form tag'
-				)
+			throw new fProgrammerException(
+				'Missing enctype="multipart/form-data" attribute in form tag'
 			);
 		}
 		
@@ -58,22 +52,16 @@ class fUpload
 	static public function count($field)
 	{
 		if (!self::check($field)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The field specified, %s, does not appear to be a file upload field',
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The field specified, %s, does not appear to be a file upload field',
+				$field
 			);
 		}
 		
 		if (!is_array($_FILES[$field]['name'])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The field specified, %s, does not appear to be an array file upload field',
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The field specified, %s, does not appear to be an array file upload field',
+				$field
 			);
 		}
 		
@@ -165,22 +153,17 @@ class fUpload
 		}
 		
 		if (!is_array($_FILES[$field]['name'])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The field specified, %s, does not appear to be an array file upload field',
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The field specified, %s, does not appear to be an array file upload field',
+				$field
 			);
 		}
 		
 		if (!isset($_FILES[$field]['name'][$index])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose('The index specified, %1$s, is invalid for the field %2$s',
-					fCore::dump($index),
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The index specified, %1$s, is invalid for the field %2$s',
+				$index,
+				$field
 			);
 		}
 		
@@ -212,22 +195,16 @@ class fUpload
 		}
 		
 		if (!$directory->isWritable()) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The directory specified, %s, is not writable',
-					fCore::dump($directory->getPath())
-				)
+			throw new fProgrammerException(
+				'The directory specified, %s, is not writable',
+				$directory->getPath()
 			);
 		}
 		
 		if (!self::check($field)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The field specified, %s, does not appear to be a file upload field',
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The field specified, %s, does not appear to be a file upload field',
+				$field
 			);
 		}
 		
@@ -240,17 +217,11 @@ class fUpload
 		}
 		
 		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose('There was an error moving the uploaded file')
-			);
+			throw new fEnvironmentException('There was an error moving the uploaded file');
 		}
 		
 		if (!@chmod($file_name, 0644)) {
-			fCore::toss(
-				'fEnvironmentException',
-				fGrammar::compose('Unable to change permissions on the uploaded file')
-			);
+			throw new fEnvironmentException('Unable to change permissions on the uploaded file');
 		}
 		
 		if (fImage::isImageCompatible($file_name)) {
@@ -298,12 +269,9 @@ class fUpload
 	public function validate($field, $index=NULL)
 	{
 		if (!self::check($field)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The field specified, %s, does not appear to be a file upload field',
-					fCore::dump($field)
-				)
+			throw new fProgrammerException(
+				'The field specified, %s, does not appear to be a file upload field',
+				$field
 			);
 		}
 		
@@ -311,37 +279,31 @@ class fUpload
 		
 		// Do some validation of the file provided
 		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('Please upload a file')
-			);
+			throw new fValidationException('Please upload a file');
 		}
 		
 		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE) {
 			$max_size = (fRequest::get('MAX_FILE_SIZE')) ? fRequest::get('MAX_FILE_SIZE') : ini_get('upload_max_filesize');
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize($max_size))
+			throw new fValidationException(
+				'The file uploaded is over the limit of %s',
+				fFilesystem::formatFilesize($max_size)
 			);
 		}
 		if ($this->max_file_size && $file_array['size'] > $this->max_file_size) {
-			fCore::toss(
-				'fValidationException',
-				fGrammar::compose('The file uploaded is over the limit of ' . fFilesystem::formatFilesize($this->max_file_size))
+			throw new fValidationException(
+				'The file uploaded is over the limit of %s',
+				fFilesystem::formatFilesize($this->max_file_size)
 			);
 		}
 		
 		if (!empty($this->mime_types) && file_exists($file_array['tmp_name']) && !in_array(fFile::determineMimeType($file_array['tmp_name']), $this->mime_types)) {
-			fCore::toss('fValidationException', $this->mime_type_message);
+			throw new fValidationException($this->mime_type_message);
 		}
 		
 		if (!$this->allow_php) {
 			$file_info = fFilesystem::getPathInfo($file_array['name']);
 			if (in_array(strtolower($file_info['extension']), array('php', 'php4', 'php5'))) {
-				fCore::toss(
-					'fValidationException',
-					fGrammar::compose('The file uploaded is a PHP file, but those are not permitted')
-				);
+				throw new fValidationException('The file uploaded is a PHP file, but those are not permitted');
 			}
 		}
 		

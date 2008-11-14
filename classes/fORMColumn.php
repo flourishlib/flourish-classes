@@ -62,6 +62,29 @@ class fORMColumn
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Sets a column to be formatted as an email address
 	 * 
 	 * @param  mixed  $class   The class name or instance of the class to set the column format
@@ -76,14 +99,11 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as an email column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as an email column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -122,14 +142,11 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a link column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a link column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -179,14 +196,11 @@ class fORMColumn
 		
 		$valid_data_types = array('integer', 'float');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a number column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a number column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -246,36 +260,27 @@ class fORMColumn
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a random string column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a random string column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
 		$valid_types = array('alphanumeric', 'alpha', 'numeric', 'hexadecimal');
 		if (!in_array($type, $valid_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The type specified, %1$s, is an invalid type. Must be one of: %2$s.',
-					fCore::dump($type),
-					join(', ', $valid_types)
-				)
+			throw new fProgrammerException(
+				'The type specified, %1$s, is an invalid type. Must be one of: %2$s.',
+				$type,
+				join(', ', $valid_types)
 			);
 		}
 		
 		if (!is_numeric($length) || $length < 1) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The length specified, %s, needs to be an integer greater than zero.',
-					$length
-				)
+			throw new fProgrammerException(
+				'The length specified, %s, needs to be an integer greater than zero.',
+				$length
 			);
 		}
 		
@@ -440,13 +445,10 @@ class fORMColumn
 		
 		if ($element) {
 			if (!isset($info[$element])) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($element),
-						join(', ', array_keys($info))
-					)
+				throw new fProgrammerException(
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+					$element,
+					join(', ', array_keys($info))
 				);
 			}
 			return $info[$element];
@@ -763,7 +765,7 @@ class fORMColumn
 				continue;
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fORM::getColumnName($class, $column)
 				);
@@ -798,7 +800,7 @@ class fORMColumn
 				continue;
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: Please enter a link in the form http://www.example.com',
 					fORM::getColumnName($class, $column)
 				);

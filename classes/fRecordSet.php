@@ -170,12 +170,9 @@ class fRecordSet implements Iterator
 			if ($page !== NULL) {
 				
 				if (!is_numeric($page) || $page < 1) {
-					fCore::toss(
-						'fProgrammerException',
-						fGrammar::compose(
-							'The page specified, %s, is not a number or less than one',
-							fCore::dump($page)
-						)
+					throw new fProgrammerException(
+						'The page specified, %s, is not a number or less than one',
+						$page
 					);
 				}
 				
@@ -356,6 +353,29 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Ensures a class extends fActiveRecord
 	 * 
 	 * @param  string $class  The class to verify
@@ -364,13 +384,10 @@ class fRecordSet implements Iterator
 	static private function validateClass($class)
 	{
 		if (!is_string($class) || !$class || !class_exists($class) || !is_subclass_of($class, 'fActiveRecord')) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The class specified, %1$s, does not appear to be a valid %2$s class',
-					fCore::dump($class),
-					'fActiveRecord'
-				)
+			throw new fProgrammerException(
+				'The class specified, %1$s, does not appear to be a valid %2$s class',
+				$class,
+				'fActiveRecord'
 			);	
 		}	
 	}
@@ -439,7 +456,7 @@ class fRecordSet implements Iterator
 	public function __call($method_name, $parameters)
 	{
 		if ($callback = fORM::getRecordSetMethod($method_name)) {
-			return fCore::call(
+			return call_user_func_array(
 				$callback,
 				array(
 					$this,
@@ -467,7 +484,10 @@ class fRecordSet implements Iterator
 				return $this->precreate($related_class, $route);
 		}
 		 
-		fCore::toss('fProgrammerException', 'Unknown method, ' . $method_name . '(), called');
+		throw new fProgrammerException(
+			'Unknown method, %s, called',
+			$method_name . '()'
+		);
 	}
 	 
 	 
@@ -517,7 +537,7 @@ class fRecordSet implements Iterator
 		
 		$output = array();
 		foreach ($this->records as $record) {
-			$output[] = fCore::call(
+			$output[] = call_user_func_array(
 				$record->$method,
 				$parameters
 			);
@@ -643,9 +663,8 @@ class fRecordSet implements Iterator
 	public function current()
 	{
 		if (!$this->valid()) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose('There are no remaining records')
+			throw new fProgrammerException(
+				'There are no remaining records'
 			);
 		}
 		
@@ -705,6 +724,9 @@ class fRecordSet implements Iterator
 		} else {
 			$type     = 'callback';
 			$callback = $procedure;
+			if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+				$callback = explode('::', $callback);	
+			}
 		}
 			
 		$new_records = array();
@@ -721,7 +743,7 @@ class fRecordSet implements Iterator
 					break;
 					
 				case 'callback':
-					$value = fCore::call($callback, $record);
+					$value = call_user_func($callback, $record);
 					break;
 			}
 			
@@ -774,10 +796,7 @@ class fRecordSet implements Iterator
 		} catch (fValidationException $e) {
 			throw $e;
 		} catch (fExpectedException $e) {
-			fCore::toss(
-				'fNoRemainingException',
-				fGrammar::compose('There are no remaining records')
-			);
+			throw new fNoRemainingException('There are no remaining records');
 		}
 	}
 	
@@ -1226,8 +1245,12 @@ class fRecordSet implements Iterator
 		
 		$result = $inital_value;
 		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		
 		foreach($this->records as $record) {
-			$result = fCore::call($callback, $result, $record);
+			$result = call_user_func($callback, $result, $record);
 		}
 		
 		return $result;
@@ -1281,14 +1304,11 @@ class fRecordSet implements Iterator
 	public function sort($method, $direction)
 	{
 		if (!in_array($direction, array('asc', 'desc'))) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The sort direction specified, %1$s, is invalid. Must be one of: %2$s or %3$s.',
-					fCore::dump($direction),
-					'asc',
-					'desc'
-				)
+			throw new fProgrammerException(
+				'The sort direction specified, %1$s, is invalid. Must be one of: %2$s or %3$s.',
+				$direction,
+				'asc',
+				'desc'
 			);
 		}
 		
@@ -1331,22 +1351,20 @@ class fRecordSet implements Iterator
 		if (!$this->count()) {
 			if ($message === NULL) {
 				if (is_array($this->class)) {
-					$names = array_map(fCore::callback(fORM::getRecordName), $this->class);
-					$names = array_map(fCore::callback(fGrammar::pluralize), $names);
+					$names = array_map(array('fORM', 'getRecordName'), $this->class);
+					$names = array_map(array('fGrammar', 'pluralize'), $names);
 					$name  = join(', ', $names);	
 				} else {
 					$name = fGrammar::pluralize(fORM::getRecordName($this->class));
 				}
 				
-				$message = fGrammar::compose(
+				$message = self::compose(
 					'No %s could be found',
 					$name
 				);	
 			}
 			
-			fCore::toss(
-				'fEmptySetException',
-				$message
+			throw new fEmptySetException($message);
 			);
 		}
 	}
@@ -1377,13 +1395,10 @@ class fRecordSet implements Iterator
 			return;
 		}			
 		
-		fCore::toss(
-			'fProgrammerException',
-			fGrammar::compose(
-				'The %1$s operation can not be performed on a record set with multiple types (%2$s) of records',
-				$operation,
-				join(', ', $this->class)	
-			)
+		throw new fProgrammerException(
+			'The %1$s operation can not be performed on a record set with multiple types (%2$s) of records',
+			$operation,
+			join(', ', $this->class)	
 		);
 	}
 }

@@ -103,13 +103,10 @@ class fMoney
 	static public function getCurrencyInfo($iso_code, $element=NULL)
 	{
 		if (!isset(self::$currencies[$iso_code])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
-					fCore::dump($iso_code),
-					join(', ', array_keys(self::$currencies))
-				)
+			throw new fProgrammerException(
+				'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
+				$iso_code,
+				join(', ', array_keys(self::$currencies))
 			);
 		}
 		
@@ -118,13 +115,10 @@ class fMoney
 		}
 		
 		if (!isset(self::$currencies[$iso_code][$element])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The element specified, %1$s, is not valid. Must be one of: %2$s.',
-					fCore::dump($element),
-					join(', ', array_keys(self::$currencies[$iso_code]))
-				)
+			throw new fProgrammerException(
+				'The element specified, %1$s, is not valid. Must be one of: %2$s.',
+				$element,
+				join(', ', array_keys(self::$currencies[$iso_code]))
 			);
 		}
 		
@@ -151,6 +145,9 @@ class fMoney
 	 */
 	static public function registerFormatCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$format_callback = $callback;
 	}
 	
@@ -163,6 +160,9 @@ class fMoney
 	 */
 	static public function registerUnformatCallback($callback)
 	{
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
 		self::$unformat_callback = $callback;
 	}
 	
@@ -199,13 +199,10 @@ class fMoney
 	static public function setDefaultCurrency($iso_code)
 	{
 		if (!isset(self::$currencies[$iso_code])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
-					fCore::dump($iso_code),
-					join(', ', array_keys(self::$currencies))
-				)
+			throw new fProgrammerException(
+				'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
+				$iso_code,
+				join(', ', array_keys(self::$currencies))
 			);
 		}
 		
@@ -240,22 +237,16 @@ class fMoney
 	public function __construct($amount, $currency=NULL)
 	{
 		if ($currency !== NULL && !isset(self::$currencies[$currency])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
-					fCore::dump($abbreviation),
-					join(', ', array_keys(self::$currencies))
-				)
+			throw new fProgrammerException(
+				'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
+				$abbreviation,
+				join(', ', array_keys(self::$currencies))
 			);
 		}
 		
 		if ($currency === NULL && self::$default_currency === NULL) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'No currency was specified and no default currency has been set'
-				)
+			throw new fProgrammerException(
+				'No currency was specified and no default currency has been set'
 			);
 		}
 		
@@ -265,7 +256,7 @@ class fMoney
 		
 		// Unformat any money value
 		if (self::$unformat_callback !== NULL) {
-			$amount = fCore::call(self::$unformat_callback, $amount, $this->currency);
+			$amount = call_user_func(self::$unformat_callback, $amount, $this->currency);
 		} else {
 			$amount = str_replace(
 				array(
@@ -350,12 +341,9 @@ class fMoney
 				$ratio_values[] = ($ratio instanceof fNumber) ? $ratio->__toString() : (string) $ratio;
 			}
 			
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The ratios specified (%s) combined are not equal to 1',
-					join(', ', $ratio_values)
-				)
+			throw new fProgrammerException(
+				'The ratios specified (%s) combined are not equal to 1',
+				join(', ', $ratio_values)
 			);
 		}
 		
@@ -404,13 +392,10 @@ class fMoney
 		}
 		
 		if (!isset(self::$currencies[$new_currency])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
-					fCore::dump($new_currency),
-					join(', ', array_keys(self::$currencies))
-				)
+			throw new fProgrammerException(
+				'The currency specified, %1$s, is not a valid currency. Must be one of: %2$s.',
+				$new_currency,
+				join(', ', array_keys(self::$currencies))
 			);
 		}
 		
@@ -449,7 +434,7 @@ class fMoney
 	public function format()
 	{
 		if (self::$format_callback !== NULL) {
-			return fCore::call(self::$format_callback, $this->value, $this->currency);
+			return call_user_func(self::$format_callback, $this->value, $this->currency);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a
@@ -583,22 +568,16 @@ class fMoney
 		}
 		
 		if (!is_string($money)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The money value specified, %s, is not an fMoney object, integer or string and is thus is invalid for this operation',
-					fCore::dump($money)
-				)
+			throw new fProgrammerException(
+				'The money value specified, %s, is not an fMoney object, integer or string and is thus is invalid for this operation',
+				$money
 			);	
 		}
 		
 		if (!self::$default_currency) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'A default currency must be set in order to convert strings or integers to fMoney objects on the fly'
-				)
-			);			
+			throw new fProgrammerException(
+				'A default currency must be set in order to convert strings or integers to fMoney objects on the fly'
+			);		
 		}
 		
 		return new fMoney($money);

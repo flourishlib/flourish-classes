@@ -164,13 +164,10 @@ class fURL
 		settype($value, 'array');
 		
 		if (sizeof($parameter) != sizeof($value)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					"There are a different number of parameters and values.\nParameters:\n%1\$s\nValues\n%2\$s",
-					fCore::dump($parameter),
-					fCore::dump($value)
-				)
+			throw new fProgrammerException(
+				"There are a different number of parameters and values.\nParameters:\n%1\$s\nValues\n%2\$s",
+				$parameter,
+				$value
 			);
 		}
 		

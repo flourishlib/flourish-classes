@@ -45,6 +45,29 @@ class fORMMoney
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Sets a column to be formatted as an fMoney object
 	 * 
 	 * @param  mixed  $class            The class name or instance of the class to set the column format
@@ -60,14 +83,11 @@ class fORMMoney
 		
 		$valid_data_types = array('float');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a money column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be %3$s to be set as a money column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -75,14 +95,11 @@ class fORMMoney
 			$currency_column_data_type = fORMSchema::retrieve()->getColumnInfo($table, $currency_column, 'type');
 			$valid_currency_column_data_types = array('varchar', 'char', 'text');
 			if (!in_array($currency_column_data_type, $valid_currency_column_data_types)) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The currency column specified, %1$s, is a %2$s column. Must be %3$s to be set as a currency column.',
-						fCore::dump($currency_column),
-						$currency_column_data_type,
-						join(', ', $valid_currency_column_data_types)
-					)
+				throw new fProgrammerException(
+					'The currency column specified, %1$s, is a %2$s column. Must be %3$s to be set as a currency column.',
+					$currency_column,
+					$currency_column_data_type,
+					join(', ', $valid_currency_column_data_types)
 				);
 			}
 		}
@@ -220,13 +237,10 @@ class fORMMoney
 		
 		if ($element) {
 			if (!isset($info[$element])) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($element),
-						join(', ', array_keys($info))
-					)
+				throw new fProgrammerException(
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+					$element,
+					join(', ', array_keys($info))
 				);
 			}
 			return $info[$element];
@@ -482,12 +496,9 @@ class fORMMoney
 		$class = get_class($object);
 		
 		if (!isset($parameters[0])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method, %s, requires at least one parameter',
-					$method_name . '()'
-				)
+			throw new fProgrammerException(
+				'The method, %s, requires at least one parameter',
+				$method_name . '()'
 			);	
 		}
 		
@@ -524,12 +535,9 @@ class fORMMoney
 		$class = get_class($object);
 		
 		if (!isset($parameters[0])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method, %s, requires at least one parameter',
-					$method_name . '()'
-				)
+			throw new fProgrammerException(
+				'The method, %s, requires at least one parameter',
+				$method_name . '()'
 			);	
 		}
 		
@@ -576,13 +584,13 @@ class fORMMoney
 				continue;
 			}
 			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: The currency specified is invalid',
 					fORM::getColumnName($class, $currency_column)
 				);	
 				
 			} else {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: Please enter a monetary value',
 					fORM::getColumnName($class, $column)
 				);

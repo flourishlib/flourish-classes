@@ -59,6 +59,29 @@ class fORMDate
 	
 	
 	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
+	}
+	
+	
+	/**
 	 * Sets a column to be a date created column
 	 * 
 	 * When a new record is stored in the database, date created columns will
@@ -76,14 +99,11 @@ class fORMDate
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date created column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date created column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -127,14 +147,11 @@ class fORMDate
 		
 		$valid_data_types = array('date', 'time', 'timestamp');
 		if (!in_array($data_type, $valid_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date updated column.',
-					fCore::dump($column),
-					$data_type,
-					join(', ', $valid_data_types)
-				)
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a date updated column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
 			);
 		}
 		
@@ -180,28 +197,22 @@ class fORMDate
 		$timestamp_data_type = fORMSchema::retrieve()->getColumnInfo($table, $timestamp_column, 'type');
 		
 		if ($timestamp_data_type != 'timestamp') {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The timestamp column specified, %1$s, is a %2$s column. Must be a %3$s to have a related timezone column.',
-					fCore::dump($timestamp_column),
-					$data_type,
-					'timestamp'
-				)
+			throw new fProgrammerException(
+				'The timestamp column specified, %1$s, is a %2$s column. Must be a %3$s to have a related timezone column.',
+				$timestamp_column,
+				$data_type,
+				'timestamp'
 			);
 		}
 		
 		$timezone_column_data_type = fORMSchema::retrieve()->getColumnInfo($table, $timezone_column, 'type');
 		$valid_timezone_column_data_types = array('varchar', 'char', 'text');
 		if (!in_array($timezone_column_data_type, $valid_timezone_column_data_types)) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The timezone column specified, %1$s, is a %2$s column. Must be %3$s to be set as a timezone column.',
-					fCore::dump($timezone_column),
-					$timezone_column_data_type,
-					join(', ', $valid_timezone_column_data_types)
-				)
+			throw new fProgrammerException(
+				'The timezone column specified, %1$s, is a %2$s column. Must be %3$s to be set as a timezone column.',
+				$timezone_column,
+				$timezone_column_data_type,
+				join(', ', $valid_timezone_column_data_types)
 			);
 		}
 		
@@ -299,13 +310,10 @@ class fORMDate
 		
 		if ($element) {
 			if (!isset($info[$element])) {
-				fCore::toss(
-					'fProgrammerException',
-					fGrammar::compose(
-						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-						fCore::dump($element),
-						join(', ', array_keys($info))
-					)
+				throw new fProgrammerException(
+					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+					$element,
+					join(', ', array_keys($info))
 				);
 			}
 			return $info[$element];
@@ -499,12 +507,9 @@ class fORMDate
 		$class = get_class($object);
 		
 		if (!isset($parameters[0])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method, %s, requires at least one parameter',
-					$method_name . '()'
-				)
+			throw new fProgrammerException(
+				'The method, %s, requires at least one parameter',
+				$method_name . '()'
 			);	
 		}
 		
@@ -544,12 +549,9 @@ class fORMDate
 		$class = get_class($object);
 		
 		if (!isset($parameters[0])) {
-			fCore::toss(
-				'fProgrammerException',
-				fGrammar::compose(
-					'The method, %s, requires at least one parameter',
-					$method_name . '()'
-				)
+			throw new fProgrammerException(
+				'The method, %s, requires at least one parameter',
+				$method_name . '()'
 			);	
 		}
 		
@@ -591,13 +593,13 @@ class fORMDate
 				continue;
 			}
 			if (!fTimestamp::isValidTimezone($values[$timezone_column])) {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: The timezone specified is invalid',
 					fORM::getColumnName($class, $timezone_column)
 				);	
 				
 			} else {
-				$validation_messages[] = fGrammar::compose(
+				$validation_messages[] = self::compose(
 					'%s: Please enter a date/time',
 					fORM::getColumnName($class, $timestamp_column)
 				);
