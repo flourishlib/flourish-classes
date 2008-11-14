@@ -1365,7 +1365,6 @@ class fRecordSet implements Iterator
 			}
 			
 			throw new fEmptySetException($message);
-			);
 		}
 	}
 	
