@@ -34,6 +34,10 @@ abstract class fPrintableException extends Exception
 	{
 		$args = array_slice(func_get_args(), 1);
 		
+		if (is_array($args) && sizeof($args) == 1) {
+			$args = $args[0];	
+		}
+		
 		if (class_exists('fText', FALSE)) {
 			return call_user_func_array(
 				array('fText', 'compose'),
