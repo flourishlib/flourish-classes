@@ -547,13 +547,6 @@ class fFile
 			$new_directory = new fDirectory($new_directory);
 		}
 		
-		if ($new_directory->getPath() == $this->getDirectory()->getPath()) {
-			throw new fProgrammerException(
-				"The new directory specified, %s, is the same as the current file's directory",
-				$new_directory->getPath()
-			);
-		}
-		
 		$new_filename = $new_directory->getPath() . $this->getFilename();
 		
 		$check_dir_permissions = FALSE;
