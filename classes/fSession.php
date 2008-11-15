@@ -124,7 +124,7 @@ class fSession
 				__CLASS__ . '::set()'
 			);
 		}
-		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#i', '.\1', $_SERVER['SERVER_NAME']));
+		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $_SERVER['SERVER_NAME']));
 	}
 	
 	

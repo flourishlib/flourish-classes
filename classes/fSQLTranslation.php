@@ -141,12 +141,12 @@ class fSQLTranslation
 		}
 		
 		// Turn comma joins into cross joins
-		if (preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s*,\s*(?:\w+(?:\s+(?:as\s+)?(?:\w+))?))*$#is', $sql)) {
+		if (preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s*,\s*(?:\w+(?:\s+(?:as\s+)?(?:\w+))?))*$#isD', $sql)) {
 			$sql = str_replace(',', ' CROSS JOIN ', $sql);
 		}
 		
 		// Error out if we can't figure out the join structure
-		if (!preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#is', $sql)) {
+		if (!preg_match('#^(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+(?:(?:CROSS|INNER|OUTER|LEFT|RIGHT)?\s+)*JOIN\s+(?:\w+(?:\s+(?:as\s+)?(?:\w+))?)(?:\s+ON\s+.*)?)*$#isD', $sql)) {
 			throw new fProgrammerException(
 				'Unable to parse FROM clause, does not appears to be in comma style or join style'
 			);
@@ -453,7 +453,7 @@ class fSQLTranslation
 	 */
 	private function fixMSSQLNationalColumns($sql)
 	{
-		if (!preg_match_all('#^\s*(select.*)$|\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?2)\)|\(\))+\s*))\s*\)\s*(?= union)|\s+union(?:\s+all)?\s+\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?3)\)|\(\))+\s*))\s*\)#i', $sql, $matches)) {
+		if (!preg_match_all('#^\s*(select.*)$|\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?2)\)|\(\))+\s*))\s*\)\s*(?= union)|\s+union(?:\s+all)?\s+\(\s*(select(?:\s*(?:[^()\']+|\'(?:\'\'|\\\\\'|\\\\[^\']|[^\'\\\\]+)*\'|\((?3)\)|\(\))+\s*))\s*\)#iD', $sql, $matches)) {
 			return $sql;
 		}
 		
@@ -533,7 +533,7 @@ class fSQLTranslation
 						$to_fix[$table] = array_merge($to_fix[$table], $national_columns[$table]); 		
 					}
 					
-				} elseif (preg_match('#^(?:(\w+)\.(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+)\.(\w+).*?\)))(?:\s+as\s+(\w+))?$#i', $selection, $match)) {
+				} elseif (preg_match('#^(?:(\w+)\.(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+)\.(\w+).*?\)))(?:\s+as\s+(\w+))?$#iD', $selection, $match)) {
 					$table = $match[1] . ((isset($match[4])) ? $match[4] : '');
 					$table = $table_aliases[$table];
 					
@@ -562,7 +562,7 @@ class fSQLTranslation
 					$to_fix[$table] = array_merge($to_fix[$table], array($column));
 				
 				// Match unqualified column names
-				} elseif (preg_match('#^(?:(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+).*?\)))(?:\s+as\s+(\w+))?$#i', $selection, $match)) {
+				} elseif (preg_match('#^(?:(\w+)|((?:min|max|trim|rtrim|ltrim|substring|replace)\((\w+).*?\)))(?:\s+as\s+(\w+))?$#iD', $selection, $match)) {
 					$column = $match[1] . ((isset($match[3])) ? $match[3] : '');
 					foreach ($table_aliases as $alias => $table) {
 						if (empty($national_columns[$table])) {
@@ -812,7 +812,7 @@ class fSQLTranslation
 				}
 			}
 			
-			$sql = preg_replace('#\)\s*;?\s*$#', ')ENGINE=InnoDB', $sql);
+			$sql = preg_replace('#\)\s*;?\s*$#D', ')ENGINE=InnoDB', $sql);
 		
 		
 		// Create foreign key triggers for SQLite

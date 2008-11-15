@@ -122,7 +122,7 @@ class fTimestamp
 	 */
 	static public function fixISOWeek($date)
 	{
-		if (preg_match('#^(.*)(\d{4})-W(5[0-3]|[1-4][0-9]|0?[1-9])-([1-7])(.*)$#', $date, $matches)) {
+		if (preg_match('#^(.*)(\d{4})-W(5[0-3]|[1-4][0-9]|0?[1-9])-([1-7])(.*)$#D', $date, $matches)) {
 			$before = $matches[1];
 			$year   = $matches[2];
 			$week   = $matches[3];

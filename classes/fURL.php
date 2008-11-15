@@ -39,7 +39,7 @@ class fURL
 	 */
 	static public function get()
 	{
-		return preg_replace('#\?.*$#', '', $_SERVER['REQUEST_URI']);
+		return preg_replace('#\?.*$#D', '', $_SERVER['REQUEST_URI']);
 	}
 	
 	
@@ -88,7 +88,7 @@ class fURL
 		$string = strtolower(trim($string));
 		$string = str_replace("'", '', $string);
 		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
-		return preg_replace('#_+$#', '', $string);
+		return preg_replace('#_+$#D', '', $string);
 	}
 	
 	

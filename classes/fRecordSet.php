@@ -717,7 +717,7 @@ class fRecordSet implements Iterator
 			$type       = 'conditions';
 			$conditions = $procedure;
 			
-		} elseif (is_string($procedure) && preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $procedure, $matches)) {
+		} elseif (is_string($procedure) && preg_match('#^\{record\}::([a-z0-9_\-]+)$#iD', $procedure, $matches)) {
 			$type   = 'psuedo-callback';
 			$method = $matches[1];
 			
@@ -924,7 +924,7 @@ class fRecordSet implements Iterator
 		
 		foreach ($parameters as $parameter) {
 			if (!is_array($parameter)) {
-				if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#i', $parameter, $matches)) {
+				if (preg_match('#^\{record\}::([a-z0-9_\-]+)$#iD', $parameter, $matches)) {
 					$parameters_array[] = $this->call($matches[1]);
 					$found_record = TRUE;
 				} elseif ($parameter === '{record}') {

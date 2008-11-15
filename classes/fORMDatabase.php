@@ -52,7 +52,7 @@ class fORMDatabase
 	{
 		$modified_array = array();
 		foreach ($array as $key => $value) {
-			if (preg_match('#^\w+$#', $key)) {
+			if (preg_match('#^\w+$#D', $key)) {
 				$modified_array[$table . '.' . $key] = $value;
 			} else {
 				$modified_array[$key] = $value;
@@ -75,7 +75,7 @@ class fORMDatabase
 	{
 		$modified_array = array();
 		foreach ($array as $key => $value) {
-			if (preg_match('#^\w+$#', $value)) {
+			if (preg_match('#^\w+$#D', $value)) {
 				$modified_array[$key] = $table . '.' . $value;
 			} else {
 				$modified_array[$key] = $value;
@@ -350,7 +350,7 @@ class fORMDatabase
 				);
 			}
 			
-			if (preg_match('#^(?:\w+(?:\{\w+\})?=>)?(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $matches)) {
+			if (preg_match('#^(?:\w+(?:\{\w+\})?=>)?(\w+)(?:\{\w+\})?\.(\w+)$#D', $column, $matches)) {
 				$column_type = fORMSchema::retrieve()->getColumnInfo($matches[1], $matches[2], 'type');
 				if (in_array($column_type, array('varchar', 'char', 'text'))) {
 					$sql[] = 'LOWER(' . $column . ') ' . $direction;
@@ -611,7 +611,7 @@ class fORMDatabase
 	static public function escapeBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
 		// Handle shorthand column names like table.column and table=>related_table.column
-		if (preg_match('#(\w+)(?:\{\w+\})?\.(\w+)$#', $column, $match)) {
+		if (preg_match('#(\w+)(?:\{\w+\})?\.(\w+)$#D', $column, $match)) {
 			$table  = $match[1];
 			$column = $match[2];
 		}
@@ -823,9 +823,9 @@ class fORMDatabase
 				break;
 			}
 			
-			$main_table   = preg_replace('#_' . $join['table_name'] . '{\w+}$#i', '', $name);
+			$main_table   = preg_replace('#_' . $join['table_name'] . '{\w+}$#iD', '', $name);
 			$second_table = $join['table_name'];
-			$route        = preg_replace('#^[^{]+{(\w+)}$#', '\1', $name);
+			$route        = preg_replace('#^[^{]+{(\w+)}$#D', '\1', $name);
 			$routes       = fORMSchema::getRoutes($main_table, $second_table, '*-to-many');
 			if (isset($routes[$route])) {
 				$joined_to_many = TRUE;
@@ -922,7 +922,7 @@ class fORMDatabase
 			
 			// Trim any punctuation off of the beginning and end of terms
 			} else {
-				$match = preg_replace('#(^[^a-z0-9]+|[^a-z0-9]+$)#i', '', $match);	
+				$match = preg_replace('#(^[^a-z0-9]+|[^a-z0-9]+$)#iD', '', $match);	
 			}
 			
 			if ($ignore_stop_words && in_array(strtolower($match), $stop_words)) {

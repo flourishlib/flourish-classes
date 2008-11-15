@@ -369,7 +369,7 @@ class fTemplating
 			$info = array(
 				'path'  => $info,
 				'title' => fGrammar::humanize(
-					preg_replace('#.*?([^/]+).(rss|xml)$#i', '\1', $info)
+					preg_replace('#.*?([^/]+).(rss|xml)$#iD', '\1', $info)
 				)
 			);
 		}

@@ -250,7 +250,7 @@ class fCore
 			return 'html';
 		}
 		
-		if (preg_match('#[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})#i', $destination)) {
+		if (preg_match('#^[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})$#iD', $destination)) {
 			return 'email';
 		}
 		
@@ -575,7 +575,7 @@ class fCore
 		
 		if ($version === NULL) {
 			$version = phpversion();
-			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#', '\1', $version);
+			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#D', '\1', $version);
 		}
 		
 		return $version;
@@ -597,7 +597,7 @@ class fCore
 	static public function handleError($error_number, $error_string, $error_file=NULL, $error_line=NULL, $error_context=NULL)
 	{
 		if (self::$dynamic_constants && $error_number == E_NOTICE) {
-			if (preg_match("#^Use of undefined constant (\w+) - assumed '\w+'\$#", $error_string, $matches)) {
+			if (preg_match("#^Use of undefined constant (\w+) - assumed '\w+'\$#D", $error_string, $matches)) {
 				define($matches[1], $matches[1]);
 				return;
 			}		

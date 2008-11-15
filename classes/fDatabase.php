@@ -885,7 +885,7 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#', $value)) {
+		if (!preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#D', $value)) {
 			return 'NULL';
 		}
 		return (string) $value;
@@ -908,7 +908,7 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?[0-9]+$#', $value)) {
+		if (!preg_match('#^[+\-]?[0-9]+$#D', $value)) {
 			return 'NULL';
 		}
 		return (string) $value;
@@ -1370,15 +1370,15 @@ class fDatabase
 		$success = FALSE;
 		
 		try {
-			if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
+			if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#iD', $sql)) {
 				$this->connection->beginTransaction();
 				$success = TRUE;
 			}
-			if (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
+			if (preg_match('#^\s*(commit)(\s+transaction)?\s*$#iD', $sql)) {
 				$this->connection->commit();
 				$success = TRUE;
 			}
-			if (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
+			if (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#iD', $sql)) {
 				$this->connection->rollBack();
 				$success = TRUE;
 			}
@@ -1566,19 +1566,19 @@ class fDatabase
 	 */
 	private function trackTransactions($sql)
 	{
-		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#i', $sql)) {
+		if (preg_match('#^\s*(begin|start)(\s+transaction)?\s*$#iD', $sql)) {
 			if ($this->inside_transaction) {
 				throw new fProgrammerException('A transaction is already in progress');
 			}
 			$this->inside_transaction = TRUE;
 			
-		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#i', $sql)) {
+		} elseif (preg_match('#^\s*(commit)(\s+transaction)?\s*$#iD', $sql)) {
 			if (!$this->inside_transaction) {
 				throw new fProgrammerException('There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 			
-		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#i', $sql)) {
+		} elseif (preg_match('#^\s*(rollback)(\s+transaction)?\s*$#iD', $sql)) {
 			if (!$this->inside_transaction) {
 				throw new fProgrammerException('There is no transaction in progress');
 			}

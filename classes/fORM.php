@@ -520,7 +520,7 @@ class fORM
 	 */
 	static public function parseMethod($method)
 	{
-		if (!preg_match('#^([a-z]+)(.*)$#', $method, $matches)) {
+		if (!preg_match('#^([a-z]+)(.*)$#D', $method, $matches)) {
 			throw new fProgrammerException(
 				'Invalid method, %s(), called',
 				$method

@@ -340,8 +340,8 @@ class fGrammar
 	{
 		list ($beginning, $singular_noun) = self::splitLastWord($singular_noun);
 		foreach (self::$singular_to_plural_rules as $from => $to) {
-			if (preg_match('#' . $from . '#i', $singular_noun)) {
-				return $beginning . preg_replace('#' . $from . '#i', $to, $singular_noun);
+			if (preg_match('#' . $from . '#iD', $singular_noun)) {
+				return $beginning . preg_replace('#' . $from . '#iD', $to, $singular_noun);
 			}
 		}
 		throw new fProgrammerException('The noun specified could not be pluralized');
@@ -432,8 +432,8 @@ class fGrammar
 	{
 		list ($beginning, $plural_noun) = self::splitLastWord($plural_noun);
 		foreach (self::$plural_to_singular_rules as $from => $to) {
-			if (preg_match('#' . $from . '#i', $plural_noun)) {
-				return $beginning . preg_replace('#' . $from . '#i', $to, $plural_noun);
+			if (preg_match('#' . $from . '#iD', $plural_noun)) {
+				return $beginning . preg_replace('#' . $from . '#iD', $to, $plural_noun);
 			}
 		}
 		throw new fProgrammerException('The noun specified could not be singularized');
@@ -460,7 +460,7 @@ class fGrammar
 		}
 		
 		// Handle camel case
-		if (preg_match('#(.*)((?<=[a-zA-Z]|^)(?:[0-9]+|[A-Z][a-z]*)|(?<=[0-9A-Z]|^)(?:[A-Z][a-z]*))$#', $string, $match)) {
+		if (preg_match('#(.*)((?<=[a-zA-Z]|^)(?:[0-9]+|[A-Z][a-z]*)|(?<=[0-9A-Z]|^)(?:[A-Z][a-z]*))$#D', $string, $match)) {
 			return array($match[1], $match[2]);
 		}
 		

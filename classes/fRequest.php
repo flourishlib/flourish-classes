@@ -387,15 +387,15 @@ class fRequest
 			
 			// Type matches have /s
 			if (strpos($item, '/') !== FALSE) {
-				$regex = '#^' . str_replace('*', '.*', $item) . '$#i';
+				$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';
 			
 			// Language matches that don't have a - are a wildcard
 			} elseif (strpos($item, '-') === FALSE) {
-				$regex = '#^' . str_replace('*', '.*', $item) . '(-.*)?$#i';	
+				$regex = '#^' . str_replace('*', '.*', $item) . '(-.*)?$#iD';	
 				
 			// Non-wildcard languages are straight-up matches
 			} else {
-				$regex = '#^' . str_replace('*', '.*', $item) . '$#i';	
+				$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';	
 			}
 			foreach ($options as $option) {
 				if (preg_match($regex, $option) && $top_q < $q) {

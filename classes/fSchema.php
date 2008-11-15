@@ -327,7 +327,7 @@ class fSchema
 			
 			// If the column has a constraint, look for valid values
 			if (in_array($info['type'], array('char', 'varchar')) && !empty($row['constraint'])) {
-				if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\']+)+\')+)\)$#', $row['constraint'], $matches)) {
+				if (preg_match('#^\(((?:(?: OR )?\[[^\]]+\]=\'(?:\'\'|[^\']+)+\')+)\)$#D', $row['constraint'], $matches)) {
 					$valid_values = explode(' OR ', $matches[1]);
 					foreach ($valid_values as $key => $value) {
 						$valid_values[$key] = substr($value, 4 + strlen($row['column']), -1);
@@ -559,11 +559,11 @@ class fSchema
 				}
 			}
 			if (!isset($info['type'])) {
-				$info['type'] = preg_replace('#^([a-z ]+).*$#i', '\1', $match[2]);
+				$info['type'] = preg_replace('#^([a-z ]+).*$#iD', '\1', $match[2]);
 			}
 		
 			if (stripos($match[2], 'enum') === 0) {
-				$info['valid_values'] = preg_replace("/^'|'\$/", '', explode(",", $match[3]));
+				$info['valid_values'] = preg_replace("/^'|'\$/D", '', explode(",", $match[3]));
 				$match[3] = 0;
 				foreach ($info['valid_values'] as $valid_value) {
 					if (strlen(utf8_decode($valid_value)) > $match[3]) {
@@ -579,7 +579,7 @@ class fSchema
 			
 			// Grab the number of decimal places
 			if (stripos($match[2], 'decimal') === 0) {
-				if (preg_match('#^\s*\d+\s*,\s*(\d+)\s*$#', $match[3], $data_type_info)) {
+				if (preg_match('#^\s*\d+\s*,\s*(\d+)\s*$#D', $match[3], $data_type_info)) {
 					$info['decimal_places'] = $data_type_info[1];
 				}
 			}
@@ -589,7 +589,7 @@ class fSchema
 		
 			// Default values
 			if (!empty($match[5]) && $match[5] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/", '', $match[5]);
+				$info['default'] = preg_replace("/^'|'\$/D", '', $match[5]);
 			}
 			
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
@@ -801,7 +801,7 @@ class fSchema
 				$info['auto_increment'] = TRUE;
 				
 			} elseif ($row['default'] !== NULL) {
-				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+$/i", '\1', $row['default']));
+				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+\$/iD", '\1', $row['default']));
 				if ($info['type'] == 'boolean') {
 					$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;
 				}
@@ -1044,7 +1044,7 @@ class fSchema
 		
 			// Default values
 			if (isset($match[6]) && $match[6] != '' && $match[6] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/", '', $match[6]);
+				$info['default'] = preg_replace("/^'|'\$/D", '', $match[6]);
 			}
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
 				$info['default'] = ($info['default'] == 'f' || $info['default'] == 0 || $info['default'] == 'false') ? FALSE : TRUE;
@@ -1052,7 +1052,7 @@ class fSchema
 		
 			// Check constraints
 			if (isset($match[9]) && preg_match('/CHECK\s*\(\s*' . $match[1] . '\s+IN\s+\(\s*((?:(?:[^, \']*|\'(?:\'\'|[^\']+)*\')\s*,\s*)*(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))\s*\)/i', $match[9], $check_match)) {
-				$info['valid_values'] = str_replace("''", "'", preg_replace("/^'|'\$/", '', preg_split("#\s*,\s*#", $check_match[1])));
+				$info['valid_values'] = str_replace("''", "'", preg_replace("/^'|'\$/D", '', preg_split("#\s*,\s*#", $check_match[1])));
 			}
 		
 			// Auto increment fields

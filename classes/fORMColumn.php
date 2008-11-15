@@ -505,7 +505,7 @@ class fORMColumn
 		$value = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
-		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#i', $value)) {
+		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#iD', $value)) {
 			$value = 'http://' . $value;
 		}
 		
@@ -764,7 +764,7 @@ class fORMColumn
 			if (!fCore::stringlike($values[$column])) {
 				continue;
 			}
-			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#i', $values[$column])) {
+			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#iD', $values[$column])) {
 				$validation_messages[] = self::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fORM::getColumnName($class, $column)

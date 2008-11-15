@@ -160,7 +160,7 @@ class fFilesystem
 	 */
 	static public function convertToBytes($size)
 	{
-		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#', strtolower(trim($size)), $matches)) {
+		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#D', strtolower(trim($size)), $matches)) {
 			throw new fProgrammerException(
 				'The size specified, %s, does not appears to be a valid size',
 				$size
@@ -224,7 +224,7 @@ class fFilesystem
 		}
 		
 		if (!isset($path_info['filename'])) {
-			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#', '', $path_info['basename']);
+			$path_info['filename'] = preg_replace('#\.' . preg_quote($path_info['extension'], '#') . '$#D', '', $path_info['basename']);
 		}
 		$path_info['dirname'] .= DIRECTORY_SEPARATOR;
 		
@@ -323,13 +323,13 @@ class fFilesystem
 		$extension = (!empty($info['extension'])) ? '.' . $info['extension'] : '';
 		
 		// Remove _copy# from the filename to start
-		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $extension, $file);
+		$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#D', $extension, $file);
 		
 		// Look for a unique name by adding _copy# to the end of the file
 		while (file_exists($file)) {
 			$info = self::getPathInfo($file);
-			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#', $file, $match)) {
-				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#', '_copy' . ($match[1]+1) . $extension, $file);
+			if (preg_match('#_copy(\d+)' . preg_quote($extension, '#') . '$#D', $file, $match)) {
+				$file = preg_replace('#_copy(\d+)' . preg_quote($extension, '#') . '$#D', '_copy' . ($match[1]+1) . $extension, $file);
 			} else {
 				$file = $info['dirname'] . $info['filename'] . '_copy1' . $extension;
 			}

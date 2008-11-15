@@ -41,7 +41,7 @@ class fEmail
 						 )@(                                                                          # The @ symbol
 						   (?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                              # Domain name
 						   (?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])    # (or) IP addresses
-						 )[ \t]*$~ix';                                                                # Allow Trailing whitespace
+						 )[ \t]*$~ixD';                                                               # Allow Trailing whitespace
 	
 	/**
 	 * A regular expression to match a `name <email>` string, exluding those with comments and folding whitespace
@@ -65,7 +65,7 @@ class fEmail
 							  )@(                                                                                  # The @ symbol
 								(?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                                      # Domain nam
 								(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])            # (or) IP addresses
-							  ))[ \t]*>[ \t]*$~ix';                                                                # Closing > and trailing whitespace
+							  ))[ \t]*>[ \t]*$~ixD';                                                               # Closing > and trailing whitespace
 	
 	
 	/**
@@ -339,7 +339,7 @@ class fEmail
 		while (isset($this->attachments[$filename])) {
 			$filename_info = fFilesystem::getPathInfo($filename);
 			$extension     = ($filename_info['extension']) ? '.' . $filename_info['extension'] : '';
-			$filename      = preg_replace('#_copy\d+$#', '', $filename_info['filename']) . '_copy' . $i . $extension;
+			$filename      = preg_replace('#_copy\d+$#D', '', $filename_info['filename']) . '_copy' . $i . $extension;
 			$i++;
 		}
 		
