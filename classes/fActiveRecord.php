@@ -178,8 +178,8 @@ abstract class fActiveRecord
 	 * Column names are the keys, but a column key will only be present if a
 	 * value has changed. The value associated with each key is an array of
 	 * old values with the first entry being the oldest value. The static 
-	 * methods ::assign(), ::changed(), ::has() and ::retrieve() are the best 
-	 * way to interact with this array.
+	 * methods ::assign(), ::changed(), ::hasOld() and ::retrieveOld() are the
+	 * best way to interact with this array.
 	 * 
 	 * @var array
 	 */

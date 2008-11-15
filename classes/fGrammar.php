@@ -23,7 +23,6 @@ class fGrammar
 	const inflectOnQuantity         = 'fGrammar::inflectOnQuantity';
 	const joinArray                 = 'fGrammar::joinArray';
 	const pluralize                 = 'fGrammar::pluralize';
-	const registerComposeCallback   = 'fGrammar::registerComposeCallback';
 	const registerJoinArrayCallback = 'fGrammar::registerJoinArrayCallback';
 	const reset                     = 'fGrammar::reset';
 	const singularize               = 'fGrammar::singularize';
