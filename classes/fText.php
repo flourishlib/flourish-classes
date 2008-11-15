@@ -15,8 +15,9 @@
 class fText
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const compose = 'fText::compose';
-	const reset   = 'fText::reset';
+	const compose                 = 'fText::compose';
+	const registerComposeCallback = 'fText::registerComposeCallback';
+	const reset                   = 'fText::reset';
 	
 	
 	/**
