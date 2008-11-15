@@ -509,7 +509,7 @@ class fCore
 	 */
 	static public function expose($data)
 	{
-		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data)) . '</pre>';
+		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data), ENT_QUOTES, 'UTF-8') . '</pre>';
 	}
 	
 	

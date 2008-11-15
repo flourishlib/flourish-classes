@@ -62,7 +62,7 @@ class fHTML
 	 */
 	static public function decode($content)
 	{
-		return html_entity_decode($content, ENT_COMPAT, 'UTF-8');
+		return html_entity_decode($content, ENT_QUOTES, 'UTF-8');
 	}
 	
 	
@@ -74,7 +74,7 @@ class fHTML
 	 */
 	static public function encode($content)
 	{
-		return htmlentities($content, ENT_COMPAT, 'UTF-8');
+		return htmlentities($content, ENT_QUOTES, 'UTF-8');
 	}
 	
 	
@@ -160,7 +160,7 @@ class fHTML
 		
 		// For each chunk of text, make sure it is converted to entities
 		foreach($text_matches as $key => $value) {
-			$text_matches[$key] = htmlspecialchars($value);
+			$text_matches[$key] = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
 		}
 		
 		// Merge the text and html back together
