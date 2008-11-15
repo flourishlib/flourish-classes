@@ -1200,6 +1200,12 @@ class fEmail
 			);
 		}
 		
+		if (strpos($this->subject, "\n") !== FALSE) {
+			$validation_messages[] = self::compose(
+				"The subject contains one or more newline characters"
+			);	
+		}
+		
 		if (!fCore::stringlike($this->plaintext_body)) {
 			$validation_messages[] = self::compose(
 				"Please provide a plaintext email body"
