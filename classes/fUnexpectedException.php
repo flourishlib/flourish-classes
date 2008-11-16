@@ -12,7 +12,7 @@
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
  */
-abstract class fUnexpectedException extends fException
+class fUnexpectedException extends fException
 {
 	/**
 	 * Prints out a generic error message inside of a `div` with the class being `'exception {exception_class_name}'`
