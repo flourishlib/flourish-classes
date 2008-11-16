@@ -688,7 +688,7 @@ abstract class fActiveRecord
 				unset($this->old_values[$pk_columns[0]]);
 			}
 			
-		} catch (fPrintableException $e) {
+		} catch (fException $e) {
 			if (!$inside_db_transaction) {
 				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
@@ -1602,7 +1602,7 @@ abstract class fActiveRecord
 				$this->cache
 			);
 			
-		} catch (fPrintableException $e) {
+		} catch (fException $e) {
 			
 			if (!$inside_db_transaction) {
 				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');

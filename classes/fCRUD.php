@@ -364,10 +364,10 @@ class fCRUD
 	
 	
 	/**
-	 * Removes list items from an fPrintableException based on their contents
+	 * Removes list items from an fException based on their contents
 	 * 
-	 * @param  fPrintableException $exception  The exception to remove field names from
-	 * @param  array               $filters    An array of strings to search for, if a string is found in a list item, the list item will be removed
+	 * @param  fException $exception  The exception to remove field names from
+	 * @param  array      $filters    An array of strings to search for, if a string is found in a list item, the list item will be removed
 	 * @return void
 	 */
 	static public function removeListItems($exception, $filters)
@@ -401,10 +401,10 @@ class fCRUD
 	
 	
 	/**
-	 * Reorders list items in an fPrintableException based on their contents
+	 * Reorders list items in an fException based on their contents
 	 * 
-	 * @param  fPrintableException $exception  The exception to reorder the list items in
-	 * @param  array               $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
+	 * @param  fException $exception  The exception to reorder the list items in
+	 * @param  array      $matches    This should be an ordered array of strings. If a list item contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
 	 */
 	static public function reorderListItems($exception, $matches)

@@ -12,7 +12,7 @@
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
  */
-abstract class fExpectedException extends fPrintableException
+abstract class fExpectedException extends fException
 {
 }
 

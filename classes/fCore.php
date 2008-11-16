@@ -632,14 +632,14 @@ class fCore
 	 */
 	static public function handleException($exception)
 	{
-		if ($exception instanceof fPrintableException) {
+		if ($exception instanceof fException) {
 			$message = $exception->formatTrace() . "\n" . $exception->getMessage();
 		} else {
 			$message = $exception->getTraceAsString() . "\n" . $exception->getMessage();
 		}
 		$message = self::compose("Uncaught Exception") . "\n------------------\n" . trim($message);
 		
-		if (self::$exception_destination != 'html' && $exception instanceof fPrintableException) {
+		if (self::$exception_destination != 'html' && $exception instanceof fException) {
 			$exception->printMessage();
 		}
 				

@@ -59,7 +59,7 @@ class fORMSchema
 			);
 		}
 		self::retrieve()->setCacheFile($cache_file);
-		fPrintableException::registerCallback(array(self::retrieve(), 'flushInfo'), 'fUnexpectedException');
+		fException::registerCallback(array(self::retrieve(), 'flushInfo'), 'fUnexpectedException');
 	}
 	
 	

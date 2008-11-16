@@ -1,18 +1,18 @@
 <?php
 /**
- * An exception that can easily be printed
+ * An exception that allows for easy l10n, printing, tracing and hooking
  * 
  * @copyright  Copyright (c) 2007-2008 William Bond
  * @author     William Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
- * @link       http://flourishlib.com/fPrintableException
+ * @link       http://flourishlib.com/fException
  * 
  * @version    1.0.0b
  * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
  */
-abstract class fPrintableException extends Exception
+abstract class fException extends Exception
 {
 	/**
 	 * Callbacks for when exceptions are created
@@ -137,7 +137,7 @@ abstract class fPrintableException extends Exception
 	static public function registerCallback($callback, $exception_type=NULL)
 	{
 		if ($exception_type === NULL) {
-			$exception_type = 'fPrintableException';	
+			$exception_type = 'fException';	
 		}
 		
 		if (!isset(self::$callbacks[$exception_type])) {
@@ -159,7 +159,7 @@ abstract class fPrintableException extends Exception
 	 * @param  mixed   $component  A string or number to insert into the message
 	 * @param  mixed   ...
 	 * @param  integer $code       The exception code to set
-	 * @return fPrintableException
+	 * @return fException
 	 */
 	public function __construct($message)
 	{
@@ -181,7 +181,7 @@ abstract class fPrintableException extends Exception
 			throw new Exception($message);	
 		}
 		
-		$args = array_map(array('fPrintableException', 'dump'), $args);
+		$args = array_map(array('fException', 'dump'), $args);
 		
 		parent::__construct(
 			self::compose($message, $args),
