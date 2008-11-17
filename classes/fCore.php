@@ -16,6 +16,8 @@ class fCore
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const backtrace               = 'fCore::backtrace';
+	const call                    = 'fCore::call';
+	const callback                = 'fCore::callback';
 	const debug                   = 'fCore::debug';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
