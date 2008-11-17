@@ -1059,7 +1059,7 @@ class fUTF8
 		
 		if ($invalid) {
 			throw new fProgrammerException(
-				'The UTF-8 character specified is invalid.'
+				'The UTF-8 character specified is invalid'
 			);
 		}
 		

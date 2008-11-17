@@ -109,7 +109,7 @@ class fUnbufferedResult implements Iterator
 		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
 			throw new fProgrammerException(
-				'The database type specified, %1$s, in invalid. Must be one of: %2$s.',
+				'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
 				$type,
 				join(', ', $valid_types)
 			);

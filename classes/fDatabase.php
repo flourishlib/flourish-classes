@@ -561,7 +561,7 @@ class fDatabase
 					
 				} elseif ($sqlite_version == 3 && (!class_exists('PDO', FALSE) || !in_array('sqlite', PDO::getAvailableDrivers()))) {
 					throw new fEnvironmentException(
-						'The database specified is an %2$s database and the %2$s extension is not installed',
+						'The database specified is an %1$s database and the %2$s extension is not installed',
 						'SQLite v3',
 						'pdo_sqlite'
 					);

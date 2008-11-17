@@ -485,8 +485,8 @@ class fRecordSet implements Iterator
 		}
 		 
 		throw new fProgrammerException(
-			'Unknown method, %s, called',
-			$method_name . '()'
+			'Unknown method, %s(), called',
+			$method_name
 		);
 	}
 	 

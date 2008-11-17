@@ -248,8 +248,8 @@ abstract class fActiveRecord
 		// This will prevent quiet failure
 		if (in_array($action, array('set', 'associate', 'inject', 'tally')) && sizeof($parameters) < 1) {
 			throw new fProgrammerException(
-				'The method, %s, requires at least one parameter',
-				$method_name . '()'
+				'The method, %s(), requires at least one parameter',
+				$method_name
 			);
 		}
 		
@@ -358,8 +358,8 @@ abstract class fActiveRecord
 			// Error handler
 			default:
 				throw new fProgrammerException(
-					'Unknown method, %s, called',
-					$method_name . '()'
+					'Unknown method, %s(), called',
+					$method_name
 				);
 		}
 	}

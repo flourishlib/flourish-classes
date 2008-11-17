@@ -732,8 +732,8 @@ class fORMFile
 				$parameters = $method_call['parameters'];
 				if (!is_callable($callback)) {
 					throw new fProgrammerException(
-						'The fImage method specified, %s, is not a valid method.',
-						$method_call['method'] . '()'
+						'The fImage method specified, %s(), is not a valid method',
+						$method_call['method']
 					);
 				}
 				call_user_func_array($callback, $parameters);
@@ -938,8 +938,8 @@ class fORMFile
 		
 		if (!array_key_exists(0, $parameters)) {
 			throw new fProgrammerException(
-				'The method %s requires exactly one parameter',
-				$method_name . '()'
+				'The method %s() requires exactly one parameter',
+				$method_name
 			);
 		}
 		
@@ -982,8 +982,8 @@ class fORMFile
 			foreach (self::$fupload_method_calls[$class][$column] as $method_call) {
 				if (!is_callable($upload->{$method_call['method']})) {
 					throw new fProgrammerException(
-						'The fUpload method specified, %s, is not a valid method.',
-						$method_call['method'] . '()'
+						'The fUpload method specified, %s(), is not a valid method',
+						$method_call['method']
 					);
 				}
 				call_user_func_array($upload->{$method_call['method']}, $method_call['parameters']);
