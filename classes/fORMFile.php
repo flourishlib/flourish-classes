@@ -600,7 +600,7 @@ class fORMFile
 	 */
 	static public function objectify($class, $column, $value)
 	{
-		if (!fCore::stringlike($value)) {
+		if (!is_string($value) && !is_numeric($value) && !is_object($value)) {
 			return $value;
 		}
 		
@@ -943,8 +943,7 @@ class fORMFile
 			);
 		}
 		
-		$file_path    = $parameters[0];
-		$invalid_file = !fCore::stringlike($file_path);
+		$file_path = $parameters[0];
 		
 		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
 			throw new fEnvironmentException(

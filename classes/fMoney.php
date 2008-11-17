@@ -563,7 +563,7 @@ class fMoney
 		
 		if (is_object($money) && is_callable(array($money, '__toString'))) {
 			$money = $money->__toString();	
-		} elseif (fCore::stringlike($money)) {
+		} elseif (is_numeric($money) || is_object($money)) {
 			$money = (string) $money;	
 		}
 		

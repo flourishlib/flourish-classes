@@ -192,7 +192,7 @@ class fHTML
 	 */
 	static public function show($content, $css_class='')
 	{
-		if (!fCore::stringlike($content)) {
+		if ((!is_string($content) && !is_object($content) && !is_numeric($content)) || !strlen(trim($content))) {
 			return FALSE;
 		}
 		

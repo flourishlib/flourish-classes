@@ -507,7 +507,7 @@ class fORMValidation
 			}
 			$old_value = fActiveRecord::retrieveOld($old_values, $primary_key);
 			$value     = $values[$primary_key];
-			if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($value) && fCore::stringlike($old_value)) {
+			if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($value) && self::stringlike($old_value)) {
 				if (strtolower($value) != strtolower($old_value)) {
 					$different = TRUE;
 				}	
@@ -524,7 +524,7 @@ class fORMValidation
 			$sql    = "SELECT " . join(', ', $primary_keys) . " FROM " . $table . " WHERE ";
 			$conditions = array();
 			foreach ($primary_keys as $primary_key) {
-				if (self::isCaseInsensitive($class, $primary_key) && fCore::stringlike($values[$primary_key])) {
+				if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($values[$primary_key])) {
 					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, strtolower($values[$primary_key]), '=');
 				} else {
 					$conditions[] = $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
@@ -825,6 +825,22 @@ class fORMValidation
 			return -1;	
 		}
 		return 1;
+	}
+	
+	
+	/**
+	 * Returns `TRUE` for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as `0`, `0.0`, `'0'`)
+	 * 
+	 * @param  mixed $value  The value to check
+	 * @return boolean  If the value is string-like
+	 */
+	static private function stringlike($value)
+	{
+		if ((!is_string($value) && !is_object($value) && !is_numeric($value)) || !strlen(trim($value))) {
+			return FALSE;	
+		}
+		
+		return TRUE;
 	}
 	
 	

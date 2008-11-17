@@ -288,7 +288,7 @@ class fORMMoney
 	 */
 	static public function objectifyMoney($class, $column, $value)
 	{
-		if (!fCore::stringlike($value)) {
+		if (!is_string($value) && !is_numeric($value) && !is_object($value)) {
 			return $value;
 		}
 		
@@ -315,7 +315,7 @@ class fORMMoney
 	 */
 	static public function objectifyMoneyWithCurrency(&$values, &$old_values, $value_column, $currency_column)
 	{
-		if (!fCore::stringlike($values[$value_column])) {
+		if (!is_string($values[$value_column]) && !is_numeric($values[$value_column]) && !is_object($values[$value_column])) {
 			return;
 		}
 			

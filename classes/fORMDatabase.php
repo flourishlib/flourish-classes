@@ -335,7 +335,7 @@ class fORMDatabase
 		$sql = array();
 		
 		foreach ($order_bys as $column => $direction) {
-			if (!fCore::stringlike($column)) {
+			if ((!is_string($column) && !is_object($column) && !is_numeric($column)) || !strlen(trim($column))) {
 				throw new fProgrammerException(
 					'An invalid sort column, %s, was specified',
 					$column

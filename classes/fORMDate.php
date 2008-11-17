@@ -362,7 +362,10 @@ class fORMDate
 	 */
 	static public function objectifyTimestampWithTimezone(&$values, &$old_values, $timestamp_column, $timezone_column)
 	{
-		if (!fCore::stringlike($values[$timestamp_column])) {
+		if ((!is_string($values[$timestamp_column]) &&
+				!is_object($values[$timestamp_column]) &&
+				!is_numeric($values[$timestamp_column])) ||
+			  !strlen(trim($values[$timestamp_column]))) {
 			return;
 		}
 			

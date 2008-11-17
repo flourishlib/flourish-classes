@@ -29,7 +29,6 @@ class fCore
 	const handleException         = 'fCore::handleException';
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
-	const stringlike              = 'fCore::stringlike';
 	
 	
 	/**
@@ -683,7 +682,6 @@ class fCore
 		self::$exception_handler_parameters = array();
 		self::$exception_message            = NULL;
 		self::$handles_errors               = FALSE;
-		self::$toss_callbacks               = array();
 	}
 	
 	
@@ -772,30 +770,6 @@ class fCore
 		} else {
 			self::$exception_message = $message;
 		}
-	}
-	
-	
-	/**
-	 * Returns `TRUE` for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as `0`, `0.0`, `'0'`)
-	 * 
-	 * @param  mixed $value  The value to check
-	 * @return boolean  If the value is string-like
-	 */
-	static public function stringlike($value)
-	{
-		if (!$value && !is_numeric($value)) {
-			return FALSE;
-		}
-		
-		if (is_resource($value) || is_array($value) || $value === TRUE) {
-			return FALSE;
-		}
-		
-		if (is_string($value) && !trim($value)) {
-			return FALSE;	
-		}
-		
-		return TRUE;
 	}
 	
 	

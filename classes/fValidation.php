@@ -38,6 +38,22 @@ class fValidation
 	
 	
 	/**
+	 * Returns `TRUE` for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as `0`, `0.0`, `'0'`)
+	 * 
+	 * @param  mixed $value  The value to check
+	 * @return boolean  If the value is string-like
+	 */
+	static protected function stringlike($value)
+	{
+		if ((!is_string($value) && !is_object($value) && !is_numeric($value)) || !strlen(trim($value))) {
+			return FALSE;	
+		}
+		
+		return TRUE;
+	}
+	
+	
+	/**
 	 * Fields that should be formatted as email addresses
 	 * 
 	 * @var array
@@ -84,7 +100,7 @@ class fValidation
 	{
 		$args = func_get_args();
 		foreach ($args as $arg) {
-			if (!fCore::stringlike($arg)) {
+			if (!self::stringlike($arg)) {
 				throw new fProgrammerException(
 					'The field specified, %s, does not appear to be a valid field name',
 					$arg
@@ -109,7 +125,7 @@ class fValidation
 	{
 		$args = func_get_args();
 		foreach ($args as $arg) {
-			if (!fCore::stringlike($arg)) {
+			if (!self::stringlike($arg)) {
 				throw new fProgrammerException(
 					'The field specified, %s, does not appear to be a valid field name',
 					$arg
@@ -149,7 +165,7 @@ class fValidation
 		
 		foreach ($args as $arg) {
 			// This handles normal field validation
-			if (fCore::stringlike($arg)) {
+			if (self::stringlike($arg)) {
 				$fixed_args[] = $arg;
 			
 			// This allows for 'or' validation
@@ -157,7 +173,7 @@ class fValidation
 				$fixed_args[] = $arg;
 			
 			// This handles conditional validation
-			} elseif (is_array($arg) && sizeof($arg) == 1 && fCore::stringlike(key($arg)) && is_array(reset($arg))) {
+			} elseif (is_array($arg) && sizeof($arg) == 1 && self::stringlike(key($arg)) && is_array(reset($arg))) {
 				$fixed_args[key($arg)] = reset($arg);
 				
 			} else {
@@ -182,7 +198,7 @@ class fValidation
 	{
 		foreach ($this->email_fields as $email_field) {
 			$value = trim(fRequest::get($email_field));
-			if (fCore::stringlike($value) && !preg_match(fEmail::EMAIL_REGEX, $value)) {
+			if (self::stringlike($value) && !preg_match(fEmail::EMAIL_REGEX, $value)) {
 				$messages[] = self::compose(
 					'%s: Please enter an email address in the form name@example.com',
 					fGrammar::humanize($email_field)
@@ -273,12 +289,12 @@ class fValidation
 	static private function hasValue($key)
 	{
 		$value = fRequest::get($key);
-		if (fCore::stringlike($value)) {
+		if (self::stringlike($value)) {
 			return TRUE;
 		}	
 		if (is_array($value)) {
 			foreach ($value as $individual_value) {
-				if (fCore::stringlike($individual_value)) {
+				if (self::stringlike($individual_value)) {
 					return TRUE;	
 				}
 			}	

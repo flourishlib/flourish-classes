@@ -885,7 +885,7 @@ abstract class fActiveRecord
 				$pk_column,
 				is_array($data) ? $data[$pk_column] : $data
 			);
-			if (fCore::stringlike($pk_data[$pk_column])) {
+			if (is_numeric($pk_data[$pk_column]) || is_object($pk_data[$pk_column])) {
 				$pk_data[$pk_column] = (string) $pk_data[$pk_column];	
 			}
 		}

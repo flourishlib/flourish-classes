@@ -201,6 +201,22 @@ class fEmail
 	
 	
 	/**
+	 * Returns `TRUE` for non-empty strings, numbers, objects, empty numbers and string-like numbers (such as `0`, `0.0`, `'0'`)
+	 * 
+	 * @param  mixed $value  The value to check
+	 * @return boolean  If the value is string-like
+	 */
+	static protected function stringlike($value)
+	{
+		if ((!is_string($value) && !is_object($value) && !is_numeric($value)) || !strlen(trim($value))) {
+			return FALSE;	
+		}
+		
+		return TRUE;
+	}
+	
+	
+	/**
 	 * The file contents to attach
 	 * 
 	 * @var array
@@ -344,7 +360,7 @@ class fEmail
 	 */
 	public function addAttachment($filename, $mime_type, $contents)
 	{
-		if (!fCore::stringlike($filename)) {
+		if (!self::stringlike($filename)) {
 			throw new fProgrammerException(
 				'The filename specified, %s, does not appear to be a valid filename',
 				$filename
@@ -718,7 +734,7 @@ class fEmail
 	 */
 	public function encrypt($recipients_smime_cert_file)
 	{
-		if (!fCore::stringlike($recipients_smime_cert_file)) {
+		if (!self::stringlike($recipients_smime_cert_file)) {
 			throw new fProgrammerException(
 				"The recipient's S/MIME certificate filename specified, %s, does not appear to be a valid filename",
 				$recipients_smime_cert_file
@@ -1118,7 +1134,7 @@ class fEmail
 	 */
 	public function sign($senders_smime_cert_file, $senders_smime_pk_file, $senders_smime_pk_password)
 	{
-		if (!fCore::stringlike($senders_smime_cert_file)) {
+		if (!self::stringlike($senders_smime_cert_file)) {
 			throw new fProgrammerException(
 				"The sender's S/MIME certificate file specified, %s, does not appear to be a valid filename",
 				$senders_smime_cert_file
@@ -1131,7 +1147,7 @@ class fEmail
 			);
 		}
 		
-		if (!fCore::stringlike($senders_smime_pk_file)) {
+		if (!self::stringlike($senders_smime_pk_file)) {
 			throw new fProgrammerException(
 				"The sender's S/MIME primary key file specified, %s, does not appear to be a valid filename",
 				$senders_smime_pk_file
@@ -1212,7 +1228,7 @@ class fEmail
 			);
 		}
 		
-		if (!fCore::stringlike($this->subject)) {
+		if (!self::stringlike($this->subject)) {
 			$validation_messages[] = self::compose(
 				"Please provide an email subject"
 			);
@@ -1224,7 +1240,7 @@ class fEmail
 			);	
 		}
 		
-		if (!fCore::stringlike($this->plaintext_body)) {
+		if (!self::stringlike($this->plaintext_body)) {
 			$validation_messages[] = self::compose(
 				"Please provide a plaintext email body"
 			);
@@ -1232,13 +1248,13 @@ class fEmail
 		
 		// Make sure the attachments look good
 		foreach ($this->attachments as $filename => $file_info) {
-			if (!fCore::stringlike($file_info['mime-type'])) {
+			if (!self::stringlike($file_info['mime-type'])) {
 				$validation_messages[] = self::compose(
 					"No mime-type was specified for the attachment %s",
 					$filename
 				);
 			}
-			if (!fCore::stringlike($file_info['contents'])) {
+			if (!self::stringlike($file_info['contents'])) {
 				$validation_messages[] = self::compose(
 					"The attachment %s appears to be a blank file",
 					$filename

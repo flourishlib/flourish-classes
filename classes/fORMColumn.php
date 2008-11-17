@@ -470,7 +470,7 @@ class fORMColumn
 	 */
 	static public function objectifyNumber($class, $column, $value)
 	{
-		if (!fCore::stringlike($value)) {
+		if (!is_string($value) && !is_numeric($value)) {
 			return $value;
 		}
 		
@@ -761,7 +761,7 @@ class fORMColumn
 		}
 		
 		foreach (self::$email_columns[$class] as $column => $enabled) {
-			if (!fCore::stringlike($values[$column])) {
+			if (!strlen($values[$column])) {
 				continue;
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#iD', $values[$column])) {
@@ -796,7 +796,7 @@ class fORMColumn
 		}
 		
 		foreach (self::$link_columns[$class] as $column => $enabled) {
-			if (!fCore::stringlike($values[$column])) {
+			if (!strlen($values[$column])) {
 				continue;
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
