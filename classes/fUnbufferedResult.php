@@ -338,30 +338,30 @@ class fUnbufferedResult implements Iterator
 		foreach ($row as $key => $value) {
 			if ($value == ' ') {
 				$row[$key] = '';
-				fCore::trigger(
-					'notice',
+				trigger_error(
 					self::compose(
 						'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
 						'http://bugs.php.net/bug.php?id=26315'
-					)
+					),
+					E_USER_NOTICE
 				);
 			}
 			if (strlen($key) == 30) {
-				fCore::trigger(
-					'notice',
+				trigger_error(
 					self::compose(
 						'A column name exactly 30 characters in length was detected coming out of the database - this column name may be truncated, see %s for more information.',
 						'http://bugs.php.net/bug.php?id=23990'
-					)
+					),
+					E_USER_NOTICE
 				);
 			}
 			if (strlen($value) == 256) {
-				fCore::trigger(
-					'notice',
+				trigger_error(
 					self::compose(
 						'A value exactly 255 characters in length was detected coming out of the database - this value may be truncated, see %s for more information.',
 						'http://bugs.php.net/bug.php?id=37757'
-					)
+					),
+					E_USER_NOTICE
 				);
 			}
 		}

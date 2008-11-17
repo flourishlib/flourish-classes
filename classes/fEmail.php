@@ -121,8 +121,14 @@ class fEmail
 		
 		if (!$sendmail_command) {
 			self::$convert_crlf = TRUE;
-			fCore::trigger('warning', 'The proper fix for sending through qmail is not possible since the sendmail path is not set');
-			fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
+			trigger_error(
+				self::compose('The proper fix for sending through qmail is not possible since the sendmail path is not set'),
+				E_USER_WARNING
+			);
+			trigger_error(
+				self::compose('Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.'),
+				E_USER_WARNING
+			);
 		}
 		
 		$sendmail_command_parts = explode(' ', $sendmail_command, 2);
@@ -158,11 +164,23 @@ class fEmail
 		} else {
 			self::$convert_crlf   = TRUE;
 			if ($safe_mode) {
-				fCore::trigger('warning', 'The proper fix for sending through qmail is not possible since safe mode is turned on and the sendmail binary is not in one of the paths defined by the safe_mode_exec_dir ini setting');
-				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
+				trigger_error(
+					self::compose('The proper fix for sending through qmail is not possible since safe mode is turned on and the sendmail binary is not in one of the paths defined by the safe_mode_exec_dir ini setting'),
+					E_USER_WARNING
+				);
+				trigger_error(
+					self::compose('Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.'),
+					E_USER_WARNING
+				);
 			} else {
-				fCore::trigger('warning', 'The proper fix for sending through qmail is not possible since the sendmail binary could not be found or is not executable');
-				fCore::trigger('warning', 'Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.');
+				trigger_error(
+					self::compose('The proper fix for sending through qmail is not possible since the sendmail binary could not be found or is not executable'),
+					E_USER_WARNING
+				);
+				trigger_error(
+					self::compose('Trying to fix qmail by converting all \r\n to \n. This will cause invalid (but possibly functioning) email headers to be generated.'),
+					E_USER_WARNING
+				);
 			}
 		}
 	}

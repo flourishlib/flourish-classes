@@ -1471,14 +1471,14 @@ class fDatabase
 		);
 		
 		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
-			fCore::trigger(
-				'warning',
+			trigger_error(
 				self::compose(
 					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()
-				)
+				),
+				E_USER_WARNING
 			);
 		}
 		
@@ -1667,14 +1667,14 @@ class fDatabase
 		);
 		
 		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
-			fCore::trigger(
-				'warning',
+			trigger_error(
 				self::compose(
 					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
 					"\n" . $result->getSQL()
-				)
+				),
+				E_USER_WARNING
 			);
 		}
 		

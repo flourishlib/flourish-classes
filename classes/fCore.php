@@ -30,7 +30,6 @@ class fCore
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
 	const stringlike              = 'fCore::stringlike';
-	const trigger                 = 'fCore::trigger';
 	
 	
 	/**
@@ -552,12 +551,12 @@ class fCore
 			return 'windows';
 		}
 		
-		self::trigger(
-			'warning',
+		trigger_error(
 			self::compose(
 				'Unable to reliably determine the server OS. Defaulting to %s.',
 				"'linux/unix'"
-			)
+			),
+			E_USER_WARNING
 		);
 		
 		return 'linux/unix';
@@ -652,12 +651,12 @@ class fCore
 		try {
 			self::call(self::$exception_handler_callback, self::$exception_handler_parameters);
 		} catch (Exception $e) {
-			self::trigger(
-				'error',
+			trigger_error(
 				self::compose(
 					'An exception was thrown in the %s closing code callback',
 					'setExceptionHandling()'
-				)
+				),
+				E_USER_ERROR
 			);
 		}
 	}
@@ -797,41 +796,6 @@ class fCore
 		}
 		
 		return TRUE;
-	}
-	
-	
-	/**
-	 * Triggers a user-level error
-	 * 
-	 * The default error handler in PHP will show the line number of this
-	 * method as the triggering code. To get a full backtrace, use
-	 * ::enableErrorHandling().
-	 * 
-	 * @param  string $error_type  The type of error to trigger: `'error'`, `'warning'`, `'notice'`
-	 * @param  string $message     The error message
-	 * @return void
-	 */
-	static public function trigger($error_type, $message)
-	{
-		$valid_error_types = array('error', 'warning', 'notice');
-		if (!in_array($error_type, $valid_error_types)) {
-			self::toss(
-				'fProgrammerException',
-				self::compose(
-					'Invalid error type, %1$s, specified. Must be one of: %2$s.',
-					self::dump($error_type),
-					join(', ', $valid_error_types)
-				)
-			);
-		}
-		
-		static $error_type_map = array(
-			'error'   => E_USER_ERROR,
-			'warning' => E_USER_WARNING,
-			'notice'  => E_USER_NOTICE
-		);
-		
-		trigger_error($message, $error_type_map[$error_type]);
 	}
 	
 	
