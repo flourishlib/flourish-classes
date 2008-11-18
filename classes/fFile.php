@@ -88,7 +88,7 @@ class fFile
 		fclose($handle);
 		
 		// If there are no low ASCII chars and no easily distinguishable tokens, we need to detect by file extension
-		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|<\?php|\%\!PS-Adobe-3|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $content)) {
+		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|%PDF-|<\?php|\%\!PS-Adobe-3|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $content)) {
 			return self::determineMimeTypeByExtension(fFilesystem::getPathInfo($file, 'extension'));		
 		}
 		
