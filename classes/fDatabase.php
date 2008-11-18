@@ -1151,7 +1151,7 @@ class fDatabase
 		$sql_queries = array();
 		
 		// Separate the SQL from quoted values
-		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\])*')|(?:[^']+)#", $sql, $matches);
+		preg_match_all("#(?:'(?:''|\\\\'|\\\\[^']|[^'\\\\]*)*')|(?:[^']+)#", $sql, $matches);
 		
 		$cur_sql = '';
 		foreach ($matches[0] as $match) {
