@@ -487,7 +487,7 @@ class fImage extends fFile
 	 * 
 	 * @param  numeric $ratio_width   The width ratio to crop the image to
 	 * @param  numeric $ratio_height  The height ratio to crop the image to
-	 * @return void
+	 * @return fImage  The image object, to allow for method chaining
 	 */
 	public function cropToRatio($ratio_width, $ratio_height)
 	{
@@ -545,6 +545,8 @@ class fImage extends fFile
 			'old_width'  => $orig_width,
 			'old_height' => $orig_height
 		);
+		
+		return $this;
 	}
 	
 	
@@ -553,7 +555,7 @@ class fImage extends fFile
 	 * 
 	 * Desaturation does not occur until ::saveChanges() is called.
 	 * 
-	 * @return void
+	 * @return fImage  The image object, to allow for method chaining
 	 */
 	public function desaturate()
 	{
@@ -567,6 +569,8 @@ class fImage extends fFile
 			'width'      => $dim['width'],
 			'height'     => $dim['height']
 		);
+		
+		return $this;
 	}
 	
 	
@@ -816,12 +820,13 @@ class fImage extends fFile
 	/**
 	 * Sets the image to be resized proportionally to a specific size canvas
 	 * 
-	 * Will only size down an image. Resize does not occur until ::saveChanges()
-	 * is called.
+	 * Will only size down an image. This method uses resampling to ensure the
+	 * resized image is smooth in aappearance. Resizing does not occur until
+	 * ::saveChanges() is called.
 	 * 
 	 * @param  integer $canvas_width   The width of the canvas to fit the image on, `0` for no constraint
 	 * @param  integer $canvas_height  The height of the canvas to fit the image on, `0` for no constraint
-	 * @return void
+	 * @return fImage  The image object, to allow for method chaining
 	 */
 	public function resize($canvas_width, $canvas_height)
 	{
@@ -885,6 +890,8 @@ class fImage extends fFile
 			'old_width'  => $orig_width,
 			'old_height' => $orig_height
 		);
+		
+		return $this;
 	}
 	
 	
@@ -901,7 +908,7 @@ class fImage extends fFile
 	 * 
 	 * @param  string  $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
 	 * @param  integer $jpeg_quality    The quality setting to use for JPEG images
-	 * @return void
+	 * @return fImage  The image object, to allow for method chaining
 	 */
 	public function saveChanges($new_image_type=NULL, $jpeg_quality=90)
 	{
@@ -970,6 +977,8 @@ class fImage extends fFile
 		}
 		
 		$this->pending_modifications = array();
+		
+		return $this;
 	}
 }
 
