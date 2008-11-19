@@ -644,10 +644,11 @@ class fImage extends fFile
 	/**
 	 * Processes the current image using GD
 	 * 
-	 * @param  string $output_file  The file to save the image to
+	 * @param  string  $output_file   The file to save the image to
+	 * @param  integer $jpeg_quality  The JPEG quality to use
 	 * @return void
 	 */
-	private function processWithGD($output_file)
+	private function processWithGD($output_file, $jpeg_quality)
 	{
 		if (empty($this->pending_modifications)) {
 			return;
@@ -735,7 +736,7 @@ class fImage extends fFile
 				imagegif($gd_res, $output_file);
 				break;
 			case 'jpg':
-				imagejpeg($gd_res, $output_file, 90);
+				imagejpeg($gd_res, $output_file, $jpeg_quality);
 				break;
 			case 'png':
 				imagepng($gd_res, $output_file);
@@ -747,10 +748,11 @@ class fImage extends fFile
 	/**
 	 * Processes the current image using ImageMagick
 	 * 
-	 * @param  string $output_file  The file to save the image to
+	 * @param  string  $output_file   The file to save the image to
+	 * @param  integer $jpeg_quality  The JPEG quality to use
 	 * @return void
 	 */
-	private function processWithImageMagick($output_file)
+	private function processWithImageMagick($output_file, $jpeg_quality)
 	{
 		if (empty($this->pending_modifications)) {
 			return;
@@ -802,7 +804,7 @@ class fImage extends fFile
 		// Set up jpeg compression
 		$info = fFilesystem::getPathInfo($output_file);
 		if ($info['extension'] == 'jpg') {
-			$command_line .= ' -compress JPEG -quality 90 ';
+			$command_line .= ' -compress JPEG -quality ' . $jpeg_quality . ' ';
 		}
 		
 		$command_line .= ' ' . escapeshellarg($output_file);
@@ -897,10 +899,11 @@ class fImage extends fFile
 	 * new file to be created, the old file will not be deleted until the
 	 * transaction is committed.
 	 * 
-	 * @param  string $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
+	 * @param  string  $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
+	 * @param  integer $jpeg_quality    The quality setting to use for JPEG images
 	 * @return void
 	 */
-	public function saveChanges($new_image_type=NULL)
+	public function saveChanges($new_image_type=NULL, $jpeg_quality=90)
 	{
 		$this->tossIfException();
 		
@@ -927,6 +930,19 @@ class fImage extends fFile
 			);
 		}
 		
+		if (is_numeric($jpeg_quality)) {
+			$jpeg_quality = (int) $jpeg_quality;	
+		}
+		
+		if (!is_integer($jpeg_quality) || $jpeg_quality < 1 || $jpeg_quality > 100) {
+			throw new fProgrammerException(
+				'The JPEG quality specified, %1$s, is either not an integer, less than %2$s or greater than %3$s.',
+				$jpeg_quality,
+				1,
+				100
+			);	
+		}
+		
 		if ($new_image_type) {
 			$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
 		} else {
@@ -939,9 +955,9 @@ class fImage extends fFile
 		}
 		
 		if (self::$processor == 'gd') {
-			$this->processWithGD($output_file);
+			$this->processWithGD($output_file, $jpeg_quality);
 		} elseif (self::$processor == 'imagemagick') {
-			$this->processWithImageMagick($output_file);
+			$this->processWithImageMagick($output_file, $jpeg_quality);
 		}
 		
 		$old_file = $this->file;
