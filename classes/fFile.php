@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fFile
 {
@@ -792,7 +793,7 @@ class fFile
 	 * 
 	 * @param  string  $new_filename  The new full path to the file
 	 * @param  boolean $overwrite     If the new filename already exists, `TRUE` will cause the file to be overwritten, `FALSE` will cause the new filename to change
-	 * @return void
+	 * @return fFile  The file object, to allow for method chaining
 	 */
 	public function rename($new_filename, $overwrite)
 	{
@@ -845,6 +846,8 @@ class fFile
 		}
 		
 		fFilesystem::updateFilenameMap($this->file, $new_filename);
+		
+		return $this;
 	}
 	
 	
@@ -871,7 +874,7 @@ class fFile
 	 * previous data will be restored.
 	 * 
 	 * @param  mixed $data  The data to write to the file
-	 * @return void
+	 * @return fFile  The file object, to allow for method chaining
 	 */
 	public function write($data)
 	{
@@ -890,6 +893,8 @@ class fFile
 		}
 		
 		file_put_contents($this->file, $data);
+		
+		return $this;
 	}
 }
 
