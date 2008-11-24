@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]
  * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -88,22 +89,25 @@ class fFile
 		$content = fread($handle, 4096);
 		fclose($handle);
 		
+		$extension = strtolower(fFilesystem::getPathInfo($file, 'extension'));
+		
 		// If there are no low ASCII chars and no easily distinguishable tokens, we need to detect by file extension
 		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|%PDF-|<\?php|\%\!PS-Adobe-3|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $content)) {
-			return self::determineMimeTypeByExtension(fFilesystem::getPathInfo($file, 'extension'));		
+			return self::determineMimeTypeByExtension($extension);		
 		}
 		
-		return self::determineMimeTypeByContents($content);
+		return self::determineMimeTypeByContents($content, $extension);
 	}
 	
 	
 	/**
 	 * Looks for specific bytes in a file to determine the mime type of the file
 	 * 
-	 * @param  string $content  The first 4 bytes of the file content to use for byte checking
+	 * @param  string $content    The first 4 bytes of the file content to use for byte checking
+	 * @param  string $extension  The extension of the filetype, only used for difficult files such as Microsoft office documents
 	 * @return string  The mime type of the file
 	 */
-	static private function determineMimeTypeByContents($content)
+	static private function determineMimeTypeByContents($content, $extension)
 	{
 		$_0_8 = substr($content, 0, 8);
 		$_0_6 = substr($content, 0, 6);
@@ -233,17 +237,16 @@ class fFile
 			return 'text/rtf';	
 		}
 		
-		if ($_0_8 == "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1") {
-			$_513_8 = substr($content, 513, 8);
-			if ($_513_8 == "\x09\x08\x10\x00\x00\x06\x05\x00") {
+		// Office '97-2003 or Office 2007 formats
+		if ($_0_8 == "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1" || $_0_8 == "PK\x03\x04\x14\x00\x06\x00") {
+			if (in_array($extension, array('xlsx', 'xls', 'csv', 'tab'))) {
 				return 'application/vnd.ms-excel';	
 			}
-			if ($_513_8 == "\xEC\xA5\xC1\x00\x3\x60\x9\x4") {
-				return 'application/msword';
-			}
-			if ($_513_8 == "\x52\x00\x6F\x00\x6F\x00\x74\x00") {	
+			if (in_array($extension, array('pptx', 'ppt'))) {	
 				return 'application/vnd.ms-powerpoint';
 			}
+			// We default to word since we need something if the extension isn't recognized
+			return 'application/msword';
 		}
 		
 		if ($_0_8 == "\x09\x04\x06\x00\x00\x00\x10\x00") {
@@ -252,20 +255,6 @@ class fFile
 		
 		if ($_0_6 == "\xDB\xA5\x2D\x00\x00\x00" || $_0_5 == "\x50\x4F\x5E\x51\x60" || $_0_4 == "\xFE\x37\x0\x23" || $_0_3 == "\x94\xA6\x2E") {
 			return 'application/msword';	
-		}
-		
-		// Office 2007 formats
-		if ($_0_4 == "PK\x03\x04") {
-			$_14_5 = substr($content, 14, 5);
-			if ($_14_5 == "\xDD\xFC\x95\x37\x66") {
-				return 'application/msword';	
-			}
-			if ($_14_5 == "\x58\x56\xC6\x8F\x60") {
-				return 'application/vnd.ms-excel';
-			}
-			if ($_14_5 == "\x26\x1\xC0\xB1\xE2") {
-				return 'application/vnd.ms-powerpoint';
-			}
 		}
 		
 		
