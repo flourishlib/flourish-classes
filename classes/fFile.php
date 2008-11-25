@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Changed the constructor to ensure the path is to a file and not directory [wb, 2008-11-24]
  * @changes    1.0.0b3  Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]
  * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -435,6 +436,12 @@ class fFile
 		if (!is_readable($file)) {
 			throw new fEnvironmentException(
 				'The file specified, %s, is not readable',
+				$file
+			);
+		}
+		if (is_dir($file)) {
+			throw new fValidationException(
+				'The file specified, %s, is actually a directory',
 				$file
 			);
 		}
