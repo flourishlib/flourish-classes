@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b1
+ * @changes    1.0.0b1  Fixed a bug with validating filesizes [wb, 2008-11-25]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fUpload
 {
@@ -278,11 +279,11 @@ class fUpload
 		$file_array = $this->extractFileUploadArray($field, $index);
 		
 		// Do some validation of the file provided
-		if (empty($file_array['name']) || empty($file_array['tmp_name']) || empty($file_array['size'])) {
+		if (empty($file_array['name'])) {
 			throw new fValidationException('Please upload a file');
 		}
 		
-		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE) {
+		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE || $file_array['error'] == UPLOAD_ERR_INI_SIZE) {
 			$max_size = (fRequest::get('MAX_FILE_SIZE')) ? fRequest::get('MAX_FILE_SIZE') : ini_get('upload_max_filesize');
 			throw new fValidationException(
 				'The file uploaded is over the limit of %s',
@@ -294,6 +295,10 @@ class fUpload
 				'The file uploaded is over the limit of %s',
 				fFilesystem::formatFilesize($this->max_file_size)
 			);
+		}
+		
+		if (empty($file_array['tmp_name']) || empty($file_array['size'])) {
+			throw new fValidationException('Please upload a file');	
 		}
 		
 		if (!empty($this->mime_types) && file_exists($file_array['tmp_name']) && !in_array(fFile::determineMimeType($file_array['tmp_name']), $this->mime_types)) {
