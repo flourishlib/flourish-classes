@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-09-05]
+ * @version    1.0.0b1
+ * @changes    1.0.0b1  Fixed bugs with objectifying money columns [wb, 2008-11-24]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
  */
 class fORMMoney
 {
@@ -288,7 +289,7 @@ class fORMMoney
 	 */
 	static public function objectifyMoney($class, $column, $value)
 	{
-		if (!is_string($value) && !is_numeric($value) && !is_object($value)) {
+		if ((!is_string($value) && !is_numeric($value) && !is_object($value)) || !strlen(trim($value))) {
 			return $value;
 		}
 		
@@ -315,7 +316,7 @@ class fORMMoney
 	 */
 	static public function objectifyMoneyWithCurrency(&$values, &$old_values, $value_column, $currency_column)
 	{
-		if (!is_string($values[$value_column]) && !is_numeric($values[$value_column]) && !is_object($values[$value_column])) {
+		if ((!is_string($values[$value_column]) && !is_numeric($values[$value_column]) && !is_object($values[$value_column])) || !strlen(trim($values[$value_column]))) {
 			return;
 		}
 			

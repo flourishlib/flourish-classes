@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-05-28]
+ * @version    1.0.0b1
+ * @changes    1.0.0b1  Fixed a bug with objectifying file columns [wb, 2008-11-24]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-05-28]
  */
 class fORMFile
 {
@@ -600,7 +601,7 @@ class fORMFile
 	 */
 	static public function objectify($class, $column, $value)
 	{
-		if (!is_string($value) && !is_numeric($value) && !is_object($value)) {
+		if ((!is_string($value) && !is_numeric($value) && !is_object($value)) || !strlen(trim($value))) {
 			return $value;
 		}
 		
