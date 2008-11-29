@@ -655,7 +655,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the current record in the set (used for iteration)
 	 * 
-	 * @throws fValidationException
+	 * @throws fNoRemainingException
 	 * @internal
 	 * 
 	 * @return fActiveRecord  The current record
@@ -663,7 +663,7 @@ class fRecordSet implements Iterator
 	public function current()
 	{
 		if (!$this->valid()) {
-			throw new fProgrammerException(
+			throw new fNoRemainingException(
 				'There are no remaining records'
 			);
 		}
@@ -783,21 +783,15 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the current record in the set and moves the pointer to the next
 	 * 
-	 * @throws fValidationException
+	 * @throws fNoRemainingException
 	 * 
-	 * @return object|false  The current record or `FALSE` if no remaining records
+	 * @return fActiveRecord  The current record
 	 */
 	public function fetchRecord()
 	{
-		try {
-			$record = $this->current();
-			$this->next();
-			return $record;
-		} catch (fValidationException $e) {
-			throw $e;
-		} catch (fExpectedException $e) {
-			throw new fNoRemainingException('There are no remaining records');
-		}
+		$record = $this->current();
+		$this->next();
+		return $record;
 	}
 	
 	
