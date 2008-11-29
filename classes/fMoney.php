@@ -461,7 +461,7 @@ class fMoney
 		$integer  = join(',', $int_sections);
 		$fraction = (strlen($fraction)) ? '.' . $fraction : '';
 		
-		return $symbol . $sign . $integer . $fraction;
+		return $sign . $symbol . $integer . $fraction;
 	}
 	
 	
