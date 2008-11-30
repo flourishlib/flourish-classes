@@ -80,7 +80,7 @@ class fORMValidation
 	 *
 	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
 	 * @param  string $main_column          The column to check for a value
-	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
+	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return void
 	 */
@@ -277,18 +277,18 @@ class fORMValidation
 	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
 	 * @param  array  &$values              An associative array of all values for the record
 	 * @param  string $main_column          The column to check for a value
-	 * @param  array  $conditional_values   If empty, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
+	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return array  The validation error messages for the rule specified
 	 */
 	static private function checkConditionalRule($class, &$values, $main_column, $conditional_values, $conditional_columns)
 	{
-		if (!empty($conditional_values))  {
+		if ($conditional_values !== NULL)  {
 			settype($conditional_values, 'array');
 		}
 		settype($conditional_columns, 'array');
 		
-		if ((!empty($conditional_values) && in_array($values[$main_column], $conditional_values)) || (empty($conditional_values))) {
+		if (($conditional_values !== NULL && in_array($values[$main_column], $conditional_values)) || ($conditional_values === NULL && strlen((string) $values[$main_column]))) {
 			$messages = array();
 			foreach ($conditional_columns as $conditional_column) {
 				if ($values[$conditional_column] === NULL) {
