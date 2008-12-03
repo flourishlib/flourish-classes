@@ -164,7 +164,7 @@ abstract class fException extends Exception
 	public function __construct($message)
 	{
 		$args          = array_slice(func_get_args(), 1);
-		$required_args = preg_match_all('#%(\d+\$)?[\-+]?( |0|\'.)?-?\d*(\.\d+)?[%bcdeufFosxX]#', $message, $matches);
+		$required_args = preg_match_all('#(?<!%)%(\d+\$)?[\-+]?( |0|\'.)?-?\d*(\.\d+)?[bcdeufFosxX]#', $message, $matches);
 		
 		$code = NULL;
 		if ($required_args == sizeof($args) - 1) {
