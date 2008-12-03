@@ -155,7 +155,7 @@ abstract class fException extends Exception
 	/**
 	 * Sets the message for the exception, allowing for string interpolation and internationalization
 	 * 
-	 * @param  string  $message    The message for the exception
+	 * @param  string  $message    The message for the exception. This should be a valid [http://php.net/sprintf `sprintf()`] string and thus all % should be written as %%.
 	 * @param  mixed   $component  A string or number to insert into the message
 	 * @param  mixed   ...
 	 * @param  integer $code       The exception code to set
