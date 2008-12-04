@@ -73,7 +73,7 @@ abstract class fActiveRecord
 	 * @param  array  &$values      The current values
 	 * @param  array  &$old_values  The old values
 	 * @param  string $column       The column to check
-	 * @return void
+	 * @return boolean  If the value for the column specified has changed
 	 */
 	static public function changed(&$values, &$old_values, $column)
 	{
