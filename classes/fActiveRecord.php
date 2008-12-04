@@ -366,6 +366,47 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Creates a clone of a record
+	 * 
+	 * If the record has an auto incrementing primary key, the primary key will
+	 * be erased in the clone. If the primary key is not auto incrementing,
+	 * the primary key will be left as-is in the clone. In either situation the
+	 * clone will return `FALSE` from the ::exists() method until ::store() is
+	 * called.
+	 * 
+	 * @return fActiveRecord
+	 */
+	public function __clone()
+	{
+		// Break any references to the identity map
+		$temp_values = $this->values;
+		$this->values = $temp_values;
+		
+		$temp_cache  = $this->cache;
+		$this->cache = $temp_cache;
+		
+		// Related records are purged
+		$this->related_records = array();
+		
+		// Old values are changed to look like the record is non-existant
+		$this->old_values = array();
+		
+		foreach (array_keys($this->values) as $key) {
+			$this->old_values[$key] = array(NULL);
+		}
+		
+		// If we have a single auto incrementing primary key, remove the value
+		$table      = fORM::tablize($this);
+		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
+		
+		if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
+			$this->values[$pk_columns[0]] = NULL;
+			unset($this->old_values[$pk_columns[0]]);
+		}		
+	}
+	
+	
+	/**
 	 * Creates a new record or loads one from the database - if a primary key is provided the record will be loaded
 	 * 
 	 * @throws fNotFoundException
