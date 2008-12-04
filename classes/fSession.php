@@ -23,6 +23,7 @@ class fSession
 	const reset           = 'fSession::reset';
 	const set             = 'fSession::set';
 	const setLength       = 'fSession::setLength';
+	const setPath         = 'fSession::setPath';
 	
 	
 	/**
