@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed detection of mime type for JPEG files with Exif information [wb, 2008-12-04]
  * @changes    1.0.0b4  Changed the constructor to ensure the path is to a file and not directory [wb, 2008-11-24]
  * @changes    1.0.0b3  Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]
  * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
@@ -135,7 +136,7 @@ class fFile
 			return 'image/x-ms-bmp';	
 		}
 		
-		if (strlen($content) > 10 && substr($content, 6, 4) == 'JFIF') {
+		if (strlen($content) > 10 && in_array(substr($content, 6, 4), array('JFIF', 'Exif'))) {
 			return 'image/jpeg';	
 		}
 		
