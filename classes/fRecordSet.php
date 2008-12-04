@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
 class fRecordSet implements Iterator
 {
@@ -29,6 +30,8 @@ class fRecordSet implements Iterator
 	 * {{{
 	 * 'column='                    => VALUE,                       // column = VALUE
 	 * 'column!'                    => VALUE                        // column <> VALUE
+	 * 'column!='                   => VALUE                        // column <> VALUE
+	 * 'column<>'                   => VALUE                        // column <> VALUE
 	 * 'column~'                    => VALUE                        // column LIKE '%VALUE%'
 	 * 'column<'                    => VALUE                        // column < VALUE
 	 * 'column<='                   => VALUE                        // column <= VALUE
@@ -36,6 +39,8 @@ class fRecordSet implements Iterator
 	 * 'column>='                   => VALUE                        // column >= VALUE
 	 * 'column='                    => array(VALUE, VALUE2, ... )   // column IN (VALUE, VALUE2, ... )
 	 * 'column!'                    => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
+	 * 'column!='                   => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
+	 * 'column<>'                   => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
 	 * 'column~'                    => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ... )
 	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
 	 * 'column|column2|column3~'    => VALUE                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%')
@@ -79,6 +84,8 @@ class fRecordSet implements Iterator
 	 * {{{
 	 * 'function(column)='   => VALUE,                       // function(column) = VALUE
 	 * 'function(column)!'   => VALUE                        // function(column) <> VALUE
+	 * 'function(column)!=   => VALUE                        // function(column) <> VALUE
+	 * 'function(column)<>'  => VALUE                        // function(column) <> VALUE
 	 * 'function(column)~'   => VALUE                        // function(column) LIKE '%VALUE%'
 	 * 'function(column)<'   => VALUE                        // function(column) < VALUE
 	 * 'function(column)<='  => VALUE                        // function(column) <= VALUE
@@ -86,6 +93,8 @@ class fRecordSet implements Iterator
 	 * 'function(column)>='  => VALUE                        // function(column) >= VALUE
 	 * 'function(column)='   => array(VALUE, VALUE2, ... )   // function(column) IN (VALUE, VALUE2, ... )
 	 * 'function(column)!'   => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )
+	 * 'function(column)!='  => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )
+	 * 'function(column)<>'  => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )
 	 * }}}
 	 * 
 	 * The aggregate functions `AVG()`, `COUNT()`, `MAX()`, `MIN()` and
@@ -241,8 +250,14 @@ class fRecordSet implements Iterator
 		foreach ($conditions as $method => $value) {
 			
 			// Split the operator off of the end of the method name
-			if (substr($method, -2) == '<=' || substr($method, -2) == '>=') {
-				$operator = substr($method, -2);
+			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>'))) {
+				$operator = strtr(
+					substr($method, -2),
+					array(
+						'<>' => '!',
+						'!=' => '!'
+					)
+				);
 				$method   = substr($method, 0, -2);
 			} else {
 				$operator = substr($method, -1);
@@ -690,6 +705,8 @@ class fRecordSet implements Iterator
 	 * // The following forms work for any $value that is not an array
 	 * 'methodName='                         => $value  // If the output is equal to $value
 	 * 'methodName!'                         => $value  // If the output is not equal to $value
+	 * 'methodName!='                        => $value  // If the output is not equal to $value
+	 * 'methodName<>'                        => $value  // If the output is not equal to $value
 	 * 'methodName<'                         => $value  // If the output is less than $value
 	 * 'methodName<='                        => $value  // If the output is less than or equal to $value
 	 * 'methodName>'                         => $value  // If the output is greater than $value
@@ -700,6 +717,8 @@ class fRecordSet implements Iterator
 	 * // The following forms work for any $array that is an array
 	 * 'methodName='                         => $array  // If the output is equal to at least one value in $array
 	 * 'methodName!'                         => $array  // If the output is not equal to any value in $array
+	 * 'methodName!='                        => $array  // If the output is not equal to any value in $array
+	 * 'methodName<>'                        => $array  // If the output is not equal to any value in $array
 	 * 'methodName~'                         => $array  // If the output contains one of the strings in $array (case insensitive)
 	 * 'methodName|methodName2|methodName3~' => $array  // If each value in the array is present in the output of at least one method (case insensitive)
 	 * }}} 

@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
 class fORMDatabase
 {
@@ -151,8 +152,14 @@ class fORMDatabase
 		$sql = array();
 		
 		foreach ($conditions as $expression => $value) {
-			if (substr($expression, -2) == '<=' || substr($expression, -2) == '>=') {
-				$operator   = substr($expression, -2);
+			if (in_array(substr($expression, -2), array('<=', '>=', '!=', '<>'))) {
+				$operator   = strtr(
+					substr($expression, -2),
+					array(
+						'<>' => '!',
+						'!=' => '!'
+					)
+				);
 				$expression = substr($expression, 0, -2);
 			} else {
 				$operator   = substr($expression, -1);
@@ -419,8 +426,14 @@ class fORMDatabase
 		$sql = array();
 		foreach ($conditions as $column => $values) {
 			
-			if (substr($column, -2) == '<=' || substr($column, -2) == '>=') {
-				$operator = substr($column, -2);
+			if (in_array(substr($expression, -2), array('<=', '>=', '!=', '<>'))) {
+				$operator = strtr(
+					substr($column, -2),
+					array(
+						'<>' => '!',
+						'!=' => '!'
+					)
+				);
 				$column   = substr($column, 0, -2);
 			} else {
 				$operator = substr($column, -1);
@@ -451,8 +464,14 @@ class fORMDatabase
 				$operators = array();
 				
 				foreach ($columns as &$_column) {
-					if (substr($_column, -2) == '<=' || substr($_column, -2) == '>=') {
-						$operators[] = substr($_column, -2);
+					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>'))) {
+						$operators[] = strtr(
+							substr($_column, -2),
+							array(
+								'<>' => '!',
+								'!=' => '!'
+							)
+						);
 						$_column     = substr($_column, 0, -2);
 					} elseif (!ctype_alnum(substr($_column, -1))) {
 						$operators[] = substr($_column, -1);
