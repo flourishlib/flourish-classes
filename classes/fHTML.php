@@ -95,51 +95,40 @@ class fHTML
 			$replacement = '"\1"';
 		}
 		
+		// Find all a tags with contents, individual HTML tags and HTML comments
+		$reg_exp = "/<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*\/\s*a\s*>|<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|<\!--.*?-->/";
+		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		
-		// Handle fully qualified urls with protocol
-		$full_url_regex       = '#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie';
-		$full_url_replacement = '"<a href=\"\1\">" . ' . $replacement . ' . "</a>"';
+		// Find all text
+		$text_matches = preg_split($reg_exp, $content);
 		
-		// Handle domains names that start with www
-		$www_url_regex       = '#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie';
-		$www_url_replacement = '"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"';
-		
-		// Handle email addresses
-		$email_regex       = '#\b([a-z0-9\\.+\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie';
-		$email_replacement = '"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"';
-		
-		$searches = array(
-			$full_url_regex => $full_url_replacement,
-			$www_url_regex  => $www_url_replacement,
-			$email_regex    => $email_replacement
-		);
-		
-		
-		// Loop through and do each kind of replacement, by doing a pass for each replacement, we prevent nested links
-		foreach ($searches as $regex => $replacement) {
-			
-			// Find all a tags
-			$reg_exp = "#<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*/\s*a\s*>#";
-			preg_match_all($reg_exp, $content, $a_tag_matches, PREG_SET_ORDER);
-			
-			// Find all text
-			$text_matches = preg_split($reg_exp, $content);
-			
-			// For each chunk of text, convert all URLs to links
-			foreach($text_matches as $key => $text) {
-				$text = preg_replace($regex, $replacement, $text);
-				$text_matches[$key] = str_replace("\\'", "'", $text);
-			}
-			
-			// Merge the text and a tags back together
-			for ($i = 0; $i < sizeof($a_tag_matches); $i++) {
-				$text_matches[$i] .= $a_tag_matches[$i][0];
-			}
-			
-			$content = implode($text_matches);
+		// For each chunk of text and create the links
+		foreach($text_matches as $key => $text) {
+			$text_matches[$key] = str_replace(
+				"\\'",
+				"'",
+				preg_replace(
+					array(
+						'#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie', # Fully URLs
+						'#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie',  # www. domains
+						'#\b([a-z0-9\\.+\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie' # email addresses
+					),
+					array(
+						'"<a href=\"\1\">" . ' . $replacement . ' . "</a>"',
+						'"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"',
+						'"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"'
+					),
+					$text
+				)
+			);
 		}
 		
-		return $content;
+		// Merge the text and html back together
+		for ($i = 0; $i < sizeof($html_matches); $i++) {
+			$text_matches[$i] .= $html_matches[$i][0];
+		}
+		
+		return implode($text_matches);
 	}
 	
 	
