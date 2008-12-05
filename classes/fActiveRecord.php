@@ -588,7 +588,7 @@ abstract class fActiveRecord
 	/**
 	 * Deletes a record from the database, but does not destroy the object
 	 * 
-	 * This method qill start a database transaction if one is not already active.
+	 * This method will start a database transaction if one is not already active.
 	 * 
 	 * @return void
 	 */
