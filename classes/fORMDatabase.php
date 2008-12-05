@@ -426,7 +426,7 @@ class fORMDatabase
 		$sql = array();
 		foreach ($conditions as $column => $values) {
 			
-			if (in_array(substr($expression, -2), array('<=', '>=', '!=', '<>'))) {
+			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>'))) {
 				$operator = strtr(
 					substr($column, -2),
 					array(
