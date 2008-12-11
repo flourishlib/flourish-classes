@@ -379,12 +379,26 @@ abstract class fActiveRecord
 	 */
 	public function __clone()
 	{
-		// Break any references to the identity map
+		// Copy values and cache, making sure objects are cloned to prevent reference issues
 		$temp_values = $this->values;
-		$this->values = $temp_values;
+		$this->values = array();
+		foreach ($temp_values as $column => $value) {
+			if (is_object($value)) {
+				$this->values[$column] = clone $value;
+			} else {
+				$this->values[$column] = $value;
+			}	
+		}
 		
 		$temp_cache  = $this->cache;
-		$this->cache = $temp_cache;
+		$this->cache = array();
+		foreach ($temp_cache as $key => $value) {
+			if (is_object($value)) {
+				$this->cache[$key] = clone $value;
+			} else {
+				$this->cache[$key] = $value;
+			}		
+		}
 		
 		// Related records are purged
 		$this->related_records = array();
