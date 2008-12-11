@@ -1334,7 +1334,7 @@ class fDatabase
 						if (!$this->isInsideTransaction()) {
 							$this->connection->rollBack();
 						} else {
-							$this->connection->query("ROLLBACK TO get_last_val");
+							$this->connection->exec("ROLLBACK TO get_last_val");
 						}
 						
 					}
