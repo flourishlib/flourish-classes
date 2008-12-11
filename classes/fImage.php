@@ -517,10 +517,10 @@ class fImage extends fFile
 			
 		if ($orig_ratio > $new_ratio) {
 			$new_height = $orig_height;
-			$new_width  = (int) ($new_ratio * $new_height);
+			$new_width  = round($new_ratio * $new_height);
 		} else {
 			$new_width  = $orig_width;
-			$new_height = (int) ($new_width / $new_ratio);
+			$new_height = round($new_width / $new_ratio);
 		}
 			
 		// Figure out where to crop from
@@ -858,11 +858,11 @@ class fImage extends fFile
 		
 		if ($canvas_width == 0) {
 			$new_height = $canvas_height;
-			$new_width  = (int) (($new_height/$orig_height) * $orig_width);
+			$new_width  = round(($new_height/$orig_height) * $orig_width);
 		
 		} elseif ($canvas_height == 0) {
 			$new_width  = $canvas_width;
-			$new_height = (int) (($new_width/$orig_width) * $orig_height);
+			$new_height = round(($new_width/$orig_width) * $orig_height);
 		
 		} else {
 			$orig_ratio   = $orig_width/$orig_height;
@@ -870,10 +870,10 @@ class fImage extends fFile
 			
 			if ($canvas_ratio > $orig_ratio) {
 				$new_height = $canvas_height;
-				$new_width  = (int) ($orig_ratio * $new_height);
+				$new_width  = round($orig_ratio * $new_height);
 			} else {
 				$new_width  = $canvas_width;
-				$new_height = (int) ($new_width / $orig_ratio);
+				$new_height = round($new_width / $orig_ratio);
 			}
 		}
 		
@@ -938,7 +938,7 @@ class fImage extends fFile
 		}
 		
 		if (is_numeric($jpeg_quality)) {
-			$jpeg_quality = (int) $jpeg_quality;	
+			$jpeg_quality = round($jpeg_quality);	
 		}
 		
 		if (!is_integer($jpeg_quality) || $jpeg_quality < 1 || $jpeg_quality > 100) {
