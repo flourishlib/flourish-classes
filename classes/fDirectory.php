@@ -337,8 +337,7 @@ class fDirectory
 			}
 		}
 		
-		
-		@rename($this->directory, $new_dirname);
+		rename($this->directory, $new_dirname);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {

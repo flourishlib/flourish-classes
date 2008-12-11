@@ -1041,14 +1041,14 @@ class fDatabase
 	private function executeQuery($result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSQL(), $this->connection));
+			$result->setResult(mssql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_query($result->getSQL(), $this->connection));
+			$result->setResult(mysql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSQL()));
+			$result->setResult(mysqli_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'odbc') {
 			$rows = array();
-			$resource = @odbc_exec($this->connection, $result->getSQL());
+			$resource = odbc_exec($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				// Allow up to 1MB of binary data
 				odbc_longreadlen($resource, 1048576);
@@ -1061,12 +1061,12 @@ class fDatabase
 				$result->setResult($resource);
 			}
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSQL()));
+			$result->setResult(pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(sqlite_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
 			$rows = array();
-			$resource = @sqlsrv_query($this->connection, $result->getSQL());
+			$resource = sqlsrv_query($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				while ($row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC)) {
 					$rows[] = $row;
@@ -1115,19 +1115,19 @@ class fDatabase
 	private function executeUnbufferedQuery($result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(@mssql_query($result->getSQL(), $this->connection, 20));
+			$result->setResult(mssql_query($result->getSQL(), $this->connection, 20));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(@mysql_unbuffered_query($result->getSQL(), $this->connection));
+			$result->setResult(mysql_unbuffered_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(@mysqli_query($this->connection, $result->getSQL(), MYSQLI_USE_RESULT));
+			$result->setResult(mysqli_query($this->connection, $result->getSQL(), MYSQLI_USE_RESULT));
 		} elseif ($this->extension == 'odbc') {
-			$result->setResult(@odbc_exec($this->connection, $result->getSQL()));
+			$result->setResult(odbc_exec($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(@pg_query($this->connection, $result->getSQL()));
+			$result->setResult(pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(sqlite_unbuffered_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
-			$result->setResult(@sqlsrv_query($this->connection, $result->getSQL()));
+			$result->setResult(sqlsrv_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pdo') {
 			$result->setResult($this->connection->query($result->getSQL()));
 		}

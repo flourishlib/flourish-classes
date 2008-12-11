@@ -541,7 +541,7 @@ class fFile
 			return fFilesystem::recordDelete($this);
 		}
 		
-		@unlink($this->file);
+		unlink($this->file);
 		
 		$exception = new fProgrammerException(
 			'The action requested can not be performed because the file has been deleted'
@@ -606,7 +606,7 @@ class fFile
 			}
 		}
 		
-		@copy($this->getPath(), $new_filename);
+		copy($this->getPath(), $new_filename);
 		$class = get_class($this);
 		$file  = new $class($new_filename);
 		
@@ -867,7 +867,7 @@ class fFile
 			}
 		}
 		
-		@rename($this->file, $new_filename);
+		rename($this->file, $new_filename);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {

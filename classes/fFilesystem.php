@@ -144,7 +144,7 @@ class fFilesystem
 		foreach ($commit_operations as $operation) {
 			// Commit operations only include deletes, however it could be a filename or object
 			if (isset($operation['filename'])) {
-				@unlink($operation['filename']);
+				unlink($operation['filename']);
 			} else {
 				$operation['object']->delete();
 			}
@@ -552,7 +552,7 @@ class fFilesystem
 						$operation['filename'],
 						new fProgrammerException('The action requested can not be performed because the file has been deleted')
 					);
-					@unlink($operation['filename']);
+					unlink($operation['filename']);
 					break;
 					
 				case 'write':
@@ -561,7 +561,7 @@ class fFilesystem
 					
 				case 'rename':
 					fFilesystem::updateFilenameMap($operation['new_name'], $operation['old_name']);
-					@rename($operation['new_name'], $operation['old_name']);
+					rename($operation['new_name'], $operation['old_name']);
 					break;
 					
 			}
