@@ -410,6 +410,38 @@ class fFile
 	
 	
 	/**
+	 * Duplicates a file in the current directory when the object is cloned
+	 * 
+	 * @return fFile  The new fFile object
+	 */
+	public function __clone()
+	{
+		$this->tossIfException();
+		
+		$directory = $this->getDirectory();
+		
+		if (!$directory->isWritable()) {
+			throw new fEnvironmentException(
+				'The file count not be cloned because the containing directory, %s, is not writable',
+				$directory
+			);
+		}
+		
+		$file = fFilesystem::makeUniqueName($directory->getPath() . $this->getFilename());
+		
+		copy($this->getPath(), $file);
+		
+		$this->file      =& fFilesystem::hookFilenameMap($file);
+		$this->exception =& fFilesystem::hookExceptionMap($file);
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isInsideTransaction()) {
+			fFilesystem::recordDuplicate($this);
+		}
+	}
+	
+	
+	/**
 	 * Creates an object to represent a file on the filesystem
 	 * 
 	 * If multiple fFile objects are created for a single file, they will
