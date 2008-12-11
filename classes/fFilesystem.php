@@ -548,6 +548,10 @@ class fFilesystem
 			switch($operation['action']) {
 				
 				case 'delete':
+					self::updateExceptionMap(
+						$operation['filename'],
+						new fProgrammerException('The action requested can not be performed because the file has been deleted')
+					);
 					@unlink($operation['filename']);
 					break;
 					
@@ -556,6 +560,7 @@ class fFilesystem
 					break;
 					
 				case 'rename':
+					fFilesystem::updateFilenameMap($operation['new_name'], $operation['old_name']);
 					@rename($operation['new_name'], $operation['old_name']);
 					break;
 					
