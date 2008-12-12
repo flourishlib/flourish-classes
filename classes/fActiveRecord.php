@@ -1498,14 +1498,14 @@ abstract class fActiveRecord
 	 * 
 	 *  - No parameters: this object will be cloned
 	 *  - A single `TRUE` value: this object plus all many-to-many associations and all child records (recursively) will be cloned
-	 *  - Any number of related record class names: the many-to-many associations or child records that correspond to the classes specified will be cloned
+	 *  - Any number of plural related record class names: the many-to-many associations or child records that correspond to the classes specified will be cloned
 	 * 
 	 * The class names specified can be a simple class name if there is only a
 	 * single route between the two corresponding database tables. If there is 
 	 * more than one route between the two tables, the class name should be
 	 * substituted with a string in the format `'RelatedClass{route}'`.
 	 * 
-	 * @param  string $related_class  The related class to replicate - see method description for details
+	 * @param  string $related_class  The plural related class to replicate - see method description for details
 	 * @param  string ...
 	 * @return fActiveRecord  The cloned record
 	 */
@@ -1533,10 +1533,10 @@ abstract class fActiveRecord
 			$recursive  = TRUE;
 			
 			foreach ($many_to_many_relationships as $relationship) {
-				$parameters[] = fORM::classize($relationship['related_table']) . '{' . $relationship['join_table'] . '}'; 		
+				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['join_table'] . '}'; 		
 			}
 			foreach ($one_to_many_relationships as $relationship) {
-				$parameters[] = fORM::classize($relationship['related_table']) . '{' . $relationship['related_column'] . '}'; 		
+				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['related_column'] . '}'; 		
 			}			
 		}
 		
@@ -1546,11 +1546,11 @@ abstract class fActiveRecord
 			// Parse the Class{route} strings
 			if (strpos($parameter, '{') !== FALSE) {
 				$brace         = strpos($parameter, '{');
-				$related_class = substr($parameter, 0, $brace);
+				$related_class = fGrammar::singularize(substr($parameter, 0, $brace));
 				$related_table = fORM::tablize($related_class);
 				$route         = substr($parameter, $brace+1, -1);
 			} else {
-				$related_class = $parameter;
+				$related_class = fGrammar::singularize($parameter);
 				$related_table = fORM::tablize($related_class);
 				$route         = fORMSchema::getRouteName($table, $related_table);
 			}
