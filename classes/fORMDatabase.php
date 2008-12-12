@@ -392,7 +392,7 @@ class fORMDatabase
 	 * @param  string $table         The table to build the where clause for
 	 * @param  string $table_alias   The alias for the table
 	 * @param  array  &$values       The values array for the fActiveRecord object
-	 * @param  array  &$old_values   The values array for the fActiveRecord object
+	 * @param  array  &$old_values   The old values array for the fActiveRecord object
 	 * @return string  The `WHERE` clause that will specify the fActiveRecord as it currently exists in the database
 	 */
 	static public function createPrimaryKeyWhereClause($table, $table_alias, &$values, &$old_values)
