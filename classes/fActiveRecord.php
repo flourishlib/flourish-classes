@@ -383,11 +383,7 @@ abstract class fActiveRecord
 		$temp_values = $this->values;
 		$this->values = array();
 		foreach ($temp_values as $column => $value) {
-			if (is_object($value)) {
-				$this->values[$column] = clone $value;
-			} else {
-				$this->values[$column] = $value;
-			}	
+			$this->values[$column] = fORM::replicate($this, $column, $value);
 		}
 		
 		$temp_cache  = $this->cache;
@@ -1492,6 +1488,121 @@ abstract class fActiveRecord
 		ksort($signatures);
 		
 		return join("\n\n", $signatures);
+	}
+	
+	
+	/**
+	 * Generates a clone of the current record, removing any auto incremented primary key value and allowing for replicating related records
+	 * 
+	 * This method will accept three different sets of parameters:
+	 * 
+	 *  - No parameters: this object will be cloned
+	 *  - A single `TRUE` value: this object plus all many-to-many associations and all child records (recursively) will be cloned
+	 *  - Any number of related record class names: the many-to-many associations or child records that correspond to the classes specified will be cloned
+	 * 
+	 * The class names specified can be a simple class name if there is only a
+	 * single route between the two corresponding database tables. If there is 
+	 * more than one route between the two tables, the class name should be
+	 * substituted with a string in the format `'RelatedClass{route}'`.
+	 * 
+	 * @param  string $related_class  The related class to replicate - see method description for details
+	 * @param  string ...
+	 * @return fActiveRecord  The cloned record
+	 */
+	public function replicate($related_class=NULL)
+	{
+		$clone = clone $this;
+		
+		$parameters = func_get_args();
+		
+		// If no parameters are passed, we are just doing the clone
+		if (!sizeof($parameters)) {
+			return $clone;
+		}
+		
+		$table = fORM::tablize($this);
+		
+		$recursive                  = FALSE;
+		$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
+		$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
+		
+		
+		// When just TRUE is passed we recursively replicate all related records
+		if (sizeof($parameters) == 1 && $parameters[0] === TRUE) {
+			$parameters = array();
+			$recursive  = TRUE;
+			
+			foreach ($many_to_many_relationships as $relationship) {
+				$parameters[] = fORM::classize($relationship['related_table']) . '{' . $relationship['join_table'] . '}'; 		
+			}
+			foreach ($one_to_many_relationships as $relationship) {
+				$parameters[] = fORM::classize($relationship['related_table']) . '{' . $relationship['related_column'] . '}'; 		
+			}			
+		}
+		
+		
+		foreach ($parameters as $parameter) {
+			
+			// Parse the Class{route} strings
+			if (strpos($parameter, '{') !== FALSE) {
+				$brace         = strpos($parameter, '{');
+				$related_class = substr($parameter, 0, $brace);
+				$related_table = fORM::tablize($related_class);
+				$route         = substr($parameter, $brace+1, -1);
+			} else {
+				$related_class = $parameter;
+				$related_table = fORM::tablize($related_class);
+				$route         = fORMSchema::getRouteName($table, $related_table);
+			}
+			
+			// Determine the kind of relationship
+			$many_to_many = FALSE;
+			$one_to_many  = FALSE;
+			
+			foreach ($many_to_many_relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table && $relationship['join_table'] == $route) {
+					$many_to_many = TRUE;	
+					break;
+				}
+			}
+			
+			foreach ($one_to_many_relationships as $relationship) {
+				if ($relationship['related_table'] == $related_table && $relationship['related_column'] == $route) {
+					$one_to_many = TRUE;
+					break;
+				}	
+			}
+			
+			if (!$many_to_many && !$one_to_many) {
+				throw new fProgrammerException(
+					'The related class specified, %1$s, does not appear to be in a many-to-many or one-to-many relationship with %$2s',
+					$parameter,
+					fORM::getClass($this)
+				);	
+			}
+			
+			// Get the related records
+			$record_set = fORMRelated::buildRecords($this, $this->values, $this->related_records, $related_class, $route);
+			
+			// One-to-many records need to be replicated, possibly recursively
+			if ($one_to_many) {
+				if ($recursive) {
+					$records = $record_set->call('replicate', TRUE);
+				} else {
+					$records = $record_set->call('replicate');
+				}
+				$record_set = fRecordSet::buildFromRecords($related_class, $records);
+				$record_set->call(
+					'set' . fGrammar::camelize($route, TRUE),
+					NULL
+				);	
+			}
+			
+			// Cause the related records to be associated with the new clone
+			fORMRelated::associateRecords($this, $clone->related_records, $related_class, $record_set, $route);
+		}
+		
+		return $clone;
 	}
 	
 	

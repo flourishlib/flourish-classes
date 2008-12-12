@@ -35,7 +35,9 @@ class fORM
 	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
 	const registerRecordSetMethod    = 'fORM::registerRecordSetMethod';
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
+	const registerReplicateCallback  = 'fORM::registerReplicateCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
+	const replicate                  = 'fORM::registerReplicateCallback';
 	const reset                      = 'fORM::reset';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
@@ -89,6 +91,13 @@ class fORM
 	 * @var array
 	 */
 	static private $reflect_callbacks = array();
+	
+	/**
+	 * Callbacks for ::replicate()
+	 * 
+	 * @var array
+	 */
+	static private $replicate_callbacks = array();
 	
 	/**
 	 * Callbacks for ::scalarize()
@@ -740,6 +749,30 @@ class fORM
 	
 	
 	/**
+	 * Registers a callback for when a value is replicated for a specific column
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  string   $column    The column to register for
+	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to replicate and should return the replicated value.
+	 * @return void
+	 */
+	static public function registerReplicateCallback($class, $column, $callback)
+	{
+		$class = self::getClass($class);
+		
+		if (!isset(self::$replicate_callbacks[$class])) {
+			self::$replicate_callbacks[$class] = array();
+		}
+		
+		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		
+		self::$replicate_callbacks[$class][$column] = $callback;
+	}
+	
+	
+	/**
 	 * Registers a callback for when ::scalarize() is called on a specific column
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to register for
@@ -764,6 +797,34 @@ class fORM
 	
 	
 	/**
+	 * Takes and value and returns a copy is scalar or a clone if an object
+	 * 
+	 * The ::registerReplicateCallback() allows for custom replication code
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $column  The database column
+	 * @param  mixed  $value   The value to copy/clone
+	 * @return mixed  The copied/cloned value
+	 */
+	static public function replicate($class, $column, $value)
+	{
+		$class = self::getClass($class);
+		
+		if (!empty(self::$replicate_callbacks[$class][$column])) {
+			return call_user_func(self::$replicate_callbacks[$class][$column], $class, $column, $value);
+		}
+		
+		if (!is_object($value)) {
+			return $value;	
+		}
+		
+		return clone $value;
+	}
+	
+	
+	/**
 	 * Resets the configuration of the class
 	 * 
 	 * @internal
@@ -781,6 +842,7 @@ class fORM
 		self::$record_names                   = array();
 		self::$record_set_method_callbacks    = array();
 		self::$reflect_callbacks              = array();
+		self::$replicate_callbacks            = array();
 		self::$scalarize_callbacks            = array();
 		self::$table_class_map                = array();
 	}

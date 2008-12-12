@@ -34,6 +34,7 @@ class fORMFile
 	const process                    = 'fORMFile::process';
 	const processImage               = 'fORMFile::processImage';
 	const reflect                    = 'fORMFile::reflect';
+	const replicate                  = 'fORMFile::replicate';
 	const reset                      = 'fORMFile::reset';
 	const rollback                   = 'fORMFile::rollback';
 	const set                        = 'fORMFile::set';
@@ -317,6 +318,12 @@ class fORMFile
 			self::reflect
 		);
 		
+		fORM::registerReplicateCallback(
+			$class,
+			$column,
+			self::replicate
+		);
+		
 		fORM::registerObjectifyCallback(
 			$class,
 			$column,
@@ -580,7 +587,7 @@ class fORMFile
 			}
 			
 			// If the file is in a temp dir, move it out
-			if (stripos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+			if (strpos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
 				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
 				$new_filename = fFilesystem::makeUniqueName($new_filename);
 				$value->rename($new_filename, FALSE);
@@ -870,6 +877,35 @@ class fORMFile
 			
 			$signatures[$inspect_method] = $signature;
 		}
+	}
+	
+	
+	/**
+	 * Creates a copy of an uploaded file in the temp directory for the newly cloned record
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The class this value is for
+	 * @param  string $column  The column the value is in
+	 * @param  mixed  $value   The value
+	 * @return mixed  The cloned fFile object
+	 */
+	static public function replicate($class, $column, $value)
+	{
+		if (!$value instanceof fFile) {
+			return $value;	
+		}
+		
+		// If the file we are replicating is in the temp dir, the copy can live there too
+		if (strpos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+			$value = clone $value;	
+		
+		// Otherwise, the copy of the file must be placed in the temp dir so it is properly cleaned up
+		} else {
+			$value = $value->duplicate($value->getDirectory()->getPath() . self::TEMP_DIRECTORY);	
+		}
+		
+		return $value;
 	}
 	
 	
