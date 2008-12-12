@@ -557,8 +557,11 @@ class fORMValidation
 	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
 	{
 		$related_table = fORM::tablize($related_class);
-		if (!empty($related_records[$related_table][$route]['record_set']) && !$related_records[$related_table][$route]['record_set']->isFlaggedForAssociation()) {
-			return;
+		if (isset($related_records[$related_table][$route]['record_set'])) {
+			$record_set = $related_records[$related_table][$route]['record_set'];	
+			if ($record_set->count() && $record_set->isFlaggedForAssociation()) {
+				return;
+			}
 		}
 		
 		return self::compose(
