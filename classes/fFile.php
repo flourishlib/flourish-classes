@@ -16,7 +16,7 @@
  * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
-class fFile
+class fFile implements Iterator
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const create = 'fFile::create';
@@ -395,11 +395,32 @@ class fFile
 	
 	
 	/**
+	 * The current line of the file
+	 * 
+	 * @var string
+	 */
+	private $current_line = NULL;
+	
+	/**
+	 * The current line number of the file
+	 * 
+	 * @var string
+	 */
+	private $current_line_number = NULL;
+	
+	/**
 	 * The full path to the file
 	 * 
 	 * @var string
 	 */
 	protected $file;
+	
+	/**
+	 * The file handle for iteration
+	 * 
+	 * @var resource
+	 */
+	private $file_handle = NULL;
 	
 	/**
 	 * An exception to be thrown if an action is performed on the file
@@ -508,6 +529,30 @@ class fFile
 	public function __toString()
 	{
 		return $this->getFilename();
+	}
+	
+	
+	/**
+	 * Returns the current line of the file (required by iterator interface)
+	 * 
+	 * @throws fNoRemainingException
+	 * @internal
+	 * 
+	 * @return array  The current row
+	 */
+	public function current()
+	{
+		$this->tossIfException();
+		
+		// Primes the result set
+		if ($this->file_handle === NULL) {
+			$this->next();
+			
+		} elseif (!$this->valid()) {
+			throw new fNoRemainingException('There are no remaining lines');
+		}
+		
+		return $this->current_line;
 	}
 	
 	
@@ -760,6 +805,19 @@ class fFile
 	
 	
 	/**
+	 * Returns the last modification time of the file
+	 * 
+	 * @return fTimestamp  The timestamp of when the file was last modified
+	 */
+	public function getMTime()
+	{
+		$this->tossIfException();
+		
+		return new fTimestamp(filemtime($this->file));	
+	}
+	
+	
+	/**
 	 * Gets the file's current path (directory and filename)
 	 * 
 	 * If the web path is requested, uses translations set with
@@ -789,6 +847,94 @@ class fFile
 		$this->tossIfException();
 		
 		return is_writable($this->file);
+	}
+	
+	
+	/**
+	 * Returns the current one-based line number (required by iterator interface)
+	 * 
+	 * @throws fNoRemainingException
+	 * @internal
+	 * 
+	 * @return integer  The current line number
+	 */
+	public function key()
+	{
+		$this->tossIfException();
+		
+		if ($this->file_handle === NULL) {
+			$this->next();
+			
+		} elseif (!$this->valid()) {
+			throw new fNoRemainingException('There are no remaining lines');
+		}
+		
+		return $this->current_line_number;
+	}
+	
+	
+	/**
+	 * Advances to the next line in the file (required by iterator interface)
+	 * 
+	 * @throws fNoRemainingException
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function next()
+	{
+		$this->tossIfException();
+		
+		if ($this->file_handle === NULL) {
+			$this->file_handle         = fopen($this->file, 'r');
+			$this->current_line        = '';
+			$this->current_line_number = 0;
+			
+		} elseif (!$this->valid()) {
+			throw new fNoRemainingException('There are no remaining lines');
+		}
+		
+		$this->current_line = fgets($this->file_handle);
+		$this->current_line_number++;
+	}
+	
+	
+	/**
+	 * Prints the contents of the file
+	 * 
+	 * This method is primarily intended for when PHP is used to control access
+	 * to files. 
+	 * 
+	 * @param  boolean $headers               If HTTP headers for the file should be included
+	 * @param  boolean $ignore_output_buffer  If the current state of the output buffer should be ignored
+	 * @return fFile  The file object, to allow for method chaining
+	 */
+	public function output($headers, $ignore_output_buffer=FALSE)
+	{
+		$this->tossIfException();
+		
+		if (!$ignore_output_buffer) {
+			if (fBuffer::isStarted()) {
+				throw new fProgrammerException(
+					'The method requested, %s(), should not normally be used when output buffering is turned off, due to memory issues. If it is neccessary to have output buffering on, please pass %s as the second parameter to this method.',
+					'output',
+					'TRUE'
+				);
+			}	
+		}
+		
+		if ($headers) {
+			header('Cache-Control: ');
+			header('Content-Length: ' . $this->getFilesize());
+			header('Content-Type: ' . $this->getMimeType());
+			header('Expires: ');
+			header('Last-Modified: ' . $this->getMTime()->format('D, d M Y H:i:s'));
+			header('Pragma: ');	
+		}
+			
+		readfile($this->file);
+		
+		return $this;
 	}
 	
 	
@@ -881,6 +1027,23 @@ class fFile
 	
 	
 	/**
+	 * Rewinds the file handle (required by iterator interface)
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	public function rewind()
+	{
+		$this->tossIfException();
+		
+		if ($this->file_handle !== NULL) {
+			rewind($this->file_handle);	
+		}
+	}
+	
+	
+	/**
 	 * Throws the file exception if exists
 	 * 
 	 * @return void
@@ -890,6 +1053,25 @@ class fFile
 		if ($this->exception) {
 			throw $this->exception;
 		}
+	}
+	
+	
+	/**
+	 * Returns if the file has any lines left (required by iterator interface)
+	 * 
+	 * @internal
+	 * 
+	 * @return boolean  If the iterator is still valid
+	 */
+	public function valid()
+	{
+		$this->tossIfException();
+		
+		if ($this->file_handle === NULL) {
+			return TRUE;
+		}
+		
+		return $this->current_line !== FALSE;
 	}
 	
 	
