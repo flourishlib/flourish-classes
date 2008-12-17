@@ -14,7 +14,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
+ * @changes    1.0.0b4  Added ::replicate() to allow cloning along with related records [wb, 2008-12-12]
+ * @changes    1.0.0b3  Changed ::__clone() to clone objects contains in the values and cache arrays [wb, 2008-12-11]
  * @changes    1.0.0b2  Added the ::__clone() method to properly duplicate a record [wb, 2008-12-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */

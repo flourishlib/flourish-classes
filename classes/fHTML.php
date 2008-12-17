@@ -12,8 +12,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug where ::makeLinks() would create links out of URLs in HTML tags [wb, 2008-12-05]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fHTML
 {

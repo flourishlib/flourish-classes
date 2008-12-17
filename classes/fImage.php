@@ -9,8 +9,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-12-19]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
+ * @changes    1.0.0b2  Changed some int casts to round() to fix ::resize() dimension issues [wb, 2008-12-11]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-12-19]
  */
 class fImage extends fFile
 {

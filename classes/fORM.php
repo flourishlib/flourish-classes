@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
 class fORM
 {

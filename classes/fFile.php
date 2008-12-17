@@ -9,7 +9,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added the Iterator interface, ::output() and ::getMTime() [wb, 2008-12-17]
+ * @changes    1.0.0b7  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b6  Added the ::__clone() method that duplicates the file on the filesystem when cloned [wb, 2008-12-11]
  * @changes    1.0.0b5  Fixed detection of mime type for JPEG files with Exif information [wb, 2008-12-04]
  * @changes    1.0.0b4  Changed the constructor to ensure the path is to a file and not directory [wb, 2008-11-24]
  * @changes    1.0.0b3  Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]

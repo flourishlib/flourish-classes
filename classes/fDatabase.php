@@ -39,8 +39,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b2  Fixed a bug with PostgreSQL when using the PDO extension and executing an INSERT statement [wb, 2008-12-11]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fDatabase
 {

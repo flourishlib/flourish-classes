@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b1
- * @changes    1.0.0b1  Fixed a bug with objectifying file columns [wb, 2008-11-24]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added ::replicate() so that replicated files get pu in the temp directory [wb, 2008-12-12]
+ * @changes    1.0.0b2  Fixed a bug with objectifying file columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-05-28]
  */
 class fORMFile

@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-12-21]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-12-21]
  */
 class fDirectory
 {

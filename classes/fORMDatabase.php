@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
  * @changes    1.0.0b2  Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */

@@ -9,8 +9,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
+ * @changes    1.0.0b2  Fixed a bug with ::addManyToManyValidationRule() [wb, 2008-12-08]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
 class fORMValidation
 {

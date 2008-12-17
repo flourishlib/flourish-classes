@@ -9,8 +9,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-03-24]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b2  Fixed a bug where the filepath and exception maps weren't being updated after a rollback [wb, 2008-12-11]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-03-24]
  */
 class fFilesystem
 {
