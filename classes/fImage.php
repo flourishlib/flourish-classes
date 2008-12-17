@@ -938,7 +938,7 @@ class fImage extends fFile
 		}
 		
 		if (is_numeric($jpeg_quality)) {
-			$jpeg_quality = round($jpeg_quality);	
+			$jpeg_quality = (int) round($jpeg_quality);
 		}
 		
 		if (!is_integer($jpeg_quality) || $jpeg_quality < 1 || $jpeg_quality > 100) {
