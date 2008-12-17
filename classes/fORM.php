@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a static method callback constant [wb, 2008-12-17]
  * @changes    1.0.0b2  Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
@@ -38,7 +39,7 @@ class fORM
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
 	const registerReplicateCallback  = 'fORM::registerReplicateCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
-	const replicate                  = 'fORM::registerReplicateCallback';
+	const replicate                  = 'fORM::replicate'; 
 	const reset                      = 'fORM::reset';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
