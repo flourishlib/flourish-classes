@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
  * @changes    1.0.0b3  Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
  * @changes    1.0.0b2  Changed some int casts to round() to fix ::resize() dimension issues [wb, 2008-12-11]
  * @changes    1.0.0b   The initial implementation [wb, 2007-12-19]
@@ -324,7 +325,7 @@ class fImage extends fFile
 		self::determineProcessor();
 		
 		if (!file_exists($image)) {
-			throw new fProgrammerException(
+			throw new fEnvironmentException(
 				'The image specified, %s, does not exist',
 				$image
 			);
@@ -656,10 +657,6 @@ class fImage extends fFile
 	 */
 	private function processWithGD($output_file, $jpeg_quality)
 	{
-		if (empty($this->pending_modifications)) {
-			return;
-		}
-		
 		$info = self::getInfo($this->file);
 		
 		switch ($info['type']) {
@@ -760,10 +757,6 @@ class fImage extends fFile
 	 */
 	private function processWithImageMagick($output_file, $jpeg_quality)
 	{
-		if (empty($this->pending_modifications)) {
-			return;
-		}
-		
 		$info = self::getInfo($this->file);
 		
 		$command_line  = escapeshellcmd(self::$imagemagick_dir . 'convert');
@@ -956,6 +949,11 @@ class fImage extends fFile
 			$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
 		} else {
 			$output_file = $this->file;
+		}
+		
+		// If we don't have any changes and no name change, just exit
+		if (!$this->pending_modifications && $output_file == $this->file) {
+			return $this;
 		}
 		
 		// Wrap changes to the image into the filesystem transaction
