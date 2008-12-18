@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  ::objectify() no longer throws an exception when a file can't be found [wb, 2008-12-18]
  * @changes    1.0.0b3  Added ::replicate() so that replicated files get pu in the temp directory [wb, 2008-12-12]
  * @changes    1.0.0b2  Fixed a bug with objectifying file columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-05-28]
@@ -626,6 +627,8 @@ class fORMFile
 		// If there was some error creating the file, just return the raw value
 		} catch (fExpectedException $e) {
 			return $value;
+		} catch (fEnvironmentException $e) {
+			return $value;	
 		}
 	}
 	
