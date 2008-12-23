@@ -906,7 +906,15 @@ class fORMFile
 		
 		// Otherwise, the copy of the file must be placed in the temp dir so it is properly cleaned up
 		} else {
-			$value = $value->duplicate($value->getDirectory()->getPath() . self::TEMP_DIRECTORY);	
+			$upload_dir = self::$file_upload_columns[$class][$column];
+			
+			try {
+				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+			} catch (fValidationException $e) {
+				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
+			}
+			
+			$value = $value->duplicate($temp_dir);	
 		}
 		
 		return $value;
@@ -997,8 +1005,16 @@ class fORMFile
 			$file_path = $doc_root . $file_path;
 		}
 		
+		$upload_dir = self::$file_upload_columns[$class][$column];
+		
+		try {
+			$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+		} catch (fValidationException $e) {
+			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
+		}
+		
 		$file     = new fFile($file_path);
-		$new_file = $file->duplicate(self::$file_upload_columns[$class][$column]);
+		$new_file = $file->duplicate($temp_dir);
 		
 		fActiveRecord::assign($values, $old_values, $column, $new_file);
 		
