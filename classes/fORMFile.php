@@ -9,7 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Old files are now checked against the current file to prevent removal of an in-use file [wb, 2008-12-23]
+ * @changes    1.0.0b5  Fixed ::replicate() to ensure the temp directory exists and ::set() to use the temp directory [wb, 2008-12-23]
  * @changes    1.0.0b4  ::objectify() no longer throws an exception when a file can't be found [wb, 2008-12-18]
  * @changes    1.0.0b3  Added ::replicate() so that replicated files get pu in the temp directory [wb, 2008-12-12]
  * @changes    1.0.0b2  Fixed a bug with objectifying file columns [wb, 2008-11-24]
