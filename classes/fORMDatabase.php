@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed a bug where loading a related record in the same table through a one-to-many relationship caused recursion [wb, 2008-12-24]
  * @changes    1.0.0b3  Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
  * @changes    1.0.0b2  Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
@@ -822,6 +823,15 @@ class fORMDatabase
 					
 						$related_table = $table_match[4];
 						$route = fORMSchema::getRouteName($table, $related_table, $table_match[5]);
+						
+						// If the related table is the current table and it is a one-to-many we don't want to join
+						if ($table_match[4] == $table) {
+							$one_to_many_routes = fORMSchema::getRoutes($table, $related_table, 'one-to-many');
+							if (isset($one_to_many_routes[$route])) {
+								$table_map[$table_match[1]] = $table_alias;
+								continue;
+							}
+						}
 						
 						$join_name = self::createJoin($table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
