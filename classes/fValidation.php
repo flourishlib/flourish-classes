@@ -2,8 +2,8 @@
 /**
  * Provides validation routines for standalone forms, such as contact forms
  * 
- * @copyright  Copyright (c) 2007-2008 William Bond
- * @author     William Bond [wb] <will@flourishlib.com>
+ * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
@@ -345,7 +345,7 @@ class fValidation
 
 
 /**
- * Copyright (c) 2007-2008 William Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
