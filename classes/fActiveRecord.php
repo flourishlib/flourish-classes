@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
  * @changes    1.0.0b5  Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
  * @changes    1.0.0b4  Added ::replicate() to allow cloning along with related records [wb, 2008-12-12]
  * @changes    1.0.0b3  Changed ::__clone() to clone objects contains in the values and cache arrays [wb, 2008-12-11]
@@ -421,14 +422,14 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Creates a new record or loads one from the database - if a primary key is provided the record will be loaded
+	 * Creates a new record or loads one from the database - if a primary key or unique key is provided the record will be loaded
 	 * 
 	 * @throws fNotFoundException
 	 * 
-	 * @param  mixed $primary_key  The primary key value(s). If multi-field, use an associative array of `(string) {field name} => (mixed) {value}`.
+	 * @param  mixed $key  The primary key or unique key value(s) - single column primary keys will accept a scalar value, all others must be an associative array of `(string) {column} => (mixed) {value}`
 	 * @return fActiveRecord
 	 */
-	public function __construct($primary_key=NULL)
+	public function __construct($key=NULL)
 	{
 		$class = get_class($this);
 		
@@ -439,45 +440,71 @@ abstract class fActiveRecord
 		}
 		
 		if (fORM::getActiveRecordMethod($this, '__construct')) {
-			return $this->__call('__construct', array($primary_key));
+			return $this->__call('__construct', array($key));
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
-		if (is_object($primary_key) && $primary_key instanceof fResult) {
-			if ($this->loadFromIdentityMap($primary_key)) {
+		if (is_object($key) && $key instanceof fResult) {
+			
+			if ($this->loadFromIdentityMap($key)) {
 				return;
 			}
 			
-			$this->loadFromResult($primary_key);
-			return;
-		}
+			$this->loadFromResult($key);
 		
 		// Handle loading an object from the database
-		if ($primary_key !== NULL) {
+		} elseif ($key !== NULL) {
 			
-			// Check the primary keys
 			$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
-			if ((sizeof($pk_columns) > 1 && array_keys($primary_key) != $pk_columns) || (sizeof($pk_columns) == 1 && !is_scalar($primary_key))) {
+			
+			// If the primary key does not look properly formatted, check to see if it is a UNIQUE key
+			$is_unique_key = FALSE;
+			if (is_array($key) && (sizeof($pk_columns) == 1 || array_keys($key) != $pk_columns)) {
+				$unique_keys = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'unique');
+				$key_keys    = array_keys($key);
+				foreach ($unique_keys as $unique_key) {
+					if ($key_keys == $unique_key) {
+						$is_unique_key = TRUE;
+					}
+				}	
+			}
+			
+			$wrong_keys = is_array($key) && array_keys($key) != $pk_columns;
+			$wrong_type = !is_array($key) && (sizeof($pk_columns) != 1 || !is_scalar($key));
+			
+			// If we didn't find a UNIQUE key and primary key doesn't look right we fail
+			if (!$is_unique_key && ($wrong_keys || $wrong_type)) {
 				throw new fProgrammerException(
-					'An invalidly formatted primary key was passed to this %s object',
+					'An invalidly formatted primary or unique key was passed to this %s object',
 					fORM::getRecordName($this)
 				);
 			}
 			
-			if ($this->loadFromIdentityMap($primary_key)) {
-				return;
-			}
-			
-			// Assign the primary key values
-			if (sizeof($pk_columns) > 1) {
-				foreach ($pk_columns as $pk_column) {
-					$this->values[$pk_column] = $primary_key[$pk_column];
+			if ($is_unique_key) {
+				
+				$result = $this->fetchResultFromUniqueKey($key);
+				if ($this->loadFromIdentityMap($result)) {
+					return;
 				}
+				$this->loadFromResult($result);
+				
 			} else {
-				$this->values[$pk_columns[0]] = $primary_key;
+				
+				if ($this->loadFromIdentityMap($key)) {
+					return;
+				}
+				
+				// Assign the primary key values for loading
+				if (is_array($key)) {
+					foreach ($pk_columns as $pk_column) {
+						$this->values[$pk_column] = $key[$pk_column];
+					}
+				} else {
+					$this->values[$pk_columns[0]] = $key;
+				}
+				
+				$this->load();
 			}
-			
-			$this->load();
 			
 		// Create an empty array for new objects
 		} else {
@@ -901,6 +928,43 @@ abstract class fActiveRecord
 			}
 		}
 		return TRUE;
+	}
+	
+	
+	/**
+	 * Loads a record from the database based on a UNIQUE key
+	 * 
+	 * @throws fNotFoundException
+	 * 
+	 * @param  array $values  The UNIQUE key values to try and load with
+	 * @return void
+	 */
+	protected function fetchResultFromUniqueKey($values)
+	{		
+		try {
+			if ($values === array_combine(array_keys($values), array_fill(0, sizeof($values), NULL))) {
+				throw new fExpectedException('The values specified for the unique key are all NULL');	
+			}
+			
+			$table = fORM::tablize($this);
+			$sql = 'SELECT * FROM ' . $table . ' WHERE ';
+			$conditions = array();
+			foreach ($values as $column => $value) {
+				$conditions[] = $column . fORMDatabase::escapeBySchema($table, $column, $value, '=');	
+			}
+			$sql .= join(' AND ', $conditions);
+		
+			$result = fORMDatabase::retrieve()->translatedQuery($sql);
+			$result->tossIfNoRows();
+			
+		} catch (fExpectedException $e) {
+			throw new fNotFoundException(
+				'The %s requested could not be found',
+				fORM::getRecordName($this)
+			);
+		}
+		
+		return $result;
 	}
 	
 	
