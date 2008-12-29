@@ -230,7 +230,7 @@ class fCore
 	 */
 	static public function callback($callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			return explode('::', $callback);	
 		}
 		

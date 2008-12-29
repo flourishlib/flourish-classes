@@ -359,7 +359,7 @@ class fGrammar
 	 */
 	static public function registerJoinArrayCallback($callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		self::$join_array_callback = $callback;

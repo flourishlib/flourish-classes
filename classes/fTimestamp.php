@@ -636,7 +636,7 @@ class fTimestamp
 	 */
 	static public function registerFormatCallback($callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		self::$format_callback = $callback;

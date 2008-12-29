@@ -250,7 +250,7 @@ class fORM
 			return TRUE;
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -567,7 +567,7 @@ class fORM
 			self::$active_record_method_callbacks[$class] = array();	
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -659,7 +659,7 @@ class fORM
 			self::$hook_callbacks[$class][$hook] = array();
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -683,7 +683,7 @@ class fORM
 			self::$objectify_callbacks[$class] = array();
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -708,7 +708,7 @@ class fORM
 	 */
 	static public function registerRecordSetMethod($method, $callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		self::$record_set_method_callbacks[$method] = $callback;
@@ -742,7 +742,7 @@ class fORM
 			return;
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -766,7 +766,7 @@ class fORM
 			self::$replicate_callbacks[$class] = array();
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
@@ -790,7 +790,7 @@ class fORM
 			self::$scalarize_callbacks[$class] = array();
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		

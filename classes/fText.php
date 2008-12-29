@@ -90,7 +90,7 @@ class fText
 			);
 		}
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		

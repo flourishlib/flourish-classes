@@ -145,7 +145,7 @@ class fMoney
 	 */
 	static public function registerFormatCallback($callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		self::$format_callback = $callback;
@@ -160,7 +160,7 @@ class fMoney
 	 */
 	static public function registerUnformatCallback($callback)
 	{
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		self::$unformat_callback = $callback;

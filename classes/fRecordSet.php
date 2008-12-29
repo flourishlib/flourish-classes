@@ -743,7 +743,7 @@ class fRecordSet implements Iterator
 		} else {
 			$type     = 'callback';
 			$callback = $procedure;
-			if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+			if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 				$callback = explode('::', $callback);	
 			}
 		}
@@ -1258,7 +1258,7 @@ class fRecordSet implements Iterator
 		
 		$result = $inital_value;
 		
-		if (is_string($callback) || strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
 		}
 		
