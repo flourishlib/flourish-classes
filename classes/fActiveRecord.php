@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed ::__construct() to not trigger the post::__construct() hook when force-configured [wb, 2008-12-30]
  * @changes    1.0.0b6  ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
  * @changes    1.0.0b5  Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
  * @changes    1.0.0b4  Added ::replicate() to allow cloning along with related records [wb, 2008-12-12]
@@ -437,6 +438,20 @@ abstract class fActiveRecord
 		if (!isset(self::$configured[$class])) {
 			$this->configure();
 			self::$configured[$class] = TRUE;
+			
+			// If the configuration was forced, prevent the post::__construct() hook from
+			// being triggered since it is not really a real record instantiation
+			$trace = array_slice(debug_backtrace(), 0, 2);
+			
+			$is_forced = sizeof($trace) == 2;
+			$is_forced = $is_forced && $trace[1]['function'] == 'forceConfigure';
+			$is_forced = $is_forced && isset($trace[1]['class']);
+			$is_forced = $is_forced && $trace[1]['type'] == '::';
+			$is_forced = $is_forced && in_array($trace[1]['class'], array('fActiveRecord', $class));
+			
+			if ($is_forced) {
+				return;	
+			}
 		}
 		
 		if (fORM::getActiveRecordMethod($this, '__construct')) {
