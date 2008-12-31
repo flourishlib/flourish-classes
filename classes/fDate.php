@@ -121,13 +121,6 @@ class fDate
 			);
 		}
 		
-		if (date('H:i:s', $timestamp) != '00:00:00') {
-			throw new fValidationException(
-				'The adjustment specified, %s, appears to be a time or timezone adjustment. Only adjustments of a day or greater are allowed for dates.',
-				$adjustment
-			);
-		}
-		
 		return new fDate($timestamp);
 	}
 	
