@@ -956,6 +956,7 @@ class fORMDatabase
 			}
 			
 			if ($ignore_stop_words && in_array(strtolower($match), $stop_words)) {
+				$ignored_terms[] = $match;
 				continue;	
 			}
 			$good_terms[] = $match;
