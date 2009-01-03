@@ -659,7 +659,7 @@ class fSchema
 			}
 			
 			// Unique keys
-			preg_match_all('/UNIQUE KEY\s+"([^"]+)"\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
+			preg_match_all('/UNIQUE KEY\s+"([^"]+)"\s+\("(.*?)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			foreach ($matches as $match) {
 				$keys[$table]['unique'][] = explode('","', $match[2]);
 			}
