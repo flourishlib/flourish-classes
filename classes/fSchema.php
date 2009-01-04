@@ -2,15 +2,16 @@
 /**
  * Gets schema information for the selected database
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug with detecting multi-column unique keys in MySQL [wb, 2009-01-03]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fSchema
 {
@@ -1819,7 +1820,7 @@ class fSchema
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-02-12]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
  */
 class fTime
 {

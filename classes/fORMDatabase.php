@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed ::parseSearchTerms() to include stop words when they are the only thing in the search string [wb, 2008-12-31]
  * @changes    1.0.0b4  Fixed a bug where loading a related record in the same table through a one-to-many relationship caused recursion [wb, 2008-12-24]
  * @changes    1.0.0b3  Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
  * @changes    1.0.0b2  Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]

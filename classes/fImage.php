@@ -2,14 +2,15 @@
 /**
  * Represents an image on the filesystem, also provides image manipulation functionality
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
  * @changes    1.0.0b4  Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
  * @changes    1.0.0b3  Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
  * @changes    1.0.0b2  Changed some int casts to round() to fix ::resize() dimension issues [wb, 2008-12-11]
@@ -990,7 +991,7 @@ class fImage extends fFile
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
