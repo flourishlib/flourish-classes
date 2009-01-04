@@ -135,6 +135,11 @@ class fImage extends fFile
 			// Look for imagemagick first since it can handle more than GD
 			try {
 				
+				// If exec is disabled we can't use imagemagick
+				if (in_array('exec', explode(',', ini_get('disable_functions')))) {
+					throw new Exception();	
+				}
+				
 				$locations = array(
 					'solaris'    => array(
 						'/opt/local/bin/',
