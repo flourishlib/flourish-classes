@@ -2,14 +2,15 @@
 /**
  * Represents a directory on the filesystem, also provides static directory-related methods
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added the $regex_filter parameter to ::scan() and ::scanRecursive(), fixed bug in ::scanRecursive() [wb, 2009-01-05]
  * @changes    1.0.0b2  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b   The initial implementation [wb, 2007-12-21]
  */
@@ -352,9 +353,10 @@ class fDirectory
 	/**
 	 * Performs a [http://php.net/scandir scandir()] on a directory, removing the `.` and `..` entries
 	 * 
+	 * @param  string $regex_filter  A PCRE to filter files/directories by path, directories can be detected by checking for a trailing / (even on Windows)
 	 * @return array  The fFile (or fImage) and fDirectory objects for the files/directories in this directory
 	 */
-	public function scan()
+	public function scan($regex_filter=NULL)
 	{
 		$this->tossIfException();
 		
@@ -363,6 +365,14 @@ class fDirectory
 		
 		foreach ($files as $file) {
 			$file = $this->directory . $file;
+			
+			if ($regex_filter) {
+				$test_path = (is_dir($file)) ? $file . '/' : $file;
+				if (!preg_match($regex_filter, $test_path)) {
+					continue;	
+				}
+			}
+			
 			if (is_dir($file)) {
 				$objects[] = new fDirectory($file);
 			} elseif (fImage::isImageCompatible($file)) {
@@ -379,20 +389,33 @@ class fDirectory
 	/**
 	 * Performs a **recursive** [http://php.net/scandir scandir()] on a directory, removing the `.` and `..` entries
 	 * 
+	 * @param  string $regex_filter  A PCRE to filter files/directories by path, directories can be detected by checking for a trailing / (even on Windows)
 	 * @return array  The fFile and fDirectory objects for the files/directory (listed recursively) in this directory
 	 */
-	public function scanRecursive()
+	public function scanRecursive($regex_filter=NULL)
 	{
 		$this->tossIfException();
 		
-		$files  = $this->scan();
+		$files   = $this->scan();
 		$objects = $files;
 		
 		$total_files = sizeof($files);
 		for ($i=0; $i < $total_files; $i++) {
 			if ($files[$i] instanceof fDirectory) {
-				$objects = array_splice($objects, $i, 0, $files[$i]->scanRecursive());
+				array_splice($objects, $i+1, 0, $files[$i]->scanRecursive());
 			}
+		}
+		
+		if ($regex_filter) {
+			$new_objects = array();
+			foreach ($objects as $object) {
+				$test_path = ($object instanceof fDirectory) ? substr($object->getPath(), 0, -1) . '/' : $object->getPath();
+				if (!preg_match($regex_filter, $test_path)) {
+					continue;	
+				}	
+				$new_objects[] = $object;
+			}
+			$objects = $new_objects;
 		}
 		
 		return $objects;
@@ -415,7 +438,7 @@ class fDirectory
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
