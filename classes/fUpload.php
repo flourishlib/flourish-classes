@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated ::validate() so it properly handles upload max filesize specified in human-readable notation [wb, 2009-01-05]
  * @changes    1.0.0b3  Removed the dependency on fRequest [wb, 2009-01-05]
  * @changes    1.0.0b2  Fixed a bug with validating filesizes [wb, 2008-11-25]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -286,6 +287,7 @@ class fUpload
 		
 		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE || $file_array['error'] == UPLOAD_ERR_INI_SIZE) {
 			$max_size = (!empty($_POST['MAX_FILE_SIZE'])) ? $_POST['MAX_FILE_SIZE'] : ini_get('upload_max_filesize');
+			$max_size = (!is_numeric($max_size)) ? fFilesystem::convertToBytes($max_size) : $max_size;
 			throw new fValidationException(
 				'The file uploaded is over the limit of %s',
 				fFilesystem::formatFilesize($max_size)
