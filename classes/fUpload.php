@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Removed some unnecessary error suppression operators from ::move() [wb, 2009-01-05]
  * @changes    1.0.0b4  Updated ::validate() so it properly handles upload max filesize specified in human-readable notation [wb, 2009-01-05]
  * @changes    1.0.0b3  Removed the dependency on fRequest [wb, 2009-01-05]
  * @changes    1.0.0b2  Fixed a bug with validating filesizes [wb, 2008-11-25]
@@ -219,11 +220,11 @@ class fUpload
 			$file_name = fFilesystem::makeUniqueName($file_name);
 		}
 		
-		if (!@move_uploaded_file($file_array['tmp_name'], $file_name)) {
+		if (!move_uploaded_file($file_array['tmp_name'], $file_name)) {
 			throw new fEnvironmentException('There was an error moving the uploaded file');
 		}
 		
-		if (!@chmod($file_name, 0644)) {
+		if (!chmod($file_name, 0644)) {
 			throw new fEnvironmentException('Unable to change permissions on the uploaded file');
 		}
 		
