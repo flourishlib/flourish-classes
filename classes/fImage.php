@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
  * @changes    1.0.0b5  Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
  * @changes    1.0.0b4  Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
  * @changes    1.0.0b3  Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
@@ -541,7 +542,7 @@ class fImage extends fFile
 			
 		// If nothing changed, don't even record the modification
 		if ($orig_width == $new_width && $orig_height == $new_height) {
-			return;
+			return $this;
 		}
 		
 		// Record what we are supposed to do
@@ -880,7 +881,7 @@ class fImage extends fFile
 		
 		// If the size did not go down, don't even record the modification
 		if ($orig_width <= $new_width || $orig_height <= $new_height) {
-			return;
+			return $this;
 		}
 		
 		// Record what we are supposed to do
