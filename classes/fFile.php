@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Changed ::__clone() and ::duplicate() to copy file permissions to the new file [wb, 2009-01-05] 
  * @changes    1.0.0b10  Fixed ::duplicate() so an exception is not thrown when no parameters are passed [wb, 2009-01-05]
  * @changes    1.0.0b9   Removed the dependency on fBuffer [wb, 2009-01-05]
  * @changes    1.0.0b8   Added the Iterator interface, ::output() and ::getMTime() [wb, 2008-12-17]
@@ -456,6 +457,7 @@ class fFile implements Iterator
 		$file = fFilesystem::makeUniqueName($directory->getPath() . $this->getFilename());
 		
 		copy($this->getPath(), $file);
+		chmod($file, fileperms($this->getPath()));
 		
 		$this->file      =& fFilesystem::hookFilenameMap($file);
 		$this->exception =& fFilesystem::hookExceptionMap($file);
@@ -658,6 +660,7 @@ class fFile implements Iterator
 		}
 		
 		copy($this->getPath(), $new_filename);
+		chmod($new_filename, fileperms($this->getPath()));
 		
 		$class = get_class($this);
 		$file  = new $class($new_filename);
