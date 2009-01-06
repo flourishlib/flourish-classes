@@ -2,15 +2,16 @@
 /**
  * Provides validation and movement of uploaded files
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b1
- * @changes    1.0.0b1  Fixed a bug with validating filesizes [wb, 2008-11-25]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Removed the dependency on fRequest [wb, 2009-01-05]
+ * @changes    1.0.0b2  Fixed a bug with validating filesizes [wb, 2008-11-25]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fUpload
@@ -28,13 +29,13 @@ class fUpload
 	 */
 	static public function check($field)
 	{
-		if (fRequest::check($field) && $_SERVER['REQUEST_METHOD'] != 'POST') {
+		if (isset($_GET[$field]) && $_SERVER['REQUEST_METHOD'] != 'POST') {
 			throw new fProgrammerException(
 				'Missing method="post" attribute in form tag'
 			);
 		}
 		
-		if (fRequest::check($field) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
+		if (isset($_POST[$field]) && (!isset($_SERVER['CONTENT_TYPE']) || stripos($_SERVER['CONTENT_TYPE'], 'multipart/form-data') === FALSE)) {
 			throw new fProgrammerException(
 				'Missing enctype="multipart/form-data" attribute in form tag'
 			);
@@ -284,7 +285,7 @@ class fUpload
 		}
 		
 		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE || $file_array['error'] == UPLOAD_ERR_INI_SIZE) {
-			$max_size = (fRequest::get('MAX_FILE_SIZE')) ? fRequest::get('MAX_FILE_SIZE') : ini_get('upload_max_filesize');
+			$max_size = (!empty($_POST['MAX_FILE_SIZE'])) ? $_POST['MAX_FILE_SIZE'] : ini_get('upload_max_filesize');
 			throw new fValidationException(
 				'The file uploaded is over the limit of %s',
 				fFilesystem::formatFilesize($max_size)
@@ -319,7 +320,7 @@ class fUpload
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
