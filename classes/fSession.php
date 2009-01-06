@@ -2,15 +2,16 @@
 /**
  * Wraps the session control functions and the `$_SESSION` superglobal for a more consistent and safer API
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fSession
 {
@@ -20,6 +21,7 @@ class fSession
 	const destroy         = 'fSession::destroy';
 	const get             = 'fSession::get';
 	const ignoreSubdomain = 'fSession::ignoreSubdomain';
+	const open            = 'fSession::open';
 	const reset           = 'fSession::reset';
 	const set             = 'fSession::set';
 	const setLength       = 'fSession::setLength';
@@ -88,7 +90,7 @@ class fSession
 		$_SESSION = array();
 		if (isset($_COOKIE[session_name()])) {
 			$params = session_get_cookie_params();
-			setcookie(session_name(), '', time()-43200, $params['path'], $params['domain']);
+			setcookie(session_name(), '', time()-43200, $params['path'], $params['domain'], $params['secure']);
 		}
 		session_destroy();
 	}
@@ -112,6 +114,9 @@ class fSession
 	/**
 	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
 	 * 
+	 * This method should be called after any calls to
+	 * [http://php.net/session_set_cookie_params `session_set_cookie_params()`].
+	 * 
 	 * @return void
 	 */
 	static public function ignoreSubdomain()
@@ -122,23 +127,36 @@ class fSession
 				__CLASS__ . '::ignoreSubdomain()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
+				__CLASS__ . '::open()',
 				__CLASS__ . '::set()'
 			);
 		}
-		session_set_cookie_params(0, '/', preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $_SERVER['SERVER_NAME']));
+		
+		$current_params = session_get_cookie_params();
+		
+		$params = array(
+			$current_params['lifetime'],
+			$current_params['path'],
+			preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $_SERVER['SERVER_NAME'])
+		);
+		
+		call_user_func_array('session_set_cookie_params', $params);
 	}
 	
 	
 	/**
-	 * Opens the session for writing
+	 * Opens the session for writing, is automatically called by ::clear(), ::get() and ::set()
 	 * 
+	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary 
 	 * @return void
 	 */
-	static private function open()
+	static public function open($cookie_only_session_id=TRUE)
 	{
 		if (!self::$open) {
-			ini_set('session.use_cookies', 1);
-			ini_set('session.use_only_cookies', 1);
+			if ($cookie_only_session_id) {
+				ini_set('session.use_cookies', 1);
+				ini_set('session.use_only_cookies', 1);
+			}
 			session_start();
 			self::$open = TRUE;
 		}
@@ -188,13 +206,13 @@ class fSession
 				__CLASS__ . '::setLength()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
+				__CLASS__ . '::open()',
 				__CLASS__ . '::set()'
 			);
 		}
 		
 		$seconds = strtotime($timespan) - time();
 		ini_set('session.gc_maxlifetime', $seconds);
-		ini_set('session.cookie_lifetime', 0);
 	}
 	
 	
@@ -212,6 +230,7 @@ class fSession
 				__CLASS__ . '::setPath()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
+				__CLASS__ . '::open()',
 				__CLASS__ . '::set()'
 			);
 		}
@@ -242,7 +261,7 @@ class fSession
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
