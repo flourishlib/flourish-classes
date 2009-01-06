@@ -1,6 +1,6 @@
 <?php
 /**
- * Provides {@link fSchema} class related functions for ORM code
+ * Provides fSchema class related functions for ORM code
  * 
  * @copyright  Copyright (c) 2007-2008 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>

@@ -44,7 +44,7 @@ class fGrammar
 	static private $humanize_rules = array();
 	
 	/**
-	 * The callback to replace {@link joinArray()} with
+	 * The callback to replace ::joinArray()
 	 * 
 	 * @var callback
 	 */
