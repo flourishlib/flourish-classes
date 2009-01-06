@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Removed the dependency on fBuffer [wb, 2009-01-05]
  * @changes    1.0.0b8  Added the Iterator interface, ::output() and ::getMTime() [wb, 2008-12-17]
  * @changes    1.0.0b7  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b6  Added the ::__clone() method that duplicates the file on the filesystem when cloned [wb, 2008-12-11]
@@ -917,7 +918,7 @@ class fFile implements Iterator
 		$this->tossIfException();
 		
 		if (!$ignore_output_buffer) {
-			if (fBuffer::isStarted()) {
+			if (ob_get_level() > 0) {
 				throw new fProgrammerException(
 					'The method requested, %s(), should not normally be used when output buffering is turned off, due to memory issues. If it is neccessary to have output buffering on, please pass %s as the second parameter to this method.',
 					'output',
