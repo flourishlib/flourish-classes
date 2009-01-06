@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Removed the dependency on fBuffer [wb, 2009-01-05]
- * @changes    1.0.0b8  Added the Iterator interface, ::output() and ::getMTime() [wb, 2008-12-17]
- * @changes    1.0.0b7  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
- * @changes    1.0.0b6  Added the ::__clone() method that duplicates the file on the filesystem when cloned [wb, 2008-12-11]
- * @changes    1.0.0b5  Fixed detection of mime type for JPEG files with Exif information [wb, 2008-12-04]
- * @changes    1.0.0b4  Changed the constructor to ensure the path is to a file and not directory [wb, 2008-11-24]
- * @changes    1.0.0b3  Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]
- * @changes    1.0.0b2  Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::duplicate() so an exception is not thrown when no parameters are passed [wb, 2009-01-05]
+ * @changes    1.0.0b9   Removed the dependency on fBuffer [wb, 2009-01-05]
+ * @changes    1.0.0b8   Added the Iterator interface, ::output() and ::getMTime() [wb, 2008-12-17]
+ * @changes    1.0.0b7   Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b6   Added the ::__clone() method that duplicates the file on the filesystem when cloned [wb, 2008-12-11]
+ * @changes    1.0.0b5   Fixed detection of mime type for JPEG files with Exif information [wb, 2008-12-04]
+ * @changes    1.0.0b4   Changed the constructor to ensure the path is to a file and not directory [wb, 2008-11-24]
+ * @changes    1.0.0b3   Fixed mime type detection of Microsoft Office files [wb, 2008-11-23]
+ * @changes    1.0.0b2   Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fFile implements Iterator
 {
@@ -631,17 +632,18 @@ class fFile implements Iterator
 		$check_dir_permissions = FALSE;
 		
 		if (file_exists($new_filename)) {
-			if (!is_writable($new_filename)) {
-				throw new fEnvironmentException(
-					'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
-					$new_directory,
-					$this->getFilename()
-				);
-			}
 			if (!$overwrite) {
 				$new_filename = fFilesystem::makeUniqueName($new_filename);
 				$check_dir_permissions = TRUE;
+				
+			} elseif (!is_writable($new_filename)) {
+				throw new fEnvironmentException(
+					'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
+					$new_directory->getPath(),
+					$this->getFilename()
+				);
 			}
+			
 		} else {
 			$check_dir_permissions = TRUE;
 		}
@@ -656,6 +658,7 @@ class fFile implements Iterator
 		}
 		
 		copy($this->getPath(), $new_filename);
+		
 		$class = get_class($this);
 		$file  = new $class($new_filename);
 		
