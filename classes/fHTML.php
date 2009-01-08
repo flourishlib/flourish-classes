@@ -5,14 +5,15 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug where ::makeLinks() would double-link some URLs [wb, 2009-01-08]
  * @changes    1.0.0b2  Fixed a bug where ::makeLinks() would create links out of URLs in HTML tags [wb, 2008-12-05]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
@@ -88,14 +89,6 @@ class fHTML
 	 */
 	static public function makeLinks($content, $link_text_length=0)
 	{
-		// Determine what replacement to perform
-		if ($link_text_length) {
-			// We don't need UTF-8 strlen here becuase email addresses and URLs can't contain UTF-8 characters
-			$replacement = '((strlen("\1") > ' . $link_text_length . ') ? substr("\1", 0, ' . $link_text_length . ') . "..." : "\1")';
-		} else {
-			$replacement = '"\1"';
-		}
-		
 		// Find all a tags with contents, individual HTML tags and HTML comments
 		$reg_exp = "/<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*\/\s*a\s*>|<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|<\!--.*?-->/";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
@@ -105,23 +98,48 @@ class fHTML
 		
 		// For each chunk of text and create the links
 		foreach($text_matches as $key => $text) {
-			$text_matches[$key] = str_replace(
-				"\\'",
-				"'",
-				preg_replace(
-					array(
-						'#\b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b#ie', # Fully URLs
-						'#\b(www\.([a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b#ie',  # www. domains
-						'#\b([a-z0-9\\.+\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b#ie' # email addresses
-					),
-					array(
-						'"<a href=\"\1\">" . ' . $replacement . ' . "</a>"',
-						'"<a href=\"http://\1\">" . ' . $replacement . ' . "</a>"',
-						'"<a href=\"mailto:\1\">" . ' . $replacement . ' . "</a>"'
-					),
-					$text
-				)
+			preg_match_all(
+				'~
+				  \b([a-z]{3,}://[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])\b                           | # Fully URLs
+				  \b(www\.(?:[a-z0-9\-]+\.)+[a-z]{2,}(?:/[a-z0-9%\$\-_.+!*;/?:@=&\'\#,]+[a-z0-9\$\-_+!*;/?:@=&\'\#,])?)\b | # www. domains
+				  \b([a-z0-9\\.+\'_\\-]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,})\b                                                    # email addresses
+				 ~ix',
+				$text,
+				$matches,
+				PREG_SET_ORDER
 			);
+			
+			// For each match we find the first occurence, replace it and then
+			// start from the end of that finding the next occurence. This
+			// prevents double linking of matches for http://www.example.com and
+			// www.example.com
+			$last_pos = 0;
+			foreach ($matches as $match) {
+				$match_pos = strpos($text, $match[0], $last_pos);
+				$length    = strlen($match[0]);
+				$prefix    = '';
+				
+				if (!empty($match[3])) {
+					$prefix = 'mailto:';
+				} elseif (!empty($match[2])) {
+					$prefix = 'http://';
+				}
+				
+				$replacement  = '<a href="' . $prefix . $match[0] . '">';
+				$replacement .= ($link_text_length && strlen($match[0]) > $link_text_length) ? substr($match[0], 0, $link_text_length) . "…" : $match[0];
+				$replacement .= '</a>';
+				
+				$text = substr_replace(
+					$text,
+					$replacement,
+					$match_pos,
+					$length
+				);
+				
+				$last_pos = $match_pos + strlen($replacement);	
+			}
+			
+			$text_matches[$key] = $text;
 		}
 		
 		// Merge the text and html back together
@@ -208,7 +226,7 @@ class fHTML
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
