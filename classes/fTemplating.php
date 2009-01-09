@@ -188,6 +188,29 @@ class fTemplating
 	
 	
 	/**
+	 * Includes the file specified - this is identical to ::place() except a filename is specified instead of an element
+	 * 
+	 * Please see the ::place() method for more details about functionality.
+	 * 
+	 * @param  string $file_path  The file to place
+	 * @param  string $file_type  Will force the file to be placed as this type of file instead of auto-detecting the file type. Valid types include: `'css'`, `'js'`, `'php'` and `'rss'`.
+	 * @return void
+	 */
+	public function inject($file_path, $file_type=NULL)
+	{
+		$prefix = '__injected_';
+		$num    = 1;
+		while (isset($this->elements[$prefix . $num])) {
+			$num++;
+		}
+		$element = $prefix . $num;
+		
+		$this->set($element, $file_path);
+		$this->place($element, $file_type);
+	}
+	
+	
+	/**
 	 * Includes the element specified - element must be set through ::set() first
 	 * 
 	 * If the element is a file path ending in `.css`, `.js`, `.rss` or `.xml`
