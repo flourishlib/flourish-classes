@@ -8,15 +8,16 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-06-23]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-06-23]
  */
 class fEmail
 {
@@ -663,10 +664,10 @@ class fEmail
 		}
 		
 		if ($body_headers) {
-			$body = $body_headers . "\r\n\r\n" . $body;
+			$body = $body_headers . "\r\n" . $body;
 		}
 		
-		file_put_contents($plaintext_file, "\r\n" . $body);
+		file_put_contents($plaintext_file, $body);
 		file_put_contents($ciphertext_file, '');
 		
 		// Set up the neccessary S/MIME resources
@@ -679,8 +680,7 @@ class fEmail
 			
 			if ($senders_private_key === FALSE) {
 				throw new fValidationException(
-					"The sender's S/MIME private key password specified does not appear to be valid for the private key",
-					$primary_key_file
+					"The sender's S/MIME private key password specified does not appear to be valid for the private key"
 				);
 			}
 		}
@@ -714,6 +714,7 @@ class fEmail
 		$new_headers = preg_replace('#^To:[^\n]+\n( [^\n]+\n)*#mi', '', $new_headers);
 		$new_headers = preg_replace('#^Subject:[^\n]+\n( [^\n]+\n)*#mi', '', $new_headers);
 		$new_headers = preg_replace('#^Content-Type:\s+' . preg_quote($headers_array['Content-Type'], '#') . "\r?\n#mi", '', $new_headers);
+		$new_headers = preg_replace('#^Content-Transfer-Encoding:\s+' . preg_quote($headers_array['Content-Transfer-Encoding'], '#') . "\r?\n#mi", '', $new_headers);
 		
 		unlink($plaintext_file);
 		unlink($ciphertext_file);
@@ -1277,7 +1278,7 @@ class fEmail
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
