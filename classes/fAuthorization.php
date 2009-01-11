@@ -2,15 +2,16 @@
 /**
  * Allows defining and checking user authentication via ACLs, authorization levels or a simple logged in/not logged in scheme
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fAuthorization
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug with using named IP ranges in ::checkIP() [wb, 2009-01-10]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fAuthorization
 {
@@ -164,7 +165,7 @@ class fAuthorization
 	static public function checkIP($ip_ranges)
 	{
 		// Check to see if a named IP range was specified
-		if (isset(self::$named_ip_ranges[$ip_ranges])) {
+		if (is_string($ip_ranges) && isset(self::$named_ip_ranges[$ip_ranges])) {
 			$ip_ranges = self::$named_ip_ranges[$ip_ranges];
 		}
 		
@@ -525,7 +526,7 @@ class fAuthorization
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
