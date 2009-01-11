@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed detection of the data type of MySQL timestamp columns, added support for dynamic default date/time values [wb, 2009-01-11]
  * @changes    1.0.0b2  Fixed a bug with detecting multi-column unique keys in MySQL [wb, 2009-01-03]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
@@ -232,7 +233,7 @@ class fSchema
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value},
+	 *         'default'        => (mixed)   {the default value-may contain special string CURRENT_TIMESTAMP},
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
@@ -344,7 +345,9 @@ class fSchema
 			
 			// Handle default values
 			if ($row['default'] !== NULL) {
-				if (in_array($info['type'], array('char', 'varchar', 'text', 'timestamp')) ) {
+				if ($row['default'] == '(getdate())') {
+					$info['default'] = 'CURRENT_TIMESTAMP';
+				} elseif (in_array($info['type'], array('char', 'varchar', 'text', 'timestamp')) ) {
 					$info['default'] = substr($row['default'], 2, -2);
 				} elseif (in_array($info['type'], array('integer', 'float', 'boolean')) ) {
 					$info['default'] = str_replace(array('(', ')'), '', $row['default']);
@@ -497,7 +500,7 @@ class fSchema
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value},
+	 *         'default'        => (mixed)   {the default value-may contain special string CURRENT_TIMESTAMP},
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
@@ -518,6 +521,7 @@ class fSchema
 			'int'				=> 'integer',
 			'bigint'			=> 'integer',
 			'datetime'			=> 'timestamp',
+			'timestamp'			=> 'timestamp',
 			'date'				=> 'date',
 			'time'				=> 'time',
 			'enum'				=> 'varchar',
@@ -697,7 +701,7 @@ class fSchema
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value},
+	 *         'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
@@ -802,9 +806,17 @@ class fSchema
 				$info['auto_increment'] = TRUE;
 				
 			} elseif ($row['default'] !== NULL) {
-				$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+\$/iD", '\1', $row['default']));
-				if ($info['type'] == 'boolean') {
-					$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;
+				if ($row['default'] == 'now()') {
+					$info['default'] = 'CURRENT_TIMESTAMP';
+				} elseif ($row['default'] == "('now'::text)::date") {
+					$info['default'] = 'CURRENT_DATE';
+				} elseif ($row['default'] == "('now'::text)::time with time zone") {
+					$info['default'] = 'CURRENT_TIME';	
+				} else {
+					$info['default'] = str_replace("''", "'", preg_replace("/^'(.*)'::[a-z ]+\$/iD", '\1', $row['default']));
+					if ($info['type'] == 'boolean') {
+						$info['default'] = ($info['default'] == 'false' || !$info['default']) ? FALSE : TRUE;
+					}
 				}
 			}
 			
@@ -972,7 +984,7 @@ class fSchema
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value},
+	 *         'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
 	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
@@ -1336,7 +1348,7 @@ class fSchema
 	 * array(
 	 *     'type'           => (string)  {data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
-	 *     'default'        => (mixed)   {the default value},
+	 *     'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
 	 *     'valid_values'   => (array)   {the valid values for a varchar field},
 	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
 	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
