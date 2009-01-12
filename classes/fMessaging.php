@@ -2,15 +2,16 @@
 /**
  * Provides session-based messaging for page-to-page communication
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-03-05]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Changed ::show() to accept more than one message name, or * for all messages [wb, 2009-01-12]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-03-05]
  */
 class fMessaging
 {
@@ -79,22 +80,49 @@ class fMessaging
 	
 	
 	/**
-	 * Retrieves a message, removes it from the session and prints it with the CSS class specified - will not print if no content
+	 * Retrieves a message, removes it from the session and prints it - will not print if no content
 	 * 
 	 * The message will be printed in a `p` tag if it does not contain
 	 * any block level HTML, otherwise it will be printed in a `div` tag.
 	 * 
-	 * @param  string $name       The name of the message to retrieve
+	 * @param  mixed  $name       The name or array of names of the message(s) to show, or `'*'` to show all
 	 * @param  string $recipient  The intended recipient
-	 * @param  string $css_class  The CSS class to use when displaying the message - if `NULL` is passed or the parameter is ommitted, `$name` will be used instead
-	 * @return boolean  If a message was shown
+	 * @param  string $css_class  Overrides using the `$name` as the CSS class when displaying the message - only used if a single `$name` is specified
+	 * @return boolean  If one or more messages was shown
 	 */
 	static public function show($name, $recipient, $css_class=NULL)
 	{
-		$css_class = ($css_class === NULL) ? $name : $css_class;
-		$message   = self::retrieve($name, $recipient);
-		fHTML::show($message, $css_class);
-		return !empty($message);
+		// Find all messages if * is specified
+		if (is_string($name) && $name == '*') {
+			fSession::open();
+			$prefix = __CLASS__ . '::' . $recipient . '::';
+			$keys   = array_keys($_SESSION);
+			$name   = array();
+			foreach ($keys as $key) {
+				if (strpos($key, $prefix) === 0) {
+					$name[] = substr($key, strlen($prefix));
+				}
+			}
+		}
+		
+		// Handle showing multiple messages
+		if (is_array($name)) {
+			$shown = FALSE;
+			$names = $name;
+			foreach ($names as $name) {
+				$shown = fHTML::show(
+					self::retrieve($name, $recipient),
+					$name
+				) || $shown;
+			}
+			return $shown;
+		}
+		
+		// Handle a single message
+		return fHTML::show(
+			self::retrieve($name, $recipient),
+			($css_class === NULL) ? $name : $css_class
+		);
 	}
 	
 	
@@ -109,7 +137,7 @@ class fMessaging
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
