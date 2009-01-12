@@ -7,14 +7,15 @@
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed ::exists() to properly detect cases when an existing record has one or more NULL values in the primary key [wb, 2009-01-11]
  * @changes    1.0.0b7  Fixed ::__construct() to not trigger the post::__construct() hook when force-configured [wb, 2008-12-30]
  * @changes    1.0.0b6  ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
  * @changes    1.0.0b5  Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
@@ -937,12 +938,16 @@ abstract class fActiveRecord
 		}
 		
 		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		$exists     = FALSE;
+		
 		foreach ($pk_columns as $pk_column) {
-			if ((self::hasOld($this->old_values, $pk_column) && self::retrieveOld($this->old_values, $pk_column) === NULL) || $this->values[$pk_column] === NULL) {
-				return FALSE;
+			$has_old = self::hasOld($this->old_values, $pk_column);
+			if (($has_old && self::retrieveOld($this->old_values, $pk_column) !== NULL) || (!$has_old && $this->values[$pk_column] !== NULL)) {
+				$exists = TRUE;
 			}
 		}
-		return TRUE;
+		
+		return $exists;
 	}
 	
 	
@@ -1955,7 +1960,7 @@ abstract class fActiveRecord
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
