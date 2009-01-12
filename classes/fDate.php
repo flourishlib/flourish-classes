@@ -2,14 +2,15 @@
 /**
  * Represents a date as a value object
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_DATE SQL keywords [wb, 2009-01-11]
  * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
  * @changes    1.0.0b   The initial implementation [wb, 2008-02-10]
  */
@@ -60,6 +61,8 @@ class fDate
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($date) && ctype_digit($date)) {
 			$timestamp = (int) $date;
+		} elseif (is_string($date) && in_array(strtoupper($date), array('CURRENT_TIMESTAMP', 'CURRENT_DATE'))) {
+			$timestamp = time();
 		} else {
 			if (is_object($date) && is_callable(array($date, '__toString'))) {
 				$date = $date->__toString();	
@@ -283,7 +286,7 @@ class fDate
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -2,14 +2,15 @@
 /**
  * Represents a time of day as a value object
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_TIME SQL keywords [wb, 2009-01-11]
  * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
  * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
  */
@@ -60,6 +61,8 @@ class fTime
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($time) && ctype_digit($time)) {
 			$timestamp = (int) $time;
+		} elseif (is_string($time) && in_array(strtoupper($time), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
+			$timestamp = time();
 		} else {
 			if (is_object($time) && is_callable(array($time, '__toString'))) {
 				$time = $time->__toString();	
@@ -274,7 +277,7 @@ class fTime
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

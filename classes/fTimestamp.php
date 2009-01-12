@@ -2,15 +2,16 @@
 /**
  * Represents a date and time as a value object
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-02-12]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added support for CURRENT_TIMESTAMP, CURRENT_DATE and CURRENT_TIME SQL keywords [wb, 2009-01-11]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
  */
 class fTimestamp
 {
@@ -745,6 +746,10 @@ class fTimestamp
 			$timestamp = strtotime('now');
 		} elseif (is_numeric($datetime) && ctype_digit($datetime)) {
 			$timestamp = (int) $datetime;
+		} elseif (is_string($datetime) && in_array(strtoupper($datetime), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
+			$timestamp = time();
+		} elseif (is_string($datetime) && strtoupper($datetime) == 'CURRENT_DATE') {
+			$timestamp = strtotime(date('Y-m-d'));
 		} else {
 			if (is_object($datetime) && is_callable(array($datetime, '__toString'))) {
 				$datetime = $datetime->__toString();	
@@ -987,7 +992,7 @@ class fTimestamp
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
