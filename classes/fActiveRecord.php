@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed ::__construct() to populate database default values when a non-existing record is instantiated [wb, 2009-01-12]
  * @changes    1.0.0b8  Fixed ::exists() to properly detect cases when an existing record has one or more NULL values in the primary key [wb, 2009-01-11]
  * @changes    1.0.0b7  Fixed ::__construct() to not trigger the post::__construct() hook when force-configured [wb, 2008-12-30]
  * @changes    1.0.0b6  ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
@@ -527,6 +528,14 @@ abstract class fActiveRecord
 			$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
 			foreach ($column_info as $column => $info) {
 				$this->values[$column] = NULL;
+				if ($info['default'] !== NULL) {
+					self::assign(
+						$this->values,
+						$this->old_values,
+						$column,
+						fORM::objectify($this, $column, $info['default'])
+					);	
+				}
 			}
 		}
 		
