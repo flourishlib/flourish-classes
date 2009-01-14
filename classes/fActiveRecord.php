@@ -231,7 +231,7 @@ abstract class fActiveRecord
 	 * will be delegated via this method.
 	 * 
 	 * @param  string $method_name  The name of the method called
-	 * @param  string $parameters   The parameters passed
+	 * @param  array  $parameters   The parameters passed
 	 * @return void
 	 */
 	public function __call($method_name, $parameters)
