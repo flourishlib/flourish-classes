@@ -2,14 +2,15 @@
 /**
  * Dynamically handles many centralized object-relational mapping tasks
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
  * @changes    1.0.0b3  Fixed a static method callback constant [wb, 2008-12-17]
  * @changes    1.0.0b2  Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
@@ -329,6 +330,10 @@ class fORM
 		
 		if (isset(self::$active_record_method_callbacks[$class][$method])) {
 			return self::$active_record_method_callbacks[$class][$method];	
+		}
+		
+		if (isset(self::$active_record_method_callbacks['*'][$method])) {
+			return self::$active_record_method_callbacks['*'][$method];	
 		}
 		
 		if (preg_match('#[A-Z0-9]#', $method)) {
@@ -908,7 +913,7 @@ class fORM
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
