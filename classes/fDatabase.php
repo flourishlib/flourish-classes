@@ -32,14 +32,15 @@
  *   - [http://php.net/pdo_sqlite pdo_sqlite] (for v3.x)
  *   - [http://php.net/sqlite sqlite] (for v2.x)
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added a few error suppression operators back in so that developers don't get errors and exceptions [wb, 2009-01-14]
  * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b2  Fixed a bug with PostgreSQL when using the PDO extension and executing an INSERT statement [wb, 2008-12-11]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -1043,14 +1044,14 @@ class fDatabase
 	private function executeQuery($result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(mssql_query($result->getSQL(), $this->connection));
+			$result->setResult(@mssql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(mysql_query($result->getSQL(), $this->connection));
+			$result->setResult(@mysql_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(mysqli_query($this->connection, $result->getSQL()));
+			$result->setResult(@mysqli_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'odbc') {
 			$rows = array();
-			$resource = odbc_exec($this->connection, $result->getSQL());
+			$resource = @odbc_exec($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				// Allow up to 1MB of binary data
 				odbc_longreadlen($resource, 1048576);
@@ -1063,12 +1064,12 @@ class fDatabase
 				$result->setResult($resource);
 			}
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(pg_query($this->connection, $result->getSQL()));
+			$result->setResult(@pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(sqlite_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(@sqlite_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
 			$rows = array();
-			$resource = sqlsrv_query($this->connection, $result->getSQL());
+			$resource = @sqlsrv_query($this->connection, $result->getSQL());
 			if (is_resource($resource)) {
 				while ($row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC)) {
 					$rows[] = $row;
@@ -1117,19 +1118,19 @@ class fDatabase
 	private function executeUnbufferedQuery($result)
 	{
 		if ($this->extension == 'mssql') {
-			$result->setResult(mssql_query($result->getSQL(), $this->connection, 20));
+			$result->setResult(@mssql_query($result->getSQL(), $this->connection, 20));
 		} elseif ($this->extension == 'mysql') {
-			$result->setResult(mysql_unbuffered_query($result->getSQL(), $this->connection));
+			$result->setResult(@mysql_unbuffered_query($result->getSQL(), $this->connection));
 		} elseif ($this->extension == 'mysqli') {
-			$result->setResult(mysqli_query($this->connection, $result->getSQL(), MYSQLI_USE_RESULT));
+			$result->setResult(@mysqli_query($this->connection, $result->getSQL(), MYSQLI_USE_RESULT));
 		} elseif ($this->extension == 'odbc') {
-			$result->setResult(odbc_exec($this->connection, $result->getSQL()));
+			$result->setResult(@odbc_exec($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pgsql') {
-			$result->setResult(pg_query($this->connection, $result->getSQL()));
+			$result->setResult(@pg_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'sqlite') {
-			$result->setResult(sqlite_unbuffered_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
+			$result->setResult(@sqlite_unbuffered_query($this->connection, $result->getSQL(), SQLITE_ASSOC, $sqlite_error_message));
 		} elseif ($this->extension == 'sqlsrv') {
-			$result->setResult(sqlsrv_query($this->connection, $result->getSQL()));
+			$result->setResult(@sqlsrv_query($this->connection, $result->getSQL()));
 		} elseif ($this->extension == 'pdo') {
 			$result->setResult($this->connection->query($result->getSQL()));
 		}
@@ -1881,7 +1882,7 @@ class fDatabase
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
