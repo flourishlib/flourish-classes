@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
  * @changes    1.0.0b2  Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-23]
  */
@@ -1268,7 +1269,7 @@ class fEmail
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
 					self::compose("The email could not be sent because:"),
-					join("</li>\n<li>", $messages)
+					join("</li>\n<li>", $validation_messages)
 				)
 			);	
 		}
