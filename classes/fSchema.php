@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  ::setColumnInfo(): fixed a bug with not grabbing the real database schema first, made general improvements [wb, 2009-01-19]
  * @changes    1.0.0b4  Added support for MySQL binary data types, numeric data type options unsigned and zerofill, and per-column character set definitions [wb, 2009-01-17]
  * @changes    1.0.0b3  Fixed detection of the data type of MySQL timestamp columns, added support for dynamic default date/time values [wb, 2009-01-11]
  * @changes    1.0.0b2  Fixed a bug with detecting multi-column unique keys in MySQL [wb, 2009-01-03]
@@ -1692,17 +1693,39 @@ class fSchema
 	{
 		$this->merged_column_info = $this->column_info;
 		
-		foreach ($this->column_info_override as $table => $info) {
-			if (!isset($this->merge_column_info[$table])) {
+		foreach ($this->column_info_override as $table => $columns) {
+			// Remove a table if the columns are set to NULL
+			if ($columns === NULL) {
+				unset($this->merged_column_info[$table]);
+				continue;	
+			}
+			
+			if (!isset($this->merged_column_info[$table])) {
 				$this->merged_column_info[$table] = array();
 			}
-			$this->merged_column_info[$table] = array_merge($this->merged_column_info[$table], $info);
+			
+			foreach ($columns as $column => $info) {
+				// Remove a column if it is set to NULL
+				if ($info === NULL) {
+					unset($this->merged_column_info[$table][$column]);	
+					continue;
+				}
+				
+				if (!isset($this->merged_column_info[$table][$column])) {
+					$this->merged_column_info[$table][$column] = array();
+				}
+				
+				$this->merged_column_info[$table][$column] = array_merge($this->merged_column_info[$table][$column], $info);
+			}
 		}
 		
 		$optional_elements = array('default', 'not_null', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
 		
 		foreach ($this->merged_column_info as $table => $column_array) {
 			foreach ($column_array as $column => $info) {
+				if (empty($info['type'])) {
+					throw new fProgrammerException('The data type for the column %1$s is empty', $column);	
+				}
 				foreach ($optional_elements as $element) {
 					if (!isset($this->merged_column_info[$table][$column][$element])) {
 						$this->merged_column_info[$table][$column][$element] = ($element == 'auto_increment') ? FALSE : NULL;
@@ -1776,9 +1799,46 @@ class fSchema
 	
 	
 	/**
-	 * Allows overriding of column info. Performs an array merge - to erase a column set values to `NULL`
+	 * Allows overriding of column info
 	 * 
-	 * @param  array  $column_info  The modified column info - see ::getColumnInfo() for format
+	 * Performs an array merge with the column info detected from the database.
+	 * 
+	 * To erase a whole table, set the `$column_info` to `NULL`. To erase a
+	 * column, set the `$column_info` for that column to `NULL`.
+	 * 
+	 * If the `$column_info` parameter is not `NULL`, it should be an
+	 * associative array containing one or more of the following keys. Please
+	 * see ::getColumnInfo() for a description of each.
+	 *  - `'type'`
+	 *  - `'not_null'`
+	 *  - `'default'`
+	 *  - `'valid_values'`
+	 *  - `'max_length'`
+	 *  - `'decimal_places'`
+	 *  - `'auto_increment'`
+	 * 
+	 * The following keys may be set to `NULL`:
+	 *  - `'not_null'`
+	 *  - `'default'`
+	 *  - `'valid_values'`
+	 *  - `'max_length'`
+	 *  - `'decimal_places'`
+	 *  
+	 * The key `'auto_increment'` should be a boolean.
+	 * 
+	 * The `'type'` key should be one of:
+	 *  - `'blob'`
+	 *  - `'boolean'`
+	 *  - `'char'`
+	 *  - `'date'`
+	 *  - `'float'`
+	 *  - `'integer'`
+	 *  - `'text'`
+	 *  - `'time'`
+	 *  - `'timestamp'`
+	 *  - `'varchar'`
+	 * 
+	 * @param  array  $column_info  The modified column info - see method description for format
 	 * @param  string $table        The table to override
 	 * @param  string $column       The column to override
 	 * @return void
@@ -1795,6 +1855,7 @@ class fSchema
 			$this->column_info_override[$table] = $column_info;
 		}
 		
+		$this->fetchColumnInfo($table);
 		$this->mergeColumnInfo();
 	}
 	
