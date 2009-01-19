@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug with detecting MySQL columns that accept `NULL` [wb, 2009-01-19]
  * @changes    1.0.0b5  ::setColumnInfo(): fixed a bug with not grabbing the real database schema first, made general improvements [wb, 2009-01-19]
  * @changes    1.0.0b4  Added support for MySQL binary data types, numeric data type options unsigned and zerofill, and per-column character set definitions [wb, 2009-01-17]
  * @changes    1.0.0b3  Fixed detection of the data type of MySQL timestamp columns, added support for dynamic default date/time values [wb, 2009-01-11]
@@ -555,7 +556,7 @@ class fSchema
 			return array();			
 		}
 		
-		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\)(?: unsigned| zerofill){0,2})?)(?: character set [^ ]+)?( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\)(?: unsigned| zerofill){0,2})?)(?: character set [^ ]+)?(?: NULL)?( NOT NULL)?(?: default ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			
