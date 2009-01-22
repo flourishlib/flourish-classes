@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed ::set() to accept objects and reject directories [wb, 2009-01-21]
  * @changes    1.0.0b7  Changed the class to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b6  Old files are now checked against the current file to prevent removal of an in-use file [wb, 2008-12-23]
  * @changes    1.0.0b5  Fixed ::replicate() to ensure the temp directory exists and ::set() to use the temp directory [wb, 2008-12-23]
@@ -992,6 +993,15 @@ class fORMFile
 		
 		$file_path = $parameters[0];
 		
+		// Handle objects being passed in
+		if ($file_path instanceof fFile) {
+			$file_path = $file_path->getPath();	
+		} elseif (is_object($file_path) && is_callable(array($file_path, '__toString'))) {
+			$file_path = $file_path->__toString();	
+		} elseif (is_object($file_path)) {
+			$file_path = (string) $file_path;	
+		}
+		
 		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
 			throw new fEnvironmentException(
 				'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
@@ -1001,6 +1011,13 @@ class fORMFile
 		
 		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
 			$file_path = $doc_root . $file_path;
+		}
+		
+		if (is_dir($file_path)) {
+			throw new fProgrammerException(
+				'The file specified, %s, is not a file but a directory',
+				$file_path
+			);
 		}
 		
 		$upload_dir = self::$file_upload_columns[$class][$column];
