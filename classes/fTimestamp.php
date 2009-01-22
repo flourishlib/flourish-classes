@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Removed a useless double check of the strtotime() return value in ::__construct() [wb, 2009-01-21]
  * @changes    1.0.0b2  Added support for CURRENT_TIMESTAMP, CURRENT_DATE and CURRENT_TIME SQL keywords [wb, 2009-01-11]
  * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
  */
@@ -759,7 +760,7 @@ class fTimestamp
 			$timestamp = strtotime(self::fixISOWeek($datetime) . ' ' . $timezone);
 		}
 		
-		if ($timestamp === FALSE || $timestamp === -1) {
+		if ($timestamp === FALSE) {
 			throw new fValidationException(
 				'The date/time specified, %s, does not appear to be a valid date/time',
 				$datetime
