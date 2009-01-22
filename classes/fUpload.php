@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated ::move() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b5  Removed some unnecessary error suppression operators from ::move() [wb, 2009-01-05]
  * @changes    1.0.0b4  Updated ::validate() so it properly handles upload max filesize specified in human-readable notation [wb, 2009-01-05]
  * @changes    1.0.0b3  Removed the dependency on fRequest [wb, 2009-01-05]
@@ -228,10 +229,7 @@ class fUpload
 			throw new fEnvironmentException('Unable to change permissions on the uploaded file');
 		}
 		
-		if (fImage::isImageCompatible($file_name)) {
-			return new fImage($file_name);
-		}
-		return new fFile($file_name);
+		return fFilesystem::createObject($file_name);
 	}
 	
 	

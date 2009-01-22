@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Refactored ::scan() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b3  Added the $regex_filter parameter to ::scan() and ::scanRecursive(), fixed bug in ::scanRecursive() [wb, 2009-01-05]
  * @changes    1.0.0b2  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b   The initial implementation [wb, 2007-12-21]
@@ -373,13 +374,7 @@ class fDirectory
 				}
 			}
 			
-			if (is_dir($file)) {
-				$objects[] = new fDirectory($file);
-			} elseif (fImage::isImageCompatible($file)) {
-				$objects[] = new fImage($file);
-			} else {
-				$objects[] = new fFile($file);
-			}
+			$objects[] = fFilesystem::createObject($file);
 		}
 		
 		return $objects;

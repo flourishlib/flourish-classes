@@ -2,14 +2,15 @@
 /**
  * Provides file manipulation functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Changed the class to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b6  Old files are now checked against the current file to prevent removal of an in-use file [wb, 2008-12-23]
  * @changes    1.0.0b5  Fixed ::replicate() to ensure the temp directory exists and ::set() to use the temp directory [wb, 2008-12-23]
  * @changes    1.0.0b4  ::objectify() no longer throws an exception when a file can't be found [wb, 2008-12-18]
@@ -621,17 +622,11 @@ class fORMFile
 		
 		try {
 			
-			if (fImage::isImageCompatible($path)) {
-				return new fImage($path);
-			}
-			
-			return new fFile($path);
+			return fFilesystem::createObject($path);
 			 
 		// If there was some error creating the file, just return the raw value
 		} catch (fExpectedException $e) {
 			return $value;
-		} catch (fEnvironmentException $e) {
-			return $value;	
 		}
 	}
 	
@@ -1016,7 +1011,7 @@ class fORMFile
 			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
 		}
 		
-		$file     = new fFile($file_path);
+		$file     = fFilesystem::createObject($file_path);
 		$new_file = $file->duplicate($temp_dir);
 		
 		fActiveRecord::assign($values, $old_values, $column, $new_file);
@@ -1108,11 +1103,7 @@ class fORMFile
 			} elseif ($existing_file) {
 				
 				$file_path = $upload_dir->getPath() . $existing_file;
-				if (fImage::isImageCompatible($file_path)) {
-					$file = new fImage($file_path);
-				} else {
-					$file = new fFile($file_path);
-				}
+				$file      = fFilesystem::createObject($file_path);
 				
 				$current_file = $values[$column];
 				if (!$current_file || ($current_file && $file->getPath() != $current_file->getPath())) {
@@ -1219,7 +1210,7 @@ class fORMFile
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

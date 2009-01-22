@@ -324,6 +324,8 @@ class fImage extends fFile
 	 * 
 	 * @internal
 	 * 
+	 * @throws fValidationException
+	 * 
 	 * @param  string $image  The image to check for incompatibility
 	 * @return boolean  If the image is compatible with the detected image processor
 	 */
@@ -332,7 +334,7 @@ class fImage extends fFile
 		self::determineProcessor();
 		
 		if (!file_exists($image)) {
-			throw new fEnvironmentException(
+			throw new fValidationException(
 				'The image specified, %s, does not exist',
 				$image
 			);
@@ -468,24 +470,18 @@ class fImage extends fFile
 	{
 		self::determineProcessor();
 		
-		try {
-			
-			if (!self::isImageCompatible($file_path)) {
-				$valid_image_types = array('GIF', 'JPG', 'PNG');
-				if (self::$processor == 'imagemagick') {
-					$valid_image_types[] = 'TIF';
-				}
-				throw new fValidationException(
-					'The image specified, %1$s, is not a valid %2$s file',
-					$file_path,
-					fGrammar::joinArray($valid_image_types, 'or')
-				);
+		parent::__construct($file_path);
+		
+		if (!self::isImageCompatible($file_path)) {
+			$valid_image_types = array('GIF', 'JPG', 'PNG');
+			if (self::$processor == 'imagemagick') {
+				$valid_image_types[] = 'TIF';
 			}
-			parent::__construct($file_path);
-				
-		} catch (fValidationException $e) {
-			$this->file = NULL;
-			$this->exception = $e;
+			throw new fValidationException(
+				'The image specified, %1$s, is not a valid %2$s file',
+				$file_path,
+				fGrammar::joinArray($valid_image_types, 'or')
+			);
 		}
 	}
 	

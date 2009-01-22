@@ -2,14 +2,15 @@
 /**
  * Handles filesystem-level tasks including filesystem transactions and the reference map to keep all fFile and fDirectory objects in sync
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added the ::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b2  Fixed a bug where the filepath and exception maps weren't being updated after a rollback [wb, 2008-12-11]
  * @changes    1.0.0b   The initial implementation [wb, 2008-03-24]
@@ -21,6 +22,7 @@ class fFilesystem
 	const begin                         = 'fFilesystem::begin';
 	const commit                        = 'fFilesystem::commit';
 	const convertToBytes                = 'fFilesystem::convertToBytes';
+	const createObject                  = 'fFilesystem::createObject';
 	const formatFilesize                = 'fFilesystem::formatFilesize';
 	const getPathInfo                   = 'fFilesystem::getPathInfo';
 	const hookExceptionMap              = 'fFilesystem::hookExceptionMap';
@@ -179,6 +181,41 @@ class fFilesystem
 						  'g' => 1073741824,
 						  't' => 1099511627776);
 		return $matches[1] * $size_map[$matches[2]];
+	}
+	
+	
+	/**
+	 * Takes a filesystem path and creates either an fDirectory, fFile or fImage object from it
+	 * 
+	 * @throws fValidationException
+	 * 
+	 * @param  string $path  The path to the filesystem object
+	 * @return fDirectory|fFile|fImage
+	 */
+	static public function createObject($path)
+	{
+		if (empty($path)) {
+			throw new fValidationException(
+				'No path was specified'
+			);
+		}
+		
+		if (!file_exists($path)) {
+			throw new fValidationException(
+				'The path specified, %s, does not exist',
+				$path
+			);
+		}
+		
+		if (is_dir($path)) {
+			return new fDirectory($path);	
+		}
+		
+		if (fImage::isImageCompatible($path)) {
+			return new fImage($path);	
+		}
+		
+		return new fFile($path);
 	}
 	
 	
@@ -610,7 +647,7 @@ class fFilesystem
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
