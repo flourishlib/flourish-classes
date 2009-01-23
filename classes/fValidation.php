@@ -2,15 +2,16 @@
 /**
  * Provides validation routines for standalone forms, such as contact forms
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added support for validating date and URL fields [wb, 2009-01-23]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fValidation
 {
@@ -54,6 +55,13 @@ class fValidation
 	
 	
 	/**
+	 * Fields that should be valid dates
+	 * 
+	 * @var array
+	 */
+	private $date_fields = array();
+	
+	/**
 	 * Fields that should be formatted as email addresses
 	 * 
 	 * @var array
@@ -74,6 +82,13 @@ class fValidation
 	 */
 	private $required_fields = array();
 	
+	/**
+	 * Fields that should be formatted as URLs
+	 * 
+	 * @var array
+	 */
+	private $url_fields = array();
+	
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
@@ -88,11 +103,35 @@ class fValidation
 	
 	
 	/**
-	 * Adds form fields to be required to be blank or a valid email address
+	 * Adds form fields to the list of fields to be blank or a valid date
 	 * 
-	 * Use ::addRequiredFields() to not allow blank values.
+	 * Use ::addRequiredFields() disallow blank values.
 	 * 
-	 * @param  string $field  Any number of fields to required valid email addresses for
+	 * @param  string $field  Any number of fields that should contain a valid date
+	 * @param  string ...
+	 * @return void
+	 */
+	public function addDateFields()
+	{
+		$args = func_get_args();
+		foreach ($args as $arg) {
+			if (!self::stringlike($arg)) {
+				throw new fProgrammerException(
+					'The field specified, %s, does not appear to be a valid field name',
+					$arg
+				);
+			}
+		}
+		$this->date_fields = array_merge($this->date_fields, $args);
+	}
+	
+	
+	/**
+	 * Adds form fields to the lis of fields to be blank or a valid email address
+	 * 
+	 * Use ::addRequiredFields() disallow blank values.
+	 * 
+	 * @param  string $field  Any number of fields that should contain a valid email address
 	 * @param  string ...
 	 * @return void
 	 */
@@ -189,6 +228,55 @@ class fValidation
 	
 	
 	/**
+	 * Adds form fields to the list of fields to be blank or a valid URL
+	 * 
+	 * Use ::addRequiredFields() disallow blank values.
+	 * 
+	 * @param  string $field  Any number of fields that should contain a valid URL
+	 * @param  string ...
+	 * @return void
+	 */
+	public function addURLFields()
+	{
+		$args = func_get_args();
+		foreach ($args as $arg) {
+			if (!self::stringlike($arg)) {
+				throw new fProgrammerException(
+					'The field specified, %s, does not appear to be a valid field name',
+					$arg
+				);
+			}
+		}
+		$this->url_fields = array_merge($this->url_fields, $args);
+	}
+	
+	
+	/**
+	 * Validates the date fields, requiring that any date fields that have a value that can be interpreted as a date
+	 * 
+	 * @param  array &$messages  The messages to display to the user
+	 * @return void
+	 */
+	private function checkDateFields(&$messages)
+	{
+		foreach ($this->date_fields as $date_field) {
+			$value     = trim(fRequest::get($date_field));
+			$timestamp = strtotime($value);
+			
+			$is_51     = version_compare(fCore::getPHPVersion(), '5.1.0') != -1;
+			$is_valid  = ($is_51 && $timestamp !== FALSE) || (!$is_51 && $timestamp !== -1);
+			
+			if (self::stringlike($value) && !$is_valid) {
+				$messages[] = self::compose(
+					'%s: Please enter a date',
+					fGrammar::humanize($date_field)
+				);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Validates the email fields, requiring that any email fields that have a value are formatted like an email address
 	 * 
 	 * @param  array &$messages  The messages to display to the user
@@ -281,6 +369,26 @@ class fValidation
 	
 	
 	/**
+	 * Validates the URL fields, requiring that any URL fields that have a value are valid URLs
+	 * 
+	 * @param  array &$messages  The messages to display to the user
+	 * @return void
+	 */
+	private function checkURLFields(&$messages)
+	{
+		foreach ($this->url_fields as $url_field) {
+			$value = trim(fRequest::get($url_field));
+			if (self::stringlike($value) && !preg_match('#^https?://[^ ]+$#iD', $value)) {
+				$messages[] = self::compose(
+					'%s: Please enter a URL in the form http://www.example.com/page',
+					fGrammar::humanize($url_field)
+				);
+			}
+		}
+	}
+	
+	
+	/**
 	 * Check if a field has a value
 	 * 
 	 * @param  string $key  The key to check for a value
@@ -312,7 +420,11 @@ class fValidation
 	 */
 	public function validate()
 	{
-		if (!$this->email_header_fields && !$this->required_fields && !$this->email_fields) {
+		if (!$this->email_header_fields &&
+			  !$this->required_fields &&
+			  !$this->email_fields &&
+			  !$this->date_fields &&
+			  !$this->url_fields) {
 			throw new fProgrammerException(
 				'No fields have been set to be validated'
 			);
@@ -321,8 +433,10 @@ class fValidation
 		$messages = array();
 		
 		$this->checkRequiredFields($messages);
+		$this->checkDateFields($messages);
 		$this->checkEmailFields($messages);
 		$this->checkEmailHeaderFields($messages);
+		$this->checkURLFields($messages);
 		
 		if ($messages) {
 			if (class_exists('fText', FALSE)) {
@@ -345,7 +459,7 @@ class fValidation
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
