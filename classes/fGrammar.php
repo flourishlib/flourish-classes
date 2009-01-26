@@ -2,15 +2,16 @@
 /**
  * Provides english word inflection, notation conversion, grammar helpers and internationlization support
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fGrammar
 {
@@ -58,10 +59,10 @@ class fGrammar
 	static private $plural_to_singular_rules = array(
 		'([ml])ice'                    => '\1ouse',
 		'(media|info(rmation)?|news)$' => '\1',
-		'quizzes$'                     => 'quiz',
-		'children$'                    => 'child',
-		'people$'                      => 'person',
-		'men$'                         => 'man',
+		'(q)uizzes$'                   => '\1uiz',
+		'(c)hildren$'                  => '\1hild',
+		'(p)eople$'                    => '\1erson',
+		'(m)en$'                       => '\1an',
 		'((?!sh).)oes$'                => '\1o',
 		'((?<!o)[ieu]s|[ieuo]x)es$'    => '\1',
 		'([cs]h)es$'                   => '\1',
@@ -85,10 +86,10 @@ class fGrammar
 		'([ml])ouse$'                  => '\1ice',
 		'(media|info(rmation)?|news)$' => '\1',
 		'(phot|log)o$'                 => '\1os',
-		'^(q)uiz$'                     => 'quizzes',
-		'child$'                       => 'children',
-		'person$'                      => 'people',
-		'man$'                         => 'men',
+		'^(q)uiz$'                     => '\1uizzes',
+		'(c)hild$'                     => '\1hildren',
+		'(p)erson$'                    => '\1eople',
+		'(m)an$'                       => '\1en',
 		'([ieu]s|[ieuo]x)$'            => '\1es',
 		'([cs]h)$'                     => '\1es',
 		'(ss)$'                        => '\1es',
@@ -514,7 +515,7 @@ class fGrammar
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
