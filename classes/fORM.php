@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
  * @changes    1.0.0b4  Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
  * @changes    1.0.0b3  Fixed a static method callback constant [wb, 2008-12-17]
  * @changes    1.0.0b2  Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
@@ -18,7 +19,7 @@
 class fORM
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const addCustomTableClassMapping = 'fORM::addCustomTableClassMapping';
+	const addCustomClassTableMapping = 'fORM::addCustomClassTableMapping';
 	const callHookCallbacks          = 'fORM::callHookCallbacks';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
 	const checkHookCallback          = 'fORM::checkHookCallback';
@@ -52,6 +53,13 @@ class fORM
 	 * @var array
 	 */
 	static private $active_record_method_callbacks = array();
+	
+	/**
+	 * Custom mappings for class <-> table
+	 * 
+	 * @var array
+	 */
+	static private $class_table_map = array();
 	
 	/**
 	 * Custom column names for columns in fActiveRecord classes
@@ -109,29 +117,22 @@ class fORM
 	 */
 	static private $scalarize_callbacks = array();
 	
-	/**
-	 * Custom mappings for table <-> class
-	 * 
-	 * @var array
-	 */
-	static private $table_class_map = array();
-	
 	
 	/**
-	 * Allows non-standard table to class mapping
+	 * Allows non-standard class to table mapping
 	 * 
 	 * By default, all database tables are assumed to be plural nouns in
 	 * `underscore_notation` and all class names are assumed to be singular
-	 * nouns in `UpperCamelCase`. This method allows arbitrary table to 
-	 * class mapping.
+	 * nouns in `UpperCamelCase`. This method allows arbitrary class to 
+	 * table mapping.
 	 * 
-	 * @param  string $table  The name of the database table
 	 * @param  string $class  The name of the class
+	 * @param  string $table  The name of the database table
 	 * @return void
 	 */
-	static public function addCustomTableClassMapping($table, $class)
+	static public function addCustomClassTableMapping($class, $table)
 	{
-		self::$table_class_map[$table] = $class;
+		self::$class_table_map[$class] = $table;
 	}
 	
 	
@@ -275,10 +276,12 @@ class fORM
 	 */
 	static public function classize($table)
 	{
-		if (!isset(self::$table_class_map[$table])) {
-			self::$table_class_map[$table] = fGrammar::camelize(fGrammar::singularize($table), TRUE);
+		if (!$class = array_search($table, self::$class_table_map)) {
+			$class = fGrammar::camelize(fGrammar::singularize($table), TRUE);
+			self::$class_table_map[$class] = $table;
 		}
-		return self::$table_class_map[$table];
+		
+		return $class;
 	}
 	
 	
@@ -840,18 +843,16 @@ class fORM
 	 */
 	static public function reset()
 	{
+		self::$class_table_map                = array();
 		self::$active_record_method_callbacks = array();
 		self::$column_names                   = array();
-		self::$configured                     = array();
 		self::$hook_callbacks                 = array();
-		self::$identity_map                   = array();
 		self::$objectify_callbacks            = array();
 		self::$record_names                   = array();
 		self::$record_set_method_callbacks    = array();
 		self::$reflect_callbacks              = array();
 		self::$replicate_callbacks            = array();
 		self::$scalarize_callbacks            = array();
-		self::$table_class_map                = array();
 	}
 	
 	
@@ -893,12 +894,10 @@ class fORM
 	{
 		$class = self::getClass($class);
 		
-		if (!$table = array_search($class, self::$table_class_map)) {
-			$table = fGrammar::underscorize(fGrammar::pluralize($class));
-			self::$table_class_map[$table] = $class;
+		if (!isset(self::$class_table_map[$class])) {
+			self::$class_table_map[$class] = fGrammar::underscorize(fGrammar::pluralize($class));
 		}
-		
-		return $table;
+		return self::$class_table_map[$class];
 	}
 	
 	
