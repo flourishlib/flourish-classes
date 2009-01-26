@@ -2,15 +2,16 @@
 /**
  * Provides cryptography functionality, including hashing, symmetric-key encryption and public-key encryption
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-11-27]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Backwards compatibility break - changed ::symmetricKeyEncrypt() to not encrypt the IV since we are using HMAC on it [wb, 2009-01-26]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-11-27]
  */
 class fCryptography
 {
@@ -436,11 +437,11 @@ class fCryptography
 			);
 		}
 		
-		$encrypted_iv  = base64_decode($elements[1]);
+		$iv            = base64_decode($elements[1]);
 		$ciphertext    = base64_decode($elements[2]);
 		$provided_hmac = $elements[3];
 		
-		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
+		$hmac = hash_hmac('sha1', $iv . '#' . $ciphertext, $secret_key);
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
@@ -449,19 +450,15 @@ class fCryptography
 			);
 		}
 		
-		// Decrypt the IV so we can feed it into the main decryption
-		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
-		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, '12345678');
-		$iv        = mdecrypt_generic($iv_module, $encrypted_iv);
-		mcrypt_generic_deinit($iv_module);
-		mcrypt_module_close($iv_module);
-		
 		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256) in cipher feedback mode
 		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
 		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		mcrypt_generic_init($module, $key, $iv);
+		
+		$old_error_reporting = error_reporting(error_reporting() ^ E_WARNING);
 		$plaintext = mdecrypt_generic($module, $ciphertext);
+		error_reporting($old_error_reporting);
+		
 		mcrypt_generic_deinit($module);
 		mcrypt_module_close($module);
 		
@@ -498,28 +495,22 @@ class fCryptography
 		srand();
 		$iv       = mcrypt_create_iv(mcrypt_enc_get_iv_size($module), MCRYPT_RAND);
 		
-		// Encrypt the IV for storage to prevent man in the middle attacks. This uses
-		// electronic codebook since it is suitable for encrypting the IV.
-		$iv_module = mcrypt_module_open('tripledes', '',  'ecb', '');
-		$iv_key    = substr($secret_key, 0, mcrypt_enc_get_key_size($iv_module));
-		mcrypt_generic_init($iv_module, $iv_key, '12345678');
-		$encrypted_iv = mcrypt_generic($iv_module, $iv);
-		mcrypt_generic_deinit($iv_module);
-		mcrypt_module_close($iv_module);
-		
 		// Finish the main encryption
 		mcrypt_generic_init($module, $key, $iv);
+		
+		$old_error_reporting = error_reporting(error_reporting() ^ E_WARNING);
 		$ciphertext = mcrypt_generic($module, $plaintext);
+		error_reporting($old_error_reporting);
 		
 		// Clean up the main encryption
 		mcrypt_generic_deinit($module);
 		mcrypt_module_close($module);
 		
 		// Here we are generating the HMAC for the encrypted data to ensure data integrity
-		$hmac = hash_hmac('sha1', $encrypted_iv . $ciphertext, $secret_key);
+		$hmac = hash_hmac('sha1', $iv . '#' . $ciphertext, $secret_key);
 		
 		// All of the data is then encoded using base64 to prevent issues with character sets
-		$encoded_iv         = base64_encode($encrypted_iv);
+		$encoded_iv         = base64_encode($iv);
 		$encoded_ciphertext = base64_encode($ciphertext);
 		
 		// Indicate in the resulting encrypted data what the encryption tool was
@@ -590,7 +581,7 @@ class fCryptography
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
