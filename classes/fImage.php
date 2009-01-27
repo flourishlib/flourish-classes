@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b6  Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
  * @changes    1.0.0b5  Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
  * @changes    1.0.0b4  Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
@@ -279,7 +280,10 @@ class fImage extends fFile
 			);		
 		}
 		
-		$image_info = @getimagesize($image_path);
+		$old_level  = error_reporting(error_reporting() & ~E_WARNING);
+		$image_info = getimagesize($image_path);
+		error_reporting($old_level);
+		
 		if ($image_info == FALSE) {
 			throw new fValidationException(
 				'The file specified, %s, is not an image',

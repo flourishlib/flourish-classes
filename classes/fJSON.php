@@ -10,15 +10,16 @@
  * object - such values are not valid according to the JSON spec, but the
  * functionality is included for compatiblity with the json extension.
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-07-12]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26] 
+ * @changes    1.0.0b   The initial implementation [wb, 2008-07-12]
  */
 class fJSON
 {
@@ -474,7 +475,10 @@ class fJSON
 	static public function encode($value)
 	{
 		if (function_exists('json_encode')) {
-			return @json_encode($value);
+			$old_level = error_reporting(error_reporting() & ~E_WARNING);
+			$result = json_encode($value);
+			error_reporting($old_level);
+			return $result;
 		}
 		
 		if (is_int($value)) {
@@ -683,7 +687,7 @@ class fJSON
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

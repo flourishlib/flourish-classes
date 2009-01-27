@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b2  Backwards compatibility break - changed ::symmetricKeyEncrypt() to not encrypt the IV since we are using HMAC on it [wb, 2009-01-26]
  * @changes    1.0.0b   The initial implementation [wb, 2007-11-27]
  */
@@ -385,8 +386,10 @@ class fCryptography
 			return;
 		}
 		
+		$old_level = error_reporting(error_reporting() & ~E_WARNING);
+		
 		// On linux/unix/solaris we should be able to use /dev/urandom
-		if (fCore::getOS() != 'windows' && @$handle = fopen('/dev/urandom', 'rb')) {
+		if (fCore::getOS() != 'windows' && $handle = fopen('/dev/urandom', 'rb')) {
 			$bytes = fread($handle, 32);
 			fclose($handle);
 				
@@ -400,6 +403,8 @@ class fCryptography
 		} else {
 			$bytes = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);	
 		}
+		
+		error_reporting($old_level);
 		
 		$seed = md5($bytes);
 		$seed = base_convert($seed, 16, 10);
@@ -455,9 +460,9 @@ class fCryptography
 		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		mcrypt_generic_init($module, $key, $iv);
 		
-		$old_error_reporting = error_reporting(error_reporting() ^ E_WARNING);
+		$old_level = error_reporting(error_reporting() & ~E_WARNING);
 		$plaintext = mdecrypt_generic($module, $ciphertext);
-		error_reporting($old_error_reporting);
+		error_reporting($old_level);
 		
 		mcrypt_generic_deinit($module);
 		mcrypt_module_close($module);
@@ -498,9 +503,9 @@ class fCryptography
 		// Finish the main encryption
 		mcrypt_generic_init($module, $key, $iv);
 		
-		$old_error_reporting = error_reporting(error_reporting() ^ E_WARNING);
+		$old_level = error_reporting(error_reporting() & ~E_WARNING);
 		$ciphertext = mcrypt_generic($module, $plaintext);
-		error_reporting($old_error_reporting);
+		error_reporting($old_level);
 		
 		// Clean up the main encryption
 		mcrypt_generic_deinit($module);
