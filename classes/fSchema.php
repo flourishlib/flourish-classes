@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Mapped the MySQL data type `'set'` to `'varchar'`, however valid values are not implemented yet [wb, 2009-02-01]
  * @changes    1.0.0b7  Fixed a bug with detecting MySQL timestamp columns [wb, 2009-01-28]
  * @changes    1.0.0b6  Fixed a bug with detecting MySQL columns that accept `NULL` [wb, 2009-01-19]
  * @changes    1.0.0b5  ::setColumnInfo(): fixed a bug with not grabbing the real database schema first, made general improvements [wb, 2009-01-19]
@@ -529,6 +530,7 @@ class fSchema
 			'date'				=> 'date',
 			'time'				=> 'time',
 			'enum'				=> 'varchar',
+			'set'               => 'varchar',
 			'varchar'			=> 'varchar',
 			'char'				=> 'char',
 			'float'				=> 'float',
@@ -581,6 +583,13 @@ class fSchema
 						$match[3] = strlen(utf8_decode($valid_value));
 					}
 				}
+			}
+			
+			// The set data type is currently only supported as a varchar
+			// with a max length of all valid values concatenated by ,s
+			if (stripos($match[2], 'set') === 0) {
+				$values = preg_replace("/^'|'\$/D", '', explode(",", $match[3]));
+				$match[3] = strlen(join(',', $values));
 			}
 			
 			// Type specific information
