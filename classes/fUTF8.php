@@ -13,8 +13,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-06-01]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug in ::explode() with newlines and zero-length delimiters [wb, 2009-02-05]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-06-01]
  */
 class fUTF8
 {
@@ -750,7 +751,8 @@ class fUTF8
 		}
 		
 		// If no delimiter was passed, we explode the characters into an array
-		return preg_split('##us', $string, NULL, PREG_SPLIT_NO_EMPTY);
+		preg_match_all('#.|^\z#us', $string, $matches);
+		return $matches[0];
 	}
 	
 	
