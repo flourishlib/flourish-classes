@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
  * @changes    1.0.0b2  Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -55,7 +56,7 @@ class fSession
 		$remove = array();
 		foreach ($_SESSION as $key => $value) {
 			if (strpos($key, $prefix) === 0) {
-				$remove = $key;	
+				$remove[] = $key;
 			}
 		}
 		
