@@ -6,14 +6,15 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a parameter name in ::rpos() from `$search` to `$needle` [wb, 2009-02-06]
  * @changes    1.0.0b2  Fixed a bug in ::explode() with newlines and zero-length delimiters [wb, 2009-02-05]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-01]
  */
@@ -1259,7 +1260,7 @@ class fUTF8
 	 * @param  integer $offset    The character position to start searching from. A negative value will stop looking that many characters from the end of the string
 	 * @return mixed  The integer character position of the last occurence of the needle or `FALSE` if no match
 	 */
-	static public function rpos($haystack, $search, $offset=0)
+	static public function rpos($haystack, $needle, $offset=0)
 	{
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($haystack)) {
@@ -1497,7 +1498,7 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
