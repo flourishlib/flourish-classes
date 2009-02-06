@@ -2,15 +2,16 @@
 /**
  * Provides internationlization support for strings
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fText
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-11-12]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Updated ::compose() to more handle `$components` passed as an array [wb, 2009-02-05]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-11-12]
  */
 class fText
 {
@@ -37,7 +38,7 @@ class fText
 	 * @param  string  $message    A message to compose
 	 * @param  mixed   $component  A string or number to insert into the message
 	 * @param  mixed   ...
-	 * @return void
+	 * @return string  The composed message
 	 */
 	static public function compose($message)
 	{
@@ -48,7 +49,13 @@ class fText
 		}
 		
 		$components = array_slice(func_get_args(), 1);
-		$message    = vsprintf($message, $components);
+		
+		// Handles components passed as an array
+		if (sizeof($components) == 1 && is_array($components[0])) {
+			$components = $components[0];	
+		}
+		
+		$message = vsprintf($message, $components);
 		
 		if (self::$compose_callbacks) {
 			foreach (self::$compose_callbacks['post'] as $callback) {
@@ -125,7 +132,7 @@ class fText
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -2,15 +2,16 @@
 /**
  * An exception that allows for easy l10n, printing, tracing and hooking
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  ::compose() more robustly handles `$components` passed as an array, ::__construct() now detects stray `%` characters [wb, 2009-02-05]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 abstract class fException extends Exception
 {
@@ -32,19 +33,22 @@ abstract class fException extends Exception
 	 */
 	static protected function compose($message)
 	{
-		$args = array_slice(func_get_args(), 1);
+		$components = array_slice(func_get_args(), 1);
 		
-		if (is_array($args) && sizeof($args) == 1) {
-			$args = $args[0];	
+		// Handles components passed as an array
+		if (sizeof($components) == 1 && is_array($components[0])) {
+			$components = $components[0];	
 		}
 		
+		// If fText is loaded, use it
 		if (class_exists('fText', FALSE)) {
 			return call_user_func_array(
 				array('fText', 'compose'),
-				array($message, $args)
+				array($message, $components)
 			);
+			
 		} else {
-			return vsprintf($message, $args);
+			return vsprintf($message, $components);
 		}
 	}
 	
@@ -155,7 +159,18 @@ abstract class fException extends Exception
 	/**
 	 * Sets the message for the exception, allowing for string interpolation and internationalization
 	 * 
-	 * @param  string  $message    The message for the exception. This should be a valid [http://php.net/sprintf `sprintf()`] string and thus all % should be written as %%.
+	 * The `$message` can contain any number of formatting placeholders for
+	 * string and number interpolation via [http://php.net/sprintf `sprintf()`].
+	 * Any `%` signs that do not appear to be part of a valid formatting
+	 * placeholder will be automatically escaped with a second `%`.
+	 * 
+	 * The following aspects of valid `sprintf()` formatting codes are not
+	 * accepted since they are redundant and restrict the non-formatting use of
+	 * the `%` sign in exception messages:
+	 *  - `% 2d`: Using a literal space as a padding character - a space will be used if no padding character is specified
+	 *  - `%'.d`: Providing a padding character but no width - no padding will be applied without a width
+	 * 
+	 * @param  string  $message    The message for the exception. This accepts a subset of [http://php.net/sprintf `sprintf()`] strings - see method description for more details.
 	 * @param  mixed   $component  A string or number to insert into the message
 	 * @param  mixed   ...
 	 * @param  integer $code       The exception code to set
@@ -164,8 +179,35 @@ abstract class fException extends Exception
 	public function __construct($message)
 	{
 		$args          = array_slice(func_get_args(), 1);
-		$required_args = preg_match_all('#(?<!%)%(\d+\$)?[\-+]?( |0|\'.)?-?\d*(\.\d+)?[bcdeufFosxX]#', $message, $matches);
+		$required_args = preg_match_all(
+			'/
+				(?<!%)                       # Ensure this is not an escaped %
+				%(                           # The leading %
+				  (?:\d+\$)?                 # Position
+				  \+?                        # Sign specifier
+				  (?:(?:0|\'.)?-?\d+|-?)     # Padding, alignment and width or just alignment
+				  (?:\.\d+)?				 # Precision
+				  [bcdeufFosxX]              # Type
+				)/x',
+			$message,
+			$matches
+		);
 		
+		// Handle %s that weren't properly escaped
+		$formats    = $matches[1];
+		$delimeters = ($formats) ? array_fill(0, sizeof($formats), '#') : array();
+		$lookahead  = join(
+			'|',
+			array_map(
+				'preg_quote',
+				$formats,
+				$delimeters 
+			)
+		);
+		$lookahead  = ($lookahead) ? '|' . $lookahead : '';
+		$message    = preg_replace('#(?<!%)%(?!%' . $lookahead . ')#', '%%', $message);	
+		
+		// If we have an extra argument, it is the exception code
 		$code = NULL;
 		if ($required_args == sizeof($args) - 1) {
 			$code = array_pop($args);		
@@ -330,7 +372,7 @@ abstract class fException extends Exception
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
