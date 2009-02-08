@@ -2,15 +2,16 @@
 /**
  * Provides low-level debugging, error and exception functionality
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added ::registerDebugCallback() [wb, 2009-02-07]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fCore
 {
@@ -29,6 +30,7 @@ class fCore
 	const getPHPVersion           = 'fCore::getPHPVersion';
 	const handleError             = 'fCore::handleError';
 	const handleException         = 'fCore::handleException';
+	const registerDebugCallback   = 'fCore::registerDebugCallback';
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
 	
@@ -39,6 +41,13 @@ class fCore
 	 * @var boolean
 	 */
 	static private $debug = NULL;
+	
+	/**
+	 * A callback to pass debug messages to
+	 * 
+	 * @var callback
+	 */
+	static private $debug_callback = NULL;
 	
 	/**
 	 * If dynamic constants should be created
@@ -301,7 +310,11 @@ class fCore
 	static public function debug($message, $force)
 	{
 		if ($force || self::$debug) {
-			self::expose($message, FALSE);
+			if (self::$debug_callback) {
+				call_user_func(self::$debug_callback, $message);	
+			} else {
+				self::expose($message, FALSE);
+			}
 		}
 	}
 	
@@ -664,6 +677,18 @@ class fCore
 	
 	
 	/**
+	 * Registers a callback to handle debug messages instead of the default action of calling ::expose() on the message
+	 * 
+	 * @param  callback $callback  A callback that accepts a single parameter, the string debug message to handle
+	 * @return void
+	 */
+	static public function registerDebugCallback($callback)
+	{
+		self::$debug_callback = self::callback($callback);	
+	}
+	
+	
+	/**
 	 * Resets the configuration of the class
 	 * 
 	 * @internal
@@ -676,6 +701,7 @@ class fCore
 		restore_exception_handler();
 		
 		self::$debug                        = NULL;
+		self::$debug_callback               = NULL;
 		self::$dynamic_constants            = FALSE;
 		self::$error_destination            = 'html';
 		self::$error_message_queue          = array();
@@ -786,7 +812,7 @@ class fCore
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
