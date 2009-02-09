@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
  * @changes    1.0.0b3  Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
  * @changes    1.0.0b2  Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-23]
@@ -1220,7 +1221,7 @@ class fEmail
 		// Make sure the required fields are all set
 		if (!$this->to_emails) {
 			$validation_messages[] = self::compose(
-				"Please provide at least on recipient"
+				"Please provide at least one recipient"
 			);
 		}
 		
