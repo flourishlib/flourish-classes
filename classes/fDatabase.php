@@ -39,7 +39,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug with executing transaction queries when using the mysqli extension [wb, 2009-02-12]
  * @changes    1.0.0b5  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b4  Added a few error suppression operators back in so that developers don't get errors and exceptions [wb, 2009-01-14]
  * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
@@ -1377,7 +1378,7 @@ class fDatabase
 	 */
 	private function handleTransactionQueries($sql, $result_class)
 	{
-		if (!is_object($this->connection)) {
+		if (!is_object($this->connection) || get_class($this->connection) != 'PDO') {
 			return FALSE;
 		}
 		
