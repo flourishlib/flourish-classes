@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
  * @changes    1.0.0b2  Added ::registerDebugCallback() [wb, 2009-02-07]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
@@ -629,7 +630,33 @@ class fCore
 		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
-		$error   = self::compose('Error') . "\n-----\n" . $backtrace . "\n" . $error_string;
+		// This was added in 5.2
+		if (!defined('E_RECOVERABLE_ERROR')) {
+			define('E_RECOVERABLE_ERROR', 4096);
+		}
+		
+		// These were added in 5.3
+		if (!defined('E_DEPRECATED')) {
+			define('E_DEPRECATED', 8192);
+		}
+		
+		if (!defined('E_USER_DEPRECATED')) {
+			define('E_USER_DEPRECATED', 16384);
+		}
+		
+		switch ($error_number) {
+			case E_WARNING:           $type = self::compose('Warning');           break;
+			case E_NOTICE:            $type = self::compose('Notice');            break;
+			case E_USER_ERROR:        $type = self::compose('User Error');        break;
+			case E_USER_WARNING:      $type = self::compose('User Warning');      break;
+			case E_USER_NOTICE:       $type = self::compose('User Notice');       break;
+			case E_STRICT:            $type = self::compose('Strict');            break;
+			case E_RECOVERABLE_ERROR: $type = self::compose('Recoverable Error'); break;
+			case E_DEPRECATED:        $type = self::compose('Deprecated');        break;
+			case E_USER_DEPRECATED:   $type = self::compose('User Deprecated');   break;
+		}
+		
+		$error = $type . "\n-----\n" . $backtrace . "\n" . $error_string;
 		
 		self::sendMessageToDestination('error', $error);
 	}
