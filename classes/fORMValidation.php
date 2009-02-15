@@ -2,14 +2,15 @@
 /**
  * Handles validation for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
  * @changes    1.0.0b3  Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
  * @changes    1.0.0b2  Fixed a bug with ::addManyToManyValidationRule() [wb, 2008-12-08]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
@@ -610,10 +611,11 @@ class fORMValidation
 				$first = TRUE;
 				foreach ($unique_columns as $unique_column) {
 					if ($first) { $first = FALSE; } else { $sql .= " AND "; }
-					if (self::isCaseInsensitive($class, $column) && (is_string($values[$unique_column]) || is_numeric($values[$unique_column]))) {
+					$value = $values[$unique_column];
+					if (self::isCaseInsensitive($class, $column) && (is_string($value) || is_numeric($value))) {
 						$sql .= 'LOWER(' . $unique_column . ')' . fORMDatabase::escapeBySchema($table, $unique_column, strtolower($value), '=');
 					} else {
-						$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $values[$unique_column], '=');
+						$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $value, '=');
 					}
 				}
 				
@@ -1038,7 +1040,7 @@ class fORMValidation
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
