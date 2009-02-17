@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b2  Added support for validating date and URL fields [wb, 2009-01-23]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -263,7 +264,7 @@ class fValidation
 			$value     = trim(fRequest::get($date_field));
 			$timestamp = strtotime($value);
 			
-			$is_51     = version_compare(fCore::getPHPVersion(), '5.1.0') != -1;
+			$is_51     = fCore::checkVersion('5.1');
 			$is_valid  = ($is_51 && $timestamp !== FALSE) || (!$is_51 && $timestamp !== -1);
 			
 			if (self::stringlike($value) && !$is_valid) {

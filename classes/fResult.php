@@ -2,15 +2,16 @@
 /**
  * Representation of a result from a query against the fDatabase class
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fResult implements Iterator
 {
@@ -382,7 +383,7 @@ class fResult implements Iterator
 		if ($using_dblib === NULL) {
 		
 			// If it is not a windows box we are definitely not using dblib
-			if (fCore::getOS() != 'windows') {
+			if (!fCore::checkOS('windows')) {
 				$using_dblib = FALSE;
 			
 			// Check this windows box for dblib
@@ -712,7 +713,7 @@ class fResult implements Iterator
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

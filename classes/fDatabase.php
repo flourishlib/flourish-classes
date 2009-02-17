@@ -39,7 +39,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b6  Fixed a bug with executing transaction queries when using the mysqli extension [wb, 2009-02-12]
  * @changes    1.0.0b5  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b4  Added a few error suppression operators back in so that developers don't get errors and exceptions [wb, 2009-01-14]
@@ -350,7 +351,7 @@ class fDatabase
 				}
 				if (!$odbc && in_array('mssql', PDO::getAvailableDrivers())) {
 					try {
-						$separator = (fCore::getOS() == 'windows') ? ',' : ':';
+						$separator = (fCore::checkOS('windows')) ? ',' : ':';
 						$port      = ($this->port) ? $separator . $this->port : '';
 						$this->connection = new PDO('mssql:host=' . $this->host . $port . ';dbname=' . $this->database, $this->username, $this->password);
 					} catch (PDOException $e) {
@@ -387,7 +388,7 @@ class fDatabase
 		}
 		
 		if ($this->extension == 'mssql') {
-			$separator        = (fCore::getOS() == 'windows') ? ',' : ':';
+			$separator        = (fCore::checkOS('windows')) ? ',' : ':';
 			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password);
 			if ($this->connection !== FALSE && mssql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;

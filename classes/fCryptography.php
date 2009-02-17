@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b2  Backwards compatibility break - changed ::symmetricKeyEncrypt() to not encrypt the IV since we are using HMAC on it [wb, 2009-01-26]
  * @changes    1.0.0b   The initial implementation [wb, 2007-11-27]
@@ -389,12 +390,12 @@ class fCryptography
 		$old_level = error_reporting(error_reporting() & ~E_WARNING);
 		
 		// On linux/unix/solaris we should be able to use /dev/urandom
-		if (fCore::getOS() != 'windows' && $handle = fopen('/dev/urandom', 'rb')) {
+		if (!fCore::checkOS('windows') && $handle = fopen('/dev/urandom', 'rb')) {
 			$bytes = fread($handle, 32);
 			fclose($handle);
 				
 		// On windows we should be able to use the Cryptographic Application Programming Interface COM object
-		} elseif (fCore::getOS() == 'windows' && class_exists('COM', FALSE)) {
+		} elseif (fCore::checkOS('windows') && class_exists('COM', FALSE)) {
 			$capi  = new COM('CAPICOM.Utilities.1');
 			$bytes = base64_decode($capi->getrandom(32, 0));
 			unset($capi);

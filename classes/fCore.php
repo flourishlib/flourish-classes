@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
  * @changes    1.0.0b3  ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
  * @changes    1.0.0b2  Added ::registerDebugCallback() [wb, 2009-02-07]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -20,6 +21,8 @@ class fCore
 	const backtrace               = 'fCore::backtrace';
 	const call                    = 'fCore::call';
 	const callback                = 'fCore::callback';
+	const checkOS                 = 'fCore::checkOS';
+	const checkVersion            = 'fCore::checkVersion';
 	const debug                   = 'fCore::debug';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
@@ -27,8 +30,6 @@ class fCore
 	const enableErrorHandling     = 'fCore::enableErrorHandling';
 	const enableExceptionHandling = 'fCore::enableExceptionHandling';
 	const expose                  = 'fCore::expose';
-	const getOS                   = 'fCore::getOS';
-	const getPHPVersion           = 'fCore::getPHPVersion';
 	const handleError             = 'fCore::handleError';
 	const handleException         = 'fCore::handleException';
 	const registerDebugCallback   = 'fCore::registerDebugCallback';
@@ -219,7 +220,7 @@ class fCore
 	static public function call($callback, $parameters=array())
 	{
 		// Fix PHP 5.0 and 5.1 static callback syntax
-		if (is_string($callback) && self::getPHPVersion() < '5.2.0' && strpos($callback, '::') !== FALSE) {
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);
 		}
 		
@@ -275,6 +276,77 @@ class fCore
 		}
 			
 		return 'file';
+	}
+	
+	
+	/**
+	 * Returns is the current OS is one of the OSes passed as a parameter
+	 * 
+	 * Valid OS strings are:
+	 *  - `'linux'`
+	 *  - `'bsd'`
+	 *  - `'osx'`
+	 *  - `'solaris'`
+	 *  - `'windows'`
+	 * 
+	 * @param  string $os  The operating system to check - see method description for valid OSes
+	 * @param  string ...
+	 * @return boolean  If the current OS is included in the list of OSes passed as parameters
+	 */
+	static public function checkOS($os)
+	{
+		$oses = func_get_args();
+		
+		$valid_oses = array('linux', 'bsd', 'osx', 'solaris', 'windows');
+		
+		if ($invalid_oses = array_diff($oses, $valid_oses)) {
+			throw new fProgrammerException(
+				'One or more of the OSes specified, %$1s, is invalid. Must be one of: %2$s.',
+				join(' ', $invalid_oses),
+				join(', ', $valid_oses)
+			);		
+		}
+		
+		$uname = php_uname('s');
+		
+		if (stripos($uname, 'linux') !== FALSE) {
+			return in_array('linux', $oses);
+		
+		} elseif (stripos($uname, 'bsd') !== FALSE) {
+			return in_array('bsd', $oses);
+		
+		} elseif (stripos($uname, 'solaris') !== FALSE || stripos($uname, 'sunos') !== FALSE) {
+			return in_array('solaris', $oses);
+		
+		} elseif (stripos($uname, 'windows') !== FALSE) {
+			return in_array('windows', $oses);
+		
+		} elseif (stripos($uname, 'darwin') !== FALSE) {
+			return in_array('osx', $oses);
+		} 
+		
+		throw new fEnvironmentException('Unable to determine the current OS');
+	}
+	
+	
+	/**
+	 * Checks to see if the running version of PHP is greater or equal to the version passed
+	 * 
+	 * @return boolean  If the running version of PHP is greater or equal to the version passed
+	 */
+	static public function checkVersion($version)
+	{
+		static $running_version = NULL;
+		
+		if ($running_version === NULL) {
+			$running_version = preg_replace(
+				'#^(\d+\.\d+\.\d+).*$#D',
+				'\1',
+				PHP_VERSION
+			);
+		}
+		
+		return version_compare($running_version, $version, '>=');
 	}
 	
 	
@@ -541,58 +613,6 @@ class fCore
 			"\n\n\$_FILES\n"   . self::dump($_FILES) .
 			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL) .
 			"\n\n\$_COOKIE\n" . self::dump($_COOKIE);
-	}
-	
-	
-	/**
-	 * Returns the (generalized) operating system the code is currently running on
-	 * 
-	 * @return string  Either `'windows'`, `'solaris'` or `'linux/unix'` (linux, *BSD)
-	 */
-	static public function getOS()
-	{
-		$uname = php_uname('s');
-		
-		if (stripos($uname, 'linux') !== FALSE) {
-			return 'linux/unix';
-		}
-		if (stripos($uname, 'bsd') !== FALSE) {
-			return 'linux/unix';
-		}
-		if (stripos($uname, 'solaris') !== FALSE || stripos($uname, 'sunos') !== FALSE) {
-			return 'solaris';
-		}
-		if (stripos($uname, 'windows') !== FALSE) {
-			return 'windows';
-		}
-		
-		trigger_error(
-			self::compose(
-				'Unable to reliably determine the server OS. Defaulting to %s.',
-				"'linux/unix'"
-			),
-			E_USER_WARNING
-		);
-		
-		return 'linux/unix';
-	}
-	
-	
-	/**
-	 * Returns the version of PHP running, ignoring any information about the OS
-	 * 
-	 * @return string  The PHP version in the format major.minor.version
-	 */
-	static public function getPHPVersion()
-	{
-		static $version = NULL;
-		
-		if ($version === NULL) {
-			$version = phpversion();
-			$version = preg_replace('#^(\d+\.\d+\.\d+).*$#D', '\1', $version);
-		}
-		
-		return $version;
 	}
 	
 	

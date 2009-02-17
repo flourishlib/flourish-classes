@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
  * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_DATE SQL keywords [wb, 2009-01-11]
  * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
@@ -73,7 +74,7 @@ class fDate
 			$timestamp = strtotime(fTimestamp::fixISOWeek($date));
 		}
 		
-		$is_51    = version_compare(fCore::getPHPVersion(), '5.1.0') != -1;
+		$is_51    = fCore::checkVersion('5.1');
 		$is_valid = ($is_51 && $timestamp !== FALSE) || (!$is_51 && $timestamp !== -1);
 		
 		if (!$is_valid) {

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b7  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b6  Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
  * @changes    1.0.0b5  Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
@@ -143,20 +144,8 @@ class fImage extends fFile
 					throw new Exception();	
 				}
 				
-				$locations = array(
-					'solaris'    => array(
-						'/opt/local/bin/',
-						'/opt/bin/',
-						'/opt/csw/bin/'
-					),
-					'linux/unix' => array(
-						'/usr/local/bin/',
-						'/usr/bin/'
-					)
-				);
-				
-				switch ($os = fCore::getOS()) {
-					case 'windows':
+				if (fCore::checkOS('windows')) {
+					
 						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
 						exec($win_search, $win_output);
 						$win_output = trim(join("\n", $win_output));
@@ -166,50 +155,78 @@ class fImage extends fFile
 						}
 						 
 						$path = 'C:\Program Files\\' . $win_output . '\\';
-						break;
 						
-					case 'linux/unix':
-					case 'solaris':
-						$found = FALSE;
-						foreach($locations[$os] as $location) {
-							if (self::isSafeModeExecDirRestricted($location)) {
-								continue;
-							}
-							if (self::isOpenBaseDirRestricted($location)) {
-								exec($location . 'convert -version', $output);
-								if ($output) {
-									$found = TRUE;
-									$path  = $location;
-									break;
-								}
-							} elseif (is_executable($location . 'convert')) {
+				} elseif (fCore::checkOS('linux', 'bsd', 'solaris', 'osx')) {
+					
+					$found = FALSE;
+					
+					if (fCore::checkOS('solaris')) {
+						$locations = array(
+							'/opt/local/bin/',
+							'/opt/bin/',
+							'/opt/csw/bin/'
+						);
+						
+					} else {
+						$locations = array(
+							'/usr/local/bin/',
+							'/usr/bin/'
+						);
+					}
+					
+					foreach($locations as $location) {
+						if (self::isSafeModeExecDirRestricted($location)) {
+							continue;
+						}
+						if (self::isOpenBaseDirRestricted($location)) {
+							exec($location . 'convert -version', $output);
+							if ($output) {
 								$found = TRUE;
 								$path  = $location;
 								break;
 							}
+						} elseif (is_executable($location . 'convert')) {
+							$found = TRUE;
+							$path  = $location;
+							break;
 						}
+					}
+					
+					// We have no fallback in solaris
+					if (!$found && fCore::checkOS('solaris')) {
+						throw new Exception();
+					}
+					
+					// On linux and bsd can try whereis
+					if (!$found && fCore::checkOS('linux', 'bsd')) {
+						$nix_search = 'whereis -b convert';
+						exec($nix_search, $nix_output);
+						$nix_output = trim(str_replace('convert:', '', join("\n", $nix_output)));
 						
-						// We have no fallback in solaris
-						if ($os == 'solaris' && !$found) {
+						if (!$nix_output) {
 							throw new Exception();
 						}
-						
-						// On most linux/unix we can try whereis
-						if ($os == 'linux/unix' && !$found) {
-							$nix_search = 'whereis -b convert';
-							exec($nix_search, $nix_output);
-							$nix_output = trim(str_replace('convert:', '', join("\n", $nix_output)));
-							
-							if (empty($nix_output)) {
-								throw new Exception();
-							}
-						
-							$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
-						}
-						break;
 					
-					default:
-						$path = NULL;
+						$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
+					}
+					
+					// OSX has a different whereis command
+					if (!$found && fCore::checkOS('osx')) {
+						$osx_search = 'whereis convert';
+						exec($osx_search, $osx_output);
+						$osx_output = trim(join("\n", $osx_output));
+						
+						if (!$osx_output) {
+							throw new Exception();
+						}
+					
+						if (preg_match('#^(.*)convert#i', $osx_output, $matches)) {
+							$path = $matches[1];
+						}
+					}
+					
+				} else {
+					$path = NULL;
 				}
 				
 				self::checkImageMagickBinary($path);
@@ -367,7 +384,7 @@ class fImage extends fFile
 	static private function isOpenBaseDirRestricted($path)
 	{
 		if (ini_get('open_basedir')) {
-			$open_basedirs = explode((fCore::getOS() == 'windows') ? ';' : ':', ini_get('open_basedir'));
+			$open_basedirs = explode((fCore::checkOS('windows')) ? ';' : ':', ini_get('open_basedir'));
 			$found = FALSE;
 			
 			foreach ($open_basedirs as $open_basedir) {

@@ -2,15 +2,16 @@
 /**
  * Provides a consistent cookie API, HTTPOnly compatibility with older PHP versions and default parameters
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCookie
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-09-01]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-09-01]
  */
 class fCookie
 {
@@ -145,7 +146,7 @@ class fCookie
 		}
 		
 		// Adds support for httponly cookies to PHP 5.0 and 5.1
-		if (strlen($value) && $httponly && fCore::getPHPVersion() < '5.2.0') {
+		if (strlen($value) && $httponly && !fCore::checkVersion('5.2')) {
 			$header_string = urlencode($name) . '=' . urlencode($value);
 			if ($expires) {
 				$header_string .= '; expires=' . gmdate('D, d-M-Y H:i:s T', $expires); 		
@@ -259,7 +260,7 @@ class fCookie
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

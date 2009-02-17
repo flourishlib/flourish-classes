@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
  * @changes    1.0.0b3  Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
  * @changes    1.0.0b2  Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
@@ -116,7 +117,7 @@ class fEmail
 	 */
 	static public function fixQmail()
 	{
-		if (fCore::getOS() == 'windows') {
+		if (fCore::checkOS('windows')) {
 			return;
 		}
 		
@@ -503,7 +504,7 @@ class fEmail
 		$email = str_replace(array("\r", "\n"), '', $email);
 		$name  = str_replace(array('\\', '"', "\r", "\n"), '', $name);
 		
-		if (!$name || fCore::getOS() == 'windows') {
+		if (!$name || fCore::checkOS('windows')) {
 			return $email;
 		}
 		
@@ -947,20 +948,20 @@ class fEmail
 		
 		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
 		$parameters = NULL;
-		if (fCore::getOS() != 'windows' && $this->bounce_to_email && !ini_get('safe_mode')) {
+		if (!fCore::checkOS('windows') && $this->bounce_to_email && !ini_get('safe_mode')) {
 			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
 			$parameters = '-f ' . $matches[0];
 		}
 		
 		// Windows takes the Return-Path email from the sendmail_from ini setting
-		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
+		if (fCore::checkOS('windows') && $this->bounce_to_email) {
 			$old_sendmail_from = ini_get('sendmail_from');
 			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
 			ini_set('sendmail_from', $matches[0]);
 		}
 		
 		// Apparently SMTP server strip a leading . from lines
-		if (fCore::getOS() == 'windows') {
+		if (fCore::checkOS('windows')) {
 			$body = str_replace("\r\n.", "\r\n..", $body);
 		}
 		
@@ -997,7 +998,7 @@ class fEmail
 			$error = !mail($to, $subject, $body, $headers, $parameters);
 		}
 		
-		if (fCore::getOS() == 'windows' && $this->bounce_to_email) {
+		if (fCore::checkOS('windows') && $this->bounce_to_email) {
 			ini_set('sendmail_from', $old_sendmail_from);
 		}
 		

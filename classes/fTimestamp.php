@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Removed a useless double check of the strtotime() return value in ::__construct() [wb, 2009-01-21]
  * @changes    1.0.0b2  Added support for CURRENT_TIMESTAMP, CURRENT_DATE and CURRENT_TIME SQL keywords [wb, 2009-01-11]
  * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
@@ -69,7 +70,7 @@ class fTimestamp
 	 */
 	static private function checkPHPVersion()
 	{
-		if (version_compare(fCore::getPHPVersion(), '5.1.0') == -1) {
+		if (!fCore::checkVersion('5.1')) {
 			throw new fEnvironmentException(
 				'The %s class takes advantage of the timezone features in PHP 5.1.0 and newer. Unfortunately it appears you are running an older version of PHP.',
 				__CLASS__
