@@ -2,7 +2,7 @@
 /**
  * Takes a subset of SQL from MySQL, PostgreSQL, SQLite and MSSQL and translates into the various dialects allowing for cross-database code
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
@@ -11,8 +11,9 @@
  * 
  * @internal
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a notice with SQLite foreign key constraints having no `ON` clauses [wb, 2009-02-21]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
 class fSQLTranslation
 {
@@ -841,7 +842,7 @@ class fSQLTranslation
 				}
 				
 				// 8 and 9 will be an either/or set, so homogenize
-				if (empty($match[9])) { $match[9] = $match[8]; }
+				if (empty($match[9]) && !empty($match[8])) { $match[9] = $match[8]; }
 				
 				// Handle column level foreign key inserts/updates
 				if ($match[1]) {
@@ -998,7 +999,7 @@ class fSQLTranslation
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
