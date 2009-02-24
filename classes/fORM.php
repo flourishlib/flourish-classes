@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
  * @changes    1.0.0b5  Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
  * @changes    1.0.0b4  Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
  * @changes    1.0.0b3  Fixed a static method callback constant [wb, 2008-12-17]
@@ -126,12 +127,14 @@ class fORM
 	 * nouns in `UpperCamelCase`. This method allows arbitrary class to 
 	 * table mapping.
 	 * 
-	 * @param  string $class  The name of the class
+	 * @param  mixed  $class  The name of the class, or an instance of it
 	 * @param  string $table  The name of the database table
 	 * @return void
 	 */
 	static public function addCustomClassTableMapping($class, $table)
 	{
+		$class = self::getClass($class);
+		
 		self::$class_table_map[$class] = $table;
 	}
 	
