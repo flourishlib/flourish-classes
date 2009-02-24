@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed an outdated fCore method call [wb, 2009-02-23]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
  * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_TIME SQL keywords [wb, 2009-01-11]
@@ -74,7 +75,7 @@ class fTime
 			$timestamp = strtotime($time);
 		}
 		
-		$is_51    = fCore::getPHPVersion('5.1');
+		$is_51    = fCore::checkVersion('5.1');
 		$is_valid = ($is_51 && $timestamp !== FALSE) || (!$is_51 && $timestamp !== -1);
 		
 		if (!$is_valid) {
