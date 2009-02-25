@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b9
+ * @version    1.0.0b10
+ * @changes    1.0.0b10 Added the ::getDatabases() method [wb, 2009-02-24]
  * @changes    1.0.0b9  Now detects unsigned and zerofill MySQL data types that do not have a parenthetical part [wb, 2009-02-16]
  * @changes    1.0.0b8  Mapped the MySQL data type `'set'` to `'varchar'`, however valid values are not implemented yet [wb, 2009-02-01]
  * @changes    1.0.0b7  Fixed a bug with detecting MySQL timestamp columns [wb, 2009-01-28]
@@ -49,6 +50,13 @@ class fSchema
 	 * @var fDatabase
 	 */
 	private $database = NULL;
+	
+	/**
+	 * The databases on the current database server
+	 * 
+	 * @var array
+	 */
+	private $databases = NULL;
 	
 	/**
 	 * If the info has changed (and should be written to cache)
@@ -1445,6 +1453,58 @@ class fSchema
 	
 	
 	/**
+	 * Returns the databases on the current server
+	 * 
+	 * @return array  The databases on the current server
+	 */
+	public function getDatabases()
+	{
+		if ($this->databases !== NULL) {
+			return $this->databases;
+		}
+		
+		$this->databases = array();
+		
+		switch ($this->database->getType()) {
+			case 'mssql':
+				$sql = 'SELECT
+								DISTINCT CATALOG_NAME
+							FROM
+								INFORMATION_SCHEMA.SCHEMATA
+							ORDER BY
+								LOWER(CATALOG_NAME)';
+				break;
+			
+			case 'mysql':
+				$sql = 'SHOW DATABASES';
+				break;
+			
+			case 'postgresql':
+				$sql = "SELECT
+								datname
+							FROM
+								pg_database
+							ORDER BY
+								LOWER(datname)";
+				break;
+								
+			case 'sqlite':
+				$this->databases[] = $this->database->getDatabase();
+				return $this->databases;
+		}
+		
+		$result = $this->database->query($sql);
+		
+		foreach ($result as $row) {
+			$keys = array_keys($row);
+			$this->databases[] = $row[$keys[0]];
+		}
+		
+		return $this->databases;
+	}
+	
+	
+	/**
 	 * Returns a list of primary key, foreign key and unique key constraints for the table specified
 	 * 
 	 * The structure of the returned array is:
@@ -1637,7 +1697,7 @@ class fSchema
 							WHERE
 								 tablename !~ '^(pg|sql)_'
 							ORDER BY
-								lower(tablename)";
+								LOWER(tablename)";
 				break;
 								
 			case 'sqlite':
