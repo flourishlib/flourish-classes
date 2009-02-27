@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed detection of multi-column primary keys in MySQL [wb, 2009-02-27]
  * @changes    1.0.0b11  Fixed an issue parsing MySQL tables with comments [wb, 2009-02-25]
  * @changes    1.0.0b10  Added the ::getDatabases() method [wb, 2009-02-24]
  * @changes    1.0.0b9   Now detects unsigned and zerofill MySQL data types that do not have a parenthetical part [wb, 2009-02-16]
@@ -683,7 +684,7 @@ class fSchema
 			$row    = $result->fetchRow();
 			
 			// Primary keys
-			preg_match_all('/PRIMARY KEY\s+\("([^"]+)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
+			preg_match_all('/PRIMARY KEY\s+\("(.*?)"\),?\n/U', $row['Create Table'], $matches, PREG_SET_ORDER);
 			if (!empty($matches)) {
 				$keys[$table]['primary'] = explode('","', $matches[0][1]);
 			}
