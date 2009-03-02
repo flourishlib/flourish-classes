@@ -2,15 +2,16 @@
 /**
  * Allows a column in an fActiveRecord class to be a relative sort order column
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-06-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug with ::inspect(), 'max_ordering_value' was being returned as 'max_ordering_index' [wb, 2009-03-02]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-06-25]
  */
 class fORMOrdering
 {
@@ -260,14 +261,14 @@ class fORMOrdering
 		if ($other_columns) {
 			$sql .= " WHERE " . self::createOtherFieldsWhereClause($table, $other_columns, $values);
 		}
-		$max_index = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
+		$max_value = (integer) fORMDatabase::retrieve()->translatedQuery($sql)->fetchScalar();
 		
 		// If this is a new record, or in a new set, we need one more space in the ordering index
 		if (self::isInNewSet($column, $other_columns, $values, $old_values)) {
-			$max_index += 1;
+			$max_value += 1;
 		}
 		
-		$info['max_ordering_index'] = $max_index;
+		$info['max_ordering_value'] = $max_value;
 		$info['feature']            = 'ordering';
 				
 		if ($element) {
@@ -604,7 +605,7 @@ class fORMOrdering
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
