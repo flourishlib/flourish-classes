@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  ::upload() and ::set() now set the `$values` entry to `NULL` for filenames that are empty [wb, 2009-03-02]
  * @changes    1.0.0b8  Changed ::set() to accept objects and reject directories [wb, 2009-01-21]
  * @changes    1.0.0b7  Changed the class to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b6  Old files are now checked against the current file to prevent removal of an in-use file [wb, 2008-12-23]
@@ -1002,38 +1003,45 @@ class fORMFile
 			$file_path = (string) $file_path;	
 		}
 		
-		if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
-			throw new fEnvironmentException(
-				'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
-				$file_path
-			);
+		if ($file_path !== NULL && $file_path !== '' && $file_path !== FALSE) {
+			if (!$file_path || (!file_exists($file_path) && !file_exists($doc_root . $file_path))) {
+				throw new fEnvironmentException(
+					'The file specified, %s, does not exist. This may indicate a missing enctype="multipart/form-data" attribute in form tag.',
+					$file_path
+				);
+			}
+			
+			if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
+				$file_path = $doc_root . $file_path;
+			}
+			
+			if (is_dir($file_path)) {
+				throw new fProgrammerException(
+					'The file specified, %s, is not a file but a directory',
+					$file_path
+				);
+			}
+			
+			$upload_dir = self::$file_upload_columns[$class][$column];
+			
+			try {
+				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+			} catch (fValidationException $e) {
+				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
+			}
+			
+			$file     = fFilesystem::createObject($file_path);
+			$new_file = $file->duplicate($temp_dir);
+			
+		} else {
+			$new_file = NULL;	
 		}
-		
-		if (!file_exists($file_path) && file_exists($doc_root . $file_path)) {
-			$file_path = $doc_root . $file_path;
-		}
-		
-		if (is_dir($file_path)) {
-			throw new fProgrammerException(
-				'The file specified, %s, is not a file but a directory',
-				$file_path
-			);
-		}
-		
-		$upload_dir = self::$file_upload_columns[$class][$column];
-		
-		try {
-			$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
-		} catch (fValidationException $e) {
-			$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
-		}
-		
-		$file     = fFilesystem::createObject($file_path);
-		$new_file = $file->duplicate($temp_dir);
 		
 		fActiveRecord::assign($values, $old_values, $column, $new_file);
 		
-		self::processImage($class, $column, $new_file);
+		if ($new_file) {
+			self::processImage($class, $column, $new_file);
+		}
 	}
 	
 	
@@ -1129,7 +1137,7 @@ class fORMFile
 				return;
 				
 			} else {
-				return;
+				$file = NULL;
 			}
 		}
 		
@@ -1197,9 +1205,9 @@ class fORMFile
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
-			$search_message  = self::compose('%s: Please enter a value', $column_name);
+			$search_message  = self::compose('#%s: Please enter a value$#', $column_name);
 			$replace_message = self::compose('%s: Please upload a file', $column_name);;
-			$validation_messages = str_replace($search_message, $replace_message, $validation_messages);
+			$validation_messages = preg_replace($search_message, $replace_message, $validation_messages);
 			
 			// Grab the error that occured
 			try {
