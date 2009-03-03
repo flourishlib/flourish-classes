@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed a bug with detecting PostgreSQL columns having both a CHECK constraint and a UNIQUE constraint [wb, 2009-02-27]
  * @changes    1.0.0b12  Fixed detection of multi-column primary keys in MySQL [wb, 2009-02-27]
  * @changes    1.0.0b11  Fixed an issue parsing MySQL tables with comments [wb, 2009-02-25]
  * @changes    1.0.0b10  Added the ::getDatabases() method [wb, 2009-02-24]
@@ -777,8 +778,7 @@ class fSchema
 						pg_type ON pg_type.oid = pg_attribute.atttypid LEFT JOIN
 						pg_constraint ON pg_constraint.conrelid = pg_class.oid AND
 										 pg_attribute.attnum = ANY (pg_constraint.conkey) AND
-										 (pg_constraint.contype = 'c' OR
-										  pg_constraint.contype = 'u') LEFT JOIN
+										 pg_constraint.contype = 'c' LEFT JOIN
 						pg_attrdef ON pg_class.oid = pg_attrdef.adrelid AND
 									  pg_attribute.attnum = pg_attrdef.adnum
 					WHERE
