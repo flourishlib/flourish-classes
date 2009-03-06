@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Backwards compatibility break - Removed ::getSecondsDifference() and ::getSeconds(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Removed a useless double check of the strtotime() return value in ::__construct() [wb, 2009-01-21]
  * @changes    1.0.0b2  Added support for CURRENT_TIMESTAMP, CURRENT_DATE and CURRENT_TIME SQL keywords [wb, 2009-01-11]
@@ -23,7 +24,6 @@ class fTimestamp
 	const defineFormat           = 'fTimestamp::defineFormat';
 	const fixISOWeek             = 'fTimestamp::fixISOWeek';
 	const getDefaultTimezone     = 'fTimestamp::getDefaultTimezone';
-	const getSeconds             = 'fTimestamp::getSeconds';
 	const isValidTimezone        = 'fTimestamp::isValidTimezone';
 	const registerFormatCallback = 'fTimestamp::registerFormatCallback';
 	const reset                  = 'fTimestamp::reset';
@@ -153,18 +153,6 @@ class fTimestamp
 		self::checkPHPVersion();
 		
 		return date_default_timezone_get();
-	}
-	
-	
-	/**
-	 * Returns the number of seconds in a given timespan (e.g. `'30 minutes'`, `'1 hour'`, `'5 days'`, etc). Useful for comparing with `getSecondsDifference()` methods in fDate, fTime and fTimestamp.
-	 * 
-	 * @param  string $timespan  The timespan to calculate the number of seconds in
-	 * @return integer  The number of seconds in the timestamp specified
-	 */
-	static public function getSeconds($timespan)
-	{
-		return strtotime($timespan) - time();
 	}
 	
 	
@@ -826,6 +814,19 @@ class fTimestamp
 	
 	
 	/**
+	 * If this timestamp is equal to the timestamp passed
+	 * 
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this timestamp is equal to the one passed
+	 */
+	public function eq($other_timestamp=NULL)
+	{
+		$other_timestamp = new fTimestamp($other_timestamp);
+		return $this->timestamp == $other_timestamp->timestamp;
+	}
+	
+	
+	/**
 	 * Formats the date/time
 	 * 
 	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from ::defineFormat()
@@ -957,15 +958,54 @@ class fTimestamp
 	
 	
 	/**
-	 * Returns the difference between the two timestamps in seconds
+	 * If this timestamp is greater than the timestamp passed
 	 * 
-	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to calculate the difference with, `NULL` is interpreted as now
-	 * @return integer  The difference between the two timestamps in seconds, positive if the other timestamp is before this time or negative if after
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to compare with, `NULL` is interpreted as now
+	 * @return boolean  If this timestamp is greater than the one passed
 	 */
-	public function getSecondsDifference($other_timestamp=NULL)
+	public function gt($other_timestamp=NULL)
 	{
 		$other_timestamp = new fTimestamp($other_timestamp);
-		return $this->timestamp - $other_timestamp->timestamp;
+		return $this->timestamp > $other_timestamp->timestamp;
+	}
+	
+	
+	/**
+	 * If this timestamp is greater than or equal to the timestamp passed
+	 * 
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to compare with, `NULL` is interpreted as now
+	 * @return boolean  If this timestamp is greater than or equal to the one passed
+	 */
+	public function gte($other_timestamp=NULL)
+	{
+		$other_timestamp = new fTimestamp($other_timestamp);
+		return $this->timestamp >= $other_timestamp->timestamp;
+	}
+	
+	
+	/**
+	 * If this timestamp is less than the timestamp passed
+	 * 
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this timestamp is less than the one passed
+	 */
+	public function lt($other_timestamp=NULL)
+	{
+		$other_timestamp = new fTimestamp($other_timestamp);
+		return $this->timestamp < $other_timestamp->timestamp;
+	}
+	
+	
+	/**
+	 * If this timestamp is less than or equal to the timestamp passed
+	 * 
+	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this timestamp is less than or equal to the one passed
+	 */
+	public function lte($other_timestamp=NULL)
+	{
+		$other_timestamp = new fTimestamp($other_timestamp);
+		return $this->timestamp <= $other_timestamp->timestamp;
 	}
 	
 	

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b6  Fixed an outdated fCore method call [wb, 2009-02-23]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
@@ -136,6 +137,19 @@ class fTime
 	
 	
 	/**
+	 * If this time is equal to the time passed
+	 * 
+	 * @param  fTime|object|string|integer $other_time  The time to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this time is equal to the one passed
+	 */
+	public function eq($other_time=NULL)
+	{
+		$other_time = new fTime($other_time);
+		return $this->time == $other_time->time;
+	}
+	
+	
+	/**
 	 * Formats the time
 	 * 
 	 * @throws fValidationException
@@ -249,15 +263,54 @@ class fTime
 	
 	
 	/**
-	 * Returns the difference between the two times in seconds
+	 * If this time is greater than the time passed
 	 * 
-	 * @param  fTime|object|string|integer $other_time  The time to calculate the difference with, `NULL` is interpreted as now
-	 * @return integer  The difference between the two times in seconds, positive if $other_time is before this time or negative if after
+	 * @param  fTime|object|string|integer $other_time  The time to compare with, `NULL` is interpreted as now
+	 * @return boolean  If this time is greater than the one passed
 	 */
-	public function getSecondsDifference($other_time=NULL)
+	public function gt($other_time=NULL)
 	{
 		$other_time = new fTime($other_time);
-		return $this->time - $other_time->time;
+		return $this->time > $other_time->time;
+	}
+	
+	
+	/**
+	 * If this time is greater than or equal to the time passed
+	 * 
+	 * @param  fTime|object|string|integer $other_time  The time to compare with, `NULL` is interpreted as now
+	 * @return boolean  If this time is greater than or equal to the one passed
+	 */
+	public function gte($other_time=NULL)
+	{
+		$other_time = new fTime($other_time);
+		return $this->time >= $other_time->time;
+	}
+	
+	
+	/**
+	 * If this time is less than the time passed
+	 * 
+	 * @param  fTime|object|string|integer $other_time  The time to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this time is less than the one passed
+	 */
+	public function lt($other_time=NULL)
+	{
+		$other_time = new fTime($other_time);
+		return $this->time < $other_time->time;
+	}
+	
+	
+	/**
+	 * If this time is less than or equal to the time passed
+	 * 
+	 * @param  fTime|object|string|integer $other_time  The time to compare with, `NULL` is interpreted as today
+	 * @return boolean  If this time is less than or equal to the one passed
+	 */
+	public function lte($other_time=NULL)
+	{
+		$other_time = new fTime($other_time);
+		return $this->time <= $other_time->time;
 	}
 	
 	
