@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Backwards compatibility break - Changed the second parameter of ::output() from `$ignore_output_buffer` to `$filename` [wb, 2009-03-05]
  * @changes    1.0.0b11  Changed ::__clone() and ::duplicate() to copy file permissions to the new file [wb, 2009-01-05] 
  * @changes    1.0.0b10  Fixed ::duplicate() so an exception is not thrown when no parameters are passed [wb, 2009-01-05]
  * @changes    1.0.0b9   Removed the dependency on fBuffer [wb, 2009-01-05]
@@ -915,25 +916,26 @@ class fFile implements Iterator
 	 * This method is primarily intended for when PHP is used to control access
 	 * to files. 
 	 * 
-	 * @param  boolean $headers               If HTTP headers for the file should be included
-	 * @param  boolean $ignore_output_buffer  If the current state of the output buffer should be ignored
+	 * @param  boolean $headers   If HTTP headers for the file should be included
+	 * @param  string  $filename  Present the file as an attachment with this filename instead of just outputting type headers
 	 * @return fFile  The file object, to allow for method chaining
 	 */
-	public function output($headers, $ignore_output_buffer=FALSE)
+	public function output($headers, $filename=NULL)
 	{
 		$this->tossIfException();
 		
-		if (!$ignore_output_buffer) {
-			if (ob_get_level() > 0) {
-				throw new fProgrammerException(
-					'The method requested, %s(), should not normally be used when output buffering is turned off, due to memory issues. If it is neccessary to have output buffering on, please pass %s as the second parameter to this method.',
-					'output',
-					'TRUE'
-				);
-			}	
+		if (ob_get_level() > 0) {
+			throw new fProgrammerException(
+				'The method requested, %s(), should not normally be used when output buffering is turned off, due to memory issues. If it is neccessary to have output buffering on, please pass %s as the second parameter to this method.',
+				'output',
+				'TRUE'
+			);
 		}
 		
 		if ($headers) {
+			if ($filename !== NULL) {
+				header('Content-Disposition: attachment; filename="' . $filename . '"');		
+			}
 			header('Cache-Control: ');
 			header('Content-Length: ' . $this->getFilesize());
 			header('Content-Type: ' . $this->getMimeType());
