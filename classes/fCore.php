@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
  * @changes    1.0.0b4  Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
  * @changes    1.0.0b3  ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
  * @changes    1.0.0b2  Added ::registerDebugCallback() [wb, 2009-02-07]
@@ -267,7 +268,7 @@ class fCore
 		
 		$path_info     = pathinfo($destination);
 		$dir_exists    = file_exists($path_info['dirname']);
-		$dir_writable  = ($dir_exists) ? is_writable($path_info['dirnam']) : FALSE;
+		$dir_writable  = ($dir_exists) ? is_writable($path_info['dirname']) : FALSE;
 		$file_exists   = file_exists($destination);
 		$file_writable = ($file_exists) ? is_writable($destination) : FALSE;
 		
