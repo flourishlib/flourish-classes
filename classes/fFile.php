@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed a bug with overwriting files via ::rename() on Windows [wb, 2009-03-11]
  * @changes    1.0.0b12  Backwards compatibility break - Changed the second parameter of ::output() from `$ignore_output_buffer` to `$filename` [wb, 2009-03-05]
  * @changes    1.0.0b11  Changed ::__clone() and ::duplicate() to copy file permissions to the new file [wb, 2009-01-05] 
  * @changes    1.0.0b10  Fixed ::duplicate() so an exception is not thrown when no parameters are passed [wb, 2009-01-05]
@@ -1012,9 +1013,18 @@ class fFile implements Iterator
 					$new_filename
 				);
 			}
+			
 			if (!$overwrite) {
 				$new_filename = fFilesystem::makeUniqueName($new_filename);
+			
+			} else {
+				if (fFilesystem::isInsideTransaction()) {
+					fFilesystem::recordWrite(new fFile($new_filename));
+				}
+				// Windows requires that the existing file be deleted before being replaced
+				unlink($new_filename);	
 			}
+				
 		} else {
 			$new_dir = new fDirectory($info['dirname']);
 			if (!$new_dir->isWritable()) {
