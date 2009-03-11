@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
  * @changes    1.0.0b5  Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
  * @changes    1.0.0b4  Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
  * @changes    1.0.0b3  ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
@@ -775,7 +776,7 @@ class fCore
 	{
 		$subject = self::compose(
 			'[%1$s] One or more errors or exceptions occured at %2$s',
-			$_SERVER['SERVER_NAME'],
+			isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : php_uname('n'),
 			date('Y-m-d H:i:s')
 		);
 		
