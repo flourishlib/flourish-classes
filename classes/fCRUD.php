@@ -2,15 +2,16 @@
 /**
  * Provides miscellaneous functionality for [http://en.wikipedia.org/wiki/Create,_read,_update_and_delete CRUD-like] pages
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCRUD
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug preventing loaded search values from being included in redirects [wb, 2009-03-18]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fCRUD
 {
@@ -200,7 +201,7 @@ class fCRUD
 			return;
 		}
 		
-		if (self::getPreviousSearchValue($column) && fRequest::get($column, $cast_to, $default) === NULL) {
+		if (self::getPreviousSearchValue($column) && !fRequest::check($column)) {
 			self::$search_values[$column] = self::getPreviousSearchValue($column);
 			self::$loaded_values[$column] = self::$search_values[$column];
 		} else {
@@ -232,7 +233,7 @@ class fCRUD
 			$possible_columns = $possible_columns[0];
 		}
 		
-		if (self::getPreviousSortColumn() && fRequest::get('sort') === NULL) {
+		if (self::getPreviousSortColumn() && !fRequest::check('sort')) {
 			self::$sort_column = self::getPreviousSortColumn();
 			self::$loaded_values['sort'] = self::$sort_column;
 		} else {
@@ -257,7 +258,7 @@ class fCRUD
 			return;
 		}
 		
-		if (self::getPreviousSortDirection() && fRequest::get('dir') === NULL) {
+		if (self::getPreviousSortDirection() && !fRequest::check('dir')) {
 			self::$sort_direction = self::getPreviousSortDirection();
 			self::$loaded_values['dir'] = self::$sort_direction;
 		} else {
@@ -579,7 +580,7 @@ class fCRUD
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
