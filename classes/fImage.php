@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed ::processWithGD() to explicitly free the image resource [wb, 2009-03-18]
  * @changes    1.0.0b8  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b7  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b6  Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
@@ -769,6 +770,8 @@ class fImage extends fFile
 				imagepng($gd_res, $output_file);
 				break;
 		}
+		
+		imagedestroy($gd_res);
 	}
 	
 	
