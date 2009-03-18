@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug with setting a new record to anywhere but the end of a set [wb, 2009-03-18]
  * @changes    1.0.0b2  Fixed a bug with ::inspect(), 'max_ordering_value' was being returned as 'max_ordering_index' [wb, 2009-03-02]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-25]
  */
@@ -403,7 +404,7 @@ class fORMOrdering
 		}
 		
 		// When we move an object into a new set and the value didn't change then move it to the end of the new set
-		if ($new_set && ($old_value === NULL || $old_value == $current_value)) {
+		if ($new_set && $object->exists() && ($old_value === NULL || $old_value == $current_value)) {
 			$current_value = $new_max_value;
 			fActiveRecord::assign($values, $old_values, $column, $current_value);		
 		}
