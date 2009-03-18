@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed ::processWithGD() to explicitly free the image resource [wb, 2009-03-18]
- * @changes    1.0.0b8  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b7  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
- * @changes    1.0.0b6  Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
- * @changes    1.0.0b5  Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
- * @changes    1.0.0b4  Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
- * @changes    1.0.0b3  Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
- * @changes    1.0.0b2  Changed some int casts to round() to fix ::resize() dimension issues [wb, 2008-12-11]
- * @changes    1.0.0b   The initial implementation [wb, 2007-12-19]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed a bug with GD not saving changes to files ending in .jpeg [wb, 2009-03-18]
+ * @changes    1.0.0b9   Changed ::processWithGD() to explicitly free the image resource [wb, 2009-03-18]
+ * @changes    1.0.0b8   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b7   Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
+ * @changes    1.0.0b6   Fixed ::cropToRatio() and ::resize() to always return the object even if nothing is to be done [wb, 2009-01-05]
+ * @changes    1.0.0b5   Added check to see if exec() is disabled, which causes ImageMagick to not work [wb, 2009-01-03]
+ * @changes    1.0.0b4   Fixed ::saveChanges() to not delete the image if no changes have been made [wb, 2008-12-18]
+ * @changes    1.0.0b3   Fixed a bug with $jpeg_quality in ::saveChanges() from 1.0.0b2 [wb, 2008-12-16]
+ * @changes    1.0.0b2   Changed some int casts to round() to fix ::resize() dimension issues [wb, 2008-12-11]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-12-19]
  */
 class fImage extends fFile
 {
@@ -764,6 +765,7 @@ class fImage extends fFile
 				imagegif($gd_res, $output_file);
 				break;
 			case 'jpg':
+			case 'jpeg':
 				imagejpeg($gd_res, $output_file, $jpeg_quality);
 				break;
 			case 'png':
