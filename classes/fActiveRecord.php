@@ -14,16 +14,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed ::__construct() to populate database default values when a non-existing record is instantiated [wb, 2009-01-12]
- * @changes    1.0.0b8  Fixed ::exists() to properly detect cases when an existing record has one or more NULL values in the primary key [wb, 2009-01-11]
- * @changes    1.0.0b7  Fixed ::__construct() to not trigger the post::__construct() hook when force-configured [wb, 2008-12-30]
- * @changes    1.0.0b6  ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
- * @changes    1.0.0b5  Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
- * @changes    1.0.0b4  Added ::replicate() to allow cloning along with related records [wb, 2008-12-12]
- * @changes    1.0.0b3  Changed ::__clone() to clone objects contains in the values and cache arrays [wb, 2008-12-11]
- * @changes    1.0.0b2  Added the ::__clone() method to properly duplicate a record [wb, 2008-12-04]
- * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  ::__wakeup() no longer registers the record as the definitive copy in the identity map [wb, 2009-03-22]
+ * @changes    1.0.0b9   Changed ::__construct() to populate database default values when a non-existing record is instantiated [wb, 2009-01-12]
+ * @changes    1.0.0b8   Fixed ::exists() to properly detect cases when an existing record has one or more NULL values in the primary key [wb, 2009-01-11]
+ * @changes    1.0.0b7   Fixed ::__construct() to not trigger the post::__construct() hook when force-configured [wb, 2008-12-30]
+ * @changes    1.0.0b6   ::__construct() now accepts an associative array matching any unique key or primary key, fixed the post::__construct() hook to be called once for each record [wb, 2008-12-26]
+ * @changes    1.0.0b5   Fixed ::replicate() to use plural record names for related records [wb, 2008-12-12]
+ * @changes    1.0.0b4   Added ::replicate() to allow cloning along with related records [wb, 2008-12-12]
+ * @changes    1.0.0b3   Changed ::__clone() to clone objects contains in the values and cache arrays [wb, 2008-12-11]
+ * @changes    1.0.0b2   Added the ::__clone() method to properly duplicate a record [wb, 2008-12-04]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
 abstract class fActiveRecord
 {
@@ -563,7 +564,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Hooks itself back into the identity map as the definitive copy
+	 * Configure itself when coming out of the session. Records from the session are NOT hooked into the identity map.
 	 * 
 	 * @return void
 	 */
@@ -574,18 +575,7 @@ abstract class fActiveRecord
 		if (!isset(self::$configured[$class])) {
 			$this->configure();
 			self::$configured[$class] = TRUE;
-		}
-		
-		if (!$this->exists()) {
-			return;	
-		}
-		
-		$hash = $this->hash($this->values);
-		
-		if (!isset(self::$identity_map[$class])) {
-			self::$identity_map[$class] = array(); 		
-		}
-		self::$identity_map[$class][$hash] = $this;		
+		}		
 	}
 	
 	
