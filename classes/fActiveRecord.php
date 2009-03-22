@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  ::set() now removes commas from integers and floats to prevent validation issues [wb, 2009-03-22]
  * @changes    1.0.0b11  ::encode() no longer adds commas to floats [wb, 2009-03-22]
  * @changes    1.0.0b10  ::__wakeup() no longer registers the record as the definitive copy in the identity map [wb, 2009-03-22]
  * @changes    1.0.0b9   Changed ::__construct() to populate database default values when a non-existing record is instantiated [wb, 2009-01-12]
@@ -1715,6 +1716,15 @@ abstract class fActiveRecord
 		}
 		
 		$value = fORM::objectify($this, $column, $value);
+		
+		// Float and int columns that look like numbers with commas will have the commas removed
+		if (is_string($value)) {
+			$table = fORM::tablize($this);
+			$type  = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+			if (in_array($type, array('integer', 'float')) && preg_match('#^(\d+,)+\d+(\.\d+)?$#', $value)) {
+				$value = str_replace(',', '', $value);
+			}
+		}
 		
 		self::assign($this->values, $this->old_values, $column, $value);
 	}
