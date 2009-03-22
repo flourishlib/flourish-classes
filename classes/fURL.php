@@ -6,15 +6,16 @@
  * the original URL entered by the user will be used, or that any rewrites
  * will **not** be reflected by this class.
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fURL
 {
@@ -88,7 +89,7 @@ class fURL
 		$string = strtolower(trim($string));
 		$string = str_replace("'", '', $string);
 		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
-		return preg_replace('#_+$#D', '', $string);
+		return preg_replace('#(^_+|_+$)#D', '', $string);
 	}
 	
 	
@@ -190,7 +191,7 @@ class fURL
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
