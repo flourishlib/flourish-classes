@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  ::encode() no longer adds commas to floats [wb, 2009-03-22]
  * @changes    1.0.0b10  ::__wakeup() no longer registers the record as the definitive copy in the identity map [wb, 2009-03-22]
  * @changes    1.0.0b9   Changed ::__construct() to populate database default values when a non-existing record is instantiated [wb, 2009-01-12]
  * @changes    1.0.0b8   Fixed ::exists() to properly detect cases when an existing record has one or more NULL values in the primary key [wb, 2009-01-11]
@@ -917,7 +918,7 @@ abstract class fActiveRecord
 				$decimal_places = (!isset($value_parts[1])) ? 0 : strlen($value_parts[1]);
 			}
 			
-			return number_format($value, $decimal_places, '.', ',');
+			return number_format($value, $decimal_places, '.', '');
 		}
 		
 		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
