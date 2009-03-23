@@ -2,14 +2,15 @@
 /**
  * A lightweight, iterable set of fActiveRecord-based objects
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b2  Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
  */
@@ -1312,7 +1313,7 @@ class fRecordSet implements Iterator
 	 * 
 	 * @param  string $method     The method to call on each object to get the value to sort by
 	 * @param  string $direction  Either `'asc'` or `'desc'`
-	 * @return void
+	 * @return fRecordSet  The record set object, to allow for method chaining
 	 */
 	public function sort($method, $direction)
 	{
@@ -1333,6 +1334,8 @@ class fRecordSet implements Iterator
 		);
 		
 		$this->sortByCallback(create_function($lambda_params, $lambda_funcs[$direction]));
+		
+		return $this;
 	}
 	
 	
@@ -1342,12 +1345,14 @@ class fRecordSet implements Iterator
 	 * @throws fValidationException
 	 * 
 	 * @param  mixed $callback  The function/method to pass to `usort()`
-	 * @return void
+	 * @return fRecordSet  The record set object, to allow for method chaining 
 	 */
 	public function sortByCallback($callback)
 	{
 		usort($this->records, $callback);
 		$this->rewind();
+		
+		return $this;
 	}
 	
 	
@@ -1418,7 +1423,7 @@ class fRecordSet implements Iterator
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

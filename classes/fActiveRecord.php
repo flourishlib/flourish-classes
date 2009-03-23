@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  ::delete(), ::load(), ::populate() and ::store() now return the record to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b12  ::set() now removes commas from integers and floats to prevent validation issues [wb, 2009-03-22]
  * @changes    1.0.0b11  ::encode() no longer adds commas to floats [wb, 2009-03-22]
  * @changes    1.0.0b10  ::__wakeup() no longer registers the record as the definitive copy in the identity map [wb, 2009-03-22]
@@ -647,7 +648,7 @@ abstract class fActiveRecord
 	 * 
 	 * This method will start a database transaction if one is not already active.
 	 * 
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function delete()
 	{
@@ -836,6 +837,8 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
+		
+		return $this;
 	}
 	
 	
@@ -1087,7 +1090,7 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fNotFoundException
 	 * 
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function load()
 	{
@@ -1110,6 +1113,8 @@ abstract class fActiveRecord
 		}
 		
 		$this->loadFromResult($result);
+		
+		return $this;
 	}
 	
 	
@@ -1194,7 +1199,7 @@ abstract class fActiveRecord
 	/**
 	 * Sets the values for this record by getting values from the request through the fRequest class
 	 * 
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function populate()
 	{
@@ -1229,6 +1234,8 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
+		
+		return $this;
 	}
 	
 	
@@ -1738,7 +1745,7 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fValidationException
 	 * 
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function store()
 	{
@@ -1902,6 +1909,8 @@ abstract class fActiveRecord
 		foreach ($this->values as $column => $value) {
 			$this->old_values[$column] = array($value);
 		}
+		
+		return $this;
 	}
 	
 	
