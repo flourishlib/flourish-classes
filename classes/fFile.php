@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  ::output() now accepts `TRUE` in the second parameter to use the current filename as the attachment filename [wb, 2009-03-23]
  * @changes    1.0.0b15  Added support for mime type detection of MP3s based on the MPEG-2 (as opposed to MPEG-1) standard [wb, 2009-03-23]
  * @changes    1.0.0b14  Fixed a bug with detecting the mime type of some MP3s [wb, 2009-03-22]
  * @changes    1.0.0b13  Fixed a bug with overwriting files via ::rename() on Windows [wb, 2009-03-11]
@@ -920,7 +921,7 @@ class fFile implements Iterator
 	 * to files. 
 	 * 
 	 * @param  boolean $headers   If HTTP headers for the file should be included
-	 * @param  string  $filename  Present the file as an attachment with this filename instead of just outputting type headers
+	 * @param  mixed   $filename  Present the file as an attachment instead of just outputting type headers - if a string is passed, that will be used for the filename, if `TRUE` is passed, the current filename will be used
 	 * @return fFile  The file object, to allow for method chaining
 	 */
 	public function output($headers, $filename=NULL)
@@ -937,6 +938,7 @@ class fFile implements Iterator
 		
 		if ($headers) {
 			if ($filename !== NULL) {
+				if ($filename === TRUE) { $filename = $this->getFilename();	}
 				header('Content-Disposition: attachment; filename="' . $filename . '"');		
 			}
 			header('Cache-Control: ');
