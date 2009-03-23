@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added support for mime type detection of MP3s based on the MPEG-2 (as opposed to MPEG-1) standard [wb, 2009-03-23]
  * @changes    1.0.0b14  Fixed a bug with detecting the mime type of some MP3s [wb, 2009-03-22]
  * @changes    1.0.0b13  Fixed a bug with overwriting files via ::rename() on Windows [wb, 2009-03-11]
  * @changes    1.0.0b12  Backwards compatibility break - Changed the second parameter of ::output() from `$ignore_output_buffer` to `$filename` [wb, 2009-03-05]
@@ -189,8 +190,8 @@ class fFile implements Iterator
 		}
 		
 		// MP3
-		if (($_0_2 & "\xFF\xFE") == "\xFF\xFA") {
-			if (in_array($content[2] & "\xF0", array("\x10", "\x20", "\x30", "\x40", "\x50", "\x60", "\x70", "\x80", "\x90", "\xA0", "\xB0", "\xC0", "\xD0", "\xE0"))) {
+		if (($_0_2 & "\xFF\xF6") == "\xFF\xF2") {
+			if (($content[2] & "\xF0") != "\xF0" && ($content[2] & "\x0C") != "\x0C") {
 				return 'audio/mpeg';
 			}	
 		}
