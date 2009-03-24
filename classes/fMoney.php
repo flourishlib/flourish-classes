@@ -2,15 +2,16 @@
 /**
  * Represents a monetary value - USD are supported by default and others can be added via ::defineCurrency()
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMoney
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-08-10]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug with calling ::format() when a format callback is set, fixed `NULL` `$element` handling in ::getCurrencyInfo() [wb, 2009-03-24]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-08-10]
  */
 class fMoney
 {
@@ -110,7 +111,7 @@ class fMoney
 			);
 		}
 		
-		if (!$element === NULL) {
+		if ($element === NULL) {
 			return self::$currencies[$iso_code];
 		}
 		
@@ -434,7 +435,7 @@ class fMoney
 	public function format()
 	{
 		if (self::$format_callback !== NULL) {
-			return call_user_func(self::$format_callback, $this->value, $this->currency);
+			return call_user_func(self::$format_callback, $this->amount, $this->currency);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a
@@ -621,7 +622,7 @@ class fMoney
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
