@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
  * @changes    1.0.0b2  Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -89,6 +90,8 @@ class fURL
 		$string = strtolower(trim($string));
 		$string = str_replace("'", '', $string);
 		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
+		$string = preg_replace('#_{2,}#', '_', $string);
+		$string = preg_replace('#_-_#', '-', $string);
 		return preg_replace('#(^_+|_+$)#D', '', $string);
 	}
 	
