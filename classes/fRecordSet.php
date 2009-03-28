@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
  * @changes    1.0.0b3  ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b2  Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
@@ -486,8 +487,12 @@ class fRecordSet implements Iterator
 		
 		list($action, $element) = fORM::parseMethod($method_name);
 		
-		$route         = ($parameters) ? $parameters[0] : NULL;
-		$related_class = fGrammar::singularize(fGrammar::camelize($element, TRUE));
+		$route = ($parameters) ? $parameters[0] : NULL;
+		
+		// This check prevents fGrammar exceptions being thrown when an unknown method is called
+		if (in_array($action, array('prebuild', 'precount', 'precreate'))) {
+			$related_class = fGrammar::singularize(fGrammar::camelize($element, TRUE));
+		}
 		 
 		switch ($action) {
 			case 'prebuild':
