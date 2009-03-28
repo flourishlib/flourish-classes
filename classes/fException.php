@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug with ::printMessage() messing up some HTML messages [wb, 2009-03-27]
  * @changes    1.0.0b2  ::compose() more robustly handles `$components` passed as an array, ::__construct() now detects stray `%` characters [wb, 2009-02-05]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -305,8 +306,6 @@ abstract class fException extends Exception
 		// Check to see if we have any block-level html, extracted from fHTML to reduce dependencies
 		$inline_tags = $inline_tags_minus_br . '<br>';
 		$no_block_html = strip_tags($content, $inline_tags) == $content;
-		
-		$content = html_entity_decode($content, ENT_QUOTES, 'UTF-8');
 		
 		// This code ensures the output is properly encoded for display in (X)HTML, extracted from fHTML to reduce dependencies
 		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";

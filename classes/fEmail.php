@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
  * @changes    1.0.0b3  Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
@@ -1192,11 +1193,11 @@ class fEmail
 		foreach ($multi_address_field_list as $field => $name) {
 			foreach ($this->$field as $email) {
 				if ($email && !preg_match(self::NAME_EMAIL_REGEX, $email) && !preg_match(self::EMAIL_REGEX, $email)) {
-					$validation_messages[] = self::compose(
+					$validation_messages[] = htmlspecialchars(self::compose(
 						'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 						$name,
 						$email
-					);
+					), ENT_QUOTES, 'UTF-8');
 				}
 			}
 		}
@@ -1211,11 +1212,11 @@ class fEmail
 		
 		foreach ($single_address_field_list as $field => $name) {
 			if ($this->$field && !preg_match(self::NAME_EMAIL_REGEX, $this->$field) && !preg_match(self::EMAIL_REGEX, $this->$field)) {
-				$validation_messages[] = self::compose(
+				$validation_messages[] = htmlspecialchars(self::compose(
 					'The %1$s %2$s is not a valid email address. Should be like "John Smith" <name@example.com> or name@example.com.',
 					$name,
 					$this->$field
-				);
+				), ENT_QUOTES, 'UTF-8');
 			}
 		}
 		
