@@ -2,14 +2,15 @@
 /**
  * Holds a single instance of the fDatabase class and provides database manipulation functionality for ORM code
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  ::insertFromAndGroupByClauses() will no longer wrap ungrouped columns if in a CAST or CASE statement for ORDER BY clauses of queries with a GROUP BY clause [wb, 2009-03-23]
  * @changes    1.0.0b5  Fixed ::parseSearchTerms() to include stop words when they are the only thing in the search string [wb, 2008-12-31]
  * @changes    1.0.0b4  Fixed a bug where loading a related record in the same table through a one-to-many relationship caused recursion [wb, 2008-12-24]
  * @changes    1.0.0b3  Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
@@ -896,14 +897,14 @@ class fORMDatabase
 				
 				// In the ORDER BY clause we need to wrap columns in
 				if ($found_order_by && $joined_to_many) {
-					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $temp_sql);
+					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\(|cast\(|case |when )\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#i', 'max(\1)', $temp_sql);
 				}
 				
 				if ($joined_to_many && preg_match('#order\s+by#i', $temp_sql)) {
 					$order_by_found = TRUE;
 					
 					$parts = preg_split('#(order\s+by)#i', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE);
-					$parts[2] = $temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\()\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#', 'max(\1)', $parts[2]);
+					$parts[2] = $temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\(|cast\(|case |when )\b((?!' . preg_quote($table, '#') . '\.)\w+\.\w+)\b#i', 'max(\1)', $parts[2]);
 					
 					$temp_sql = join('', $parts);
 				}
@@ -1038,7 +1039,7 @@ class fORMDatabase
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
