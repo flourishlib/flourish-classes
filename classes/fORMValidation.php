@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
  * @changes    1.0.0b4  Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
  * @changes    1.0.0b3  Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
  * @changes    1.0.0b2  Fixed a bug with ::addManyToManyValidationRule() [wb, 2008-12-08]
@@ -456,14 +457,15 @@ class fORMValidation
 	{
 		settype($columns, 'array');
 		
+		$column_names = array();
+		foreach ($columns as $column) {
+			$column_names[] = fORM::getColumnName($class, $column);
+		}
+		
 		$found_value = FALSE;
 		foreach ($columns as $column) {
 			if ($values[$column] !== NULL) {
 				if ($found_value) {
-					$column_names = array();
-					foreach ($columns as $column) {
-						$column_names[] = fORM::getColumnName($class, $column);
-					}
 					return self::compose(
 						'%s: Please enter a value for only one',
 						join(', ', $column_names)
@@ -472,6 +474,13 @@ class fORMValidation
 				$found_value = TRUE;
 			}
 		}
+		
+		if (!$found_value) {
+			return self::compose(
+				'%s: Please enter a value for one',
+				join(', ', $column_names)
+			);	
+		}	
 	}
 	
 	
