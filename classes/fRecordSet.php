@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
  * @changes    1.0.0b4  ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
  * @changes    1.0.0b3  ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b2  Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
@@ -140,15 +141,15 @@ class fRecordSet implements Iterator
 		
 		$sql = "SELECT " . $table . ".* FROM :from_clause";
 		
-		$having_conditions = fORMDatabase::splitHavingConditions($where_conditions);
-		
 		if ($where_conditions) {
+			$having_conditions = fORMDatabase::splitHavingConditions($where_conditions);
+		
 			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table, $where_conditions);
 		}
 		
 		$sql .= ' :group_by_clause ';
 		
-		if ($having_conditions) {
+		if ($where_conditions && $having_conditions) {
 			$sql .= ' HAVING ' . fORMDatabase::createHavingClause($having_conditions);	
 		}
 		
@@ -223,7 +224,41 @@ class fRecordSet implements Iterator
 	/**
 	 * Creates an fRecordSet from an SQL statement
 	 * 
-	 * @param  string $class                  The type of object to create
+	 * The SQL statement should select all columns from a single table with a *
+	 * pattern since that is what an fActiveRecord models. If any columns are
+	 * left out or added, strange error may happen when loading or saving
+	 * records.
+	 * 
+	 * Here is an example of an appropriate SQL statement:
+	 * 
+	 * {{{
+	 * #!sql
+	 * SELECT users.* FROM users INNER JOIN groups ON users.group_id = groups.group_id WHERE groups.name = 'Public'
+	 * }}}
+	 * 
+	 * Here is an example of a SQL statement that will cause errors:
+	 * 
+	 * {{{
+	 * #!sql
+	 * SELECT users.*, groups.name FROM users INNER JOIN groups ON users.group_id = groups.group_id WHERE groups.group_id = 2
+	 * }}}
+	 * 
+	 * The `$non_limited_count_sql` should only be passed when the `$sql`
+	 * contains a `LIMIT` clause and should contain a count of the records when
+	 * a `LIMIT` is not imposed.
+	 * 
+	 * Here is an example of a `$sql` statement with a `LIMIT` clause and a
+	 * corresponding `$non_limited_count_sql`:
+	 * 
+	 * {{{
+	 * #!php
+	 * fRecordSet::buildFromSQL('User', 'SELECT * FROM users LIMIT 5', 'SELECT count(*) FROM users');
+	 * }}}
+	 * 
+	 * The `$non_limited_count_sql` is used when ::count() is called with `TRUE`
+	 * passed as the parameter.
+	 * 
+	 * @param  string $class                  The class to create the fRecordSet of
 	 * @param  string $sql                    The SQL to create the set from
 	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a `LIMIT` clause had not been used. Should only be passed if a `LIMIT` clause is used.
 	 * @return fRecordSet  A set of fActiveRecord objects
@@ -231,6 +266,13 @@ class fRecordSet implements Iterator
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
 		self::validateClass($class);
+		
+		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(\w+\.)?\*\s*FROM#i', $sql)) {
+			throw new fProgrammerException(
+				'The SQL statement specified, %s, does not appear to be in the form SELECT * FROM table',
+				$sql
+			);	
+		}
 		
 		return new fRecordSet(
 			$class,
