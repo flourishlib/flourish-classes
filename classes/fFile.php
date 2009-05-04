@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Changed ::__sleep() to not reset the iterator since it can cause side-effects [wb, 2009-05-04]
  * @changes    1.0.0b17  Added ::__sleep() and ::__wakeup() for proper serialization with the filesystem map [wb, 2009-05-03]
  * @changes    1.0.0b16  ::output() now accepts `TRUE` in the second parameter to use the current filename as the attachment filename [wb, 2009-03-23]
  * @changes    1.0.0b15  Added support for mime type detection of MP3s based on the MPEG-2 (as opposed to MPEG-1) standard [wb, 2009-03-23]
@@ -541,12 +542,6 @@ class fFile implements Iterator
 	 */
 	public function __sleep()
 	{
-		if ($this->file_handle) {
-			fclose($this->file_handle);
-			$this->current_line        = NULL;
-			$this->current_line_number = NULL;
-			$this->file_handle         = NULL;	
-		}
 		return array('exception', 'file');
 	}
 	
