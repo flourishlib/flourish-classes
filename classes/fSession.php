@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  The class now works with existing sessions [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
  * @changes    1.0.0b2  Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -73,10 +74,10 @@ class fSession
 	 */
 	static public function close()
 	{
-		if (self::$open) {
-			session_write_close();
-			self::$open = FALSE;
-		}
+		if (!self::$open) { return; }
+		
+		session_write_close();
+		self::$open = FALSE;
 	}
 	
 	
@@ -122,14 +123,15 @@ class fSession
 	 */
 	static public function ignoreSubdomain()
 	{
-		if (self::$open) {
+		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s or %6$s',
 				__CLASS__ . '::ignoreSubdomain()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
-				__CLASS__ . '::set()'
+				__CLASS__ . '::set()',
+				'session_start()'
 			);
 		}
 		
@@ -153,14 +155,18 @@ class fSession
 	 */
 	static public function open($cookie_only_session_id=TRUE)
 	{
-		if (!self::$open) {
-			if ($cookie_only_session_id) {
-				ini_set('session.use_cookies', 1);
-				ini_set('session.use_only_cookies', 1);
-			}
-			session_start();
-			self::$open = TRUE;
+		if (self::$open) { return; }
+		
+		self::$open = TRUE;
+		
+		// If the session is already open, we just piggy-back without setting options
+		if (isset($_SESSION)) { return; }
+		
+		if ($cookie_only_session_id) {
+			ini_set('session.use_cookies', 1);
+			ini_set('session.use_only_cookies', 1);
 		}
+		session_start();
 	}
 	
 	
@@ -201,14 +207,15 @@ class fSession
 	 */
 	static public function setLength($timespan)
 	{
-		if (self::$open) {
+		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s or %6$s',
 				__CLASS__ . '::setLength()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
-				__CLASS__ . '::set()'
+				__CLASS__ . '::set()',
+				'session_start()'
 			);
 		}
 		
@@ -225,14 +232,15 @@ class fSession
 	 */
 	static public function setPath($directory)
 	{
-		if (self::$open) {
+		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s or %4$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s or %6$s',
 				__CLASS__ . '::setPath()',
 				__CLASS__ . '::clear()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
-				__CLASS__ . '::set()'
+				__CLASS__ . '::set()',
+				'session_start()'
 			);
 		}
 		
