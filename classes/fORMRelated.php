@@ -5,15 +5,16 @@
  * The functionality of this class only works with single-field `FOREIGN KEY`
  * constraints.
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-12-30]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-12-30]
  */
 class fORMRelated
 {
@@ -436,11 +437,11 @@ class fORMRelated
 		$filter          = self::determineRequestFilter($class, $related_class, $route);
 		$pk_field        = $filter . $first_pk_column;
 		
-		$total_records = sizeof(fRequest::get($pk_field, 'array', array()));
-		$records       = array();
+		$input_keys = array_keys(fRequest::get($pk_field, 'array', array()));
+		$records    = array();
 		
-		for ($i = 0; $i < $total_records; $i++) {
-			fRequest::filter($filter, $i);
+		foreach ($input_keys as $input_key) {
+			fRequest::filter($filter, $input_key);
 			
 			// Try to load the value from the database first
 			try {
@@ -807,7 +808,7 @@ class fORMRelated
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
