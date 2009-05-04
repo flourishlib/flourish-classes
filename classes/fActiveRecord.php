@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  ::store() no longer tries to get an auto-incrementing ID from the database if a value was set [wb, 2009-05-02]
  * @changes    1.0.0b13  ::delete(), ::load(), ::populate() and ::store() now return the record to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b12  ::set() now removes commas from integers and floats to prevent validation issues [wb, 2009-03-22]
  * @changes    1.0.0b11  ::encode() no longer adds commas to floats [wb, 2009-03-22]
@@ -1331,7 +1332,7 @@ abstract class fActiveRecord
 			return number_format($value, $decimal_places, '.', ',');
 		}
 		
-		// Turn like-breaks into breaks for text fields and add links
+		// Turn line-breaks into breaks for text fields and add links
 		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
 			return fHTML::makeLinks(fHTML::convertNewlines(fHTML::prepare($value)));
 		}
@@ -1344,7 +1345,7 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Generates a preormatted block of text containing the method signatures for all methods (including dynamic ones)
+	 * Generates a pre-formatted block of text containing the method signatures for all methods (including dynamic ones)
 	 * 
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
 	 * @return string  A preformatted block of text with the method signatures and optionally the doc comment
@@ -1771,7 +1772,7 @@ abstract class fActiveRecord
 			if (!$this->exists()) {
 				$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 				
-				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
+				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment'] && !$values[$pk_columns[0]]) {
 					$new_autoincrementing_record = TRUE;
 					$pk_column = $pk_columns[0];
 				}
