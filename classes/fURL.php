@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
  * @changes    1.0.0b3  ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
  * @changes    1.0.0b2  Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -46,13 +47,18 @@ class fURL
 	
 	
 	/**
-	 * Returns the current domain name, with protcol prefix
+	 * Returns the current domain name, with protcol prefix. Port will be included if not 80 for HTTP or 443 for HTTPS.
 	 * 
 	 * @return string  The current domain name, prefixed by `http://` or `https://`
 	 */
 	static public function getDomain()
 	{
-		return ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https://' : 'http://') . $_SERVER['SERVER_NAME'];
+		$port = (isset($_SERVER['SERVER_PORT'])) ? $_SERVER['SERVER_PORT'] : NULL;
+		if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') {
+			return 'https://' . $_SERVER['SERVER_NAME'] . ($port && $port != 443 ? ':' . $port : '');
+		} else {
+			return 'http://' . $_SERVER['SERVER_NAME'] . ($port && $port != 80 ? ':' . $port : '');
+		}
 	}
 	
 	
