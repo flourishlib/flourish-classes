@@ -2,6 +2,11 @@
 /**
  * Wraps the session control functions and the `$_SESSION` superglobal for a more consistent and safer API
  * 
+ * A `Cannot send session cache limiter` warning will be triggered if ::open(),
+ * ::clear(), ::get() or ::set() is called after output has been sent to the
+ * browser. To prevent such a warning, explicitly call ::open() before
+ * generating any output.
+ * 
  * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -9,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added documentation about session cache limiter warnings [wb, 2009-05-04]
  * @changes    1.0.0b4  The class now works with existing sessions [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
  * @changes    1.0.0b2  Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
@@ -149,6 +155,11 @@ class fSession
 	
 	/**
 	 * Opens the session for writing, is automatically called by ::clear(), ::get() and ::set()
+	 * 
+	 * A `Cannot send session cache limiter` warning will be triggered if this,
+	 * ::clear(), ::get() or ::set() is called after output has been sent to the
+	 * browser. To prevent such a warning, explicitly call this method before
+	 * generating any output.
 	 * 
 	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary 
 	 * @return void
