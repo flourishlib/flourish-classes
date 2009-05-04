@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added ::__sleep() and ::__wakeup() for proper serialization with the filesystem map [wb, 2009-05-03]
  * @changes    1.0.0b16  ::output() now accepts `TRUE` in the second parameter to use the current filename as the attachment filename [wb, 2009-03-23]
  * @changes    1.0.0b15  Added support for mime type detection of MP3s based on the MPEG-2 (as opposed to MPEG-1) standard [wb, 2009-03-23]
  * @changes    1.0.0b14  Fixed a bug with detecting the mime type of some MP3s [wb, 2009-03-22]
@@ -534,6 +535,23 @@ class fFile implements Iterator
 	
 	
 	/**
+	 * The iterator information doesn't need to be serialized since a resource can't be
+	 *
+	 * @return array  The instance variables to serialize
+	 */
+	public function __sleep()
+	{
+		if ($this->file_handle) {
+			fclose($this->file_handle);
+			$this->current_line        = NULL;
+			$this->current_line_number = NULL;
+			$this->file_handle         = NULL;	
+		}
+		return array('exception', 'file');
+	}
+	
+	
+	/**
 	 * Returns the filename of the file
 	 * 
 	 * @return string  The filename
@@ -541,6 +559,25 @@ class fFile implements Iterator
 	public function __toString()
 	{
 		return $this->getFilename();
+	}
+	
+	
+	/**
+	 * Re-inserts the file back into the filesystem map when unserialized
+	 *
+	 * @return void
+	 */
+	public function __wakeup()
+	{
+		$file      = $this->file;
+		$exception = $this->exception;
+		
+		$this->file      =& fFilesystem::hookFilenameMap($file);
+		$this->exception =& fFilesystem::hookExceptionMap($file);
+		
+		if ($exception !== NULL) {
+			fFilesystem::updateExceptionMap($file, $exception);
+		}
 	}
 	
 	
