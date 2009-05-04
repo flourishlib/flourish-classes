@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated the class to be consistent with PHP 5.2.9+ for encoding and decoding invalid data [wb, 2009-05-04]
  * @changes    1.0.0b2  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26] 
  * @changes    1.0.0b   The initial implementation [wb, 2008-07-12]
  */
@@ -289,7 +290,7 @@ class fJSON
 		}
 		
 		// If the json is an array or object, we can rely on the php function
-		if (function_exists('json_decode') && ($json[0] == '[' || $json[0] == '{')) {
+		if (function_exists('json_decode') && ($json[0] == '[' || $json[0] == '{' || version_compare(PHP_VERSION, '5.2.9', '>='))) {
 			return json_decode($json, $assoc);
 		}
 		
@@ -335,9 +336,9 @@ class fJSON
 				return $element;
 			}
 		}
-		
+							
 		if ($json[0] != '[' && $json[0] != '{') {
-			return $json;
+			return NULL;
 		}
 		
 		foreach ($matches[0] as $match) {
@@ -474,11 +475,12 @@ class fJSON
 	 */
 	static public function encode($value)
 	{
+		if (is_resource($value)) {
+			return 'null';
+		}
+		
 		if (function_exists('json_encode')) {
-			$old_level = error_reporting(error_reporting() & ~E_WARNING);
-			$result = json_encode($value);
-			error_reporting($old_level);
-			return $result;
+			return json_encode($value);
 		}
 		
 		if (is_int($value)) {
@@ -497,12 +499,11 @@ class fJSON
 			return 'null';
 		}
 		
-		if (is_resource($value)) {
-			return 'null';
-		}
-		
 		if (is_string($value)) {
-			$value = iconv('utf-8', 'utf-8', $value);
+			
+			if (!preg_match('#^.*$#usD', $value)) {
+				return 'null';
+			}
 			
 			$char_array = fUTF8::explode($value);
 			
