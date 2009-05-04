@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added a check to ::__construct() to ensure that the `$code` parameter is numeric [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed a bug with ::printMessage() messing up some HTML messages [wb, 2009-03-27]
  * @changes    1.0.0b2  ::compose() more robustly handles `$components` passed as an array, ::__construct() now detects stray `%` characters [wb, 2009-02-05]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -210,13 +211,13 @@ abstract class fException extends Exception
 		
 		// If we have an extra argument, it is the exception code
 		$code = NULL;
-		if ($required_args == sizeof($args) - 1) {
+		if ($required_args == sizeof($args) - 1 && is_numeric($args[sizeof($args)-1])) {
 			$code = array_pop($args);		
 		}
 		
 		if (sizeof($args) != $required_args) {
 			$message = self::compose(
-				'Only %1$d components were passed to the %2$s constructor, while %3$d were specified in the message',
+				'%1$d components were passed to the %2$s constructor, while %3$d were specified in the message',
 				sizeof($args),
 				get_class($this),
 				$required_args
