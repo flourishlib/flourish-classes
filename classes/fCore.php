@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  ::backtrace() now properly replaces document root with {doc_root} on Windows [wb, 2009-05-02]
  * @changes    1.0.0b6  Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
  * @changes    1.0.0b5  Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
  * @changes    1.0.0b4  Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
@@ -125,7 +126,7 @@ class fCore
 		settype($remove_lines, 'integer');
 		
 		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
-		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
+		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 		
 		$backtrace = debug_backtrace();
 		
@@ -143,7 +144,7 @@ class fCore
 				$bt_string .= "\n";
 			}
 			if (isset($call['file'])) {
-				$bt_string .= str_replace($doc_root, '{doc_root}/', $call['file']) . '(' . $call['line'] . '): ';
+				$bt_string .= str_replace($doc_root, '{doc_root}' . DIRECTORY_SEPARATOR, $call['file']) . '(' . $call['line'] . '): ';
 			} else {
 				$bt_string .= '[internal function]: ';
 			}
@@ -172,7 +173,8 @@ class fCore
 							// Shorten the UTF-8 string if it is too long
 							if (strlen(utf8_decode($arg)) > 18) {
 								preg_match('#^(.{0,15})#us', $arg, $short_arg);
-								$arg = $short_arg[1] . '...';
+								$arg  = (isset($short_arg[1])) ? $short_arg[1] : $short_arg[0];
+								$arg .= '...';
 							}
 							$bt_string .= "'" . $arg . "'";
 						} else {
