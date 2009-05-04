@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  ::rename() will now rename the file in its current directory if the new filename has no directory separator [wb, 2009-05-04]
  * @changes    1.0.0b18  Changed ::__sleep() to not reset the iterator since it can cause side-effects [wb, 2009-05-04]
  * @changes    1.0.0b17  Added ::__sleep() and ::__wakeup() for proper serialization with the filesystem map [wb, 2009-05-03]
  * @changes    1.0.0b16  ::output() now accepts `TRUE` in the second parameter to use the current filename as the attachment filename [wb, 2009-03-23]
@@ -1015,7 +1016,7 @@ class fFile implements Iterator
 	 * This operation will be reverted if a filesystem transaction is in
 	 * progress and is later rolled back.
 	 * 
-	 * @param  string  $new_filename  The new full path to the file
+	 * @param  string  $new_filename  The new full path to the file or a new filename in the current directory
 	 * @param  boolean $overwrite     If the new filename already exists, `TRUE` will cause the file to be overwritten, `FALSE` will cause the new filename to change
 	 * @return fFile  The file object, to allow for method chaining
 	 */
@@ -1028,6 +1029,11 @@ class fFile implements Iterator
 				'The file, %s, can not be renamed because the directory containing it is not writable',
 				$this->file
 			);
+		}
+		
+		// If the filename does not contain any folder traversal, rename the file in the current directory
+		if (preg_match('#^[^/\\\\]+$#D', $new_filename)) {
+			$new_filename = $this->getDirectory()->getPath() . $new_filename;		
 		}
 		
 		$info = fFilesystem::getPathInfo($new_filename);
