@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added support for Oracle, various bug fixes [wb, 2009-05-04]
  * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b   The initial implementation [wb, 2008-05-07]
  */
@@ -100,14 +101,14 @@ class fUnbufferedResult implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type           The type of database: `'mssql'`, `'mysql'`, `'postgresql'`, `'sqlite'`
-	 * @param  string $extension      The database extension used: `'mssql'`, `'mysql'`, `'mysqli'`, `'odbc'`, `'pdo'`, `'pgsql'`, `'sqlite', 'sqlsrv'`
+	 * @param  string $type           The type of database: `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, `'sqlite'`
+	 * @param  string $extension      The database extension used: `'mssql'`, `'mysql'`, `'mysqli'`, `'oci8'` `'odbc'`, `'pdo'`, `'pgsql'`, `'sqlite', 'sqlsrv'`
 	 * @param  string $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
 	 * @return fUnbufferedResult
 	 */
 	public function __construct($type, $extension, $character_set=NULL)
 	{
-		$valid_types = array('mssql', 'mysql', 'postgresql', 'sqlite');
+		$valid_types = array('mssql', 'mysql', 'oracle', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
 			throw new fProgrammerException(
 				'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
@@ -116,7 +117,7 @@ class fUnbufferedResult implements Iterator
 			);
 		}
 		
-		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
+		$valid_extensions = array('mssql', 'mysql', 'mysqli', 'oci8', 'odbc', 'pdo', 'pgsql', 'sqlite', 'sqlsrv');
 		if (!in_array($extension, $valid_extensions)) {
 			throw new fProgrammerException(
 				'The database extension specified, %1$s, is invalid. Must be one of: %2$s.',
@@ -150,17 +151,21 @@ class fUnbufferedResult implements Iterator
 			mysql_free_result($this->result);
 		} elseif ($this->extension == 'mysqli') {
 			mysqli_free_result($this->result);
+		} elseif ($this->extension == 'oci8') {
+			oci_free_statement($this->result);
 		} elseif ($this->extension == 'odbc') {
 			odbc_free_result($this->result);
 		} elseif ($this->extension == 'pgsql') {
 			pg_free_result($this->result);
 		} elseif ($this->extension == 'sqlite') {
-			sqlite_fetch_all($this->result);
+			unset($this->result);
 		} elseif ($this->extension == 'sqlsrv') {
 			sqlsrv_free_stmt($this->result);
 		} elseif ($this->extension == 'pdo') {
 			$this->result->closeCursor();
 		}
+		
+		$this->result = NULL;
 	}
 	
 	
@@ -184,18 +189,19 @@ class fUnbufferedResult implements Iterator
 	private function advanceCurrentRow()
 	{
 		if ($this->extension == 'mssql') {
-			$row = mssql_fetch_assoc($this->result);
-			if (empty($row)) {
-				mssql_fetch_batch($this->result);
+			// For some reason the mssql extension will return an empty row even
+			// when now rows were returned, so we have to explicitly check for this
+			if ($this->pointer == 0 && !mssql_num_rows($this->result)) {
+				$row = FALSE;	
+			
+			} else {
 				$row = mssql_fetch_assoc($this->result);
-			}
-			if (!empty($row)) {
-				$row = $this->fixDblibMSSQLDriver($row);
-				
-				// This is an unfortunate fix that required for databases that don't support limit
-				// clauses with an offset. It prevents unrequested columns from being returned.
-				if (!empty($row) && $this->untranslated_sql !== NULL && isset($row['__flourish_limit_offset_row_num'])) {
-					unset($row['__flourish_limit_offset_row_num']);
+				if (empty($row)) {
+					mssql_fetch_batch($this->result);
+					$row = mssql_fetch_assoc($this->result);
+				}
+				if (!empty($row)) {
+					$row = $this->fixDblibMSSQLDriver($row);
 				}
 			}
 				
@@ -203,6 +209,8 @@ class fUnbufferedResult implements Iterator
 			$row = mysql_fetch_assoc($this->result);
 		} elseif ($this->extension == 'mysqli') {
 			$row = mysqli_fetch_assoc($this->result);
+		} elseif ($this->extension == 'oci8') {
+			$row = oci_fetch_assoc($this->result);
 		} elseif ($this->extension == 'odbc') {
 			$row = odbc_fetch_array($this->result);
 		} elseif ($this->extension == 'pgsql') {
@@ -213,13 +221,30 @@ class fUnbufferedResult implements Iterator
 			$row = sqlsrv_fetch_array($this->result, SQLSRV_FETCH_ASSOC);
 		} elseif ($this->extension == 'pdo') {
 			$row = $this->result->fetch(PDO::FETCH_ASSOC);
+		}   
+		
+		// Fix uppercase column names to lowercase
+		if ($row && $this->type == 'oracle') {
+			$new_row = array();
+			foreach ($row as $column => $value) {
+				$new_row[strtolower($column)] = $value;
+			}	
+			$row = $new_row;
+		}
+		
+		// This is an unfortunate fix that required for databases that don't support limit
+		// clauses with an offset. It prevents unrequested columns from being returned.
+		if ($row && ($this->type == 'mssql' || $this->type == 'oracle')) {
+			if ($this->untranslated_sql !== NULL && isset($row['flourish__row__num'])) {
+				unset($row['flourish__row__num']);
+			}	
 		}
 		
 		// This decodes the data coming out of MSSQL into UTF-8
 		if ($row && $this->type == 'mssql') {
 			if ($this->character_set) {
 				foreach ($row as $key => $value) {
-					if (!is_string($value) || strpos($key, '__flourish_mssqln_') === 0) {
+					if (!is_string($value) || strpos($key, '__flourish_mssqln_') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xD-\x1F]#', $value)) {
 						continue;
 					} 		
 					$row[$key] = iconv($this->character_set, 'UTF-8', $value);
@@ -243,6 +268,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function current()
 	{
+		$this->validateState();
+		
 		// Primes the result set
 		if ($this->pointer === NULL) {
 			$this->pointer = 0;
@@ -268,18 +295,18 @@ class fUnbufferedResult implements Iterator
 	 */
 	private function decodeMSSQLNationalColumns($row)
 	{
-		if (strpos($this->sql, '__flourish_mssqln_') === FALSE) {
+		if (strpos($this->sql, 'fmssqln__') === FALSE) {
 			return $row;
 		}
 		
 		$columns = array_keys($row);
 		
 		foreach ($columns as $column) {
-			if (substr($column, 0, 18) != '__flourish_mssqln_') {
+			if (substr($column, 0, 9) != 'fmssqln__') {
 				continue;
 			}	
 			
-			$real_column = substr($column, 18);
+			$real_column = substr($column, 9);
 			
 			$row[$real_column] = iconv('ucs-2le', 'utf-8', $row[$column]);
 			unset($row[$column]);
@@ -299,6 +326,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function fetchRow()
 	{
+		$this->validateState();
+		
 		$row = $this->current();
 		$this->next();
 		return $row;
@@ -328,7 +357,7 @@ class fUnbufferedResult implements Iterator
 				$module_info = ob_get_contents();
 				ob_end_clean();
 				
-				$using_dblib = preg_match('#FreeTDS#ims', $module_info, $match);
+				$using_dblib = !preg_match('#FreeTDS#ims', $module_info, $match);
 			}
 		}
 		
@@ -380,6 +409,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function getResult()
 	{
+		$this->validateState();
+		
 		return $this->result;
 	}
 	
@@ -416,6 +447,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function key()
 	{
+		$this->validateState();
+		
 		if ($this->pointer === NULL) {
 			$this->current();
 		}
@@ -434,6 +467,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function next()
 	{
+		$this->validateState();
+		
 		if ($this->pointer === NULL) {
 			$this->current();
 		}
@@ -452,6 +487,8 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function rewind()
 	{
+		$this->validateState();
+		
 		if (!empty($this->pointer)) {
 			throw new fProgrammerException(
 				'Unbuffered database results can not be iterated through multiple times'
@@ -530,12 +567,27 @@ class fUnbufferedResult implements Iterator
 	 */
 	public function valid()
 	{
+		$this->validateState();
+		
 		if ($this->pointer === NULL) {
 			$this->advanceCurrentRow();
 			$this->pointer = 0;
 		}
 		
 		return !empty($this->current_row);
+	}
+	
+	
+	/**
+	 * Throws an exception if this object has been deconstructed already
+	 * 
+	 * @return void
+	 */
+	private function validateState()
+	{
+		if ($this->result === NULL) {
+			throw new fProgrammerException('This unbuffered result has been fully fetched, or replaced by a newer result');	
+		}	
 	}
 }
 

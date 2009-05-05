@@ -2,21 +2,21 @@
 /**
  * Provides fSchema class related functions for ORM code
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Backwards Compatiblity Break - removed ::enableSmartCaching(), fORM::enableSchemaCaching() now provides equivalent functionality [wb, 2009-05-04]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fORMSchema
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const attach                       = 'fORMSchema::attach';
-	const enableSmartCaching           = 'fORMSchema::enableSmartCaching';
 	const getRoute                     = 'fORMSchema::getRoute';
 	const getRouteName                 = 'fORMSchema::getRouteName';
 	const getRouteNameFromRelationship = 'fORMSchema::getRouteNameFromRelationship';
@@ -42,24 +42,6 @@ class fORMSchema
 	static public function attach($schema)
 	{
 		self::$schema_object = $schema;
-	}
-	
-	
-	/**
-	 * Turns on schema caching, using fUnexpectedException flushing
-	 *
-	 * @param  string  $cache_file  The file to use for caching
-	 * @return void
-	 */
-	static public function enableSmartCaching($cache_file)
-	{
-		if (!self::retrieve() instanceof fSchema) {
-			throw new fProgrammerException(
-				'Smart caching is only available (and most likely only applicable) if you are using the fSchema object'
-			);
-		}
-		self::retrieve()->setCacheFile($cache_file);
-		fException::registerCallback(array(self::retrieve(), 'flushInfo'), 'fUnexpectedException');
 	}
 	
 	
@@ -308,7 +290,7 @@ class fORMSchema
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added ::enableSchemaCaching() to replace fORMSchema::enableSmartCaching() [wb, 2009-05-04]
  * @changes    1.0.0b6  Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
  * @changes    1.0.0b5  Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
  * @changes    1.0.0b4  Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
@@ -26,6 +27,7 @@ class fORM
 	const checkHookCallback          = 'fORM::checkHookCallback';
 	const classize                   = 'fORM::classize';
 	const defineActiveRecordClass    = 'fORM::defineActiveRecordClass';
+	const enableSchemaCaching        = 'fORM::enableSchemaCaching';
 	const getActiveRecordMethod      = 'fORM::getActiveRecordMethod';
 	const getClass                   = 'fORM::getClass';
 	const getColumnName              = 'fORM::getColumnName';
@@ -312,6 +314,36 @@ class fORM
 			'The class specified, %s, does not correspond to a database table',
 			$class
 		);
+	}
+	
+	
+	/**
+	 * Enables caching on the fDatabase, fSQLTranslation and fSchema objects used for the ORM
+	 * 
+	 * This method will cache database schema information to the three objects
+	 * that use it during normal ORM operation: fDatabase, fSQLTranslation and
+	 * fSchema. To allow for schema changes without having to manually clear
+	 * the cache, all cached information will be cleared if any
+	 * fUnexpectedException objects are thrown.
+	 * 
+	 * This method should be called right after fORMDatabase::attach().
+	 *          
+	 * @param  fCache $cache  The object to cache schema information to
+	 * @return void
+	 */
+	static public function enableSchemaCaching($cache)
+	{
+		$db = fORMDatabase::retrieve();
+		$db->enableCaching($cache);
+		fException::registerCallback($db->clearCache, 'fUnexpectedException');
+		
+		$sql_translation = $db->getSQLTranslation();
+		$sql_translation->enableCaching($cache);
+		fException::registerCallback($sql_translation->clearCache, 'fUnexpectedException');
+		
+		$schema = fORMSchema::retrieve();
+		$schema->enableCaching($cache);
+		fException::registerCallback($schema->clearCache, 'fUnexpectedException');	
 	}
 	
 	
