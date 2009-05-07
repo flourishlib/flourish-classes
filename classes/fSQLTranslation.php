@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added the missing ::__get() method for callback support [wb, 2009-05-06]
  * @changes    1.0.0b3  Added Oracle and caching support, various bug fixes [wb, 2009-05-04]
  * @changes    1.0.0b2  Fixed a notice with SQLite foreign key constraints having no `ON` clauses [wb, 2009-02-21]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -210,6 +211,18 @@ class fSQLTranslation
 		}
 		
 		$this->schema_info = array();
+	}
+	
+	
+	/**
+	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @param  string $method  The method to create a callback for
+	 * @return callback  The callback for the method requested
+	 */
+	public function __get($method)
+	{
+		return array($this, $method);		
 	}
 	
 	
