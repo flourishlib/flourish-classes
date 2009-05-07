@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed a bug with ::decode() where JSON objects could lose all but the first key: value pair [wb, 2009-05-06]
  * @changes    1.0.0b3  Updated the class to be consistent with PHP 5.2.9+ for encoding and decoding invalid data [wb, 2009-05-04]
  * @changes    1.0.0b2  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26] 
  * @changes    1.0.0b   The initial implementation [wb, 2008-07-12]
@@ -415,7 +416,7 @@ class fJSON
 			}
 			
 			if ($ref_match) {
-				$stack[] = array($type, $match);
+				$stack[] = array($type, &$match);
 				$stack_end = end($stack);
 			}
 			
@@ -456,7 +457,7 @@ class fJSON
 				$last_key = NULL;
 			}
 			$last = $type;
-
+			unset($match);
 		}
 		
 		if ($matched_length != strlen($json) || sizeof($stack) > 0) {
