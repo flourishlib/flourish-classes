@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed an incorrect variable reference in ::store() [wb, 2009-05-06]
  * @changes    1.0.0b14  ::store() no longer tries to get an auto-incrementing ID from the database if a value was set [wb, 2009-05-02]
  * @changes    1.0.0b13  ::delete(), ::load(), ::populate() and ::store() now return the record to allow for method chaining [wb, 2009-03-23]
  * @changes    1.0.0b12  ::set() now removes commas from integers and floats to prevent validation issues [wb, 2009-03-22]
@@ -1772,7 +1773,7 @@ abstract class fActiveRecord
 			if (!$this->exists()) {
 				$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 				
-				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment'] && !$values[$pk_columns[0]]) {
+				if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment'] && !$this->values[$pk_columns[0]]) {
 					$new_autoincrementing_record = TRUE;
 					$pk_column = $pk_columns[0];
 				}
