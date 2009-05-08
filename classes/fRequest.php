@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Added ::generateCSRFToken() from fCRUD::generateRequestToken() and ::validateCSRFToken() from fCRUD::validateRequestToken() [wb, 2009-05-08]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -492,7 +493,7 @@ class fRequest
 	 */
 	static public function reset()
 	{
-		fSession::clear(NULL, __CLASS__ . '::');
+		fSession::clear(__CLASS__ . '::');
 		
 		self::$backup_files      = NULL;
 		self::$backup_get        = NULL;

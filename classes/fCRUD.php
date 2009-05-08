@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCRUD
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b3  Backwards Compatiblity Break - moved ::printOption() to fHTML::printOption(), ::showChecked() to fHTML::showChecked(), ::removeListItems() and ::reorderListItems() to fException::splitMessage(), ::generateRequestToken() to fRequest::generateCSRFToken(), and ::validateRequestToken() to fRequest::validateCSRFToken() [wb, 2009-05-08]
  * @changes    1.0.0b2  Fixed a bug preventing loaded search values from being included in redirects [wb, 2009-03-18]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -311,7 +312,7 @@ class fCRUD
 	 */
 	static public function reset()
 	{
-		fSession::clear(NULL, __CLASS__ . '::');
+		fSession::clear(__CLASS__ . '::');
 		
 		self::$loaded_values  = array();
 		self::$row_number     = 1;

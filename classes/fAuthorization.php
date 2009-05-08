@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fAuthorization
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Fixed a bug with using named IP ranges in ::checkIP() [wb, 2009-01-10]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -233,10 +234,10 @@ class fAuthorization
 	 */
 	static public function destroyUserInfo()
 	{
-		fSession::clear('user_auth_level', __CLASS__ . '::');
-		fSession::clear('user_acls', __CLASS__ . '::');
-		fSession::clear('user_token', __CLASS__ . '::');
-		fSession::clear('requested_url', __CLASS__ . '::');
+		fSession::delete('user_auth_level', __CLASS__ . '::');
+		fSession::delete('user_acls', __CLASS__ . '::');
+		fSession::delete('user_token', __CLASS__ . '::');
+		fSession::delete('requested_url', __CLASS__ . '::');
 	}
 	
 	
@@ -251,7 +252,7 @@ class fAuthorization
 	{
 		$requested_url = fSession::get('requested_url', $default_url, __CLASS__ . '::');
 		if ($clear) {
-			fSession::clear('requested_url', __CLASS__ . '::');
+			fSession::delete('requested_url', __CLASS__ . '::');
 		}
 		return $requested_url;
 	}

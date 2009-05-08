@@ -14,7 +14,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
  * @changes    1.0.0b5  Added documentation about session cache limiter warnings [wb, 2009-05-04]
  * @changes    1.0.0b4  The class now works with existing sessions [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
@@ -26,6 +27,7 @@ class fSession
 	// The following constants allow for nice looking callbacks to static methods
 	const clear           = 'fSession::clear';
 	const close           = 'fSession::close';
+	const delete          = 'fSession::delete';
 	const destroy         = 'fSession::destroy';
 	const get             = 'fSession::get';
 	const ignoreSubdomain = 'fSession::ignoreSubdomain';
@@ -45,30 +47,20 @@ class fSession
 	
 	
 	/**
-	 * Unsets a key from the `$_SESSION` superglobal using the prefix provided
+	 * Removes all session values with the provided prefix
 	 * 
-	 * @param  string $key     The key to unset, if no key is specified all keys with the prefix will be removed
-	 * @param  string $prefix  The prefix to stick before the key
+	 * @param  string $prefix  The prefix to clear all session values for
 	 * @return void
 	 */
-	static public function clear($key=NULL, $prefix='fSession::')
+	static public function clear($prefix='fSession::')
 	{
 		self::open();
-		
-		if ($key !== NULL) {
-			unset($_SESSION[$prefix . $key]);
-			return;
-		}
 		
 		$remove = array();
 		foreach ($_SESSION as $key => $value) {
 			if (strpos($key, $prefix) === 0) {
-				$remove[] = $key;
+				unset($_SESSION[$key]);
 			}
-		}
-		
-		foreach ($remove as $key) {
-			unset($_SESSION[$key]);	
 		}
 	}
 	
@@ -84,6 +76,21 @@ class fSession
 		
 		session_write_close();
 		self::$open = FALSE;
+	}
+	
+	
+	/**
+	 * Deletes a value from the session
+	 * 
+	 * @param  string $key     The key of the value to delete
+	 * @param  string $prefix  The prefix to use for the key
+	 * @return void
+	 */
+	static public function delete($key, $prefix='fSession::')
+	{
+		self::open();
+		
+		unset($_SESSION[$prefix . $key]);
 	}
 	
 	

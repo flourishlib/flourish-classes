@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Changed ::show() to accept more than one message name, or * for all messages [wb, 2009-01-12]
  * @changes    1.0.0b   The initial implementation [wb, 2008-03-05]
  */
@@ -59,7 +60,7 @@ class fMessaging
 	 */
 	static public function reset()
 	{
-		fSession::clear(NULL, __CLASS__ . '::');	
+		fSession::clear(__CLASS__ . '::');
 	}
 	
 	
@@ -74,7 +75,7 @@ class fMessaging
 	{
 		$prefix  = __CLASS__ . '::' . $recipient . '::';
 		$message = fSession::get($name, NULL, $prefix);
-		fSession::clear($name, $prefix);
+		fSession::delete($name, $prefix);
 		return $message;
 	}
 	
