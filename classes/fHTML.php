@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added methods ::printOption() and ::showChecked() that were in fCRUD [wb, 2009-05-08]
  * @changes    1.0.0b3  Fixed a bug where ::makeLinks() would double-link some URLs [wb, 2009-01-08]
  * @changes    1.0.0b2  Fixed a bug where ::makeLinks() would create links out of URLs in HTML tags [wb, 2008-12-05]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -26,8 +27,10 @@ class fHTML
 	const encode                 = 'fHTML::encode';
 	const makeLinks              = 'fHTML::makeLinks';
 	const prepare                = 'fHTML::prepare';
+	const printOption            = 'fHTML::printOption';
 	const sendHeader             = 'fHTML::sendHeader';
 	const show                   = 'fHTML::show';
+	const showChecked            = 'fHTML::showChecked';
 	
 	
 	/**
@@ -181,6 +184,29 @@ class fHTML
 	
 	
 	/**
+	 * Prints an `option` tag with the provided value, using the selected value to determine if the option should be marked as selected
+	 * 
+	 * @param  string $text            The text to display in the option tag
+	 * @param  string $value           The value for the option
+	 * @param  string $selected_value  If the value is the same as this, the option will be marked as selected
+	 * @return void
+	 */
+	static public function printOption($text, $value, $selected_value=NULL)
+	{
+		$selected = FALSE;
+		if ($value == $selected_value || (is_array($selected_value) && in_array($value, $selected_value))) {
+			$selected = TRUE;
+		}
+		
+		echo '<option value="' . fHTML::encode($value) . '"';
+		if ($selected) {
+			echo ' selected="selected"';
+		}
+		echo '>' . fHTML::prepare($text) . '</option>';
+	}
+	
+	
+	/**
 	 * Sets the proper Content-Type header for a UTF-8 HTML (or pseudo-XHTML) page
 	 * 
 	 * @return void
@@ -212,6 +238,29 @@ class fHTML
 		}
 		
 		return TRUE;
+	}
+	
+	
+	/**
+	 * Prints a `checked="checked"` HTML input attribute if `$value` equals `$checked_value`, or if `$value` is in `$checked_value`
+	 * 
+	 * @param  string       $value          The value for the current HTML input tag
+	 * @param  string|array $checked_value  The value (or array of values) that has been checked
+	 * @return boolean  If the checked attribute was printed
+	 */
+	static public function showChecked($value, $checked_value)
+	{
+		$checked = FALSE;
+		if ($value == $checked_value || (is_array($checked_value) && in_array($value, $checked_value))) {
+			$checked = TRUE;
+		}
+		
+		if ($checked) {
+			echo ' checked="checked"';
+			return TRUE;
+		}
+		
+		return FALSE;
 	}
 	
 	

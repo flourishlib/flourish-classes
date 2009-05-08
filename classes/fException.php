@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added ::splitMessage() to replace fCRUD::removeListItems() and fCRUD::reorderListItems() [wb, 2009-05-08]
  * @changes    1.0.0b4  Added a check to ::__construct() to ensure that the `$code` parameter is numeric [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed a bug with ::printMessage() messing up some HTML messages [wb, 2009-03-27]
  * @changes    1.0.0b2  ::compose() more robustly handles `$components` passed as an array, ::__construct() now detects stray `%` characters [wb, 2009-02-05]
@@ -159,6 +160,19 @@ abstract class fException extends Exception
 	
 	
 	/**
+	 * Compares the message matching strings by longest first so that the longest matches are made first
+	 *
+	 * @param  string $a  The first string to compare
+	 * @param  string $b  The second string to compare
+	 * @return integer  `-1` if `$a` is longer than `$b`, `0` if they are equal length, `1` if `$a` is shorter than `$b`
+	 */
+	static private function sortMatchingArray($a, $b)
+	{
+		return -1 * strnatcmp(strlen($a), strlen($b));
+	}
+	
+	
+	/**
 	 * Sets the message for the exception, allowing for string interpolation and internationalization
 	 * 
 	 * The `$message` can contain any number of formatting placeholders for
@@ -262,11 +276,11 @@ abstract class fException extends Exception
 	public function formatTrace()
 	{
 		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
-		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
+		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 		
 		$backtrace = explode("\n", $this->getTraceAsString());
 		$backtrace = preg_replace('/^#\d+\s+/', '', $backtrace);
-		$backtrace = str_replace($doc_root, '{doc_root}/', $backtrace);
+		$backtrace = str_replace($doc_root, '{doc_root}' . DIRECTORY_SEPARATOR, $backtrace);
 		$backtrace = array_diff($backtrace, array('{main}'));
 		$backtrace = array_reverse($backtrace);
 		
@@ -366,6 +380,132 @@ abstract class fException extends Exception
 	public function setMessage($new_message)
 	{
 		$this->message = $new_message;
+	}
+	
+	
+	/**
+	 * Splits an exception with an HTML list into multiple strings each containing part of the original message
+	 * 
+	 * This method should be called with two or more parameters of arrays of
+	 * string to match. If any of the provided strings are matching in a list
+	 * item in the exception message, a new copy of the message will be created
+	 * containing just the matching list items.
+	 * 
+	 * Here is an exception message to be split:
+	 * 
+	 * {{{
+	 * #!text/html
+	 * <p>The following problems were found:</p>
+	 * <ul>
+	 *     <li>First Name: Please enter a value</li>
+	 *     <li>Last Name: Please enter a value</li>
+	 *     <li>Email: Please enter a value</li>
+	 *     <li>Address: Please enter a value</li>
+	 *     <li>City: Please enter a value</li>
+	 *     <li>State: Please enter a value</li>
+	 *     <li>Zip Code: Please enter a value</li>
+	 * </ul>
+	 * }}}
+	 * 
+	 * The following PHP would split the exception into two messages:
+	 * 
+	 * {{{
+	 * #!php
+	 * list ($name_exception, $address_exception) = $exception->splitMessage(
+	 *     array('First Name', 'Last Name', 'Email'),
+	 *     array('Address', 'City', 'State', 'Zip Code')
+	 * );
+	 * }}}
+	 * 
+	 * The resulting messages would be:
+	 * 
+	 * {{{
+	 * #!text/html
+	 * <p>The following problems were found:</p>
+	 * <ul>
+	 *     <li>First Name: Please enter a value</li>
+	 *     <li>Last Name: Please enter a value</li>
+	 *     <li>Email: Please enter a value</li>
+	 * </ul>
+	 * }}}
+	 * 
+	 * and
+	 * 
+	 * {{{
+	 * #!text/html
+	 * <p>The following problems were found:</p>
+	 * <ul>
+	 *     <li>Address: Please enter a value</li>
+	 *     <li>City: Please enter a value</li>
+	 *     <li>State: Please enter a value</li>
+	 *     <li>Zip Code: Please enter a value</li>
+	 * </ul>
+	 * }}}
+	 * 
+	 * If no list items match the strings in a parameter, the result will be
+	 * an empty string, allowing for simple display:
+	 * 
+	 * {{{
+	 * #!php
+	 * fHTML::show($name_exception, 'error');
+	 * }}}
+	 * 
+	 * @param  array $list_item_matches  An array of strings to filter the list items by, list items will be ordered in the same order as this array
+	 * @param  array ...
+	 * @return array  This will contain an array of strings corresponding to the parameters passed - an empty string is returned when none of the list items matched the strings in the parameter
+	 */
+	public function splitMessage($list_item_matches)
+	{
+		$class = get_class($this);
+		
+		$matching_arrays = func_get_args();
+		
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#isD', $this->message, $matches)) {
+			throw new fProgrammerException('Unable to split exception since no HTML lists were found in the message');
+		}
+		
+		$beginning_html  = $matches[1];
+		$list_items_html = $matches[2];
+		$ending_html     = $matches[3];
+		
+		preg_match_all('#<li(.*?)</li>#i', $list_items_html, $list_items, PREG_SET_ORDER);
+		
+		$output = array();
+		
+		foreach ($matching_arrays as $matching_array) {
+			
+			// This ensures that we match on the longest string first
+			uasort($matching_array, array('self', 'sortMatchingArray'));
+			
+			// We may match more than one list item per matching string, so we need a multi-dimensional array to hold them
+			$matched_list_items = array_fill(0, sizeof($matching_array), array());
+			$found              = FALSE;
+			
+			foreach ($list_items as $list_item) {
+				foreach ($matching_array as $match_num => $matching_string) {
+					if (strpos($list_item[1], $matching_string) !== FALSE) {
+						$matched_list_items[$match_num][] = $list_item[0];
+						$found = TRUE;
+						continue 2;
+					}
+				}
+			}
+			
+			if (!$found) {
+				$output[] = '';
+				continue;
+			}
+			
+			// This merges all of the multi-dimensional arrays back to one so we can do a simple join
+			$merged_list_items = array();
+			foreach ($matched_list_items as $match_num => $matched_items) {
+				$merged_list_items = array_merge($merged_list_items, $matched_items);
+			}
+			
+			$output[] = $beginning_html . join("\n", $merged_list_items) . $ending_html;
+		}
+		
+		return $output;
 	}
 }
 
