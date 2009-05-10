@@ -114,7 +114,7 @@ class fTime
 	
 	
 	/**
-	 * Changes the time by the adjustment specified, only asjustments of `'hours'`, `'minutes'`, and `'seconds'` are allowed
+	 * Changes the time by the adjustment specified, only adjustments of `'hours'`, `'minutes'`, and `'seconds'` are allowed
 	 * 
 	 * @throws fValidationException
 	 * 
