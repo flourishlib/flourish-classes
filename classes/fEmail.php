@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Email names with UTF-8 characters are now properly encoded [wb, 2009-05-08]
  * @changes    1.0.0b6  Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b4  The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
@@ -502,14 +503,23 @@ class fEmail
 	 */
 	private function combineNameEmail($name, $email)
 	{
-		$email = str_replace(array("\r", "\n"), '', $email);
-		$name  = str_replace(array('\\', '"', "\r", "\n"), '', $name);
+		// Strip lower ascii character since they aren't useful in email addresses
+		$email = preg_replace('#[\x0-\x19]+#', '', $email);
+		$name  = preg_replace('#[\x0-\x19]+#', '', $name);
 		
 		if (!$name || fCore::checkOS('windows')) {
 			return $email;
 		}
 		
-		return '"' . $name . '" <' . $email . '>';
+		// If the name contains any non-ascii bytes or stuff not allowed
+		// in quoted strings we just make an encoded word out of it
+		if (preg_replace('#[\x80-\xff\x5C\x22]#', '', $name) != $name) {
+			$name = $this->makeEncodedWord($name);
+		} else {
+			$name = '"' . $name . '"';	
+		}
+		
+		return $name . ' <' . $email . '>';
 	}
 	
 	
@@ -783,7 +793,7 @@ class fEmail
 		
 		// Decode characters that don't have to be coded
 		$decodings = array(
-			'=20' => ' ', '=21' => '!', '=22' => '"',  '=23' => '#',
+			'=20' => '_', '=21' => '!', '=22' => '"',  '=23' => '#',
 			'=24' => '$', '=25' => '%', '=26' => '&',  '=27' => "'",
 			'=28' => '(', '=29' => ')', '=2A' => '*',  '=2B' => '+',
 			'=2C' => ',', '=2D' => '-', '=2E' => '.',  '=2F' => '/',
