@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug with ::escape() where floats that start with a . were encoded as `NULL` [wb, 2009-05-09]
  * @changes    1.0.0b8  Added Oracle support, change PostgreSQL code to no longer cause lastval() warnings, added support for arrays of values to ::escape() [wb, 2009-05-03]
  * @changes    1.0.0b7  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b6  Fixed a bug with executing transaction queries when using the mysqli extension [wb, 2009-02-12]
@@ -1056,7 +1057,7 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?[0-9]+(\.[0-9]+)?$#D', $value)) {
+		if (!preg_match('#^[+\-]?([0-9]+(\.[0-9]+)?|(\.[0-9]+))$#D', $value)) {
 			return 'NULL';
 		}
 		return (string) $value;
