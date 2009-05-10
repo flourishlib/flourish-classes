@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed ::prepare() so it does not encode multi-line HTML comments [wb, 2009-05-09]
  * @changes    1.0.0b4  Added methods ::printOption() and ::showChecked() that were in fCRUD [wb, 2009-05-08]
  * @changes    1.0.0b3  Fixed a bug where ::makeLinks() would double-link some URLs [wb, 2009-01-08]
  * @changes    1.0.0b2  Fixed a bug where ::makeLinks() would create links out of URLs in HTML tags [wb, 2008-12-05]
@@ -163,7 +164,7 @@ class fHTML
 	static public function prepare($content)
 	{
 		// Find all html tags, entities and comments
-		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/";
+		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--(.|\n)*?-->/";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		
 		// Find all text
