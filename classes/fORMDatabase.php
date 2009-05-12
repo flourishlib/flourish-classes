@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a bug with ::creatingWhereClause() where a null value would not be escaped property [wb, 2009-05-12]
  * @changes    1.0.0b7  Fixed a bug where an OR condition in ::createWhereClause() could not have one of the values be an array [wb, 2009-04-22]
  * @changes    1.0.0b6  ::insertFromAndGroupByClauses() will no longer wrap ungrouped columns if in a CAST or CASE statement for ORDER BY clauses of queries with a GROUP BY clause [wb, 2009-03-23]
  * @changes    1.0.0b5  Fixed ::parseSearchTerms() to include stop words when they are the only thing in the search string [wb, 2008-12-31]
@@ -153,7 +154,11 @@ class fORMDatabase
 			
 		// A single value
 		} else {
-			$value = $values[0];
+			if ($values === array()) {
+				$value = NULL;
+			} else {
+				$value = current($values);
+			}
 			
 			switch ($operator) {
 				case '=':
