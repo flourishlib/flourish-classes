@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Fixed a bug with ::clearCache() not properly reseting the tables and databases list [wb, 2009-05-13]
  * @changes    1.0.0b16  Backwards Compatibility Break - ::setCacheFile() changed to ::enableCaching() and now requires an fCache object, ::flushInfo() renamed to ::clearCache(), added Oracle support [wb, 2009-05-04]
  * @changes    1.0.0b15  Added support for the three different types of identifier quoting in SQLite [wb, 2009-03-28]
  * @changes    1.0.0b14  Added support for MySQL column definitions containing the COLLATE keyword [wb, 2009-03-28]
@@ -159,12 +160,12 @@ class fSchema
 	public function clearCache()
 	{
 		$this->column_info        = array();
-		$this->databases          = array();
+		$this->databases          = NULL;
 		$this->keys               = array();
 		$this->merged_column_info = array();
 		$this->merged_keys        = array();
 		$this->relationships      = array();
-		$this->tables             = array();
+		$this->tables             = NULL;
 		if ($this->cache) {
 			$prefix = $this->makeCachePrefix();
 			$this->cache->delete($prefix . 'column_info');
