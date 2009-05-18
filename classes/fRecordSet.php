@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
  * @changes    1.0.0b5  ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
  * @changes    1.0.0b4  ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
  * @changes    1.0.0b3  ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
@@ -1409,28 +1410,30 @@ class fRecordSet implements Iterator
 	 * @throws fEmptySetException
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no records in this set
-	 * @return void
+	 * @return fRecordSet  The record set object, to allow for method chaining
 	 */
 	public function tossIfEmpty($message=NULL)
 	{
-		if (!$this->count()) {
-			if ($message === NULL) {
-				if (is_array($this->class)) {
-					$names = array_map(array('fORM', 'getRecordName'), $this->class);
-					$names = array_map(array('fGrammar', 'pluralize'), $names);
-					$name  = join(', ', $names);	
-				} else {
-					$name = fGrammar::pluralize(fORM::getRecordName($this->class));
-				}
-				
-				$message = self::compose(
-					'No %s could be found',
-					$name
-				);	
+		if ($this->count()) {
+			return $this;	
+		}
+		
+		if ($message === NULL) {
+			if (is_array($this->class)) {
+				$names = array_map(array('fORM', 'getRecordName'), $this->class);
+				$names = array_map(array('fGrammar', 'pluralize'), $names);
+				$name  = join(', ', $names);	
+			} else {
+				$name = fGrammar::pluralize(fORM::getRecordName($this->class));
 			}
 			
-			throw new fEmptySetException($message);
+			$message = self::compose(
+				'No %s could be found',
+				$name
+			);	
 		}
+		
+		throw new fEmptySetException($message);
 	}
 	
 	
