@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Added missing support for MySQL mediumint columns [wb, 2009-05-18]
  * @changes    1.0.0b17  Fixed a bug with ::clearCache() not properly reseting the tables and databases list [wb, 2009-05-13]
  * @changes    1.0.0b16  Backwards Compatibility Break - ::setCacheFile() changed to ::enableCaching() and now requires an fCache object, ::flushInfo() renamed to ::clearCache(), added Oracle support [wb, 2009-05-04]
  * @changes    1.0.0b15  Added support for the three different types of identifier quoting in SQLite [wb, 2009-03-28]
@@ -590,6 +591,7 @@ class fSchema
 		$data_type_mapping = array(
 			'tinyint'			=> 'integer',
 			'smallint'			=> 'integer',
+			'mediumint'         => 'integer',
 			'int'				=> 'integer',
 			'bigint'			=> 'integer',
 			'datetime'			=> 'timestamp',
