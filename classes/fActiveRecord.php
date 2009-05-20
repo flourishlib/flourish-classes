@@ -7,14 +7,16 @@
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Fixed bugs in ::__clone() and ::replicate() related to recursive relationships [wb-imarc, 2009-05-20]
  * @changes    1.0.0b15  Fixed an incorrect variable reference in ::store() [wb, 2009-05-06]
  * @changes    1.0.0b14  ::store() no longer tries to get an auto-incrementing ID from the database if a value was set [wb, 2009-05-02]
  * @changes    1.0.0b13  ::delete(), ::load(), ::populate() and ::store() now return the record to allow for method chaining [wb, 2009-03-23]
@@ -55,6 +57,22 @@ abstract class fActiveRecord
 	 * @var array
 	 */
 	static protected $identity_map = array();
+	
+	
+	/**
+	 * Keeps track of the recursive call level of replication so we can clear the map
+	 * 
+	 * @var integer
+	 */
+	static protected $replicate_level = 0;
+	
+	
+	/**
+	 * Keeps a list of records that have been replicated
+	 * 
+	 * @var array
+	 */
+	static protected $replicate_map = array();
 	
 	
 	/**
@@ -393,14 +411,16 @@ abstract class fActiveRecord
 	public function __clone()
 	{
 		// Copy values and cache, making sure objects are cloned to prevent reference issues
-		$temp_values = $this->values;
-		$this->values = array();
+		$temp_values  = $this->values;
+		$new_values   = array();
+		$this->values =& $new_values;
 		foreach ($temp_values as $column => $value) {
 			$this->values[$column] = fORM::replicate($this, $column, $value);
 		}
 		
 		$temp_cache  = $this->cache;
-		$this->cache = array();
+		$new_cache   = array();
+		$this->cache =& $new_cache;
 		foreach ($temp_cache as $key => $value) {
 			if (is_object($value)) {
 				$this->cache[$key] = clone $value;
@@ -410,10 +430,12 @@ abstract class fActiveRecord
 		}
 		
 		// Related records are purged
-		$this->related_records = array();
+		$new_related_records   = array();
+		$this->related_records =& $new_related_records;
 		
 		// Old values are changed to look like the record is non-existant
-		$this->old_values = array();
+		$new_old_values   = array();
+		$this->old_values =& $new_old_values;
 		
 		foreach (array_keys($this->values) as $key) {
 			$this->old_values[$key] = array(NULL);
@@ -1608,14 +1630,29 @@ abstract class fActiveRecord
 	 */
 	public function replicate($related_class=NULL)
 	{
-		$clone = clone $this;
+		fActiveRecord::$replicate_level++;
+		
+		$class = get_class($this);
+		$hash  = self::hash($this->values);
+		
+		// If the object has not been replicated yet, do it now
+		if (!isset(fActiveRecord::$replicate_map[$class])) {
+			fActiveRecord::$replicate_map[$class] = array();
+		}
+		if (!isset(fActiveRecord::$replicate_map[$class][$hash])) {
+			fActiveRecord::$replicate_map[$class][$hash] = clone $this;
+			
+			// We need the primary key to get a hash, otherwise certain recursive relationships end up losing members
+			$table      = fORM::tablize($class);
+			$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
+			if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
+				fActiveRecord::$replicate_map[$class][$hash]->values[$pk_columns[0]] = $this->values[$pk_columns[0]];
+			}
+			
+		}
+		$clone = fActiveRecord::$replicate_map[$class][$hash];
 		
 		$parameters = func_get_args();
-		
-		// If no parameters are passed, we are just doing the clone
-		if (!sizeof($parameters)) {
-			return $clone;
-		}
 		
 		$table = fORM::tablize($this);
 		
@@ -1637,6 +1674,7 @@ abstract class fActiveRecord
 			}			
 		}
 		
+		$record_sets = array();
 		
 		foreach ($parameters as $parameter) {
 			
@@ -1697,6 +1735,22 @@ abstract class fActiveRecord
 			
 			// Cause the related records to be associated with the new clone
 			fORMRelated::associateRecords($this, $clone->related_records, $related_class, $record_set, $route);
+		}
+		
+		fActiveRecord::$replicate_level--;
+		if (!fActiveRecord::$replicate_level) {
+			// This removes the primary keys we had added back in for proper duplicate detection
+			foreach (fActiveRecord::$replicate_map as $class => $records) {
+				$table      = fORM::tablize($class);
+				$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
+				if (sizeof($pk_columns) != 1 || !fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
+					continue;
+				}
+				foreach ($records as $hash => $record) {
+					$record->values[$pk_columns[0]] = NULL;		
+				}	
+			}
+			fActiveRecord::$replicate_map = array();	
 		}
 		
 		return $clone;
@@ -1981,7 +2035,7 @@ abstract class fActiveRecord
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
