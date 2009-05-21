@@ -94,6 +94,8 @@ class fValidation
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -415,7 +417,7 @@ class fValidation
 	/**
 	 * Checks for required fields, email field formatting and email header injection using values previously set
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When one of the options set for the object is violated
 	 * 
 	 * @return void
 	 */

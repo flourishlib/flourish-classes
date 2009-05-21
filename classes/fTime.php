@@ -54,7 +54,7 @@ class fTime
 	/**
 	 * Creates the time to represent, no timezone is allowed since times don't have timezones
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$time` is not a valid time
 	 * 
 	 * @param  fTime|object|string|integer $time  The time to represent, `NULL` is interpreted as now
 	 * @return fTime
@@ -93,6 +93,8 @@ class fTime
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -116,7 +118,7 @@ class fTime
 	/**
 	 * Changes the time by the adjustment specified, only adjustments of `'hours'`, `'minutes'`, and `'seconds'` are allowed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$adjustment` is not a valid relative time measurement
 	 * 
 	 * @param  string $adjustment  The adjustment to make
 	 * @return fTime  The adjusted time
@@ -152,7 +154,7 @@ class fTime
 	/**
 	 * Formats the time
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When a non-time formatting character is included in `$format`
 	 * 
 	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from fTimestamp::defineFormat()
 	 * @return string  The formatted time

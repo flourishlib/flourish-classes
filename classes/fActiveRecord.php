@@ -406,6 +406,8 @@ abstract class fActiveRecord
 	 * clone will return `FALSE` from the ::exists() method until ::store() is
 	 * called.
 	 * 
+	 * @internal
+	 * 
 	 * @return fActiveRecord
 	 */
 	public function __clone()
@@ -455,7 +457,7 @@ abstract class fActiveRecord
 	/**
 	 * Creates a new record or loads one from the database - if a primary key or unique key is provided the record will be loaded
 	 * 
-	 * @throws fNotFoundException
+	 * @throws fNotFoundException  When the record specified by `$key` can not be found in the database
 	 * 
 	 * @param  mixed $key  The primary key or unique key value(s) - single column primary keys will accept a scalar value, all others must be an associative array of `(string) {column} => (mixed) {value}`
 	 * @return fActiveRecord
@@ -581,6 +583,8 @@ abstract class fActiveRecord
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -592,6 +596,8 @@ abstract class fActiveRecord
 	
 	/**
 	 * Configure itself when coming out of the session. Records from the session are NOT hooked into the identity map.
+	 * 
+	 * @internal
 	 * 
 	 * @return void
 	 */
@@ -1112,7 +1118,7 @@ abstract class fActiveRecord
 	/**
 	 * Loads a record from the database
 	 * 
-	 * @throws fNotFoundException
+	 * @throws fNotFoundException  When the record could not be found in the database
 	 * 
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
@@ -1799,7 +1805,7 @@ abstract class fActiveRecord
 	 * This method will start database and filesystem transactions if they have
 	 * not already been started.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When ::validate() throws an exception
 	 * 
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
@@ -1973,7 +1979,7 @@ abstract class fActiveRecord
 	/**
 	 * Validates the values of the record against the database and any additional validation rules
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the record, or one of the associated records, violates one of the validation rules for the class or can not be properly stored in the database
 	 * 
 	 * @param  boolean $return_messages  If an array of validation messages should be returned instead of an exception being thrown
 	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned

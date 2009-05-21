@@ -507,8 +507,6 @@ class fRecordSet implements Iterator
 	 * record in the record set. `precreate` will create a *-to-one record
 	 * for every record in the record set.
 	 *  
-	 * @throws fValidationException
-	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  string $parameters   The parameters passed
 	 * @return void
@@ -577,6 +575,8 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
@@ -719,7 +719,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the current record in the set (used for iteration)
 	 * 
-	 * @throws fNoRemainingException
+	 * @throws fNoRemainingException  When there are no remaining records in the set
 	 * @internal
 	 * 
 	 * @return fActiveRecord  The current record
@@ -851,7 +851,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Returns the current record in the set and moves the pointer to the next
 	 * 
-	 * @throws fNoRemainingException
+	 * @throws fNoRemainingException  When there are no remaining records in the set
 	 * 
 	 * @return fActiveRecord  The current record
 	 */
@@ -876,8 +876,6 @@ class fRecordSet implements Iterator
 	
 	/**
 	 * Returns all of the records in the set
-	 * 
-	 * @throws fValidationException
 	 * 
 	 * @return array  The records in the set
 	 */
@@ -1357,8 +1355,6 @@ class fRecordSet implements Iterator
 	 * 
 	 * This methods uses fUTF8::inatcmp() to perform comparisons.
 	 * 
-	 * @throws fValidationException
-	 * 
 	 * @param  string $method     The method to call on each object to get the value to sort by
 	 * @param  string $direction  Either `'asc'` or `'desc'`
 	 * @return fRecordSet  The record set object, to allow for method chaining
@@ -1390,8 +1386,6 @@ class fRecordSet implements Iterator
 	/**
 	 * Sorts the set by passing the callback to [http://php.net/usort `usort()`] and rewinds the interator
 	 * 
-	 * @throws fValidationException
-	 * 
 	 * @param  mixed $callback  The function/method to pass to `usort()`
 	 * @return fRecordSet  The record set object, to allow for method chaining 
 	 */
@@ -1407,7 +1401,7 @@ class fRecordSet implements Iterator
 	/**
 	 * Throws an fEmptySetException if the record set is empty
 	 * 
-	 * @throws fEmptySetException
+	 * @throws fEmptySetException  When there are no record in the set
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no records in this set
 	 * @return fRecordSet  The record set object, to allow for method chaining

@@ -180,7 +180,7 @@ class fNumber
 	/**
 	 * Normalizes two numbers to the same number of decimal places
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number1` or `$number2` is not a valid number
 	 * 
 	 * @param  fNumber|string $number1  The first number to normalize
 	 * @param  fNumber|string $number2  The second number to normalize
@@ -230,7 +230,7 @@ class fNumber
 	/**
 	 * Parses a number to ensure it is valid
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number
 	 * 
 	 * @param  object|string $number   The number to parse
 	 * @param  string        $element  The element to return: `'number'`, `'integer'`, `'fraction'`, `'array'`
@@ -330,7 +330,7 @@ class fNumber
 	/**
 	 * Adds two numbers together
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number1` or `$number2` is not a valid number
 	 * 
 	 * @param  string  $number1  The first addend
 	 * @param  string  $number2  The second addend
@@ -379,7 +379,7 @@ class fNumber
 	/**
 	 * Divides a number by another
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$dividend` or `$divisor` is not a valid number
 	 * 
 	 * @param  string  $dividend    The number to be divided
 	 * @param  string  $divisor     The number to divide by
@@ -616,7 +616,7 @@ class fNumber
 	/**
 	 * Calculates the integer power of a number
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` or `$power` is not a valid number or when `$power` is outside of the normal 32-bit integer range
 	 * 
 	 * @param  string $number     The number to raise to the power
 	 * @param  string $power      The power to raise to, must be between `−2,147,483,648` and `2,147,483,647`
@@ -663,7 +663,7 @@ class fNumber
 	/**
 	 * Subtracts the second number from the first
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$minuend` or `$subtrahend` is not a valid number
 	 * 
 	 * @param  string $minuend     The number to subtract from
 	 * @param  string $subtrahend  The number to subtract
@@ -863,7 +863,7 @@ class fNumber
 	/**
 	 * Creates a large/precise number
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$value` is not a valid number
 	 * 
 	 * @param  string  $value  The value for the number - any valid PHP integer or float format including values with `e` exponents
 	 * @param  integer $scale  The number of digits after the decimal place, defaults to number of digits in `$value`
@@ -888,6 +888,8 @@ class fNumber
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
@@ -925,7 +927,7 @@ class fNumber
 	/**
 	 * Adds two numbers together
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$addend` is not a valid number
 	 * 
 	 * @param  fNumber|string $addend  The addend
 	 * @param  integer        $scale   The number of places after the decimal - overrides the scale for this number
@@ -973,7 +975,7 @@ class fNumber
 	/**
 	 * Divides this number by the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$divisor` is not a valid number
 	 * 
 	 * @param  fNumber|string $divisor  The divisor
 	 * @param  integer        $scale    The number of places after the decimal - overrides the scale for this number
@@ -1004,7 +1006,7 @@ class fNumber
 	/**
 	 * Indicates if this value is equal to the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number
 	 * 
 	 * @param  fNumber|string $number  The number to compare to
 	 * @param  integer        $scale   The number of decimal places to compare - will use all available if not specified
@@ -1043,8 +1045,6 @@ class fNumber
 	/**
 	 * Rounds the number to the next lowest integer
 	 * 
-	 * @throws fValidationException
-	 * 
 	 * @return fNumber  The next lowest integer
 	 */
 	public function floor()
@@ -1069,7 +1069,7 @@ class fNumber
 	/**
 	 * Returns the float remainder of dividing this number by the divisor provided
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$divisor` is not a valid number
 	 * 
 	 * @param  fNumber|string $divisor  The divisor
 	 * @param  integer        $scale    The number of places after the decimal - overrides the scale for this number
@@ -1152,7 +1152,7 @@ class fNumber
 	/**
 	 * Indicates if this value is greater than the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number
 	 * 
 	 * @param  fNumber|string $number  The number to compare to
 	 * @param  integer        $scale   The number of decimal places to compare - will use all available if not specified
@@ -1175,7 +1175,7 @@ class fNumber
 	/**
 	 * Indicates if this value is greater than or equal to the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number
 	 * 
 	 * @param  fNumber|string $number  The number to compare to
 	 * @param  integer        $scale   The number of decimal places to compare - will use all available if not specified
@@ -1198,7 +1198,7 @@ class fNumber
 	/**
 	 * Indicates if this value is less than the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number 
 	 * 
 	 * @param  fNumber|string $number  The number to compare to
 	 * @param  integer        $scale   The number of decimal places to compare - will use all available if not specified
@@ -1221,7 +1221,7 @@ class fNumber
 	/**
 	 * Indicates if this value is less than or equal to the one passed
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$number` is not a valid number 
 	 * 
 	 * @param  fNumber|string $number  The number to compare to
 	 * @param  integer        $scale   The number of decimal places to compare - will use all available if not specified
@@ -1244,7 +1244,7 @@ class fNumber
 	/**
 	 * Returns the remainder of dividing this number by the divisor provided. All floats are converted to integers.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$divisor` is not a valid number 
 	 * 
 	 * @param  fNumber|string $divisor  The divisor - will be converted to an integer if it is a float
 	 * @return fNumber  The remainder
@@ -1269,7 +1269,7 @@ class fNumber
 	/**
 	 * Multiplies two numbers
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$multiplier` is not a valid number 
 	 * 
 	 * @param  fNumber|string $multiplier  The multiplier
 	 * @param  integer        $scale       The number of places after the decimal - overrides the scale for this number
@@ -1308,7 +1308,7 @@ class fNumber
 	/**
 	 * Raise this number to the power specified
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$exponent` is not a valid number 
 	 * 
 	 * @param  integer $exponent  The power to raise to - all non integer values will be truncated to integers
 	 * @param  integer $scale     The number of places after the decimal - overrides the scale for this number
@@ -1334,7 +1334,7 @@ class fNumber
 	 * This method is faster than doing `$num->pow($exponent)->mod($modulus)`
 	 * and is primarily useful for cryptographic functionality.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$exponent` or `$modulus` is not a valid number 
 	 * 
 	 * @param  fNumber|string $exponent  The power to raise to - all non integer values will be truncated to integers
 	 * @param  fNumber|string $modulus   The value to divide by - all non integer values will be truncated to integers
@@ -1394,8 +1394,6 @@ class fNumber
 	
 	/**
 	 * Rounds this number to the specified number of digits after the decimal - negative scales round the number by places to the left of the decimal
-	 * 
-	 * @throws fValidationException
 	 * 
 	 * @param  integer $scale  The number of places after (or before if negative) the decimal to round to
 	 * @return fNumber  The rounded result
@@ -1551,7 +1549,7 @@ class fNumber
 	/**
 	 * Subtracts two numbers
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$subtrahend` is not a valid number 
 	 * 
 	 * @param  fNumber|string $subtrahend  The subtrahend
 	 * @param  integer        $scale       The number of places after the decimal - overrides the scale for this number

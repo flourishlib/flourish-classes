@@ -91,7 +91,7 @@ class fImage extends fFile
 	 * This operation will be reverted by a filesystem transaction being rolled
 	 * back.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no image was specified or when the image already exists
 	 * 
 	 * @param  string $file_path  The path to the new image
 	 * @param  string $contents   The contents to write to the image
@@ -283,7 +283,7 @@ class fImage extends fFile
 	 *  - `'png'`
 	 *  - `'tif'`
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the file specified is not an image
 	 * 
 	 * @param  string $image_path  The path to the image to get stats for
 	 * @param  string $element     The element to retrieve: `'type'`, `'width'`, `'height'`
@@ -347,7 +347,7 @@ class fImage extends fFile
 	 * 
 	 * @internal
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the image specified does not exist
 	 * 
 	 * @param  string $image  The image to check for incompatibility
 	 * @return boolean  If the image is compatible with the detected image processor
@@ -484,7 +484,7 @@ class fImage extends fFile
 	/**
 	 * Creates an object to represent an image on the filesystem
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no image was specified, when the image does not exist or when the path specified is not an image
 	 * 
 	 * @param  string $file_path  The path to the image
 	 * @return fImage

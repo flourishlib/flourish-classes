@@ -482,7 +482,6 @@ class fORMDatabase
 	 * If you are looking to build a primary key where clause from the `$values`
 	 * and `$old_values` arrays, please see ::createPrimaryKeyWhereClause()
 	 * 
-	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $table         The table to build the where clause for
@@ -648,7 +647,6 @@ class fORMDatabase
 	/**
 	 * Escapes a value for a DB call based on database schema
 	 * 
-	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  string $table                The table to store the value

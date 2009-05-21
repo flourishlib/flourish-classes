@@ -30,7 +30,7 @@ class fDirectory
 	 * 
 	 * This operation will be reverted by a filesystem transaction being rolled back.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no directory was specified, or the directory already exists
 	 * 
 	 * @param  string  $directory  The path to the new directory
 	 * @param  numeric $mode       The mode (permissions) to use when creating the directory. This should be an octal number (requires a leading zero). This has no effect on the Windows platform.
@@ -108,7 +108,7 @@ class fDirectory
 	 * they will reflect changes in each other including rename and delete
 	 * actions.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no directory was specified, when the directory does not exist or when the path specified is not a directory
 	 * 
 	 * @param  string $directory  The path to the directory
 	 * @return fDirectory
@@ -147,6 +147,8 @@ class fDirectory
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested

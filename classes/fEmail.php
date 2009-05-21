@@ -345,6 +345,8 @@ class fEmail
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -935,7 +937,7 @@ class fEmail
 	/**
 	 * Sends the email
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When ::validate() throws an exception
 	 * 
 	 * @return void
 	 */
@@ -1185,7 +1187,7 @@ class fEmail
 	/**
 	 * Validates that all of the parts of the email are valid
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When part of the email is missing or formatted incorrectly
 	 * 
 	 * @return void
 	 */

@@ -187,7 +187,7 @@ class fFilesystem
 	/**
 	 * Takes a filesystem path and creates either an fDirectory, fFile or fImage object from it
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no path was specified or the path specified does not exist
 	 * 
 	 * @param  string $path  The path to the filesystem object
 	 * @return fDirectory|fFile|fImage

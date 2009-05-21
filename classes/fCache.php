@@ -137,6 +137,8 @@ class fCache
 	/**
 	 * Cleans up after the cache object
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function __destruct()

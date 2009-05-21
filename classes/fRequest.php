@@ -560,7 +560,7 @@ class fRequest
 	 * This method takes a request token and ensures it is valid, otherwise
 	 * it will throw an fValidationException.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the CSRF token specified is invalid
 	 * 
 	 * @param  string $token  The request token to validate
 	 * @param  string $url    The URL to validate the token for, default to the current page

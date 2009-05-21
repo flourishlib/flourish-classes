@@ -52,7 +52,7 @@ class fCryptography
 	/**
 	 * Create a private key resource based on a filename and password
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the private key is invalid
 	 * 
 	 * @param  string $private_key_file  The path to a PEM-encoded private key
 	 * @param  string $password          The password for the private key
@@ -160,7 +160,7 @@ class fCryptography
 	 * A public key (X.509 certificate) is required for encryption and a
 	 * private key (PEM) is required for decryption.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the ciphertext appears to be corrupted
 	 * 
 	 * @param  string $ciphertext        The content to be decrypted
 	 * @param  string $private_key_file  The path to a PEM-encoded private key
@@ -249,7 +249,7 @@ class fCryptography
 	 * A private key (PEM) is required for signing and a public key
 	 * (X.509 certificate) is required for verification.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the private key is invalid
 	 * 
 	 * @param  string $plaintext         The content to be signed
 	 * @param  string $private_key_file  The path to a PEM-encoded private key
@@ -423,7 +423,7 @@ class fCryptography
 	 * Since this is symmetric-key cryptography, the same key is used for
 	 * encryption and decryption.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When the ciphertext appears to be corrupted
 	 * 
 	 * @param  string $ciphertext  The content to be decrypted
 	 * @param  string $secret_key  The secret key to use for decryption

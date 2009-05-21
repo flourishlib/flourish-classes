@@ -397,7 +397,6 @@ class fORMRelated
 	/**
 	 * Sets the values for records in a one-to-many relationship with this record
 	 * 
-	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
@@ -676,7 +675,6 @@ class fORMRelated
 	/**
 	 * Associates a set of many-to-many related records with the current record
 	 * 
-	 * @throws fValidationException
 	 * @internal
 	 * 
 	 * @param  array      &$values       The current values for the main record being stored
@@ -717,7 +715,7 @@ class fORMRelated
 	/**
 	 * Stores a set of one-to-many related records in the database
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When one of the "many" records throws an exception from fActiveRecord::store()
 	 * @internal
 	 * 
 	 * @param  array      &$values       The current values for the main record being stored

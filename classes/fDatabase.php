@@ -253,6 +253,8 @@ class fDatabase
 	/**
 	 * Closes the open database connection
 	 * 
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function __destruct()
@@ -284,6 +286,8 @@ class fDatabase
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
+	 * 
+	 * @internal
 	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
@@ -2244,7 +2248,7 @@ class fDatabase
 	 *  - `'date'` (or `'%d'`)
 	 *  - `'float'` (or `'%f'`)
 	 *  - `'integer'` (or `'%i'`)
-	 *  - `'string'` (also `'%s, `'varchar'`, `'char'` or `'text'`)
+	 *  - `'string'` (also `'%s'`, `'varchar'`, `'char'` or `'text'`)
 	 *  - `'time'` (or `'%t'`)
 	 *  - `'timestamp'` (or `'%p'`)
 	 * 

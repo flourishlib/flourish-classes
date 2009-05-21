@@ -172,6 +172,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -260,8 +262,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the current row in the result set (required by iterator interface)
 	 * 
-	 * @throws fNoRowsException
-	 * @throws fNoRemainingException
+	 * @throws fNoRowsException       When the query did not return any rows
+	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * @internal
 	 * 
 	 * @return array  The current row
@@ -319,8 +321,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the row next row in the result set (where the pointer is currently assigned to)
 	 * 
-	 * @throws fNoRowsException
-	 * @throws fNoRemainingException
+	 * @throws fNoRowsException       When the query did not return any rows
+	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * 
 	 * @return array  The associative array of the row
 	 */
@@ -440,7 +442,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Returns the current row number (required by iterator interface)
 	 * 
-	 * @throws fNoRowsException
+	 * @throws fNoRowsException       When the query did not return any rows
+	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * @internal
 	 * 
 	 * @return integer  The current row number
@@ -460,7 +463,8 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Advances to the next row in the result (required by iterator interface)
 	 * 
-	 * @throws fNoRowsException
+	 * @throws fNoRowsException       When the query did not return any rows
+	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * @internal
 	 * 
 	 * @return void
@@ -542,7 +546,7 @@ class fUnbufferedResult implements Iterator
 	/**
 	 * Throws an fNoResultException if the query did not return any rows
 	 * 
-	 * @throws fNoRowsException
+	 * @throws fNoRowsException  When the query did not return any rows
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no rows in this result set
 	 * @return void

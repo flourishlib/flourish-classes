@@ -703,7 +703,7 @@ class fTimestamp
 	/**
 	 * Creates the date/time to represent
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$datetime` is not a valid date/time, date or time value
 	 * 
 	 * @param  fTimestamp|object|string|integer $datetime  The date/time to represent, `NULL` is interpreted as now
 	 * @param  string $timezone  The timezone for the date/time. This causes the date/time to be interpretted as being in the specified timezone. If not specified, will default to timezone set by ::setDefaultTimezone().
@@ -763,6 +763,8 @@ class fTimestamp
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -786,7 +788,7 @@ class fTimestamp
 	/**
 	 * Changes the date/time by the adjustment specified
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$adjustment` is not a valid relative date/time measurement or timezone
 	 * 
 	 * @param  string $adjustment  The adjustment to make - may be a relative adjustment or a different timezone
 	 * @return fTimestamp  The adjusted date/time

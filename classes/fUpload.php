@@ -113,6 +113,8 @@ class fUpload
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -186,7 +188,7 @@ class fUpload
 	/**
 	 * Moves an uploaded file from the temp directory to a permanent location
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$directory` is somehow invalid or ::validate() thows an exception
 	 * 
 	 * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @param  string            $field      The file upload field to get the file from
@@ -262,7 +264,7 @@ class fUpload
 	/**
 	 * Validates the uploaded file, ensuring a file was actually uploaded and that is matched the restrictions put in place
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no file is uploaded or the uploaded file violates the options set for this object
 	 * 
 	 * @param  string  $field  The field the file was uploaded through
 	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate

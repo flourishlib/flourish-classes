@@ -53,7 +53,7 @@ class fDate
 	/**
 	 * Creates the date to represent, no timezone is allowed since dates don't have timezones
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$date` is not a valid date
 	 * 
 	 * @param  fDate|object|string|integer $date  The date to represent, `NULL` is interpreted as today
 	 * @return fDate
@@ -92,6 +92,8 @@ class fDate
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -115,7 +117,7 @@ class fDate
 	/**
 	 * Changes the date by the adjustment specified, only adjustments of a day or more will be made
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When `$adjustment` is not a relative date measurement
 	 * 
 	 * @param  string $adjustment  The adjustment to make
 	 * @return fDate  The adjusted date
@@ -151,7 +153,7 @@ class fDate
 	/**
 	 * Formats the date
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When a non-date formatting character is included in `$format`
 	 * 
 	 * @param  string $format  The [http://php.net/date date()] function compatible formatting string, or a format name from fTimestamp::defineFormat()
 	 * @return string  The formatted date

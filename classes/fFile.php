@@ -41,7 +41,7 @@ class fFile implements Iterator
 	 * 
 	 * This operation will be reverted by a filesystem transaction being rolled back.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no file was specified or the file already exists
 	 * 
 	 * @param  string $file_path  The path to the new file
 	 * @param  string $contents   The contents to write to the file, must be a non-NULL value to be written
@@ -447,6 +447,8 @@ class fFile implements Iterator
 	/**
 	 * Duplicates a file in the current directory when the object is cloned
 	 * 
+	 * @internal
+	 * 
 	 * @return fFile  The new fFile object
 	 */
 	public function __clone()
@@ -483,7 +485,7 @@ class fFile implements Iterator
 	 * If multiple fFile objects are created for a single file, they will
 	 * reflect changes in each other including rename and delete actions.
 	 * 
-	 * @throws fValidationException
+	 * @throws fValidationException  When no file was specified, the file does not exist or the path specified is not a file
 	 * 
 	 * @param  string $file  The path to the file
 	 * @return fFile
@@ -527,6 +529,8 @@ class fFile implements Iterator
 	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
+	 * @internal
+	 * 
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
@@ -539,6 +543,8 @@ class fFile implements Iterator
 	/**
 	 * The iterator information doesn't need to be serialized since a resource can't be
 	 *
+	 * @internal
+	 * 
 	 * @return array  The instance variables to serialize
 	 */
 	public function __sleep()
@@ -561,6 +567,8 @@ class fFile implements Iterator
 	/**
 	 * Re-inserts the file back into the filesystem map when unserialized
 	 *
+	 * @internal
+	 * 
 	 * @return void
 	 */
 	public function __wakeup()
@@ -580,7 +588,7 @@ class fFile implements Iterator
 	/**
 	 * Returns the current line of the file (required by iterator interface)
 	 * 
-	 * @throws fNoRemainingException
+	 * @throws fNoRemainingException   When there are no remaining lines in the file
 	 * @internal
 	 * 
 	 * @return array  The current row
@@ -901,7 +909,7 @@ class fFile implements Iterator
 	/**
 	 * Returns the current one-based line number (required by iterator interface)
 	 * 
-	 * @throws fNoRemainingException
+	 * @throws fNoRemainingException  When there are no remaining lines in the file
 	 * @internal
 	 * 
 	 * @return integer  The current line number
@@ -924,7 +932,7 @@ class fFile implements Iterator
 	/**
 	 * Advances to the next line in the file (required by iterator interface)
 	 * 
-	 * @throws fNoRemainingException
+	 * @throws fNoRemainingException  When there are no remaining lines in the file
 	 * @internal
 	 * 
 	 * @return void
