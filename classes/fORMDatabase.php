@@ -769,7 +769,7 @@ class fORMDatabase
 	 * 
 	 * {{{
 	 * SELECT users.* FROM :from_clause WHERE groups.group_id = 5 :group_by_clause ORDER BY lower(users.first_name) ASC
-	 * <}}}
+	 * }}}
 	 * 
 	 * @internal
 	 * 
