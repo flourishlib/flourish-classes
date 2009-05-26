@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Update code to only translate data types inside of `CREATE TABLE` queries [wb, 2009-05-22]
  * @changes    1.0.0b4  Added the missing ::__get() method for callback support [wb, 2009-05-06]
  * @changes    1.0.0b3  Added Oracle and caching support, various bug fixes [wb, 2009-05-04]
  * @changes    1.0.0b2  Fixed a notice with SQLite foreign key constraints having no `ON` clauses [wb, 2009-02-21]
@@ -779,113 +780,77 @@ class fSQLTranslation
 	 */
 	private function translateBasicSyntax($sql)
 	{
-		// SQLite fixes
-		if ($this->database->getType() == 'sqlite') {
+		if ($this->database->getType() == 'mssql') {
+			$regex = array(
+				'#\bbegin\s*(?!tran)#i' => 'BEGIN TRANSACTION ',
+				'#\brandom\(#i'         => 'RAND(',
+				'#\batan2\(#i'          => 'ATN2(',
+				'#\bceil\(#i'           => 'CEILING(',
+				'#\bln\(#i'             => 'LOG(',
+				'#\blength\(#i'         => 'LEN(',
+				'#\bsubstr\(#i'			=> 'SUBSTRING(',
+				'#\btrue\b#i'           => "'1'",
+				'#\bfalse\b#i'          => "'0'",
+				'#\|\|#i'               => '+',
+				'#\btrim\(\s*((?>[^(),]+|\((?1)\)|\(\))+)\s*\)#i'  => 'RTRIM(LTRIM(\1))',
+				'#\bround\(\s*((?>[^(),]+|\((?1)\)|\(\))+)\s*\)#i' => 'round(\1, 0)',
+				'#\blog\(\s*((?>[^(),]+|\((?1)(?:,(?1))?\)|\(\))+)\s*,\s*((?>[^(),]+|\((?2)(?:,(?2))?\)|\(\))+)\s*\)#i' => '(LOG(\2)/LOG(\1))'
+			);
+		
+		
+		} elseif ($this->database->getType() == 'mysql') {
+			$regex = array(
+				'#\brandom\(#i' => 'rand(',
+				'#\bpi\(\)#i'   => '(pi()+0.0000000000000)'
+			);
+		
+		
+		} elseif ($this->database->getType() == 'oracle') {
+			$regex = array(
+				'#\btrue\b#i'     => '1',
+				'#\bfalse\b#i'    => '0',
+				'#\bceiling\(#i'  => 'CEIL(',
+				'#\brandom\(\)#i' => '(ABS(DBMS_RANDOM.RANDOM)/2147483647)',
+				'#\bpi\(\)#i'     => '3.14159265358979',
+				'#\bcot\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i'     => '(1/TAN(\1))',
+				'#\bdegrees\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i' => '(\1 * 57.295779513083)',
+				'#\bradians\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i' => '(\1 * 0.017453292519943)',
+				'#(?:\b|^)((?>[^()%\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*%\s*((?>[^()\s]+|\(((?:[^()]+|\((?4)\))*)\))+)(?:\b|$)#i'   => 'MOD(\1, \3)',
+				'#(?:\b|^)((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s+LIKE\s+((?>[^()\s]+|\(((?:[^()]+|\((?4)\))*)\))+)(?:\b|$)#i' => 'LOWER(\1) LIKE LOWER(\3)'
+			);
+		
+		
+		} elseif ($this->database->getType() == 'postgresql') {
+			$regex = array(
+				'#\b([\w.]+)\s+like\b#i' => 'CAST(\1 AS VARCHAR) ILIKE',
+				'#\blike\b#i'            => 'ILIKE'
+			);
+		
+		
+		} elseif ($this->database->getType() == 'sqlite') {
 			
-			if ($this->database->getType() == 'sqlite' && $this->database->getExtension() == 'pdo') {
-				$regex_sqlite = array(
-					'#\binteger(?:\(\d+\))?\s+autoincrement\s+primary\s+key\b#i'  => 'INTEGER PRIMARY KEY AUTOINCREMENT',
-					'#\bcurrent_timestamp\b#i'                                    => "datetime(CURRENT_TIMESTAMP, 'localtime')",
-					'#\btrue\b#i'                                                 => "'1'",
-					'#\bfalse\b#i'                                                => "'0'",
-					'#\brandom\(\)#i'                                             => '(ABS(RANDOM())/9223372036854775807)'
+			if ($this->database->getExtension() == 'pdo') {
+				$regex = array(
+					'#\bcurrent_timestamp\b#i' => "datetime(CURRENT_TIMESTAMP, 'localtime')",
+					'#\btrue\b#i'              => "'1'",
+					'#\bfalse\b#i'             => "'0'",
+					'#\brandom\(\)#i'          => '(ABS(RANDOM())/9223372036854775807)'
 				);
 			} else {
-				$regex_sqlite = array(
-					'#\binteger(?:\(\d+\))?\s+autoincrement\s+primary\s+key\b#i'  => 'INTEGER PRIMARY KEY',
-					'#\bcurrent_timestamp\b#i'                                    => "CURRENT_TIMESTAMP()",
-					'#\bcurrent_time\b#i'                                         => "CURRENT_TIME()",
-					'#\bcurrent_date\b#i'                                         => "CURRENT_DATE()",
-					'#\btrue\b#i'                                                 => "'1'",
-					'#\bfalse\b#i'                                                => "'0'",
-					'#\brandom\(\)#i'                                             => '(ABS(RANDOM())/9223372036854775807)',
+				$regex = array(
+					'#\bcurrent_timestamp\b#i' => "CURRENT_TIMESTAMP()",
+					'#\bcurrent_time\b#i'      => "CURRENT_TIME()",
+					'#\bcurrent_date\b#i'      => "CURRENT_DATE()",
+					'#\btrue\b#i'              => "'1'",
+					'#\bfalse\b#i'             => "'0'",
+					'#\brandom\(\)#i'          => '(ABS(RANDOM())/9223372036854775807)',
 					// SQLite 2 doesn't support CAST, but is also type-less, so we remove it
 					'#\bcast\(\s*((?:[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s+as\s+(?:[^()\s]+|\(((?:[^()]+|\((?3)\))*)\))+\s*\)#i'	=> '\1'
 				);
 			}
-			
-			return preg_replace(array_keys($regex_sqlite), array_values($regex_sqlite), $sql);
 		}
 		
-		// PostgreSQL fixes
-		if ($this->database->getType() == 'postgresql') {
-			static $regex_postgresql = array(
-				'#\b([\w.]+)\s+like\b#i'                     => 'CAST(\1 AS VARCHAR) ILIKE',
-				'#\blike\b#i'                                => 'ILIKE',
-				'#\bblob\b#i'                                => 'BYTEA',
-				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'SERIAL'
-			);
-			
-			return preg_replace(array_keys($regex_postgresql), array_values($regex_postgresql), $sql);
-		}
-		
-		// MySQL fixes
-		if ($this->database->getType() == 'mysql') {
-			static $regex_mysql = array(
-				'#\brandom\(#i'                              => 'rand(',
-				'#\btext\b#i'                                => 'MEDIUMTEXT',
-				'#\bblob\b#i'                                => 'LONGBLOB',
-				'#\btimestamp\b#i'                           => 'DATETIME',
-				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'INTEGER AUTO_INCREMENT',
-				'#\bpi\(\)#i'					             => '(pi()+0.0000000000000)'
-			);
-		
-			return preg_replace(array_keys($regex_mysql), array_values($regex_mysql), $sql);
-		}
-		
-		// MSSQL fixes
-		if ($this->database->getType() == 'mssql') {
-			static $regex_mssql = array(
-				'#\bbegin\s*(?!tran)#i'                      => 'BEGIN TRANSACTION ',
-				'#\brandom\(#i'                              => 'RAND(',
-				'#\batan2\(#i'                               => 'ATN2(',
-				'#\bceil\(#i'                                => 'CEILING(',
-				'#\bln\(#i'                                  => 'LOG(',
-				'#\blength\(#i'                              => 'LEN(',
-				'#\bsubstr\(#i'					             => 'SUBSTRING(',
-				'#\bblob\b#i'                                => 'IMAGE',
-				'#\btimestamp\b#i'                           => 'DATETIME',
-				'#\btime\b#i'                                => 'DATETIME',
-				'#\bdate\b#i'                                => 'DATETIME',
-				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'INTEGER IDENTITY(1,1)',
-				'#\bboolean\b#i'                             => 'BIT',
-				'#\bvarchar\b#i'                             => 'NVARCHAR',
-				'#\bchar\b#i'                                => 'NCHAR',
-				'#\btext\b#i'                                => 'NTEXT',
-				'#\btrue\b#i'                                => "'1'",
-				'#\bfalse\b#i'                               => "'0'",
-				'#\|\|#i'                                    => '+',
-				// These wrap multiple mssql functions to accomplish another function
-				'#\blog\(\s*((?>[^(),]+|\((?1)(?:,(?1))?\)|\(\))+)\s*,\s*((?>[^(),]+|\((?2)(?:,(?2))?\)|\(\))+)\s*\)#i' => '(LOG(\2)/LOG(\1))',
-				'#\btrim\(\s*((?>[^(),]+|\((?1)\)|\(\))+)\s*\)#i'                                                       => 'RTRIM(LTRIM(\1))',
-				'#\bround\(\s*((?>[^(),]+|\((?1)\)|\(\))+)\s*\)#i'                                                      => 'round(\1, 0)'
-			);
-		
-			return preg_replace(array_keys($regex_mssql), array_values($regex_mssql), $sql);
-		}
-		
-		// Oracle fixes
-		if ($this->database->getType() == 'oracle') {
-			static $regex_oracle = array(
-				'#\bbigint\b#i'                  => 'INTEGER',
-				'#\bboolean\b#i'                 => 'NUMBER(1)',
-				'#\btext\b#i'                    => 'CLOB',
-				'#\bvarchar\b#i'                 => 'VARCHAR2',
-				'#\btime\b#i'                    => 'TIMESTAMP',
-				'#\btrue\b#i'                    => '1',
-				'#\bfalse\b#i'                   => '0',
-				'#(?:\b|^)((?>[^()%\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*%\s*((?>[^()\s]+|\(((?:[^()]+|\((?4)\))*)\))+)(?:\b|$)#i'   => 'MOD(\1, \3)',
-				'#(?:\b|^)((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s+LIKE\s+((?>[^()\s]+|\(((?:[^()]+|\((?4)\))*)\))+)(?:\b|$)#i' => 'LOWER(\1) LIKE LOWER(\3)',
-				'#\bcot\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i'                                                      => '(1/TAN(\1))',
-				'#\bceiling\(#i'                 => 'CEIL(',
-				'#\brandom\(\)#i'                => '(ABS(DBMS_RANDOM.RANDOM)/2147483647)',
-				'#\bpi\(\)#i'					 => '3.14159265358979',
-				'#\bdegrees\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i' => '(\1 * 57.295779513083)',
-				'#\bradians\(\s*((?>[^()\s]+|\(((?:[^()]+|\((?2)\))*)\))+)\s*\)#i' => '(\1 * 0.017453292519943)',
-			);
-		
-			return preg_replace(array_keys($regex_oracle), array_values($regex_oracle), $sql);
-		}
+		return preg_replace(array_keys($regex), array_values($regex), $sql);
 	}
 	
 	
@@ -898,12 +863,43 @@ class fSQLTranslation
 	 */
 	private function translateCreateTableStatements($sql, &$extra_statements)
 	{
-		if (stripos($sql, 'CREATE TABLE') === FALSE) {
+		if (!preg_match('#^\s*CREATE\s+TABLE\s+(\w+)#i', $sql, $table_matches) ) {
 			return $sql;	
 		}
 		
-		// Make sure MySQL uses InnoDB tables
-		if ($this->database->getType() == 'mysql') {
+		$table = $table_matches[1];
+		
+		if ($this->database->getType() == 'mssql') {
+			
+			// Data type translation
+			$regex = array(
+				'#\bblob\b#i'                                => 'IMAGE',
+				'#\btimestamp\b#i'                           => 'DATETIME',
+				'#\btime\b#i'                                => 'DATETIME',
+				'#\bdate\b#i'                                => 'DATETIME',
+				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'INTEGER IDENTITY(1,1)',
+				'#\bboolean\b#i'                             => 'BIT',
+				'#\bvarchar\b#i'                             => 'NVARCHAR',
+				'#\bchar\b#i'                                => 'NCHAR',
+				'#\btext\b#i'                                => 'NTEXT'
+			);
+			
+			$sql = preg_replace(array_keys($regex), array_values($regex), $sql);	
+		
+		
+		} elseif ($this->database->getType() == 'mysql') {
+			
+			// Data type translation
+			$regex = array(
+				'#\btext\b#i'                                => 'MEDIUMTEXT',
+				'#\bblob\b#i'                                => 'LONGBLOB',
+				'#\btimestamp\b#i'                           => 'DATETIME',
+				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'INTEGER AUTO_INCREMENT'
+			);
+			
+			$sql = preg_replace(array_keys($regex), array_values($regex), $sql);
+			
+			// Make sure MySQL uses InnoDB tables, translate check constraints to enums and fix column-level foreign key definitions
 			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\(\d+\))?(?:\s+unsigned|\s+zerofill|\s+character\s+set\s+[^ ]+|\s+collate\s+[^ ]+|\s+NULL|\s+NOT\s+NULL|(\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|\s+UNIQUE|\s+PRIMARY\s+KEY|(\s+CHECK\s*\(\w+\s+IN\s+(\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\))\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(,|\s*(?=\)))#mi', $sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
@@ -926,71 +922,24 @@ class fSQLTranslation
 			$sql = preg_replace('#\)\s*;?\s*$#D', ')ENGINE=InnoDB', $sql);
 		
 		
-		// Create foreign key triggers for SQLite
-		} elseif ($this->database->getType() == 'sqlite' && preg_match('#CREATE\s+TABLE\s+(\w+)#i', $sql, $table_matches) !== FALSE && stripos($sql, 'REFERENCES') !== FALSE) {
-			
-			$referencing_table = $table_matches[1];
-			
-			preg_match_all('#(?:(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?)?\s*(?:,|\s*(?=\)))|(?<=,|\()\s*FOREIGN\s+KEY\s*(?:(\w+)|\((\w+)\))\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?\s*(?:,|\s*(?=\))))#mi', $sql, $matches, PREG_SET_ORDER);
-			
-			$not_null_columns = array();
-			foreach ($matches as $match) {
-				// Find all of the not null columns
-				if (!empty($match[2])) {
-					$not_null_columns[] = $match[1];
-				}
-				
-				// If neither of these fields is matched, we don't have a foreign key
-				if (empty($match[3]) && empty($match[10])) {
-					continue;
-				}
-				
-				// 8 and 9 will be an either/or set, so homogenize
-				if (empty($match[9]) && !empty($match[8])) { $match[9] = $match[8]; }
-				
-				// Handle column level foreign key inserts/updates
-				if ($match[1]) {
-					$this->createSQLiteForeignKeyTriggerValidInsertUpdate($extra_statements, $referencing_table, $match[1], $match[4], $match[5], in_array($match[1], $not_null_columns));
-				
-				// Handle table level foreign key inserts/update
-				} elseif ($match[9]) {
-					$this->createSQLiteForeignKeyTriggerValidInsertUpdate($extra_statements, $referencing_table, $match[9], $match[10], $match[11], in_array($match[9], $not_null_columns));
-				}
-				
-				// If none of these fields is matched, we don't have on delete or on update clauses
-				if (empty($match[6]) && empty($match[7]) && empty($match[12]) && empty($match[13])) {
-					continue;
-				}
-				
-				// Handle column level foreign key delete/update clauses
-				if (!empty($match[3])) {
-					if ($match[6]) {
-						$this->createSQLiteForeignKeyTriggerOnDelete($extra_statements, $referencing_table, $match[1], $match[4], $match[5], $match[6]);
-					}
-					if (!empty($match[7])) {
-						$this->createSQLiteForeignKeyTriggerOnUpdate($extra_statements, $referencing_table, $match[1], $match[4], $match[5], $match[7]);
-					}
-					continue;
-				}
-				
-				// Handle table level foreign key delete/update clauses
-				if ($match[12]) {
-					$this->createSQLiteForeignKeyTriggerOnDelete($extra_statements, $referencing_table, $match[9], $match[10], $match[11], $match[12]);
-				}
-				if ($match[13]) {
-					$this->createSQLiteForeignKeyTriggerOnUpdate($extra_statements, $referencing_table, $match[9], $match[10], $match[11], $match[13]);
-				}
-			}
+		} elseif ($this->database->getType() == 'oracle') {
 		
-		
-		// Create sequences and triggers for Oracle
-		} elseif ($this->database->getType() == 'oracle' && preg_match('#CREATE\s+TABLE\s+(\w+)#i', $sql, $table_matches) !== FALSE && stripos($sql, 'autoincrement') !== FALSE) {
+			// Data type translation
+			$regex = array(
+				'#\bbigint\b#i'                  => 'INTEGER',
+				'#\bboolean\b#i'                 => 'NUMBER(1)',
+				'#\btext\b#i'                    => 'CLOB',
+				'#\bvarchar\b#i'                 => 'VARCHAR2',
+				'#\btime\b#i'                    => 'TIMESTAMP'
+			);
 			
-			if (preg_match('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?.*?\bAUTOINCREMENT\b[^,\)]*(?:,|\s*(?=\)))#mi', $sql, $matches)) {
-				$table_name    = $table_matches[1];
+			$sql = preg_replace(array_keys($regex), array_values($regex), $sql);
+			
+			// Create sequences and triggers for Oracle
+			if (stripos($sql, 'autoincrement') !== FALSE && preg_match('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?.*?\bAUTOINCREMENT\b[^,\)]*(?:,|\s*(?=\)))#mi', $sql, $matches)) {
 				$column        = $matches[1];
 				
-				$table_column  = substr($table_name . '_' . $column, 0, 26);
+				$table_column  = substr($table . '_' . $column, 0, 26);
 				
 				$sequence_name = $table_column . '_seq';
 				$trigger_name  = $table_column . '_trg';
@@ -998,7 +947,7 @@ class fSQLTranslation
 				$sequence = 'CREATE SEQUENCE ' . $sequence_name;
 				
 				$trigger  = 'CREATE OR REPLACE TRIGGER '. $trigger_name . "\n";
-				$trigger .= "BEFORE INSERT ON " . $table_name . "\n";
+				$trigger .= "BEFORE INSERT ON " . $table . "\n";
 				$trigger .= "FOR EACH ROW\n";
 				$trigger .= "BEGIN\n";
 				$trigger .= "  IF :new." . $column . " IS NULL THEN\n";
@@ -1011,7 +960,82 @@ class fSQLTranslation
 				
 				$sql = preg_replace('#\s+autoincrement\b#i', '', $sql);
 			}
+		
 					
+		} elseif ($this->database->getType() == 'postgresql') {
+			
+			// Data type translation
+			$regex = array(
+				'#\bblob\b#i'                                => 'BYTEA',
+				'#\binteger(?:\(\d+\))?\s+autoincrement\b#i' => 'SERIAL'
+			);
+			
+			$sql = preg_replace(array_keys($regex), array_values($regex), $sql);
+		
+			
+		} elseif ($this->database->getType() == 'sqlite') {
+		
+			// Data type translation
+			if ($this->database->getExtension() == 'pdo') {
+				$sql = preg_replace('#\binteger(?:\(\d+\))?\s+autoincrement\s+primary\s+key\b#i', 'INTEGER PRIMARY KEY AUTOINCREMENT', $sql);
+			} else {
+				$sql = preg_replace('#\binteger(?:\(\d+\))?\s+autoincrement\s+primary\s+key\b#i', 'INTEGER PRIMARY KEY', $sql);
+			}
+			
+			// Create foreign key triggers for SQLite
+			if (stripos($sql, 'REFERENCES') !== FALSE) {
+				
+				preg_match_all('#(?:(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?)?\s*(?:,|\s*(?=\)))|(?<=,|\()\s*FOREIGN\s+KEY\s*(?:(\w+)|\((\w+)\))\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL)))?\s*(?:,|\s*(?=\))))#mi', $sql, $matches, PREG_SET_ORDER);
+				
+				$not_null_columns = array();
+				foreach ($matches as $match) {
+					// Find all of the not null columns
+					if (!empty($match[2])) {
+						$not_null_columns[] = $match[1];
+					}
+					
+					// If neither of these fields is matched, we don't have a foreign key
+					if (empty($match[3]) && empty($match[10])) {
+						continue;
+					}
+					
+					// 8 and 9 will be an either/or set, so homogenize
+					if (empty($match[9]) && !empty($match[8])) { $match[9] = $match[8]; }
+					
+					// Handle column level foreign key inserts/updates
+					if ($match[1]) {
+						$this->createSQLiteForeignKeyTriggerValidInsertUpdate($extra_statements, $table, $match[1], $match[4], $match[5], in_array($match[1], $not_null_columns));
+					
+					// Handle table level foreign key inserts/update
+					} elseif ($match[9]) {
+						$this->createSQLiteForeignKeyTriggerValidInsertUpdate($extra_statements, $table, $match[9], $match[10], $match[11], in_array($match[9], $not_null_columns));
+					}
+					
+					// If none of these fields is matched, we don't have on delete or on update clauses
+					if (empty($match[6]) && empty($match[7]) && empty($match[12]) && empty($match[13])) {
+						continue;
+					}
+					
+					// Handle column level foreign key delete/update clauses
+					if (!empty($match[3])) {
+						if ($match[6]) {
+							$this->createSQLiteForeignKeyTriggerOnDelete($extra_statements, $table, $match[1], $match[4], $match[5], $match[6]);
+						}
+						if (!empty($match[7])) {
+							$this->createSQLiteForeignKeyTriggerOnUpdate($extra_statements, $table, $match[1], $match[4], $match[5], $match[7]);
+						}
+						continue;
+					}
+					
+					// Handle table level foreign key delete/update clauses
+					if ($match[12]) {
+						$this->createSQLiteForeignKeyTriggerOnDelete($extra_statements, $table, $match[9], $match[10], $match[11], $match[12]);
+					}
+					if ($match[13]) {
+						$this->createSQLiteForeignKeyTriggerOnUpdate($extra_statements, $table, $match[9], $match[10], $match[11], $match[13]);
+					}
+				}
+			}
 		}
 		
 		
