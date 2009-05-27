@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added a ::crop() method [wb, 2009-05-27]
  * @changes    1.0.0b10  Fixed a bug with GD not saving changes to files ending in .jpeg [wb, 2009-03-18]
  * @changes    1.0.0b9   Changed ::processWithGD() to explicitly free the image resource [wb, 2009-03-18]
  * @changes    1.0.0b8   Updated for new fCore API [wb, 2009-02-16]
@@ -509,6 +510,75 @@ class fImage extends fFile
 	}
 	
 	
+	/**
+	 * Crops the image by the exact pixel dimensions specified
+	 * 
+	 * The crop does not occur until ::saveChanges() is called.
+	 * 
+	 * @param  numeric $crop_from_x  The number of pixels from the left of the image to start the crop from
+	 * @param  numeric $crop_from_y  The number of pixels from the top of the image to start the crop from
+	 * @param  numeric $new_width    The width in pixels to crop the image to
+	 * @param  numeric $new_height   The height in pixels to crop the image to
+	 * @return fImage  The image object, to allow for method chaining
+	 */
+	public function crop($crop_from_x, $crop_from_y, $new_width, $new_height)
+	{
+		$this->tossIfException();
+		
+		// Get the original dimensions for our parameter checking
+		$dim = $this->getCurrentDimensions();
+		$orig_width  = $dim['width'];
+		$orig_height = $dim['height'];
+		
+		// Make sure the user input is valid
+		if (!is_numeric($crop_from_x) || $crop_from_x < 0 || $crop_from_x > $orig_width - 1) {
+			throw new fProgrammerException(
+				'The crop-from x specified, %s, is not a number, is less than zero, or would result in a zero-width image',
+				$crop_from_x
+			);
+		}
+		if (!is_numeric($crop_from_y) || $crop_from_y < 0 || $crop_from_y > $orig_height - 1) {
+			throw new fProgrammerException(
+				'The crop-from y specified, %s, is not a number, is less than zero, or would result in a zero-height image',
+				$crop_from_y
+			);
+		}
+		
+		if (!is_numeric($new_width) || $new_width <= 0 || $crop_from_x + $new_width > $orig_width) {
+			throw new fProgrammerException(
+				'The new width specified, %1$s, is not a number, is less than or equal to zero, or is larger than can be cropped with the specified crop-from x of %2$s',
+				$new_width,
+				$crop_from_x
+			);
+		}
+		if (!is_numeric($new_height) || $new_height <= 0 || $crop_from_y + $new_height > $orig_height) {
+			throw new fProgrammerException(
+				'The new height specified, %1$s, is not a number, is less than or equal to zero, or is larger than can be cropped with the specified crop-from y of %2$s',
+				$new_height,
+				$crop_from_y
+			);
+		}
+		
+		// If nothing changed, don't even record the modification
+		if ($orig_width == $new_width && $orig_height == $new_height) {
+			return $this;
+		}
+		
+		// Record what we are supposed to do
+		$this->pending_modifications[] = array(
+			'operation'  => 'crop',
+			'start_x'    => $crop_from_x,
+			'start_y'    => $crop_from_y,
+			'width'      => $new_width,
+			'height'     => $new_height,
+			'old_width'  => $orig_width,
+			'old_height' => $orig_height
+		);
+		
+		return $this;
+	}
+	
+		
 	/**
 	 * Crops the biggest area possible from the center of the image that matches the ratio provided
 	 * 
