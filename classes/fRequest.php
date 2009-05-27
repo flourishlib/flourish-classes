@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Added ::generateCSRFToken() from fCRUD::generateRequestToken() and ::validateCSRFToken() from fCRUD::validateRequestToken() [wb, 2009-05-08]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -24,6 +25,7 @@ class fRequest
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const check                 = 'fRequest::check';
+	const encode                = 'fRequest::encode';
 	const filter                = 'fRequest::filter';
 	const generateCSRFToken     = 'fRequest::generateCSRFToken';
 	const get                   = 'fRequest::get';
@@ -37,6 +39,7 @@ class fRequest
 	const isPost                = 'fRequest::isPost';
 	const isPut                 = 'fRequest::isPut';
 	const overrideAction        = 'fRequest::overrideAction';
+	const prepare               = 'fRequest::prepare';
 	const reset                 = 'fRequest::reset';
 	const set                   = 'fRequest::set';
 	const unfilter              = 'fRequest::unfilter';
@@ -90,6 +93,20 @@ class fRequest
 		self::initPutDelete();
 		
 		return isset($_GET[$key]) || isset($_POST[$key]) || isset(self::$put_delete[$key]);
+	}
+	
+	
+	/**
+	 * Gets a value from ::get() and passes it through fHTML::encode()
+	 * 
+	 * @param  string $key            The key to get the value of
+	 * @param  string $cast_to        Cast the value to this data type
+	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead
+	 * @return string  The encoded value
+	 */
+	static public function encode($key, $cast_to=NULL, $default_value=NULL)
+	{
+		return fHTML::encode(self::get($key, $cast_to, $default_value));
 	}
 	
 	
@@ -178,7 +195,8 @@ class fRequest
 	/**
 	 * Gets a value from the `DELETE`/`PUT` post data, `$_POST` or `$_GET` superglobals (in that order)
 	 * 
-	 * A value that exactly equals `''` and is not cast to a specific type will become `NULL`.
+	 * A value that exactly equals `''` and is not cast to a specific type will
+	 * become `NULL`.
 	 *  
 	 * All text values are interpreted as UTF-8 string and appropriately
 	 * cleaned.
@@ -445,6 +463,20 @@ class fRequest
 		}
 		
 		return $top_item;
+	}
+	
+	
+	/**
+	 * Gets a value from ::get() and passes it through fHTML::prepare()
+	 * 
+	 * @param  string $key            The key to get the value of
+	 * @param  string $cast_to        Cast the value to this data type
+	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead
+	 * @return string  The prepared value
+	 */
+	static public function prepare($key, $cast_to=NULL, $default_value=NULL)
+	{
+		return fHTML::prepare(self::get($key, $cast_to, $default_value));
 	}
 	
 	
