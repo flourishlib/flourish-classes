@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed a bug where calling ::saveChanges() after unserializing would throw an exception related to the image processor [wb, 2009-05-27]
  * @changes    1.0.0b11  Added a ::crop() method [wb, 2009-05-27]
  * @changes    1.0.0b10  Fixed a bug with GD not saving changes to files ending in .jpeg [wb, 2009-03-18]
  * @changes    1.0.0b9   Changed ::processWithGD() to explicitly free the image resource [wb, 2009-03-18]
@@ -1007,6 +1008,7 @@ class fImage extends fFile
 	public function saveChanges($new_image_type=NULL, $jpeg_quality=90)
 	{
 		$this->tossIfException();
+		self::determineProcessor();
 		
 		if (self::$processor == 'none') {
 			throw new fEnvironmentException(
