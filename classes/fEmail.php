@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added the method ::clearRecipients() [wb, 2009-05-29]
  * @changes    1.0.0b7  Email names with UTF-8 characters are now properly encoded [wb, 2009-05-08]
  * @changes    1.0.0b6  Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
@@ -471,6 +472,19 @@ class fEmail
 		}
 		
 		return $header . "\r\n";
+	}
+	
+	
+	/**
+	 * Removes all To, CC and BCC recipients from the email
+	 * 
+	 * @return void
+	 */
+	public function clearRecipients()
+	{
+		$this->to_emails  = array();
+		$this->cc_emails  = array();
+		$this->bcc_emails = array();
 	}
 	
 	
