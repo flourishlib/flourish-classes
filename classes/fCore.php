@@ -2,14 +2,16 @@
 /**
  * Provides low-level debugging, error and exception functionality
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  ::enableErrorHandling() and ::enableExceptionHandling() now accept multiple email addresses, and a much wider range of emails [wb-imarc, 2009-06-01]
  * @changes    1.0.0b7  ::backtrace() now properly replaces document root with {doc_root} on Windows [wb, 2009-05-02]
  * @changes    1.0.0b6  Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
  * @changes    1.0.0b5  Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
@@ -265,7 +267,22 @@ class fCore
 			return 'html';
 		}
 		
-		if (preg_match('#^[a-z0-9_.\-\']+@([a-z0-9\-]+\.){1,}([a-z]{2,})$#iD', $destination)) {
+		if (preg_match('~^(?:                                                                         # Allow leading whitespace
+						   (?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")                     # An "atom" or a quoted string
+						   (?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*  # A . plus another "atom" or a quoted string, any number of times
+						  )@(?:                                                                       # The @ symbol
+						   (?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                              # Domain name
+						   (?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])    # (or) IP addresses
+						  )
+						  (?:\s*,\s*                                                                  # Any number of other emails separated by a comma with surrounding spaces
+						   (?:
+							(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")
+							(?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*
+						   )@(?:
+							(?:[a-z0-9\\-]+\.)+[a-z]{2,}|
+							(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])
+						   )
+						  )*$~xiD', $destination)) {
 			return 'email';
 		}
 		
@@ -863,7 +880,7 @@ class fCore
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
