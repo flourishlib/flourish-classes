@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added some missing parameter information to ::reflect() [wb, 2009-06-01]
  * @changes    1.0.0b16  Fixed bugs in ::__clone() and ::replicate() related to recursive relationships [wb-imarc, 2009-05-20]
  * @changes    1.0.0b15  Fixed an incorrect variable reference in ::store() [wb, 2009-05-06]
  * @changes    1.0.0b14  ::store() no longer tries to get an auto-incrementing ID from the database if a value was set [wb, 2009-05-02]
@@ -1581,6 +1582,15 @@ abstract class fActiveRecord
 					$signature .= ', ';
 				}
 				
+				if ($parameter->isArray()) {
+					$signature .= 'array ';	
+				}
+				if ($parameter->getClass()) {
+					$signature .= $parameter->getClass()->getName() . ' ';	
+				}
+				if ($parameter->isPassedByReference()) {
+					$signature .= '&';	
+				}
 				$signature .= '$' . $parameter->getName();
 				
 				if ($parameter->isDefaultValueAvailable()) {

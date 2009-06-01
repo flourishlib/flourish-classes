@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
  * @changes    1.0.0b2  ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
  * @changes    1.0.0b   The initial implementation [wb, 2007-12-30]
  */
@@ -58,17 +59,51 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed       $class                 The class name or instance of the class to get the related values for
-	 * @param  array       &$related_records      The related records existing for the fActiveRecord class
-	 * @param  string      $related_class         The class we are associating with the current record
-	 * @param  fRecordSet  $records_to_associate  An fRecordSet of the records to be associated
-	 * @param  string      $route                 The route to use between the current class and the related class
+	 * @param  mixed             $class                 The class name or instance of the class to get the related values for
+	 * @param  array             &$related_records      The related records existing for the fActiveRecord class
+	 * @param  string            $related_class         The class we are associating with the current record
+	 * @param  fRecordSet|array  $records_to_associate  An fRecordSet, an array or records, or an array of primary keys of the records to be associated
+	 * @param  string            $route                 The route to use between the current class and the related class
 	 * @return void
 	 */
 	static public function associateRecords($class, &$related_records, $related_class, $records_to_associate, $route=NULL)
 	{
-		$records = clone $records_to_associate;
+		if ($records_to_associate instanceof fRecordSet) {
+			$records = clone $records_to_associate;
+		
+		} elseif (!sizeof($records_to_associate)) {
+			$records = fRecordSet::buildFromRecords($related_class, array());	
+		
+		} elseif ($records_to_associate[0] instanceof fActiveRecord) {
+			$records = fRecordSet::buildFromRecords($related_class, $records_to_associate);	
+		
+		} else {
+			$related_table = fORM::tablize($related_class);
+			$pk_columns    = fORMSchema::retrieve()->getKeys($related_table, 'primary');
+			
+			if (sizeof($pk_columns) == 1) {
+				$records = fRecordSet::build($related_class, array($pk_columns[0] . '=' => $records_to_associate));	
+			
+			} else {
+				$sql = 'SELECT * FROM ' . $related_table . ' WHERE ';
+				
+				$column_info = fORMSchema::retrieve()->getColumnInfo($related_table);
+				$or_conditions = array();
+				foreach ($records_to_associate as $record_to_associate) {
+					$and_conditions = array();
+					foreach ($record_to_associate as $column => $value) {
+						$and_conditions = $column . ' ' . fORMDatabase::escapeBySchema($related_table, $column, $value, '=');	
+					}
+					$or_conditions[] = '(' . join(' AND ', $and_conditions) . ')';
+				}
+				$sql .= '(' . join(' OR ', $or_conditions) . ')';
+				
+				$records = fRecordSet::buildFromSQL($related_class, $sql);
+			}	
+		}
+		
 		$records->flagAssociate();
+		
 		self::setRecords($class, $related_records, $related_class, $records, $route);
 	}
 	
@@ -544,13 +579,95 @@ class fORMRelated
 			$routes = fORMSchema::getRoutes($table, $relationship['related_table'], '*-to-many');
 			$route_names = array();
 			
+			$many_to_many_route_names = array();
+			$one_to_many_route_names  = array();
+			
 			foreach ($routes as $route) {
-				if (isset($relationship['join_table'])) {
-					$route_names[] = fORMSchema::getRouteNameFromRelationship('many-to-many', $route);
+				if (isset($route['join_table'])) {
+					$route_name = fORMSchema::getRouteNameFromRelationship('many-to-many', $route);
+					$route_names[]              = $route_name;
+					$many_to_many_route_names[] = $route_name;
+					
 				} else {
-					$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-many', $route);
+					$route_name = fORMSchema::getRouteNameFromRelationship('one-to-many', $route);
+					$route_names[]             = $route_name;
+					$one_to_many_route_names[] = $route_name;
 				}
 			}
+			
+			if ($one_to_many_route_names) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$related_table = fORM::tablize($related_class);
+				
+					$signature .= "/**\n";
+					$signature .= " * Calls the ::populate() method for multiple child " . $related_class . " records. Uses request value arrays in the form " . $related_table . "::{column_name}[].\n";
+					$signature .= " * \n";
+					if (sizeof($one_to_many_route_names) > 1) {
+						$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $one_to_many_route_names) . "'.\n";
+					}
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$populate_related_method = 'populate' . fGrammar::pluralize($related_class);
+				$signature .= 'public function ' . $populate_related_method . '(';
+				if (sizeof($one_to_many_route_names) > 1) {
+					$signature .= '$route';
+				}
+				$signature .= ')';
+				
+				$signatures[$populate_related_method] = $signature;
+			}
+			
+			
+			if ($many_to_many_route_names) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$related_table = fORM::tablize($related_class);
+				
+					$signature .= "/**\n";
+					$signature .= " * Creates entries in the appropriate joining table to create associations with the specified " . $related_class . " records. Uses request value array(s) in the form " . $related_table . "::{primary_key_column_name(s)}[].\n";
+					$signature .= " * \n";
+					if (sizeof($many_to_many_route_names) > 1) {
+						$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $many_to_many_route_names) . "'.\n";
+					}
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$link_related_method = 'link' . fGrammar::pluralize($related_class);
+				$signature .= 'public function ' . $link_related_method . '(';
+				if (sizeof($many_to_many_route_names) > 1) {
+					$signature .= '$route';
+				}
+				$signature .= ')';
+				
+				$signatures[$link_related_method] = $signature;
+				
+				
+				$signature = '';
+				if ($include_doc_comments) {
+					$related_table = fORM::tablize($related_class);
+				
+					$signature .= "/**\n";
+					$signature .= " * Creates entries in the appropriate joining table to create associations with the specified " . $related_class . " records\n";
+					$signature .= " * \n";
+					$signature .= " * @param  fRecordSet|array \$records_to_associate  The records to associate - should be an fRecords, an array of records or an array of primary keys\n";
+					if (sizeof($many_to_many_route_names) > 1) {
+						$signature .= " * @param  string           \$route  The route to the related class. Must be one of: '" . join("', '", $many_to_many_route_names) . "'.\n";
+					}
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$associate_related_method = 'associate' . fGrammar::pluralize($related_class);
+				$signature .= 'public function ' . $associate_related_method . '(';
+				if (sizeof($many_to_many_route_names) > 1) {
+					$signature .= '$route';
+				}
+				$signature .= ')';
+				
+				$signatures[$associate_related_method] = $signature;
+			}
+			
 			
 			$signature = '';
 			if ($include_doc_comments) {
