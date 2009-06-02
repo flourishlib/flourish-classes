@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
  * @changes    1.0.0b4  Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Added ::generateCSRFToken() from fCRUD::generateRequestToken() and ::validateCSRFToken() from fCRUD::validateRequestToken() [wb, 2009-05-08]
@@ -51,28 +52,28 @@ class fRequest
 	 * 
 	 * @var array
 	 */
-	static private $backup_files = NULL;
+	static private $backup_files = array();
 	
 	/**
 	 * A backup copy of `$_GET` for ::unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_get = NULL;
+	static private $backup_get = array();
 	
 	/**
 	 * A backup copy of `$_POST` for unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_post = NULL;
+	static private $backup_post = array();
 	
 	/**
 	 * A backup copy of the local `PUT`/`DELETE` post data for ::unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_put_delete = NULL;
+	static private $backup_put_delete = array();
 	
 	/**
 	 * The key/value pairs from the post data of a `PUT`/`DELETE` request
@@ -125,7 +126,7 @@ class fRequest
 		
 		$regex = '#^' . preg_quote($prefix, '#') . '#';
 		
-		self::$backup_files = $_FILES;
+		self::$backup_files[] = $_FILES;
 		
 		$_FILES = array();
 		foreach (self::$backup_files as $field => $value) {
@@ -146,9 +147,10 @@ class fRequest
 		);
 		
 		foreach ($globals as $refs) {
-			$refs['backup'] = $refs['array'];
-			$refs['array']  = array();	
-			foreach ($refs['backup'] as $field => $value) {
+			$current_backup   = sizeof($refs['backup']);
+			$refs['backup'][] = $refs['array'];
+			$refs['array']    = array();	
+			foreach ($refs['backup'][$current_backup] as $field => $value) {
 				if (strpos($field, $prefix) === 0 && is_array($value) && isset($value[$key])) {
 					$new_field = preg_replace($regex, '', $field);
 					$refs['array'][$new_field] = $value[$key];
@@ -571,7 +573,7 @@ class fRequest
 	 */
 	static public function unfilter()
 	{
-		if (self::$backup_get === NULL) {
+		if (self::$backup_get === array()) {
 			throw new fProgrammerException(
 				'%1$s can only be called after %2$s',
 				__CLASS__ . '::unfilter()',
@@ -579,10 +581,10 @@ class fRequest
 			);
 		}
 		
-		$_FILES           = self::$backup_files;
-		$_GET             = self::$backup_get;
-		$_POST            = self::$backup_post;
-		self::$put_delete = self::$backup_put_delete;
+		$_FILES           = array_pop(self::$backup_files);
+		$_GET             = array_pop(self::$backup_get);
+		$_POST            = array_pop(self::$backup_post);
+		self::$put_delete = array_pop(self::$backup_put_delete);
 	}
 	
 	
