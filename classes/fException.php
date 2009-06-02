@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed ::splitMessage() so that the original message is returned if no list items are found, added ::reorderMessage() [wb, 2009-06-02]
  * @changes    1.0.0b5  Added ::splitMessage() to replace fCRUD::removeListItems() and fCRUD::reorderListItems() [wb, 2009-05-08]
  * @changes    1.0.0b4  Added a check to ::__construct() to ensure that the `$code` parameter is numeric [wb, 2009-05-04]
  * @changes    1.0.0b3  Fixed a bug with ::printMessage() messing up some HTML messages [wb, 2009-03-27]
@@ -374,6 +375,56 @@ abstract class fException extends Exception
 	
 	
 	/**
+	 * Reorders list items in the message based on simple string matching
+	 * 
+	 * @param  string $match  This should be a string to match to one of the list items - whatever the order this is in the parameter list will be the order of the list item in the adjusted message
+	 * @param  string ...
+	 * @return fException  The exception object, to allow for method chaining
+	 */
+	public function reorderMessage($match)
+	{
+		// If we can't find a list, don't bother continuing
+		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#isD', $this->message, $message_parts)) {
+			return $this;
+		}
+		
+		$matching_array = func_get_args();
+		// This ensures that we match on the longest string first
+		uasort($matching_array, array('self', 'sortMatchingArray'));
+		
+		$beginning     = $message_parts[1];
+		$list_contents = $message_parts[2];
+		$ending        = $message_parts[3];
+		
+		preg_match_all('#<li(.*?)</li>#i', $list_contents, $list_items, PREG_SET_ORDER);
+		
+		$ordered_items = array_fill(0, sizeof($matching_array), array());
+		$other_items   = array();
+		
+		foreach ($list_items as $list_item) {
+			foreach ($matching_array as $num => $match_string) {
+				if (strpos($list_item[1], $match_string) !== FALSE) {
+					$ordered_items[$num][] = $list_item[0];
+					continue 2;
+				}
+			}
+			
+			$other_items[] = $list_item[0];
+		}
+		
+		$final_list = array();
+		foreach ($ordered_items as $ordered_item) {
+			$final_list = array_merge($final_list, $ordered_item);
+		}
+		$final_list = array_merge($final_list, $other_items);
+		
+		$this->message = $beginning . join("\n", $final_list) . $ending;
+		
+		return $this;
+	}
+	
+	
+	/**
 	 * Allows the message to be overwriten
 	 * 
 	 * @param  string $new_message  The new message for the exception
@@ -452,9 +503,14 @@ abstract class fException extends Exception
 	 * fHTML::show($name_exception, 'error');
 	 * }}}
 	 * 
+	 * An empty string is returned when none of the list items matched the
+	 * strings in the parameter. If no list items are found, the first value in
+	 * the returned array will be the existing message and all other array
+	 * values will be an empty string.
+	 * 
 	 * @param  array $list_item_matches  An array of strings to filter the list items by, list items will be ordered in the same order as this array
 	 * @param  array ...
-	 * @return array  This will contain an array of strings corresponding to the parameters passed - an empty string is returned when none of the list items matched the strings in the parameter
+	 * @return array  This will contain an array of strings corresponding to the parameters passed - see method description for details
 	 */
 	public function splitMessage($list_item_matches)
 	{
@@ -463,7 +519,7 @@ abstract class fException extends Exception
 		$matching_arrays = func_get_args();
 		
 		if (!preg_match('#^(.*<(?:ul|ol)[^>]*?>)(.*?)(</(?:ul|ol)>.*)$#isD', $this->message, $matches)) {
-			throw new fProgrammerException('Unable to split exception since no HTML lists were found in the message');
+			return array_merge(array($this->message), array_fill(0, sizeof($matching_arrays)-1, ''));
 		}
 		
 		$beginning_html  = $matches[1];
