@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
  * @changes    1.0.0b3  ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
  * @changes    1.0.0b2  ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
  * @changes    1.0.0b   The initial implementation [wb, 2007-12-30]
@@ -25,6 +26,7 @@ class fORMRelated
 	const countRecords              = 'fORMRelated::countRecords';
 	const createRecord              = 'fORMRelated::createRecord';
 	const determineRequestFilter    = 'fORMRelated::determineRequestFilter';
+	const flagForAssociation        = 'fORMRelated::flagForAssociation';
 	const getOrderBys               = 'fORMRelated::getOrderBys';
 	const getRelatedRecordName      = 'fORMRelated::getRelatedRecordName';
 	const linkRecords               = 'fORMRelated::linkRecords';
@@ -34,9 +36,11 @@ class fORMRelated
 	const reset                     = 'fORMRelated::reset';
 	const setOrderBys               = 'fORMRelated::setOrderBys';
 	const setRecords                = 'fORMRelated::setRecords';
+	const store                     = 'fORMRelated::store';
 	const storeManyToMany           = 'fORMRelated::storeManyToMany';
 	const storeOneToMany            = 'fORMRelated::storeOneToMany';
 	const tallyRecords              = 'fORMRelated::tallyRecords';
+	const validate                  = 'fORMRelated::validate';
 	
 	
 	/**
@@ -68,6 +72,9 @@ class fORMRelated
 	 */
 	static public function associateRecords($class, &$related_records, $related_class, $records_to_associate, $route=NULL)
 	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
 		if ($records_to_associate instanceof fRecordSet) {
 			$records = clone $records_to_associate;
 		
@@ -78,7 +85,6 @@ class fORMRelated
 			$records = fRecordSet::buildFromRecords($related_class, $records_to_associate);	
 		
 		} else {
-			$related_table = fORM::tablize($related_class);
 			$pk_columns    = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 			
 			if (sizeof($pk_columns) == 1) {
@@ -102,9 +108,10 @@ class fORMRelated
 			}	
 		}
 		
-		$records->flagAssociate();
+		$route = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
 		
 		self::setRecords($class, $related_records, $related_class, $records, $route);
+		self::flagForAssociation($class, $related_records, $related_class, $route);
 	}
 	
 	
@@ -157,6 +164,29 @@ class fORMRelated
 		self::setRecords($class, $related_records, $related_class, $record_set, $route);
 		
 		return $record_set;
+	}
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static private function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
 	}
 	
 	
@@ -275,6 +305,36 @@ class fORMRelated
 	
 	
 	/**
+	 * Sets the related records for a *-to-many relationship to be associated upon fActiveRecord::store()
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
+	 * @param  string $related_class     The class we are associating with the current record
+	 * @param  string $route             The route to use between the current class and the related class
+	 * @return void
+	 */
+	static public function flagForAssociation($class, &$related_records, $related_class, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		if (!isset($related_records[$related_table][$route])) {
+			throw new fProgrammerException(
+				'%1$s can only be called after %2$s',
+				__CLASS__ . '::flagForAssociation()',
+				__CLASS__ . '::setRecords()'
+			);
+		}
+		
+		$related_records[$related_table][$route]['associate'] = TRUE;
+	}
+	
+	
+	/**
 	 * Gets the ordering to use when returning an fRecordSet of related objects
 	 *
 	 * @internal
@@ -346,7 +406,7 @@ class fORMRelated
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
-		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		$route_name   = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, 'many-to-many');
 		
 		$field_table      = $relationship['related_table'];
@@ -367,7 +427,7 @@ class fORMRelated
 			)
 		);
 		
-		self::associateRecords($class, $related_records, $related_class, $record_set, $route);
+		self::associateRecords($class, $related_records, $related_class, $record_set, $route_name);
 	}
 	
 	
@@ -501,8 +561,8 @@ class fORMRelated
 		}
 		
 		$record_set = fRecordSet::buildFromRecords($related_class, $records);
-		$record_set->flagAssociate();
 		self::setRecords($class, $related_records, $related_class, $record_set, $route);
+		self::flagForAssociation($class, $related_records, $related_class, $route);
 	}
 	
 	
@@ -759,7 +819,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Sets the related records for many-to-many relationships
+	 * Sets the related records for *-to-many relationships
 	 * 
 	 * @internal
 	 * 
@@ -786,6 +846,41 @@ class fORMRelated
 		
 		$related_records[$related_table][$route]['record_set'] = $records;
 		$related_records[$related_table][$route]['count']      = $records->count();
+		$related_records[$related_table][$route]['associate']  = FALSE;
+	}
+	
+	
+	/**
+	 * Stores any many-to-many associations or any one-to-many records that have been flagged for association
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed      $class             The class name or instance of the class to store the related records for
+	 * @param  array      &$values           The current values for the main record being stored
+	 * @param  array      &$related_records  The related records array
+	 * @return void
+	 */
+	static public function store($class, &$values, &$related_records)
+	{
+		$table = fORM::tablize($class);
+		
+		$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
+		$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
+		
+		foreach ($related_records as $related_table => $relationship) {
+			foreach ($relationship as $route => $related_info) {
+				if (!$related_info['count'] || !$related_info['associate']) {
+					continue;
+				}
+				
+				$relationship = fORMSchema::getRoute($table, $related_table, $route);
+				if (isset($relationship['join_table'])) {
+					fORMRelated::storeManyToMany($values, $relationship, $related_info['record_set']);
+				} else {
+					fORMRelated::storeOneToMany($values, $relationship, $related_info['record_set']);
+				}
+			}
+		}
 	}
 	
 	
@@ -906,9 +1001,130 @@ class fORMRelated
 		
 		if (!isset($related_records[$related_table][$route]['record_set'])) {
 			$related_records[$related_table][$route]['record_set'] = NULL;
+			$related_records[$related_table][$route]['associate']  = FALSE;
 		}
 		$related_records[$related_table][$route]['count'] = $count;
 		
+	}
+	
+	
+	/**
+	 * Validates any many-to-many associations or any one-to-many records that have been flagged for association
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed      $class             The class name or instance of the class to validate the related records for
+	 * @param  array      &$related_records  The related records array
+	 * @return void
+	 */
+	static public function validate($class, &$related_records)
+	{
+		$class = fORM::getClass($class);
+		$table = fORM::tablize($class);
+		
+		$validation_messages = array();
+		
+		// Find the record sets to validate
+		foreach ($related_records as $related_table => $routes) {
+			foreach ($routes as $route => $related_info) {
+				if (!$related_info['count'] || !$related_info['associate']) {
+					continue;
+				}
+				
+				$related_class = fORM::classize($related_table);
+				$relationship  = fORMSchema::getRoute($table, $related_table, $route);
+																												
+				if (isset($relationship['join_table'])) {
+					$related_messages = self::validateManyToMany($class, $related_class, $route, $related_info['record_set']);
+				} else {
+					$related_messages = self::validateOneToMany($class, $related_class, $route, $related_info['record_set']);
+				}
+				
+				$validation_messages = array_merge($validation_messages, $related_messages);
+			}
+		}	
+		
+		return $validation_messages;
+	}
+	
+	
+	/**
+	 * Validates one-to-many related records
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $related_class  The name of the class for this record set
+	 * @param  string     $route          The route between the table and related table
+	 * @param  fRecordSet $record_set     The related records to validate
+	 * @return array  An array of validation messages
+	 */
+	static private function validateOneToMany($class, $related_class, $route, $record_set)
+	{
+		$table               = fORM::tablize($class);
+		$related_table       = fORM::tablize($related_class);
+		$route_name          = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-many');
+		$filter              = self::determineRequestFilter($class, $related_class, $route);
+		$related_record_name = self::getRelatedRecordName($class, $related_class, $route);
+		
+		$record_number = 1;
+		
+		$messages = array();
+		
+		foreach ($record_set as $record) {
+			fRequest::filter($filter, $record_number-1);
+			$record_messages = $record->validate(TRUE);
+			foreach ($record_messages as $record_message) {
+				// Ignore validation messages about the primary key since it will be added
+				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
+					continue;
+				}
+				$messages[] = self::compose(
+					'%1$s #%2$s %3$s',
+					$related_record_name,
+					$record_number,
+					$record_message
+				);
+			}
+			$record_number++;
+			fRequest::unfilter();
+		}
+		
+		return $messages;
+	}
+	
+	
+	/**
+	 * Validates many-to-many related records
+	 *
+	 * @internal
+	 * 
+	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $related_class  The name of the class for this record set
+	 * @param  string     $route          The route between the table and related table
+	 * @param  fRecordSet $record_set     The related records to validate
+	 * @return array  An array of validation messages
+	 */
+	static private function validateManyToMany($class, $related_class, $route, $record_set)
+	{
+		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
+		$record_number = 1;
+		
+		$messages = array();
+		
+		foreach ($record_set as $record) {
+			if (!$record->exists()) {
+				$messages[] = self::compose(
+					'%1$s #%2$s: Please select a %3$s',
+					$related_record_name,
+					$record_number,
+					$related_record_name
+				);
+			}
+			$record_number++;
+		}
+		
+		return $messages;
 	}
 	
 	

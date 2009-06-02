@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Backwards Compatibility Break - Removed ::flagAssociate() and ::isFlaggedForAssociation(), callbacks registered via fORM::registerRecordSetMethod() no longer receive the `$associate` parameter [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
  * @changes    1.0.0b5  ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
  * @changes    1.0.0b4  ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
@@ -454,13 +455,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * A flag to indicate this should record set should be associated to the parent fActiveRecord object
-	 * 
-	 * @var boolean
-	 */
-	private $associate = FALSE;
-	
-	/**
 	 * The type of class to create from the primary keys provided
 	 * 
 	 * @var string
@@ -520,8 +514,7 @@ class fRecordSet implements Iterator
 					$this,
 					$this->class,
 					&$this->records,
-					&$this->pointer,
-					&$this->associate
+					&$this->pointer
 				)
 			);	
 		}
@@ -834,21 +827,6 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Flags this record set for association with the fActiveRecord object that references it
-	 * 
-	 * @internal
-	 * 
-	 * @return void
-	 */
-	public function flagAssociate()
-	{
-		$this->validateSingleClass('associate');
-		
-		$this->associate = TRUE;
-	}
-	
-	
-	/**
 	 * Returns the current record in the set and moves the pointer to the next
 	 * 
 	 * @throws fNoRemainingException  When there are no remaining records in the set
@@ -912,19 +890,6 @@ class fRecordSet implements Iterator
 		}
 		
 		return $primary_keys;
-	}
-	
-	
-	/**
-	 * Returns if this record set is flagged for association with the fActiveRecord object that references it
-	 * 
-	 * @internal
-	 * 
-	 * @return boolean  If this record set is flagged for association
-	 */
-	public function isFlaggedForAssociation()
-	{
-		return $this->associate;
 	}
 	
 	

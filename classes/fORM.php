@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated documentation to reflect removal of `$associate` parameter for callbacks passed to ::registerRecordSetMethod() [wb, 2009-06-02]
  * @changes    1.0.0b7  Added ::enableSchemaCaching() to replace fORMSchema::enableSmartCaching() [wb, 2009-05-04]
  * @changes    1.0.0b6  Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
  * @changes    1.0.0b5  Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
@@ -743,7 +744,6 @@ class fORM
 	 *  - **`$class`**:       The class of each record
 	 *  - **`&$records`**:    The ordered array of fActiveRecord objects
 	 *  - **`&$pointer`**:    The current array pointer for the records array
-	 *  - **`&$associate`**:  If the record should be associated with an fActiveRecord holding it
 	 * 
 	 * @param  string   $method    The method to hook for
 	 * @param  callback $callback  The callback to execute - see method description for parameter list

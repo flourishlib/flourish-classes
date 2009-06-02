@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Changed ::store() to use new fORMRelated::store() method [wb, 2009-06-02]
  * @changes    1.0.0b17  Added some missing parameter information to ::reflect() [wb, 2009-06-01]
  * @changes    1.0.0b16  Fixed bugs in ::__clone() and ::replicate() related to recursive relationships [wb-imarc, 2009-05-20]
  * @changes    1.0.0b15  Fixed an incorrect variable reference in ::store() [wb, 2009-05-06]
@@ -1903,25 +1904,8 @@ abstract class fActiveRecord
 			
 			
 			// Storing *-to-many relationships
+			fORMRelated::store($this, $this->values, $this->related_records);
 			
-			$one_to_many_relationships  = fORMSchema::retrieve()->getRelationships($table, 'one-to-many');
-			$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
-			
-			foreach ($this->related_records as $related_table => $relationship) {
-				foreach ($relationship as $route => $info) {
-					$record_set = $info['record_set'];
-					if (!$record_set || !$record_set->isFlaggedForAssociation()) {
-						continue;
-					}
-					
-					$relationship = fORMSchema::getRoute($table, $related_table, $route);
-					if (isset($relationship['join_table'])) {
-						fORMRelated::storeManyToMany($this->values, $relationship, $record_set);
-					} else {
-						fORMRelated::storeOneToMany($this->values, $relationship, $record_set);
-					}
-				}
-			}
 			
 			fORM::callHookCallbacks(
 				$this,

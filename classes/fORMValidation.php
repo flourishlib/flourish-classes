@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated ::validateRelated() to use new fORMRelated::validate() method and ::checkRelatedOneOrMoreRule() to use new `$related_records` structure [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b5  Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
  * @changes    1.0.0b4  Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
@@ -575,10 +576,10 @@ class fORMValidation
 	 */
 	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
 	{
-		$related_table = fORM::tablize($related_class);
-		if (isset($related_records[$related_table][$route]['record_set'])) {
-			$record_set = $related_records[$related_table][$route]['record_set'];	
-			if ($record_set->count() && $record_set->isFlaggedForAssociation()) {
+		$related_table =  fORM::tablize($related_class);
+		$related_info  =& $related_records[$related_table][$route];
+		if (isset($related_info['count'])) {
+			if ($related_info['count'] && $related_info['associate']) {
 				return;
 			}
 		}
@@ -948,108 +949,10 @@ class fORMValidation
 			}
 		}
 		
-		// Find the record sets to validate
-		foreach ($related_records as $related_table => $routes) {
-			foreach ($routes as $route => $info) {
-				$record_set = $info['record_set'];
-				if (!$record_set || !$record_set->isFlaggedForAssociation()) {
-					continue;
-				}
-				
-				$related_class = fORM::classize($related_table);
-				$relationship  = fORMSchema::getRoute($table, $related_table, $route);
-																												
-				if (isset($relationship['join_table'])) {
-					$related_messages = self::validateManyToMany($class, $related_class, $route, $record_set);
-				} else {
-					$related_messages = self::validateOneToMany($class, $related_class, $route, $record_set);
-				}
-				
-				$validation_messages = array_merge($validation_messages, $related_messages);
-			}
-		}
+		$related_messages    = fORMRelated::validate($class, $related_records);
+		$validation_messages = array_merge($validation_messages, $related_messages);
 		
 		return $validation_messages;
-	}
-	
-	
-	/**
-	 * Validates one-to-many related records
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed      $class          The class name or instance of the class these records are related to
-	 * @param  string     $related_class  The name of the class for this record set
-	 * @param  string     $route          The route between the table and related table
-	 * @param  fRecordSet $record_set     The related records to validate
-	 * @return array  An array of validation messages
-	 */
-	static private function validateOneToMany($class, $related_class, $route, $record_set)
-	{
-		$table               = fORM::tablize($class);
-		$related_table       = fORM::tablize($related_class);
-		$route_name          = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-many');
-		$filter              = fORMRelated::determineRequestFilter($class, $related_class, $route);
-		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
-		
-		$record_number = 1;
-		
-		$messages = array();
-		
-		foreach ($record_set as $record) {
-			fRequest::filter($filter, $record_number-1);
-			$record_messages = $record->validate(TRUE);
-			foreach ($record_messages as $record_message) {
-				// Ignore validation messages about the primary key since it will be added
-				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
-					continue;
-				}
-				$messages[] = self::compose(
-					'%1$s #%2$s %3$s',
-					$related_record_name,
-					$record_number,
-					$record_message
-				);
-			}
-			$record_number++;
-			fRequest::unfilter();
-		}
-		
-		return $messages;
-	}
-	
-	
-	/**
-	 * Validates many-to-many related records
-	 *
-	 * @internal
-	 * 
-	 * @param  mixed      $class          The class name or instance of the class these records are related to
-	 * @param  string     $related_class  The name of the class for this record set
-	 * @param  string     $route          The route between the table and related table
-	 * @param  fRecordSet $record_set     The related records to validate
-	 * @return array  An array of validation messages
-	 */
-	static private function validateManyToMany($class, $related_class, $route, $record_set)
-	{
-		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
-		$record_number = 1;
-		
-		$messages = array();
-		
-		foreach ($record_set as $record) {
-			if (!$record->exists()) {
-				$messages[] = self::compose(
-					'%1$s #%2$s: Please select a %3$s',
-					$related_record_name,
-					$record_number,
-					$related_record_name
-				);
-			}
-			$record_number++;
-		}
-		
-		return $messages;
 	}
 }
 
