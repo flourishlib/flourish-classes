@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b5  Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
  * @changes    1.0.0b4  Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
  * @changes    1.0.0b3  Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
@@ -345,7 +346,9 @@ class fORMValidation
 					}
 					break;
 				case 'timestamp':
-					if (strtotime($value) === FALSE) {
+					try {
+						new fTimestamp($value);	
+					} catch (fValidationException $e) {
 						return self::compose(
 							'%s: Please enter a date/time',
 							fORM::getColumnName($class, $column)
@@ -353,7 +356,9 @@ class fORMValidation
 					}
 					break;
 				case 'date':
-					if (strtotime($value) === FALSE) {
+					try {
+						new fDate($value);	
+					} catch (fValidationException $e) {
 						return self::compose(
 							'%s: Please enter a date',
 							fORM::getColumnName($class, $column)
@@ -361,7 +366,9 @@ class fORMValidation
 					}
 					break;
 				case 'time':
-					if (strtotime($value) === FALSE) {
+					try {
+						new fTime($value);	
+					} catch (fValidationException $e) {
 						return self::compose(
 							'%s: Please enter a time',
 							fORM::getColumnName($class, $column)

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
  * @changes    1.0.0b7  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b6  Fixed an outdated fCore method call [wb, 2009-02-23]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
@@ -62,7 +63,7 @@ class fTime
 	public function __construct($time=NULL)
 	{
 		if ($time === NULL) {
-			$timestamp = strtotime('now');
+			$timestamp = time();
 		} elseif (is_numeric($time) && ctype_digit($time)) {
 			$timestamp = (int) $time;
 		} elseif (is_string($time) && in_array(strtoupper($time), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
@@ -73,6 +74,9 @@ class fTime
 			} elseif (is_numeric($time) || is_object($time)) {
 				$time = (string) $time;	
 			}
+			
+			$time = fTimestamp::callUnformatCallback($time);
+			
 			$timestamp = strtotime($time);
 		}
 		

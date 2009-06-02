@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Added ::registerUnformatCallback() and ::callUnformatCallback() to allow for localization of date/time parsing [wb, 2009-06-01]
  * @changes    1.0.0b5  Backwards compatibility break - Removed ::getSecondsDifference() and ::getSeconds(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Removed a useless double check of the strtotime() return value in ::__construct() [wb, 2009-01-21]
@@ -19,16 +20,18 @@
 class fTimestamp
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const callFormatCallback     = 'fTimestamp::callFormatCallback';
-	const combine                = 'fTimestamp::combine';
-	const defineFormat           = 'fTimestamp::defineFormat';
-	const fixISOWeek             = 'fTimestamp::fixISOWeek';
-	const getDefaultTimezone     = 'fTimestamp::getDefaultTimezone';
-	const isValidTimezone        = 'fTimestamp::isValidTimezone';
-	const registerFormatCallback = 'fTimestamp::registerFormatCallback';
-	const reset                  = 'fTimestamp::reset';
-	const setDefaultTimezone     = 'fTimestamp::setDefaultTimezone';
-	const translateFormat        = 'fTimestamp::translateFormat';
+	const callFormatCallback       = 'fTimestamp::callFormatCallback';
+	const callUnformatCallback     = 'fTimestamp::callUnformatCallback';
+	const combine                  = 'fTimestamp::combine';
+	const defineFormat             = 'fTimestamp::defineFormat';
+	const fixISOWeek               = 'fTimestamp::fixISOWeek';
+	const getDefaultTimezone       = 'fTimestamp::getDefaultTimezone';
+	const isValidTimezone          = 'fTimestamp::isValidTimezone';
+	const registerFormatCallback   = 'fTimestamp::registerFormatCallback';
+	const registerUnformatCallback = 'fTimestamp::registerUnformatCallback';
+	const reset                    = 'fTimestamp::reset';
+	const setDefaultTimezone       = 'fTimestamp::setDefaultTimezone';
+	const translateFormat          = 'fTimestamp::translateFormat';
 	
 	
 	/**
@@ -45,6 +48,13 @@ class fTimestamp
 	 */
 	static private $format_callback = NULL;
 	
+	/**
+	 * A callback to parse all date string to allow for locale-specific parsing
+	 * 
+	 * @var callback
+	 */
+	static private $unformat_callback = NULL;
+	
 	
 	/**
 	 * If a format callback is defined, call it
@@ -52,7 +62,7 @@ class fTimestamp
 	 * @internal
 	 * 
 	 * @param  string $formatted_string  The formatted date/time/timestamp string to be (possibly) modified
-	 * @return void
+	 * @return string  The (possibly) modified formatted string
 	 */
 	static public function callFormatCallback($formatted_string)
 	{
@@ -60,6 +70,23 @@ class fTimestamp
 			return call_user_func(self::$format_callback, $formatted_string);
 		}
 		return $formatted_string;
+	}
+	
+	
+	/**
+	 * If an unformat callback is defined, call it
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $date_time_string  A raw date/time/timestamp string to be (possibly) parsed/modified
+	 * @return string  The (possibly) parsed or modified date/time/timestamp
+	 */
+	static public function callUnformatCallback($date_time_string)
+	{
+		if (self::$unformat_callback) {
+			return call_user_func(self::$unformat_callback, $date_time_string);
+		}
+		return $date_time_string;
 	}
 	
 	
@@ -635,6 +662,21 @@ class fTimestamp
 	
 	
 	/**
+	 * Allows setting a callback to parse any date strings passed into ::__construct(), fDate::__construct() and fTime::__construct()
+	 * 
+	 * @param  callback $callback  The callback to pass all date/time/timestamp strings through. Should accept a single string and return a single string that is parsable by [http://php.net/strtotime `strtotime()`].
+	 * @return void
+	 */
+	static public function registerUnformatCallback($callback)
+	{
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		self::$unformat_callback = $callback;
+	}
+	
+	
+	/**
 	 * Resets the configuration of the class
 	 * 
 	 * @internal
@@ -733,7 +775,7 @@ class fTimestamp
 		$this->timezone = $timezone;
 		
 		if ($datetime === NULL) {
-			$timestamp = strtotime('now');
+			$timestamp = time();
 		} elseif (is_numeric($datetime) && ctype_digit($datetime)) {
 			$timestamp = (int) $datetime;
 		} elseif (is_string($datetime) && in_array(strtoupper($datetime), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
@@ -746,6 +788,9 @@ class fTimestamp
 			} elseif (is_numeric($datetime) || is_object($datetime)) {
 				$datetime = (string) $datetime;	
 			}
+			
+			$datetime = self::callUnformatCallback($datetime);
+			
 			$timestamp = strtotime(self::fixISOWeek($datetime) . ' ' . $timezone);
 		}
 		

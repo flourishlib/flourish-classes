@@ -46,16 +46,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug with ::escape() where floats that start with a . were encoded as `NULL` [wb, 2009-05-09]
- * @changes    1.0.0b8  Added Oracle support, change PostgreSQL code to no longer cause lastval() warnings, added support for arrays of values to ::escape() [wb, 2009-05-03]
- * @changes    1.0.0b7  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b6  Fixed a bug with executing transaction queries when using the mysqli extension [wb, 2009-02-12]
- * @changes    1.0.0b5  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
- * @changes    1.0.0b4  Added a few error suppression operators back in so that developers don't get errors and exceptions [wb, 2009-01-14]
- * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
- * @changes    1.0.0b2  Fixed a bug with PostgreSQL when using the PDO extension and executing an INSERT statement [wb, 2008-12-11]
- * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Changed date/time/timestamp escaping from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
+ * @changes    1.0.0b9   Fixed a bug with ::escape() where floats that start with a . were encoded as `NULL` [wb, 2009-05-09]
+ * @changes    1.0.0b8   Added Oracle support, change PostgreSQL code to no longer cause lastval() warnings, added support for arrays of values to ::escape() [wb, 2009-05-03]
+ * @changes    1.0.0b7   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b6   Fixed a bug with executing transaction queries when using the mysqli extension [wb, 2009-02-12]
+ * @changes    1.0.0b5   Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
+ * @changes    1.0.0b4   Added a few error suppression operators back in so that developers don't get errors and exceptions [wb, 2009-01-14]
+ * @changes    1.0.0b3   Removed some unnecessary error suppresion operators [wb, 2008-12-11]
+ * @changes    1.0.0b2   Fixed a bug with PostgreSQL when using the PDO extension and executing an INSERT statement [wb, 2008-12-11]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-09-25]
  */
 class fDatabase
 {
@@ -1038,10 +1039,14 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';
 		}
-		if (!strtotime($value)) {
+		
+		try {
+			$value = new fDate($value);
+			return "'" . $value->format('Y-m-d') . "'";
+			
+		} catch (fValidationException $e) {
 			return 'NULL';
 		}
-		return "'" . date('Y-m-d', strtotime($value)) . "'";
 	}
 	
 	
@@ -1200,13 +1205,19 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';
 		}
-		if (!strtotime($value)) {
+		
+		try {
+			$value = new fTime($value);
+			
+			if ($this->type == 'mssql' || $this->type == 'oracle') {
+				return "'" . $value->format('1970-01-01 H:i:s') . "'";	
+			}
+			
+			return "'" . $value->format('H:i:s') . "'";
+			
+		} catch (fValidationException $e) {
 			return 'NULL';
 		}
-		if ($this->type == 'mssql' || $this->type == 'oracle') {
-			return "'" . date('1970-01-01 H:i:s', strtotime($value)) . "'";	
-		}
-		return "'" . date('H:i:s', strtotime($value)) . "'";
 	}
 	
 	
@@ -1223,10 +1234,14 @@ class fDatabase
 		if ($value === NULL) {
 			return 'NULL';
 		}
-		if (!strtotime($value)) {
+		
+		try {
+			$value = new fTimestamp($value);
+			return "'" . $value->format('Y-m-d H:i:s') . "'";
+			
+		} catch (fValidationException $e) {
 			return 'NULL';
 		}
-		return "'" . date('Y-m-d H:i:s', strtotime($value)) . "'";
 	}
 	
 	
