@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
  * @changes    1.0.0b4  Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
  * @changes    1.0.0b3  ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
  * @changes    1.0.0b2  ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
@@ -35,11 +36,12 @@ class fORMRelated
 	const reflect                   = 'fORMRelated::reflect';
 	const reset                     = 'fORMRelated::reset';
 	const setOrderBys               = 'fORMRelated::setOrderBys';
-	const setRecords                = 'fORMRelated::setRecords';
+	const setCount                  = 'fORMRelated::setCount';
+	const setPrimaryKeys            = 'fORMRelated::setPrimaryKeys';
+	const setRecordSet              = 'fORMRelated::setRecordSet';
 	const store                     = 'fORMRelated::store';
 	const storeManyToMany           = 'fORMRelated::storeManyToMany';
 	const storeOneToMany            = 'fORMRelated::storeOneToMany';
-	const tallyRecords              = 'fORMRelated::tallyRecords';
 	const validate                  = 'fORMRelated::validate';
 	
 	
@@ -75,6 +77,8 @@ class fORMRelated
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
+		$primary_keys = FALSE;
+		
 		if ($records_to_associate instanceof fRecordSet) {
 			$records = clone $records_to_associate;
 		
@@ -84,33 +88,18 @@ class fORMRelated
 		} elseif ($records_to_associate[0] instanceof fActiveRecord) {
 			$records = fRecordSet::buildFromRecords($related_class, $records_to_associate);	
 		
+		// This indicates we are working with just primary keys, so we have to call a different method
 		} else {
-			$pk_columns    = fORMSchema::retrieve()->getKeys($related_table, 'primary');
-			
-			if (sizeof($pk_columns) == 1) {
-				$records = fRecordSet::build($related_class, array($pk_columns[0] . '=' => $records_to_associate));	
-			
-			} else {
-				$sql = 'SELECT * FROM ' . $related_table . ' WHERE ';
-				
-				$column_info = fORMSchema::retrieve()->getColumnInfo($related_table);
-				$or_conditions = array();
-				foreach ($records_to_associate as $record_to_associate) {
-					$and_conditions = array();
-					foreach ($record_to_associate as $column => $value) {
-						$and_conditions = $column . ' ' . fORMDatabase::escapeBySchema($related_table, $column, $value, '=');	
-					}
-					$or_conditions[] = '(' . join(' AND ', $and_conditions) . ')';
-				}
-				$sql .= '(' . join(' OR ', $or_conditions) . ')';
-				
-				$records = fRecordSet::buildFromSQL($related_class, $sql);
-			}	
+			$primary_keys = TRUE;	
 		}
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
 		
-		self::setRecords($class, $related_records, $related_class, $records, $route);
+		if ($primary_keys) {
+			self::setPrimaryKeys($class, $related_records, $related_class, $records_to_associate, $route);
+		} else {
+			self::setRecordSet($class, $related_records, $related_class, $records, $route);
+		}
 		self::flagForAssociation($class, $related_records, $related_class, $route);
 	}
 	
@@ -161,7 +150,7 @@ class fORMRelated
 			$record_set       = fRecordSet::build($related_class, $where_conditions, $order_bys);
 		}
 		
-		self::setRecords($class, $related_records, $related_class, $record_set, $route);
+		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 		
 		return $record_set;
 	}
@@ -240,7 +229,7 @@ class fORMRelated
 			$count = ($result->valid()) ? (int) $result->fetchScalar() : 0;
 		}
 		
-		self::tallyRecords($class, $related_records, $related_class, $count, $route);
+		self::setCount($class, $related_records, $related_class, $count, $route);
 		
 		return $count;
 	}
@@ -322,11 +311,12 @@ class fORMRelated
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
-		if (!isset($related_records[$related_table][$route])) {
+		if (!isset($related_records[$related_table][$route]['record_set']) && !isset($related_records[$related_table][$route]['primary_keys'])) {
 			throw new fProgrammerException(
-				'%1$s can only be called after %2$s',
+				'%1$s can only be called after %2$s or %3$s',
 				__CLASS__ . '::flagForAssociation()',
-				__CLASS__ . '::setRecords()'
+				__CLASS__ . '::setRecordSet()',
+				__CLASS__ . '::setPrimaryKeys()'
 			);
 		}
 		
@@ -356,6 +346,95 @@ class fORMRelated
 		}
 		
 		return self::$order_bys[$table][$related_table][$route];
+	}
+	
+	
+	/**
+	 * Gets the primary keys of the related records for *-to-many relationships
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  array  &$values           The values for the fActiveRecord class
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
+	 * @param  string $related_class     The class that is related to the current record
+	 * @param  string $route             The route to follow for the class specified
+	 * @return array  The primary keys of the related records
+	 */
+	static public function getPrimaryKeys($class, &$values, &$related_records, $related_class, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		if (!isset($related_records[$related_table])) {
+			$related_records[$related_table] = array();
+		}
+		if (!isset($related_records[$related_table][$route])) {
+			$related_records[$related_table][$route] = array();
+		}
+		
+		$related_info =& $related_records[$related_table][$route];
+		if (!isset($related_info['primary_keys'])) {
+			if (isset($related_info['record_set'])) {
+				$related_info['primary_keys'] = $related_info['record_set']->getPrimaryKeys();
+				
+			// If we don't have a record set yet we want to use a single SQL query to just get the primary keys
+			} else {
+				$relationship       = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
+				$related_pk_columns = fORMSchema::retrieve()->getKeys($related_table, 'primary');
+				$column_info        = fORMSchema::retrieve()->getColumnInfo($related_table);
+				
+				$column         = $relationship['column'];
+				$related_column = $relationship['related_column'];
+				
+				if (!isset($relationship['join_table'])) {
+					
+					$result = fORMDatabase::retrieve()->translatedQuery(
+						"SELECT " . join(', ', $related_pk_columns) . " FROM " . $related_table .
+						" WHERE " . $related_column . fORMDatabase::escapeBySchema($table, $relationship['column'], $values[$column], '=')
+					);
+					
+				} else {
+				
+					// Add the related table to each pk column to ensure we don't get ambiguity SQL errors
+					foreach ($related_pk_columns as &$related_pk_column) {
+						$related_pk_column = $related_table . "." . $related_pk_column;	
+					}
+					
+					$result = fORMDatabase::retrieve()->translatedQuery(
+						"SELECT " . join(', ', $related_pk_columns) . " FROM " . $related_table . " INNER JOIN " . $relationship['join_table'] .
+						" ON " . $related_table . "." . $related_column . " = " . $relationship['join_table'] . "." . $relationship['join_related_column'] .
+						" WHERE " . $relationship['join_table'] . "." . $relationship['join_column'] . fORMDatabase::escapeBySchema($table, $relationship['column'], $values[$column], '=')
+					);
+					
+				}
+				
+				$primary_keys = array();
+				
+				foreach ($result as $row) {
+					if (sizeof($row) > 1) {
+						$primary_key = array();
+						foreach ($row as $column => $value) {
+							$value = fORMDatabase::retrieve()->unescape($column_info[$column]['type'], $value);
+							$primary_key[$column] = $value;
+						}	
+						$primary_keys[] = $primary_key;
+					} else {
+						$column = key($row);
+						$primary_keys[] = fORMDatabase::retrieve()->unescape($column_info[$column]['type'], $row[$column]);
+					}	
+				}
+				
+				$related_info['record_set']   = NULL;
+				$related_info['count']        = sizeof($primary_keys);
+				$related_info['associate']    = FALSE;
+				$related_info['primary_keys'] = $primary_keys;
+			}	
+		}
+		
+		return $related_info['primary_keys'];
 	}
 	
 	
@@ -561,7 +640,7 @@ class fORMRelated
 		}
 		
 		$record_set = fRecordSet::buildFromRecords($related_class, $records);
-		self::setRecords($class, $related_records, $related_class, $record_set, $route);
+		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 		self::flagForAssociation($class, $related_records, $related_class, $route);
 	}
 	
@@ -819,18 +898,56 @@ class fORMRelated
 	
 	
 	/**
-	 * Sets the related records for *-to-many relationships
+	 * Records the number of related one-to-many or many-to-many records
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed   $class             The class name or instance of the class to get the related values for
+	 * @param  array   &$values           The values for the fActiveRecord class
+	 * @param  array   &$related_records  The related records existing for the fActiveRecord class
+	 * @param  string  $related_class     The class that is related to the current record
+	 * @param  integer $count             The number of records
+	 * @param  string  $route             The route to follow for the class specified
+	 * @return void
+	 */
+	static public function setCount($class, &$related_records, $related_class, $count, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		// Cache the results for subsequent calls
+		if (!isset($related_records[$related_table])) {
+			$related_records[$related_table] = array();
+		}
+		if (!isset($related_records[$related_table][$route])) {
+			$related_records[$related_table][$route] = array();
+		}
+		
+		if (!isset($related_records[$related_table][$route]['record_set'])) {
+			$related_records[$related_table][$route]['record_set']   = NULL;
+			$related_records[$related_table][$route]['associate']    = FALSE;
+			$related_records[$related_table][$route]['primary_keys'] = NULL;
+		}
+		
+		$related_records[$related_table][$route]['count'] = $count;
+	}
+	
+	
+	/**
+	 * Sets the related records for *-to-many relationships, providing only primary keys
 	 * 
 	 * @internal
 	 * 
 	 * @param  mixed  $class             The class name or instance of the class to get the related values for
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
-	 * @param  string $related_class     The class we are associating with the current record
-	 * @param  fRecordSet $records       The records are associating
+	 * @param  string $related_class     The class we are setting the records for
+	 * @param  array  $primary_keys      The records to set
 	 * @param  string $route             The route to use between the current class and the related class
 	 * @return void
 	 */
-	static public function setRecords($class, &$related_records, $related_class, fRecordSet $records, $route=NULL)
+	static public function setPrimaryKeys($class, &$related_records, $related_class, $primary_keys, $route=NULL)
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
@@ -844,9 +961,43 @@ class fORMRelated
 			$related_records[$related_table][$route] = array();
 		}
 		
-		$related_records[$related_table][$route]['record_set'] = $records;
-		$related_records[$related_table][$route]['count']      = $records->count();
-		$related_records[$related_table][$route]['associate']  = FALSE;
+		$related_records[$related_table][$route]['record_set']   = NULL;
+		$related_records[$related_table][$route]['count']        = sizeof($primary_keys);
+		$related_records[$related_table][$route]['associate']    = FALSE;
+		$related_records[$related_table][$route]['primary_keys'] = $primary_keys;
+	}
+	
+	
+	/**
+	 * Sets the related records for *-to-many relationships
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
+	 * @param  string $related_class     The class we are associating with the current record
+	 * @param  fRecordSet $records       The records are associating
+	 * @param  string $route             The route to use between the current class and the related class
+	 * @return void
+	 */
+	static public function setRecordSet($class, &$related_records, $related_class, fRecordSet $records, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
+		
+		if (!isset($related_records[$related_table])) {
+			$related_records[$related_table] = array();
+		}
+		if (!isset($related_records[$related_table][$route])) {
+			$related_records[$related_table][$route] = array();
+		}
+		
+		$related_records[$related_table][$route]['record_set']   = $records;
+		$related_records[$related_table][$route]['count']        = $records->count();
+		$related_records[$related_table][$route]['associate']    = FALSE;
+		$related_records[$related_table][$route]['primary_keys'] = NULL;
 	}
 	
 	
@@ -875,9 +1026,9 @@ class fORMRelated
 				
 				$relationship = fORMSchema::getRoute($table, $related_table, $route);
 				if (isset($relationship['join_table'])) {
-					fORMRelated::storeManyToMany($values, $relationship, $related_info['record_set']);
+					fORMRelated::storeManyToMany($values, $relationship, $related_info);
 				} else {
-					fORMRelated::storeOneToMany($values, $relationship, $related_info['record_set']);
+					fORMRelated::storeOneToMany($values, $relationship, $related_info);
 				}
 			}
 		}
@@ -889,12 +1040,12 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  array      &$values       The current values for the main record being stored
-	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set    The set of records to associate
+	 * @param  array &$values       The current values for the main record being stored
+	 * @param  array $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  array $related_info  An array containing the keys `'record_set'`, `'count'`, `'primary_keys'` and `'associate'` 
 	 * @return void
 	 */
-	static public function storeManyToMany(&$values, $relationship, $record_set)
+	static public function storeManyToMany(&$values, $relationship, $related_info)
 	{
 		$column_value      = $values[$relationship['column']];
 		
@@ -910,11 +1061,36 @@ class fORMRelated
 		fORMDatabase::retrieve()->translatedQuery($delete_sql);
 		
 		// Then we add back the ones in the record set
-		$join_related_column     = $relationship['join_related_column'];
-		$get_related_method_name = 'get' . fGrammar::camelize($relationship['related_column'], TRUE);
+		$join_related_column = $relationship['join_related_column'];
 		
-		foreach ($record_set as $record) {
-			$related_column_value = fORMDatabase::escapeBySchema($join_table, $join_related_column, $record->$get_related_method_name());
+		$related_pk_columns  = fORMSchema::retrieve()->getKeys($relationship['related_table'], 'primary');
+		
+		$related_column_values = array();
+		
+		// If the related column is the primary key, we can just use the primary keys if we have them
+		if ($related_pk_columns[0] == $relationship['related_column'] && $related_info['primary_keys']) {
+			$related_column_values = $related_info['primary_keys'];
+		
+		// Otherwise we need to pull the related values out of the record set
+		} else {
+			// If there is no record set, build it from the primary keys
+			if (!$related_info['record_set']) {
+				$related_class = fORM::classize($relationship['related_table']);
+				$related_info['record_set'] = fRecordSet::build($related_class, array($related_pk_columns[0] . '=' => $related_info['primary_keys']));
+			}
+			
+			$get_related_method_name = 'get' . fGrammar::camelize($relationship['related_column'], TRUE);
+			
+			foreach ($related_info['record_set'] as $record) {
+				$related_column_values[] = $record->$get_related_method_name();
+			}	
+		}
+		
+		// Ensure we aren't storing duplicates
+		$related_column_values = array_unique($related_column_values);
+		
+		foreach ($related_column_values as $related_column_value) {
+			$related_column_value = fORMDatabase::escapeBySchema($join_table, $join_related_column, $related_column_value);
 			
 			$insert_sql  = 'INSERT INTO ' . $join_table . ' (' . $join_column . ', ' . $join_related_column . ') ';
 			$insert_sql .= 'VALUES (' . $join_column_value . ', ' . $related_column_value . ')';
@@ -930,14 +1106,16 @@ class fORMRelated
 	 * @throws fValidationException  When one of the "many" records throws an exception from fActiveRecord::store()
 	 * @internal
 	 * 
-	 * @param  array      &$values       The current values for the main record being stored
-	 * @param  array      $relationship  The information about the relationship between this object and the records in the record set
-	 * @param  fRecordSet $record_set    The set of records to store
+	 * @param  array &$values       The current values for the main record being stored
+	 * @param  array $relationship  The information about the relationship between this object and the records in the record set
+	 * @param  array $related_info  An array containing the keys `'record_set'`, `'count'`, `'primary_keys'` and `'associate'`
 	 * @return void
 	 */
-	static public function storeOneToMany(&$values, $relationship, $record_set)
+	static public function storeOneToMany(&$values, $relationship, $related_info)
 	{
 		$column_value = $values[$relationship['column']];
+		
+		$record_set = $related_info['record_set'];
 		
 		$where_conditions = array(
 			$relationship['related_column'] . '=' => $column_value
@@ -968,43 +1146,6 @@ class fORMRelated
 			fRequest::unfilter();
 			$record_number++;
 		}
-	}
-	
-	
-	/**
-	 * Records the number of related one-to-many or many-to-many records
-	 * 
-	 * @internal
-	 * 
-	 * @param  mixed   $class             The class name or instance of the class to get the related values for
-	 * @param  array   &$values           The values for the fActiveRecord class
-	 * @param  array   &$related_records  The related records existing for the fActiveRecord class
-	 * @param  string  $related_class     The class that is related to the current record
-	 * @param  integer $count             The number of records
-	 * @param  string  $route             The route to follow for the class specified
-	 * @return void
-	 */
-	static public function tallyRecords($class, &$related_records, $related_class, $count, $route=NULL)
-	{
-		$table         = fORM::tablize($class);
-		$related_table = fORM::tablize($related_class);
-		
-		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		
-		// Cache the results for subsequent calls
-		if (!isset($related_records[$related_table])) {
-			$related_records[$related_table] = array();
-		}
-		if (!isset($related_records[$related_table][$route])) {
-			$related_records[$related_table][$route] = array();
-		}
-		
-		if (!isset($related_records[$related_table][$route]['record_set'])) {
-			$related_records[$related_table][$route]['record_set'] = NULL;
-			$related_records[$related_table][$route]['associate']  = FALSE;
-		}
-		$related_records[$related_table][$route]['count'] = $count;
-		
 	}
 	
 	

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Added `list{RelatedRecords}()` methods, updated code for new fORMRelated API [wb, 2009-06-02]
  * @changes    1.0.0b18  Changed ::store() to use new fORMRelated::store() method [wb, 2009-06-02]
  * @changes    1.0.0b17  Added some missing parameter information to ::reflect() [wb, 2009-06-01]
  * @changes    1.0.0b16  Fixed bugs in ::__clone() and ::replicate() related to recursive relationships [wb-imarc, 2009-05-20]
@@ -358,9 +359,9 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				 
 				if (isset($parameters[1])) {
-					return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::setRecordSet($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelated::setRecords($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::setRecordSet($this, $this->related_records, $subject, $parameters[0]);
 
 			case 'link':
 				$subject = fGrammar::singularize($subject);
@@ -370,6 +371,15 @@ abstract class fActiveRecord
 					return fORMRelated::linkRecords($this, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::linkRecords($this, $this->related_records, $subject);
+			
+			case 'list':
+				$subject = fGrammar::singularize($subject);
+				$subject = fGrammar::camelize($subject, TRUE);
+				
+				if (isset($parameters[0])) {
+					return fORMRelated::getPrimaryKeys($this, $this->values, $this->related_records, $subject, $parameters[0]);
+				}
+				return fORMRelated::getPrimaryKeys($this, $this->values, $this->related_records, $subject);
 			
 			case 'populate':
 				$subject = fGrammar::singularize($subject);
@@ -385,9 +395,9 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
-					return fORMRelated::tallyRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::setCount($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelated::tallyRecords($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::setCount($this, $this->related_records, $subject, $parameters[0]);
 			
 			// Error handler
 			default:
