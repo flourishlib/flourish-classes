@@ -2,15 +2,16 @@
 /**
  * Adds JSON functionality to fActiveRecord and fRecordSet
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMJSON
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-06-25]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Updated the code to remove the `$associate` parameter for the record set method callback [wb, 2009-06-02]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-06-25]
  */
 class fORMJSON
 {
@@ -111,10 +112,9 @@ class fORMJSON
 	 * @param  string     $class       The class of the records
 	 * @param  array      &$records    The fActiveRecord objects
 	 * @param  integer    &$pointer    The current iteration pointer
-	 * @param  boolean    &$associate  If the record set should be associated with any containing fActiveRecord
 	 * @return string  The JSON object that represents an array of all of the fActiveRecord objects
 	 */
-	static public function toJSONRecordSet($record_set, $class, &$records, &$pointer, &$associate)
+	static public function toJSONRecordSet($record_set, $class, &$records, &$pointer)
 	{
 		return '[' . join(',', $record_set->call('toJSON')) . ']';	
 	}
@@ -131,7 +131,7 @@ class fORMJSON
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
