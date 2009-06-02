@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated ::merge() to accept arrays of fActiveRecords or a single fActiveRecord in addition to an fRecordSet [wb, 2009-06-02]
  * @changes    1.0.0b7  Backwards Compatibility Break - Removed ::flagAssociate() and ::isFlaggedForAssociation(), callbacks registered via fORM::registerRecordSetMethod() no longer receive the `$associate` parameter [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
  * @changes    1.0.0b5  ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
@@ -981,17 +982,58 @@ class fRecordSet implements Iterator
 	
 	
 	/**
-	 * Merges two fRecordSet objects together
+	 * Merges the record set with more records
 	 * 
-	 * @param  fRecordSet  The record set to merge with the current record set, duplicates will **not** be removed
+	 * @param  fRecordSet|array|fActiveRecord $records  The record set, array of records, or record to merge with the current record set, duplicates will **not** be removed
 	 * @return fRecordSet  The merged record sets
 	 */
-	public function merge($record_set)
+	public function merge($records)
 	{
-		if ($this->class != $record_set->class) {
+		if ($records instanceof fRecordSet) {
+			$new_records = $records->records;
+			$new_class   = $records->class;	
+		
+		} elseif (is_array($records)) {
+			$new_records = array();
+			$new_class   = array();
+			foreach ($records as $record) {
+				if (!$record instanceof fActiveRecord) {
+					throw new fProgrammerException(
+						'One of the records specified is not an instance of %s',
+						'fActiveRecord'
+					);	
+				}
+				$new_records[] = $record;
+				if (!in_array(get_class($record), $new_class)) {
+					$new_class[] = get_class($record);
+				}	
+			}
+			if (sizeof($new_class) == 1) {
+				$new_class = $new_class[0];
+			}	
+		
+		} elseif ($records instanceof fActiveRecord) {
+			$new_records = array($records);
+			$new_class   = get_class($records);
+			
+		} else {
+			throw new fProgrammerException(
+				'The records specified, %1$s, are invalid. Must be an %2$s, %3$s or an array of %4$s.',
+				$records,
+				'fRecordSet',
+				'fActiveRecord',
+				'fActiveRecords'
+			);	
+		}
+		
+		if (!$new_records) {
+			return $this;	
+		}
+		
+		if ($this->class != $new_class) {
 			$class = array_unique(array_merge(
-				(is_array($this->class))       ? $this->class       : array($this->class),
-				(is_array($record_set->class)) ? $record_set->class : array($record_set->class)	
+				(is_array($this->class)) ? $this->class : array($this->class),
+				(is_array($new_class))   ? $new_class   : array($new_class)	
 			));
 		} else {
 			$class = $this->class;	
@@ -1001,7 +1043,7 @@ class fRecordSet implements Iterator
 			$class,
 			array_merge(
 				$this->records,
-				$record_set->records
+				$new_records
 			)
 		);
 	}
