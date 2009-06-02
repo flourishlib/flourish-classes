@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * #changes    1.0.0b6  Updated ::showChecked() to require strict equality if one parameter is `NULL` [wb, 2009-06-02]
  * @changes    1.0.0b5  Fixed ::prepare() so it does not encode multi-line HTML comments [wb, 2009-05-09]
  * @changes    1.0.0b4  Added methods ::printOption() and ::showChecked() that were in fCRUD [wb, 2009-05-08]
  * @changes    1.0.0b3  Fixed a bug where ::makeLinks() would double-link some URLs [wb, 2009-01-08]
@@ -245,14 +246,24 @@ class fHTML
 	/**
 	 * Prints a `checked="checked"` HTML input attribute if `$value` equals `$checked_value`, or if `$value` is in `$checked_value`
 	 * 
+	 * Please note that if either `$value` or `$checked_value` is `NULL`, a
+	 * strict comparison will be performed, whereas normally a non-strict
+	 * comparison is made. Thus `0` and `FALSE` will cause the checked
+	 * attribute to be printed, but `0` and `NULL` will not.
+	 * 
 	 * @param  string       $value          The value for the current HTML input tag
 	 * @param  string|array $checked_value  The value (or array of values) that has been checked
 	 * @return boolean  If the checked attribute was printed
 	 */
 	static public function showChecked($value, $checked_value)
 	{
-		$checked = FALSE;
-		if ($value == $checked_value || (is_array($checked_value) && in_array($value, $checked_value))) {
+		$checked  = FALSE;
+		
+		$one_null = $value === NULL || $checked_value === NULL;
+		$equal    = ($one_null) ? $value === $checked_value : $value == $checked_value;
+		$in_array = is_array($checked_value) && in_array($value, $checked_value, $one_null ? TRUE : FALSE);
+		
+		if ($equal || $in_array) {
 			$checked = TRUE;
 		}
 		
