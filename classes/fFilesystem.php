@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Changed ::formatFilesize() to use proper uppercase letters instead of lowercase [wb, 2009-06-02]
  * @changes    1.0.0b4  Added the ::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
  * @changes    1.0.0b2  Fixed a bug where the filepath and exception maps weren't being updated after a rollback [wb, 2008-12-11]
@@ -220,7 +221,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Takes the size of a file in bytes and returns a friendly size in b/kb/mb/gb/tb
+	 * Takes the size of a file in bytes and returns a friendly size in B/KB/MB/GB/TB
 	 * 
 	 * @param  integer $bytes           The size of the file in bytes
 	 * @param  integer $decimal_places  The number of decimal places to display
@@ -231,7 +232,7 @@ class fFilesystem
 		if ($bytes < 0) {
 			$bytes = 0;
 		}
-		$suffixes  = array('b', 'kb', 'mb', 'gb', 'tb');
+		$suffixes  = array('B', 'KB', 'MB', 'GB', 'TB');
 		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
 		$suffix    = floor(log($bytes)/6.9314718);
 		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
