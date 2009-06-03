@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added support for `'*'` and arrays of names to ::check() [wb, 2009-06-02] 
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Changed ::show() to accept more than one message name, or * for all messages [wb, 2009-01-12]
  * @changes    1.0.0b   The initial implementation [wb, 2008-03-05]
@@ -27,12 +28,35 @@ class fMessaging
 	/**
 	 * Checks to see if a message exists of the name specified for the recipient specified
 	 * 
-	 * @param  string $name       The name of the message
+	 * @param  string $name       The name or array of names of the message(s) to check for, or `'*'` to check for any
 	 * @param  string $recipient  The intended recipient
-	 * @return boolean  If a message of the type and recipient specified exists
+	 * @return boolean  If a message of the name and recipient specified exists
 	 */
 	static public function check($name, $recipient)
 	{
+		// Check all messages if * is specified
+		if (is_string($name) && $name == '*') {
+			fSession::open();
+			$prefix = __CLASS__ . '::' . $recipient . '::';
+			$keys   = array_keys($_SESSION);
+			foreach ($keys as $key) {
+				if (strpos($key, $prefix) === 0) {
+					return TRUE;
+				}
+			}
+			return FALSE;
+		}
+		
+		// Handle checking multiple messages
+		if (is_array($name)) {
+			foreach ($names as $name) {
+				if (self::check($name, $recipient)) {
+					return TRUE;	
+				}
+			}
+			return FALSE;
+		}
+		
 		return fSession::get($name, NULL, __CLASS__ . '::' . $recipient . '::') !== NULL;
 	}
 	
