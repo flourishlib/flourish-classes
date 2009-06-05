@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b7  Updated ::validateRelated() to use new fORMRelated::validate() method and ::checkRelatedOneOrMoreRule() to use new `$related_records` structure [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b5  Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
@@ -235,8 +236,8 @@ class fORMValidation
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
 			return self::compose(
-				'%s: Please enter a value',
-				fORM::getColumnName($class, $column)
+				'%sPlease enter a value',
+				fValidationException::formatField(fORM::getColumnName($class, $column))
 			);
 		}
 		
@@ -246,8 +247,8 @@ class fORMValidation
 		// Make sure a valid value is chosen
 		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
 			return self::compose(
-				'%1$s: Please choose from one of the following: %2$s',
-				fORM::getColumnName($class, $column),
+				'%1$sPlease choose from one of the following: %2$s',
+				fValidationException::formatField(fORM::getColumnName($class, $column)),
 				join(', ', $column_info['valid_values'])
 			);
 		}
@@ -255,8 +256,8 @@ class fORMValidation
 		// Make sure the value isn't too long
 		if ($column_info['type'] == 'varchar' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
 			return self::compose(
-				'%1$s: Please enter a value no longer than %2$s characters',
-				fORM::getColumnName($class, $column),
+				'%1$sPlease enter a value no longer than %2$s characters',
+				fValidationException::formatField(fORM::getColumnName($class, $column)),
 				$column_info['max_length']
 			);
 		}
@@ -264,8 +265,8 @@ class fORMValidation
 		// Make sure the value is the proper length
 		if ($column_info['type'] == 'char' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) != $column_info['max_length']) {
 			return self::compose(
-				'%1$s: Please enter exactly %2$s characters',
-				fORM::getColumnName($class, $column),
+				'%1$sPlease enter exactly %2$s characters',
+				fValidationException::formatField(fORM::getColumnName($class, $column)),
 				$column_info['max_length']
 			);
 		}
@@ -299,8 +300,8 @@ class fORMValidation
 			foreach ($conditional_columns as $conditional_column) {
 				if ($values[$conditional_column] === NULL) {
 					$messages[] = self::compose(
-						'%s: Please enter a value',
-						fORM::getColumnName($class, $conditional_column)
+						'%sPlease enter a value',
+						fValidationException::formatField(fORM::getColumnName($class, $conditional_column))
 					);
 				}
 			}
@@ -332,8 +333,8 @@ class fORMValidation
 				case 'blob':
 					if (!is_string($value) && !is_numeric($value)) {
 						return self::compose(
-							'%s: Please enter a string',
-							fORM::getColumnName($class, $column)
+							'%sPlease enter a string',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
 						);
 					}
 					break;
@@ -341,8 +342,8 @@ class fORMValidation
 				case 'float':
 					if (!is_numeric($value)) {
 						return self::compose(
-							'%s: Please enter a number',
-							fORM::getColumnName($class, $column)
+							'%sPlease enter a number',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
 						);
 					}
 					break;
@@ -351,8 +352,8 @@ class fORMValidation
 						new fTimestamp($value);	
 					} catch (fValidationException $e) {
 						return self::compose(
-							'%s: Please enter a date/time',
-							fORM::getColumnName($class, $column)
+							'%sPlease enter a date/time',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
 						);
 					}
 					break;
@@ -361,8 +362,8 @@ class fORMValidation
 						new fDate($value);	
 					} catch (fValidationException $e) {
 						return self::compose(
-							'%s: Please enter a date',
-							fORM::getColumnName($class, $column)
+							'%sPlease enter a date',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
 						);
 					}
 					break;
@@ -371,8 +372,8 @@ class fORMValidation
 						new fTime($value);	
 					} catch (fValidationException $e) {
 						return self::compose(
-							'%s: Please enter a time',
-							fORM::getColumnName($class, $column)
+							'%sPlease enter a time',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
 						);
 					}
 					break;
@@ -412,8 +413,8 @@ class fORMValidation
 					$result->tossIfNoRows();
 				} catch (fNoRowsException $e) {
 					return self::compose(
-						'%s: The value specified is invalid',
-						fORM::getColumnName($class, $column)
+						'%sThe value specified is invalid',
+						fValidationException::formatField(fORM::getColumnName($class, $column))
 					);
 				}
 			}
@@ -446,8 +447,8 @@ class fORMValidation
 				$column_names[] = fORM::getColumnName($class, $column);
 			}
 			return self::compose(
-				'%s: Please enter a value for at least one',
-				join(', ', $column_names)
+				'%sPlease enter a value for at least one',
+				fValidationException::formatField(join(', ', $column_names))
 			);
 		}
 	}
@@ -475,8 +476,8 @@ class fORMValidation
 			if ($values[$column] !== NULL) {
 				if ($found_value) {
 					return self::compose(
-						'%s: Please enter a value for only one',
-						join(', ', $column_names)
+						'%sPlease enter a value for only one',
+						fValidationException::formatField(join(', ', $column_names))
 					);
 				}
 				$found_value = TRUE;
@@ -485,8 +486,8 @@ class fORMValidation
 		
 		if (!$found_value) {
 			return self::compose(
-				'%s: Please enter a value for one',
-				join(', ', $column_names)
+				'%sPlease enter a value for one',
+				fValidationException::formatField(join(', ', $column_names))
 			);	
 		}	
 	}
@@ -585,8 +586,8 @@ class fORMValidation
 		}
 		
 		return self::compose(
-			'%s: Please select at least one',
-			fGrammar::pluralize(fORMRelated::getRelatedRecordName($class, $related_class, $route))
+			'%sPlease select at least one',
+			fValidationException::formatField(fGrammar::pluralize(fORMRelated::getRelatedRecordName($class, $related_class, $route)))
 		);
 	}
 	
@@ -654,13 +655,13 @@ class fORMValidation
 					}
 					if (sizeof($column_names) == 1) {
 						return self::compose(
-							'%s: The value specified must be unique, however it already exists',
-							join('', $column_names)
+							'%sThe value specified must be unique, however it already exists',
+							fValidationException::formatField(join('', $column_names))
 						);
 					} else {
 						return self::compose(
-							'%s: The values specified must be a unique combination, however the specified combination already exists',
-							join(', ', $column_names)
+							'%sThe values specified must be a unique combination, however the specified combination already exists',
+							fValidationException::formatField(join(', ', $column_names))
 						);
 					}
 				

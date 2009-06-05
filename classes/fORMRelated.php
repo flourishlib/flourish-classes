@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b5  Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
  * @changes    1.0.0b4  Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
  * @changes    1.0.0b3  ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
@@ -1215,16 +1216,28 @@ class fORMRelated
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number-1);
 			$record_messages = $record->validate(TRUE);
+			
 			foreach ($record_messages as $record_message) {
 				// Ignore validation messages about the primary key since it will be added
-				if (strpos($record_message, fORM::getColumnName($related_class, $route_name)) !== FALSE) {
+				if (strpos($record_message, fValidationException::formatField(fORM::getColumnName($related_class, $route_name))) === 0) {
 					continue;
 				}
+				
+				$token_field           = fValidationException::formatField('__TOKEN__');
+				$extract_message_regex = '#' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '(.*)$#D';
+				preg_match($extract_message_regex, $record_message, $matches);
+				
 				$messages[] = self::compose(
-					'%1$s #%2$s %3$s',
-					$related_record_name,
-					$record_number,
-					$record_message
+					'%1$s%2$s',
+					fValidationException::formatField(
+						self::compose(
+							'%1$s #%2$s %3$s',
+							$related_record_name,
+							$record_number,
+							$matches[1]
+						)
+					),
+					$matches[2]
 				);
 			}
 			$record_number++;
@@ -1256,9 +1269,14 @@ class fORMRelated
 		foreach ($record_set as $record) {
 			if (!$record->exists()) {
 				$messages[] = self::compose(
-					'%1$s #%2$s: Please select a %3$s',
-					$related_record_name,
-					$record_number,
+					'%sPlease select a %3$s',
+					fValidationException::formatField(
+						self::compose(
+							'%1$s #%2$s',
+							$related_record_name,
+							$record_number
+						)
+					),
 					$related_record_name
 				);
 			}

@@ -2,15 +2,16 @@
 /**
  * Provides money functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b1
- * @changes    1.0.0b1  Fixed bugs with objectifying money columns [wb, 2008-11-24]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b2  Fixed bugs with objectifying money columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
  */
 class fORMMoney
@@ -586,14 +587,14 @@ class fORMMoney
 			}
 			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
 				$validation_messages[] = self::compose(
-					'%s: The currency specified is invalid',
-					fORM::getColumnName($class, $currency_column)
+					'%sThe currency specified is invalid',
+					fValidationException::formatField(fORM::getColumnName($class, $currency_column))
 				);	
 				
 			} else {
 				$validation_messages[] = self::compose(
-					'%s: Please enter a monetary value',
-					fORM::getColumnName($class, $column)
+					'%sPlease enter a monetary value',
+					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);
 			}
 		}
@@ -611,7 +612,7 @@ class fORMMoney
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

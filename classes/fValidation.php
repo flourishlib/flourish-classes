@@ -270,8 +270,8 @@ class fValidation
 					new fTimestamp($value);	
 				} catch (fValidationException $e) {
 					$messages[] = self::compose(
-						'%s: Please enter a date',
-						fGrammar::humanize($date_field)
+						'%sPlease enter a date',
+						fValidationException::formatField(fGrammar::humanize($date_field))
 					);
 				}
 			}
@@ -291,8 +291,8 @@ class fValidation
 			$value = trim(fRequest::get($email_field));
 			if (self::stringlike($value) && !preg_match(fEmail::EMAIL_REGEX, $value)) {
 				$messages[] = self::compose(
-					'%s: Please enter an email address in the form name@example.com',
-					fGrammar::humanize($email_field)
+					'%sPlease enter an email address in the form name@example.com',
+					fValidationException::formatField(fGrammar::humanize($email_field))
 				);
 			}
 		}
@@ -310,8 +310,8 @@ class fValidation
 		foreach ($this->email_header_fields as $email_header_field) {
 			if (preg_match('#\r|\n#', fRequest::get($email_header_field))) {
 				$messages[] = self::compose(
-					'%s: Line breaks are not allowed',
-					fGrammar::humanize($email_header_field)
+					'%sLine breaks are not allowed',
+					fValidationException::formatField(fGrammar::humanize($email_header_field))
 				);
 			}
 		}
@@ -331,8 +331,8 @@ class fValidation
 			if (is_numeric($key) && is_string($required_field)) {
 				if (!self::hasValue($required_field)) {
 					$messages[] = self::compose(
-						'%s: Please enter a value',
-						fGrammar::humanize($required_field)
+						'%sPlease enter a value',
+						fValidationException::formatField(fGrammar::humanize($required_field))
 					);
 				}
 				
@@ -348,8 +348,8 @@ class fValidation
 				if (!$found) {
 					$required_field = array_map(array('fGrammar', 'humanize'), $required_field);
 					$messages[] = self::compose(
-						'%s: Please enter at least one',
-						join(', ', $required_field)
+						'%sPlease enter at least one',
+						fValidationException::formatField(join(', ', $required_field))
 					);
 				}
 				
@@ -361,8 +361,8 @@ class fValidation
 				foreach ($required_field as $individual_field) {
 					if (!self::hasValue($individual_field)) {
 						$messages[] = self::compose(
-							'%s: Please enter a value',
-							fGrammar::humanize($individual_field)
+							'%sPlease enter a value',
+							fValidationException::formatField(fGrammar::humanize($individual_field))
 						);
 					}
 				}
@@ -383,8 +383,8 @@ class fValidation
 			$value = trim(fRequest::get($url_field));
 			if (self::stringlike($value) && !preg_match('#^https?://[^ ]+$#iD', $value)) {
 				$messages[] = self::compose(
-					'%s: Please enter a URL in the form http://www.example.com/page',
-					fGrammar::humanize($url_field)
+					'%sPlease enter a URL in the form http://www.example.com/page',
+					fValidationException::formatField(fGrammar::humanize($url_field))
 				);
 			}
 		}
@@ -442,16 +442,10 @@ class fValidation
 		$this->checkURLFields($messages);
 		
 		if ($messages) {
-			if (class_exists('fText', FALSE)) {
-				$message = fText::compose("The following problems were found:");	
-			} else {
-				$message = "The following problems were found:";
-			}
-			
 			throw new fValidationException(
 				sprintf(
 					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					$message,
+					self::compose("The following problems were found:"),
 					join("</li>\n<li>", $messages)
 				)
 			);

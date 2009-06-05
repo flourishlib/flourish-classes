@@ -2,15 +2,16 @@
 /**
  * Provides additional date/time functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-09-05]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
  */
 class fORMDate
 {
@@ -597,14 +598,14 @@ class fORMDate
 			}
 			if (!fTimestamp::isValidTimezone($values[$timezone_column])) {
 				$validation_messages[] = self::compose(
-					'%s: The timezone specified is invalid',
-					fORM::getColumnName($class, $timezone_column)
+					'%sThe timezone specified is invalid',
+					fValidationException::formatField(fORM::getColumnName($class, $timezone_column))
 				);	
 				
 			} else {
 				$validation_messages[] = self::compose(
-					'%s: Please enter a date/time',
-					fORM::getColumnName($class, $timestamp_column)
+					'%sPlease enter a date/time',
+					fValidationException::formatField(fORM::getColumnName($class, $timestamp_column))
 				);
 			}
 		}
@@ -622,7 +623,7 @@ class fORMDate
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

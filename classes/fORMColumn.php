@@ -2,15 +2,16 @@
 /**
  * Provides special column functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b1
- * @changes    1.0.0b1  Fixed a bug with objectifying number columns [wb, 2008-11-24]
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b2  Fixed a bug with objectifying number columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-05-27]
  */
 class fORMColumn
@@ -767,8 +768,8 @@ class fORMColumn
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#iD', $values[$column])) {
 				$validation_messages[] = self::compose(
-					'%s: Please enter an email address in the form name@example.com',
-					fORM::getColumnName($class, $column)
+					'%sPlease enter an email address in the form name@example.com',
+					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);
 			}
 		}
@@ -802,8 +803,8 @@ class fORMColumn
 			}
 			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
 				$validation_messages[] = self::compose(
-					'%s: Please enter a link in the form http://www.example.com',
-					fORM::getColumnName($class, $column)
+					'%sPlease enter a link in the form http://www.example.com',
+					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);
 			}
 		}
@@ -821,7 +822,7 @@ class fORMColumn
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

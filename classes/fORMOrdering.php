@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b3  Fixed a bug with setting a new record to anywhere but the end of a set [wb, 2009-03-18]
  * @changes    1.0.0b2  Fixed a bug with ::inspect(), 'max_ordering_value' was being returned as 'max_ordering_index' [wb, 2009-03-02]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-25]
@@ -572,7 +573,7 @@ class fORMOrdering
 		// Remove any previous validation warnings
 		$filtered_messages = array();
 		foreach ($validation_messages as $validation_message) {
-			if (!preg_match('#^[^:]*\b' . preg_quote($column_name, '#') . '\b#', $validation_message)) {
+			if (!preg_match('#^' . preg_quote(fValidationException::formatField($column_name), '#') . '#', $validation_message)) {
 				$filtered_messages[] = $validation_message;
 			}
 		}
@@ -584,13 +585,13 @@ class fORMOrdering
 		}
 		
 		if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-			$validation_messages[] = self::compose('%s: Please enter an integer', $column_name);
+			$validation_messages[] = self::compose('%sPlease enter an integer', fValidationException::formatField($column_name));
 		
 		} elseif ($current_value < 1) {
-			$validation_messages[] = self::compose('%s: The value can not be less than 1', $column_name);
+			$validation_messages[] = self::compose('%sThe value can not be less than 1', fValidationException::formatField($column_name));
 			
 		} elseif ((!$new_set || $new_set_new_value) && $current_value > $new_max_value) {
-			$validation_messages[] = self::compose('%1$s: The value can not be greater than %2$s', $column_name, $new_max_value);
+			$validation_messages[] = self::compose('%1$sThe value can not be greater than %2$s', fValidationException::formatField($column_name), $new_max_value);
 		}
 	}
 	

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b10  Fixed a bug where an inherited file upload column would not be properly re-set with an `existing-` input [wb, 2009-05-26]
  * @changes    1.0.0b9   ::upload() and ::set() now set the `$values` entry to `NULL` for filenames that are empty [wb, 2009-03-02]
  * @changes    1.0.0b8   Changed ::set() to accept objects and reject directories [wb, 2009-01-21]
@@ -1217,9 +1218,9 @@ class fORMFile
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
-			$search_message  = self::compose('#%s: Please enter a value$#', $column_name);
-			$replace_message = self::compose('%s: Please upload a file', $column_name);;
-			$validation_messages = preg_replace($search_message, $replace_message, $validation_messages);
+			$search_message  = self::compose('%sPlease enter a value', fValidationException::formatField($column_name));
+			$replace_message = self::compose('%sPlease upload a file', fValidationException::formatField($column_name));
+			$validation_messages = preg_replace('#^' . preg_quote($search_message, '#') . '$#', $replace_message, $validation_messages);
 			
 			// Grab the error that occured
 			try {
@@ -1229,7 +1230,7 @@ class fORMFile
 				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != self::compose('Please upload a file')) {
-					$validation_messages[] = $column_name . ': ' . $e->getMessage();
+					$validation_messages[] = fValidationException::formatField($column_name) . $e->getMessage();
 				}
 			}
 		}

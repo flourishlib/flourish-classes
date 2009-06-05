@@ -14,6 +14,50 @@
  */
 class fValidationException extends fExpectedException
 {
+	/**
+	 * The formatting string to use for field names
+	 * 
+	 * @var string
+	 */
+	static protected $field_format = '%s: ';
+	
+	
+	/**
+	 * Accepts a field name and formats it based on the formatting string set via ::setFieldFormat()
+	 * 
+	 * @param string $field  The name of the field to format
+	 * @return string  The formatted field name
+	 */
+	static public function formatField($field)
+	{
+		return sprintf(self::$field_format, $field);	
+	}
+	
+	
+	/**
+	* Set the format to be applied to all field names used in fValidationExceptions
+	* 
+	* The format should contain exactly one `%s`
+	* [http://php.net/sprintf sprintf()] conversion specification, which will
+	* be replaced with the field name. Any literal `%` characters should be
+	* written as `%%`.
+	* 
+	* The default format is just `%s: `, which simply inserts a `:` and space
+	* after the field name.
+	* 
+	* @param string $format  A string to format the field name with - `%s` will be replaced with the field name
+	* @return void
+	*/
+	static public function setFieldFormat($format)
+	{
+		if (substr_count(str_replace('%%', '', $format), '%') != 1 || strpos($format, '%s') === FALSE) {
+			throw new fProgrammerException(
+				'The format, %s, has more or less than exactly one %%s sprintf() conversion specification',
+				$format
+			);	
+		}
+		self::$field_format = $format;		
+	}
 }
 
 
