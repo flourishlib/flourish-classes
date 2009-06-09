@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed a bug where some windows machines would throw an exception when generating random strings or numbers [wb, 2009-06-09]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
  * @changes    1.0.0b2  Backwards compatibility break - changed ::symmetricKeyEncrypt() to not encrypt the IV since we are using HMAC on it [wb, 2009-01-26]
@@ -389,6 +390,8 @@ class fCryptography
 		
 		$old_level = error_reporting(error_reporting() & ~E_WARNING);
 		
+		$bytes = NULL;
+		
 		// On linux/unix/solaris we should be able to use /dev/urandom
 		if (!fCore::checkOS('windows') && $handle = fopen('/dev/urandom', 'rb')) {
 			$bytes = fread($handle, 32);
@@ -396,12 +399,16 @@ class fCryptography
 				
 		// On windows we should be able to use the Cryptographic Application Programming Interface COM object
 		} elseif (fCore::checkOS('windows') && class_exists('COM', FALSE)) {
-			$capi  = new COM('CAPICOM.Utilities.1');
-			$bytes = base64_decode($capi->getrandom(32, 0));
-			unset($capi);
+			try {
+				// This COM object no longer seems to work on PHP 5.2.9+, no response on the bug report yet
+				$capi  = new COM('CAPICOM.Utilities.1');
+				$bytes = base64_decode($capi->getrandom(32, 0));
+				unset($capi);
+			} catch (Exception $e) { }
+		}
 		
-		// Otherwise we get some of the most unique info we can		
-		} else {
+		// If we could not use the OS random number generators we get some of the most unique info we can		
+		if (!$bytes) {
 			$bytes = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);	
 		}
 		
