@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b5  Changed ::formatFilesize() to use proper uppercase letters instead of lowercase [wb, 2009-06-02]
  * @changes    1.0.0b4  Added the ::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b3  Removed some unnecessary error suppresion operators [wb, 2008-12-11]
@@ -448,7 +449,11 @@ class fFilesystem
 		// Handle all of the directories and files inside this directory
 		foreach (self::$filename_map as $filename => $ignore) {
 			if (preg_match('#^' . preg_quote($existing_dirname, '#') . '#', $filename)) {
-				$new_filename = preg_replace('#^' . preg_quote($existing_dirname, '#') . '#', $new_dirname, $filename);
+				$new_filename = preg_replace(
+					'#^' . preg_quote($existing_dirname, '#') . '#',
+					strtr($new_dirname, array('\\' => '\\\\', '$' => '\\$')),
+					$filename
+				);
 				
 				self::$filename_map[$new_filename]  =& self::$filename_map[$filename];
 				self::$exception_map[$new_filename] =& self::$exception_map[$filename];
@@ -630,7 +635,11 @@ class fFilesystem
 		$translations = array(realpath($_SERVER['DOCUMENT_ROOT']) => '') + self::$web_path_translations;
 		
 		foreach ($translations as $search => $replace) {
-			$path = preg_replace('#^' . preg_quote($search, '#') . '#', $replace, $path);
+			$path = preg_replace(
+				'#^' . preg_quote($search, '#') . '#',
+				strtr($replace, array('\\' => '\\\\', '$' => '\\$')),
+				$path
+			);
 		}
 		
 		return $path;

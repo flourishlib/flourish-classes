@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b19  Added `list{RelatedRecords}()` methods, updated code for new fORMRelated API [wb, 2009-06-02]
  * @changes    1.0.0b18  Changed ::store() to use new fORMRelated::store() method [wb, 2009-06-02]
  * @changes    1.0.0b17  Added some missing parameter information to ::reflect() [wb, 2009-06-01]
@@ -853,7 +854,7 @@ abstract class fActiveRecord
 					$regex_parts = explode('__', $regex);
 					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
 					
-					$message = preg_replace($regex, '\1' . fORM::getRecordName($this) . '\2', $message);
+					$message = preg_replace($regex, '\1' . strtr(fORM::getRecordName($this), array('\\' => '\\\\', '$' => '\\$')) . '\2', $message);
 					
 					$find          = self::compose("One or more %s references it", '__');
 					$find_parts    = explode('__', $find);
@@ -861,7 +862,7 @@ abstract class fActiveRecord
 					
 					$replace       = self::compose("One or more %s indirectly references it", '__');
 					$replace_parts = explode('__', $replace);
-					$replace_regex = $replace_parts[0] . '\1' . $replace_parts[1];
+					$replace_regex = strtr($replace_parts[0], array('\\' => '\\\\', '$' => '\\$')) . '\1' . strtr($replace_parts[1], array('\\' => '\\\\', '$' => '\\$'));
 					
 					$message = preg_replace($find_regex, $replace_regex, $regex);
 					throw new fValidationException($message);

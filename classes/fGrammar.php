@@ -10,6 +10,7 @@
  * @link       http://flourishlib.com/fGrammar
  * 
  * @version    1.0.0b2
+ * @changes    1.0.0b3  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b2  Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
  */
@@ -150,11 +151,17 @@ class fGrammar
 	static public function addSingularPluralRule($singular, $plural)
 	{
 		self::$singular_to_plural_rules = array_merge(
-			array('^(' . $singular[0] . ')' . substr($singular, 1) . '$' => '\1' . substr($plural, 1)),
+			array(
+				'^(' . preg_quote($singular[0], '#') . ')' . preg_quote(substr($singular, 1), '#') . '$' =>
+					'\1' . strtr(substr($plural, 1), array('\\' => '\\\\', '$' => '\\$'))
+			),
 			self::$singular_to_plural_rules
 		);
 		self::$plural_to_singular_rules = array_merge(
-			array('^(' . $plural[0] . ')' . substr($plural, 1) . '$' => '\1' . substr($singular, 1)),
+			array(
+				'^(' . preg_quote($plural[0], '#') . ')' . preg_quote(substr($plural, 1), '#') . '$' =>
+					'\1' . strtr(substr($singular, 1), array('\\' => '\\\\', '$' => '\\$'))
+			),
 			self::$plural_to_singular_rules
 		);
 	}

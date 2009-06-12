@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b11  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b10  Fixed a bug where an inherited file upload column would not be properly re-set with an `existing-` input [wb, 2009-05-26]
  * @changes    1.0.0b9   ::upload() and ::set() now set the `$values` entry to `NULL` for filenames that are empty [wb, 2009-03-02]
@@ -1220,7 +1221,7 @@ class fORMFile
 			
 			$search_message  = self::compose('%sPlease enter a value', fValidationException::formatField($column_name));
 			$replace_message = self::compose('%sPlease upload a file', fValidationException::formatField($column_name));
-			$validation_messages = preg_replace('#^' . preg_quote($search_message, '#') . '$#', $replace_message, $validation_messages);
+			$validation_messages = preg_replace('#^' . preg_quote($search_message, '#') . '$#', strtr($replace_message, array('\\' => '\\\\', '$' => '\\$')), $validation_messages);
 			
 			// Grab the error that occured
 			try {

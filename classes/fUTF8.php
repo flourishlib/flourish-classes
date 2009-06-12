@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b3  Fixed a parameter name in ::rpos() from `$search` to `$needle` [wb, 2009-02-06]
  * @changes    1.0.0b2  Fixed a bug in ::explode() with newlines and zero-length delimiters [wb, 2009-02-05]
  * @changes    1.0.0b   The initial implementation [wb, 2008-06-01]
@@ -851,7 +852,11 @@ class fUTF8
 		} else {
 			$search = '#' . preg_quote($search, '#') . '#ui';
 		}
-		return preg_replace($search, $replace, $string);
+		return preg_replace(
+			$search,
+			strtr($replace, array('\\' => '\\\\', '$' => '\\$')),
+			$string
+		);
 	}
 	
 	

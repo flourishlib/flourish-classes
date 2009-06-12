@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b5  Update code to only translate data types inside of `CREATE TABLE` queries [wb, 2009-05-22]
  * @changes    1.0.0b4  Added the missing ::__get() method for callback support [wb, 2009-05-06]
  * @changes    1.0.0b3  Added Oracle and caching support, various bug fixes [wb, 2009-05-04]
@@ -633,7 +634,7 @@ class fSQLTranslation
 				}		
 			}
 			
-			$replace = preg_replace('#\bselect\s+' . preg_quote($select_clause, '#') . '#i', 'SELECT ' . join(', ', array_merge($selections, $additions)), $select);
+			$replace = preg_replace('#\bselect\s+' . preg_quote($select_clause, '#') . '#i', 'SELECT ' . strtr(join(', ', array_merge($selections, $additions)), array('\\' => '\\\\', '$' => '\\$')), $select);
 			$sql = str_replace($select, $replace, $sql);	
 		}
 		
@@ -668,7 +669,7 @@ class fSQLTranslation
 		}
 		
 		if ($set_clause) {
-			$sql = preg_replace('#:set_clause\b#', $set_clause, $sql, 1);	
+			$sql = preg_replace('#:set_clause\b#', strtr($set_clause, array('\\' => '\\\\', '$' => '\\$')), $sql, 1);	
 		}
 		
 		return $sql;
@@ -738,6 +739,7 @@ class fSQLTranslation
 				
 			// Put the strings back into the SQL
 			foreach ($strings[$number] as $index => $string) {
+				$string  = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
 				$sql     = preg_replace('#:string_' . $index . '\b#', $string, $sql, 1);
 				$new_sql = preg_replace('#:string_' . $index . '\b#', $string, $new_sql, 1);	
 			}

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b8  Fixed a bug with ::creatingWhereClause() where a null value would not be escaped property [wb, 2009-05-12]
  * @changes    1.0.0b7  Fixed a bug where an OR condition in ::createWhereClause() could not have one of the values be an array [wb, 2009-04-22]
  * @changes    1.0.0b6  ::insertFromAndGroupByClauses() will no longer wrap ungrouped columns if in a CAST or CASE statement for ORDER BY clauses of queries with a GROUP BY clause [wb, 2009-03-23]
@@ -935,9 +936,9 @@ class fORMDatabase
 				
 				$temp_sql = str_replace(':from_clause', $from_clause, $temp_sql);
 				if ($has_group_by_placeholder) {
-					$temp_sql = preg_replace('#\s:group_by_clause\s#', $group_by_clause, $temp_sql);
+					$temp_sql = preg_replace('#\s:group_by_clause\s#', strtr($group_by_clause, array('\\' => '\\\\', '$' => '\\$')), $temp_sql);
 				} elseif ($group_by_columns) {
-					$temp_sql = preg_replace('#(\sGROUP\s+BY\s((?!HAVING|ORDER\s+BY).)*)\s#i', '\1, ' . $group_by_columns, $temp_sql);
+					$temp_sql = preg_replace('#(\sGROUP\s+BY\s((?!HAVING|ORDER\s+BY).)*)\s#i', '\1, ' . strtr($group_by_columns, array('\\' => '\\\\', '$' => '\\$')), $temp_sql);
 				}
 			}
 			

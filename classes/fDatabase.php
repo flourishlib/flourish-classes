@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b10  Changed date/time/timestamp escaping from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b9   Fixed a bug with ::escape() where floats that start with a . were encoded as `NULL` [wb, 2009-05-09]
  * @changes    1.0.0b8   Added Oracle support, change PostgreSQL code to no longer cause lastval() warnings, added support for arrays of values to ::escape() [wb, 2009-05-03]
@@ -954,7 +955,8 @@ class fDatabase
 		
 		$string_number = 0;
 		foreach ($strings as $string) {
-			$sql = preg_replace('#:string_' . $string_number++ . '\b#', $string, $sql);	
+			$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
+			$sql    = preg_replace('#:string_' . $string_number++ . '\b#', $string, $sql);	
 		}
 		
 		return $sql;
@@ -1184,7 +1186,7 @@ class fDatabase
 			}
 			
 			# a \ before a \r\n has to be escaped with another \
-			return preg_replace('#(?<!\\\\)\\\\(?=\r\n)#', '\\\\', $output);
+			return preg_replace('#(?<!\\\\)\\\\(?=\r\n)#', '\\\\\\\\', $output);
 		
 		} elseif ($this->extension == 'pdo') {
 			return $this->connection->quote($value);
@@ -1983,7 +1985,8 @@ class fDatabase
 				$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
 				// Put the strings back into the SQL
 				foreach ($strings[$number] as $index => $string) {
-					$query = preg_replace('#:string_' . $index . '\b#', str_replace('\\', '\\\\', $string), $query, 1);
+					$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
+					$query  = preg_replace('#:string_' . $index . '\b#', $string, $query, 1);
 				}
 				$output[] = $query;
 			}	
