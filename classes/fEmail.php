@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug where the MIME headers were not being set for all emails [wb, 2009-06-12]
  * @changes    1.0.0b8  Added the method ::clearRecipients() [wb, 2009-05-29]
  * @changes    1.0.0b7  Email names with UTF-8 characters are now properly encoded [wb, 2009-05-08]
  * @changes    1.0.0b6  Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
@@ -636,9 +637,7 @@ class fEmail
 			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";
 		}
 		
-		if ($this->html_body || $this->attachments) {
-			$headers .= "MIME-Version: 1.0\r\n";
-		}
+		$headers .= "MIME-Version: 1.0\r\n";
 		
 		if ($this->html_body && !$this->attachments) {
 			$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n";
