@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated class to automatically correct ordering values that are too high [wb, 2009-06-14]
  * @changes    1.0.0b4  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b3  Fixed a bug with setting a new record to anywhere but the end of a set [wb, 2009-03-18]
  * @changes    1.0.0b2  Fixed a bug with ::inspect(), 'max_ordering_value' was being returned as 'max_ordering_index' [wb, 2009-03-02]
@@ -393,6 +394,8 @@ class fORMOrdering
 			$new_max_value = $current_max_value + 1;
 		}
 		
+		$changed = FALSE;
+		
 		// If a blank value was set, correct it to the old value (if there
 		// was one), or a new value at the end of the set
 		if ($current_value === '' || $current_value === NULL) {
@@ -401,13 +404,24 @@ class fORMOrdering
 			} else {
 				$current_value = $new_max_value;
 			}
-			fActiveRecord::assign($values, $old_values, $column, $current_value);
+			$changed = TRUE;
 		}
 		
 		// When we move an object into a new set and the value didn't change then move it to the end of the new set
 		if ($new_set && $object->exists() && ($old_value === NULL || $old_value == $current_value)) {
 			$current_value = $new_max_value;
-			fActiveRecord::assign($values, $old_values, $column, $current_value);		
+			$changed = TRUE;		
+		}
+		
+		// If the value is too high, then set it to the last value
+		if ($current_value > $new_max_value) {
+			$current_value = $new_max_value;
+			$changed = TRUE;
+		}
+		
+		if ($changed) {
+			fActiveRecord::assign($values, $old_values, $column, $current_value);
+			$old_value = fActiveRecord::retrieveOld($old_values, $column);
 		}
 		
 		// If the value didn't change, we can exit
@@ -590,8 +604,6 @@ class fORMOrdering
 		} elseif ($current_value < 1) {
 			$validation_messages[] = self::compose('%sThe value can not be less than 1', fValidationException::formatField($column_name));
 			
-		} elseif ((!$new_set || $new_set_new_value) && $current_value > $new_max_value) {
-			$validation_messages[] = self::compose('%1$sThe value can not be greater than %2$s', fValidationException::formatField($column_name), $new_max_value);
 		}
 	}
 	
