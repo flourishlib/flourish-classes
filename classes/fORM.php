@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added caching for performance and changed some method APIs to only allow class names instead of instances [wb, 2009-06-15]
  * @changes    1.0.0b8  Updated documentation to reflect removal of `$associate` parameter for callbacks passed to ::registerRecordSetMethod() [wb, 2009-06-02]
  * @changes    1.0.0b7  Added ::enableSchemaCaching() to replace fORMSchema::enableSmartCaching() [wb, 2009-05-04]
  * @changes    1.0.0b6  Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
@@ -57,6 +58,17 @@ class fORM
 	 * @var array
 	 */
 	static private $active_record_method_callbacks = array();
+	
+	/**
+	 * Cache for repetitive computation
+	 * 
+	 * @var array
+	 */
+	static private $cache = array(
+		'parseMethod'           => array(),
+		'getActiveRecordMethod' => array(),
+		'objectify'             => array()
+	);
 	
 	/**
 	 * Custom mappings for class <-> table
@@ -158,7 +170,7 @@ class fORM
 	 */
 	static public function callHookCallbacks($object, $hook, &$values, &$old_values, &$related_records, &$cache, &$parameter=NULL)
 	{
-		$class = self::getClass($object);
+		$class = get_class($object);
 		
 		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return;
@@ -204,7 +216,7 @@ class fORM
 	 */
 	static public function callReflectCallbacks($object, &$signatures, $include_doc_comments)
 	{
-		$class = self::getClass($object);
+		$class = get_class($object);
 		
 		if (!isset(self::$reflect_callbacks[$class]) && !isset(self::$reflect_callbacks['*'])) {
 			return;
@@ -241,15 +253,13 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class     The name of the class, or an instance of it
+	 * @param  string $class     The name of the class
 	 * @param  string $hook      The hook to check
 	 * @param  array  $callback  The specific callback to check for
 	 * @return boolean  If the specified callback exists
 	 */
 	static public function checkHookCallback($class, $hook, $callback=NULL)
 	{
-		$class = self::getClass($class);
-		
 		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return FALSE;
 		}
@@ -359,30 +369,36 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class   The name of the class, or an instance of it
+	 * @param  string $class   The name of the class
 	 * @param  string $method  The method to get the callback for
 	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
 	 */
 	static public function getActiveRecordMethod($class, $method)
 	{
-		$class = self::getClass($class);
+		// This caches method lookups, providing a significant performance
+		// boost to pages with lots of method calls that get passed to
+		// fActiveRecord::__call()
+		if (isset(self::$cache['getActiveRecordMethod'][$class . '::' . $method])) {
+			return (!$method = self::$cache['getActiveRecordMethod'][$class . '::' . $method]) ? NULL : $method; 	
+		}
+		
+		$callback = NULL;
 		
 		if (isset(self::$active_record_method_callbacks[$class][$method])) {
-			return self::$active_record_method_callbacks[$class][$method];	
-		}
+			$callback = self::$active_record_method_callbacks[$class][$method];	
 		
-		if (isset(self::$active_record_method_callbacks['*'][$method])) {
-			return self::$active_record_method_callbacks['*'][$method];	
-		}
+		} elseif (isset(self::$active_record_method_callbacks['*'][$method])) {
+			$callback = self::$active_record_method_callbacks['*'][$method];	
 		
-		if (preg_match('#[A-Z0-9]#', $method)) {
+		} elseif (preg_match('#[A-Z0-9]#', $method)) {
 			list($action, $subject) = self::parseMethod($method);
 			if (isset(self::$active_record_method_callbacks[$class][$action . '*'])) {
-				return self::$active_record_method_callbacks[$class][$action . '*'];	
+				$callback = self::$active_record_method_callbacks[$class][$action . '*'];	
 			}	
 		}
 		
-		return NULL;	
+		self::$cache['getActiveRecordMethod'][$class . '::' . $method] = ($callback === NULL) ? FALSE : $callback;
+		return $callback;
 	}
 	
 	
@@ -409,14 +425,12 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $class   The class name the column is part of
 	 * @param  string $column  The database column
 	 * @return string  The column name for the column specified
 	 */
 	static public function getColumnName($class, $column)
 	{
-		$class = self::getClass($class);
-		
 		if (!isset(self::$column_names[$class])) {
 			self::$column_names[$class] = array();
 		}
@@ -437,13 +451,11 @@ class fORM
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed $class  The class name or instance of the class to get the record name of
+	 * @param  string $class  The class name to get the record name of
 	 * @return string  The record name for the class specified
 	 */
 	static public function getRecordName($class)
 	{
-		$class = self::getClass($class);
-		
 		if (!isset(self::$record_names[$class])) {
 			self::$record_names[$class] = fGrammar::humanize($class);
 		}
@@ -495,7 +507,11 @@ class fORM
 	 */
 	static public function objectify($class, $column, $value)
 	{
-		$class = self::getClass($class);
+		// This short-circuits computation for already checked columns, providing
+		// a nice little performance boost to pages with lots of records
+		if (isset(self::$cache['objectify'][$class . '::' . $column])) {
+			return $value;	
+		}
 		
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
 			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
@@ -519,6 +535,9 @@ class fORM
 			} catch (fValidationException $e) {
 				// Validation exception results in the raw value being saved
 			}
+		
+		} else {
+			self::$cache['objectify'][$class . '::' . $column] = TRUE;	
 		}
 		
 		return $value;
@@ -575,13 +594,18 @@ class fORM
 	 */
 	static public function parseMethod($method)
 	{
+		if (isset(self::$cache['parseMethod'][$method])) {
+			return self::$cache['parseMethod'][$method];	
+		}
+		
 		if (!preg_match('#^([a-z]+)(.*)$#D', $method, $matches)) {
 			throw new fProgrammerException(
 				'Invalid method, %s(), called',
 				$method
 			);	
 		}
-		return array($matches[1], fGrammar::underscorize($matches[2]));
+		self::$cache['parseMethod'][$method] = array($matches[1], fGrammar::underscorize($matches[2]));
+		return self::$cache['parseMethod'][$method];
 	}
 	
 	
@@ -616,6 +640,8 @@ class fORM
 		}
 		
 		self::$active_record_method_callbacks[$class][$method] = $callback;
+		
+		self::$cache['getActiveRecordMethod'] = array();
 	}
 	
 	
@@ -732,6 +758,8 @@ class fORM
 		}
 		
 		self::$objectify_callbacks[$class][$column] = $callback;
+		
+		self::$cache['objectify'] = array();
 	}
 	
 	
@@ -848,15 +876,13 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $class   The class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to copy/clone
 	 * @return mixed  The copied/cloned value
 	 */
 	static public function replicate($class, $column, $value)
 	{
-		$class = self::getClass($class);
-		
 		if (!empty(self::$replicate_callbacks[$class][$column])) {
 			return call_user_func(self::$replicate_callbacks[$class][$column], $class, $column, $value);
 		}
@@ -878,8 +904,13 @@ class fORM
 	 */
 	static public function reset()
 	{
-		self::$class_table_map                = array();
 		self::$active_record_method_callbacks = array();
+		self::$cache                          = array(
+			'parseMethod'           => array(),
+			'getActiveRecordMethod' => array(),
+			'objectify'             => array()
+		);
+		self::$class_table_map                = array();
 		self::$column_names                   = array();
 		self::$hook_callbacks                 = array();
 		self::$objectify_callbacks            = array();
@@ -927,8 +958,6 @@ class fORM
 	 */
 	static public function tablize($class)
 	{
-		$class = self::getClass($class);
-		
 		if (!isset(self::$class_table_map[$class])) {
 			self::$class_table_map[$class] = fGrammar::underscorize(fGrammar::pluralize($class));
 		}

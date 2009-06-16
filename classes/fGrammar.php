@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added caching for various methods - provided significant performance boost to ORM [wb, 2009-06-15] 
  * @changes    1.0.0b3  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b2  Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -30,6 +31,19 @@ class fGrammar
 	const singularize               = 'fGrammar::singularize';
 	const underscorize              = 'fGrammar::underscorize';
 	
+	
+	/**
+	 * Cache for plural <-> singular and underscore <-> camelcase
+	 * 
+	 * @var array
+	 */
+	static private $cache = array(
+		'camelize'     => array(0 => array(), 1 => array()),
+		'humanize'     => array(),
+		'pluralize'    => array(),
+		'singularize'  => array(),
+		'underscorize' => array()
+	);
 	
 	/**
 	 * Custom rules for camelizing a string
@@ -123,6 +137,8 @@ class fGrammar
 	static public function addHumanizeRule($non_humanized_string, $humanized_string)
 	{
 		self::$humanize_rules[$non_humanized_string] = $humanized_string;
+		
+		self::$cache['humanize'] = array();
 	}
 	
 	
@@ -138,6 +154,9 @@ class fGrammar
 		$camel_case = strtolower($camel_case[0]) . substr($camel_case, 1);
 		self::$underscorize_rules[$camel_case] = $underscore_notation;
 		self::$camelize_rules[$underscore_notation] = $camel_case;
+		
+		self::$cache['camelize']     = array(0 => array(), 1 => array());
+		self::$cache['underscorize'] = array();
 	}
 	
 	
@@ -164,6 +183,9 @@ class fGrammar
 			),
 			self::$plural_to_singular_rules
 		);
+		
+		self::$cache['pluralize']   = array();
+		self::$cache['singularize'] = array();
 	}
 	
 	
@@ -176,34 +198,41 @@ class fGrammar
 	 */
 	static public function camelize($string, $upper)
 	{
+		$upper = (int) $upper;
+		if (isset(self::$cache['camelize'][$upper][$string])) {
+			return self::$cache['camelize'][$upper][$string];		
+		}
+		
+		$original = $string;
+		
 		// Handle custom rules
 		if (isset(self::$camelize_rules[$string])) {
-			$camel = self::$camelize_rules[$string];
+			$string = self::$camelize_rules[$string];
 			if ($upper) {
-				return strtoupper($camel[0]) . substr($camel, 1);
+				$string = strtoupper($camel[0]) . substr($camel, 1);
 			}
-			return $camel;	
-		}
 		
 		// Make a humanized string like underscore notation
-		if (strpos($string, ' ') !== FALSE) {
+		} elseif (strpos($string, ' ') !== FALSE) {
 			$string = strtolower(preg_replace('#\s+#', '_', $string));
-		}
 		
 		// Check to make sure this is not already camel case
-		if (strpos($string, '_') === FALSE) {
+		} elseif (strpos($string, '_') === FALSE) {
 			if ($upper) {
 				$string = strtoupper($string[0]) . substr($string, 1);
 			}
-			return $string;
+			
+		// Handle underscore notation
+		} else {
+			$string = strtolower($string);
+			if ($upper) {
+				$string = strtoupper($string[0]) . substr($string, 1);
+			}
+			$string = preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);		
 		}
 		
-		// Handle underscore notation
-		$string = strtolower($string);
-		if ($upper) {
-			$string = strtoupper($string[0]) . substr($string, 1);
-		}
-		return preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
+		self::$cache['camelize'][$upper][$original] = $string;
+		return $string;
 	}
 	
 	
@@ -215,25 +244,33 @@ class fGrammar
 	 */
 	static public function humanize($string)
 	{
+		if (isset(self::$cache['humanize'][$string])) {
+			return self::$cache['humanize'][$string];
+		}
+		
+		$original = $string;
+		
 		if (isset(self::$humanize_rules[$string])) {
-			return self::$humanize_rules[$string];	
+			$string = self::$humanize_rules[$string];	
+		
+		// If there is no space, it isn't already humanized
+		} elseif (strpos($string, ' ') === FALSE) {
+			
+			// If we don't have an underscore we probably have camelCase
+			if (strpos($string, '_') === FALSE) {
+				$string = self::underscorize($string);
+			}
+			
+			$string = preg_replace(
+				'/(\b(api|css|gif|html|id|jpg|js|mp3|pdf|php|png|sql|swf|url|xhtml|xml)\b|\b\w)/e',
+				'strtoupper("\1")',
+				str_replace('_', ' ', $string)
+			);
 		}
 		
-		// If there is a space, it is already humanized
-		if (strpos($string, ' ') !== FALSE) {
-			return $string;
-		}
+		self::$cache['humanize'][$original] = $string;
 		
-		// If we don't have an underscore we probably have camelCase
-		if (strpos($string, '_') === FALSE) {
-			$string = self::underscorize($string);
-		}
-		
-		return preg_replace(
-			'/(\b(api|css|gif|html|id|jpg|js|mp3|pdf|php|png|sql|swf|url|xhtml|xml)\b|\b\w)/e',
-			'strtoupper("\1")',
-			str_replace('_', ' ', $string)
-		);
+		return $string;
 	}
 	
 	
@@ -346,13 +383,28 @@ class fGrammar
 	 */
 	static public function pluralize($singular_noun)
 	{
+		if (isset(self::$cache['pluralize'][$singular_noun])) {
+			return self::$cache['pluralize'][$singular_noun];		
+		}
+		
+		$original    = $singular_noun;
+		$plural_noun = NULL;
+		
 		list ($beginning, $singular_noun) = self::splitLastWord($singular_noun);
 		foreach (self::$singular_to_plural_rules as $from => $to) {
 			if (preg_match('#' . $from . '#iD', $singular_noun)) {
-				return $beginning . preg_replace('#' . $from . '#iD', $to, $singular_noun);
+				$plural_noun = $beginning . preg_replace('#' . $from . '#iD', $to, $singular_noun);
+				break;
 			}
 		}
-		throw new fProgrammerException('The noun specified could not be pluralized');
+		
+		if (!$plural_noun) {
+			throw new fProgrammerException('The noun specified could not be pluralized');
+		}
+		
+		self::$cache['pluralize'][$original] = $plural_noun;
+		
+		return $plural_noun;
 	}
 	
 	
@@ -383,7 +435,14 @@ class fGrammar
 	 */
 	static public function reset()
 	{
-		self::$camelize_rules    = array();
+		self::$cache                    = array(
+			'camelize'     => array(0 => array(), 1 => array()),
+			'humanize'     => array(),
+			'pluralize'    => array(),
+			'singularize'  => array(),
+			'underscorize' => array()
+		);
+		self::$camelize_rules           = array();
 		self::$humanize_rules           = array();
 		self::$join_array_callback      = NULL;
 		self::$plural_to_singular_rules = array(
@@ -438,13 +497,28 @@ class fGrammar
 	 */
 	static public function singularize($plural_noun)
 	{
+		if (isset(self::$cache['singularize'][$plural_noun])) {
+			return self::$cache['singularize'][$plural_noun];		
+		}
+		
+		$original      = $plural_noun;
+		$singular_noun = NULL;
+		
 		list ($beginning, $plural_noun) = self::splitLastWord($plural_noun);
 		foreach (self::$plural_to_singular_rules as $from => $to) {
 			if (preg_match('#' . $from . '#iD', $plural_noun)) {
-				return $beginning . preg_replace('#' . $from . '#iD', $to, $plural_noun);
+				$singular_noun = $beginning . preg_replace('#' . $from . '#iD', $to, $plural_noun);
+				break;
 			}
 		}
-		throw new fProgrammerException('The noun specified could not be singularized');
+		
+		if (!$singular_noun) {
+			throw new fProgrammerException('The noun specified could not be singularized');
+		}
+		
+		self::$cache['singularize'][$original] = $singular_noun;
+		
+		return $singular_noun;
 	}
 	
 	
@@ -484,30 +558,37 @@ class fGrammar
 	 */
 	static public function underscorize($string)
 	{
+		if (isset(self::$cache['underscorize'][$string])) {
+			return self::$cache['underscorize'][$string];		
+		}
+		
+		$original = $string;
 		$string = strtolower($string[0]) . substr($string, 1);
 		
 		// Handle custom rules
 		if (isset(self::$underscorize_rules[$string])) {
-			return self::$underscorize_rules[$string];
-		}
+			$string = self::$underscorize_rules[$string];
 		
 		// If the string is already underscore notation then leave it
-		if (strpos($string, '_') !== FALSE) {
-			return $string;
-		}
+		} elseif (strpos($string, '_') !== FALSE) {
 		
 		// Allow humanized string to be passed in
-		if (strpos($string, ' ') !== FALSE) {
-			return strtolower(preg_replace('#\s+#', '_', $string));
+		} elseif (strpos($string, ' ') !== FALSE) {
+			$string = strtolower(preg_replace('#\s+#', '_', $string));
+		
+		} else {
+			do {
+				$old_string = $string;
+				$string = preg_replace('/([a-zA-Z])([0-9])/', '\1_\2', $string);
+				$string = preg_replace('/([a-z0-9A-Z])([A-Z])/', '\1_\2', $string);
+			} while ($old_string != $string);
+			
+			$string = strtolower($string);
 		}
 		
-		do {
-			$old_string = $string;
-			$string = preg_replace('/([a-zA-Z])([0-9])/', '\1_\2', $string);
-			$string = preg_replace('/([a-z0-9A-Z])([A-Z])/', '\1_\2', $string);
-		} while ($old_string != $string);
+		self::$cache['underscorize'][$original] = $string;
 		
-		return strtolower($string);
+		return $string;
 	}
 	
 	

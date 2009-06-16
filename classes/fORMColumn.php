@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b2  Fixed a bug with objectifying number columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-05-27]
@@ -330,7 +331,8 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($object), $column);	
+		$class       = get_class($object);
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -364,7 +366,7 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$settings = self::$random_columns[$class][$column];
@@ -539,7 +541,8 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($object), $column);	
+		$class       = get_class($object);
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -593,9 +596,12 @@ class fORMColumn
 		}
 		
 		if (isset(self::$number_columns[$class])) {
+			
+			$table = fORM::tablize($class);
+			
 			foreach(self::$number_columns[$class] as $column => $enabled) {
 				$camelized_column = fGrammar::camelize($column, TRUE);
-				$type             = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column, 'type');
+				$type             = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 				
 				// Get and set methods
 				$signature = '';

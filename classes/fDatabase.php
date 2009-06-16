@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Updates to ::unescape() to improve performance [wb, 2009-06-15]
  * @changes    1.0.0b11  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b10  Changed date/time/timestamp escaping from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b9   Fixed a bug with ::escape() where floats that start with a . were encoded as `NULL` [wb, 2009-05-09]
@@ -2279,40 +2280,47 @@ class fDatabase
 		$callback = NULL;
 		
 		switch ($data_type) {
-			case 'blob':
-			case '%l':
-				$callback = $this->unescapeBlob;
-				break;
-			case 'boolean':
-			case '%b':
-				$callback = $this->unescapeBoolean;
-				break;
-			case 'date':
-			case '%d':
-				$callback = $this->unescapeDate;
-				break;
-			case 'float':
-			case '%f':
-				$callback = $this->unescapeFloat;
-				break;
-			case 'integer':
-			case '%i':
-				$callback = $this->unescapeInteger;
-				break;
+			// Testing showed that strings tend to be most common,
+			// and moving this to the top of the switch statement
+			// improved performance on read-heavy pages
 			case 'string':
 			case 'varchar':
 			case 'char':
 			case 'text':
 			case '%s':
-				$callback = $this->unescapeString;
+				return $value;
+			
+			case 'boolean':
+			case '%b':
+				$callback = $this->unescapeBoolean;
 				break;
+				
+			case 'date':
+			case '%d':
+				$callback = $this->unescapeDate;
+				break;
+				
+			case 'float':
+			case '%f':
+				return $value;
+				
+			case 'integer':
+			case '%i':
+				return $value;
+			
 			case 'time':
 			case '%t':
 				$callback = $this->unescapeTime;
 				break;
+				
 			case 'timestamp':
 			case '%p':
 				$callback = $this->unescapeTimestamp;
+				break;
+			
+			case 'blob':
+			case '%l':
+				$callback = $this->unescapeBlob;
 				break;
 		}
 		
@@ -2381,42 +2389,6 @@ class fDatabase
 			$value = preg_replace('#:\d{3}#', '', $value);
 		}
 		return date('Y-m-d', strtotime($value));
-	}
-	
-	
-	/**
-	 * Unescapes a float coming out of the database (included for completeness)
-	 * 
-	 * @param  string $value  The value to unescape
-	 * @return float  The float
-	 */
-	private function unescapeFloat($value)
-	{
-		return $value;
-	}
-	
-	
-	/**
-	 * Unescapes an integer coming out of the database (included for completeness)
-	 * 
-	 * @param  string $value  The value to unescape
-	 * @return integer  The integer
-	 */
-	private function unescapeInteger($value)
-	{
-		return $value;
-	}
-	
-	
-	/**
-	 * Unescapes a string coming out of the database (included for completeness)
-	 * 
-	 * @param  string $value  The value to unescape
-	 * @return string  The string
-	 */
-	private function unescapeString($value)
-	{
-		return $value;
 	}
 	
 	

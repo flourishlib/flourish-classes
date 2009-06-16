@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b8  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b7  Updated ::validateRelated() to use new fORMRelated::validate() method and ::checkRelatedOneOrMoreRule() to use new `$related_records` structure [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
@@ -229,7 +230,7 @@ class fORMValidation
 	 */
 	static private function checkAgainstSchema($object, $column, &$values, &$old_values)
 	{
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
@@ -281,7 +282,7 @@ class fORMValidation
 	/**
 	 * Validates against a conditional validation rule
 	 *
-	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
+	 * @param  string $class                The class this validation rule applies to
 	 * @param  array  &$values              An associative array of all values for the record
 	 * @param  string $main_column          The column to check for a value
 	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
@@ -315,7 +316,7 @@ class fORMValidation
 	/**
 	 * Validates a value against the database data type
 	 *
-	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $class   The class the column is part of
 	 * @param  string $column  The column to check
 	 * @param  mixed  $value   The value to check
 	 * @return string  A validation error message for the column specified
@@ -386,7 +387,7 @@ class fORMValidation
 	/**
 	 * Validates values against foreign key constraints
 	 *
-	 * @param  mixed  $class    The class name or instance of the class to check the foreign keys for
+	 * @param  string $class    The class to check the foreign keys for
 	 * @param  string $column   The column to check
 	 * @param  array  &$values  The values to check
 	 * @return string  A validation error message for the column specified
@@ -425,7 +426,7 @@ class fORMValidation
 	/**
 	 * Validates against a one-or-more validation rule
 	 *
-	 * @param  mixed  $class    The class name or instance of the class the columns are part of
+	 * @param  string $class    The class the columns are part of
 	 * @param  array  &$values  An associative array of all values for the record
 	 * @param  array  $columns  The columns to check
 	 * @return string  A validation error message for the rule
@@ -457,7 +458,7 @@ class fORMValidation
 	/**
 	 * Validates against an only-one validation rule
 	 *
-	 * @param  mixed  $class    The class name or instance of the class the columns are part of
+	 * @param  string $class    The class the columns are part of
 	 * @param  array  &$values  An associative array of all values for the record
 	 * @param  array  $columns  The columns to check
 	 * @return string  A validation error message for the rule
@@ -503,7 +504,7 @@ class fORMValidation
 	 */
 	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
@@ -569,7 +570,7 @@ class fORMValidation
 	/**
 	 * Validates against a *-to-many one or more validation rule
 	 *
-	 * @param  mixed  $class             The class name or instance of the class we are checking
+	 * @param  string $class             The class we are checking
 	 * @param  array  &$related_records  The related records array to check
 	 * @param  string $related_class     The name of the related class
 	 * @param  string $route             The name of the route from the class to the related class
@@ -603,7 +604,7 @@ class fORMValidation
 	 */
 	static private function checkUniqueConstraints($object, $column, &$values, &$old_values)
 	{
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$key_info = fORMSchema::retrieve()->getKeys($table);
@@ -699,7 +700,7 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class  The class name or an instance of the class to initilize the arrays for
+	 * @param  string $class  The class to initilize the arrays for
 	 * @return void
 	 */
 	static private function initializeRuleArrays($class)
@@ -716,16 +717,13 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class   The class to check
+	 * @param  string $class   The class to check
 	 * @param  string $column  The column to check
 	 * @return boolean  If the column is set to be case insensitive
 	 */
 	static private function isCaseInsensitive($class, $column)
 	{
-		if (!isset(self::$case_insensitive_columns[$class][$column])) {
-			return FALSE;
-		}	
-		return TRUE;
+		return isset(self::$case_insensitive_columns[$class][$column]);
 	}
 	
 	
@@ -734,14 +732,12 @@ class fORMValidation
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed $class                 The class name or an instance of the class to reorder messages for
-	 * @param  array &$validation_messages  An array of one validation message per value
+	 * @param  string $class                 The class to reorder messages for
+	 * @param  array  &$validation_messages  An array of one validation message per value
 	 * @return void
 	 */
 	static public function reorderMessages($class, &$validation_messages)
 	{
-		$class = fORM::getClass($class);
-		
 		if (!isset(self::$message_orders[$class])) {
 			return;
 		}
@@ -881,7 +877,7 @@ class fORMValidation
 	 */
 	static public function validate($object, $values, $old_values)
 	{
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		self::initializeRuleArrays($class);
@@ -931,13 +927,12 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed $class             The class name or instance of the class to validate
-	 * @param  array &$related_records  The related records to validate
+	 * @param  string $class             The class to validate
+	 * @param  array  &$related_records  The related records to validate
 	 * @return array  An array of validation messages
 	 */
 	static public function validateRelated($class, &$related_records)
 	{
-		$class = fORM::getClass($class);
 		$table = fORM::tablize($class);
 		
 		$validation_messages = array();

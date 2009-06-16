@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Performance tweaks and updates for fORM and fORMRelated API changes [wb, 2009-06-15]
  * @changes    1.0.0b20  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b19  Added `list{RelatedRecords}()` methods, updated code for new fORMRelated API [wb, 2009-06-02]
  * @changes    1.0.0b18  Changed ::store() to use new fORMRelated::store() method [wb, 2009-06-02]
@@ -264,7 +265,9 @@ abstract class fActiveRecord
 	 */
 	public function __call($method_name, $parameters)
 	{
-		if ($callback = fORM::getActiveRecordMethod($this, $method_name)) {
+		$class = get_class($this);
+		
+		if ($callback = fORM::getActiveRecordMethod($class, $method_name)) {
 			return call_user_func_array(
 				$callback,
 				array(
@@ -325,80 +328,80 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
-					return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::associateRecords($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelated::associateRecords($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::associateRecords($class, $this->related_records, $subject, $parameters[0]);
 			
 			case 'build':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::buildRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::buildRecords($this, $this->values, $this->related_records, $subject);
+				return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject);
 			
 			case 'count':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::countRecords($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::countRecords($this, $this->values, $this->related_records, $subject);
+				return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject);
 			
 			case 'create':
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::createRecord($this, $this->values, $subject, $parameters[0]);
+					return fORMRelated::createRecord($class, $this->values, $subject, $parameters[0]);
 				}
-				return fORMRelated::createRecord($this, $this->values, $subject);
+				return fORMRelated::createRecord($class, $this->values, $subject);
 			 
 			case 'inject':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				 
 				if (isset($parameters[1])) {
-					return fORMRelated::setRecordSet($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::setRecordSet($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelated::setRecordSet($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::setRecordSet($class, $this->related_records, $subject, $parameters[0]);
 
 			case 'link':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::linkRecords($this, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::linkRecords($class, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::linkRecords($this, $this->related_records, $subject);
+				return fORMRelated::linkRecords($class, $this->related_records, $subject);
 			
 			case 'list':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::getPrimaryKeys($this, $this->values, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::getPrimaryKeys($this, $this->values, $this->related_records, $subject);
+				return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject);
 			
 			case 'populate':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::populateRecords($this, $this->related_records, $subject, $parameters[0]);
+					return fORMRelated::populateRecords($class, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::populateRecords($this, $this->related_records, $subject);
+				return fORMRelated::populateRecords($class, $this->related_records, $subject);
 			
 			case 'tally':
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
-					return fORMRelated::setCount($this, $this->related_records, $subject, $parameters[0], $parameters[1]);
+					return fORMRelated::setCount($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
-				return fORMRelated::setCount($this, $this->related_records, $subject, $parameters[0]);
+				return fORMRelated::setCount($class, $this->related_records, $subject, $parameters[0]);
 			
 			// Error handler
 			default:
@@ -425,12 +428,14 @@ abstract class fActiveRecord
 	 */
 	public function __clone()
 	{
+		$class = get_class($this);
+		
 		// Copy values and cache, making sure objects are cloned to prevent reference issues
 		$temp_values  = $this->values;
 		$new_values   = array();
 		$this->values =& $new_values;
 		foreach ($temp_values as $column => $value) {
-			$this->values[$column] = fORM::replicate($this, $column, $value);
+			$this->values[$column] = fORM::replicate($class, $column, $value);
 		}
 		
 		$temp_cache  = $this->cache;
@@ -457,7 +462,7 @@ abstract class fActiveRecord
 		}
 		
 		// If we have a single auto incrementing primary key, remove the value
-		$table      = fORM::tablize($this);
+		$table      = fORM::tablize($class);
 		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 		
 		if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
@@ -499,7 +504,7 @@ abstract class fActiveRecord
 			}
 		}
 		
-		if (fORM::getActiveRecordMethod($this, '__construct')) {
+		if (fORM::getActiveRecordMethod($class, '__construct')) {
 			return $this->__call('__construct', array($key));
 		}
 		
@@ -515,12 +520,13 @@ abstract class fActiveRecord
 		// Handle loading an object from the database
 		} elseif ($key !== NULL) {
 			
-			$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+			$table      = fORM::tablize($class);
+			$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 			
 			// If the primary key does not look properly formatted, check to see if it is a UNIQUE key
 			$is_unique_key = FALSE;
 			if (is_array($key) && (sizeof($pk_columns) == 1 || array_keys($key) != $pk_columns)) {
-				$unique_keys = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'unique');
+				$unique_keys = fORMSchema::retrieve()->getKeys($table, 'unique');
 				$key_keys    = array_keys($key);
 				foreach ($unique_keys as $unique_key) {
 					if ($key_keys == $unique_key) {
@@ -536,7 +542,7 @@ abstract class fActiveRecord
 			if (!$is_unique_key && ($wrong_keys || $wrong_type)) {
 				throw new fProgrammerException(
 					'An invalidly formatted primary or unique key was passed to this %s object',
-					fORM::getRecordName($this)
+					fORM::getRecordName($class)
 				);
 			}
 			
@@ -568,7 +574,7 @@ abstract class fActiveRecord
 			
 		// Create an empty array for new objects
 		} else {
-			$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
+			$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class));
 			foreach ($column_info as $column => $info) {
 				$this->values[$column] = NULL;
 				if ($info['default'] !== NULL) {
@@ -576,14 +582,14 @@ abstract class fActiveRecord
 						$this->values,
 						$this->old_values,
 						$column,
-						fORM::objectify($this, $column, $info['default'])
+						fORM::objectify($class, $column, $info['default'])
 					);	
 				}
 			}
 		}
 		
 		fORM::callHookCallbacks(
-			$this,
+			$class,
 			'post::__construct()',
 			$this->values,
 			$this->old_values,
@@ -645,7 +651,7 @@ abstract class fActiveRecord
 	 */
 	protected function constructInsertSQL($sql_values)
 	{
-		$sql = 'INSERT INTO ' . fORM::tablize($this) . ' (';
+		$sql = 'INSERT INTO ' . fORM::tablize(get_class($this)) . ' (';
 		
 		$columns = '';
 		$values  = '';
@@ -670,7 +676,7 @@ abstract class fActiveRecord
 	 */
 	protected function constructUpdateSQL($sql_values)
 	{
-		$table = fORM::tablize($this);
+		$table = fORM::tablize(get_class($this));
 		
 		$sql = 'UPDATE ' . $table . ' SET ';
 		$column_num = 0;
@@ -695,14 +701,16 @@ abstract class fActiveRecord
 	 */
 	public function delete()
 	{
-		if (fORM::getActiveRecordMethod($this, 'delete')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'delete')) {
 			return $this->__call('delete', array());
 		}
 		
 		if (!$this->exists()) {
 			throw new fProgrammerException(
 				'This %s object does not yet exist in the database, and thus can not be deleted',
-				fORM::getRecordName($this)
+				fORM::getRecordName($class)
 			);
 		}
 		
@@ -714,7 +722,7 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
-		$table  = fORM::tablize($this);
+		$table = fORM::tablize($class);
 		
 		$inside_db_transaction = fORMDatabase::retrieve()->isInsideTransaction();
 		
@@ -779,7 +787,7 @@ abstract class fActiveRecord
 				throw new fValidationException(
 					sprintf(
 						"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-						self::compose('This %s can not be deleted because:', fORM::getRecordName($this)),
+						self::compose('This %s can not be deleted because:', fORM::getRecordName($class)),
 						join("</li>\n<li>", $restriction_messages)
 					)
 				);
@@ -824,9 +832,8 @@ abstract class fActiveRecord
 			
 			// If we just deleted an object that has an auto-incrementing primary key,
 			// lets delete that value from the object since it is no longer valid
-			$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 			$pk_columns  = fORMSchema::retrieve()->getKeys($table, 'primary');
-			if (sizeof($pk_columns) == 1 && $column_info[$pk_columns[0]]['auto_increment']) {
+			if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
 				$this->values[$pk_columns[0]] = NULL;
 				unset($this->old_values[$pk_columns[0]]);
 			}
@@ -848,13 +855,13 @@ abstract class fActiveRecord
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
 				$message = $e->getMessage();
-				$search  = self::compose('This %s can not be deleted because:', fORM::getRecordName($this));
+				$search  = self::compose('This %s can not be deleted because:', fORM::getRecordName($class));
 				if (stripos($message, $search) === FALSE) {
 					$regex       = self::compose('This %s can not be deleted because:', '__');
 					$regex_parts = explode('__', $regex);
 					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
 					
-					$message = preg_replace($regex, '\1' . strtr(fORM::getRecordName($this), array('\\' => '\\\\', '$' => '\\$')) . '\2', $message);
+					$message = preg_replace($regex, '\1' . strtr(fORM::getRecordName($class), array('\\' => '\\\\', '$' => '\\$')) . '\2', $message);
 					
 					$find          = self::compose("One or more %s references it", '__');
 					$find_parts    = explode('__', $find);
@@ -908,7 +915,8 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$column_type = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column, 'type');
+		$table       = fORM::tablize(get_class($this));
+		$column_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		// Ensure the programmer is calling the function properly
 		if (in_array($column_type, array('blob'))) {
@@ -949,7 +957,7 @@ abstract class fActiveRecord
 		
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
-			$column_decimal_places = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column, 'decimal_places');
+			$column_decimal_places = fORMSchema::retrieve()->getColumnInfo($table, $column, 'decimal_places');
 			
 			// If the user passed in a formatting value, use it
 			if ($formatting !== NULL && is_numeric($formatting)) {
@@ -980,11 +988,13 @@ abstract class fActiveRecord
 	 */
 	public function exists()
 	{
-		if (fORM::getActiveRecordMethod($this, 'exists')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'exists')) {
 			return $this->__call('exists', array());
 		}
 		
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($class), 'primary');
 		$exists     = FALSE;
 		
 		foreach ($pk_columns as $pk_column) {
@@ -1008,12 +1018,13 @@ abstract class fActiveRecord
 	 */
 	protected function fetchResultFromUniqueKey($values)
 	{		
+		$class = get_class($this);
 		try {
 			if ($values === array_combine(array_keys($values), array_fill(0, sizeof($values), NULL))) {
 				throw new fExpectedException('The values specified for the unique key are all NULL');	
 			}
 			
-			$table = fORM::tablize($this);
+			$table = fORM::tablize($class);
 			$sql = 'SELECT * FROM ' . $table . ' WHERE ';
 			$conditions = array();
 			foreach ($values as $column => $value) {
@@ -1027,7 +1038,7 @@ abstract class fActiveRecord
 		} catch (fExpectedException $e) {
 			throw new fNotFoundException(
 				'The %s requested could not be found',
-				fORM::getRecordName($this)
+				fORM::getRecordName($class)
 			);
 		}
 		
@@ -1043,7 +1054,7 @@ abstract class fActiveRecord
 	 */
 	protected function get($column)
 	{
-		if (!array_key_exists($column, $this->values)) {
+		if (!isset($this->values[$column]) && !array_key_exists($column, $this->values)) {
 			throw new fProgrammerException(
 				'The column specified, %s, does not exist',
 				$column
@@ -1061,13 +1072,14 @@ abstract class fActiveRecord
 	 */
 	protected function hash($data)
 	{
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($this), 'primary');
+		$class      = get_class($this);
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize(get_class($this)), 'primary');
 		
 		// Build an array of just the primary key data
 		$pk_data = array();
 		foreach ($pk_columns as $pk_column) {
 			$pk_data[$pk_column] = fORM::scalarize(
-				$this,
+				$class,
 				$pk_column,
 				is_array($data) ? $data[$pk_column] : $data
 			);
@@ -1096,7 +1108,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column);
+		$info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize(get_class($this)), $column);
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
 			unset($info['valid_values']);
@@ -1137,12 +1149,14 @@ abstract class fActiveRecord
 	 */
 	public function load()
 	{
-		if (fORM::getActiveRecordMethod($this, 'load')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'load')) {
 			return $this->__call('load', array());
 		}
 		
 		try {
-			$table = fORM::tablize($this);
+			$table = fORM::tablize($class);
 			$sql = 'SELECT * FROM ' . $table . ' WHERE ' . fORMDatabase::createPrimaryKeyWhereClause($table, $table, $this->values, $this->old_values);
 		
 			$result = fORMDatabase::retrieve()->translatedQuery($sql);
@@ -1151,7 +1165,7 @@ abstract class fActiveRecord
 		} catch (fExpectedException $e) {
 			throw new fNotFoundException(
 				'The %s requested could not be found',
-				fORM::getRecordName($this)
+				fORM::getRecordName($class)
 			);
 		}
 		
@@ -1169,21 +1183,21 @@ abstract class fActiveRecord
 	 */
 	protected function loadFromResult($result)
 	{
+		$class       = get_class($this);
 		$row         = $result->current();
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class));
+		
+		$db = fORMDatabase::retrieve();
 		
 		foreach ($row as $column => $value) {
-			if ($value === NULL) {
-				$this->values[$column] = $value;
-			} else {
-				$this->values[$column] = fORMDatabase::retrieve()->unescape($column_info[$column]['type'], $value);
+			if ($value !== NULL) {
+				$value = $db->unescape($column_info[$column]['type'], $value);
 			}
 			
-			$this->values[$column] = fORM::objectify($this, $column, $this->values[$column]);
+			$this->values[$column] = fORM::objectify($class, $column, $value);
 		}
 		
 		// Save this object to the identity map
-		$class = get_class($this);
 		$hash  = $this->hash($row);
 		
 		if (!isset(self::$identity_map[$class])) {
@@ -1246,7 +1260,9 @@ abstract class fActiveRecord
 	 */
 	public function populate()
 	{
-		if (fORM::getActiveRecordMethod($this, 'populate')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'populate')) {
 			return $this->__call('populate', array());
 		}
 		
@@ -1259,7 +1275,7 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
-		$table = fORM::tablize($this);
+		$table = fORM::tablize($class);
 		
 		$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
@@ -1307,11 +1323,11 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this), $column);
+		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize(get_class($this)), $column);
 		$column_type = $column_info['type'];
 		
 		// Ensure the programmer is calling the function properly
-		if (in_array($column_type, array('blob'))) {
+		if ($column_type == 'blob') {
 			throw new fProgrammerException(
 				'The column specified, %s, can not be prepared because it is a blob column',
 				$column
@@ -1396,7 +1412,8 @@ abstract class fActiveRecord
 	{
 		$signatures = array();
 		
-		$columns_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($this));
+		$class        = get_class($this);
+		$columns_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class));
 		foreach ($columns_info as $column => $column_info) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
 			
@@ -1551,11 +1568,11 @@ abstract class fActiveRecord
 			$signatures[$inspect_method] = $signature;
 		}
 		
-		fORMRelated::reflect($this, $signatures, $include_doc_comments);
+		fORMRelated::reflect($class, $signatures, $include_doc_comments);
 		
 		fORM::callReflectCallbacks($this, $signatures, $include_doc_comments);
 		
-		$reflection = new ReflectionClass(get_class($this));
+		$reflection = new ReflectionClass($class);
 		$methods    = $reflection->getMethods();
 		
 		foreach ($methods as $method) {
@@ -1662,7 +1679,8 @@ abstract class fActiveRecord
 		
 		$class = get_class($this);
 		$hash  = self::hash($this->values);
-		
+		$table = fORM::tablize($class);
+			
 		// If the object has not been replicated yet, do it now
 		if (!isset(fActiveRecord::$replicate_map[$class])) {
 			fActiveRecord::$replicate_map[$class] = array();
@@ -1671,7 +1689,6 @@ abstract class fActiveRecord
 			fActiveRecord::$replicate_map[$class][$hash] = clone $this;
 			
 			// We need the primary key to get a hash, otherwise certain recursive relationships end up losing members
-			$table      = fORM::tablize($class);
 			$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 			if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
 				fActiveRecord::$replicate_map[$class][$hash]->values[$pk_columns[0]] = $this->values[$pk_columns[0]];
@@ -1681,8 +1698,6 @@ abstract class fActiveRecord
 		$clone = fActiveRecord::$replicate_map[$class][$hash];
 		
 		$parameters = func_get_args();
-		
-		$table = fORM::tablize($this);
 		
 		$recursive                  = FALSE;
 		$many_to_many_relationships = fORMSchema::retrieve()->getRelationships($table, 'many-to-many');
@@ -1740,12 +1755,12 @@ abstract class fActiveRecord
 				throw new fProgrammerException(
 					'The related class specified, %1$s, does not appear to be in a many-to-many or one-to-many relationship with %$2s',
 					$parameter,
-					fORM::getClass($this)
+					get_class($this)
 				);	
 			}
 			
 			// Get the related records
-			$record_set = fORMRelated::buildRecords($this, $this->values, $this->related_records, $related_class, $route);
+			$record_set = fORMRelated::buildRecords($class, $this->values, $this->related_records, $related_class, $route);
 			
 			// One-to-many records need to be replicated, possibly recursively
 			if ($one_to_many) {
@@ -1762,7 +1777,7 @@ abstract class fActiveRecord
 			}
 			
 			// Cause the related records to be associated with the new clone
-			fORMRelated::associateRecords($this, $clone->related_records, $related_class, $record_set, $route);
+			fORMRelated::associateRecords($class, $clone->related_records, $related_class, $record_set, $route);
 		}
 		
 		fActiveRecord::$replicate_level--;
@@ -1806,11 +1821,12 @@ abstract class fActiveRecord
 			$value = NULL;
 		}
 		
-		$value = fORM::objectify($this, $column, $value);
+		$class = get_class($this);
+		$value = fORM::objectify($class, $column, $value);
 		
 		// Float and int columns that look like numbers with commas will have the commas removed
 		if (is_string($value)) {
-			$table = fORM::tablize($this);
+			$table = fORM::tablize($class);
 			$type  = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 			if (in_array($type, array('integer', 'float')) && preg_match('#^(\d+,)+\d+(\.\d+)?$#', $value)) {
 				$value = str_replace(',', '', $value);
@@ -1833,7 +1849,9 @@ abstract class fActiveRecord
 	 */
 	public function store()
 	{
-		if (fORM::getActiveRecordMethod($this, 'store')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'store')) {
 			return $this->__call('store', array());
 		}
 		
@@ -1847,7 +1865,7 @@ abstract class fActiveRecord
 		);
 		
 		try {
-			$table       = fORM::tablize($this);
+			$table       = fORM::tablize($class);
 			$column_info = fORMSchema::retrieve()->getColumnInfo($table);
 			
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
@@ -1891,7 +1909,7 @@ abstract class fActiveRecord
 			
 			$sql_values = array();
 			foreach ($column_info as $column => $info) {
-				$value = fORM::scalarize($this, $column, $this->values[$column]);
+				$value = fORM::scalarize($class, $column, $this->values[$column]);
 				$sql_values[$column] = fORMDatabase::escapeBySchema($table, $column, $value);
 			}
 			
@@ -1915,7 +1933,7 @@ abstract class fActiveRecord
 			
 			
 			// Storing *-to-many relationships
-			fORMRelated::store($this, $this->values, $this->related_records);
+			fORMRelated::store($class, $this->values, $this->related_records);
 			
 			
 			fORM::callHookCallbacks(
@@ -1991,7 +2009,9 @@ abstract class fActiveRecord
 	 */
 	public function validate($return_messages=FALSE)
 	{
-		if (fORM::getActiveRecordMethod($this, 'validate')) {
+		$class = get_class($this);
+		
+		if (fORM::getActiveRecordMethod($class, 'validate')) {
 			return $this->__call('validate', array($return_messages));
 		}
 		
@@ -2011,7 +2031,7 @@ abstract class fActiveRecord
 		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
 		
 		// Validate related records
-		$related_validation_messages = fORMValidation::validateRelated($this, $this->related_records);
+		$related_validation_messages = fORMValidation::validateRelated($class, $this->related_records);
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		
@@ -2025,7 +2045,7 @@ abstract class fActiveRecord
 			$validation_messages
 		);
 		
-		fORMValidation::reorderMessages($this, $validation_messages);
+		fORMValidation::reorderMessages($class, $validation_messages);
 		
 		if ($return_messages) {
 			return $validation_messages;

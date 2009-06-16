@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b5  Updated class to automatically correct ordering values that are too high [wb, 2009-06-14]
  * @changes    1.0.0b4  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b3  Fixed a bug with setting a new record to anywhere but the end of a set [wb, 2009-03-18]
@@ -560,7 +561,7 @@ class fORMOrdering
 	 */
 	static public function validate($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
 	{
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$column        = self::$ordering_columns[$class]['column'];

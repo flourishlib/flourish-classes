@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b12  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b11  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b10  Fixed a bug where an inherited file upload column would not be properly re-set with an `existing-` input [wb, 2009-05-26]
@@ -743,7 +744,7 @@ class fORMFile
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$class = fORM::getClass($object);
+		$class = get_class($object);
 		
 		self::processImage($class, $column, $values[$column]);
 	}

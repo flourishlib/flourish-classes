@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated code for new fORM API, fixed API documentation bugs [wb, 2009-06-15]
  * @changes    1.0.0b6  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b5  Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
  * @changes    1.0.0b4  Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
@@ -66,7 +67,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed             $class                 The class name or instance of the class to get the related values for
+	 * @param  string            $class                 The class to get the related values for
 	 * @param  array             &$related_records      The related records existing for the fActiveRecord class
 	 * @param  string            $related_class         The class we are associating with the current record
 	 * @param  fRecordSet|array  $records_to_associate  An fRecordSet, an array or records, or an array of primary keys of the records to be associated
@@ -110,7 +111,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to get the related values for
 	 * @param  array  &$values           The values for the fActiveRecord class
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class that is related to the current record
@@ -185,7 +186,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to get the related values for
 	 * @param  array  &$values           The values for the fActiveRecord class
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class that is related to the current record
@@ -241,7 +242,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class          The class name or instance of the class to get the related values for
+	 * @param  string $class          The class to create the related record for
 	 * @param  array  $values         The values existing in the fActiveRecord class
 	 * @param  string $related_class  The related class name
 	 * @param  string $route          The route to the related class
@@ -249,8 +250,7 @@ class fORMRelated
 	 */
 	static public function createRecord($class, $values, $related_class, $route=NULL)
 	{
-		$table = fORM::tablize($class);
-		
+		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
 		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-one');
@@ -264,7 +264,7 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class          The class name or instance of the main class
+	 * @param  string $class          The class name of the main class
 	 * @param  string $related_class  The related class being filtered for
 	 * @param  string $route          The route to the related table
 	 * @return string  The prefix to filter the request fields by
@@ -299,7 +299,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to associate the related records to
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class we are associating with the current record
 	 * @param  string $route             The route to use between the current class and the related class
@@ -330,7 +330,7 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class          The class name or instance of the class this ordering rule applies to
+	 * @param  string $class          The class to get the order bys for
 	 * @param  string $related_class  The related class the ordering rules apply to
 	 * @param  string $route          The route to the related table, should be a column name in the current table or a join table name
 	 * @return array  An array of the order bys - see fRecordSet::build() for format
@@ -355,7 +355,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to get the related primary keys for
 	 * @param  array  &$values           The values for the fActiveRecord class
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class that is related to the current record
@@ -447,15 +447,13 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed $class          The class name or instance of the class to get the related class name for
-	 * @param  mixed $related_class  The related class/class name to get the record name of
+	 * @param  string $class          The class to get the related class name for
+	 * @param  string $related_class  The related class to get the record name of
 	 * @return string  The record name for the related class specified
 	 */
 	static public function getRelatedRecordName($class, $related_class, $route=NULL)
 	{
-		$table = fORM::tablize($class);
-		
-		$related_class = fORM::getClass($related_class);
+		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
 		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
@@ -475,7 +473,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to get link the related records to
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The related class to populate
 	 * @param  string $route             The route to the related class
@@ -550,8 +548,8 @@ class fORMRelated
 	 */
 	static public function overrideRelatedRecordName($class, $related_class, $record_name, $route=NULL)
 	{
-		$table = fORM::tablize($class);
-		
+		$class         = fORM::getClass($class);
+		$table         = fORM::tablize($class);
 		$related_class = fORM::getClass($related_class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -574,7 +572,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to populate the related records of
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The related class to populate
 	 * @param  string $route             The route to the related class
@@ -582,6 +580,7 @@ class fORMRelated
 	 */
 	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
 	{
+		$table           = fORM::tablize($class);
 		$related_table   = fORM::tablize($related_class);
 		$pk_columns      = fORMSchema::retrieve()->getKeys($related_table, 'primary');
 		
@@ -589,7 +588,7 @@ class fORMRelated
 		if (sizeof($pk_columns) > 1) {
 		
 			$first_pk_column = NULL;
-			$relationships   = fORMSchema::getRoutes($related_table, fORM::tablize($class), '*-to-one');
+			$relationships   = fORMSchema::getRoutes($related_table, $table, '*-to-one');
 			foreach ($pk_columns as $pk_column) {
 				foreach ($relationships as $relationship) {
 					if ($pk_column == $relationship['column']) {
@@ -651,7 +650,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed   $class                 The class name or instance of the class this ordering rule applies to
+	 * @param  string  $class                 The class to reflect the related record methods for
 	 * @param  array   &$signatures           The associative array of `{method_name} => {signature}`
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
 	 * @return void
@@ -881,6 +880,7 @@ class fORMRelated
 	 */
 	static public function setOrderBys($class, $related_class, $order_bys, $route=NULL)
 	{
+		$class         = fORM::getClass($class);
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -903,7 +903,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed   $class             The class name or instance of the class to get the related values for
+	 * @param  string  $class             The class to set the related records count for
 	 * @param  array   &$values           The values for the fActiveRecord class
 	 * @param  array   &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string  $related_class     The class that is related to the current record
@@ -941,7 +941,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to set the related primary keys for
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class we are setting the records for
 	 * @param  array  $primary_keys      The records to set
@@ -974,7 +974,7 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed  $class             The class name or instance of the class to get the related values for
+	 * @param  string $class             The class to set the related records for
 	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
 	 * @param  string $related_class     The class we are associating with the current record
 	 * @param  fRecordSet $records       The records are associating
@@ -1007,9 +1007,9 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed      $class             The class name or instance of the class to store the related records for
-	 * @param  array      &$values           The current values for the main record being stored
-	 * @param  array      &$related_records  The related records array
+	 * @param  string $class             The class to store the related records for
+	 * @param  array  &$values           The current values for the main record being stored
+	 * @param  array  &$related_records  The related records array
 	 * @return void
 	 */
 	static public function store($class, &$values, &$related_records)
@@ -1155,13 +1155,12 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  mixed      $class             The class name or instance of the class to validate the related records for
-	 * @param  array      &$related_records  The related records array
+	 * @param  string $class             The class to validate the related records for
+	 * @param  array  &$related_records  The related records array
 	 * @return void
 	 */
 	static public function validate($class, &$related_records)
 	{
-		$class = fORM::getClass($class);
 		$table = fORM::tablize($class);
 		
 		$validation_messages = array();
@@ -1195,7 +1194,7 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $class          The class to validate the related records for
 	 * @param  string     $related_class  The name of the class for this record set
 	 * @param  string     $route          The route between the table and related table
 	 * @param  fRecordSet $record_set     The related records to validate
@@ -1253,7 +1252,7 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed      $class          The class name or instance of the class these records are related to
+	 * @param  string     $class          The class to validate the related records for
 	 * @param  string     $related_class  The name of the class for this record set
 	 * @param  string     $route          The route between the table and related table
 	 * @param  fRecordSet $record_set     The related records to validate

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Add caching of merged info, improved performance of ::getColumnInfo() [wb, 2009-06-15]
  * @changes    1.0.0b19  Fixed a couple of bugs with ::setKeysOverride() [wb, 2009-06-04]
  * @changes    1.0.0b18  Added missing support for MySQL mediumint columns [wb, 2009-05-18]
  * @changes    1.0.0b17  Fixed a bug with ::clearCache() not properly reseting the tables and databases list [wb, 2009-05-13]
@@ -175,6 +176,9 @@ class fSchema
 			$this->cache->delete($prefix . 'column_info');
 			$this->cache->delete($prefix . 'databases');
 			$this->cache->delete($prefix . 'keys');
+			$this->cache->delete($prefix . 'merged_column_info');
+			$this->cache->delete($prefix . 'merged_keys');
+			$this->cache->delete($prefix . 'relationships');
 			$this->cache->delete($prefix . 'tables');
 		}
 	}
@@ -191,10 +195,17 @@ class fSchema
 		$this->cache = $cache;
 		
 		$prefix = $this->makeCachePrefix();
-		$this->column_info = $this->cache->get($prefix . 'column_info', array());
-		$this->databases   = $this->cache->get($prefix . 'databases',   NULL);
-		$this->keys        = $this->cache->get($prefix . 'keys',        array());
-		$this->tables      = $this->cache->get($prefix . 'tables',      NULL);
+		$this->column_info        = $this->cache->get($prefix . 'column_info',          array());
+		$this->databases          = $this->cache->get($prefix . 'databases',            NULL);
+		$this->keys               = $this->cache->get($prefix . 'keys',                 array());
+		
+		if (!$this->column_info_override && !$this->keys_override) {
+			$this->merged_column_info = $this->cache->get($prefix . 'merged_column_info',   array());
+			$this->merged_keys        = $this->cache->get($prefix . 'merged_keys',          array());  
+			$this->relationships      = $this->cache->get($prefix . 'relationships',        array());
+		}
+		
+		$this->tables             = $this->cache->get($prefix . 'tables',               NULL);   
 	}
 	
 	
@@ -1713,6 +1724,10 @@ class fSchema
 			$this->findStarToOneRelationships($table);
 			$this->findOneToManyRelationships($table);
 		}
+		
+		if ($this->cache) {
+			$this->cache->set($this->makeCachePrefix() . 'relationships', $this->relationships);	
+		}
 	}
 	
 	
@@ -1771,13 +1786,22 @@ class fSchema
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
 	{
-		$valid_elements = array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
-		if ($element && !in_array($element, $valid_elements)) {
-			throw new fProgrammerException(
-				'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-				$element,
-				join(', ', $valid_elements)
-			);
+		// Return the saved column info if possible
+		if (!$column && isset($this->merged_column_info[$table])) {
+			return $this->merged_column_info[$table];
+		}
+		if ($column && isset($this->merged_column_info[$table][$column])) {
+			if ($element !== NULL) {
+				if (!isset($this->merged_column_info[$table][$column][$element]) && !array_key_exists($element, $this->merged_column_info[$table][$column])) {
+					throw new fProgrammerException(
+						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
+						$element,
+						join(', ', array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment'))
+					);	
+				}
+				return $this->merged_column_info[$table][$column][$element];
+			}
+			return $this->merged_column_info[$table][$column];
 		}
 		
 		if (!in_array($table, $this->getTables())) {
@@ -1785,17 +1809,6 @@ class fSchema
 				'The table specified, %s, does not exist in the database',
 				$table
 			);
-		}
-		
-		// Return the saved column info if possible
-		if (!$column && isset($this->merged_column_info[$table])) {
-			return $this->merged_column_info[$table];
-		}
-		if ($column && isset($this->merged_column_info[$table][$column])) {
-			if ($element !== NULL) {
-				return $this->merged_column_info[$table][$column][$element];
-			}
-			return $this->merged_column_info[$table][$column];
 		}
 		
 		$this->fetchColumnInfo($table);
@@ -2217,6 +2230,10 @@ class fSchema
 				}
 			}
 		}
+		
+		if ($this->cache) {
+			$this->cache->set($this->makeCachePrefix() . 'merged_column_info', $this->merged_column_info);	
+		}
 	}
 		
 	
@@ -2235,6 +2252,10 @@ class fSchema
 				$this->merged_keys[$table] = array();
 			}
 			$this->merged_keys[$table] = array_merge($this->merged_keys[$table], $info);
+		}
+		
+		if ($this->cache) {
+			$this->cache->set($this->makeCachePrefix() . 'merged_keys', $this->merged_keys);	
 		}
 		
 		$this->findRelationships();

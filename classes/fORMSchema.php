@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added routes caching for performance [wb, 2009-06-15]
  * @changes    1.0.0b2  Backwards Compatiblity Break - removed ::enableSmartCaching(), fORM::enableSchemaCaching() now provides equivalent functionality [wb, 2009-05-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
@@ -23,6 +24,16 @@ class fORMSchema
 	const getRoutes                    = 'fORMSchema::getRoutes';
 	const reset                        = 'fORMSchema::reset';
 	const retrieve                     = 'fORMSchema::retrieve';
+	
+	
+	/**
+	 * A cache for computed information
+	 * 
+	 * @var array
+	 */
+	static private $cache = array(
+		'getRoutes' => array()
+	);
 	
 	
 	/**
@@ -203,6 +214,11 @@ class fORMSchema
 	 */
 	static public function getRoutes($table, $related_table, $relationship_type=NULL)
 	{
+		$key = $table . '::' . $related_table . '::' . $relationship_type;
+		if (isset(self::$cache['getRoutes'][$key])) {
+			return self::$cache['getRoutes'][$key];	
+		}
+		
 		$valid_relationship_types = array(
 			NULL,
 			'*-to-many',
@@ -247,6 +263,8 @@ class fORMSchema
 				}
 			}
 		}
+		
+		self::$cache['getRoutes'][$key] = $routes;
 		
 		return $routes;
 	}
