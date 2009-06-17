@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed ::validate() so it properly ignores ordering columns in multi-column unique constraints [wb, 2009-06-17]
  * @changes    1.0.0b6  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b5  Updated class to automatically correct ordering values that are too high [wb, 2009-06-14]
  * @changes    1.0.0b4  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -588,7 +589,7 @@ class fORMOrdering
 		// Remove any previous validation warnings
 		$filtered_messages = array();
 		foreach ($validation_messages as $validation_message) {
-			if (!preg_match('#^' . preg_quote(fValidationException::formatField($column_name), '#') . '#', $validation_message)) {
+			if (!preg_match('#^' . str_replace('___', '(.*?)', preg_quote(fValidationException::formatField('___' . $column_name . '___'), '#')) . '#', $validation_message)) {
 				$filtered_messages[] = $validation_message;
 			}
 		}
