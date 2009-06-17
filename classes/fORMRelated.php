@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed ::associateRecords() to work for *-to-many instead of just many-to-many relationships [wb, 2009-06-17]
  * @changes    1.0.0b7  Updated code for new fORM API, fixed API documentation bugs [wb, 2009-06-15]
  * @changes    1.0.0b6  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b5  Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
@@ -63,7 +64,7 @@ class fORMRelated
 	
 	
 	/**
-	 * Creates associations for many-to-many relationships
+	 * Creates associations for *-to-many relationships
 	 * 
 	 * @internal
 	 * 
@@ -95,7 +96,7 @@ class fORMRelated
 			$primary_keys = TRUE;	
 		}
 		
-		$route = fORMSchema::getRouteName($table, $related_table, $route, 'many-to-many');
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		if ($primary_keys) {
 			self::setPrimaryKeys($class, $related_records, $related_class, $records_to_associate, $route);
