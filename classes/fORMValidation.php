@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Updated code for new fORM API [wb, 2009-06-15]
- * @changes    1.0.0b8  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
- * @changes    1.0.0b7  Updated ::validateRelated() to use new fORMRelated::validate() method and ::checkRelatedOneOrMoreRule() to use new `$related_records` structure [wb, 2009-06-02]
- * @changes    1.0.0b6  Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
- * @changes    1.0.0b5  Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
- * @changes    1.0.0b4  Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
- * @changes    1.0.0b3  Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
- * @changes    1.0.0b2  Fixed a bug with ::addManyToManyValidationRule() [wb, 2008-12-08]
- * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed UNIQUE constraint checking so it is only done once per constraint, fixed some UTF-8 case sensitivity issues [wb, 2009-06-17]
+ * @changes    1.0.0b9   Updated code for new fORM API [wb, 2009-06-15]
+ * @changes    1.0.0b8   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b7   Updated ::validateRelated() to use new fORMRelated::validate() method and ::checkRelatedOneOrMoreRule() to use new `$related_records` structure [wb, 2009-06-02]
+ * @changes    1.0.0b6   Changed date/time/timestamp checking from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
+ * @changes    1.0.0b5   Fixed a bug in ::checkOnlyOneRule() where no values would not be flagged as an error [wb, 2009-04-23]
+ * @changes    1.0.0b4   Fixed a bug in ::checkUniqueConstraints() related to case-insensitive columns [wb, 2009-02-15]
+ * @changes    1.0.0b3   Implemented proper fix for ::addManyToManyValidationRule() [wb, 2008-12-12]
+ * @changes    1.0.0b2   Fixed a bug with ::addManyToManyValidationRule() [wb, 2008-12-08]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
 class fORMValidation
 {
@@ -272,8 +273,6 @@ class fORMValidation
 			);
 		}
 		
-		$message = self::checkUniqueConstraints($object, $column, $values, $old_values);
-		if ($message) { return $message; }
 		$message = self::checkForeignKeyConstraints($class, $column, $values);
 		if ($message) { return $message; }
 	}
@@ -530,7 +529,7 @@ class fORMValidation
 			$old_value = fActiveRecord::retrieveOld($old_values, $primary_key);
 			$value     = $values[$primary_key];
 			if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($value) && self::stringlike($old_value)) {
-				if (strtolower($value) != strtolower($old_value)) {
+				if (fUTF8::lower($value) != fUTF8::lower($old_value)) {
 					$different = TRUE;
 				}	
 			} elseif ($old_value != $value) {
@@ -547,7 +546,7 @@ class fORMValidation
 			$conditions = array();
 			foreach ($primary_keys as $primary_key) {
 				if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($values[$primary_key])) {
-					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, strtolower($values[$primary_key]), '=');
+					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, fUTF8::lower($values[$primary_key]), '=');
 				} else {
 					$conditions[] = $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
 				} 
@@ -597,12 +596,11 @@ class fORMValidation
 	 * Validates values against unique constraints
 	 *
 	 * @param  fActiveRecord  $object       The instance of the class to check
-	 * @param  string         $column       The column to check
 	 * @param  array          &$values      The values to check
 	 * @param  array          &$old_values  The old values for the record
 	 * @return string  A validation error message for the unique constraints
 	 */
-	static private function checkUniqueConstraints($object, $column, &$values, &$old_values)
+	static private function checkUniqueConstraints($object, &$values, &$old_values)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -614,60 +612,59 @@ class fORMValidation
 		
 		foreach ($unique_keys AS $unique_columns) {
 			settype($unique_columns, 'array');
-			if (in_array($column, $unique_columns)) {
-				// NULL values are unique
-				$found_not_null = FALSE;
-				foreach ($unique_columns as $unique_column) {
-					if ($values[$unique_column] !== NULL) {
-						$found_not_null = TRUE;
-					}
+			
+			// NULL values are unique
+			$found_not_null = FALSE;
+			foreach ($unique_columns as $unique_column) {
+				if ($values[$unique_column] !== NULL) {
+					$found_not_null = TRUE;
 				}
-				if (!$found_not_null) {
-					continue;
-				}
-				
-				$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
-				$first = TRUE;
-				foreach ($unique_columns as $unique_column) {
-					if ($first) { $first = FALSE; } else { $sql .= " AND "; }
-					$value = $values[$unique_column];
-					if (self::isCaseInsensitive($class, $column) && (is_string($value) || is_numeric($value))) {
-						$sql .= 'LOWER(' . $unique_column . ')' . fORMDatabase::escapeBySchema($table, $unique_column, strtolower($value), '=');
-					} else {
-						$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $value, '=');
-					}
-				}
-				
-				if ($object->exists()) {
-					foreach ($primary_keys as $primary_key) {
-						$value = fActiveRecord::retrieveOld($old_values, $primary_key, $values[$primary_key]);
-						$sql  .= ' AND ' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
-					}
-				}
-				
-				try {
-					$result = fORMDatabase::retrieve()->translatedQuery($sql);
-					$result->tossIfNoRows();
-				
-					// If an exception was not throw, we have existing values
-					$column_names = array();
-					foreach ($unique_columns as $unique_column) {
-						$column_names[] = fORM::getColumnName($class, $unique_column);
-					}
-					if (sizeof($column_names) == 1) {
-						return self::compose(
-							'%sThe value specified must be unique, however it already exists',
-							fValidationException::formatField(join('', $column_names))
-						);
-					} else {
-						return self::compose(
-							'%sThe values specified must be a unique combination, however the specified combination already exists',
-							fValidationException::formatField(join(', ', $column_names))
-						);
-					}
-				
-				} catch (fNoRowsException $e) { }
 			}
+			if (!$found_not_null) {
+				continue;
+			}
+			
+			$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
+			$first = TRUE;
+			foreach ($unique_columns as $unique_column) {
+				if ($first) { $first = FALSE; } else { $sql .= " AND "; }
+				$value = $values[$unique_column];
+				if (self::isCaseInsensitive($class, $unique_column) && self::stringlike($value)) {
+					$sql .= 'LOWER(' . $unique_column . ')' . fORMDatabase::escapeBySchema($table, $unique_column, fUTF8::lower($value), '=');
+				} else {
+					$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $value, '=');
+				}
+			}
+			
+			if ($object->exists()) {
+				foreach ($primary_keys as $primary_key) {
+					$value = fActiveRecord::retrieveOld($old_values, $primary_key, $values[$primary_key]);
+					$sql  .= ' AND ' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
+				}
+			}
+			
+			try {
+				$result = fORMDatabase::retrieve()->translatedQuery($sql);
+				$result->tossIfNoRows();
+			
+				// If an exception was not throw, we have existing values
+				$column_names = array();
+				foreach ($unique_columns as $unique_column) {
+					$column_names[] = fORM::getColumnName($class, $unique_column);
+				}
+				if (sizeof($column_names) == 1) {
+					return self::compose(
+						'%sThe value specified must be unique, however it already exists',
+						fValidationException::formatField(join('', $column_names))
+					);
+				} else {
+					return self::compose(
+						'%sThe values specified must be a unique combination, however the specified combination already exists',
+						fValidationException::formatField(join(', ', $column_names))
+					);
+				}
+			
+			} catch (fNoRowsException $e) { }
 		}
 	}
 	
@@ -902,6 +899,9 @@ class fORMValidation
 			$message = self::checkAgainstSchema($object, $column, $values, $old_values);
 			if ($message) { $validation_messages[] = $message; }
 		}
+		
+		$message = self::checkUniqueConstraints($object, $values, $old_values);
+		if ($message) { $validation_messages[] = $message; }
 		
 		foreach (self::$conditional_validation_rules[$class] as $rule) {
 			$messages = self::checkConditionalRule($class, $values, $rule['main_column'], $rule['conditional_values'], $rule['conditional_columns']);
