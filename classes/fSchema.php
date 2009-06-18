@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Added support for the UUID data type in PostgreSQL [wb, 2009-06-18]
  * @changes    1.0.0b20  Add caching of merged info, improved performance of ::getColumnInfo() [wb, 2009-06-15]
  * @changes    1.0.0b19  Fixed a couple of bugs with ::setKeysOverride() [wb, 2009-06-04]
  * @changes    1.0.0b18  Added missing support for MySQL mediumint columns [wb, 2009-05-18]
@@ -1153,6 +1154,7 @@ class fSchema
 			'timestamp'			=> 'timestamp',
 			'date'				=> 'date',
 			'time'				=> 'time',
+			'uuid'              => 'varchar',
 			'character varying'	=> 'varchar',
 			'character'			=> 'char',
 			'real'				=> 'float',
@@ -1215,6 +1217,11 @@ class fSchema
 			// Handle the special data for varchar fields
 			if (in_array($info['type'], array('char', 'varchar')) && !empty($column_data_type[2])) {
 				$info['max_length'] = $column_data_type[2];
+			}
+			
+			// In PostgreSQL, a UUID can be the 32 digits, 32 digits plus 4 hyphens or 32 digits plus 4 hyphens and 2 curly braces
+			if ($row['data_type'] == 'uuid') {
+				$info['max_length'] = 38;	
 			}
 			
 			// Handle check constraints that are just simple lists
