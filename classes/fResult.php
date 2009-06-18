@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed a bug with not properly converting SQL Server text to UTF-8 [wb, 2009-06-18]
  * @changes    1.0.0b3  Added support for Oracle, various bug fixes [wb, 2009-05-04]
  * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
@@ -247,7 +248,7 @@ class fResult implements Iterator
 		if ($row && $this->type == 'mssql') {
 			if ($this->character_set) {
 				foreach ($row as $key => $value) {
-					if (!is_string($value) || strpos($key, 'fmssqln__') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xD-\x1F]#', $value)) {
+					if (!is_string($value) || strpos($key, 'fmssqln__') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xE-\x1F]#', $value)) {
 						continue;
 					} 		
 					$row[$key] = iconv($this->character_set, 'UTF-8', $value);
