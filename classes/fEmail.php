@@ -8,23 +8,25 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Bill Bushee, iMarc LLC [bb-imarc] <bill@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug where the MIME headers were not being set for all emails [wb, 2009-06-12]
- * @changes    1.0.0b8  Added the method ::clearRecipients() [wb, 2009-05-29]
- * @changes    1.0.0b7  Email names with UTF-8 characters are now properly encoded [wb, 2009-05-08]
- * @changes    1.0.0b6  Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
- * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b4  The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
- * @changes    1.0.0b3  Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
- * @changes    1.0.0b2  Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
- * @changes    1.0.0b   The initial implementation [wb, 2008-06-23]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed a bug with sending both an HTML and a plaintext body [bb-imarc, 2009-06-18]
+ * @changes    1.0.0b9   Fixed a bug where the MIME headers were not being set for all emails [wb, 2009-06-12]
+ * @changes    1.0.0b8   Added the method ::clearRecipients() [wb, 2009-05-29]
+ * @changes    1.0.0b7   Email names with UTF-8 characters are now properly encoded [wb, 2009-05-08]
+ * @changes    1.0.0b6   Fixed a bug where <> quoted email addresses in validation messages were not showing [wb, 2009-03-27]
+ * @changes    1.0.0b5   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b4   The recipient error message in ::validate() no longer contains a typo [wb, 2009-02-09]
+ * @changes    1.0.0b3   Fixed a bug with missing content in the fValidationException thrown by ::validate() [wb, 2009-01-14]
+ * @changes    1.0.0b2   Fixed a few bugs with sending S/MIME encrypted/signed emails [wb, 2009-01-10]
+ * @changes    1.0.0b    The initial implementation [wb, 2008-06-23]
  */
 class fEmail
 {
@@ -561,9 +563,10 @@ class fEmail
 			if ($this->attachments) {
 				$boundary = $this->createBoundary();
 				$body    .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n\r\n";
+			} else {
+				$body .= $mime_notice . "\r\n";
 			}
 			
-			$body .= $mime_notice . "\r\n";
 			$body .= '--' . $boundary . "\r\n";
 			$body .= "Content-Type: text/plain; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
@@ -572,7 +575,7 @@ class fEmail
 			$body .= "Content-Type: text/html; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			$body .= $this->makeQuotedPrintable($this->html_body) . "\r\n\r\n";
-			$body .= '--' . $boundary . "\r\n";
+			$body .= '--' . $boundary . "--\r\n";
 		
 		// If there is no HTML, just encode the body
 		} else {
@@ -592,15 +595,16 @@ class fEmail
 			$multipart_body  = $mime_notice . "\r\n";
 			$multipart_body .= '--' . $boundary . "\r\n";
 			$multipart_body .= $body . "\r\n";
-			$multipart_body .= '--' . $boundary . "\r\n";
 			
 			foreach ($this->attachments as $filename => $file_info) {
+				$multipart_body .= '--' . $boundary . "\r\n";
 				$multipart_body .= 'Content-Type: ' . $file_info['mime-type'] . "\r\n";
 				$multipart_body .= "Content-Transfer-Encoding: base64\r\n";
 				$multipart_body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
 				$multipart_body .= $this->makeBase64($file_info['contents']) . "\r\n\r\n";
-				$multipart_body .= '--' . $boundary . "\r\n";
 			}
+			
+			$multipart_body .= '--' . $boundary . "--\r\n"; 
 			
 			$body = $multipart_body;
 		}
@@ -1307,7 +1311,7 @@ class fEmail
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
