@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
- * @changes    1.0.0b8  Fixed a bug with ::creatingWhereClause() where a null value would not be escaped property [wb, 2009-05-12]
- * @changes    1.0.0b7  Fixed a bug where an OR condition in ::createWhereClause() could not have one of the values be an array [wb, 2009-04-22]
- * @changes    1.0.0b6  ::insertFromAndGroupByClauses() will no longer wrap ungrouped columns if in a CAST or CASE statement for ORDER BY clauses of queries with a GROUP BY clause [wb, 2009-03-23]
- * @changes    1.0.0b5  Fixed ::parseSearchTerms() to include stop words when they are the only thing in the search string [wb, 2008-12-31]
- * @changes    1.0.0b4  Fixed a bug where loading a related record in the same table through a one-to-many relationship caused recursion [wb, 2008-12-24]
- * @changes    1.0.0b3  Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
- * @changes    1.0.0b2  Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]
- * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Updated ::createWhereClause() to properly handle NULLs for arrays of values when doing = and != comparisons [wb, 2009-06-17]
+ * @changes    1.0.0b9   Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
+ * @changes    1.0.0b8   Fixed a bug with ::creatingWhereClause() where a null value would not be escaped property [wb, 2009-05-12]
+ * @changes    1.0.0b7   Fixed a bug where an OR condition in ::createWhereClause() could not have one of the values be an array [wb, 2009-04-22]
+ * @changes    1.0.0b6   ::insertFromAndGroupByClauses() will no longer wrap ungrouped columns if in a CAST or CASE statement for ORDER BY clauses of queries with a GROUP BY clause [wb, 2009-03-23]
+ * @changes    1.0.0b5   Fixed ::parseSearchTerms() to include stop words when they are the only thing in the search string [wb, 2008-12-31]
+ * @changes    1.0.0b4   Fixed a bug where loading a related record in the same table through a one-to-many relationship caused recursion [wb, 2008-12-24]
+ * @changes    1.0.0b3   Fixed a bug from 1.0.0b2 [wb, 2008-12-05]
+ * @changes    1.0.0b2   Added support for != and <> to ::createWhereClause() and ::createHavingClause() [wb, 2008-12-04]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
 class fORMDatabase
 {
@@ -123,18 +124,34 @@ class fORMDatabase
 			switch ($operator) {
 				case '=':
 					$condition = array();
+					$has_null  = FALSE;
 					foreach ($values as $value) {
+						if ($value === NULL) {
+							$has_null = TRUE;
+							continue;	
+						}
 						$condition[] = self::escapeBySchema($table, $column, $value);
 					}
 					$sql = $column . ' IN (' . join(', ', $condition) . ')';
+					if ($has_null) {
+						$sql = '(' . $column . ' IS NULL OR ' . $sql . ')';	
+					}
 					break;
 					
 				case '!':
 					$condition = array();
+					$has_null  = FALSE;
 					foreach ($values as $value) {
+						if ($value === NULL) {
+							$has_null = TRUE;
+							continue;	
+						}
 						$condition[] = self::escapeBySchema($table, $column, $value);
 					}
 					$sql = $column . ' NOT IN (' . join(', ', $condition) . ')';
+					if ($has_null) {
+						$sql = '(' . $column . ' IS NOT NULL AND ' . $sql . ')';	
+					}
 					break;
 					
 				case '~':
