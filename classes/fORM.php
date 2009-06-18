@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Added caching for performance and changed some method APIs to only allow class names instead of instances [wb, 2009-06-15]
- * @changes    1.0.0b8  Updated documentation to reflect removal of `$associate` parameter for callbacks passed to ::registerRecordSetMethod() [wb, 2009-06-02]
- * @changes    1.0.0b7  Added ::enableSchemaCaching() to replace fORMSchema::enableSmartCaching() [wb, 2009-05-04]
- * @changes    1.0.0b6  Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
- * @changes    1.0.0b5  Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
- * @changes    1.0.0b4  Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
- * @changes    1.0.0b3  Fixed a static method callback constant [wb, 2008-12-17]
- * @changes    1.0.0b2  Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
- * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed a bug with ::objectify() caching during NULL date/time/timestamp values and breaking further objectification [wb, 2009-06-18]
+ * @changes    1.0.0b9   Added caching for performance and changed some method APIs to only allow class names instead of instances [wb, 2009-06-15]
+ * @changes    1.0.0b8   Updated documentation to reflect removal of `$associate` parameter for callbacks passed to ::registerRecordSetMethod() [wb, 2009-06-02]
+ * @changes    1.0.0b7   Added ::enableSchemaCaching() to replace fORMSchema::enableSmartCaching() [wb, 2009-05-04]
+ * @changes    1.0.0b6   Added the ability to pass a class instance to ::addCustomClassTableMapping() [wb, 2009-02-23]
+ * @changes    1.0.0b5   Backwards compatibility break - renamed ::addCustomTableClassMapping() to ::addCustomClassTableMapping() and swapped the parameters [wb, 2009-01-26]
+ * @changes    1.0.0b4   Fixed a bug with retrieving fActiveRecord methods registered for all classes [wb, 2009-01-14]
+ * @changes    1.0.0b3   Fixed a static method callback constant [wb, 2008-12-17]
+ * @changes    1.0.0b2   Added ::replicate() and ::registerReplicateCallback() for fActiveRecord::replicate() [wb, 2008-12-12]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
 class fORM
 {
@@ -522,7 +523,12 @@ class fORM
 		// Turn date/time values into objects
 		$column_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
-		if ($value !== NULL && in_array($column_type, array('date', 'time', 'timestamp'))) {
+		if (in_array($column_type, array('date', 'time', 'timestamp'))) {
+			
+			if ($value === NULL) {
+				return $value;	
+			}
+			
 			try {
 				
 				// Explicit calls to the constructors are used for dependency detection
