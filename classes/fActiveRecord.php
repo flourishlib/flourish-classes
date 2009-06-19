@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Added support for the $formatting parameter to encode methods on char, text and varchar columns [wb, 2009-06-19]
  * @changes    1.0.0b21  Performance tweaks and updates for fORM and fORMRelated API changes [wb, 2009-06-15]
  * @changes    1.0.0b20  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b19  Added `list{RelatedRecords}()` methods, updated code for new fORMRelated API [wb, 2009-06-02]
@@ -897,6 +898,7 @@ abstract class fActiveRecord
 	 * 
 	 * Below are the transformations performed:
 	 *  
+	 *  - **varchar, char, text**: will run through fHTML::encode(), if `TRUE` is passed the text will be run through fHTML::convertNewLinks() and fHTML::makeLinks()
 	 *  - **float**: takes 1 parameter to specify the number of decimal places
 	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
 	 *  - **objects**: the object will be converted to a string by `__toString()` or a `(string)` cast and then will be run through fHTML::encode()
@@ -919,14 +921,14 @@ abstract class fActiveRecord
 		$column_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
 		
 		// Ensure the programmer is calling the function properly
-		if (in_array($column_type, array('blob'))) {
+		if ($column_type == 'blob') {
 			throw new fProgrammerException(
 				'The column specified, %s, does not support forming because it is a blob column',
 				$column
 			);
 		}
 		
-		if ($formatting !== NULL && in_array($column_type, array('varchar', 'char', 'text', 'boolean', 'integer'))) {
+		if ($formatting !== NULL && in_array($column_type, array('boolean', 'integer'))) {
 			throw new fProgrammerException(
 				'The column specified, %s, does not support any formatting options',
 				$column
@@ -974,6 +976,11 @@ abstract class fActiveRecord
 			}
 			
 			return number_format($value, $decimal_places, '.', '');
+		}
+		
+		// Turn line-breaks into breaks for text fields and add links
+		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
+			return fHTML::makeLinks(fHTML::convertNewlines(fHTML::encode($value)));
 		}
 		
 		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
@@ -1303,7 +1310,7 @@ abstract class fActiveRecord
 	 * 
 	 * Below are the transformations performed:
 	 * 
-	 *  - **varchar, char, text**: will run through fHTML::prepare()
+	 *  - **varchar, char, text**: will run through fHTML::prepare(), if `TRUE` is passed the text will be run through fHTML::convertNewLinks() and fHTML::makeLinks()
 	 *  - **boolean**: will return `'Yes'` or `'No'`
 	 *  - **integer**: will add thousands/millions/etc. separators
 	 *  - **float**: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
