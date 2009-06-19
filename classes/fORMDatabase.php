@@ -2,14 +2,16 @@
 /**
  * Holds a single instance of the fDatabase class and provides database manipulation functionality for ORM code
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Craig Ruksznis, iMarc LLC [cr-imarc] <craigruk@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added support for concatenated columns to ::escapeBySchema() [cr-imarc, 2009-06-19]
  * @changes    1.0.0b10  Updated ::createWhereClause() to properly handle NULLs for arrays of values when doing = and != comparisons [wb, 2009-06-17]
  * @changes    1.0.0b9   Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b8   Fixed a bug with ::creatingWhereClause() where a null value would not be escaped property [wb, 2009-05-12]
@@ -572,7 +574,7 @@ class fORMDatabase
 			$values = $new_values;
 			
 			// Multi-column condition
-			if (strpos($column, '|') !== FALSE) {
+			if (preg_match('#(?<!\|)\|(?!\|)#', $column)) {
 				$columns   = explode('|', $column);
 				$operators = array();
 				
@@ -668,25 +670,44 @@ class fORMDatabase
 	 * @internal
 	 * 
 	 * @param  string $table                The table to store the value
-	 * @param  string $column               The column to store the value in, may also be shorthand column name like `table.column` or `table=>related_table.column`
+	 * @param  string $column               The column to store the value in, may also be shorthand column name like `table.column` or `table=>related_table.column` or concatenated column names like `table.column||table.other_column`
 	 * @param  mixed  $value                The value to escape
 	 * @param  string $comparison_operator  Optional: should be `'='`, `'!='`, `'!'`, `'<>'`, `'<'`, `'<='`, `'>'`, `'>='`, `'IN'`, `'NOT IN'`
 	 * @return string  The SQL-ready representation of the value
 	 */
 	static public function escapeBySchema($table, $column, $value, $comparison_operator=NULL)
 	{
-		// Handle shorthand column names like table.column and table=>related_table.column
-		if (preg_match('#(\w+)(?:\{\w+\})?\.(\w+)$#D', $column, $match)) {
-			$table  = $match[1];
-			$column = $match[2];
-		}
+		// handle concatenated column names
+		if (preg_match('#\|\|#', $column)) {
+			
+			if (is_object($value) && is_callable(array($value, '__toString'))) {
+				$value = $value->__toString();
+			} elseif (is_object($value)) {
+				$value = (string) $value;
+			}
+			
+			$column_info = array(
+				'not_null' => FALSE,
+				'default'  => NULL,
+				'type'     => 'varchar'
+			);
+			
+		} else {
+			
+			// Handle shorthand column names like table.column and table=>related_table.column
+			if (preg_match('#(\w+)(?:\{\w+\})?\.(\w+)$#D', $column, $match)) {
+				$table  = $match[1];
+				$column = $match[2];
+			}
+			
+			$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);	
+			
+			// Some of the tables being escaped for are linking tables that might break with classize()
+			if (is_object($value)) {
+				$class = fORM::classize($table);
+				$value = fORM::scalarize($class, $column, $value);
+			}
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);	
-		
-		// Some of the tables being escaped for are linking tables that might break with classize()
-		if (is_object($value)) {
-			$class = fORM::classize($table);
-			$value = fORM::scalarize($class, $column, $value);
 		}
 		
 		if ($comparison_operator !== NULL) {
@@ -1081,7 +1102,7 @@ class fORMDatabase
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

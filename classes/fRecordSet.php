@@ -81,6 +81,7 @@ class fRecordSet implements Iterator
 	 * 'related_table{route}=>once_removed_related_table.column'        // e.g. 'user_groups{user_group_id}=>permissions.level'
 	 * 'related_table=>once_removed_related_table{route}.column'        // e.g. 'user_groups=>permissions{read}.level'
 	 * 'related_table{route}=>once_removed_related_table{route}.column' // e.g. 'user_groups{user_group_id}=>permissions{read}.level'
+	 * 'column||other_column'                                           // e.g. 'first_name||last_name' - this concatenates the column values
 	 * }}}
 	 * 
 	 * In addition to using plain column names for where conditions, it is also
