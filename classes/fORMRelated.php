@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug where ::store() would not save associations with no related records [wb, 2009-06-23]
  * @changes    1.0.0b8  Changed ::associateRecords() to work for *-to-many instead of just many-to-many relationships [wb, 2009-06-17]
  * @changes    1.0.0b7  Updated code for new fORM API, fixed API documentation bugs [wb, 2009-06-15]
  * @changes    1.0.0b6  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -1022,7 +1023,7 @@ class fORMRelated
 		
 		foreach ($related_records as $related_table => $relationship) {
 			foreach ($relationship as $route => $related_info) {
-				if (!$related_info['count'] || !$related_info['associate']) {
+				if (!$related_info['associate']) {
 					continue;
 				}
 				
