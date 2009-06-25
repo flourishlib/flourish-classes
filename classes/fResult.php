@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
  * @changes    1.0.0b4  Fixed a bug with not properly converting SQL Server text to UTF-8 [wb, 2009-06-18]
  * @changes    1.0.0b3  Added support for Oracle, various bug fixes [wb, 2009-05-04]
  * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
@@ -74,6 +75,13 @@ class fResult implements Iterator
 	 * @var string
 	 */
 	private $extension = NULL;
+	
+	/**
+	 * If rows should be converted to objects
+	 * 
+	 * @var boolean
+	 */
+	private $output_objects = FALSE;
 	
 	/**
 	 * The position of the pointer in the result set
@@ -262,6 +270,18 @@ class fResult implements Iterator
 	
 	
 	/**
+	 * Sets the object to return rows as objects instead of associative arrays (the default)
+	 * 
+	 * @return fResult  The result object, to allow for method chaining
+	 */
+	public function asObjects()
+	{
+		$this->output_objects = TRUE;
+		return $this;
+	}
+	
+	
+	/**
 	 * Returns the number of rows affected by the query
 	 * 
 	 * @return integer  The number of rows affected by the query
@@ -308,6 +328,9 @@ class fResult implements Iterator
 			$this->advanceCurrentRow();
 		}
 		
+		if ($this->output_objects) {
+			return (object) $this->current_row;	
+		}
 		return $this->current_row;
 	}
 	
