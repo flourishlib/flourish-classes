@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Fixed the exception message thrown by ::output() when output buffering is turned on [wb, 2009-06-26]
  * @changes    1.0.0b19  ::rename() will now rename the file in its current directory if the new filename has no directory separator [wb, 2009-05-04]
  * @changes    1.0.0b18  Changed ::__sleep() to not reset the iterator since it can cause side-effects [wb, 2009-05-04]
  * @changes    1.0.0b17  Added ::__sleep() and ::__wakeup() for proper serialization with the filesystem map [wb, 2009-05-03]
@@ -971,9 +972,12 @@ class fFile implements Iterator
 		
 		if (ob_get_level() > 0) {
 			throw new fProgrammerException(
-				'The method requested, %s(), should not normally be used when output buffering is turned off, due to memory issues. If it is neccessary to have output buffering on, please pass %s as the second parameter to this method.',
-				'output',
-				'TRUE'
+				'The method requested, %1$s, can not be used when output buffering is turned on, due to potential memory issues. Please call %2$s, %3$s and %4$s, or %5$s as appropriate to turn off output buffering.',
+				'output()',
+				'ob_end_clean()',
+				'fBuffer::erase()',
+				'fBuffer::stop()',
+				'fTemplating::destroy()'
 			);
 		}
 		
