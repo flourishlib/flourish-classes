@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
  * @changes    1.0.0b10  Fixed UNIQUE constraint checking so it is only done once per constraint, fixed some UTF-8 case sensitivity issues [wb, 2009-06-17]
  * @changes    1.0.0b9   Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b8   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -569,20 +570,28 @@ class fORMValidation
 	/**
 	 * Validates against a *-to-many one or more validation rule
 	 *
-	 * @param  string $class             The class we are checking
-	 * @param  array  &$related_records  The related records array to check
-	 * @param  string $related_class     The name of the related class
-	 * @param  string $route             The name of the route from the class to the related class
+	 * @param  fActiveRecord $object            The object being checked
+	 * @param  array         &$values           The values for the object
+	 * @param  array         &$related_records  The related records for the object
+	 * @param  string        $related_class     The name of the related class
+	 * @param  string        $route             The name of the route from the class to the related class
 	 * @return string  A validation error message for the rule
 	 */
-	static private function checkRelatedOneOrMoreRule($class, &$related_records, $related_class, $route)
+	static private function checkRelatedOneOrMoreRule($object, &$values, &$related_records, $related_class, $route)
 	{
-		$related_table =  fORM::tablize($related_class);
-		$related_info  =& $related_records[$related_table][$route];
-		if (isset($related_info['count'])) {
-			if ($related_info['count'] && $related_info['associate']) {
-				return;
-			}
+		$related_table   = fORM::tablize($related_class);
+		$class           = get_class($object);
+		
+		$exists          = $object->exists();
+		$records_are_set = isset($related_records[$related_table][$route]);
+		$has_records     = $records_are_set && $related_records[$related_table][$route]['count'];
+		
+		if ($exists && (!$records_are_set || $has_records)) {
+			return;
+		}
+		
+		if (!$exists && $has_records) {
+			return;	
 		}
 		
 		return self::compose(
@@ -927,12 +936,14 @@ class fORMValidation
 	 *
 	 * @internal
 	 * 
-	 * @param  string $class             The class to validate
-	 * @param  array  &$related_records  The related records to validate
-	 * @return array  An array of validation messages
+	 * @param  fActiveRecord $object            The object to validate
+	 * @param  array         &$values           The values for the object
+	 * @param  array         &$related_records  The related records for the object
+	 * @return array         An array of validation messages
 	 */
-	static public function validateRelated($class, &$related_records)
+	static public function validateRelated($object, &$values, &$related_records)
 	{
+		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
 		$validation_messages = array();
@@ -940,12 +951,12 @@ class fORMValidation
 		// Check related validation rules 
 		foreach (self::$related_one_or_more_validation_rules[$class] as $related_class => $routes) {
 			foreach ($routes as $route => $enabled) {
-				$message = self::checkRelatedOneOrMoreRule($class, $related_records, $related_class, $route);
+				$message = self::checkRelatedOneOrMoreRule($object, $values, $related_records, $related_class, $route);
 				if ($message) { $validation_messages[] = $message; }
 			}
 		}
 		
-		$related_messages    = fORMRelated::validate($class, $related_records);
+		$related_messages    = fORMRelated::validate($class, $values, $related_records);
 		$validation_messages = array_merge($validation_messages, $related_messages);
 		
 		return $validation_messages;

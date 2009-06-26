@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Updated code for new fORMValidation::validateRelated() API [wb, 2009-06-26]
  * @changes    1.0.0b22  Added support for the $formatting parameter to encode methods on char, text and varchar columns [wb, 2009-06-19]
  * @changes    1.0.0b21  Performance tweaks and updates for fORM and fORMRelated API changes [wb, 2009-06-15]
  * @changes    1.0.0b20  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -2038,7 +2039,7 @@ abstract class fActiveRecord
 		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
 		
 		// Validate related records
-		$related_validation_messages = fORMValidation::validateRelated($class, $this->related_records);
+		$related_validation_messages = fORMValidation::validateRelated($this, $this->values, $this->related_records);
 		
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
 		

@@ -12,16 +12,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug where ::store() would not save associations with no related records [wb, 2009-06-23]
- * @changes    1.0.0b8  Changed ::associateRecords() to work for *-to-many instead of just many-to-many relationships [wb, 2009-06-17]
- * @changes    1.0.0b7  Updated code for new fORM API, fixed API documentation bugs [wb, 2009-06-15]
- * @changes    1.0.0b6  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
- * @changes    1.0.0b5  Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
- * @changes    1.0.0b4  Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
- * @changes    1.0.0b3  ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
- * @changes    1.0.0b2  ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
- * @changes    1.0.0b   The initial implementation [wb, 2007-12-30]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
+ * @changes    1.0.0b9   Fixed a bug where ::store() would not save associations with no related records [wb, 2009-06-23]
+ * @changes    1.0.0b8   Changed ::associateRecords() to work for *-to-many instead of just many-to-many relationships [wb, 2009-06-17]
+ * @changes    1.0.0b7   Updated code for new fORM API, fixed API documentation bugs [wb, 2009-06-15]
+ * @changes    1.0.0b6   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b5   Added ::getPrimaryKeys() and ::setPrimaryKeys(), renamed ::setRecords() to ::setRecordSet() and ::tallyRecords() to ::setCount() [wb, 2009-06-02]
+ * @changes    1.0.0b4   Updated code to handle new association method for related records and new `$related_records` structure, added ::store() and ::validate() [wb, 2009-06-02]
+ * @changes    1.0.0b3   ::associateRecords() can now accept an array of records or primary keys instead of only an fRecordSet [wb, 2009-06-01]
+ * @changes    1.0.0b2   ::populateRecords() now accepts any input field keys instead of sequential ones starting from 0 [wb, 2009-05-03]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-12-30]
  */
 class fORMRelated
 {
@@ -1158,10 +1159,11 @@ class fORMRelated
 	 * @internal
 	 * 
 	 * @param  string $class             The class to validate the related records for
-	 * @param  array  &$related_records  The related records array
+	 * @param  array  &$values           The values for the object
+	 * @param  array  &$related_records  The related records for the object
 	 * @return void
 	 */
-	static public function validate($class, &$related_records)
+	static public function validate($class, &$values, &$related_records)
 	{
 		$table = fORM::tablize($class);
 		
@@ -1178,9 +1180,9 @@ class fORMRelated
 				$relationship  = fORMSchema::getRoute($table, $related_table, $route);
 																												
 				if (isset($relationship['join_table'])) {
-					$related_messages = self::validateManyToMany($class, $related_class, $route, $related_info['record_set']);
+					$related_messages = self::validateManyToMany($class, $related_class, $route, $related_info);
 				} else {
-					$related_messages = self::validateOneToMany($class, $related_class, $route, $related_info['record_set']);
+					$related_messages = self::validateOneToMany($class, $values, $related_records, $related_class, $route);
 				}
 				
 				$validation_messages = array_merge($validation_messages, $related_messages);
@@ -1196,13 +1198,14 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  string     $class          The class to validate the related records for
-	 * @param  string     $related_class  The name of the class for this record set
-	 * @param  string     $route          The route between the table and related table
-	 * @param  fRecordSet $record_set     The related records to validate
+	 * @param  string $class             The class to validate the related records for
+	 * @param  array  &$values           The values for the object
+	 * @param  array  &$related_records  The related records for the object
+	 * @param  string $related_class     The name of the class for this record set
+	 * @param  string $route             The route between the table and related table
 	 * @return array  An array of validation messages
 	 */
-	static private function validateOneToMany($class, $related_class, $route, $record_set)
+	static private function validateOneToMany($class, &$values, &$related_records, $related_class, $route)
 	{
 		$table               = fORM::tablize($class);
 		$related_table       = fORM::tablize($related_class);
@@ -1213,6 +1216,8 @@ class fORMRelated
 		$record_number = 1;
 		
 		$messages = array();
+		
+		$record_set = self::buildRecords($class, $values, $related_records, $related_class, $route);
 		
 		foreach ($record_set as $record) {
 			fRequest::filter($filter, $record_number-1);
@@ -1254,21 +1259,23 @@ class fORMRelated
 	 *
 	 * @internal
 	 * 
-	 * @param  string     $class          The class to validate the related records for
-	 * @param  string     $related_class  The name of the class for this record set
-	 * @param  string     $route          The route between the table and related table
-	 * @param  fRecordSet $record_set     The related records to validate
+	 * @param  string $class          The class to validate the related records for
+	 * @param  string $related_class  The name of the class for this record set
+	 * @param  string $route          The route between the table and related table
+	 * @param  array  $related_info   The related info to validate
 	 * @return array  An array of validation messages
 	 */
-	static private function validateManyToMany($class, $related_class, $route, $record_set)
+	static private function validateManyToMany($class, $related_class, $route, $related_info)
 	{
 		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
 		
 		$messages = array();
 		
-		foreach ($record_set as $record) {
-			if (!$record->exists()) {
+		$related_records = $related_info['record_set'] ? $related_info['record_set'] : $related_info['primary_keys'];
+		
+		foreach ($related_records as $record) {
+			if ((is_object($record) && !$record->exists()) || !$record) {
 				$messages[] = self::compose(
 					'%sPlease select a %3$s',
 					fValidationException::formatField(
