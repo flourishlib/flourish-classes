@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated ::__construct() to no longer require a message, like the Exception class, and allow for non-integer codes [wb, 2009-06-26]
  * @changes    1.0.0b6  Fixed ::splitMessage() so that the original message is returned if no list items are found, added ::reorderMessage() [wb, 2009-06-02]
  * @changes    1.0.0b5  Added ::splitMessage() to replace fCRUD::removeListItems() and fCRUD::reorderListItems() [wb, 2009-05-08]
  * @changes    1.0.0b4  Added a check to ::__construct() to ensure that the `$code` parameter is numeric [wb, 2009-05-04]
@@ -187,13 +188,13 @@ abstract class fException extends Exception
 	 *  - `% 2d`: Using a literal space as a padding character - a space will be used if no padding character is specified
 	 *  - `%'.d`: Providing a padding character but no width - no padding will be applied without a width
 	 * 
-	 * @param  string  $message    The message for the exception. This accepts a subset of [http://php.net/sprintf `sprintf()`] strings - see method description for more details.
-	 * @param  mixed   $component  A string or number to insert into the message
-	 * @param  mixed   ...
-	 * @param  integer $code       The exception code to set
+	 * @param  string $message    The message for the exception. This accepts a subset of [http://php.net/sprintf `sprintf()`] strings - see method description for more details.
+	 * @param  mixed  $component  A string or number to insert into the message
+	 * @param  mixed  ...
+	 * @param  mixed  $code       The exception code to set
 	 * @return fException
 	 */
-	public function __construct($message)
+	public function __construct($message='')
 	{
 		$args          = array_slice(func_get_args(), 1);
 		$required_args = preg_match_all(
@@ -226,7 +227,7 @@ abstract class fException extends Exception
 		
 		// If we have an extra argument, it is the exception code
 		$code = NULL;
-		if ($required_args == sizeof($args) - 1 && is_numeric($args[sizeof($args)-1])) {
+		if ($required_args == sizeof($args) - 1) {
 			$code = array_pop($args);		
 		}
 		
@@ -242,10 +243,8 @@ abstract class fException extends Exception
 		
 		$args = array_map(array('fException', 'dump'), $args);
 		
-		parent::__construct(
-			self::compose($message, $args),
-			$code
-		);
+		parent::__construct(self::compose($message, $args));
+		$this->code = $code;
 		
 		foreach (self::$callbacks as $class => $callbacks) {
 			foreach ($callbacks as $callback) {
