@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed ::build() to only fall back to ordering by primary keys if one exists [wb, 2009-06-26]
  * @changes    1.0.0b8  Updated ::merge() to accept arrays of fActiveRecords or a single fActiveRecord in addition to an fRecordSet [wb, 2009-06-02]
  * @changes    1.0.0b7  Backwards Compatibility Break - Removed ::flagAssociate() and ::isFlaggedForAssociation(), callbacks registered via fORM::registerRecordSetMethod() no longer receive the `$associate` parameter [wb, 2009-06-02]
  * @changes    1.0.0b6  Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
@@ -161,8 +162,7 @@ class fRecordSet implements Iterator
 			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
 		
 		// If no ordering is specified, order by the primary key
-		} else {
-			$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
+		} elseif ($primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary')) {
 			$expressions = array();
 			foreach ($primary_keys as $primary_key) {
 				$expressions[] = $table . '.' . $primary_key . ' ASC';
