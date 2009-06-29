@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added ::disableContext() to remove context info for exception/error handling, tweaked output for exceptions/errors [wb, 2009-06-28]
  * @changes    1.0.0b8  ::enableErrorHandling() and ::enableExceptionHandling() now accept multiple email addresses, and a much wider range of emails [wb-imarc, 2009-06-01]
  * @changes    1.0.0b7  ::backtrace() now properly replaces document root with {doc_root} on Windows [wb, 2009-05-02]
  * @changes    1.0.0b6  Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
@@ -29,6 +30,7 @@ class fCore
 	const checkOS                 = 'fCore::checkOS';
 	const checkVersion            = 'fCore::checkVersion';
 	const debug                   = 'fCore::debug';
+	const disableContext          = 'fCore::disableContext';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
 	const enableDynamicConstants  = 'fCore::enableDynamicConstants';
@@ -41,6 +43,13 @@ class fCore
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
 	
+	
+	/**
+	 * If the context info has been shown
+	 * 
+	 * @var boolean
+	 */
+	static private $context_shown = FALSE;
 	
 	/**
 	 * If global debugging is enabled
@@ -111,6 +120,13 @@ class fCore
 	 * @var boolean
 	 */
 	static private $handles_errors = FALSE;
+	
+	/**
+	 * If the context info should be shown with errors/exceptions
+	 * 
+	 * @var boolean
+	 */
+	static private $show_context = TRUE;
 	
 	
 	/**
@@ -488,6 +504,26 @@ class fCore
 	
 	
 	/**
+	 * Disables including the context information with exception and error messages
+	 * 
+	 * The context information includes the following superglobals:
+	 * 
+	 *  - `$_SERVER`
+	 *  - `$_POST`
+	 *  - `$_GET`
+	 *  - `$_SESSION`
+	 *  - `$_FILES`
+	 *  - `$_COOKIE`
+	 * 
+	 * @return void
+	 */
+	static public function disableContext()
+	{
+		self::$show_context = FALSE;
+	}
+	
+	
+	/**
 	 * Enables debug messages globally, i.e. they will be shown for any call to ::debug()
 	 * 
 	 * @param  boolean $flag  If debugging messages should be shown
@@ -628,12 +664,12 @@ class fCore
 	static private function generateContext()
 	{
 		return self::compose('Context') . "\n-------" .
-			"\n\n\$_SERVER\n"  . self::dump($_SERVER) .
-			"\n\n\$_POST\n" . self::dump($_POST) .
-			"\n\n\$_GET\n" . self::dump($_GET) .
-			"\n\n\$_FILES\n"   . self::dump($_FILES) .
-			"\n\n\$_SESSION\n" . self::dump((isset($_SESSION)) ? $_SESSION : NULL) .
-			"\n\n\$_COOKIE\n" . self::dump($_COOKIE);
+			"\n\n\$_SERVER: "  . self::dump($_SERVER) .
+			"\n\n\$_POST: " . self::dump($_POST) .
+			"\n\n\$_GET: " . self::dump($_GET) .
+			"\n\n\$_FILES: "   . self::dump($_FILES) .
+			"\n\n\$_SESSION: " . self::dump((isset($_SESSION)) ? $_SESSION : NULL) .
+			"\n\n\$_COOKIE: " . self::dump($_COOKIE);
 	}
 	
 	
@@ -669,6 +705,9 @@ class fCore
 		
 		$backtrace = self::backtrace(1);
 		
+		// Remove the reference to handleError
+		$backtrace = preg_replace('#: fCore::handleError\(.*?\)$#', '', $backtrace);
+		
 		$error_string = preg_replace('# \[<a href=\'.*?</a>\]: #', ': ', $error_string);
 		
 		// This was added in 5.2
@@ -697,7 +736,7 @@ class fCore
 			case E_USER_DEPRECATED:   $type = self::compose('User Deprecated');   break;
 		}
 		
-		$error = $type . "\n-----\n" . $backtrace . "\n" . $error_string;
+		$error = $type . "\n" . str_pad('', strlen($type), '-') . "\n" . $backtrace . "\n" . $error_string;
 		
 		self::sendMessageToDestination('error', $error);
 	}
@@ -713,18 +752,23 @@ class fCore
 	 */
 	static public function handleException($exception)
 	{
+		$message = ($exception->getMessage()) ? $exception->getMessage() : '{no message}';
 		if ($exception instanceof fException) {
-			$message = $exception->formatTrace() . "\n" . $exception->getMessage();
+			$trace = $exception->formatTrace();
 		} else {
-			$message = $exception->getTraceAsString() . "\n" . $exception->getMessage();
+			$trace = $exception->getTraceAsString();
 		}
-		$message = self::compose("Uncaught Exception") . "\n------------------\n" . trim($message);
+		$code = ($exception->getCode()) ? ' (code ' . $exception->getCode() . ')' : '';
+		
+		$info       = $trace . "\n" . $message . $code;
+		$headline   = self::compose("Uncaught") . " " . get_class($exception);
+		$info_block = $headline . "\n" . str_pad('', strlen($headline), '-') . "\n" . trim($info);
 		
 		if (self::$exception_destination != 'html' && $exception instanceof fException) {
 			$exception->printMessage();
 		}
 				
-		self::sendMessageToDestination('exception', $message);
+		self::sendMessageToDestination('exception', $info_block);
 		
 		if (self::$exception_handler_callback === NULL) {
 			return;
@@ -768,6 +812,7 @@ class fCore
 		restore_error_handler();
 		restore_exception_handler();
 		
+		self::$context_shown                = FALSE;
 		self::$debug                        = NULL;
 		self::$debug_callback               = NULL;
 		self::$dynamic_constants            = FALSE;
@@ -778,6 +823,7 @@ class fCore
 		self::$exception_handler_parameters = array();
 		self::$exception_message            = NULL;
 		self::$handles_errors               = FALSE;
+		self::$show_context                 = TRUE;
 	}
 	
 	
@@ -816,14 +862,17 @@ class fCore
 		}
 		
 		foreach ($messages as $destination => $message) {
+			if (self::$show_context) {
+				$message .= "\n\n" . self::generateContext();	
+			}
+			
 			if (self::checkDestination($destination) == 'email') {
-				mail($destination, $subject, $message . "\n\n" . self::generateContext());
+				mail($destination, $subject, $message);
 			
 			} else {
 				$handle = fopen($destination, 'a');
 				fwrite($handle, $subject . "\n\n");
 				fwrite($handle, $message . "\n\n");
-				fwrite($handle, self::generateContext() . "\n\n");
 				fclose($handle);
 			}
 		}
@@ -846,10 +895,9 @@ class fCore
 		$destination = ($type == 'exception') ? self::$exception_destination : self::$error_destination;
 		
 		if ($destination == 'html') {
-			static $shown_context = FALSE;
-			if (!$shown_context) {
+			if (self::$show_context && !self::$context_shown) {
 				self::expose(self::generateContext());
-				$shown_context = TRUE;
+				self::$context_shown = TRUE;
 			}
 			self::expose($message);
 			return;
