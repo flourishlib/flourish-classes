@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added a missing line of backtrace to ::formatTrace() [wb, 2009-06-28]
  * @changes    1.0.0b7  Updated ::__construct() to no longer require a message, like the Exception class, and allow for non-integer codes [wb, 2009-06-26]
  * @changes    1.0.0b6  Fixed ::splitMessage() so that the original message is returned if no list items are found, added ::reorderMessage() [wb, 2009-06-02]
  * @changes    1.0.0b5  Added ::splitMessage() to replace fCRUD::removeListItems() and fCRUD::reorderListItems() [wb, 2009-05-08]
@@ -281,6 +282,7 @@ abstract class fException extends Exception
 		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 		
 		$backtrace = explode("\n", $this->getTraceAsString());
+		array_unshift($backtrace, $this->file . '(' . $this->line . ')');
 		$backtrace = preg_replace('/^#\d+\s+/', '', $backtrace);
 		$backtrace = str_replace($doc_root, '{doc_root}' . DIRECTORY_SEPARATOR, $backtrace);
 		$backtrace = array_diff($backtrace, array('{main}'));
