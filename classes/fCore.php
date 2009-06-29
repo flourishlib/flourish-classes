@@ -10,16 +10,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Added ::disableContext() to remove context info for exception/error handling, tweaked output for exceptions/errors [wb, 2009-06-28]
- * @changes    1.0.0b8  ::enableErrorHandling() and ::enableExceptionHandling() now accept multiple email addresses, and a much wider range of emails [wb-imarc, 2009-06-01]
- * @changes    1.0.0b7  ::backtrace() now properly replaces document root with {doc_root} on Windows [wb, 2009-05-02]
- * @changes    1.0.0b6  Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
- * @changes    1.0.0b5  Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
- * @changes    1.0.0b4  Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
- * @changes    1.0.0b3  ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
- * @changes    1.0.0b2  Added ::registerDebugCallback() [wb, 2009-02-07]
- * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::expose() to properly display when output includes non-UTF-8 binary data [wb, 2009-06-29]
+ * @changes    1.0.0b9   Added ::disableContext() to remove context info for exception/error handling, tweaked output for exceptions/errors [wb, 2009-06-28]
+ * @changes    1.0.0b8   ::enableErrorHandling() and ::enableExceptionHandling() now accept multiple email addresses, and a much wider range of emails [wb-imarc, 2009-06-01]
+ * @changes    1.0.0b7   ::backtrace() now properly replaces document root with {doc_root} on Windows [wb, 2009-05-02]
+ * @changes    1.0.0b6   Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
+ * @changes    1.0.0b5   Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
+ * @changes    1.0.0b4   Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
+ * @changes    1.0.0b3   ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
+ * @changes    1.0.0b2   Added ::registerDebugCallback() [wb, 2009-02-07]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-09-25]
  */
 class fCore
 {
@@ -652,7 +653,7 @@ class fCore
 	 */
 	static public function expose($data)
 	{
-		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data), ENT_QUOTES, 'UTF-8') . '</pre>';
+		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data), ENT_QUOTES) . '</pre>';
 	}
 	
 	
