@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Updated ::addConditionalValidationRule() to allow any number of `$main_columns`, and if any of those have a matching value, the condtional columns will be required [wb, 2009-06-30]
  * @changes    1.0.0b11  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
  * @changes    1.0.0b10  Fixed UNIQUE constraint checking so it is only done once per constraint, fixed some UTF-8 case sensitivity issues [wb, 2009-06-17]
  * @changes    1.0.0b9   Updated code for new fORM API [wb, 2009-06-15]
@@ -84,17 +85,17 @@ class fORMValidation
 	/**
 	 * Adds a conditional validation rule
 	 * 
-	 * If a non-empty value is found in the `$main_column`, or if specified, a 
-	 * value from the `$conditional_values` array, all of the
+	 * If a non-empty value is found in one of the `$main_columns`, or if
+	 * specified, a value from the `$conditional_values` array, all of the
 	 * `$conditional_columns` will also be required to have a value.
 	 *
-	 * @param  mixed  $class                The class name or instance of the class this validation rule applies to
-	 * @param  string $main_column          The column to check for a value
-	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
-	 * @param  array  $conditional_columns  The columns that are to be required
+	 * @param  mixed         $class                The class name or instance of the class this validation rule applies to
+	 * @param  string|array  $main_columns         The column(s) to check for a value
+	 * @param  mixed         $conditional_values   If `NULL`, any value in the main column will trigger the conditional column(s), otherwise the value must match this scalar value or be present in the array of values
+	 * @param  string|array  $conditional_columns  The column(s) that are to be required
 	 * @return void
 	 */
-	static public function addConditionalValidationRule($class, $main_column, $conditional_values, $conditional_columns)
+	static public function addConditionalValidationRule($class, $main_columns, $conditional_values, $conditional_columns)
 	{
 		$class = fORM::getClass($class);
 		
@@ -102,8 +103,14 @@ class fORMValidation
 			self::$conditional_validation_rules[$class] = array();
 		}
 		
+		settype($main_columns, 'array');
+		settype($conditional_columns, 'array');
+		if ($conditional_values !== NULL) {
+			settype($conditional_values, 'array');
+		}	
+		
 		$rule = array();
-		$rule['main_column']         = $main_column;
+		$rule['main_columns']        = $main_columns;
 		$rule['conditional_values']  = $conditional_values;
 		$rule['conditional_columns'] = $conditional_columns;
 		
@@ -284,31 +291,38 @@ class fORMValidation
 	 *
 	 * @param  string $class                The class this validation rule applies to
 	 * @param  array  &$values              An associative array of all values for the record
-	 * @param  string $main_column          The column to check for a value
+	 * @param  array  $main_columns         The columns to check for a value
 	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
 	 * @return array  The validation error messages for the rule specified
 	 */
-	static private function checkConditionalRule($class, &$values, $main_column, $conditional_values, $conditional_columns)
+	static private function checkConditionalRule($class, &$values, $main_columns, $conditional_values, $conditional_columns)
 	{
-		if ($conditional_values !== NULL)  {
-			settype($conditional_values, 'array');
-		}
-		settype($conditional_columns, 'array');
+		$check_for_missing_values = FALSE;
 		
-		if (($conditional_values !== NULL && in_array($values[$main_column], $conditional_values)) || ($conditional_values === NULL && strlen((string) $values[$main_column]))) {
-			$messages = array();
-			foreach ($conditional_columns as $conditional_column) {
-				if ($values[$conditional_column] === NULL) {
-					$messages[] = self::compose(
-						'%sPlease enter a value',
-						fValidationException::formatField(fORM::getColumnName($class, $conditional_column))
-					);
-				}
-			}
-			if (!empty($messages)) {
-				return $messages;
-			}
+		foreach ($main_columns as $main_column) {
+			$matches_conditional_value = $conditional_values !== NULL && in_array($values[$main_column], $conditional_values);
+			$has_some_value            = $conditional_values === NULL && strlen((string) $values[$main_column]);
+			if ($matches_conditional_value || $has_some_value) {
+				$check_for_missing_values = TRUE;
+				break;	
+			}	
+		}
+		
+		if (!$check_for_missing_values) {
+			return;	
+		}
+		
+		$messages = array();
+		foreach ($conditional_columns as $conditional_column) {
+			if ($values[$conditional_column] !== NULL) { continue; }
+			$messages[] = self::compose(
+				'%sPlease enter a value',
+				fValidationException::formatField(fORM::getColumnName($class, $conditional_column))
+			);
+		}
+		if ($messages) {
+			return $messages;
 		}
 	}
 	
@@ -913,7 +927,7 @@ class fORMValidation
 		if ($message) { $validation_messages[] = $message; }
 		
 		foreach (self::$conditional_validation_rules[$class] as $rule) {
-			$messages = self::checkConditionalRule($class, $values, $rule['main_column'], $rule['conditional_values'], $rule['conditional_columns']);
+			$messages = self::checkConditionalRule($class, $values, $rule['main_columns'], $rule['conditional_values'], $rule['conditional_columns']);
 			if ($messages) { $validation_messages = array_merge($validation_messages, $messages); }
 		}
 		
