@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * #changes    1.0.0b14  Added ::addStringReplacement() and ::addRegexReplacement() for simple validation message modification [wb, 2009-07-01]
  * @changes    1.0.0b13  Changed ::reorderMessages() to compare string in a case-insensitive manner [wb, 2009-06-30]
  * @changes    1.0.0b12  Updated ::addConditionalValidationRule() to allow any number of `$main_columns`, and if any of those have a matching value, the condtional columns will be required [wb, 2009-06-30]
  * @changes    1.0.0b11  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
@@ -32,7 +33,10 @@ class fORMValidation
 	const addOneOrMoreValidationRule   = 'fORMValidation::addOneOrMoreValidationRule';
 	const addOneToManyValidationRule   = 'fORMValidation::addOneToManyValidationRule';
 	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
+	const addRegexReplacement          = 'fORMValidation::addRegexReplacement';
+	const addStringReplacement         = 'fORMValidation::addStringReplacement';
 	const reorderMessages              = 'fORMValidation::reorderMessages';
+	const replaceMessages              = 'fORMValidation::replaceMessages';
 	const reset                        = 'fORMValidation::reset';
 	const setColumnCaseInsensitive     = 'fORMValidation::setColumnCaseInsensitive';
 	const setMessageOrder              = 'fORMValidation::setMessageOrder';
@@ -76,11 +80,25 @@ class fORMValidation
 	static private $only_one_validation_rules = array();
 	
 	/**
+	 * Regular expression replacements performed on each validation message
+	 * 
+	 * @var array
+	 */
+	static private $regex_replacements = array();
+	
+	/**
 	 * Validation rules that require at least one or more *-to-many related records to be associated
 	 * 
 	 * @var array
 	 */
 	static private $related_one_or_more_validation_rules = array();
+	
+	/**
+	 * String replacements performed on each validation message
+	 * 
+	 * @var array
+	 */
+	static private $string_replacements = array();
 	
 	
 	/**
@@ -226,6 +244,66 @@ class fORMValidation
 		$rule['columns'] = $columns;
 		
 		self::$only_one_validation_rules[$class][] = $rule;
+	}
+	
+	
+	/**
+	 * Adds a call to [http://php.net/oreg_replace `preg_replace()`] for each validation message
+	 * 
+	 * Regex replacement is done after the `post::validate()` hook, and right
+	 * before the validation messages are reordered.
+	 * 
+	 * If a validation message is an empty string after replacement, it will be
+	 * removed from the list of validation messages.
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns exists in
+	 * @param  string $search   The PCRE regex to search for - see http://php.net/pcre for details
+	 * @param  string $replace  The string to replace with - all $ and \ are used in back references and must be escaped with a \ when meant literally
+	 * @return void
+	 */
+	static public function addRegexReplacement($class, $search, $replace)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$regex_replacements[$class])) {
+			self::$regex_replacements[$class] = array(
+				'search'  => array(),
+				'replace' => array()
+			);
+		}
+		
+		self::$regex_replacements[$class]['search'][]  = $search;
+		self::$regex_replacements[$class]['replace'][] = $replace;
+	}
+	
+	
+	/**
+	 * Adds a call to [http://php.net/str_replace `str_replace()`] for each validation message
+	 * 
+	 * String replacement is done after the `post::validate()` hook, and right
+	 * before the validation messages are reordered.
+	 * 
+	 * If a validation message is an empty string after replacement, it will be
+	 * removed from the list of validation messages.
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns exists in
+	 * @param  string $search   The string to search for
+	 * @param  string $replace  The string to replace with
+	 * @return void
+	 */
+	static public function addStringReplacement($class, $search, $replace)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$string_replacements[$class])) {
+			self::$string_replacements[$class] = array(
+				'search'  => array(),
+				'replace' => array()
+			);
+		}
+		
+		self::$string_replacements[$class]['search'][]  = $search;
+		self::$string_replacements[$class]['replace'][] = $replace;
 	}
 	
 	
@@ -749,18 +827,30 @@ class fORMValidation
 	
 	
 	/**
+	 * Returns FALSE if the string is empty - used for array filtering
+	 * 
+	 * @param  string $string  The string to check
+	 * @return boolean  If the string is not blank
+	 */
+	static private function isNonBlankString($string)
+	{
+		return ((string) $string) !== '';
+	}
+	
+	
+	/**
 	 * Reorders list items in an html string based on their contents
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $class                 The class to reorder messages for
-	 * @param  array  &$validation_messages  An array of one validation message per value
-	 * @return void
+	 * @param  string $class                The class to reorder messages for
+	 * @param  array  $validation_messages  An array of the validation messages
+	 * @return array  The reordered validation messages
 	 */
-	static public function reorderMessages($class, &$validation_messages)
+	static public function reorderMessages($class, $validation_messages)
 	{
 		if (!isset(self::$message_orders[$class])) {
-			return;
+			return $validation_messages;
 		}
 			
 		$matches = self::$message_orders[$class];
@@ -783,7 +873,38 @@ class fORMValidation
 		foreach ($ordered_items as $ordered_item) {
 			$final_list = array_merge($final_list, $ordered_item);
 		}
-		$validation_messages = array_merge($final_list, $other_items);
+		return array_merge($final_list, $other_items);
+	}
+	
+	
+	/**
+	 * Takes a list of validation messages and performs string and regex replacements on them
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class                The class to reorder messages for
+	 * @param  array  $validation_messages  The array of validation messages
+	 * @return array  The new array of validation messages
+	 */
+	static public function replaceMessages($class, $validation_messages)
+	{
+		if (isset(self::$string_replacements[$class])) {
+			$validation_messages = str_replace(
+				self::$string_replacements[$class]['search'],
+				self::$string_replacements[$class]['replace'],
+				$validation_messages	
+			);
+		}
+		
+		if (isset(self::$regex_replacements[$class])) {
+			$validation_messages = preg_replace(
+				self::$regex_replacements[$class]['search'],
+				self::$regex_replacements[$class]['replace'],
+				$validation_messages	
+			);
+		}
+		
+		return array_filter($validation_messages, array('fORMValidation', 'isNonBlankString'));
 	}
 	
 	
@@ -801,7 +922,9 @@ class fORMValidation
 		self::$message_orders                       = array();
 		self::$one_or_more_validation_rules         = array();
 		self::$only_one_validation_rules            = array();
+		self::$regex_replacements                   = array();
 		self::$related_one_or_more_validation_rules = array();
+		self::$string_replacements                  = array();
 	}
 	
 	

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Updated ::validate() to use new fORMValidation API, including new message search/replace functionality [wb, 2009-07-01]
  * @changes    1.0.0b24  Changed ::validate() to remove duplicate validation messages [wb, 2009-06-30]
  * @changes    1.0.0b23  Updated code for new fORMValidation::validateRelated() API [wb, 2009-06-26]
  * @changes    1.0.0b22  Added support for the $formatting parameter to encode methods on char, text and varchar columns [wb, 2009-06-19]
@@ -2056,7 +2057,8 @@ abstract class fActiveRecord
 		
 		$validation_messages = array_unique($validation_messages);
 		
-		fORMValidation::reorderMessages($class, $validation_messages);
+		$validation_messages = fORMValidation::replaceMessages($class, $validation_messages);
+		$validation_messages = fORMValidation::reorderMessages($class, $validation_messages);
 		
 		if ($return_messages) {
 			return $validation_messages;
