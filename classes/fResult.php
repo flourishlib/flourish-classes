@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug where ::fetchAllRows() would throw a fNoRowsException [wb, 2009-06-30]
  * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
  * @changes    1.0.0b4  Fixed a bug with not properly converting SQL Server text to UTF-8 [wb, 2009-06-18]
  * @changes    1.0.0b3  Added support for Oracle, various bug fixes [wb, 2009-05-04]
@@ -371,8 +372,6 @@ class fResult implements Iterator
 	 */
 	public function fetchAllRows()
 	{
-		$this->seek(0);
-		
 		$all_rows = array();
 		foreach ($this as $row) {
 			$all_rows[] = $row;
