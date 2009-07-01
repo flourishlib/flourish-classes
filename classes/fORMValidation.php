@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Changed ::reorderMessages() to compare string in a case-insensitive manner [wb, 2009-06-30]
  * @changes    1.0.0b12  Updated ::addConditionalValidationRule() to allow any number of `$main_columns`, and if any of those have a matching value, the condtional columns will be required [wb, 2009-06-30]
  * @changes    1.0.0b11  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
  * @changes    1.0.0b10  Fixed UNIQUE constraint checking so it is only done once per constraint, fixed some UTF-8 case sensitivity issues [wb, 2009-06-17]
@@ -769,7 +770,7 @@ class fORMValidation
 		
 		foreach ($validation_messages as $validation_message) {
 			foreach ($matches as $num => $match_string) {
-				if (strpos($validation_message, $match_string) !== FALSE) {
+				if (fUTF8::ipos($validation_message, $match_string) !== FALSE) {
 					$ordered_items[$num][] = $validation_message;
 					continue 2;
 				}
@@ -838,6 +839,9 @@ class fORMValidation
 	/**
 	 * Allows setting the order that the list items in a validation message will be displayed
 	 *
+	 * All string comparisons during the reordering process are done in a
+	 * case-insensitive manner.
+	 * 
 	 * @param  mixed $class    The class name or an instance of the class to set the message order for
 	 * @param  array $matches  This should be an ordered array of strings. If a line contains the string it will be displayed in the relative order it occurs in this array.
 	 * @return void
