@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
  * @changes    1.0.0b5  Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
  * @changes    1.0.0b4  Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
@@ -126,11 +127,13 @@ class fRequest
 		
 		$regex = '#^' . preg_quote($prefix, '#') . '#';
 		
+		$current_backup       = sizeof(self::$backup_files);
 		self::$backup_files[] = $_FILES;
 		
 		$_FILES = array();
-		foreach (self::$backup_files as $field => $value) {
-			if (strpos($field, $prefix) === 0 && is_array($value) && isset($value['name'][$key])) {
+		foreach (self::$backup_files[$current_backup] as $field => $value) {
+			$matches_prefix = !$prefix || ($prefix && strpos($field, $prefix) === 0);
+			if ($matches_prefix && is_array($value) && isset($value['name'][$key])) {
 				$new_field = preg_replace($regex, '', $field);
 				$_FILES[$new_field]['name']     = $value['name'][$key];
 				$_FILES[$new_field]['type']     = $value['type'][$key];
@@ -151,7 +154,8 @@ class fRequest
 			$refs['backup'][] = $refs['array'];
 			$refs['array']    = array();	
 			foreach ($refs['backup'][$current_backup] as $field => $value) {
-				if (strpos($field, $prefix) === 0 && is_array($value) && isset($value[$key])) {
+				$matches_prefix = !$prefix || ($prefix && strpos($field, $prefix) === 0);
+				if ($matches_prefix && is_array($value) && isset($value[$key])) {
 					$new_field = preg_replace($regex, '', $field);
 					$refs['array'][$new_field] = $value[$key];
 				}
