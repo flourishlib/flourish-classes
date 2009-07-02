@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a bug with ::filter() not properly creating new `$_FILES` entries [wb, 2009-07-02]
  * @changes    1.0.0b6  ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
  * @changes    1.0.0b5  Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
  * @changes    1.0.0b4  Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
@@ -135,6 +136,7 @@ class fRequest
 			$matches_prefix = !$prefix || ($prefix && strpos($field, $prefix) === 0);
 			if ($matches_prefix && is_array($value) && isset($value['name'][$key])) {
 				$new_field = preg_replace($regex, '', $field);
+				$_FILES[$new_field]             = array();
 				$_FILES[$new_field]['name']     = $value['name'][$key];
 				$_FILES[$new_field]['type']     = $value['type'][$key];
 				$_FILES[$new_field]['tmp_name'] = $value['tmp_name'][$key];
