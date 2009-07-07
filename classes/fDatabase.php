@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated ::escape() to accept arrays of values for insertion into full SQL strings [wb, 2009-07-06]
  * @changes    1.0.0b12  Updates to ::unescape() to improve performance [wb, 2009-06-15]
  * @changes    1.0.0b11  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b10  Changed date/time/timestamp escaping from `strtotime()` to fDate/fTime/fTimestamp for better localization support [wb, 2009-06-01]
@@ -798,8 +799,20 @@ class fDatabase
 	 *  - `%t` for a time
 	 *  - `%p` for a timestamp
 	 * 
+	 * Depending on what `$sql_or_type` and `$value` are, the output will be
+	 * slightly different. If `$sql_or_type` is a data type or a single
+	 * placeholder and `$value` is:
+	 * 
+	 *  - a scalar value - an escaped SQL string is returned
+	 *  - an array - an array of escaped SQL strings is returned
+	 * 
+	 * If `$sql_or_type` is a SQL string and `$value` is:
+	 * 
+	 *  - a scalar value - the escaped value is inserted into the SQL string
+	 *  - an array - the escaped values are inserted into the SQL string separated by commas
+	 * 
 	 * @param  string $sql_or_type  This can either be the data type to escape or an SQL string with a data type placeholder - see method description
-	 * @param  mixed  $value        The value to escape - you should pass a single value or an array of values if a data type is specified, or a value for each placeholder
+	 * @param  mixed  $value        The value to escape - both single values and arrays of values are supported, see method description for details
 	 * @param  mixed  ...
 	 * @return mixed  The escaped value/SQL or an array of the escaped values
 	 */
@@ -903,33 +916,40 @@ class fDatabase
 		foreach ($pieces as $piece) {
 			switch ($piece) {
 				case '%l':
-					$sql .= $this->escapeBlob($value);
+					$callback = $this->escapeBlob;
 					break;
 				case '%b':
-					$sql .= $this->escapeBoolean($value);
+					$callback = $this->escapeBoolean;
 					break;
 				case '%d':
-					$sql .= $this->escapeDate($value);
+					$callback = $this->escapeDate;
 					break;
 				case '%f':
-					$sql .= $this->escapeFloat($value);
+					$callback = $this->escapeFloat;
 					break;
 				case '%i':
-					$sql .= $this->escapeInteger($value);
+					$callback = $this->escapeInteger;
 					break;
 				case '%s':
-					$sql .= $this->escapeString($value);
+					$callback = $this->escapeString;
 					break;
 				case '%t':
-					$sql .= $this->escapeTime($value);
+					$callback = $this->escapeTime;
 					break;
 				case '%p':
-					$sql .= $this->escapeTimestamp($value);
+					$callback = $this->escapeTimestamp;
 					break;
 				default:
 					$sql .= $piece;
 					continue 2;	
-			} 		
+			}
+			
+			if (is_array($value)) {
+				$sql .= join(', ', array_map($callback, $value));		
+			} else {
+				$sql .= call_user_func($callback, $value);
+			}
+					
 			if (sizeof($values)) {
 				$value = array_shift($values);
 			} else {
