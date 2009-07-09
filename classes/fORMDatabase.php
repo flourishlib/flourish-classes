@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Added support for the `NOT LIKE` operator `!~` to ::createWhereClause() [wb, 2009-07-08]
  * @changes    1.0.0b11  Added support for concatenated columns to ::escapeBySchema() [cr-imarc, 2009-06-19]
  * @changes    1.0.0b10  Updated ::createWhereClause() to properly handle NULLs for arrays of values when doing = and != comparisons [wb, 2009-06-17]
  * @changes    1.0.0b9   Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -163,6 +164,14 @@ class fORMDatabase
 					}
 					$sql = '(' . join(' OR ', $condition) . ')';
 					break;
+				
+				case '!~':
+					$condition = array();
+					foreach ($values as $value) {
+						$condition[] = $column . self::retrieve()->escape(' NOT LIKE %s', '%' . $value . '%');
+					}
+					$sql = '(' . join(' AND ', $condition) . ')';
+					break;
 					
 				default:
 					throw new fProgrammerException(
@@ -199,6 +208,10 @@ class fORMDatabase
 					
 				case '~':
 					$sql = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
+					break;
+				
+				case '!~':
+					$sql = $column . self::retrieve()->escape(' NOT LIKE %s', '%' . $value . '%');
 					break;
 					
 				default:
@@ -541,7 +554,7 @@ class fORMDatabase
 		$sql = array();
 		foreach ($conditions as $column => $values) {
 			
-			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>'))) {
+			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~'))) {
 				$operator = strtr(
 					substr($column, -2),
 					array(
@@ -579,7 +592,7 @@ class fORMDatabase
 				$operators = array();
 				
 				foreach ($columns as &$_column) {
-					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>'))) {
+					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>', '!~'))) {
 						$operators[] = strtr(
 							substr($_column, -2),
 							array(
