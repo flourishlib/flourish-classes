@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed ::build() to only fall back to ordering by primary keys if one exists [wb, 2009-06-26]
- * @changes    1.0.0b8  Updated ::merge() to accept arrays of fActiveRecords or a single fActiveRecord in addition to an fRecordSet [wb, 2009-06-02]
- * @changes    1.0.0b7  Backwards Compatibility Break - Removed ::flagAssociate() and ::isFlaggedForAssociation(), callbacks registered via fORM::registerRecordSetMethod() no longer receive the `$associate` parameter [wb, 2009-06-02]
- * @changes    1.0.0b6  Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
- * @changes    1.0.0b5  ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
- * @changes    1.0.0b4  ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
- * @changes    1.0.0b3  ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
- * @changes    1.0.0b2  Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
- * @changes    1.0.0b   The initial implementation [wb, 2007-08-04]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Moved the private method ::checkConditions() to fActiveRecord::checkConditions() [wb, 2009-07-08]
+ * @changes    1.0.0b9   Changed ::build() to only fall back to ordering by primary keys if one exists [wb, 2009-06-26]
+ * @changes    1.0.0b8   Updated ::merge() to accept arrays of fActiveRecords or a single fActiveRecord in addition to an fRecordSet [wb, 2009-06-02]
+ * @changes    1.0.0b7   Backwards Compatibility Break - Removed ::flagAssociate() and ::isFlaggedForAssociation(), callbacks registered via fORM::registerRecordSetMethod() no longer receive the `$associate` parameter [wb, 2009-06-02]
+ * @changes    1.0.0b6   Changed ::tossIfEmpty() to return the record set to allow for method chaining [wb, 2009-05-18]
+ * @changes    1.0.0b5   ::build() now allows NULL for `$where_conditions` and `$order_bys`, added a check to the SQL passed to ::buildFromSQL() [wb, 2009-05-03]
+ * @changes    1.0.0b4   ::__call() was changed to prevent exceptions coming from fGrammar when an unknown method is called [wb, 2009-03-27]
+ * @changes    1.0.0b3   ::sort() and ::sortByCallback() now return the record set to allow for method chaining [wb, 2009-03-23]
+ * @changes    1.0.0b2   Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
 class fRecordSet implements Iterator
 {
@@ -283,135 +284,6 @@ class fRecordSet implements Iterator
 			fORMDatabase::retrieve()->translatedQuery($sql),
 			$non_limited_count_sql
 		);
-	}
-	
-	
-	/**
-	 * Checks to see if a record matches all of the conditions
-	 * 
-	 * @param  fActiveRecord $record      The record to check
-	 * @param  array         $conditions  The conditions to check - see ::filter() for format details
-	 * @return boolean  If the record meets all conditions
-	 */
-	static private function checkConditions($record, $conditions)
-	{
-		foreach ($conditions as $method => $value) {
-			
-			// Split the operator off of the end of the method name
-			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>'))) {
-				$operator = strtr(
-					substr($method, -2),
-					array(
-						'<>' => '!',
-						'!=' => '!'
-					)
-				);
-				$method   = substr($method, 0, -2);
-			} else {
-				$operator = substr($method, -1);
-				$method   = substr($method, 0, -1);
-			}
-			
-			$multi_method = FALSE;
-			
-			if ($operator == '~' && strpos($method, '|')) {
-				$multi_method = TRUE;
-				$result = array();
-				foreach(explode('|', $method) as $_method) {
-					$result[] = $record->$_method();	
-				}
-					
-			} else {
-				$result = $record->$method();
-			}
-			
-			switch ($operator) {
-				case '~':
-					// This is a fuzzy search type operation since it is using the output of multiple methods
-					if ($multi_method) {
-						if (!is_array($value)) {
-							$value = fORMDatabase::parseSearchTerms($value, TRUE);
-						}	
-						
-						foreach ($value as $_value) {
-							$found = FALSE;
-							foreach ($result as $_result) {
-								if (fUTF8::ipos($_result, $_value) !== FALSE) {
-									$found = TRUE;
-								} 
-							}
-							if (!$found) {
-								return FALSE;
-							}	
-						}
-					
-					// This is a simple LIKE match against one or more values
-					} else {
-						// Ensure the method output is present in at least one value of the array
-						if (is_array($value)) {
-						
-							$found = FALSE;
-							foreach ($value as $_value) {
-								if (fUTF8::ipos($result, $_value) !== FALSE) {
-									$found = TRUE;
-								}	
-							}
-							if (!$found) {
-								return FALSE;	
-							}
-								
-						// Ensure the method is present in the value
-						} elseif (!is_array($value) && fUTF8::ipos($result, $value) === FALSE) {
-							return FALSE;	
-						}	
-					}
-					break;
-				
-				case '=':
-					if (is_array($value) && !in_array($result, $value)) {
-						return FALSE;	
-					}
-					if (!is_array($value) && $result != $value) {
-						return FALSE;	
-					}
-					break;
-					
-				case '!':
-					if (is_array($value) && in_array($result, $value)) {
-						return FALSE;	
-					}
-					if (!is_array($value) && $result == $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '<':
-					if ($result >= $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '<=':
-					if ($result > $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '>':
-					if ($result <= $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '>=':
-					if ($result < $value) {
-						return FALSE;	
-					}
-					break;
-			}	
-		}
-		
-		return TRUE;
 	}
 	
 	
@@ -798,7 +670,7 @@ class fRecordSet implements Iterator
 		foreach ($this->records as $record) {
 			switch ($type) {
 				case 'conditions':
-					$value = self::checkConditions($record, $conditions);
+					$value = fActiveRecord::checkConditions($record, $conditions);
 					break;
 					
 				case 'psuedo-callback':

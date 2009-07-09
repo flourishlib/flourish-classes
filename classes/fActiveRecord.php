@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Added ::checkConditions() from fRecordSet [wb, 2009-07-08]
  * @changes    1.0.0b25  Updated ::validate() to use new fORMValidation API, including new message search/replace functionality [wb, 2009-07-01]
  * @changes    1.0.0b24  Changed ::validate() to remove duplicate validation messages [wb, 2009-06-30]
  * @changes    1.0.0b23  Updated code for new fORMValidation::validateRelated() API [wb, 2009-06-26]
@@ -45,11 +46,12 @@
 abstract class fActiveRecord
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const assign         = 'fActiveRecord::assign';
-	const changed        = 'fActiveRecord::changed';
-	const forceConfigure = 'fActiveRecord::forceConfigure';
-	const hasOld         = 'fActiveRecord::hasOld';
-	const retrieveOld    = 'fActiveRecord::retrieveOld';
+	const assign          = 'fActiveRecord::assign';
+	const changed         = 'fActiveRecord::changed';
+	const checkConditions = 'fActiveRecord::checkConditions';
+	const forceConfigure  = 'fActiveRecord::forceConfigure';
+	const hasOld          = 'fActiveRecord::hasOld';
+	const retrieveOld     = 'fActiveRecord::retrieveOld';
 	
 	
 	/**
@@ -123,6 +125,137 @@ abstract class fActiveRecord
 		}
 		
 		return $old_values[$column][0] != $values[$column];	
+	}
+	
+	
+	/**
+	 * Checks to see if a record matches all of the conditions
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $record      The record to check
+	 * @param  array         $conditions  The conditions to check - see fRecordSet::filter() for format details
+	 * @return boolean  If the record meets all conditions
+	 */
+	static public function checkConditions($record, $conditions)
+	{
+		foreach ($conditions as $method => $value) {
+			
+			// Split the operator off of the end of the method name
+			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>'))) {
+				$operator = strtr(
+					substr($method, -2),
+					array(
+						'<>' => '!',
+						'!=' => '!'
+					)
+				);
+				$method   = substr($method, 0, -2);
+			} else {
+				$operator = substr($method, -1);
+				$method   = substr($method, 0, -1);
+			}
+			
+			$multi_method = FALSE;
+			
+			if ($operator == '~' && strpos($method, '|')) {
+				$multi_method = TRUE;
+				$result = array();
+				foreach(explode('|', $method) as $_method) {
+					$result[] = $record->$_method();	
+				}
+					
+			} else {
+				$result = $record->$method();
+			}
+			
+			switch ($operator) {
+				case '~':
+					// This is a fuzzy search type operation since it is using the output of multiple methods
+					if ($multi_method) {
+						if (!is_array($value)) {
+							$value = fORMDatabase::parseSearchTerms($value, TRUE);
+						}	
+						
+						foreach ($value as $_value) {
+							$found = FALSE;
+							foreach ($result as $_result) {
+								if (fUTF8::ipos($_result, $_value) !== FALSE) {
+									$found = TRUE;
+								} 
+							}
+							if (!$found) {
+								return FALSE;
+							}	
+						}
+					
+					// This is a simple LIKE match against one or more values
+					} else {
+						// Ensure the method output is present in at least one value of the array
+						if (is_array($value)) {
+						
+							$found = FALSE;
+							foreach ($value as $_value) {
+								if (fUTF8::ipos($result, $_value) !== FALSE) {
+									$found = TRUE;
+								}	
+							}
+							if (!$found) {
+								return FALSE;	
+							}
+								
+						// Ensure the method is present in the value
+						} elseif (!is_array($value) && fUTF8::ipos($result, $value) === FALSE) {
+							return FALSE;	
+						}	
+					}
+					break;
+				
+				case '=':
+					if (is_array($value) && !in_array($result, $value)) {
+						return FALSE;	
+					}
+					if (!is_array($value) && $result != $value) {
+						return FALSE;	
+					}
+					break;
+					
+				case '!':
+					if (is_array($value) && in_array($result, $value)) {
+						return FALSE;	
+					}
+					if (!is_array($value) && $result == $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '<':
+					if ($result >= $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '<=':
+					if ($result > $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '>':
+					if ($result <= $value) {
+						return FALSE;	
+					}
+					break;
+				
+				case '>=':
+					if ($result < $value) {
+						return FALSE;	
+					}
+					break;
+			}	
+		}
+		
+		return TRUE;
 	}
 	
 	
