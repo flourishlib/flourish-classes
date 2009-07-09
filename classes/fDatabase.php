@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed ::determineExtension() and ::determineCharacterSet() to be protected instead of private [wb, 2009-07-08]
  * @changes    1.0.0b13  Updated ::escape() to accept arrays of values for insertion into full SQL strings [wb, 2009-07-06]
  * @changes    1.0.0b12  Updates to ::unescape() to improve performance [wb, 2009-06-15]
  * @changes    1.0.0b11  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -131,7 +132,7 @@ class fDatabase
 	 * 
 	 * @var string
 	 */
-	private $extension;
+	protected $extension;
 	
 	/**
 	 * The host the database server is located on
@@ -173,7 +174,7 @@ class fDatabase
 	 * 
 	 * @var array 
 	 */
-	private $schema_info;
+	protected $schema_info;
 	
 	/**
 	 * The millisecond threshold for triggering a warning about SQL performance
@@ -552,7 +553,7 @@ class fDatabase
 	 * 
 	 * @return void
 	 */
-	private function determineCharacterSet()
+	protected function determineCharacterSet()
 	{
 		$this->schema_info['character_set'] = 'WINDOWS-1252';
 		$this->schema_info['character_set'] = $this->query("SELECT 'WINDOWS-' + CONVERT(VARCHAR, COLLATIONPROPERTY(CONVERT(NVARCHAR, DATABASEPROPERTYEX(DB_NAME(), 'Collation')), 'CodePage')) AS charset")->fetchScalar();
@@ -567,7 +568,7 @@ class fDatabase
 	 * 
 	 * @return void
 	 */
-	private function determineExtension()
+	protected function determineExtension()
 	{
 		switch ($this->type) {
 			
