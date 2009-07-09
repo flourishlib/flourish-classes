@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  PostgreSQL UNIQUE constraints that are created as indexes and not table constraints are now properly detected [wb, 2009-07-08]
  * @changes    1.0.0b21  Added support for the UUID data type in PostgreSQL [wb, 2009-06-18]
  * @changes    1.0.0b20  Add caching of merged info, improved performance of ::getColumnInfo() [wb, 2009-06-15]
  * @changes    1.0.0b19  Fixed a couple of bugs with ::setKeysOverride() [wb, 2009-06-04]
@@ -1303,7 +1304,8 @@ class fSchema
 			$keys[$table]['foreign'] = array();
 		}
 		
-		$sql  = "SELECT
+		$sql  = "(
+				 SELECT
 						 t.relname AS table,
 						 con.conname AS constraint_name,
 						 CASE con.contype
@@ -1327,7 +1329,8 @@ class fSchema
 							 WHEN 'r' THEN 'restrict'
 							 WHEN 'n' THEN 'set_null'
 							 WHEN 'd' THEN 'set_default'
-						 END AS on_update
+						 END AS on_update,
+						CASE WHEN con.conkey IS NOT NULL THEN position('-'||col.attnum||'-' in '-'||array_to_string(con.conkey, '-')||'-') ELSE 0 END AS column_order
 					 FROM
 						 pg_attribute AS col INNER JOIN
 						 pg_class AS t ON col.attrelid = t.oid INNER JOIN
@@ -1341,12 +1344,30 @@ class fSchema
 						 (con.contype = 'p' OR
 						  con.contype = 'f' OR
 						  con.contype = 'u')
-					 ORDER BY
-						 t.relname,
-						 con.contype,
-						 con.conname,
-						 CASE WHEN con.conkey IS NOT NULL THEN position('-'||col.attnum||'-' in '-'||array_to_string(con.conkey, '-')||'-') ELSE 0 END,
-						 col.attname";
+				) UNION (
+				SELECT
+						t.relname AS table,
+						ic.relname AS constraint_name,
+						'unique' AS type,
+						col.attname AS column,
+						NULL AS foreign_table,
+						NULL AS foreign_column,
+						NULL AS on_delete,
+						NULL AS on_update,
+						CASE WHEN ind.indkey IS NOT NULL THEN position('-'||col.attnum||'-' in '-'||array_to_string(ind.indkey, '-')||'-') ELSE 0 END AS column_order
+					FROM
+						pg_class AS t INNER JOIN
+						pg_index AS ind ON ind.indrelid = t.oid INNER JOIN
+						pg_namespace AS n ON t.relnamespace = n.oid INNER JOIN
+						pg_class AS ic ON ind.indexrelid = ic.oid LEFT JOIN
+						pg_constraint AS con ON con.conrelid = t.oid AND con.contype = 'u' AND con.conname = ic.relname INNER JOIN
+						pg_attribute AS col ON col.attrelid = t.oid AND col.attnum = ANY (ind.indkey)  
+					WHERE
+						n.nspname NOT IN ('pg_catalog', 'pg_toast') AND
+						indisunique = TRUE AND
+						indisprimary = FALSE AND
+						con.oid IS NULL
+				) ORDER BY 1, 3, 2, 9";
 		
 		$result = $this->database->query($sql);
 		
