@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Fixed a bug where records would break the identity map at the end of ::store() [wb, 2009-07-09]
  * @changes    1.0.0b27  Changed ::hash() from a protected method to a static public/internal method that requires the class name for non-fActiveRecord values [wb, 2009-07-09]
  * @changes    1.0.0b26  Added ::checkConditions() from fRecordSet [wb, 2009-07-08]
  * @changes    1.0.0b25  Updated ::validate() to use new fORMValidation API, including new message search/replace functionality [wb, 2009-07-01]
@@ -2160,7 +2161,7 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
-		$was_new = $this->exists();
+		$was_new = !$this->exists();
 		
 		// If we got here we succefully stored, so update old values to make exists() work
 		foreach ($this->values as $column => $value) {
