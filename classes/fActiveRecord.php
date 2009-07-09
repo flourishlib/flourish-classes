@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Changed ::hash() from a protected method to a static public/internal method that requires the class name for non-fActiveRecord values [wb, 2009-07-09]
  * @changes    1.0.0b26  Added ::checkConditions() from fRecordSet [wb, 2009-07-08]
  * @changes    1.0.0b25  Updated ::validate() to use new fORMValidation API, including new message search/replace functionality [wb, 2009-07-01]
  * @changes    1.0.0b24  Changed ::validate() to remove duplicate validation messages [wb, 2009-06-30]
@@ -296,6 +297,60 @@ abstract class fActiveRecord
 			return;	
 		}
 		new $class();
+	}
+	
+	
+	/**
+	 * Takes a row of data or a primary key and makes a hash from the primary key
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord|array|string|int $record   An fActiveRecord object, an array of the records data, an array of primary key data or a scalar primary key value
+	 * @param  string                         $class    The class name, if $record isn't an fActiveRecord
+	 * @return string|NULL  A hash of the record's primary key value or NULL if the record doesn't exist yet
+	 */
+	static public function hash($record, $class=NULL)
+	{
+		if ($record instanceof fActiveRecord && !$record->exists()) {
+			return NULL;	
+		}
+		
+		if ($class === NULL) {
+			if (!$record instanceof fActiveRecord) {
+				throw new fProgrammerException(
+					'The class of the record mus be provided if the record specified is not an instance of fActiveRecord'
+				);
+			}
+			$class = get_class($record);	
+		}
+		
+		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($class), 'primary');
+		
+		// Build an array of just the primary key data
+		$pk_data = array();
+		foreach ($pk_columns as $pk_column) {
+			if ($record instanceof fActiveRecord) {
+				$value = (self::hasOld($record->old_values, $pk_column)) ? self::retrieveOld($record->old_values, $pk_column) : $record->values[$pk_column];
+			
+			} elseif (is_array($record)) {
+				$value = $record[$pk_column];
+			
+			} else {
+				$value = $record;	
+			}
+			
+			$pk_data[$pk_column] = fORM::scalarize(
+				$class,
+				$pk_column,
+				$value
+			);
+			
+			if (is_numeric($pk_data[$pk_column]) || is_object($pk_data[$pk_column])) {
+				$pk_data[$pk_column] = (string) $pk_data[$pk_column];	
+			}
+		}
+		
+		return md5(serialize($pk_data));
 	}
 	
 	
@@ -1208,34 +1263,6 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Takes a row of data or a primary key and makes a hash from the primary key
-	 * 
-	 * @param  mixed $data   An array of the records data, an array of primary key data or a scalar primary key value
-	 * @return string  A hash of the record's primary key value
-	 */
-	protected function hash($data)
-	{
-		$class      = get_class($this);
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize(get_class($this)), 'primary');
-		
-		// Build an array of just the primary key data
-		$pk_data = array();
-		foreach ($pk_columns as $pk_column) {
-			$pk_data[$pk_column] = fORM::scalarize(
-				$class,
-				$pk_column,
-				is_array($data) ? $data[$pk_column] : $data
-			);
-			if (is_numeric($pk_data[$pk_column]) || is_object($pk_data[$pk_column])) {
-				$pk_data[$pk_column] = (string) $pk_data[$pk_column];	
-			}
-		}
-		
-		return md5(serialize($pk_data));
-	}
-	
-	
-	/**
 	 * Retrieves information about a column
 	 * 
 	 * @param  string $column   The name of the column to inspect
@@ -1341,7 +1368,7 @@ abstract class fActiveRecord
 		}
 		
 		// Save this object to the identity map
-		$hash  = $this->hash($row);
+		$hash = self::hash($row, $class);
 		
 		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array(); 		
@@ -1379,7 +1406,7 @@ abstract class fActiveRecord
 			return FALSE;
 		}
 		
-		$hash = $this->hash($row);
+		$hash = self::hash($row, $class);
 		
 		if (!isset(self::$identity_map[$class][$hash])) {
 			return FALSE;
@@ -1821,7 +1848,7 @@ abstract class fActiveRecord
 		fActiveRecord::$replicate_level++;
 		
 		$class = get_class($this);
-		$hash  = self::hash($this->values);
+		$hash  = self::hash($this->values, $class);
 		$table = fORM::tablize($class);
 			
 		// If the object has not been replicated yet, do it now
@@ -2133,9 +2160,21 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
+		$was_new = $this->exists();
+		
 		// If we got here we succefully stored, so update old values to make exists() work
 		foreach ($this->values as $column => $value) {
 			$this->old_values[$column] = array($value);
+		}
+		
+		// If the object was just inserted into the database, save it to the identity map
+		if ($was_new) {
+			$hash = self::hash($this->values, $class);
+			
+			if (!isset(self::$identity_map[$class])) {
+				self::$identity_map[$class] = array(); 		
+			}
+			self::$identity_map[$class][$hash] = $this;		
 		}
 		
 		return $this;
