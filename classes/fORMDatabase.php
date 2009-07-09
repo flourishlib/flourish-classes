@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Added support for the `AND LIKE` operator `&~` to ::createWhereClause() [wb, 2009-07-09]
  * @changes    1.0.0b12  Added support for the `NOT LIKE` operator `!~` to ::createWhereClause() [wb, 2009-07-08]
  * @changes    1.0.0b11  Added support for concatenated columns to ::escapeBySchema() [cr-imarc, 2009-06-19]
  * @changes    1.0.0b10  Updated ::createWhereClause() to properly handle NULLs for arrays of values when doing = and != comparisons [wb, 2009-06-17]
@@ -165,6 +166,14 @@ class fORMDatabase
 					$sql = '(' . join(' OR ', $condition) . ')';
 					break;
 				
+				case '&~':
+					$condition = array();
+					foreach ($values as $value) {
+						$condition[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
+					}
+					$sql = '(' . join(' AND ', $condition) . ')';
+					break;
+				
 				case '!~':
 					$condition = array();
 					foreach ($values as $value) {
@@ -175,7 +184,7 @@ class fORMDatabase
 					
 				default:
 					throw new fProgrammerException(
-						'An invalid array comparison operator, %s, was specified',
+						'An invalid array comparison operator, %s, was specified for an array of values',
 						$operator
 					);
 					break;
@@ -216,7 +225,7 @@ class fORMDatabase
 					
 				default:
 					throw new fProgrammerException(
-						'An invalid comparison operator, %s, was specified',
+						'An invalid comparison operator, %s, was specified for a single value',
 						$operator
 					);
 					break;
@@ -554,7 +563,7 @@ class fORMDatabase
 		$sql = array();
 		foreach ($conditions as $column => $values) {
 			
-			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~'))) {
+			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~', '&~'))) {
 				$operator = strtr(
 					substr($column, -2),
 					array(
@@ -592,7 +601,7 @@ class fORMDatabase
 				$operators = array();
 				
 				foreach ($columns as &$_column) {
-					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>', '!~'))) {
+					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>', '!~', '&~'))) {
 						$operators[] = strtr(
 							substr($_column, -2),
 							array(
