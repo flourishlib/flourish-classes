@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Made the `$recipient` parameter optional for all methods [wb, 2009-07-08]
  * @changes    1.0.0b4  Added support for `'*'` and arrays of names to ::check() [wb, 2009-06-02] 
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Changed ::show() to accept more than one message name, or * for all messages [wb, 2009-01-12]
@@ -28,12 +29,16 @@ class fMessaging
 	/**
 	 * Checks to see if a message exists of the name specified for the recipient specified
 	 * 
-	 * @param  string $name       The name or array of names of the message(s) to check for, or `'*'` to check for any
-	 * @param  string $recipient  The intended recipient
+	 * @param  string $name         The name or array of names of the message(s) to check for, or `'*'` to check for any
+	 * @param  string [$recipient]  The intended recipient
 	 * @return boolean  If a message of the name and recipient specified exists
 	 */
-	static public function check($name, $recipient)
+	static public function check($name, $recipient=NULL)
 	{
+		if ($recipient === NULL) {
+			$recipient = '{default}';	
+		}
+		
 		// Check all messages if * is specified
 		if (is_string($name) && $name == '*') {
 			fSession::open();
@@ -65,12 +70,20 @@ class fMessaging
 	 * Creates a message that is stored in the session and retrieved by another page
 	 * 
 	 * @param  string $name       A name for the message
-	 * @param  string $recipient  The intended recipient
+	 * @param  string $recipient  The intended recipient - this may be ommitted
 	 * @param  string $message    The message to send
+	 * @param  string :$name
+	 * @param  string :$message
 	 * @return void
 	 */
-	static public function create($name, $recipient, $message)
-	{
+	static public function create($name, $recipient, $message=NULL)
+	{                                  
+		// This allows for the $recipient parameter to be optional
+		if ($message === NULL) {
+			$message   = $recipient;
+			$recipient = '{default}';	
+		}
+		
 		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
 	}
 	
@@ -95,8 +108,12 @@ class fMessaging
 	 * @param  string $recipient  The intended recipient
 	 * @return string  The message contents
 	 */
-	static public function retrieve($name, $recipient)
+	static public function retrieve($name, $recipient=NULL)
 	{
+		if ($recipient === NULL) {
+			$recipient = '{default}';	
+		}
+		
 		$prefix  = __CLASS__ . '::' . $recipient . '::';
 		$message = fSession::get($name, NULL, $prefix);
 		fSession::delete($name, $prefix);
@@ -115,8 +132,12 @@ class fMessaging
 	 * @param  string $css_class  Overrides using the `$name` as the CSS class when displaying the message - only used if a single `$name` is specified
 	 * @return boolean  If one or more messages was shown
 	 */
-	static public function show($name, $recipient, $css_class=NULL)
+	static public function show($name, $recipient=NULL, $css_class=NULL)
 	{
+		if ($recipient === NULL) {
+			$recipient = '{default}';	
+		}
+		
 		// Find all messages if * is specified
 		if (is_string($name) && $name == '*') {
 			fSession::open();
