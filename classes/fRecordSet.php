@@ -9,7 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added the methods ::contains() and ::unique() [wb, 2009-07-09]
+ * @changes    1.0.0b13  Added documentation to ::build() about the intersection operator `><` [wb, 2009-07-09]
  * @changes    1.0.0b12  Added documentation to ::build() about the `AND LIKE` operator `&~` [wb, 2009-07-09]
  * @changes    1.0.0b11  Added documentation to ::build() about the `NOT LIKE` operator `!~` [wb, 2009-07-08]
  * @changes    1.0.0b10  Moved the private method ::checkConditions() to fActiveRecord::checkConditions() [wb, 2009-07-08]
@@ -56,6 +58,7 @@ class fRecordSet implements Iterator
 	 * 'column&~'                   => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' AND column LIKE '%VALUE2%' AND column ... )
 	 * 'column!~'                   => array(VALUE, VALUE2, ... )   // (column NOT LIKE '%VALUE%' AND column NOT LIKE '%VALUE2%' AND column ... )
 	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
+	 * 'column|column2><'           => array(VALUE, VALUE2)         // ((column <= VALUE AND column2 >= VALUE) OR (column <= VALUE2 AND column2 >= VALUE2) OR (column >= VALUE AND column2 <= VALUE2)) 
 	 * 'column|column2|column3~'    => VALUE                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%')
 	 * 'column|column2|column3~'    => array(VALUE, VALUE2, ... )   // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ... )
 	 * }}}
@@ -563,6 +566,40 @@ class fRecordSet implements Iterator
 		}
 		
 		return $sql;
+	}
+	
+	
+	/**
+	 * Checks if the record set contains the record specified
+	 * 
+	 * @param  fActiveRecord $record  The record to check, must exist in the database
+	 * @return boolean  If the record specified is in this record set
+	 */
+	public function contains($record)
+	{
+		$class = get_class($record);
+		if (!in_array($class, (array) $this->class)) {
+			return FALSE;	
+		}
+		
+		if (!$record->exists()) {
+			throw new fProgrammerException(
+				'Only records that exist can be checked for in the record set'
+			);	
+		}
+		
+		$hash = fActiveRecord::hash($record);
+		
+		foreach ($this->records as $_record) {
+			if ($class != get_class($_record)) {
+				continue;
+			}	
+			if ($hash == fActiveRecord::hash($_record)) {
+				return TRUE;	
+			}
+		}
+		
+		return FALSE;
 	}
 	
 	
@@ -1314,6 +1351,30 @@ class fRecordSet implements Iterator
 		}
 		
 		throw new fEmptySetException($message);
+	}
+	
+	
+	/**
+	 * Returns a new fRecordSet containing only unique records in the record set
+	 * 
+	 * @return fRecordSet  The new record set with only unique records
+	 */
+	public function unique()
+	{
+		$records = array();
+		
+		foreach ($this->records as $record) {
+			$class = get_class($record);
+			$hash  = fActiveRecord::hash($record);
+			if (isset($records[$class . '::' . $hash])) {
+				continue;
+			}	
+			$records[$class . '::' . $hash] = $record;
+		}
+		
+		$set = new fRecordSet($this->class);
+		$set->records = array_values($records);
+		return $set;
 	}
 	
 	
