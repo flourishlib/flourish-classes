@@ -448,7 +448,7 @@ abstract class fException extends Exception
 	 * Here is an exception message to be split:
 	 * 
 	 * {{{
-	 * #!text/html
+	 * #!html
 	 * <p>The following problems were found:</p>
 	 * <ul>
 	 *     <li>First Name: Please enter a value</li>
@@ -474,7 +474,7 @@ abstract class fException extends Exception
 	 * The resulting messages would be:
 	 * 
 	 * {{{
-	 * #!text/html
+	 * #!html
 	 * <p>The following problems were found:</p>
 	 * <ul>
 	 *     <li>First Name: Please enter a value</li>
@@ -486,7 +486,7 @@ abstract class fException extends Exception
 	 * and
 	 * 
 	 * {{{
-	 * #!text/html
+	 * #!html
 	 * <p>The following problems were found:</p>
 	 * <ul>
 	 *     <li>Address: Please enter a value</li>
