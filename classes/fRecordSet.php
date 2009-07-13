@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added the methods ::diff() and ::intersect() [wb, 2009-07-13]
  * @changes    1.0.0b14  Added the methods ::contains() and ::unique() [wb, 2009-07-09]
  * @changes    1.0.0b13  Added documentation to ::build() about the intersection operator `><` [wb, 2009-07-09]
  * @changes    1.0.0b12  Added documentation to ::build() about the `AND LIKE` operator `&~` [wb, 2009-07-09]
@@ -647,6 +648,50 @@ class fRecordSet implements Iterator
 	
 	
 	/**
+	 * Removes all passed records from the current record set
+	 * 
+	 * @param  fRecordSet|array|fActiveRecord $records  The record set, array of records, or record to remove from the current record set, all instances will be removed
+	 * @return fRecordSet  The records not present in the passed records
+	 */
+	public function diff($records)
+	{
+		$remove_records = array();
+		
+		if ($records instanceof fActiveRecord) {
+			$records = array($records);	
+		}
+		foreach ($records as $record) {
+			$class = get_class($record);
+			$hash  = fActiveRecord::hash($record);
+			$remove_records[$class . '::' . $hash] = TRUE;
+		}
+		
+		$new_records = array();
+		$classes     = array();
+		
+		foreach ($this->records as $record) {
+			$class = get_class($record);
+			$hash  = fActiveRecord::hash($record);
+			if (!isset($remove_records[$class . '::' . $hash])) {
+				$new_records[]   = $record;
+				$classes[$class] = TRUE;
+			}		
+		}
+		
+		// If there are no classes, we use the last class from the loop,
+		// otherwise we grab the singular classes, or the full array
+		if (sizeof($classes) > 0) {
+			$class = sizeof($classes) == 1 ? key($classes) : array_keys($classes);
+		}	
+		
+		return self::buildFromRecords(
+			$class,
+			$new_records		
+		);
+	}
+	
+	
+	/**
 	 * Filters the records in the record set via a callback
 	 * 
 	 * The `$callback` parameter can be one of three different forms to filter
@@ -807,6 +852,50 @@ class fRecordSet implements Iterator
 		}
 		
 		return $primary_keys;
+	}
+	
+	
+	/**
+	 * Returns all records in the current record set that are also present in the passed records
+	 * 
+	 * @param  fRecordSet|array|fActiveRecord $records  The record set, array of records, or record to create an intersection of with the current record set
+	 * @return fRecordSet  The records present in the current record set that are also present in the passed records
+	 */
+	public function intersect($records)
+	{
+		$hashes = array();
+		
+		if ($records instanceof fActiveRecord) {
+			$records = array($records);	
+		}
+		foreach ($records as $record) {
+			$class = get_class($record);
+			$hash  = fActiveRecord::hash($record);
+			$hashes[$class . '::' . $hash] = TRUE;
+		}
+		
+		$new_records = array();
+		$classes     = array();
+		
+		foreach ($this->records as $record) {
+			$class = get_class($record);
+			$hash  = fActiveRecord::hash($record);
+			if (isset($hashes[$class . '::' . $hash])) {
+				$new_records[]   = $record;
+				$classes[$class] = TRUE;
+			}		
+		}
+		
+		// If there are no classes, we use the last class from the loop,
+		// otherwise we grab the singular classes, or the full array
+		if (sizeof($classes) > 0) {
+			$class = sizeof($classes) == 1 ? key($classes) : array_keys($classes);
+		}	
+		
+		return self::buildFromRecords(
+			$class,
+			$new_records		
+		);
 	}
 	
 	
