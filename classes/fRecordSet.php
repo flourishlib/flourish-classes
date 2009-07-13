@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Updated documentation for the intersection operator `><` [wb, 2009-07-13]
  * @changes    1.0.0b15  Added the methods ::diff() and ::intersect() [wb, 2009-07-13]
  * @changes    1.0.0b14  Added the methods ::contains() and ::unique() [wb, 2009-07-09]
  * @changes    1.0.0b13  Added documentation to ::build() about the intersection operator `><` [wb, 2009-07-09]
@@ -59,7 +60,7 @@ class fRecordSet implements Iterator
 	 * 'column&~'                   => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' AND column LIKE '%VALUE2%' AND column ... )
 	 * 'column!~'                   => array(VALUE, VALUE2, ... )   // (column NOT LIKE '%VALUE%' AND column NOT LIKE '%VALUE2%' AND column ... )
 	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
-	 * 'column|column2><'           => array(VALUE, VALUE2)         // ((column <= VALUE AND column2 >= VALUE) OR (column <= VALUE2 AND column2 >= VALUE2) OR (column >= VALUE AND column2 <= VALUE2)) 
+	 * 'column|column2><'           => array(VALUE, VALUE2)         // ((column <= VALUE AND column2 >= VALUE) OR (column <= VALUE2 AND column2 >= VALUE2) OR (column >= VALUE AND column2 <= VALUE2) OR (column2 IS NULL AND column >= VALUE AND column <= VALUE2)) 
 	 * 'column|column2|column3~'    => VALUE                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%')
 	 * 'column|column2|column3~'    => array(VALUE, VALUE2, ... )   // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ... )
 	 * }}}

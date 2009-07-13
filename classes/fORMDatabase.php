@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added support for the intersection operator `><` to ::createWhereClause() [wb, 2009-07-13]
  * @changes    1.0.0b13  Added support for the `AND LIKE` operator `&~` to ::createWhereClause() [wb, 2009-07-09]
  * @changes    1.0.0b12  Added support for the `NOT LIKE` operator `!~` to ::createWhereClause() [wb, 2009-07-08]
  * @changes    1.0.0b11  Added support for concatenated columns to ::escapeBySchema() [cr-imarc, 2009-06-19]
@@ -563,7 +564,7 @@ class fORMDatabase
 		$sql = array();
 		foreach ($conditions as $column => $values) {
 			
-			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~', '&~'))) {
+			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
 				$operator = strtr(
 					substr($column, -2),
 					array(
@@ -619,30 +620,49 @@ class fORMDatabase
 				
 				$columns = self::addTableToValues($table, $columns);
 				
-				// Handle fuzzy searches
 				if (sizeof($operators) == 1) {
-					if ($operator != '~') {
+					
+					// Handle fuzzy searches
+					if ($operator == '~') {
+					
+						// If the value to search is a single string value, parse it for search terms
+						if (sizeof($values) == 1 && is_string($values[0])) {
+							$values = self::parseSearchTerms($values[0], TRUE);	
+						}
+						
+						$condition = array();
+						foreach ($values as $value) {
+							$sub_condition = array();
+							foreach ($columns as $column) {
+								$sub_condition[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
+							}
+							$condition[] = '(' . join(' OR ', $sub_condition) . ')';
+						}
+						$sql[] = ' (' . join(' AND ', $condition) . ') ';
+					
+					// Handle intersection
+					} elseif ($operator == '><') {
+						
+						if (sizeof($columns) != 2 || sizeof($values) != 2) {
+							throw new fProgrammerException(
+								'The intersection operator, %s, requires exactly two columns and two values',
+								$operator
+							);	
+						}
+															 
+						$part_1 = '(' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[0]) . ')';
+						$part_2 = '(' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[1]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[1]) . ')';
+						$part_3 = '(' . $columns[0] . ' >= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' <= ' . self::escapeBySchema($table, $columns[1], $values[1]) . ')';
+						$part_4 = '(' . $columns[1] . ' IS NULL AND ' . $columns[0] . ' >= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[1]) . ')';
+						
+						$sql[] = ' (' . $part_1 . ' OR ' . $part_2 . ' OR ' . $part_3 . ' OR ' . $part_4 . ') ';
+					
+					} else {
 						throw new fProgrammerException(
-							'An invalid comparison operator, %s, was specified',
+							'An invalid comparison operator, %s, was specified for multiple columns',
 							$operator
 						);
 					}
-					
-					// If the value to search is a single string value, parse it for search terms
-					if (sizeof($values) == 1 && is_string($values[0])) {
-						$values = self::parseSearchTerms($values[0], TRUE);	
-					}
-					
-					$condition = array();
-					foreach ($values as $value) {
-						$sub_condition = array();
-						foreach ($columns as $column) {
-							$sub_condition[] = $column . self::retrieve()->escape(' LIKE %s', '%' . $value . '%');
-						}
-						$condition[] = '(' . join(' OR ', $sub_condition) . ')';
-					}
-					$sql[] = ' (' . join(' AND ', $condition) . ') ';
-				
 				
 				// Handle OR combos
 				} else {
