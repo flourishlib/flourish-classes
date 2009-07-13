@@ -89,22 +89,26 @@ class fFile implements Iterator
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $file  The file to check the mime type for
+	 * @param  string $file      The file to check the mime type for - must be a valid filesystem path if no `$contents` are provided, otherwise just a filename
+	 * @param  string $contents  The first 4096 bytes of the file content - the `$file` parameter only need be a filename if this is provided
 	 * @return string  The mime type of the file
 	 */
-	static public function determineMimeType($file)
+	static public function determineMimeType($file, $contents=NULL)
 	{
-		if (!file_exists($file)) {
-			throw new fValidationException(
-				'The file specified, %s, does not exist',
-				$file
-			);
+		// If no contents are provided, we must get them
+		if ($contents === NULL) {
+			if (!file_exists($file)) {
+				throw new fValidationException(
+					'The file specified, %s, does not exist',
+					$file
+				);
+			}
+			
+			// The first 4k should be enough for content checking
+			$handle  = fopen($file, 'r');
+			$content = fread($handle, 4096);
+			fclose($handle);
 		}
-		
-		// The first 4k should be enough for content checking
-		$handle  = fopen($file, 'r');
-		$content = fread($handle, 4096);
-		fclose($handle);
 		
 		$extension = strtolower(fFilesystem::getPathInfo($file, 'extension'));
 		
