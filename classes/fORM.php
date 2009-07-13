@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added ::registerInspectCallback() and ::callInspectCallbacks() [wb, 2009-07-13]
  * @changes    1.0.0b10  Fixed a bug with ::objectify() caching during NULL date/time/timestamp values and breaking further objectification [wb, 2009-06-18]
  * @changes    1.0.0b9   Added caching for performance and changed some method APIs to only allow class names instead of instances [wb, 2009-06-15]
  * @changes    1.0.0b8   Updated documentation to reflect removal of `$associate` parameter for callbacks passed to ::registerRecordSetMethod() [wb, 2009-06-02]
@@ -26,6 +27,7 @@ class fORM
 	// The following constants allow for nice looking callbacks to static methods
 	const addCustomClassTableMapping = 'fORM::addCustomClassTableMapping';
 	const callHookCallbacks          = 'fORM::callHookCallbacks';
+	const callInspectCallbacks       = 'fORM::callInspectCallbacks';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
 	const checkHookCallback          = 'fORM::checkHookCallback';
 	const classize                   = 'fORM::classize';
@@ -42,6 +44,7 @@ class fORM
 	const parseMethod                = 'fORM::parseMethod';
 	const registerActiveRecordMethod = 'fORM::registerActiveRecordMethod';
 	const registerHookCallback       = 'fORM::registerHookCallback';
+	const registerInspectCallback    = 'fORM::registerInspectCallback';
 	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
 	const registerRecordSetMethod    = 'fORM::registerRecordSetMethod';
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
@@ -93,6 +96,13 @@ class fORM
 	static private $hook_callbacks = array();
 	
 	/**
+	 * Callbacks for ::callInspectCallbacks()
+	 * 
+	 * @var array
+	 */
+	static private $inspect_callbacks = array();
+	
+	/**
 	 * Callbacks for ::objectify()
 	 * 
 	 * @var array
@@ -114,7 +124,7 @@ class fORM
 	static private $record_set_method_callbacks = array();
 	
 	/**
-	 * Callbacks for ::reflect()
+	 * Callbacks for ::callReflectCallbacks()
 	 * 
 	 * @var array
 	 */
@@ -206,11 +216,39 @@ class fORM
 	
 	
 	/**
+	 * Calls all inspect callbacks for the class and column specified
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class      The class to inspect the column of
+	 * @param  string $column     The column to inspect
+	 * @param  array  &$metadata  The associative array of data about the column
+	 * @return void
+	 */
+	static public function callInspectCallbacks($class, $column, &$metadata)
+	{
+		if (!isset(self::$inspect_callbacks[$class][$column])) {
+			return;
+		}
+		
+		foreach (self::$inspect_callbacks[$class][$column] as $callback) {
+			// This is the only way to pass by reference
+			$parameters = array(
+				$class,
+				$column,
+				&$metadata
+			);
+			call_user_func_array($callback, $parameters);
+		}
+	}
+	
+	
+	/**
 	 * Calls all reflect callbacks for the object passed
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object                The instance of the class to call the hook for
+	 * @param  fActiveRecord $object                The instance of the class to call the callbacks for
 	 * @param  array         &$signatures           The associative array of `{method_name} => {signature}`
 	 * @param  boolean       $include_doc_comments  If the doc comments should be included in the signature
 	 * @return void
@@ -744,6 +782,33 @@ class fORM
 	
 	
 	/**
+	 * Registers a callback to modify the results of fActiveRecord::inspect() methods
+	 * 
+	 * @param  mixed    $class     The class name or instance of the class to register for
+	 * @param  string   $column    The column to register for
+	 * @param  callback $callback  The callback to register. Callback should accept a single parameter by reference, an associative array of the various metadata about a column.
+	 * @return void
+	 */
+	static public function registerInspectCallback($class, $column, $callback)
+	{
+		$class = self::getClass($class);
+		
+		if (!isset(self::$inspect_callbacks[$class])) {
+			self::$inspect_callbacks[$class] = array();
+		}
+		if (!isset(self::$inspect_callbacks[$class][$column])) {
+			self::$inspect_callbacks[$class][$column] = array();
+		}
+		
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);	
+		}
+		
+		self::$inspect_callbacks[$class][$column][] = $callback;
+	}
+	
+	
+	/**
 	 * Registers a callback for when ::objectify() is called on a specific column
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to register for
@@ -919,6 +984,7 @@ class fORM
 		self::$class_table_map                = array();
 		self::$column_names                   = array();
 		self::$hook_callbacks                 = array();
+		self::$inspect_callbacks              = array();
 		self::$objectify_callbacks            = array();
 		self::$record_names                   = array();
 		self::$record_set_method_callbacks    = array();

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b2  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
  */
@@ -108,19 +109,9 @@ class fORMDate
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
+		fORM::registerHookCallback($class, 'pre::validate()', self::setDateCreated);
 		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'pre::validate()',
-			self::setDateCreated
-		);
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		if (empty(self::$date_created_columns[$class])) {
 			self::$date_created_columns[$class] = array();
@@ -156,19 +147,9 @@ class fORMDate
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
+		fORM::registerHookCallback($class, 'pre::validate()', self::setDateUpdated);
 		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'pre::validate()',
-			self::setDateUpdated
-		);
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		if (empty(self::$date_updated_columns[$class])) {
 			self::$date_updated_columns[$class] = array();
@@ -217,15 +198,6 @@ class fORMDate
 			);
 		}
 		
-		$camelized_timestamp_column = fGrammar::camelize($timestamp_column, TRUE);
-		$camelized_timezone_column  = fGrammar::camelize($timezone_column, TRUE);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'inspect' . $camelized_timezone_column,
-			self::inspect
-		);
-		
 		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateTimezoneColumns)) {
 			fORM::registerHookCallback($class, 'post::validate()', self::validateTimezoneColumns);
 		}
@@ -238,15 +210,17 @@ class fORMDate
 			fORM::registerHookCallback($class, 'pre::validate()', self::makeTimestampObjects);
 		}
 		
+		fORM::registerInspectCallback($class, $column, self::inspect);
+		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'set' . $camelized_timestamp_column,
+			'set' . fGrammar::camelize($timestamp_column, TRUE),
 			self::setTimestampColumn
 		);
 		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'set' . $camelized_timezone_column,
+			'set' . fGrammar::camelize($timezone_column, TRUE),
 			self::setTimezoneColumn
 		);
 		
@@ -263,64 +237,28 @@ class fORMDate
 	
 	
 	/**
-	 * Returns the metadata about a column including features added by this class
+	 * Adds metadata about features added by this class
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  array         &$cache            The cache array for the record
-	 * @param  string        $method_name       The method that was called
-	 * @param  array         $parameters        The parameters passed to the method
-	 * @return mixed  The metadata array or element specified
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	static public function inspect($class, $column, &$metadata)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
-		
-		$class   = get_class($object);
-		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
-		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
-		
-		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
-			unset($info['valid_values']);
-			unset($info['max_length']);
-		}
-		
-		if ($info['type'] != 'float') {
-			unset($info['decimal_places']);
-		}
-		
-		if ($info['type'] != 'integer') {
-			unset($info['auto_increment']);
-		}
-		
 		if (!empty(self::$date_created_columns[$class][$column])) {
-			$info['feature'] = 'date created';
+			$metadata['feature'] = 'date created';
 		}
 		
 		if (!empty(self::$date_updated_columns[$class][$column])) {
-			$info['feature'] = 'date updated';
+			$metadata['feature'] = 'date updated';
 		}
 		
 		if (!empty(self::$timezone_columns[$class][$column])) {
-			$info['feature'] = 'timezone';
+			$metadata['feature'] = 'timezone';
 		}
-		
-		if ($element) {
-			if (!isset($info[$element])) {
-				throw new fProgrammerException(
-					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-					$element,
-					join(', ', array_keys($info))
-				);
-			}
-			return $info[$element];
-		}
-		
-		return $info;
 	}
 	
 	

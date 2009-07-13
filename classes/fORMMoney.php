@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b2  Fixed bugs with objectifying money columns [wb, 2008-11-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
@@ -110,12 +111,6 @@ class fORMMoney
 		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
 			'encode' . $camelized_column,
 			self::encodeMoneyColumn
 		);
@@ -130,10 +125,8 @@ class fORMMoney
 			fORM::registerHookCallback($class, 'post::validate()', self::validateMoneyColumns);
 		}
 		
-		fORM::registerReflectCallback(
-			$class,
-			self::reflect
-		);
+		fORM::registerReflectCallback($class, self::reflect);
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		$value = FALSE;
 		
@@ -166,11 +159,7 @@ class fORMMoney
 			);
 		
 		} else {
-			fORM::registerObjectifyCallback(
-				$class,
-				$column,
-				self::objectifyMoney
-			);
+			fORM::registerObjectifyCallback($class, $column, self::objectifyMoney);
 		}
 		
 		if (empty(self::$money_columns[$class])) {
@@ -210,45 +199,19 @@ class fORMMoney
 	
 	
 	/**
-	 * Returns the metadata about a column including features added by this class
+	 * Adds metadata about features added by this class
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  array         &$cache            The cache array for the record
-	 * @param  string        $method_name       The method that was called
-	 * @param  array         $parameters        The parameters passed to the method
-	 * @return mixed  The metadata array or element specified
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	static public function inspect($class, $column, &$metadata)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
-		
-		$class   = get_class($object);
-		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
-		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
-		
-		unset($info['valid_values']);
-		unset($info['max_length']);
-		unset($info['auto_increment']);
-		
-		$info['feature'] = 'money';
-		
-		if ($element) {
-			if (!isset($info[$element])) {
-				throw new fProgrammerException(
-					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-					$element,
-					join(', ', array_keys($info))
-				);
-			}
-			return $info[$element];
-		}
-		
-		return $info;
+		unset($metadata['auto_increment']);
+		$metadata['feature'] = 'money';
 	}
 	
 	

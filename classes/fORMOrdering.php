@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b7  Fixed ::validate() so it properly ignores ordering columns in multi-column unique constraints [wb, 2009-06-17]
  * @changes    1.0.0b6  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b5  Updated class to automatically correct ordering values that are too high [wb, 2009-06-14]
@@ -103,36 +104,12 @@ class fORMOrdering
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
+		fORM::registerHookCallback($class, 'post::validate()', self::validate);
+		fORM::registerHookCallback($class, 'post-validate::store()', self::reorder);
+		fORM::registerHookCallback($class, 'pre-commit::delete()', self::delete);
 		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'post::validate()',
-			self::validate
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'post-validate::store()',
-			self::reorder
-		);
-		
-		fORM::registerHookCallback(
-			$class,
-			'pre-commit::delete()',
-			self::delete
-		);
-		
-		fORM::registerReflectCallback(
-			$class,
-			self::reflect
-		);
+		fORM::registerReflectCallback($class, self::reflect);
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		// Ensure we only ever have one ordering column by overwriting
 		self::$ordering_columns[$class]['column']        = $column;
@@ -235,28 +212,18 @@ class fORMOrdering
 	
 	
 	/**
-	 * Returns the metadata about a column including features added by this class
+	 * Adds metadata about features added by this class
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  array         &$cache            The cache array for the record
-	 * @param  string        $method_name       The method that was called
-	 * @param  array         $parameters        The parameters passed to the method
-	 * @return mixed  The metadata array or element specified
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	static public function inspect($class, $column, &$metadata)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
-		
-		$class = get_class($object);
 		$table = fORM::tablize($class);
-		
-		$info       = fORMSchema::retrieve()->getColumnInfo($table, $column);
-		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
 		
 		$column        = self::$ordering_columns[$class]['column'];
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
@@ -273,14 +240,8 @@ class fORMOrdering
 			$max_value += 1;
 		}
 		
-		$info['max_ordering_value'] = $max_value;
-		$info['feature']            = 'ordering';
-				
-		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;
-		}
-		
-		return $info;
+		$metadata['max_ordering_value'] = $max_value;
+		$metadata['feature']            = 'ordering';
 	}
 	
 	

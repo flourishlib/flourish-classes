@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b4  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b2  Fixed a bug with objectifying number columns [wb, 2008-11-24]
@@ -110,17 +111,11 @@ class fORMColumn
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
 		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateEmailColumns)) {
 			fORM::registerHookCallback($class, 'post::validate()', self::validateEmailColumns);
 		}
+		
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		if (empty(self::$email_columns[$class])) {
 			self::$email_columns[$class] = array();
@@ -153,17 +148,9 @@ class fORMColumn
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'prepare' . $camelized_column,
+			'prepare' . fGrammar::camelize($column, TRUE),
 			self::prepareLinkColumn
 		);
 		
@@ -171,10 +158,8 @@ class fORMColumn
 			fORM::registerHookCallback($class, 'post::validate()', self::validateLinkColumns);
 		}
 		
-		fORM::registerReflectCallback(
-			$class,
-			self::reflect
-		);
+		fORM::registerReflectCallback($class, self::reflect);
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		if (empty(self::$link_columns[$class])) {
 			self::$link_columns[$class] = array();
@@ -211,12 +196,6 @@ class fORMColumn
 		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
 			'encode' . $camelized_column,
 			self::encodeNumberColumn
 		);
@@ -227,16 +206,9 @@ class fORMColumn
 			self::prepareNumberColumn
 		);
 		
-		fORM::registerReflectCallback(
-			$class,
-			self::reflect
-		);
-		
-		fORM::registerObjectifyCallback(
-			$class,
-			$column,
-			self::objectifyNumber
-		);
+		fORM::registerReflectCallback($class, self::reflect);
+		fORM::registerInspectCallback($class, $column, self::inspect);
+		fORM::registerObjectifyCallback($class, $column, self::objectifyNumber);
 		
 		if (empty(self::$number_columns[$class])) {
 			self::$number_columns[$class] = array();
@@ -287,23 +259,17 @@ class fORMColumn
 			);
 		}
 		
-		$camelized_column = fGrammar::camelize($column, TRUE);
-		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
-			'generate' . $camelized_column,
+			'generate' . fGrammar::camelize($column, TRUE),
 			self::generate
 		);
 		
 		if (!fORM::checkHookCallback($class, 'pre::validate()', self::setRandomStrings)) {
 			fORM::registerHookCallback($class, 'pre::validate()', self::setRandomStrings);
 		}
+		
+		fORM::registerInspectCallback($class, $column, self::inspect);
 		
 		if (empty(self::$random_columns[$class])) {
 			self::$random_columns[$class] = array();
@@ -397,68 +363,32 @@ class fORMColumn
 	
 	
 	/**
-	 * Returns the metadata about a column including features added by this class
+	 * Adds metadata about features added by this class
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  array         &$cache            The cache array for the record
-	 * @param  string        $method_name       The method that was called
-	 * @param  array         $parameters        The parameters passed to the method
-	 * @return mixed  The metadata array or element specified
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	static public function inspect($class, $column, &$metadata)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
-		
-		$class   = get_class($object);
-		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
-		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
-		
-		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
-			unset($info['valid_values']);
-			unset($info['max_length']);
-		}
-		
-		if ($info['type'] != 'float') {
-			unset($info['decimal_places']);
-		}
-		
-		if ($info['type'] != 'integer') {
-			unset($info['auto_increment']);
-		}
-		
 		if (!empty(self::$email_columns[$class][$column])) {
-			$info['feature'] = 'email';
+			$metadata['feature'] = 'email';
 		}
 		
 		if (!empty(self::$link_columns[$class][$column])) {
-			$info['feature'] = 'link';
+			$metadata['feature'] = 'link';
 		}
 		
 		if (!empty(self::$random_columns[$class][$column])) {
-			$info['feature'] = 'random';
+			$metadata['feature'] = 'random';
 		}
 		
 		if (!empty(self::$number_columns[$class][$column])) {
-			$info['feature'] = 'number';
+			$metadata['feature'] = 'number';
 		}
-		
-		if ($element) {
-			if (!isset($info[$element])) {
-				throw new fProgrammerException(
-					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
-					$element,
-					join(', ', array_keys($info))
-				);
-			}
-			return $info[$element];
-		}
-		
-		return $info;
 	}
 	
 	

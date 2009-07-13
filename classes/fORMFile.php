@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b13  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b12  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b11  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -296,12 +297,6 @@ class fORMFile
 		
 		fORM::registerActiveRecordMethod(
 			$class,
-			'inspect' . $camelized_column,
-			self::inspect
-		);
-		
-		fORM::registerActiveRecordMethod(
-			$class,
 			'upload' . $camelized_column,
 			self::upload
 		);
@@ -324,22 +319,10 @@ class fORMFile
 			self::prepare
 		);
 		
-		fORM::registerReflectCallback(
-			$class,
-			self::reflect
-		);
-		
-		fORM::registerReplicateCallback(
-			$class,
-			$column,
-			self::replicate
-		);
-		
-		fORM::registerObjectifyCallback(
-			$class,
-			$column,
-			self::objectify
-		);
+		fORM::registerReflectCallback($class, self::reflect);
+		fORM::registerInspectCallback($class, $column, self::inspect);
+		fORM::registerReplicateCallback($class, $column, self::replicate);
+		fORM::registerObjectifyCallback($class, $column, self::objectify);
 		
 		$only_once_hooks = array(
 			'post-begin::delete()'    => self::begin,
@@ -541,41 +524,25 @@ class fORMFile
 	
 	
 	/**
-	 * Returns the metadata about a column including features added by this class
+	 * Adds metadata about features added by this class
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object            The fActiveRecord instance
-	 * @param  array         &$values           The current values
-	 * @param  array         &$old_values       The old values
-	 * @param  array         &$related_records  Any records related to this record
-	 * @param  array         &$cache            The cache array for the record
-	 * @param  string        $method_name       The method that was called
-	 * @param  array         $parameters        The parameters passed to the method
-	 * @return mixed  The metadata array or element specified
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
 	 */
-	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	static public function inspect($class, $column, &$metadata)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
-		
-		$class   = get_class($object);
-		$info    = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
-		$element = (isset($parameters[0])) ? $parameters[0] : NULL;
-		
 		if (!empty(self::$image_upload_columns[$class][$column])) {
-			$info['feature'] = 'image';
+			$metadata['feature'] = 'image';
 			
 		} elseif (!empty(self::$file_upload_columns[$class][$column])) {
-			$info['feature'] = 'file';
+			$metadata['feature'] = 'file';
 		}
 		
-		$info['directory'] = self::$file_upload_columns[$class][$column]->getPath();
-		
-		if ($element) {
-			return (isset($info[$element])) ? $info[$element] : NULL;
-		}
-		
-		return $info;
+		$metadata['directory'] = self::$file_upload_columns[$class][$column]->getPath();
 	}
 	
 	

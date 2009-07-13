@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Updated to use new fORM::callInspectCallbacks() method [wb, 2009-07-13]
  * @changes    1.0.0b28  Fixed a bug where records would break the identity map at the end of ::store() [wb, 2009-07-09]
  * @changes    1.0.0b27  Changed ::hash() from a protected method to a static public/internal method that requires the class name for non-fActiveRecord values [wb, 2009-07-09]
  * @changes    1.0.0b26  Added ::checkConditions() from fRecordSet [wb, 2009-07-08]
@@ -1295,6 +1296,8 @@ abstract class fActiveRecord
 		}
 		
 		$info['feature'] = NULL;
+		
+		fORM::callInspectCallbacks(get_class($this), $column, $info);
 		
 		if ($element) {
 			if (!isset($info[$element])) {
