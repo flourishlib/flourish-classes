@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a translation bug with ::getFuzzyDifference() [wb, 2009-07-11]
  * @changes    1.0.0b6  Added ::registerUnformatCallback() and ::callUnformatCallback() to allow for localization of date/time parsing [wb, 2009-06-01]
  * @changes    1.0.0b5  Backwards compatibility break - Removed ::getSecondsDifference() and ::getSeconds(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
@@ -968,7 +969,7 @@ class fTimestamp
 			if (abs($diff) > $break_point) { continue; }
 			
 			$unit_diff = round(abs($diff)/$unit_info[0]);
-			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[1] . 's');
+			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[2]);
 			break;
 		}
 		
