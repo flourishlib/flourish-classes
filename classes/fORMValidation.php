@@ -2,15 +2,17 @@
 /**
  * Handles validation for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b14
- * #changes    1.0.0b14  Added ::addStringReplacement() and ::addRegexReplacement() for simple validation message modification [wb, 2009-07-01]
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added ::addValidValuesValidationRule() [wb/jt, 2009-07-13]
+ * @changes    1.0.0b14  Added ::addStringReplacement() and ::addRegexReplacement() for simple validation message modification [wb, 2009-07-01]
  * @changes    1.0.0b13  Changed ::reorderMessages() to compare string in a case-insensitive manner [wb, 2009-06-30]
  * @changes    1.0.0b12  Updated ::addConditionalValidationRule() to allow any number of `$main_columns`, and if any of those have a matching value, the condtional columns will be required [wb, 2009-06-30]
  * @changes    1.0.0b11  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
@@ -35,6 +37,8 @@ class fORMValidation
 	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
 	const addRegexReplacement          = 'fORMValidation::addRegexReplacement';
 	const addStringReplacement         = 'fORMValidation::addStringReplacement';
+	const addValidValuesValidationRule = 'fORMValidation::addValidValuesValidationRule';
+	const inspect                      = 'fORMValidation::inspect';
 	const reorderMessages              = 'fORMValidation::reorderMessages';
 	const replaceMessages              = 'fORMValidation::replaceMessages';
 	const reset                        = 'fORMValidation::reset';
@@ -99,6 +103,13 @@ class fORMValidation
 	 * @var array
 	 */
 	static private $string_replacements = array();
+	
+	/**
+	 * Valid values validation rules
+	 * 
+	 * @var array
+	 */
+	static private $valid_values_validation_rules = array();
 	
 	
 	/**
@@ -304,6 +315,36 @@ class fORMValidation
 		
 		self::$string_replacements[$class]['search'][]  = $search;
 		self::$string_replacements[$class]['replace'][] = $replace;
+	}
+	
+	
+	/**
+	 * Restricts a column to having only a value from the list of valid values
+	 * 
+	 * Please note that `NULL` values are always allowed, even if not listed in
+	 * the `$valid_values` array, if the column is not set as `NOT NULL`.
+	 * 
+	 * This functionality can also be accomplished by added a `CHECK` constraint
+	 * on the column in the database, or using a MySQL `ENUM` data type.
+	 *
+	 * @param  mixed   $class         The class name or instance of the class this validation rule applies to
+	 * @param  string  $column        The column to validate
+	 * @param  array   $valid_values  The valid values to check - `NULL` values are always allows if the column is not set to `NOT NULL`
+	 * @return void
+	 */
+	static public function addValidValuesValidationRule($class, $column, $valid_values)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$valid_values_validation_rules[$class])) {
+			self::$valid_values_validation_rules[$class] = array();
+		}
+		
+		settype($valid_values, 'array');
+		
+		self::$valid_values_validation_rules[$class][$column] = $valid_values;
+		
+		fORM::registerInspectCallback($class, $column, self::inspect);
 	}
 	
 	
@@ -772,6 +813,31 @@ class fORMValidation
 	
 	
 	/**
+	 * Validates against a valid values validation rule
+	 *
+	 * @param  string $class         The class this validation rule applies to
+	 * @param  array  &$values       An associative array of all values for the record
+	 * @param  string $column        The column the rule applies to
+	 * @param  array  $valid_values  An array of valid values to check the column against
+	 * @return string  The validation error message for the rule specified
+	 */
+	static private function checkValidValuesRule($class, &$values, $column, $valid_values)
+	{
+		if ($values[$column] === NULL) {
+			return;	
+		}
+		
+		if (!in_array($values[$column], $valid_values)) {
+			return self::compose(
+				 '%1$sPlease choose from one of the following: %2$s',
+				fValidationException::formatField(fORM::getColumnName($class, $column)),
+				join(', ', $valid_values)
+			);
+		}
+	}
+	
+	
+	/**
 	 * Composes text using fText if loaded
 	 * 
 	 * @param  string  $message    The message to compose
@@ -808,6 +874,25 @@ class fORMValidation
 		self::$one_or_more_validation_rules[$class]         = (isset(self::$one_or_more_validation_rules[$class]))         ? self::$one_or_more_validation_rules[$class]         : array();
 		self::$only_one_validation_rules[$class]            = (isset(self::$only_one_validation_rules[$class]))            ? self::$only_one_validation_rules[$class]            : array();
 		self::$related_one_or_more_validation_rules[$class] = (isset(self::$related_one_or_more_validation_rules[$class])) ? self::$related_one_or_more_validation_rules[$class] : array();
+		self::$valid_values_validation_rules[$class]        = (isset(self::$valid_values_validation_rules[$class]))        ? self::$valid_values_validation_rules[$class]        : array();
+	}
+	
+	
+	/**
+	 * Adds metadata about features added by this class
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class      The class being inspected
+	 * @param  string $column     The column being inspected
+	 * @param  array  &$metadata  The array of metadata about a column
+	 * @return void
+	 */
+	static public function inspect($class, $column, &$metadata)
+	{
+		if (!empty(self::$valid_values_validation_rules[$class][$column])) {
+			$metadata['valid_values'] = self::$valid_values_validation_rules[$class][$column];
+		}
 	}
 	
 	
@@ -925,6 +1010,7 @@ class fORMValidation
 		self::$regex_replacements                   = array();
 		self::$related_one_or_more_validation_rules = array();
 		self::$string_replacements                  = array();
+		self::$valid_values_validation_rules        = array();
 	}
 	
 	
@@ -1053,6 +1139,11 @@ class fORMValidation
 		$message = self::checkUniqueConstraints($object, $values, $old_values);
 		if ($message) { $validation_messages[] = $message; }
 		
+		foreach (self::$valid_values_validation_rules[$class] as $column => $valid_values) {
+			$message = self::checkValidValuesRule($class, $values, $column, $valid_values);
+			if ($message) { $validation_messages[] = $message; }
+		}
+		
 		foreach (self::$conditional_validation_rules[$class] as $rule) {
 			$messages = self::checkConditionalRule($class, $values, $rule['main_columns'], $rule['conditional_values'], $rule['conditional_columns']);
 			if ($messages) { $validation_messages = array_merge($validation_messages, $messages); }
@@ -1107,7 +1198,7 @@ class fORMValidation
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
