@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed ::formatFilesize() to not use decimal places for bytes, add a space before and drop the `B` in suffixes [wb, 2009-07-12]
  * @changes    1.0.0b7  Fixed ::formatFilesize() to work when `$bytes` equals zero [wb, 2009-07-08]
  * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b5  Changed ::formatFilesize() to use proper uppercase letters instead of lowercase [wb, 2009-06-02]
@@ -223,7 +224,7 @@ class fFilesystem
 	
 	
 	/**
-	 * Takes the size of a file in bytes and returns a friendly size in B/KB/MB/GB/TB
+	 * Takes the size of a file in bytes and returns a friendly size in B/K/M/G/T
 	 * 
 	 * @param  integer $bytes           The size of the file in bytes
 	 * @param  integer $decimal_places  The number of decimal places to display
@@ -234,10 +235,10 @@ class fFilesystem
 		if ($bytes < 0) {
 			$bytes = 0;
 		}
-		$suffixes  = array('B', 'KB', 'MB', 'GB', 'TB');
+		$suffixes  = array('B', 'K', 'M', 'G', 'T');
 		$sizes     = array(1, 1024, 1048576, 1073741824, 1099511627776);
 		$suffix    = (!$bytes) ? 0 : floor(log($bytes)/6.9314718);
-		return number_format($bytes/$sizes[$suffix], $decimal_places) . $suffixes[$suffix];
+		return number_format($bytes/$sizes[$suffix], ($suffix == 0) ? 0 : $decimal_places) . ' ' . $suffixes[$suffix];
 	}
 	
 	
