@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Updated ::callReflectCallbacks() to accept a class name instead of an object [wb, 2009-07-13]
  * @changes    1.0.0b11  Added ::registerInspectCallback() and ::callInspectCallbacks() [wb, 2009-07-13]
  * @changes    1.0.0b10  Fixed a bug with ::objectify() caching during NULL date/time/timestamp values and breaking further objectification [wb, 2009-06-18]
  * @changes    1.0.0b9   Added caching for performance and changed some method APIs to only allow class names instead of instances [wb, 2009-06-15]
@@ -244,19 +245,17 @@ class fORM
 	
 	
 	/**
-	 * Calls all reflect callbacks for the object passed
+	 * Calls all reflect callbacks for the class passed
 	 * 
 	 * @internal
 	 * 
-	 * @param  fActiveRecord $object                The instance of the class to call the callbacks for
-	 * @param  array         &$signatures           The associative array of `{method_name} => {signature}`
-	 * @param  boolean       $include_doc_comments  If the doc comments should be included in the signature
+	 * @param  string  $class                 The class to call the callbacks for
+	 * @param  array   &$signatures           The associative array of `{method_name} => {signature}`
+	 * @param  boolean $include_doc_comments  If the doc comments should be included in the signature
 	 * @return void
 	 */
-	static public function callReflectCallbacks($object, &$signatures, $include_doc_comments)
+	static public function callReflectCallbacks($class, &$signatures, $include_doc_comments)
 	{
-		$class = get_class($object);
-		
 		if (!isset(self::$reflect_callbacks[$class]) && !isset(self::$reflect_callbacks['*'])) {
 			return;
 		}

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Updated ::reflect() for new fORM::callReflectCallbacks() API [wb, 2009-07-13]
  * @changes    1.0.0b29  Updated to use new fORM::callInspectCallbacks() method [wb, 2009-07-13]
  * @changes    1.0.0b28  Fixed a bug where records would break the identity map at the end of ::store() [wb, 2009-07-09]
  * @changes    1.0.0b27  Changed ::hash() from a protected method to a static public/internal method that requires the class name for non-fActiveRecord values [wb, 2009-07-09]
@@ -1744,7 +1745,7 @@ abstract class fActiveRecord
 		
 		fORMRelated::reflect($class, $signatures, $include_doc_comments);
 		
-		fORM::callReflectCallbacks($this, $signatures, $include_doc_comments);
+		fORM::callReflectCallbacks($class, $signatures, $include_doc_comments);
 		
 		$reflection = new ReflectionClass($class);
 		$methods    = $reflection->getMethods();
