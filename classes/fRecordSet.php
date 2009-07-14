@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Changed ::__call() to pass the parameters to the callback [wb, 2009-07-14]
  * @changes    1.0.0b16  Updated documentation for the intersection operator `><` [wb, 2009-07-13]
  * @changes    1.0.0b15  Added the methods ::diff() and ::intersect() [wb, 2009-07-13]
  * @changes    1.0.0b14  Added the methods ::contains() and ::unique() [wb, 2009-07-09]
@@ -399,7 +400,8 @@ class fRecordSet implements Iterator
 					$this,
 					$this->class,
 					&$this->records,
-					&$this->pointer
+					&$this->pointer,
+					$parameters
 				)
 			);	
 		}

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated documentation for ::registerRecordSetMethod() [wb, 2009-07-14]
  * @changes    1.0.0b12  Updated ::callReflectCallbacks() to accept a class name instead of an object [wb, 2009-07-13]
  * @changes    1.0.0b11  Added ::registerInspectCallback() and ::callInspectCallbacks() [wb, 2009-07-13]
  * @changes    1.0.0b10  Fixed a bug with ::objectify() caching during NULL date/time/timestamp values and breaking further objectification [wb, 2009-06-18]
@@ -842,6 +843,7 @@ class fORM
 	 *  - **`$class`**:       The class of each record
 	 *  - **`&$records`**:    The ordered array of fActiveRecord objects
 	 *  - **`&$pointer`**:    The current array pointer for the records array
+	 *  - **`$parameters`**:  Any parameters passed to the method
 	 * 
 	 * @param  string   $method    The method to hook for
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
