@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addConditionalValidationRule() to ::addConditionalRule(), ::addManyToManyValidationRule() to ::addManyToManyRule(), ::addOneOrMoreValidationRule() to ::addOneOrMoreRule(), ::addOneToManyValidationRule() to ::addOneToManyRule(), ::addOnlyOneValidationRule() to ::addOnlyOneRule(), ::addValidValuesValidationRule() to ::addValidValuesRule() [wb, 2009-07-13]
  * @changes    1.0.0b15  Added ::addValidValuesValidationRule() [wb/jt, 2009-07-13]
  * @changes    1.0.0b14  Added ::addStringReplacement() and ::addRegexReplacement() for simple validation message modification [wb, 2009-07-01]
  * @changes    1.0.0b13  Changed ::reorderMessages() to compare string in a case-insensitive manner [wb, 2009-06-30]
@@ -30,22 +31,22 @@
 class fORMValidation
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const addConditionalValidationRule = 'fORMValidation::addConditionalValidationRule';
-	const addManyToManyValidationRule  = 'fORMValidation::addManyToManyValidationRule';
-	const addOneOrMoreValidationRule   = 'fORMValidation::addOneOrMoreValidationRule';
-	const addOneToManyValidationRule   = 'fORMValidation::addOneToManyValidationRule';
-	const addOnlyOneValidationRule     = 'fORMValidation::addOnlyOneValidationRule';
-	const addRegexReplacement          = 'fORMValidation::addRegexReplacement';
-	const addStringReplacement         = 'fORMValidation::addStringReplacement';
-	const addValidValuesValidationRule = 'fORMValidation::addValidValuesValidationRule';
-	const inspect                      = 'fORMValidation::inspect';
-	const reorderMessages              = 'fORMValidation::reorderMessages';
-	const replaceMessages              = 'fORMValidation::replaceMessages';
-	const reset                        = 'fORMValidation::reset';
-	const setColumnCaseInsensitive     = 'fORMValidation::setColumnCaseInsensitive';
-	const setMessageOrder              = 'fORMValidation::setMessageOrder';
-	const validate                     = 'fORMValidation::validate';
-	const validateRelated              = 'fORMValidation::validateRelated';	
+	const addConditionalRule       = 'fORMValidation::addConditionalRule';
+	const addManyToManyRule        = 'fORMValidation::addManyToManyRule';
+	const addOneOrMoreRule         = 'fORMValidation::addOneOrMoreRule';
+	const addOneToManyRule         = 'fORMValidation::addOneToManyRule';
+	const addOnlyOneRule           = 'fORMValidation::addOnlyOneRule';
+	const addRegexReplacement      = 'fORMValidation::addRegexReplacement';
+	const addStringReplacement     = 'fORMValidation::addStringReplacement';
+	const addValidValuesRule       = 'fORMValidation::addValidValuesRule';
+	const inspect                  = 'fORMValidation::inspect';
+	const reorderMessages          = 'fORMValidation::reorderMessages';
+	const replaceMessages          = 'fORMValidation::replaceMessages';
+	const reset                    = 'fORMValidation::reset';
+	const setColumnCaseInsensitive = 'fORMValidation::setColumnCaseInsensitive';
+	const setMessageOrder          = 'fORMValidation::setMessageOrder';
+	const validate                 = 'fORMValidation::validate';
+	const validateRelated          = 'fORMValidation::validateRelated';	
 	
 	
 	/**
@@ -56,81 +57,81 @@ class fORMValidation
 	static private $case_insensitive_columns = array();
 	
 	/**
-	 * Conditional validation rules
+	 * Conditional rules
 	 * 
 	 * @var array
 	 */
-	static private $conditional_validation_rules = array();
+	static private $conditional_rules = array();
 	
 	/**
-	 * Ordering rules for validation messages
+	 * Ordering rules for messages
 	 * 
 	 * @var array
 	 */
 	static private $message_orders = array();
 	
 	/**
-	 * One or more validation rules
+	 * One or more rules
 	 * 
 	 * @var array
 	 */
-	static private $one_or_more_validation_rules = array();
+	static private $one_or_more_rules = array();
 	
 	/**
-	 * Only one validation rules
+	 * Only one rules
 	 * 
 	 * @var array
 	 */
-	static private $only_one_validation_rules = array();
+	static private $only_one_rules = array();
 	
 	/**
-	 * Regular expression replacements performed on each validation message
+	 * Regular expression replacements performed on each message
 	 * 
 	 * @var array
 	 */
 	static private $regex_replacements = array();
 	
 	/**
-	 * Validation rules that require at least one or more *-to-many related records to be associated
+	 * Rules that require at least one or more *-to-many related records to be associated
 	 * 
 	 * @var array
 	 */
-	static private $related_one_or_more_validation_rules = array();
+	static private $related_one_or_more_rules = array();
 	
 	/**
-	 * String replacements performed on each validation message
+	 * String replacements performed on each message
 	 * 
 	 * @var array
 	 */
 	static private $string_replacements = array();
 	
 	/**
-	 * Valid values validation rules
+	 * Valid values rules
 	 * 
 	 * @var array
 	 */
-	static private $valid_values_validation_rules = array();
+	static private $valid_values_rules = array();
 	
 	
 	/**
-	 * Adds a conditional validation rule
+	 * Adds a conditional rule
 	 * 
 	 * If a non-empty value is found in one of the `$main_columns`, or if
 	 * specified, a value from the `$conditional_values` array, all of the
 	 * `$conditional_columns` will also be required to have a value.
 	 *
-	 * @param  mixed         $class                The class name or instance of the class this validation rule applies to
+	 * @param  mixed         $class                The class name or instance of the class this rule applies to
 	 * @param  string|array  $main_columns         The column(s) to check for a value
 	 * @param  mixed         $conditional_values   If `NULL`, any value in the main column will trigger the conditional column(s), otherwise the value must match this scalar value or be present in the array of values
 	 * @param  string|array  $conditional_columns  The column(s) that are to be required
 	 * @return void
 	 */
-	static public function addConditionalValidationRule($class, $main_columns, $conditional_values, $conditional_columns)
+	static public function addConditionalRule($class, $main_columns, $conditional_values, $conditional_columns)
 	{
 		$class = fORM::getClass($class);
 		
-		if (!isset(self::$conditional_validation_rules[$class])) {
-			self::$conditional_validation_rules[$class] = array();
+		if (!isset(self::$conditional_rules[$class])) {
+			self::$conditional_rules[$class] = array();
 		}
 		
 		settype($main_columns, 'array');
@@ -144,28 +145,28 @@ class fORMValidation
 		$rule['conditional_values']  = $conditional_values;
 		$rule['conditional_columns'] = $conditional_columns;
 		
-		self::$conditional_validation_rules[$class][] = $rule;
+		self::$conditional_rules[$class][] = $rule;
 	}
 	
 	
 	/**
-	 * Add a many-to-many validation rule that requires at least one related record is associated with the current record
+	 * Add a many-to-many rule that requires at least one related record is associated with the current record
 	 *
 	 * @param  mixed  $class          The class name or instance of the class to add the rule for
 	 * @param  string $related_class  The name of the related class
 	 * @param  string $route          The route to the related class
 	 * @return void
 	 */
-	static public function addManyToManyValidationRule($class, $related_class, $route=NULL)
+	static public function addManyToManyRule($class, $related_class, $route=NULL)
 	{
 		$class = fORM::getClass($class);
 		
-		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
-			self::$related_one_or_more_validation_rules[$class] = array();
+		if (!isset(self::$related_one_or_more_rules[$class])) {
+			self::$related_one_or_more_rules[$class] = array();
 		}
 		
-		if (!isset(self::$related_one_or_more_validation_rules[$class][$related_class])) {
-			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
+		if (!isset(self::$related_one_or_more_rules[$class][$related_class])) {
+			self::$related_one_or_more_rules[$class][$related_class] = array();
 		}
 		
 		$route = fORMSchema::getRouteName(
@@ -175,52 +176,52 @@ class fORMValidation
 			'many-to-many'
 		);
 		
-		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
+		self::$related_one_or_more_rules[$class][$related_class][$route] = TRUE;
 	}
 	
 	
 	/**
-	 * Adds a one-or-more validation rule that requires at least one of the columns specified has a value
+	 * Adds a one-or-more rule that requires at least one of the columns specified has a value
 	 *
 	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
-	static public function addOneOrMoreValidationRule($class, $columns)
+	static public function addOneOrMoreRule($class, $columns)
 	{
 		$class = fORM::getClass($class);
 		
 		settype($columns, 'array');
 		
-		if (!isset(self::$one_or_more_validation_rules[$class])) {
-			self::$one_or_more_validation_rules[$class] = array();
+		if (!isset(self::$one_or_more_rules[$class])) {
+			self::$one_or_more_rules[$class] = array();
 		}
 		
 		$rule = array();
 		$rule['columns'] = $columns;
 		
-		self::$one_or_more_validation_rules[$class][] = $rule;
+		self::$one_or_more_rules[$class][] = $rule;
 	}
 	
 	
 	/**
-	 * Add a one-to-many validation rule that requires at least one related record is associated with the current record
+	 * Add a one-to-many rule that requires at least one related record is associated with the current record
 	 *
 	 * @param  mixed  $class          The class name or instance of the class to add the rule for
 	 * @param  string $related_class  The name of the related class
 	 * @param  string $route          The route to the related class
 	 * @return void
 	 */
-	static public function addOneToManyValidationRule($class, $related_class, $route=NULL)
+	static public function addOneToManyRule($class, $related_class, $route=NULL)
 	{
 		$class = fORM::getClass($class);
 		
-		if (!isset(self::$related_one_or_more_validation_rules[$class])) {
-			self::$related_one_or_more_validation_rules[$class] = array();
+		if (!isset(self::$related_one_or_more_rules[$class])) {
+			self::$related_one_or_more_rules[$class] = array();
 		}
 		
-		if (!isset(self::$related_one_or_more_validation_rules[$class][$related_class])) {
-			self::$related_one_or_more_validation_rules[$class][$related_class] = array();
+		if (!isset(self::$related_one_or_more_rules[$class][$related_class])) {
+			self::$related_one_or_more_rules[$class][$related_class] = array();
 		}
 		
 		$route = fORMSchema::getRouteName(
@@ -230,42 +231,42 @@ class fORMValidation
 			'one-to-many'
 		);
 		
-		self::$related_one_or_more_validation_rules[$class][$related_class][$route] = TRUE;
+		self::$related_one_or_more_rules[$class][$related_class][$route] = TRUE;
 	}
 	
 	
 	/**
-	 * Add an only-one validation rule that requires exactly one of the columns must have a value
+	 * Add an only-one rule that requires exactly one of the columns must have a value
 	 *
 	 * @param  mixed $class    The class name or instance of the class the columns exists in
 	 * @param  array $columns  The columns to check
 	 * @return void
 	 */
-	static public function addOnlyOneValidationRule($class, $columns)
+	static public function addOnlyOneRule($class, $columns)
 	{
 		$class = fORM::getClass($class);
 		
 		settype($columns, 'array');
 		
-		if (!isset(self::$only_one_validation_rules[$class])) {
-			self::$only_one_validation_rules[$class] = array();
+		if (!isset(self::$only_one_rules[$class])) {
+			self::$only_one_rules[$class] = array();
 		}
 		
 		$rule = array();
 		$rule['columns'] = $columns;
 		
-		self::$only_one_validation_rules[$class][] = $rule;
+		self::$only_one_rules[$class][] = $rule;
 	}
 	
 	
 	/**
-	 * Adds a call to [http://php.net/oreg_replace `preg_replace()`] for each validation message
+	 * Adds a call to [http://php.net/oreg_replace `preg_replace()`] for each message
 	 * 
 	 * Regex replacement is done after the `post::validate()` hook, and right
-	 * before the validation messages are reordered.
+	 * before the messages are reordered.
 	 * 
-	 * If a validation message is an empty string after replacement, it will be
-	 * removed from the list of validation messages.
+	 * If a message is an empty string after replacement, it will be
+	 * removed from the list of messages.
 	 * 
 	 * @param  mixed  $class    The class name or instance of the class the columns exists in
 	 * @param  string $search   The PCRE regex to search for - see http://php.net/pcre for details
@@ -289,13 +290,13 @@ class fORMValidation
 	
 	
 	/**
-	 * Adds a call to [http://php.net/str_replace `str_replace()`] for each validation message
+	 * Adds a call to [http://php.net/str_replace `str_replace()`] for each message
 	 * 
 	 * String replacement is done after the `post::validate()` hook, and right
-	 * before the validation messages are reordered.
+	 * before the messages are reordered.
 	 * 
-	 * If a validation message is an empty string after replacement, it will be
-	 * removed from the list of validation messages.
+	 * If a message is an empty string after replacement, it will be
+	 * removed from the list of messages.
 	 * 
 	 * @param  mixed  $class    The class name or instance of the class the columns exists in
 	 * @param  string $search   The string to search for
@@ -327,22 +328,22 @@ class fORMValidation
 	 * This functionality can also be accomplished by added a `CHECK` constraint
 	 * on the column in the database, or using a MySQL `ENUM` data type.
 	 *
-	 * @param  mixed   $class         The class name or instance of the class this validation rule applies to
+	 * @param  mixed   $class         The class name or instance of the class this rule applies to
 	 * @param  string  $column        The column to validate
 	 * @param  array   $valid_values  The valid values to check - `NULL` values are always allows if the column is not set to `NOT NULL`
 	 * @return void
 	 */
-	static public function addValidValuesValidationRule($class, $column, $valid_values)
+	static public function addValidValuesRule($class, $column, $valid_values)
 	{
 		$class = fORM::getClass($class);
 		
-		if (!isset(self::$valid_values_validation_rules[$class])) {
-			self::$valid_values_validation_rules[$class] = array();
+		if (!isset(self::$valid_values_rules[$class])) {
+			self::$valid_values_rules[$class] = array();
 		}
 		
 		settype($valid_values, 'array');
 		
-		self::$valid_values_validation_rules[$class][$column] = $valid_values;
+		self::$valid_values_rules[$class][$column] = $valid_values;
 		
 		fORM::registerInspectCallback($class, $column, self::inspect);
 	}
@@ -355,7 +356,7 @@ class fORMValidation
 	 * @param  string         $column       The column to check
 	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array          &$old_values  The old values from the record
-	 * @return string  A validation error message for the column specified
+	 * @return string  An error message for the column specified
 	 */
 	static private function checkAgainstSchema($object, $column, &$values, &$old_values)
 	{
@@ -407,14 +408,14 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates against a conditional validation rule
+	 * Validates against a conditional rule
 	 *
-	 * @param  string $class                The class this validation rule applies to
+	 * @param  string $class                The class this rule applies to
 	 * @param  array  &$values              An associative array of all values for the record
 	 * @param  array  $main_columns         The columns to check for a value
 	 * @param  array  $conditional_values   If `NULL`, any value in the main column will trigger the conditional columns, otherwise the value must match one of these
 	 * @param  array  $conditional_columns  The columns that are to be required
-	 * @return array  The validation error messages for the rule specified
+	 * @return array  The error messages for the rule specified
 	 */
 	static private function checkConditionalRule($class, &$values, $main_columns, $conditional_values, $conditional_columns)
 	{
@@ -453,7 +454,7 @@ class fORMValidation
 	 * @param  string $class   The class the column is part of
 	 * @param  string $column  The column to check
 	 * @param  mixed  $value   The value to check
-	 * @return string  A validation error message for the column specified
+	 * @return string  An error message for the column specified
 	 */
 	static private function checkDataType($class, $column, $value)
 	{
@@ -524,7 +525,7 @@ class fORMValidation
 	 * @param  string $class    The class to check the foreign keys for
 	 * @param  string $column   The column to check
 	 * @param  array  &$values  The values to check
-	 * @return string  A validation error message for the column specified
+	 * @return string  An error message for the column specified
 	 */
 	static private function checkForeignKeyConstraints($class, $column, &$values)
 	{
@@ -558,12 +559,12 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates against a one-or-more validation rule
+	 * Validates against a one-or-more rule
 	 *
 	 * @param  string $class    The class the columns are part of
 	 * @param  array  &$values  An associative array of all values for the record
 	 * @param  array  $columns  The columns to check
-	 * @return string  A validation error message for the rule
+	 * @return string  An error message for the rule
 	 */
 	static private function checkOneOrMoreRule($class, &$values, $columns)
 	{
@@ -590,12 +591,12 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates against an only-one validation rule
+	 * Validates against an only-one rule
 	 *
 	 * @param  string $class    The class the columns are part of
 	 * @param  array  &$values  An associative array of all values for the record
 	 * @param  array  $columns  The columns to check
-	 * @return string  A validation error message for the rule
+	 * @return string  An error message for the rule
 	 */
 	static private function checkOnlyOneRule($class, &$values, $columns)
 	{
@@ -634,7 +635,7 @@ class fORMValidation
 	 * @param  fActiveRecord  $object       The instance of the class to check
 	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array          &$old_values  The old values for the record
-	 * @return string  A validation error message
+	 * @return string  An error message
 	 */
 	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
@@ -702,14 +703,14 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates against a *-to-many one or more validation rule
+	 * Validates against a *-to-many one or more rule
 	 *
 	 * @param  fActiveRecord $object            The object being checked
 	 * @param  array         &$values           The values for the object
 	 * @param  array         &$related_records  The related records for the object
 	 * @param  string        $related_class     The name of the related class
 	 * @param  string        $route             The name of the route from the class to the related class
-	 * @return string  A validation error message for the rule
+	 * @return string  An error message for the rule
 	 */
 	static private function checkRelatedOneOrMoreRule($object, &$values, &$related_records, $related_class, $route)
 	{
@@ -741,7 +742,7 @@ class fORMValidation
 	 * @param  fActiveRecord  $object       The instance of the class to check
 	 * @param  array          &$values      The values to check
 	 * @param  array          &$old_values  The old values for the record
-	 * @return string  A validation error message for the unique constraints
+	 * @return string  An error message for the unique constraints
 	 */
 	static private function checkUniqueConstraints($object, &$values, &$old_values)
 	{
@@ -813,13 +814,13 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates against a valid values validation rule
+	 * Validates against a valid values rule
 	 *
-	 * @param  string $class         The class this validation rule applies to
+	 * @param  string $class         The class this rule applies to
 	 * @param  array  &$values       An associative array of all values for the record
 	 * @param  string $column        The column the rule applies to
 	 * @param  array  $valid_values  An array of valid values to check the column against
-	 * @return string  The validation error message for the rule specified
+	 * @return string  The error message for the rule specified
 	 */
 	static private function checkValidValuesRule($class, &$values, $column, $valid_values)
 	{
@@ -870,11 +871,11 @@ class fORMValidation
 	 */
 	static private function initializeRuleArrays($class)
 	{
-		self::$conditional_validation_rules[$class]         = (isset(self::$conditional_validation_rules[$class]))         ? self::$conditional_validation_rules[$class]         : array();
-		self::$one_or_more_validation_rules[$class]         = (isset(self::$one_or_more_validation_rules[$class]))         ? self::$one_or_more_validation_rules[$class]         : array();
-		self::$only_one_validation_rules[$class]            = (isset(self::$only_one_validation_rules[$class]))            ? self::$only_one_validation_rules[$class]            : array();
-		self::$related_one_or_more_validation_rules[$class] = (isset(self::$related_one_or_more_validation_rules[$class])) ? self::$related_one_or_more_validation_rules[$class] : array();
-		self::$valid_values_validation_rules[$class]        = (isset(self::$valid_values_validation_rules[$class]))        ? self::$valid_values_validation_rules[$class]        : array();
+		self::$conditional_rules[$class]         = (isset(self::$conditional_rules[$class]))         ? self::$conditional_rules[$class]         : array();
+		self::$one_or_more_rules[$class]         = (isset(self::$one_or_more_rules[$class]))         ? self::$one_or_more_rules[$class]         : array();
+		self::$only_one_rules[$class]            = (isset(self::$only_one_rules[$class]))            ? self::$only_one_rules[$class]            : array();
+		self::$related_one_or_more_rules[$class] = (isset(self::$related_one_or_more_rules[$class])) ? self::$related_one_or_more_rules[$class] : array();
+		self::$valid_values_rules[$class]        = (isset(self::$valid_values_rules[$class]))        ? self::$valid_values_rules[$class]        : array();
 	}
 	
 	
@@ -890,8 +891,8 @@ class fORMValidation
 	 */
 	static public function inspect($class, $column, &$metadata)
 	{
-		if (!empty(self::$valid_values_validation_rules[$class][$column])) {
-			$metadata['valid_values'] = self::$valid_values_validation_rules[$class][$column];
+		if (!empty(self::$valid_values_rules[$class][$column])) {
+			$metadata['valid_values'] = self::$valid_values_rules[$class][$column];
 		}
 	}
 	
@@ -928,14 +929,14 @@ class fORMValidation
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $class                The class to reorder messages for
-	 * @param  array  $validation_messages  An array of the validation messages
-	 * @return array  The reordered validation messages
+	 * @param  string $class     The class to reorder messages for
+	 * @param  array  $messages  An array of the messages
+	 * @return array  The reordered messages
 	 */
-	static public function reorderMessages($class, $validation_messages)
+	static public function reorderMessages($class, $messages)
 	{
 		if (!isset(self::$message_orders[$class])) {
-			return $validation_messages;
+			return $messages;
 		}
 			
 		$matches = self::$message_orders[$class];
@@ -943,15 +944,15 @@ class fORMValidation
 		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
 		
-		foreach ($validation_messages as $validation_message) {
+		foreach ($messages as $message) {
 			foreach ($matches as $num => $match_string) {
-				if (fUTF8::ipos($validation_message, $match_string) !== FALSE) {
-					$ordered_items[$num][] = $validation_message;
+				if (fUTF8::ipos($message, $match_string) !== FALSE) {
+					$ordered_items[$num][] = $message;
 					continue 2;
 				}
 			}
 			
-			$other_items[] = $validation_message;
+			$other_items[] = $message;
 		}
 		
 		$final_list = array();
@@ -963,33 +964,33 @@ class fORMValidation
 	
 	
 	/**
-	 * Takes a list of validation messages and performs string and regex replacements on them
+	 * Takes a list of messages and performs string and regex replacements on them
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $class                The class to reorder messages for
-	 * @param  array  $validation_messages  The array of validation messages
-	 * @return array  The new array of validation messages
+	 * @param  string $class     The class to reorder messages for
+	 * @param  array  $messages  The array of messages
+	 * @return array  The new array of messages
 	 */
-	static public function replaceMessages($class, $validation_messages)
+	static public function replaceMessages($class, $messages)
 	{
 		if (isset(self::$string_replacements[$class])) {
-			$validation_messages = str_replace(
+			$messages = str_replace(
 				self::$string_replacements[$class]['search'],
 				self::$string_replacements[$class]['replace'],
-				$validation_messages	
+				$messages	
 			);
 		}
 		
 		if (isset(self::$regex_replacements[$class])) {
-			$validation_messages = preg_replace(
+			$messages = preg_replace(
 				self::$regex_replacements[$class]['search'],
 				self::$regex_replacements[$class]['replace'],
-				$validation_messages	
+				$messages	
 			);
 		}
 		
-		return array_filter($validation_messages, array('fORMValidation', 'isNonBlankString'));
+		return array_filter($messages, array('fORMValidation', 'isNonBlankString'));
 	}
 	
 	
@@ -1002,15 +1003,15 @@ class fORMValidation
 	 */
 	static public function reset()
 	{
-		self::$case_insensitive_columns             = array();
-		self::$conditional_validation_rules         = array();
-		self::$message_orders                       = array();
-		self::$one_or_more_validation_rules         = array();
-		self::$only_one_validation_rules            = array();
-		self::$regex_replacements                   = array();
-		self::$related_one_or_more_validation_rules = array();
-		self::$string_replacements                  = array();
-		self::$valid_values_validation_rules        = array();
+		self::$case_insensitive_columns  = array();
+		self::$conditional_rules         = array();
+		self::$message_orders            = array();
+		self::$one_or_more_rules         = array();
+		self::$only_one_rules            = array();
+		self::$regex_replacements        = array();
+		self::$related_one_or_more_rules = array();
+		self::$string_replacements       = array();
+		self::$valid_values_rules        = array();
 	}
 	
 	
@@ -1046,7 +1047,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Allows setting the order that the list items in a validation message will be displayed
+	 * Allows setting the order that the list items in a message will be displayed
 	 *
 	 * All string comparisons during the reordering process are done in a
 	 * case-insensitive manner.
@@ -1099,14 +1100,14 @@ class fORMValidation
 	
 	
 	/**
-	 * Validates values for an fActiveRecord object against the database schema and any additional validation rules that have been added
+	 * Validates values for an fActiveRecord object against the database schema and any additional rules that have been added
 	 *
 	 * @internal
 	 * 
 	 * @param  fActiveRecord  $object      The instance of the class to validate
 	 * @param  array          $values      The values to validate
 	 * @param  array          $old_values  The old values for the record
-	 * @return array  An array of validation messages
+	 * @return array  An array of messages
 	 */
 	static public function validate($object, $values, $old_values)
 	{
@@ -1139,22 +1140,22 @@ class fORMValidation
 		$message = self::checkUniqueConstraints($object, $values, $old_values);
 		if ($message) { $validation_messages[] = $message; }
 		
-		foreach (self::$valid_values_validation_rules[$class] as $column => $valid_values) {
+		foreach (self::$valid_values_rules[$class] as $column => $valid_values) {
 			$message = self::checkValidValuesRule($class, $values, $column, $valid_values);
 			if ($message) { $validation_messages[] = $message; }
 		}
 		
-		foreach (self::$conditional_validation_rules[$class] as $rule) {
+		foreach (self::$conditional_rules[$class] as $rule) {
 			$messages = self::checkConditionalRule($class, $values, $rule['main_columns'], $rule['conditional_values'], $rule['conditional_columns']);
 			if ($messages) { $validation_messages = array_merge($validation_messages, $messages); }
 		}
 		
-		foreach (self::$one_or_more_validation_rules[$class] as $rule) {
+		foreach (self::$one_or_more_rules[$class] as $rule) {
 			$message = self::checkOneOrMoreRule($class, $values, $rule['columns']);
 			if ($message) { $validation_messages[] = $message; }
 		}
 		
-		foreach (self::$only_one_validation_rules[$class] as $rule) {
+		foreach (self::$only_one_rules[$class] as $rule) {
 			$message = self::checkOnlyOneRule($class, $values, $rule['columns']);
 			if ($message) { $validation_messages[] = $message; }
 		}
@@ -1171,7 +1172,7 @@ class fORMValidation
 	 * @param  fActiveRecord $object            The object to validate
 	 * @param  array         &$values           The values for the object
 	 * @param  array         &$related_records  The related records for the object
-	 * @return array         An array of validation messages
+	 * @return array         An array of messages
 	 */
 	static public function validateRelated($object, &$values, &$related_records)
 	{
@@ -1180,8 +1181,8 @@ class fORMValidation
 		
 		$validation_messages = array();
 		
-		// Check related validation rules 
-		foreach (self::$related_one_or_more_validation_rules[$class] as $related_class => $routes) {
+		// Check related rules 
+		foreach (self::$related_one_or_more_rules[$class] as $related_class => $routes) {
 			foreach ($routes as $route => $enabled) {
 				$message = self::checkRelatedOneOrMoreRule($object, $values, $related_records, $related_class, $route);
 				if ($message) { $validation_messages[] = $message; }
