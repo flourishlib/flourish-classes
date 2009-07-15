@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Added method chaining support to prebuild, precount and precreate methods [wb, 2009-07-15]
  * @changes    1.0.0b17  Changed ::__call() to pass the parameters to the callback [wb, 2009-07-14]
  * @changes    1.0.0b16  Updated documentation for the intersection operator `><` [wb, 2009-07-13]
  * @changes    1.0.0b15  Added the methods ::diff() and ::intersect() [wb, 2009-07-13]
@@ -1083,7 +1084,7 @@ class fRecordSet implements Iterator
 		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
-			return;
+			return $this;
 		}
 		
 		$related_table = fORM::tablize($related_class);
@@ -1199,6 +1200,8 @@ class fRecordSet implements Iterator
 			$method = 'inject' . fGrammar::pluralize($related_class);
 			$record->$method($set, $route);
 		}
+		
+		return $this;
 	}
 	
 	
@@ -1215,7 +1218,7 @@ class fRecordSet implements Iterator
 		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
-			return;
+			return $this;
 		}
 		
 		$related_table = fORM::tablize($related_class);
@@ -1263,6 +1266,8 @@ class fRecordSet implements Iterator
 			$count  = (isset($counts[$record->$get_method()])) ? $counts[$record->$get_method()] : 0;
 			$record->$tally_method($count, $route);
 		}
+		
+		return $this;
 	}
 	
 	
@@ -1279,7 +1284,7 @@ class fRecordSet implements Iterator
 		
 		// If there are no primary keys we can just exit
 		if (!array_merge($this->getPrimaryKeys())) {
-			return;
+			return $this;
 		}
 		
 		$relationship = fORMSchema::getRoute(
@@ -1297,6 +1302,8 @@ class fRecordSet implements Iterator
 				)
 			)
 		);
+		
+		return $this;
 	}
 	
 	
