@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a bug with translating `NOT LIKE` operators in PostgreSQL [wb, 2009-07-15]
  * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b5  Update code to only translate data types inside of `CREATE TABLE` queries [wb, 2009-05-22]
  * @changes    1.0.0b4  Added the missing ::__get() method for callback support [wb, 2009-05-06]
@@ -824,8 +825,8 @@ class fSQLTranslation
 		
 		} elseif ($this->database->getType() == 'postgresql') {
 			$regex = array(
-				'#\b([\w.]+)\s+like\b#i' => 'CAST(\1 AS VARCHAR) ILIKE',
-				'#\blike\b#i'            => 'ILIKE'
+				'#\b([\w.]+)\s+(not\s+)?like\b#i' => 'CAST(\1 AS VARCHAR) \2ILIKE',
+				'#\blike\b#i'                     => 'ILIKE'
 			);
 		
 		
