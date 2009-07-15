@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed a bug where auto-incremented values would not be detected when table names were quoted [wb, 2009-07-15]
  * @changes    1.0.0b14  Changed ::determineExtension() and ::determineCharacterSet() to be protected instead of private [wb, 2009-07-08]
  * @changes    1.0.0b13  Updated ::escape() to accept arrays of values for insertion into full SQL strings [wb, 2009-07-06]
  * @changes    1.0.0b12  Updates to ::unescape() to improve performance [wb, 2009-06-15]
@@ -1573,7 +1574,7 @@ class fDatabase
 	 */
 	private function handleAutoIncrementedValue($result)
 	{
-		if (!preg_match('#^\s*INSERT\s+INTO\s+(\w+)#i', $result->getSQL(), $table_match)) {
+		if (!preg_match('#^\s*INSERT\s+INTO\s+(?:`|"|\[)?(\w+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
 			$result->setAutoIncrementedValue(NULL);
 			return;
 		}
