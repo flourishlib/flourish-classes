@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed another bug with deleting records in the middle of a set, added support for reordering multiple records at once [dc-imarc, 2009-07-17]
  * @changes    1.0.0b10  Fixed a bug with deleting multiple in-memory records in the same set [dc-imarc, 2009-07-15]
  * @changes    1.0.0b9   Fixed a bug with using fORM::registerInspectCallback() [wb, 2009-07-15]
  * @changes    1.0.0b8   Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
@@ -196,10 +197,13 @@ class fORMOrdering
 		$shift_up   = $current_max_value + 9;
 		
 		$sql = "SELECT " . $table . "." . $column . " FROM " . $table . " LEFT JOIN " . $table . " AS t2 ON " . $table . "." . $column . " = t2." . $column . " + 1";
+		foreach ($other_columns as $other_column) {
+			$sql .= " AND " . $table . "." . $other_column . " = t2." . $other_column;	
+		}
+		$sql .= " WHERE t2." . $column . " IS NULL AND " . $table . "." . $column . " != 1";
 		if ($other_columns) {
 			$sql .= " AND " . self::createOldOtherFieldsWhereClause($table, $other_columns, $values, $old_values);
 		}
-		$sql .= " WHERE t2." . $column . " IS NULL AND " . $table . "." . $column . " != 1";
 		
 		$res = fORMDatabase::retrieve()->translatedQuery($sql);
 		
@@ -378,7 +382,14 @@ class fORMOrdering
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
 		
 		$current_value = $values[$column];
-		$old_value     = fActiveRecord::retrieveOld($old_values, $column);
+		if (!$object->exists()) {
+			$old_value = fActiveRecord::retrieveOld($old_values, $column);
+		} else {
+			$old_value = fORMDatabase::retrieve()->translatedQuery(
+				"SELECT " . $column . " FROM " . $table . " WHERE " .
+				fORMDatabase::createPrimaryKeyWhereClause($table, $table, $values, $old_values)
+			)->fetchScalar();	
+		}
 		
 		// Figure out the range we are dealing with
 		$sql = "SELECT max(" . $column . ") FROM " . $table;
@@ -420,7 +431,6 @@ class fORMOrdering
 		
 		if ($changed) {
 			fActiveRecord::assign($values, $old_values, $column, $current_value);
-			$old_value = fActiveRecord::retrieveOld($old_values, $column);
 		}
 		
 		// If the value didn't change, we can exit
