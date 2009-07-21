@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added ::isOneToOne() [wb, 2009-07-21]
  * @changes    1.0.0b3  Added routes caching for performance [wb, 2009-06-15]
  * @changes    1.0.0b2  Backwards Compatiblity Break - removed ::enableSmartCaching(), fORM::enableSchemaCaching() now provides equivalent functionality [wb, 2009-05-04]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -22,6 +23,7 @@ class fORMSchema
 	const getRouteName                 = 'fORMSchema::getRouteName';
 	const getRouteNameFromRelationship = 'fORMSchema::getRouteNameFromRelationship';
 	const getRoutes                    = 'fORMSchema::getRoutes';
+	const isOneToOne                   = 'fORMSchema::isOneToOne';
 	const reset                        = 'fORMSchema::reset';
 	const retrieve                     = 'fORMSchema::retrieve';
 	
@@ -267,6 +269,42 @@ class fORMSchema
 		self::$cache['getRoutes'][$key] = $routes;
 		
 		return $routes;
+	}
+	
+	
+	/**
+	 * Indicates if the relationship specified is a one-to-one relationship
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $table          The main table we are searching on behalf of
+	 * @param  string $related_table  The related table we are trying to find the routes for
+	 * @param  string $route          The route between the two tables
+	 * @return boolean  If the table is in a one-to-one relationship with the related table over the route specified
+	 */
+	static public function isOneToOne($table, $related_table, $route=NULL)
+	{
+		$relationships = self::getRoutes($table, $related_table, 'one-to-one', $route);
+		
+		if ($route === NULL && sizeof($relationships) > 1) {
+			throw new fProgrammerException(
+				'There is more than one route for the %1$srelationship between %2$s and %3$s',
+				'one-to-one ',
+				$table,
+				$related_table
+			);
+		}
+		if (!$relationships) {
+			return FALSE;	
+		}
+		
+		foreach ($relationships as $relationship) {
+			if ($route === NULL || $route == $relationship['column']) {
+				return TRUE;
+			} 		
+		}
+		
+		return FALSE;
 	}
 	
 	

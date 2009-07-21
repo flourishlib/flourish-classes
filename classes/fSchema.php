@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed a bug where one-to-one relationships were being listed as many-to-one [wb, 2009-07-21]
  * @changes    1.0.0b22  PostgreSQL UNIQUE constraints that are created as indexes and not table constraints are now properly detected [wb, 2009-07-08]
  * @changes    1.0.0b21  Added support for the UUID data type in PostgreSQL [wb, 2009-06-18]
  * @changes    1.0.0b20  Add caching of merged info, improved performance of ::getColumnInfo() [wb, 2009-06-15]
@@ -147,7 +148,7 @@ class fSchema
 	 * @return boolean  If the column is part of a single-column unique key
 	 */
 	private function checkForSingleColumnUniqueKey($table, $column)
-	{
+	{        
 		foreach ($this->merged_keys[$table]['unique'] as $key) {
 			if (array($column) == $key) {
 				return TRUE;
@@ -1693,14 +1694,17 @@ class fSchema
 	private function findOneToManyRelationships($table)
 	{
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
+			$type = ($this->checkForSingleColumnUniqueKey($table, $key['column'])) ? 'one-to-one' : 'one-to-many';
 			$temp = array();
 			$temp['table']          = $key['foreign_table'];
 			$temp['column']         = $key['foreign_column'];
 			$temp['related_table']  = $table;
 			$temp['related_column'] = $key['column'];
-			$temp['on_delete']      = $key['on_delete'];
-			$temp['on_update']      = $key['on_update'];
-			$this->relationships[$key['foreign_table']]['one-to-many'][] = $temp;
+			if ($type == 'one-to-many') {
+				$temp['on_delete']      = $key['on_delete'];
+				$temp['on_update']      = $key['on_update'];
+			}
+			$this->relationships[$key['foreign_table']][$type][] = $temp;
 		}
 	}
 	

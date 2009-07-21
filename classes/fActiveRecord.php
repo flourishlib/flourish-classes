@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Fixed a bug with loading a record by a multi-column primary key, fixed one-to-one relationship API [wb, 2009-07-21]
  * @changes    1.0.0b30  Updated ::reflect() for new fORM::callReflectCallbacks() API [wb, 2009-07-13]
  * @changes    1.0.0b29  Updated to use new fORM::callInspectCallbacks() method [wb, 2009-07-13]
  * @changes    1.0.0b28  Fixed a bug where records would break the identity map at the end of ::store() [wb, 2009-07-09]
@@ -519,13 +520,33 @@ abstract class fActiveRecord
 			
 			// Related data methods
 			case 'associate':
-				$subject = fGrammar::singularize($subject);
+				$table   = fORM::tablize($class);
+				$records = $parameters[0];
+				$route   = isset($parameters[1]) ? $parameters[1] : NULL;
+				$plural  = FALSE;
+				
+				// one-to-many relationships need to use plural forms
+				if (in_array($subject, fORMSchema::retrieve()->getTables())) {
+					if (fORMSchema::isOneToOne($table, $subject, $route)) {
+						throw new fProgrammerException(
+							'The table %1$s is not in a %2$srelationship with the table %3$s',
+							$table,
+							'*-to-many ',
+							$subject
+						); 		
+					}
+					$subject = fGrammar::singularize($subject);
+					$plural  = TRUE;
+				}
 				$subject = fGrammar::camelize($subject, TRUE);
 				
-				if (isset($parameters[1])) {
-					return fORMRelated::associateRecords($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
+				// This handles one-to-many and many-to-many relationships
+				if ($plural) {
+					return fORMRelated::associateRecords($class, $this->related_records, $subject, $records, $route);
 				}
-				return fORMRelated::associateRecords($class, $this->related_records, $subject, $parameters[0]);
+				
+				// This handles one-to-one relationships
+				return fORMRelated::associateRecord($class, $this->related_records, $subject, $records, $route);
 			
 			case 'build':
 				$subject = fGrammar::singularize($subject);
@@ -549,9 +570,9 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::createRecord($class, $this->values, $subject, $parameters[0]);
+					return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
-				return fORMRelated::createRecord($class, $this->values, $subject);
+				return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject);
 			 
 			case 'inject':
 				$subject = fGrammar::singularize($subject);
@@ -581,13 +602,25 @@ abstract class fActiveRecord
 				return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject);
 			
 			case 'populate':
-				$subject = fGrammar::singularize($subject);
+				$table = fORM::tablize($class);
+				$route = isset($parameters[0]) ? $parameters[0] : NULL;
+				
+				// one-to-many relationships need to use plural forms
+				if (in_array($subject, fORMSchema::retrieve()->getTables())) {
+					if (fORMSchema::isOneToOne($table, $subject, $route)) {
+						throw new fProgrammerException(
+							'The table %1$s is not in a %2$srelationship with the table %3$s',
+							$table,
+							'one-to-many ',
+							$subject
+						); 		
+					}
+					$subject = fGrammar::singularize($subject);
+				}
+				
 				$subject = fGrammar::camelize($subject, TRUE);
 				
-				if (isset($parameters[0])) {
-					return fORMRelated::populateRecords($class, $this->related_records, $subject, $parameters[0]);
-				}
-				return fORMRelated::populateRecords($class, $this->related_records, $subject);
+				return fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
 			
 			case 'tally':
 				$subject = fGrammar::singularize($subject);
@@ -720,7 +753,7 @@ abstract class fActiveRecord
 			
 			// If the primary key does not look properly formatted, check to see if it is a UNIQUE key
 			$is_unique_key = FALSE;
-			if (is_array($key) && (sizeof($pk_columns) == 1 || array_keys($key) != $pk_columns)) {
+			if (is_array($key) && (sizeof($pk_columns) == 1 || array_diff(array_keys($key), $pk_columns))) {
 				$unique_keys = fORMSchema::retrieve()->getKeys($table, 'unique');
 				$key_keys    = array_keys($key);
 				foreach ($unique_keys as $unique_key) {
@@ -730,7 +763,7 @@ abstract class fActiveRecord
 				}	
 			}
 			
-			$wrong_keys = is_array($key) && array_keys($key) != $pk_columns;
+			$wrong_keys = is_array($key) && array_diff(array_keys($key), $pk_columns);
 			$wrong_type = !is_array($key) && (sizeof($pk_columns) != 1 || !is_scalar($key));
 			
 			// If we didn't find a UNIQUE key and primary key doesn't look right we fail
