@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed a bug in ::determineMimeType() [wb, 2009-07-21]
  * @changes    1.0.0b20  Fixed the exception message thrown by ::output() when output buffering is turned on [wb, 2009-06-26]
  * @changes    1.0.0b19  ::rename() will now rename the file in its current directory if the new filename has no directory separator [wb, 2009-05-04]
  * @changes    1.0.0b18  Changed ::__sleep() to not reset the iterator since it can cause side-effects [wb, 2009-05-04]
@@ -105,19 +106,19 @@ class fFile implements Iterator
 			}
 			
 			// The first 4k should be enough for content checking
-			$handle  = fopen($file, 'r');
-			$content = fread($handle, 4096);
+			$handle   = fopen($file, 'r');
+			$contents = fread($handle, 4096);
 			fclose($handle);
 		}
 		
 		$extension = strtolower(fFilesystem::getPathInfo($file, 'extension'));
 		
 		// If there are no low ASCII chars and no easily distinguishable tokens, we need to detect by file extension
-		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|%PDF-|<\?php|\%\!PS-Adobe-3|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $content)) {
+		if (!preg_match('#[\x00-\x08\x0B\x0C\x0E-\x1F]|%PDF-|<\?php|\%\!PS-Adobe-3|<\?xml|\{\\\\rtf|<\?=|<html|<\!doctype|<rss|\#\![/a-z0-9]+(python|ruby|perl|php)\b#i', $contents)) {
 			return self::determineMimeTypeByExtension($extension);		
 		}
 		
-		return self::determineMimeTypeByContents($content, $extension);
+		return self::determineMimeTypeByContents($contents, $extension);
 	}
 	
 	
