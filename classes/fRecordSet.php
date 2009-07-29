@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Fixed bugs with ::diff() and ::intersect() and empty record sets [wb, 2009-07-29]
  * @changes    1.0.0b18  Added method chaining support to prebuild, precount and precreate methods [wb, 2009-07-15]
  * @changes    1.0.0b17  Changed ::__call() to pass the parameters to the callback [wb, 2009-07-14]
  * @changes    1.0.0b16  Updated documentation for the intersection operator `><` [wb, 2009-07-13]
@@ -682,10 +683,12 @@ class fRecordSet implements Iterator
 			}		
 		}
 		
-		// If there are no classes, we use the last class from the loop,
-		// otherwise we grab the singular classes, or the full array
 		if (sizeof($classes) > 0) {
 			$class = sizeof($classes) == 1 ? key($classes) : array_keys($classes);
+		}
+		
+		if (empty($class)) {
+			$class = $this->class;
 		}	
 		
 		return self::buildFromRecords(
@@ -890,10 +893,12 @@ class fRecordSet implements Iterator
 			}		
 		}
 		
-		// If there are no classes, we use the last class from the loop,
-		// otherwise we grab the singular classes, or the full array
 		if (sizeof($classes) > 0) {
 			$class = sizeof($classes) == 1 ? key($classes) : array_keys($classes);
+		}
+		
+		if (empty($class)) {
+			$class = $this->class;
 		}	
 		
 		return self::buildFromRecords(
