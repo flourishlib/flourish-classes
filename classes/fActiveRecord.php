@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Changed ::delete() to remove auto-incrementing primary keys after the post::delete() hook [wb, 2009-07-29]
  * @changes    1.0.0b31  Fixed a bug with loading a record by a multi-column primary key, fixed one-to-one relationship API [wb, 2009-07-21]
  * @changes    1.0.0b30  Updated ::reflect() for new fORM::callReflectCallbacks() API [wb, 2009-07-13]
  * @changes    1.0.0b29  Updated to use new fORM::callInspectCallbacks() method [wb, 2009-07-13]
@@ -1058,15 +1059,8 @@ abstract class fActiveRecord
 				$this->cache
 			);
 			
-			// If we just deleted an object that has an auto-incrementing primary key,
-			// lets delete that value from the object since it is no longer valid
-			$pk_columns  = fORMSchema::retrieve()->getKeys($table, 'primary');
-			if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
-				$this->values[$pk_columns[0]] = NULL;
-				unset($this->old_values[$pk_columns[0]]);
-			}
-			
 		} catch (fException $e) {
+			
 			if (!$inside_db_transaction) {
 				fORMDatabase::retrieve()->translatedQuery('ROLLBACK');
 			}
@@ -1115,6 +1109,14 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
+		
+		// If we just deleted an object that has an auto-incrementing primary key,
+		// lets delete that value from the object since it is no longer valid
+		$pk_columns  = fORMSchema::retrieve()->getKeys($table, 'primary');
+		if (sizeof($pk_columns) == 1 && fORMSchema::retrieve()->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
+			$this->values[$pk_columns[0]] = NULL;
+			unset($this->old_values[$pk_columns[0]]);
+		}
 		
 		return $this;
 	}
