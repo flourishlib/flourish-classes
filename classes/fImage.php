@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated class to work even if the file extension is wrong or not present, ::saveChanges() detects files that aren't writable [wb, 2009-07-29]
  * @changes    1.0.0b12  Fixed a bug where calling ::saveChanges() after unserializing would throw an exception related to the image processor [wb, 2009-05-27]
  * @changes    1.0.0b11  Added a ::crop() method [wb, 2009-05-27]
  * @changes    1.0.0b10  Fixed a bug with GD not saving changes to files ending in .jpeg [wb, 2009-03-18]
@@ -295,10 +296,13 @@ class fImage extends fFile
 	{
 		$extension = strtolower(fFilesystem::getPathInfo($image_path, 'extension'));
 		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'gif', 'tif', 'tiff'))) {
-			throw new fValidationException(
-				'The file specified, %s, does not appear to be an image',
-				$image_path
-			);		
+			$mime_type = fFile::determineMimeType($image_path);
+			if (!in_array($mime_type, array('image/jpeg', 'image/png', 'image/gif', 'image/tiff'))) {
+				throw new fValidationException(
+					'The file specified, %s, does not appear to be an image',
+					$image_path
+				);
+			}	
 		}
 		
 		$old_level  = error_reporting(error_reporting() & ~E_WARNING);
@@ -829,14 +833,19 @@ class fImage extends fFile
 		}
 		
 		// Save the file
-		$info = fFilesystem::getPathInfo($output_file);
+		$path_info = fFilesystem::getPathInfo($output_file);
+		$type = $path_info['extension'];
+		$type = ($type == 'jpeg') ? 'jpg' : $type;
 		
-		switch ($info['extension']) {
+		if (!in_array($type, array('gif', 'jpg', 'png'))) {
+			$type = $info['type'];	
+		}
+		
+		switch ($type) {
 			case 'gif':
 				imagegif($gd_res, $output_file);
 				break;
 			case 'jpg':
-			case 'jpeg':
 				imagejpeg($gd_res, $output_file, $jpeg_quality);
 				break;
 			case 'png':
@@ -901,12 +910,19 @@ class fImage extends fFile
 		}
 		
 		// Set up jpeg compression
-		$info = fFilesystem::getPathInfo($output_file);
-		if ($info['extension'] == 'jpg') {
+		$path_info = fFilesystem::getPathInfo($output_file);
+		$type = $path_info['extension'];
+		$type = ($type == 'jpeg') ? 'jpg' : $type;
+		
+		if (!in_array($type, array('gif', 'jpg', 'png'))) {
+			$type = $info['type'];	
+		}
+		
+		if ($type == 'jpg') {
 			$command_line .= ' -compress JPEG -quality ' . $jpeg_quality . ' ';
 		}
 		
-		$command_line .= ' ' . escapeshellarg($output_file);
+		$command_line .= ' ' . escapeshellarg($type . ':' . $output_file);
 		
 		exec($command_line);
 	}
@@ -1048,8 +1064,21 @@ class fImage extends fFile
 		
 		if ($new_image_type) {
 			$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
+			$output_dir  = dirname($output_file);
+			if (!is_writable($output_dir)) {
+				throw new fEnvironmentException(
+					'Changes to the image can not be saved because the directory to save the new file, %s, is not writable',
+					$output_dir
+				);		
+			}
 		} else {
 			$output_file = $this->file;
+			if (!is_writable($output_file)) {
+				throw new fEnvironmentException(
+					'Changes to the image can not be saved because the file, %s, is not writable',
+					$output_file
+				);	
+			}
 		}
 		
 		// If we don't have any changes and no name change, just exit
