@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Changed the class to implement Countable, making the [http://php.net/count `count()`] function work [wb, 2009-07-29]
  * @changes    1.0.0b19  Fixed bugs with ::diff() and ::intersect() and empty record sets [wb, 2009-07-29]
  * @changes    1.0.0b18  Added method chaining support to prebuild, precount and precreate methods [wb, 2009-07-15]
  * @changes    1.0.0b17  Changed ::__call() to pass the parameters to the callback [wb, 2009-07-14]
@@ -30,7 +31,7 @@
  * @changes    1.0.0b2   Added support for != and <> to ::build() and ::filter() [wb, 2008-12-04]
  * @changes    1.0.0b    The initial implementation [wb, 2007-08-04]
  */
-class fRecordSet implements Iterator
+class fRecordSet implements Iterator, Countable
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const build                  = 'fRecordSet::build';
