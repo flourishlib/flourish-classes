@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
  * @changes    1.0.0b4  ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
  * @changes    1.0.0b3  ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
  * @changes    1.0.0b2  Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
@@ -103,12 +104,17 @@ class fURL
 	
 	
 	/**
-	 * Redirects to the URL specified, if the URL does not start with `http://` or `https://` it redirects to current site
+	 * Redirects to the URL specified, without requiring a full-qualified URL
+	 * 
+	 *  - If the URL starts with `/`, it is treated as an absolute path on the current site
+	 *  - If the URL starts with `http://` or `https://`, it is treated as a fully-qualified URL
+	 *  - If the URL starts with anything else, including a `?`, it is appended to the current URL
+	 *  - If the URL is ommitted, it is treated as the current URL
 	 * 
 	 * @param  string $url  The url to redirect to
 	 * @return void
 	 */
-	static public function redirect($url)
+	static public function redirect($url=NULL)
 	{
 		if (strpos($url, '/') === 0) {
 			$url = self::getDomain() . $url;
