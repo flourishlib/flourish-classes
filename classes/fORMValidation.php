@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added @internal methods ::removeStringReplacement() and ::removeRegexReplacement() [wb, 2009-07-29]
  * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addConditionalValidationRule() to ::addConditionalRule(), ::addManyToManyValidationRule() to ::addManyToManyRule(), ::addOneOrMoreValidationRule() to ::addOneOrMoreRule(), ::addOneToManyValidationRule() to ::addOneToManyRule(), ::addOnlyOneValidationRule() to ::addOnlyOneRule(), ::addValidValuesValidationRule() to ::addValidValuesRule() [wb, 2009-07-13]
  * @changes    1.0.0b15  Added ::addValidValuesValidationRule() [wb/jt, 2009-07-13]
  * @changes    1.0.0b14  Added ::addStringReplacement() and ::addRegexReplacement() for simple validation message modification [wb, 2009-07-01]
@@ -40,6 +41,8 @@ class fORMValidation
 	const addStringReplacement     = 'fORMValidation::addStringReplacement';
 	const addValidValuesRule       = 'fORMValidation::addValidValuesRule';
 	const inspect                  = 'fORMValidation::inspect';
+	const removeStringReplacement  = 'fORMValidation::removeStringReplacement';
+	const removeRegexReplacement   = 'fORMValidation::removeRegexReplacement';
 	const reorderMessages          = 'fORMValidation::reorderMessages';
 	const replaceMessages          = 'fORMValidation::replaceMessages';
 	const reset                    = 'fORMValidation::reset';
@@ -921,6 +924,82 @@ class fORMValidation
 	static private function isNonBlankString($string)
 	{
 		return ((string) $string) !== '';
+	}
+	
+	
+	/**
+	 * Removes a regex replacement
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns exists in
+	 * @param  string $search   The string to search for
+	 * @param  string $replace  The string to replace with
+	 * @return void
+	 */
+	static public function removeRegexReplacement($class, $search, $replace)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$regex_replacements[$class])) {
+			self::$regex_replacements[$class] = array(
+				'search'  => array(),
+				'replace' => array()
+			);
+		}
+		
+		$replacements = count(self::$regex_replacements[$class]['search']);
+		
+		for ($i = 0; $i < $replacements; $i++) {
+			$match_search  = self::$regex_replacements[$class]['search'][$i] == $search;
+			$match_replace = self::$regex_replacements[$class]['replace'][$i] == $replace;
+			if ($match_search && $match_replace) {
+				unset(self::$regex_replacements[$class]['search'][$i]);
+				unset(self::$regex_replacements[$class]['replace'][$i]);
+			}
+		}
+		
+		// Remove the any gaps in the arrays
+		self::$regex_replacements[$class]['search']  = array_merge(self::$regex_replacements[$class]['search']);
+		self::$regex_replacements[$class]['replace'] = array_merge(self::$regex_replacements[$class]['replace']);
+	}
+	
+	
+	/**
+	 * Removes a string replacement
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns exists in
+	 * @param  string $search   The string to search for
+	 * @param  string $replace  The string to replace with
+	 * @return void
+	 */
+	static public function removeStringReplacement($class, $search, $replace)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$string_replacements[$class])) {
+			self::$string_replacements[$class] = array(
+				'search'  => array(),
+				'replace' => array()
+			);
+		}
+		
+		$replacements = count(self::$string_replacements[$class]['search']);
+		
+		for ($i = 0; $i < $replacements; $i++) {
+			$match_search  = self::$string_replacements[$class]['search'][$i] == $search;
+			$match_replace = self::$string_replacements[$class]['replace'][$i] == $replace;
+			if ($match_search && $match_replace) {
+				unset(self::$string_replacements[$class]['search'][$i]);
+				unset(self::$string_replacements[$class]['replace'][$i]);
+			}
+		}
+		
+		// Remove the any gaps in the arrays
+		self::$string_replacements[$class]['search']  = array_merge(self::$string_replacements[$class]['search']);
+		self::$string_replacements[$class]['replace'] = array_merge(self::$string_replacements[$class]['replace']);
 	}
 	
 	

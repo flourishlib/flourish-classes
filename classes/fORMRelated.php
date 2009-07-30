@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Changed how related record values are set and how related validation messages are ignored because of recursive relationships [wb, 2009-07-29]
  * @changes    1.0.0b11  Fixed some bugs with one-to-one relationships [wb, 2009-07-21]
  * @changes    1.0.0b10  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
  * @changes    1.0.0b9   Fixed a bug where ::store() would not save associations with no related records [wb, 2009-06-23]
@@ -1325,9 +1326,13 @@ class fORMRelated
 		$pk_field        = $filter . $first_pk_column;
 		$input_keys      = array_keys(fRequest::get($pk_field, 'array', array()));
 		
+		// Set all of the values first to prevent issues with recursive relationships
+		foreach ($record_set as $i => $record) {
+			$record->$set_method_name($column_value);	
+		}
+		
 		foreach ($record_set as $i => $record) {
 			fRequest::filter($filter, isset($input_keys[$i]) ? $input_keys[$i] : $i);
-			$record->$set_method_name($column_value);
 			$record->store();
 			fRequest::unfilter();
 		}
@@ -1406,16 +1411,16 @@ class fORMRelated
 			$records = self::buildRecords($class, $values, $related_records, $related_class, $route);
 		}
 		
+		// Ignore validation messages about the primary key since it will be added
+		$primary_key_name  = fValidationException::formatField(fORM::getColumnName($related_class, $route));
+		$primary_key_regex = '#^' . preg_quote($primary_key_name, '#') . '.*$#D';
+		fORMValidation::addRegexReplacement($related_class, $primary_key_regex, '');
+		
 		foreach ($records as $i => $record) {
 			fRequest::filter($filter, isset($input_keys[$i]) ? $input_keys[$i] : $i);
 			$record_messages = $record->validate(TRUE);
 			
 			foreach ($record_messages as $record_message) {
-				// Ignore validation messages about the primary key since it will be added
-				if (strpos($record_message, fValidationException::formatField(fORM::getColumnName($related_class, $route))) === 0) {
-					continue;
-				}
-				
 				$token_field           = fValidationException::formatField('__TOKEN__');
 				$extract_message_regex = '#' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '(.*)$#D';
 				preg_match($extract_message_regex, $record_message, $matches);
@@ -1444,6 +1449,8 @@ class fORMRelated
 			}
 			fRequest::unfilter();
 		}
+		
+		fORMValidation::removeRegexReplacement($related_class, $primary_key_regex, '');
 		
 		return $messages;
 	}
