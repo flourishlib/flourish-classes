@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  ::addFImageMethodCall() no longer requires column be an image upload column, inheritance to an image column now only happens for fImage objects [wb, 2009-07-29] 
  * @changes    1.0.0b14  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b13  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b12  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -120,9 +121,9 @@ class fORMFile
 	{
 		$class = fORM::getClass($class);
 		
-		if (!array_key_exists($column, self::$image_upload_columns[$class])) {
+		if (empty(self::$file_upload_columns[$class][$column])) {
 			throw new fProgrammerException(
-				'The column specified, %s, has not been configured as an image upload column.',
+				'The column specified, %s, has not been configured as a file or image upload column',
 				$column
 			);
 		}
@@ -164,7 +165,7 @@ class fORMFile
 		
 		if (empty(self::$file_upload_columns[$class][$column])) {
 			throw new fProgrammerException(
-				'The column specified, %s, has not been configured as a file or image upload column.',
+				'The column specified, %s, has not been configured as a file or image upload column',
 				$column
 			);
 		}
@@ -1138,6 +1139,11 @@ class fORMFile
 			foreach (self::$column_inheritence[$class][$column] as $other_column) {
 				
 				if ($file) {
+					
+					// Image columns will only inherit if it is an fImage object
+					if (!$file instanceof fImage && isset(self::$image_upload_columns[$class][$other_column])) {
+						continue;		
+					}
 					
 					$other_upload_dir = self::$file_upload_columns[$class][$other_column];
 					$other_temp_dir   = self::prepareTempDir($other_upload_dir);
