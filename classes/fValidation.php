@@ -131,7 +131,7 @@ class fValidation
 	
 	
 	/**
-	 * Adds form fields to the lis of fields to be blank or a valid email address
+	 * Adds form fields to the list of fields to be blank or a valid email address
 	 * 
 	 * Use ::addRequiredFields() disallow blank values.
 	 * 
