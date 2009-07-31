@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  ::setOrderBys() now (properly) only recognizes *-to-many relationships [wb, 2009-07-31] 
  * @changes    1.0.0b12  Changed how related record values are set and how related validation messages are ignored because of recursive relationships [wb, 2009-07-29]
  * @changes    1.0.0b11  Fixed some bugs with one-to-one relationships [wb, 2009-07-21]
  * @changes    1.0.0b10  Fixed a couple of bugs with validating related records [wb, 2009-06-26]
@@ -1057,7 +1058,7 @@ class fORMRelated
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
-		$route = fORMSchema::getRouteName($table, $related_table, $route);
+		$route = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
 		
 		if (!isset(self::$order_bys[$table])) {
 			self::$order_bys[$table] = array();
