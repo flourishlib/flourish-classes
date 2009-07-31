@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed some error messaging to not include {empty_string} in some situations [wb, 2009-07-31]
  * @changes    1.0.0b4  Added ::isOneToOne() [wb, 2009-07-21]
  * @changes    1.0.0b3  Added routes caching for performance [wb, 2009-06-15]
  * @changes    1.0.0b2  Backwards Compatiblity Break - removed ::enableSmartCaching(), fORM::enableSchemaCaching() now provides equivalent functionality [wb, 2009-05-04]
@@ -150,20 +151,18 @@ class fORMSchema
 		$keys = array_keys($routes);
 		
 		if (sizeof($keys) > 1) {
-			$relationship_type .= ($relationship_type) ? ' ' : '';
 			throw new fProgrammerException(
-				'There is more than one route for the %1$srelationship between %2$s and %3$s',
-				$relationship_type,
+				'There is more than one route for the%1$srelationship between %2$s and %3$s',
+				($relationship_type) ? ' ' . $relationship_type . ' ' : ' ',
 				$table,
 				$related_table
 			);
 		}
 		if (sizeof($keys) == 0) {
-			$relationship_type .= ($relationship_type) ? ' ' : '';
 			throw new fProgrammerException(
-				'The table %1$s is not in a %2$srelationship with the table %3$s',
+				'The table %1$s is not in a%2$srelationship with the table %3$s',
 				$table,
-				$relationship_type,
+				($relationship_type) ? ' ' . $relationship_type . ' ' : ' ',
 				$related_table
 			);
 		}
@@ -288,8 +287,8 @@ class fORMSchema
 		
 		if ($route === NULL && sizeof($relationships) > 1) {
 			throw new fProgrammerException(
-				'There is more than one route for the %1$srelationship between %2$s and %3$s',
-				'one-to-one ',
+				'There is more than one route for the%1$srelationship between %2$s and %3$s',
+				' one-to-one ',
 				$table,
 				$related_table
 			);
