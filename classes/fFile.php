@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Fixed ::__toString() to never throw an exception [wb, 2009-08-06]
  * @changes    1.0.0b21  Fixed a bug in ::determineMimeType() [wb, 2009-07-21]
  * @changes    1.0.0b20  Fixed the exception message thrown by ::output() when output buffering is turned on [wb, 2009-06-26]
  * @changes    1.0.0b19  ::rename() will now rename the file in its current directory if the new filename has no directory separator [wb, 2009-05-04]
@@ -566,7 +567,11 @@ class fFile implements Iterator
 	 */
 	public function __toString()
 	{
-		return $this->getFilename();
+		try {
+			return $this->getFilename();
+		} catch (Exception $e) {
+			return '';	
+		}
 	}
 	
 	
