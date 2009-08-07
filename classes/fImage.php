@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Performance updates for checking image type and compatiblity [wb, 2009-07-31]
  * @changes    1.0.0b13  Updated class to work even if the file extension is wrong or not present, ::saveChanges() detects files that aren't writable [wb, 2009-07-29]
  * @changes    1.0.0b12  Fixed a bug where calling ::saveChanges() after unserializing would throw an exception related to the image processor [wb, 2009-05-27]
  * @changes    1.0.0b11  Added a ::crop() method [wb, 2009-05-27]
@@ -296,8 +297,8 @@ class fImage extends fFile
 	{
 		$extension = strtolower(fFilesystem::getPathInfo($image_path, 'extension'));
 		if (!in_array($extension, array('jpg', 'jpeg', 'png', 'gif', 'tif', 'tiff'))) {
-			$mime_type = fFile::determineMimeType($image_path);
-			if (!in_array($mime_type, array('image/jpeg', 'image/png', 'image/gif', 'image/tiff'))) {
+			$type = self::getImageType($image_path);
+			if ($type === NULL) {
 				throw new fValidationException(
 					'The file specified, %s, does not appear to be an image',
 					$image_path
@@ -349,6 +350,42 @@ class fImage extends fFile
 	
 	
 	/**
+	 * Gets the image type from a file by looking at the file contents
+	 * 
+	 * @param  string $image  The image path to get the type for
+	 * @return string|NULL  The type of the image - `'jpg'`, `'gif'`, `'png'` or `'tif'` - NULL if not one of those  
+	 */
+	static private function getImageType($image)
+	{
+		$handle   = fopen($image, 'r');
+		$contents = fread($handle, 12);
+		fclose($handle);
+		
+		$_0_8 = substr($contents, 0, 8);
+		$_0_4 = substr($contents, 0, 4);
+		$_6_4 = substr($contents, 6, 4);
+		
+		if ($_0_4 == "MM\x00\x2A" || $_0_4 == "II\x2A\x00") {
+			return 'tif';	
+		}
+		
+		if ($_0_8 == "\x89PNG\x0D\x0A\x1A\x0A") {
+			return 'png';	
+		}
+		
+		if ($_0_4 == 'GIF8') {
+			return 'gif';	
+		}
+		
+		if ($_6_4 == 'JFIF' || $_6_4 == 'Exif') {
+			return 'jpg';	
+		}
+		
+		return NULL;	
+	}
+	
+	
+	/**
 	 * Checks to make sure the class can handle the image file specified
 	 * 
 	 * @internal
@@ -369,13 +406,9 @@ class fImage extends fFile
 			);
 		}
 		
-		try {
-			$info = self::getInfo($image);
-		
-			if ($info['type'] === NULL || ($info['type'] == 'tif' && self::$processor == 'gd')) {
-				return FALSE;
-			}
-		} catch (fValidationException $e) {
+		$type = self::getImageType($image);
+	
+		if ($type === NULL || ($type == 'tif' && self::$processor == 'gd')) {
 			return FALSE;
 		}
 		
@@ -492,14 +525,15 @@ class fImage extends fFile
 	 * 
 	 * @throws fValidationException  When no image was specified, when the image does not exist or when the path specified is not an image
 	 * 
-	 * @param  string $file_path  The path to the image
+	 * @param  string  $file_path    The path to the image
+	 * @param  boolean $skip_checks  If file checks should be skipped, which improves performance, but may cause undefined behavior - only skip these if they are duplicated elsewhere
 	 * @return fImage
 	 */
-	public function __construct($file_path)
+	public function __construct($file_path, $skip_checks=FALSE)
 	{
 		self::determineProcessor();
 		
-		parent::__construct($file_path);
+		parent::__construct($file_path, $skip_checks);
 		
 		if (!self::isImageCompatible($file_path)) {
 			$valid_image_types = array('GIF', 'JPG', 'PNG');
@@ -717,7 +751,7 @@ class fImage extends fFile
 	 */
 	public function getType()
 	{
-		return self::getInfo($this->file, 'type');
+		return self::getImageType($this->file);
 	}
 	
 	
@@ -739,8 +773,8 @@ class fImage extends fFile
 	 */
 	private function isAnimatedGif()
 	{
-		$info = self::getInfo($this->file);
-		if ($info['type'] == 'gif') {
+		$type = self::getImageType($this->file);
+		if ($type == 'gif') {
 			if (preg_match('#\x00\x21\xF9\x04.{4}\x00\x2C#s', file_get_contents($this->file))) {
 				return TRUE;
 			}
@@ -758,9 +792,9 @@ class fImage extends fFile
 	 */
 	private function processWithGD($output_file, $jpeg_quality)
 	{
-		$info = self::getInfo($this->file);
+		$type = self::getImageType($this->file);
 		
-		switch ($info['type']) {
+		switch ($type) {
 			case 'gif':
 				$gd_res = imagecreatefromgif($this->file);
 				break;
@@ -834,14 +868,14 @@ class fImage extends fFile
 		
 		// Save the file
 		$path_info = fFilesystem::getPathInfo($output_file);
-		$type = $path_info['extension'];
-		$type = ($type == 'jpeg') ? 'jpg' : $type;
+		$new_type = $path_info['extension'];
+		$new_type = ($type == 'jpeg') ? 'jpg' : $type;
 		
-		if (!in_array($type, array('gif', 'jpg', 'png'))) {
-			$type = $info['type'];	
+		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
+			$new_type = $type;	
 		}
 		
-		switch ($type) {
+		switch ($new_type) {
 			case 'gif':
 				imagegif($gd_res, $output_file);
 				break;
@@ -866,7 +900,7 @@ class fImage extends fFile
 	 */
 	private function processWithImageMagick($output_file, $jpeg_quality)
 	{
-		$info = self::getInfo($this->file);
+		$type = self::getImageType($this->file);
 		
 		$command_line  = escapeshellcmd(self::$imagemagick_dir . 'convert');
 		
@@ -882,7 +916,7 @@ class fImage extends fFile
 		}
 		
 		// TIFF files should be set to a depth of 8
-		if ($info['type'] == 'tif') {
+		if ($type == 'tif') {
 			$command_line .= ' -depth 8 ';
 		}
 		
@@ -911,18 +945,18 @@ class fImage extends fFile
 		
 		// Set up jpeg compression
 		$path_info = fFilesystem::getPathInfo($output_file);
-		$type = $path_info['extension'];
-		$type = ($type == 'jpeg') ? 'jpg' : $type;
+		$new_type = $path_info['extension'];
+		$new_type = ($new_type == 'jpeg') ? 'jpg' : $new_type;
 		
-		if (!in_array($type, array('gif', 'jpg', 'png'))) {
-			$type = $info['type'];	
+		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
+			$new_type = $type;	
 		}
 		
-		if ($type == 'jpg') {
+		if ($new_type == 'jpg') {
 			$command_line .= ' -compress JPEG -quality ' . $jpeg_quality . ' ';
 		}
 		
-		$command_line .= ' ' . escapeshellarg($type . ':' . $output_file);
+		$command_line .= ' ' . escapeshellarg($new_type . ':' . $output_file);
 		
 		exec($command_line);
 	}
@@ -1032,8 +1066,8 @@ class fImage extends fFile
 			);
 		}
 		
-		$info = self::getInfo($this->file);
-		if ($info['type'] == 'tif' && self::$processor == 'gd') {
+		$type = self::getImageType($this->file);
+		if ($type == 'tif' && self::$processor == 'gd') {
 			throw new fEnvironmentException(
 				'The image specified, %s, is a TIFF file and the GD extension can not handle TIFF files. Please install ImageMagick if you wish to manipulate TIFF files.',
 				$this->file

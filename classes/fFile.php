@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b22  Fixed ::__toString() to never throw an exception [wb, 2009-08-06]
  * @changes    1.0.0b21  Fixed a bug in ::determineMimeType() [wb, 2009-07-21]
  * @changes    1.0.0b20  Fixed the exception message thrown by ::output() when output buffering is turned on [wb, 2009-06-26]
@@ -494,34 +495,31 @@ class fFile implements Iterator
 	 * 
 	 * @throws fValidationException  When no file was specified, the file does not exist or the path specified is not a file
 	 * 
-	 * @param  string $file  The path to the file
+	 * @param  string  $file         The path to the file
+	 * @param  boolean $skip_checks  If file checks should be skipped, which improves performance, but may cause undefined behavior - only skip these if they are duplicated elsewhere
 	 * @return fFile
 	 */
-	public function __construct($file)
+	public function __construct($file, $skip_checks=FALSE)
 	{
-		if (empty($file)) {
-			throw new fValidationException(
-				'No filename was specified'
-			);
-		}
-		
-		if (!file_exists($file)) {
-			throw new fValidationException(
-				'The file specified, %s, does not exist',
-				$file
-			);
-		}
-		if (!is_readable($file)) {
-			throw new fEnvironmentException(
-				'The file specified, %s, is not readable',
-				$file
-			);
-		}
-		if (is_dir($file)) {
-			throw new fValidationException(
-				'The file specified, %s, is actually a directory',
-				$file
-			);
+		if (!$skip_checks) {
+			if (empty($file)) {
+				throw new fValidationException(
+					'No filename was specified'
+				);
+			}
+			
+			if (!is_readable($file)) {
+				throw new fEnvironmentException(
+					'The file specified, %s, does not exist or is not readable',
+					$file
+				);
+			}
+			if (is_dir($file)) {
+				throw new fValidationException(
+					'The file specified, %s, is actually a directory',
+					$file
+				);
+			}
 		}
 		
 		// Store the file as an absolute path

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added some performance tweaks to ::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b8  Changed ::formatFilesize() to not use decimal places for bytes, add a space before and drop the `B` in suffixes [wb, 2009-07-12]
  * @changes    1.0.0b7  Fixed ::formatFilesize() to work when `$bytes` equals zero [wb, 2009-07-08]
  * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -204,22 +205,22 @@ class fFilesystem
 			);
 		}
 		
-		if (!file_exists($path)) {
+		if (!is_readable($path)) {
 			throw new fValidationException(
-				'The path specified, %s, does not exist',
+				'The path specified, %s, does not exist or is not readable',
 				$path
 			);
 		}
 		
 		if (is_dir($path)) {
-			return new fDirectory($path);	
+			return new fDirectory($path, TRUE);
 		}
 		
 		if (fImage::isImageCompatible($path)) {
-			return new fImage($path);	
+			return new fImage($path, TRUE);
 		}
 		
-		return new fFile($path);
+		return new fFile($path, TRUE);
 	}
 	
 	
