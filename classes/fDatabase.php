@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Fixed PostgreSQL and Oracle from trying to get auto-incrementing values on inserts when explicit values were given [wb, 2009-08-06]
  * @changes    1.0.0b15  Fixed a bug where auto-incremented values would not be detected when table names were quoted [wb, 2009-07-15]
  * @changes    1.0.0b14  Changed ::determineExtension() and ::determineCharacterSet() to be protected instead of private [wb, 2009-07-08]
  * @changes    1.0.0b13  Updated ::escape() to accept arrays of values for insertion into full SQL strings [wb, 2009-07-06]
@@ -1607,7 +1608,7 @@ class fDatabase
 				}
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+VALUES\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '\b#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '\b#i', $result->getSQL())) {
 				return;	
 			}
 			
@@ -1638,7 +1639,7 @@ class fDatabase
 				}	
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+VALUES\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table], '#') . '\b#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table], '#') . '\b#i', $result->getSQL())) {
 				return;
 			} 		
 		}
