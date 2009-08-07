@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Added the ability to compare fActiveRecord objects in ::checkConditions() [wb, 2009-08-07]
  * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07] 
  * @changes    1.0.0b32  Changed ::delete() to remove auto-incrementing primary keys after the post::delete() hook [wb, 2009-07-29]
  * @changes    1.0.0b31  Fixed a bug with loading a record by a multi-column primary key, fixed one-to-one relationship API [wb, 2009-07-21]
@@ -242,19 +243,29 @@ abstract class fActiveRecord
 					break;
 				
 				case '=':
-					if (is_array($value) && !in_array($result, $value)) {
-						return FALSE;	
-					}
-					if (!is_array($value) && $result != $value) {
+					if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
+						if (get_class($value) != get_class($result) || !$value->exists() || !$result->exists() || self::hash($value) != self::hash($result)) {
+							return FALSE;
+						}
+						
+					} elseif (is_array($value) && !in_array($result, $value)) {
+						return FALSE;
+							
+					} elseif (!is_array($value) && $result != $value) {
 						return FALSE;	
 					}
 					break;
 					
 				case '!':
-					if (is_array($value) && in_array($result, $value)) {
+					if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
+						if (get_class($value) == get_class($result) && $value->exists() && $result->exists() && self::hash($value) == self::hash($result)) {
+							return FALSE;
+						}
+						
+					} elseif (is_array($value) && in_array($result, $value)) {
 						return FALSE;	
-					}
-					if (!is_array($value) && $result == $value) {
+						
+					} elseif (!is_array($value) && $result == $value) {
 						return FALSE;	
 					}
 					break;
