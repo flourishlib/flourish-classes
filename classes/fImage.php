@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added ::getDimensions() [wb, 2009-08-07]
  * @changes    1.0.0b14  Performance updates for checking image type and compatiblity [wb, 2009-07-31]
  * @changes    1.0.0b13  Updated class to work even if the file extension is wrong or not present, ::saveChanges() detects files that aren't writable [wb, 2009-07-29]
  * @changes    1.0.0b12  Fixed a bug where calling ::saveChanges() after unserializing would throw an exception related to the image processor [wb, 2009-05-27]
@@ -730,6 +731,18 @@ class fImage extends fFile
 		}
 		
 		return $output;
+	}
+	
+	
+	/**
+	 * Returns the width and height of the image as a two element array
+	 * 
+	 * @return array  In the format `0 => (integer) {width}, 1 => (integer) {height}`
+	 */
+	public function getDimensions()
+	{
+		$info = self::getInfo($this->file);
+		return array($info['width'], $info['height']);
 	}
 	
 	
