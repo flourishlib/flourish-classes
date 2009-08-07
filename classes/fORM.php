@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Updated documentation for ::registerActiveRecordMethod() to include info about prefix method matches [wb, 2009-08-07]
  * @changes    1.0.0b13  Updated documentation for ::registerRecordSetMethod() [wb, 2009-07-14]
  * @changes    1.0.0b12  Updated ::callReflectCallbacks() to accept a class name instead of an object [wb, 2009-07-13]
  * @changes    1.0.0b11  Added ::registerInspectCallback() and ::callInspectCallbacks() [wb, 2009-07-13]
@@ -403,7 +404,7 @@ class fORM
 	 * The callback returned will be determined by the following logic:
 	 * 
 	 *  1. If an exact callback has been defined for the method, it will be returned
-	 *  2. If a callback in the form `{action}*` has been defined that matches the method, it will be returned
+	 *  2. If a callback in the form `{prefix}*` has been defined that matches the method, it will be returned
 	 *  3. `NULL` will be returned
 	 * 
 	 * @internal
@@ -667,7 +668,7 @@ class fORM
 	 *  - **`&$parameters`**:      The parameters passed to the method
 	 * 
 	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
-	 * @param  string   $method    The method to hook for
+	 * @param  string   $method    The method to hook for - this can be a complete method name or `{prefix}*` where `*` will match any column name
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
 	 * @return void
 	 */
