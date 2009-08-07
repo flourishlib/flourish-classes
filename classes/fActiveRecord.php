@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07] 
  * @changes    1.0.0b32  Changed ::delete() to remove auto-incrementing primary keys after the post::delete() hook [wb, 2009-07-29]
  * @changes    1.0.0b31  Fixed a bug with loading a record by a multi-column primary key, fixed one-to-one relationship API [wb, 2009-07-21]
  * @changes    1.0.0b30  Updated ::reflect() for new fORM::callReflectCallbacks() API [wb, 2009-07-13]
@@ -57,8 +58,16 @@ abstract class fActiveRecord
 	const checkConditions = 'fActiveRecord::checkConditions';
 	const forceConfigure  = 'fActiveRecord::forceConfigure';
 	const hasOld          = 'fActiveRecord::hasOld';
+	const reset           = 'fActiveRecord::reset';
 	const retrieveOld     = 'fActiveRecord::retrieveOld';
 	
+	
+	/**
+	 * Caches callbacks for methods
+	 * 
+	 * @var array
+	 */
+	static protected $callback_cache = array();
 	
 	/**
 	 * An array of flags indicating a class has been configured
@@ -77,6 +86,14 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Caches method name parsings
+	 * 
+	 * @var array
+	 */
+	static protected $method_name_cache = array();
+	
+	
+	/**
 	 * Keeps track of the recursive call level of replication so we can clear the map
 	 * 
 	 * @var integer
@@ -90,6 +107,13 @@ abstract class fActiveRecord
 	 * @var array
 	 */
 	static protected $replicate_map = array();
+	
+	/**
+	 * Contains a list of what columns in each class need to be unescaped and what data type they are
+	 * 
+	 * @var array
+	 */
+	static protected $unescape_map = array();
 	
 	
 	/**
@@ -375,6 +399,21 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$callback_cache    = array();
+		self::$method_name_cache = array();
+		self::$unescape_map      = array();
+	}
+	
+	
+	/**
 	 * Retrieves the oldest value for a column or all old values
 	 *
 	 * @internal
@@ -464,7 +503,15 @@ abstract class fActiveRecord
 	{
 		$class = get_class($this);
 		
-		if ($callback = fORM::getActiveRecordMethod($class, $method_name)) {
+		if (!isset(self::$callback_cache[$class][$method_name])) {
+			if (!isset(self::$callback_cache[$class])) {
+				self::$callback_cache[$class] = array();
+			}	
+			$callback = fORM::getActiveRecordMethod($class, $method_name);
+			self::$callback_cache[$class][$method_name] = $callback ? $callback : FALSE;
+		}
+		
+		if ($callback = self::$callback_cache[$class][$method_name]) {
 			return call_user_func_array(
 				$callback,
 				array(
@@ -479,36 +526,28 @@ abstract class fActiveRecord
 			);
 		}
 		
-		list ($action, $subject) = fORM::parseMethod($method_name);
-		
-		// This will prevent quiet failure
-		if (in_array($action, array('set', 'associate', 'inject', 'tally')) && sizeof($parameters) < 1) {
-			throw new fProgrammerException(
-				'The method, %s(), requires at least one parameter',
-				$method_name
-			);
+		if (!isset(self::$method_name_cache[$method_name])) {
+			list ($action, $subject) = fORM::parseMethod($method_name);
+			self::$method_name_cache[$method_name] = array(
+				'action'  => $action,
+				'subject' => $subject
+			);	
+		} else {
+			$action  = self::$method_name_cache[$method_name]['action'];
+			$subject = self::$method_name_cache[$method_name]['subject'];	
 		}
 		
 		switch ($action) {
 			
 			// Value methods
+			case 'get':
+				return $this->get($subject);
+				
 			case 'encode':
 				if (isset($parameters[0])) {
 					return $this->encode($subject, $parameters[0]);
 				}
 				return $this->encode($subject);
-			
-			case 'get':
-				if (isset($parameters[0])) {
-					return $this->get($subject, $parameters[0]);
-				}
-				return $this->get($subject);
-			
-			case 'inspect':
-				if (isset($parameters[0])) {
-					return $this->inspect($subject, $parameters[0]);
-				}
-				return $this->inspect($subject);
 			
 			case 'prepare':
 				if (isset($parameters[0])) {
@@ -516,11 +555,30 @@ abstract class fActiveRecord
 				}
 				return $this->prepare($subject);
 			
+			case 'inspect':
+				if (isset($parameters[0])) {
+					return $this->inspect($subject, $parameters[0]);
+				}
+				return $this->inspect($subject);
+			
 			case 'set':
+				if (!isset($parameters[0])) {
+					throw new fProgrammerException(
+						'The method, %s(), requires at least one parameter',
+						$method_name
+					);
+				}
 				return $this->set($subject, $parameters[0]);
 			
 			// Related data methods
 			case 'associate':
+				if (!isset($parameters[0])) {
+					throw new fProgrammerException(
+						'The method, %s(), requires at least one parameter',
+						$method_name
+					);
+				}
+				
 				$table   = fORM::tablize($class);
 				$records = $parameters[0];
 				$route   = isset($parameters[1]) ? $parameters[1] : NULL;
@@ -576,6 +634,13 @@ abstract class fActiveRecord
 				return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject);
 			 
 			case 'inject':
+				if (!isset($parameters[0])) {
+					throw new fProgrammerException(
+						'The method, %s(), requires at least one parameter',
+						$method_name
+					);
+				}
+				
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				 
@@ -624,6 +689,13 @@ abstract class fActiveRecord
 				return fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
 			
 			case 'tally':
+				if (!isset($parameters[0])) {
+					throw new fProgrammerException(
+						'The method, %s(), requires at least one parameter',
+						$method_name
+					);
+				}
+				
 				$subject = fGrammar::singularize($subject);
 				$subject = fGrammar::camelize($subject, TRUE);
 				
@@ -733,18 +805,23 @@ abstract class fActiveRecord
 			}
 		}
 		
-		if (fORM::getActiveRecordMethod($class, '__construct')) {
-			return $this->__call('__construct', array($key));
+		if (!isset(self::$callback_cache[$class]['__construct'])) {
+			if (!isset(self::$callback_cache[$class])) {
+				self::$callback_cache[$class] = array();
+			}
+			$callback = fORM::getActiveRecordMethod($class, '__construct');
+			self::$callback_cache[$class]['__construct'] = $callback ? $callback : FALSE;	
+		}
+		if ($callback = self::$callback_cache[$class]['__construct']) {
+			return $this->__call($callback);
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
-		if (is_object($key) && $key instanceof fResult) {
+		if ($key instanceof fResult) {
 			
-			if ($this->loadFromIdentityMap($key)) {
+			if ($this->loadFromResult($key)) {
 				return;
 			}
-			
-			$this->loadFromResult($key);
 		
 		// Handle loading an object from the database
 		} elseif ($key !== NULL) {
@@ -778,14 +855,14 @@ abstract class fActiveRecord
 			if ($is_unique_key) {
 				
 				$result = $this->fetchResultFromUniqueKey($key);
-				if ($this->loadFromIdentityMap($result)) {
-					return;
+				if ($this->loadFromResult($result)) {
+					return;	
 				}
-				$this->loadFromResult($result);
 				
 			} else {
 				
-				if ($this->loadFromIdentityMap($key)) {
+				$hash = self::hash($key, $class);
+				if ($this->loadFromIdentityMap($key, $hash)) {
 					return;
 				}
 				
@@ -818,7 +895,7 @@ abstract class fActiveRecord
 		}
 		
 		fORM::callHookCallbacks(
-			$class,
+			$this,
 			'post::__construct()',
 			$this->values,
 			$this->old_values,
@@ -944,7 +1021,8 @@ abstract class fActiveRecord
 		}
 		
 		fORM::callHookCallbacks(
-			$this, 'pre::delete()',
+			$this,
+			'pre::delete()',
 			$this->values,
 			$this->old_values,
 			$this->related_records,
@@ -1389,27 +1467,52 @@ abstract class fActiveRecord
 	 * Loads a record from the database directly from a result object
 	 * 
 	 * @param  fResult $result  The result object to use for loading the current object
-	 * @return void
+	 * @return boolean  If the record was loaded from the identity map
 	 */
 	protected function loadFromResult($result)
 	{
-		$class       = get_class($this);
-		$row         = $result->current();
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class));
+		$class = get_class($this);
+		$table = fORM::tablize($class);
+		$row   = $result->current();
 		
 		$db = fORMDatabase::retrieve();
 		
+		if (!isset(self::$unescape_map[$class])) {
+			self::$unescape_map[$class] = array();
+			$column_info                = fORMSchema::retrieve()->getColumnInfo($table);
+			
+			foreach ($column_info as $column => $info) {
+				if (in_array($info['type'], array('blob', 'boolean', 'date', 'time', 'timestamp'))) {
+					self::$unescape_map[$class][$column] = $info['type'];
+				}
+			}	
+		}
+		
+		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
+		foreach ($pk_columns as $column) {
+			$value = $row[$column];
+			if ($value !== NULL && isset($unescape_map[$class][$column])) {
+				$value = $db->unescape($unescape_map[$class][$column], $value);
+			}	
+			
+			$this->values[$column] = fORM::objectify($class, $column, $value);
+			unset($row[$column]);
+		}
+		
+		$hash = self::hash($this->values, $class);
+		if ($this->loadFromIdentityMap($this->values, $hash)) {
+			return TRUE;
+		}
+		
 		foreach ($row as $column => $value) {
-			if ($value !== NULL) {
-				$value = $db->unescape($column_info[$column]['type'], $value);
+			if ($value !== NULL && isset($unescape_map[$class][$column])) {
+				$value = $db->unescape($unescape_map[$class][$column], $value);
 			}
 			
 			$this->values[$column] = fORM::objectify($class, $column, $value);
 		}
 		
 		// Save this object to the identity map
-		$hash = self::hash($row, $class);
-		
 		if (!isset(self::$identity_map[$class])) {
 			self::$identity_map[$class] = array(); 		
 		}
@@ -1423,30 +1526,25 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
+		
+		return FALSE;
 	}
 	
 	
 	/**
 	 * Tries to load the object (via references to class vars) from the fORM identity map
 	 * 
-	 * @param  fResult|array $source  The data source for the primary key values
+	 * @param  array  $row   The data source for the primary key values
+	 * @param  string $hash  The unique hash for this record
 	 * @return boolean  If the load was successful
 	 */
-	protected function loadFromIdentityMap($source)
+	protected function loadFromIdentityMap($row, $hash)
 	{
-		if ($source instanceof fResult) {
-			$row = $source->current();
-		} else {
-			$row = $source;
-		}
-		
 		$class = get_class($this);
 		
 		if (!isset(self::$identity_map[$class])) {
 			return FALSE;
 		}
-		
-		$hash = self::hash($row, $class);
 		
 		if (!isset(self::$identity_map[$class][$hash])) {
 			return FALSE;
