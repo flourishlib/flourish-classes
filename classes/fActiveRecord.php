@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Fixed a bug with setting NULL values from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b35  Fixed a bug with unescaping data in ::loadFromResult() from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b34  Added the ability to compare fActiveRecord objects in ::checkConditions() [wb, 2009-08-07]
  * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07] 
@@ -574,7 +575,7 @@ abstract class fActiveRecord
 				return $this->inspect($subject);
 			
 			case 'set':
-				if (!isset($parameters[0])) {
+				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
 						'The method, %s(), requires at least one parameter',
 						$method_name
@@ -584,7 +585,7 @@ abstract class fActiveRecord
 			
 			// Related data methods
 			case 'associate':
-				if (!isset($parameters[0])) {
+				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
 						'The method, %s(), requires at least one parameter',
 						$method_name
@@ -646,7 +647,7 @@ abstract class fActiveRecord
 				return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject);
 			 
 			case 'inject':
-				if (!isset($parameters[0])) {
+				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
 						'The method, %s(), requires at least one parameter',
 						$method_name
@@ -701,7 +702,7 @@ abstract class fActiveRecord
 				return fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
 			
 			case 'tally':
-				if (!isset($parameters[0])) {
+				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
 						'The method, %s(), requires at least one parameter',
 						$method_name
