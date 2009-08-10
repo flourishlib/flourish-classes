@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Fixed a bug with ::createRecord() when a foreign key constraint is on a column other than the primary key [wb, 2009-08-10]
  * @changes    1.0.0b13  ::setOrderBys() now (properly) only recognizes *-to-many relationships [wb, 2009-07-31] 
  * @changes    1.0.0b12  Changed how related record values are set and how related validation messages are ignored because of recursive relationships [wb, 2009-07-29]
  * @changes    1.0.0b11  Fixed some bugs with one-to-one relationships [wb, 2009-07-21]
@@ -340,7 +341,7 @@ class fORMRelated
 			return new $related_class();	
 		}
 		
-		return new $related_class($values[$relationship['column']]);
+		return new $related_class(array($route => $values[$route]));
 	}
 	
 	
