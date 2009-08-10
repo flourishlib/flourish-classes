@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Fixed a bug with unescaping data in ::loadFromResult() from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b34  Added the ability to compare fActiveRecord objects in ::checkConditions() [wb, 2009-08-07]
  * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07] 
  * @changes    1.0.0b32  Changed ::delete() to remove auto-incrementing primary keys after the post::delete() hook [wb, 2009-07-29]
@@ -686,9 +687,9 @@ abstract class fActiveRecord
 				if (in_array($subject, fORMSchema::retrieve()->getTables())) {
 					if (fORMSchema::isOneToOne($table, $subject, $route)) {
 						throw new fProgrammerException(
-							'The table %1$s is not in a %2$srelationship with the table %3$s',
+							'The table %1$s is not in a%2$srelationship with the table %3$s',
 							$table,
-							'one-to-many ',
+							' one-to-many ',
 							$subject
 						); 		
 					}
@@ -1502,8 +1503,8 @@ abstract class fActiveRecord
 		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
 		foreach ($pk_columns as $column) {
 			$value = $row[$column];
-			if ($value !== NULL && isset($unescape_map[$class][$column])) {
-				$value = $db->unescape($unescape_map[$class][$column], $value);
+			if ($value !== NULL && isset(self::$unescape_map[$class][$column])) {
+				$value = $db->unescape(self::$unescape_map[$class][$column], $value);
 			}	
 			
 			$this->values[$column] = fORM::objectify($class, $column, $value);
@@ -1516,8 +1517,8 @@ abstract class fActiveRecord
 		}
 		
 		foreach ($row as $column => $value) {
-			if ($value !== NULL && isset($unescape_map[$class][$column])) {
-				$value = $db->unescape($unescape_map[$class][$column], $value);
+			if ($value !== NULL && isset(self::$unescape_map[$class][$column])) {
+				$value = $db->unescape(self::$unescape_map[$class][$column], $value);
 			}
 			
 			$this->values[$column] = fORM::objectify($class, $column, $value);
