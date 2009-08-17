@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
  * @changes    1.0.0b6  Fixed a bug where ::fetchAllRows() would throw a fNoRowsException [wb, 2009-06-30]
  * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
  * @changes    1.0.0b4  Fixed a bug with not properly converting SQL Server text to UTF-8 [wb, 2009-06-18]
@@ -71,11 +72,11 @@ class fResult implements Iterator
 	private $current_row = NULL;
 	
 	/**
-	 * The php extension used for database interaction
+	 * The database object this result was created from
 	 * 
-	 * @var string
+	 * @var fDatabase
 	 */
-	private $extension = NULL;
+	private $database = NULL;
 	
 	/**
 	 * If rows should be converted to objects
@@ -113,11 +114,11 @@ class fResult implements Iterator
 	private $sql = '';
 	
 	/**
-	 * The type of the database
+	 * Holds the data types for each column to allow for on-the-fly unescaping
 	 * 
-	 * @var string
+	 * @var array
 	 */
-	private $type = NULL;
+	private $unescape_map = array();
 	
 	/**
 	 * The SQL from before translation - only applicable to translated queries
@@ -128,42 +129,23 @@ class fResult implements Iterator
 	
 	
 	/**
-	 * Sets the PHP extension the query occured through
+	 * Configures the result set
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type           The type of database: `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, `'sqlite'`
-	 * @param  string $extension      The database extension used: `'array'`, `'mssql'`, `'mysql'`, `'mysqli'`, `'pgsql'`, `'sqlite'`
-	 * @param  string $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
+	 * @param  fDatabase $database       The database object this result set was created from
+	 * @param  string    $character_set  MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
 	 * @return fResult
 	 */
-	public function __construct($type, $extension, $character_set=NULL)
+	public function __construct($database, $character_set=NULL)
 	{
-		$valid_types = array('mssql', 'mysql', 'oracle', 'postgresql', 'sqlite');
-		if (!in_array($type, $valid_types)) {
+		if (!$database instanceof fDatabase) {
 			throw new fProgrammerException(
-				'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
-				$type,
-				join(', ', $valid_types)
+				'The database object provided does not appear to be a descendant of fDatabase'
 			);
 		}
 		
-		// Certain extensions don't offer a buffered query, so it is emulated using an array
-		if (in_array($extension, array('oci8', 'odbc', 'pdo', 'sqlsrv'))) {
-			$extension = 'array';
-		}
-		
-		$valid_extensions = array('array', 'mssql', 'mysql', 'mysqli', 'pgsql', 'sqlite');
-		if (!in_array($extension, $valid_extensions)) {
-			throw new fProgrammerException(
-				'The database extension specified, %1$s, is invalid. Must be one of: %2$s.',
-				$extension,
-				join(', ', $valid_extensions)
-			);
-		}
-		
-		$this->type          = $type;
-		$this->extension     = $extension;
+		$this->database      = $database;
 		$this->character_set = $character_set;
 	}
 	
@@ -181,16 +163,22 @@ class fResult implements Iterator
 			return;
 		}
 		
-		if ($this->extension == 'mssql') {
-			mssql_free_result($this->result);
-		} elseif ($this->extension == 'mysql') {
-			mysql_free_result($this->result);
-		} elseif ($this->extension == 'mysqli') {
-			mysqli_free_result($this->result);
-		} elseif ($this->extension == 'pgsql') {
-			pg_free_result($this->result);
-		} elseif ($this->extension == 'sqlite') {
-			// SQLite doesn't have a way to free a result
+		switch ($this->database->getExtension()) {
+			case 'mssql':
+				mssql_free_result($this->result);
+				break;
+				
+			case 'mysql':
+				mysql_free_result($this->result);
+				break;
+				
+			case 'mysqli':
+				mysqli_free_result($this->result);
+				break;
+				
+			case 'pgsql':
+				pg_free_result($this->result);
+				break;
 		}
 		
 		$this->result = NULL;
@@ -218,26 +206,40 @@ class fResult implements Iterator
 	 */
 	private function advanceCurrentRow()
 	{
-		if ($this->extension == 'mssql') {
-			$row = mssql_fetch_assoc($this->result);
-			if (!empty($row)) {
-				$row = $this->fixDblibMSSQLDriver($row);
-			}
+		switch ($this->database->getExtension()) {
+			case 'mssql':
+				$row = mssql_fetch_assoc($this->result);
+				if (!empty($row)) {
+					$row = $this->fixDblibMSSQLDriver($row);
+				}
+				break;
 				
-		} elseif ($this->extension == 'mysql') {
-			$row = mysql_fetch_assoc($this->result);
-		} elseif ($this->extension == 'mysqli') {
-			$row = mysqli_fetch_assoc($this->result);
-		} elseif ($this->extension == 'pgsql') {
-			$row = pg_fetch_assoc($this->result);
-		} elseif ($this->extension == 'sqlite') {
-			$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
-		} elseif ($this->extension == 'array') {
-			$row = $this->result[$this->pointer];
+			case 'mysql':
+				$row = mysql_fetch_assoc($this->result);
+				break;
+				
+			case 'mysqli':
+				$row = mysqli_fetch_assoc($this->result);
+				break;
+				
+			case 'pgsql':
+				$row = pg_fetch_assoc($this->result);
+				break;
+				
+			case 'sqlite':
+				$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
+				break;
+				
+			case 'oci8':
+			case 'odbc':
+			case 'pdo':
+			case 'sqlsrv':
+				$row = $this->result[$this->pointer];
+				break;
 		}
 		
 		// Fix uppercase column names to lowercase
-		if ($row && $this->type == 'oracle') {
+		if ($row && $this->database->getType() == 'oracle') {
 			$new_row = array();
 			foreach ($row as $column => $value) {
 				$new_row[strtolower($column)] = $value;
@@ -247,14 +249,14 @@ class fResult implements Iterator
 		
 		// This is an unfortunate fix that required for databases that don't support limit
 		// clauses with an offset. It prevents unrequested columns from being returned.
-		if ($row && ($this->type == 'mssql' || $this->type == 'oracle')) {
+		if ($row && in_array($this->database->getType(), array('mssql', 'oracle'))) {
 			if ($this->untranslated_sql !== NULL && isset($row['flourish__row__num'])) {
 				unset($row['flourish__row__num']);
 			}	
 		}
 		
 		// This decodes the data coming out of MSSQL into UTF-8
-		if ($row && $this->type == 'mssql') {
+		if ($row && $this->database->getType() == 'mssql') {
 			if ($this->character_set) {
 				foreach ($row as $key => $value) {
 					if (!is_string($value) || strpos($key, 'fmssqln__') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xE-\x1F]#', $value)) {
@@ -264,6 +266,13 @@ class fResult implements Iterator
 				}
 			}
 			$row = $this->decodeMSSQLNationalColumns($row);
+		}
+		
+		if ($this->unescape_map) {
+			foreach ($this->unescape_map as $column => $type) {
+				if (!isset($row[$column])) { continue; }
+				$row[$column] = $this->database->unescape($type, $row[$column]);
+			}	
 		} 
 		
 		$this->current_row = $row;
@@ -311,7 +320,7 @@ class fResult implements Iterator
 	 * @throws fNoRemainingException  When there are no remaining rows in the result
 	 * @internal
 	 * 
-	 * @return array  The current row
+	 * @return array|stdClass  The current row
 	 */
 	public function current()
 	{
@@ -386,7 +395,7 @@ class fResult implements Iterator
 	 * @throws fNoRowsException       When the query did not return any rows
 	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * 
-	 * @return array  The associative array of the row
+	 * @return array|stdClass  The next row in the result
 	 */
 	public function fetchRow()
 	{
@@ -402,7 +411,7 @@ class fResult implements Iterator
 	 * @throws fNoRowsException       When the query did not return any rows
 	 * @throws fNoRemainingException  When there are no rows left in the result
 	 * 
-	 * @return string|number  The first scalar value from ::fetchRow()
+	 * @return string|number|boolean  The first scalar value from ::fetchRow()
 	 */
 	public function fetchScalar()
 	{
@@ -602,19 +611,34 @@ class fResult implements Iterator
 		
 		$this->pointer = $row;
 					
-		if ($this->extension == 'mssql') {
-			$success = mssql_data_seek($this->result, $row);
-		} elseif ($this->extension == 'mysql') {
-			$success = mysql_data_seek($this->result, $row);
-		} elseif ($this->extension == 'mysqli') {
-			$success = mysqli_data_seek($this->result, $row);
-		} elseif ($this->extension == 'pgsql') {
-			$success = pg_result_seek($this->result, $row);
-		} elseif ($this->extension == 'sqlite') {
-			$success = sqlite_seek($this->result, $row);
-		} elseif ($this->extension == 'array') {
-			// Do nothing since we already changed the pointer
-			$success = TRUE;
+		switch ($this->database->getExtension()) {
+			case 'mssql':
+				$success = mssql_data_seek($this->result, $row);
+				break;
+				
+			case 'mysql':
+				$success = mysql_data_seek($this->result, $row);
+				break;
+				
+			case 'mysqli':
+				$success = mysqli_data_seek($this->result, $row);
+				break;
+				
+			case 'pgsql':
+				$success = pg_result_seek($this->result, $row);
+				break;
+				
+			case 'sqlite':
+				$success = sqlite_seek($this->result, $row);
+				break;
+				
+			case 'oci8':
+			case 'odbc':
+			case 'pdo':
+			case 'sqlsrv':
+				// Do nothing since we already changed the pointer
+				$success = TRUE;
+				break;
 		}
 		
 		if (!$success) {
@@ -722,7 +746,7 @@ class fResult implements Iterator
 	 * @throws fNoRowsException  When the query did not return any rows
 	 * 
 	 * @param  string $message  The message to use for the exception if there are no rows in this result set
-	 * @return void
+	 * @return fResult  The result object, to allow for method chaining
 	 */
 	public function tossIfNoRows($message=NULL)
 	{
@@ -732,6 +756,32 @@ class fResult implements Iterator
 			}
 			throw new fNoRowsException($message);
 		}
+		
+		return $this;
+	}
+	
+	
+	/**
+	 * Sets the result object to unescape all values as they are retrieved from the object
+	 * 
+	 * The data types should be from the list of types supported by
+	 * fDatabase::unescape().
+	 * 
+	 * @param  array $column_data_type_map  An associative array with column names as the keys and the data types as the values
+	 * @return fResult  The result object, to allow for method chaining
+	 */
+	public function unescape($column_data_type_map)
+	{
+		 if (!is_array($column_data_type_map)) {
+			throw new fProgrammerException(
+				'The column to data type map specified, %s, does not appear to be an array',
+				$column_data_type_map
+			);
+		 }
+		 
+		 $this->unescape_map = $column_data_type_map;
+		 
+		 return $this;
 	}
 	
 	

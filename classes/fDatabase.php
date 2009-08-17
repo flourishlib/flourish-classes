@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Updated the class for the new fResult and fUnbufferedResult APIs, fixed ::unescape() to not touch NULLs [wb, 2009-08-12]
  * @changes    1.0.0b17  Added the ability to pass an array of all values as a single parameter to ::escape() instead of one value per parameter [wb, 2009-08-11]
  * @changes    1.0.0b16  Fixed PostgreSQL and Oracle from trying to get auto-incrementing values on inserts when explicit values were given [wb, 2009-08-06]
  * @changes    1.0.0b15  Fixed a bug where auto-incremented values would not be detected when table names were quoted [wb, 2009-07-15]
@@ -1906,7 +1907,7 @@ class fDatabase
 			}	
 		}
 		
-		$result = new $result_class($this->type, $this->extension);
+		$result = new $result_class($this);
 		$result->setSQL($sql);
 		$result->setResult(TRUE);
 		return $result;
@@ -2086,7 +2087,7 @@ class fDatabase
 		$start_time = microtime(TRUE);	
 			
 		if (!$result = $this->handleTransactionQueries($sql, $result_type)) {
-			$result = new $result_type($this->type, $this->extension, $this->type == 'mssql' ? $this->schema_info['character_set'] : NULL);
+			$result = new $result_type($this, $this->type == 'mssql' ? $this->schema_info['character_set'] : NULL);
 			$result->setSQL($sql);
 			
 			if ($result_type == 'fResult') {
@@ -2346,6 +2347,10 @@ class fDatabase
 	 */
 	public function unescape($data_type, $value)
 	{
+		if ($value === NULL) {
+			return $value;	
+		}
+		
 		$callback = NULL;
 		
 		switch ($data_type) {

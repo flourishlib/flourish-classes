@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Changed ::__construct() to allow any Iterator object instead of just fResult [wb, 2009-08-12]
  * @changes    1.0.0b36  Fixed a bug with setting NULL values from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b35  Fixed a bug with unescaping data in ::loadFromResult() from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b34  Added the ability to compare fActiveRecord objects in ::checkConditions() [wb, 2009-08-07]
@@ -421,6 +422,8 @@ abstract class fActiveRecord
 	static public function reset()
 	{
 		self::$callback_cache    = array();
+		self::$configured        = array();
+		self::$identity_map      = array();
 		self::$method_name_cache = array();
 		self::$unescape_map      = array();
 	}
@@ -830,7 +833,7 @@ abstract class fActiveRecord
 		}
 		
 		// Handle loading by a result object passed via the fRecordSet class
-		if ($key instanceof fResult) {
+		if ($key instanceof Iterator) {
 			
 			if ($this->loadFromResult($key)) {
 				return;
@@ -1479,7 +1482,7 @@ abstract class fActiveRecord
 	/**
 	 * Loads a record from the database directly from a result object
 	 * 
-	 * @param  fResult $result  The result object to use for loading the current object
+	 * @param  Iterator $result  The result object to use for loading the current object
 	 * @return boolean  If the record was loaded from the identity map
 	 */
 	protected function loadFromResult($result)
