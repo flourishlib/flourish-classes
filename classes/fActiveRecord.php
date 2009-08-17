@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Updated ::changed() to do a strict comparison when at least one value is NULL [wb, 2009-08-17]
  * @changes    1.0.0b37  Changed ::__construct() to allow any Iterator object instead of just fResult [wb, 2009-08-12]
  * @changes    1.0.0b36  Fixed a bug with setting NULL values from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b35  Fixed a bug with unescaping data in ::loadFromResult() from v1.0.0b33 [wb, 2009-08-10]
@@ -156,6 +157,12 @@ abstract class fActiveRecord
 	{
 		if (!isset($old_values[$column])) {
 			return FALSE;
+		}
+		
+		// We do a strict comparison when one of the values is NULL since
+		// NULL is almost always meant to be distinct from 0, FALSE, etc
+		if ($old_values[$column][0] === NULL || $values[$column] === NULL) {
+			return $old_values[$column][0] !== $values[$column];	
 		}
 		
 		return $old_values[$column][0] != $values[$column];	
