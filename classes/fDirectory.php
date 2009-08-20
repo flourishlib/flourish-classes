@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug where deleting a directory would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b5  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b4  Refactored ::scan() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b3  Added the $regex_filter parameter to ::scan() and ::scanRecursive(), fixed bug in ::scanRecursive() [wb, 2009-01-05]
@@ -140,6 +141,12 @@ class fDirectory
 		
 		$this->directory =& fFilesystem::hookFilenameMap($directory);
 		$this->exception =& fFilesystem::hookExceptionMap($directory);
+		
+		// If there is an exception and were not inside a transaction, but we've
+		// gotten to here, then the directory exists, so the exception must be outdated
+		if ($this->exception !== NULL && !fFilesystem::isInsideTransaction()) {
+			fFilesystem::updateExceptionMap($directory, NULL);
+		}
 	}
 	
 	

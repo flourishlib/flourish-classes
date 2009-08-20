@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Fixed a bug where deleting a file would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b23  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b22  Fixed ::__toString() to never throw an exception [wb, 2009-08-06]
  * @changes    1.0.0b21  Fixed a bug in ::determineMimeType() [wb, 2009-07-21]
@@ -528,6 +529,12 @@ class fFile implements Iterator
 		// Hook into the global file and exception maps
 		$this->file      =& fFilesystem::hookFilenameMap($file);
 		$this->exception =& fFilesystem::hookExceptionMap($file);
+		
+		// If there is an exception and were not inside a transaction, but we've
+		// gotten to here, then the file exists, so the exception must be outdated
+		if ($this->exception !== NULL && !fFilesystem::isInsideTransaction()) {
+			fFilesystem::updateExceptionMap($file, NULL);
+		}
 	}
 	
 	
