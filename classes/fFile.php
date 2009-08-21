@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed ::__construct() to throw an fValidationException when the file does not exist [wb, 2009-08-21]
  * @changes    1.0.0b24  Fixed a bug where deleting a file would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b23  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b22  Fixed ::__toString() to never throw an exception [wb, 2009-08-06]
@@ -510,7 +511,7 @@ class fFile implements Iterator
 			}
 			
 			if (!is_readable($file)) {
-				throw new fEnvironmentException(
+				throw new fValidationException(
 					'The file specified, %s, does not exist or is not readable',
 					$file
 				);

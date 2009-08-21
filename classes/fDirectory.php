@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed ::__construct() to throw an fValidationException when the directory does not exist [wb, 2009-08-21]
  * @changes    1.0.0b6  Fixed a bug where deleting a directory would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b5  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b4  Refactored ::scan() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
@@ -124,7 +125,7 @@ class fDirectory
 			}
 			
 			if (!is_readable($directory)) {
-				throw new fEnvironmentException(
+				throw new fValidationException(
 					'The directory specified, %s, does not exist or is not readable',
 					$directory
 				);
