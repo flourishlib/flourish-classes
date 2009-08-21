@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed ::checkOnlyOneRule() and ::checkOneOrMoreRule() to consider blank strings as NULL [wb, 2009-08-21]
  * @changes    1.0.0b17  Added @internal methods ::removeStringReplacement() and ::removeRegexReplacement() [wb, 2009-07-29]
  * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addConditionalValidationRule() to ::addConditionalRule(), ::addManyToManyValidationRule() to ::addManyToManyRule(), ::addOneOrMoreValidationRule() to ::addOneOrMoreRule(), ::addOneToManyValidationRule() to ::addOneToManyRule(), ::addOnlyOneValidationRule() to ::addOnlyOneRule(), ::addValidValuesValidationRule() to ::addValidValuesRule() [wb, 2009-07-13]
  * @changes    1.0.0b15  Added ::addValidValuesValidationRule() [wb/jt, 2009-07-13]
@@ -575,7 +576,7 @@ class fORMValidation
 		
 		$found_value = FALSE;
 		foreach ($columns as $column) {
-			if ($values[$column] !== NULL) {
+			if ($values[$column] !== NULL && $values[$column] !== '') {
 				$found_value = TRUE;
 			}
 		}
@@ -612,7 +613,7 @@ class fORMValidation
 		
 		$found_value = FALSE;
 		foreach ($columns as $column) {
-			if ($values[$column] !== NULL) {
+			if ($values[$column] !== NULL && $values[$column] !== '') {
 				if ($found_value) {
 					return self::compose(
 						'%sPlease enter a value for only one',
