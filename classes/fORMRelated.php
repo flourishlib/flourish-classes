@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Fixed a bug with ::createRecord() not creating non-existent record when the related value is NULL [wb, 2009-08-25]
  * @changes    1.0.0b15  Fixed a bug with ::createRecord() where foreign keys with a different column and related column name would not load properly [wb, 2009-08-17]
  * @changes    1.0.0b14  Fixed a bug with ::createRecord() when a foreign key constraint is on a column other than the primary key [wb, 2009-08-10]
  * @changes    1.0.0b13  ::setOrderBys() now (properly) only recognizes *-to-many relationships [wb, 2009-07-31] 
@@ -340,6 +341,11 @@ class fORMRelated
 				return $record_set->current();		
 			}
 			return new $related_class();	
+		}
+		
+		// This allows records without a related record to return a non-existent one
+		if ($values[$relationship['column']] === NULL) {
+			return new $related_class();
 		}
 		
 		return new $related_class(array($relationship['related_column'] => $values[$relationship['column']]));
