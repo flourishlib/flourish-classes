@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Casting to an integer or string in ::get() now properly casts when the `$key` isn't present in the request, added support for date, time, timestamp and `?` casts [wb, 2009-08-25] 
  * @changes    1.0.0b7  Fixed a bug with ::filter() not properly creating new `$_FILES` entries [wb, 2009-07-02]
  * @changes    1.0.0b6  ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
  * @changes    1.0.0b5  Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
@@ -205,13 +206,28 @@ class fRequest
 	 * 
 	 * A value that exactly equals `''` and is not cast to a specific type will
 	 * become `NULL`.
+	 * 
+	 * Valid `$cast_to` types include:
+	 *  - `'string'`,
+	 *  - `'int'`
+	 *  - `'integer'`
+	 *  - `'bool'`
+	 *  - `'boolean'`
+	 *  - `'array'`
+	 *  - `'date'`
+	 *  - `'time'`
+	 *  - `'timestamp'`
+	 * 
+	 * It is also possible to append a `?` to a data type to return `NULL`
+	 * whenever the `$key` was not specified in the request, or if the value
+	 * was a blank string.
 	 *  
 	 * All text values are interpreted as UTF-8 string and appropriately
 	 * cleaned.
 	 * 
 	 * @param  string $key            The key to get the value of
-	 * @param  string $cast_to        Cast the value to this data type
-	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead
+	 * @param  string $cast_to        Cast the value to this data type - see method description for details
+	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead. This value will get cast if a `$cast_to` is specified.
 	 * @return mixed  The value
 	 */
 	static public function get($key, $cast_to=NULL, $default_value=NULL)
@@ -227,6 +243,14 @@ class fRequest
 			$value = $_GET[$key];
 		}
 		
+		// This allows for data_type? casts to allow NULL through
+		if ($cast_to !== NULL && substr($cast_to, -1) == '?') {
+			if ($value === NULL || $value === '') {
+				return $value;
+			}	
+			$cast_to = substr($cast_to, 0, -1);
+		}
+		
 		if (get_magic_quotes_gpc() && (self::isPost() || self::isGet())) {
 			if (is_array($value)) {
 				$value = array_map('stripslashes', $value);
@@ -235,23 +259,45 @@ class fRequest
 			}
 		}
 		
-		if ($cast_to == 'array' && is_string($value) && strpos($value, ',') !== FALSE) {
+		// This normalizes an empty element to NULL
+		if ($cast_to === NULL && $value === '') {
+			$value = NULL;
+			
+		} elseif ($cast_to == 'date') {
+			try {
+				$value = new fDate($value);
+			} catch (fValidationException $e) {
+				$value = new fDate();	
+			}
+			
+		} elseif ($cast_to == 'time') {
+			try {
+				$value = new fTime($value);
+			} catch (fValidationException $e) {
+				$value = new fTime();	
+			}
+			
+		} elseif ($cast_to == 'timestamp') {
+			try {
+				$value = new fTimestamp($value);
+			} catch (fValidationException $e) {
+				$value = new fTimestamp();	
+			}
+			
+		} elseif ($cast_to == 'array' && is_string($value) && strpos($value, ',') !== FALSE) {
 			$value = explode(',', $value);
-		}
 		
-		if ($cast_to == 'bool' || $cast_to == 'boolean') {
+		} elseif ($cast_to == 'array' && ($value === NULL || $value === '')) {
+			$value = array();
+				
+		} elseif ($cast_to == 'bool' || $cast_to == 'boolean') {
 			if (strtolower($value) == 'f' || strtolower($value) == 'false' || strtolower($value) == 'no' || !$value) {
 				$value = FALSE;
 			} else {
 				$value = TRUE;
 			}
-		}
-		
-		if ($cast_to == 'array' && ($value === NULL || $value === '')) {
-			$value = array();
-		} elseif ($cast_to === NULL && $value === '') {
-			$value = NULL;
-		} elseif ($cast_to && $value !== NULL) {
+			
+		} elseif ($cast_to) {
 			settype($value, $cast_to);
 		}
 		
