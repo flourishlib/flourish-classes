@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Added a check to the configuration part of ::__construct() to ensure modelled tables have primary keys [wb, 2009-08-26]
  * @changes    1.0.0b39  Changed `set{ColumnName}()` methods to return the record for method chaining, fixed a bug with loading by multi-column unique constraints, fixed a bug with ::load() [wb, 2009-08-26]
  * @changes    1.0.0b38  Updated ::changed() to do a strict comparison when at least one value is NULL [wb, 2009-08-17]
  * @changes    1.0.0b37  Changed ::__construct() to allow any Iterator object instead of just fResult [wb, 2009-08-12]
@@ -811,6 +812,17 @@ abstract class fActiveRecord
 		
 		// If the features of this class haven't been set yet, do it
 		if (!isset(self::$configured[$class])) {
+			$table = fORM::tablize($class);
+			if (!fORMSchema::retrieve()->getKeys($table, 'primary')) {
+				throw new fProgrammerException(
+					'The database table %1$s (being modelled by the class %2$s) does not appear to have a primary key defined. %3$s and %4$s will not work properly without a primary key.',
+					$table,
+					$class,
+					'fActiveRecord',
+					'fRecordSet'
+				);	
+			}
+			
 			$this->configure();
 			self::$configured[$class] = TRUE;
 			
