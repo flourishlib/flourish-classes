@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b38
+ * @version    1.0.0b39
+ * @changes    1.0.0b39  Changed `set{ColumnName}()` methods to return the record for method chaining, fixed a bug with loading by multi-column unique constraints, fixed a bug with ::load() [wb, 2009-08-26]
  * @changes    1.0.0b38  Updated ::changed() to do a strict comparison when at least one value is NULL [wb, 2009-08-17]
  * @changes    1.0.0b37  Changed ::__construct() to allow any Iterator object instead of just fResult [wb, 2009-08-12]
  * @changes    1.0.0b36  Fixed a bug with setting NULL values from v1.0.0b33 [wb, 2009-08-10]
@@ -520,7 +521,7 @@ abstract class fActiveRecord
 	 * 
 	 * @param  string $method_name  The name of the method called
 	 * @param  array  $parameters   The parameters passed
-	 * @return void
+	 * @return mixed  The value returned by the method called
 	 */
 	public function __call($method_name, $parameters)
 	{
@@ -858,7 +859,7 @@ abstract class fActiveRecord
 				$unique_keys = fORMSchema::retrieve()->getKeys($table, 'unique');
 				$key_keys    = array_keys($key);
 				foreach ($unique_keys as $unique_key) {
-					if ($key_keys == $unique_key) {
+					if (!array_diff($key_keys, $unique_key)) {
 						$is_unique_key = TRUE;
 					}
 				}	
@@ -1480,7 +1481,7 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$this->loadFromResult($result);
+		$this->loadFromResult($result, TRUE);
 		
 		return $this;
 	}
@@ -1489,10 +1490,11 @@ abstract class fActiveRecord
 	/**
 	 * Loads a record from the database directly from a result object
 	 * 
-	 * @param  Iterator $result  The result object to use for loading the current object
+	 * @param  Iterator $result               The result object to use for loading the current object
+	 * @param  boolean  $ignore_identity_map  If the identity map should be ignored and the values loaded no matter what
 	 * @return boolean  If the record was loaded from the identity map
 	 */
-	protected function loadFromResult($result)
+	protected function loadFromResult($result, $ignore_identity_map=FALSE)
 	{
 		$class = get_class($this);
 		$table = fORM::tablize($class);
@@ -1523,7 +1525,7 @@ abstract class fActiveRecord
 		}
 		
 		$hash = self::hash($this->values, $class);
-		if ($this->loadFromIdentityMap($this->values, $hash)) {
+		if (!$ignore_identity_map && $this->loadFromIdentityMap($this->values, $hash)) {
 			return TRUE;
 		}
 		
@@ -2136,7 +2138,7 @@ abstract class fActiveRecord
 	 * 
 	 * @param  string $column  The column to set the value to
 	 * @param  mixed  $value   The value to set
-	 * @return void
+	 * @return fActiveRecord  This record, to allow for method chaining
 	 */
 	protected function set($column, $value)
 	{
@@ -2165,6 +2167,8 @@ abstract class fActiveRecord
 		}
 		
 		self::assign($this->values, $this->old_values, $column, $value);
+		
+		return $this;
 	}
 	
 	
