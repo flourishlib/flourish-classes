@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b40
+ * @version    1.0.0b41
+ * @changes    1.0.0b41  Fixed a bug in the last version that would cause issues with classes containing a custom class to table mapping [wb, 2009-09-01]
  * @changes    1.0.0b40  Added a check to the configuration part of ::__construct() to ensure modelled tables have primary keys [wb, 2009-08-26]
  * @changes    1.0.0b39  Changed `set{ColumnName}()` methods to return the record for method chaining, fixed a bug with loading by multi-column unique constraints, fixed a bug with ::load() [wb, 2009-08-26]
  * @changes    1.0.0b38  Updated ::changed() to do a strict comparison when at least one value is NULL [wb, 2009-08-17]
@@ -812,6 +813,9 @@ abstract class fActiveRecord
 		
 		// If the features of this class haven't been set yet, do it
 		if (!isset(self::$configured[$class])) {
+			$this->configure();
+			self::$configured[$class] = TRUE;
+			
 			$table = fORM::tablize($class);
 			if (!fORMSchema::retrieve()->getKeys($table, 'primary')) {
 				throw new fProgrammerException(
@@ -822,9 +826,6 @@ abstract class fActiveRecord
 					'fRecordSet'
 				);	
 			}
-			
-			$this->configure();
-			self::$configured[$class] = TRUE;
 			
 			// If the configuration was forced, prevent the post::__construct() hook from
 			// being triggered since it is not really a real record instantiation
