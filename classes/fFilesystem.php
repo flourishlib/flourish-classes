@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Corrected the API documentation for ::getPathInfo() [wb, 2009-09-09]
  * @changes    1.0.0b10  Updated ::updateExceptionMap() to not contain the Exception class parameter hint, allowing NULL to be passed [wb, 2009-08-20]
  * @changes    1.0.0b9   Added some performance tweaks to ::createObject() [wb, 2009-08-06]
  * @changes    1.0.0b8   Changed ::formatFilesize() to not use decimal places for bytes, add a space before and drop the `B` in suffixes [wb, 2009-07-12]
@@ -247,11 +248,11 @@ class fFilesystem
 	/**
 	 * Returns info about a path including dirname, basename, extension and filename
 	 * 
-	 * @param  string $file_path  The file to rename
-	 * @param  string $element    The piece of information to return: `'dirname'`, `'basename'`, `'extension'`, or `'filename'`
+	 * @param  string $path     The file/directory path to retrieve information about
+	 * @param  string $element  The piece of information to return: `'dirname'`, `'basename'`, `'extension'`, or `'filename'`
 	 * @return array  The file's dirname, basename, extension and filename
 	 */
-	static public function getPathInfo($file, $element=NULL)
+	static public function getPathInfo($path, $element=NULL)
 	{
 		$valid_elements = array('dirname', 'basename', 'extension', 'filename');
 		if ($element !== NULL && !in_array($element, $valid_elements)) {
@@ -262,7 +263,7 @@ class fFilesystem
 			);
 		}
 		
-		$path_info = pathinfo($file);
+		$path_info = pathinfo($path);
 		
 		if (!isset($path_info['extension'])) {
 			$path_info['extension'] = NULL;
