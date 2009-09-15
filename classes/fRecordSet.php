@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added an extra parameter to ::diff(), ::filter(), ::intersect(), ::slice() and ::unique() to save the number of records in the current set as the non-limited count for the new set [wb, 2009-09-15]
  * @changes    1.0.0b22  Changed ::__construct() to accept any Iterator instead of just an fResult object [wb, 2009-08-12]
  * @changes    1.0.0b21  Added performance tweaks to ::prebuild() and ::precreate() [wb, 2009-07-31]
  * @changes    1.0.0b20  Changed the class to implement Countable, making the [http://php.net/count `count()`] function work [wb, 2009-07-29]
@@ -620,7 +621,7 @@ class fRecordSet implements Iterator, Countable
 	 */
 	public function count($ignore_limit=FALSE)
 	{
-		if ($ignore_limit !== TRUE || $this->non_limited_count_sql === NULL) {
+		if ($ignore_limit !== TRUE || ($this->non_limited_count === NULL && $this->non_limited_count_sql === NULL)) {
 			return sizeof($this->records);
 		}
 		
@@ -658,10 +659,11 @@ class fRecordSet implements Iterator, Countable
 	/**
 	 * Removes all passed records from the current record set
 	 * 
-	 * @param  fRecordSet|array|fActiveRecord $records  The record set, array of records, or record to remove from the current record set, all instances will be removed
+	 * @param  fRecordSet|array|fActiveRecord $records                  The record set, array of records, or record to remove from the current record set, all instances will be removed
+	 * @param  boolean                        $remember_original_count  If the number of records in the current set should be saved as the non-limited count for the new set
 	 * @return fRecordSet  The records not present in the passed records
 	 */
-	public function diff($records)
+	public function diff($records, $remember_original_count=FALSE)
 	{
 		$remove_records = array();
 		
@@ -694,10 +696,16 @@ class fRecordSet implements Iterator, Countable
 			$class = $this->class;
 		}	
 		
-		return self::buildFromRecords(
+		$set = self::buildFromRecords(
 			$class,
 			$new_records		
 		);
+		
+		if ($remember_original_count) {
+			$set->non_limited_count	= $this->count();
+		}
+		
+		return $set;
 	}
 	
 	
@@ -737,10 +745,11 @@ class fRecordSet implements Iterator, Countable
 	 * 'methodName|methodName2|methodName3~' => $array  // If each value in the array is present in the output of at least one method (case insensitive)
 	 * }}} 
 	 * 
-	 * @param  callback|string|array $procedure  The way in which to filter the records - see method description for possible forms
+	 * @param  callback|string|array $procedure                The way in which to filter the records - see method description for possible forms
+	 * @param  boolean               $remember_original_count  If the number of records in the current set should be saved as the non-limited count for the new set
 	 * @return fRecordSet  A new fRecordSet with the filtered records
 	 */
-	public function filter($procedure)
+	public function filter($procedure, $remember_original_count=FALSE)
 	{
 		if (!$this->records) {
 			return clone $this;
@@ -794,7 +803,13 @@ class fRecordSet implements Iterator, Countable
 			$classes = $classes[0];	
 		}
 		
-		return self::buildFromRecords($classes, $new_records);
+		$set = self::buildFromRecords($classes, $new_records);
+		
+		if ($remember_original_count) {
+			$set->non_limited_count	= $this->count();
+		}
+		
+		return $set;
 	}
 	
 	
@@ -868,10 +883,11 @@ class fRecordSet implements Iterator, Countable
 	/**
 	 * Returns all records in the current record set that are also present in the passed records
 	 * 
-	 * @param  fRecordSet|array|fActiveRecord $records  The record set, array of records, or record to create an intersection of with the current record set
+	 * @param  fRecordSet|array|fActiveRecord $records                  The record set, array of records, or record to create an intersection of with the current record set
+	 * @param  boolean                        $remember_original_count  If the number of records in the current set should be saved as the non-limited count for the new set
 	 * @return fRecordSet  The records present in the current record set that are also present in the passed records
 	 */
-	public function intersect($records)
+	public function intersect($records, $remember_original_count=FALSE)
 	{
 		$hashes = array();
 		
@@ -904,10 +920,16 @@ class fRecordSet implements Iterator, Countable
 			$class = $this->class;
 		}	
 		
-		return self::buildFromRecords(
+		$set = self::buildFromRecords(
 			$class,
 			$new_records		
 		);
+		
+		if ($remember_original_count) {
+			$set->non_limited_count	= $this->count();
+		}
+		
+		return $set;
 	}
 	
 	
@@ -1337,11 +1359,12 @@ class fRecordSet implements Iterator, Countable
 	/**
 	 * Slices a section of records from the set and returns a new set containing those
 	 * 
-	 * @param  integer $offset  The index to start at, negative indexes will slice that many records from the end
-	 * @param  integer $length  The number of records to return, negative values will stop that many records before the end, `NULL` will return all records to the end of the set - if there are not enough records, less than `$length` will be returned
+	 * @param  integer $offset                   The index to start at, negative indexes will slice that many records from the end
+	 * @param  integer $length                   The number of records to return, negative values will stop that many records before the end, `NULL` will return all records to the end of the set - if there are not enough records, less than `$length` will be returned
+	 * @param  boolean $remember_original_count  If the number of records in the current set should be saved as the non-limited count for the new set
 	 * @return fRecordSet  The new slice of records
 	 */
-	public function slice($offset, $length=NULL)
+	public function slice($offset, $length=NULL, $remember_original_count=FALSE)
 	{
 		if ($length === NULL) {
 			if ($offset >= 0) {
@@ -1350,7 +1373,14 @@ class fRecordSet implements Iterator, Countable
 				$length = abs($offset);	
 			}
 		}
-		return self::buildFromRecords($this->class, array_slice($this->records, $offset, $length));
+		
+		$set = self::buildFromRecords($this->class, array_slice($this->records, $offset, $length));
+		
+		if ($remember_original_count) {
+			$set->non_limited_count	= $this->count();
+		}
+		
+		return $set;
 	}
 	
 	
@@ -1438,9 +1468,10 @@ class fRecordSet implements Iterator, Countable
 	/**
 	 * Returns a new fRecordSet containing only unique records in the record set
 	 * 
+	 * @param  boolean $remember_original_count  If the number of records in the current set should be saved as the non-limited count for the new set
 	 * @return fRecordSet  The new record set with only unique records
 	 */
-	public function unique()
+	public function unique($remember_original_count=FALSE)
 	{
 		$records = array();
 		
@@ -1455,6 +1486,11 @@ class fRecordSet implements Iterator, Countable
 		
 		$set = new fRecordSet($this->class);
 		$set->records = array_values($records);
+		
+		if ($remember_original_count) {
+			$set->non_limited_count	= $this->count();
+		}
+		
 		return $set;
 	}
 	
