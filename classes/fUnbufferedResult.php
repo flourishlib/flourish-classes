@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b6  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
  * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
  * @changes    1.0.0b4  Fixed a bug with not properly converting SQL Server text to UTF-8 [wb, 2009-06-18]
@@ -363,7 +364,7 @@ class fUnbufferedResult implements Iterator
 			
 			$real_column = substr($column, 9);
 			
-			$row[$real_column] = iconv('ucs-2le', 'utf-8', $row[$column]);
+			$row[$real_column] = iconv('ucs-2le', 'utf-8', $this->database->unescape('blob', $row[$column]));
 			unset($row[$column]);
 		}
 		

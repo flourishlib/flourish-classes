@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a bug with translating MSSQL national columns over an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b10  Changed last bug fix to support PHP 5.1.6 [wb, 2009-09-18]
  * @changes    1.0.0b9   Fixed another bug with parsing table aliases for MSSQL national columns [wb, 2009-09-18]
  * @changes    1.0.0b8   Fixed a bug with parsing table aliases that occurs when handling MSSQL national columns [wb, 2009-09-09] 
@@ -475,7 +476,7 @@ class fSQLTranslation
 						(c.data_type = 'nvarchar' OR
 						 c.data_type = 'ntext' OR
 						 c.data_type = 'nchar') AND
-						c.table_catalog = '" . $this->database->getDatabase() . "'
+						c.table_catalog = DB_NAME()
 					ORDER BY
 						lower(c.table_name) ASC,
 						lower(c.column_name) ASC"

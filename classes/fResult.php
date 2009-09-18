@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b7  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
  * @changes    1.0.0b6  Fixed a bug where ::fetchAllRows() would throw a fNoRowsException [wb, 2009-06-30]
  * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
@@ -366,7 +367,7 @@ class fResult implements Iterator
 			
 			$real_column = substr($column, 9);
 			
-			$row[$real_column] = iconv('ucs-2le', 'utf-8', $row[$column]);
+			$row[$real_column] = iconv('ucs-2le', 'utf-8', $this->database->unescape('blob', $row[$column]));
 			unset($row[$column]);
 		}
 		
