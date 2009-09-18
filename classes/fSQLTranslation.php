@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed another bug with parsing table aliases for MSSQL national columns [wb, 2009-09-18]
  * @changes    1.0.0b8  Fixed a bug with parsing table aliases that occurs when handling MSSQL national columns [wb, 2009-09-09] 
  * @changes    1.0.0b7  Fixed a bug with translating `NOT LIKE` operators in PostgreSQL [wb, 2009-07-15]
  * @changes    1.0.0b6  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -69,7 +70,7 @@ class fSQLTranslation
 		
 		foreach ($tables as $table) {
 			// This grabs the table name and alias (if there is one)
-			preg_match('#^\s*([\w.]+|\(((?:[^()]+|\((?2)\))*)\))(?:\s+(?:as\s+)?((?!ON|USING)[\w.]+))?\s*(?:(?:ON|USING)\s+(.*))?\s*$#im', $table, $parts);
+			preg_match('#^\s*([\w.]+|\((?:(?:[^()]+|\((?2)\))*)\))(?:\s+(?:as\s+)?((?!ON|USING)[\w.]+))?\s*(?:(?:ON|USING)\s+(.*))?\s*$#im', $table, $parts);
 			
 			$table_name  = $parts[1];
 			$table_alias = (!empty($parts[2])) ? $parts[2] : $parts[1]; 
