@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Changed ::ucwords() to also uppercase words right after various punctuation [wb, 2009-09-18]
  * @changes    1.0.0b4  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b3  Fixed a parameter name in ::rpos() from `$search` to `$needle` [wb, 2009-02-06]
  * @changes    1.0.0b2  Fixed a bug in ::explode() with newlines and zero-length delimiters [wb, 2009-02-05]
@@ -1411,12 +1412,7 @@ class fUTF8
 	 */
 	static public function ucwords($string)
 	{
-		// We get better performance falling back for ASCII strings
-		if (!self::detect($string)) {
-			return ucwords($string);
-		}
-		
-		return preg_replace('#(?<=^|\s|[\x{2000}-\x{200A}])(.)#ue', 'self::upper("$1")', $string);
+		return preg_replace('#(?<=^|\s|[\x{2000}-\x{200A}]|/|-|\(|\[|\{|\||"|^\'|\s\'|‘|“)(.)#ue', 'self::upper(str_replace("\\\\\'", "\'", "$1"))', $string);
 	}
 	
 	
