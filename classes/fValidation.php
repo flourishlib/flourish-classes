@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added the `$return_messages` parameter to ::validate() and updated code for new fValidationException API [wb, 2009-09-17]
  * @changes    1.0.0b4  Changed date checking from `strtotime()` to fTimestamp for better localization support [wb, 2009-06-01]
  * @changes    1.0.0b3  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b2  Added support for validating date and URL fields [wb, 2009-01-23]
@@ -419,9 +420,10 @@ class fValidation
 	 * 
 	 * @throws fValidationException  When one of the options set for the object is violated
 	 * 
-	 * @return void
+	 * @param  boolean $return_messages  If an array of validation messages should be returned instead of an exception being thrown
+	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned
 	 */
-	public function validate()
+	public function validate($return_messages=FALSE)
 	{
 		if (!$this->email_header_fields &&
 			  !$this->required_fields &&
@@ -441,13 +443,14 @@ class fValidation
 		$this->checkEmailHeaderFields($messages);
 		$this->checkURLFields($messages);
 		
+		if ($return_messages) {
+			return $messages;
+		}
+		
 		if ($messages) {
 			throw new fValidationException(
-				sprintf(
-					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					self::compose("The following problems were found:"),
-					join("</li>\n<li>", $messages)
-				)
+				'The following problems were found:',
+				$messages
 			);
 		}
 	}

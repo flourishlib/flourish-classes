@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Updated to use the new fValidationException API [wb, 2009-09-17]
  * @changes    1.0.0b10  Fixed a bug with sending both an HTML and a plaintext body [bb-imarc, 2009-06-18]
  * @changes    1.0.0b9   Fixed a bug where the MIME headers were not being set for all emails [wb, 2009-06-12]
  * @changes    1.0.0b8   Added the method ::clearRecipients() [wb, 2009-05-29]
@@ -1298,11 +1299,8 @@ class fEmail
 		
 		if ($validation_messages) {
 			throw new fValidationException(
-				sprintf(
-					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					self::compose("The email could not be sent because:"),
-					join("</li>\n<li>", $validation_messages)
-				)
+				'The email could not be sent because:',
+				$validation_messages
 			);	
 		}
 	}

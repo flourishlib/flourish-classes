@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b43
+ * @version    1.0.0b44
+ * @changes    1.0.0b44  Updated code for new fValidationException API [wb, 2009-09-18]
  * @changes    1.0.0b43  Updated code for new fRecordSet API [wb, 2009-09-16]
  * @changes    1.0.0b42  Corrected a grammar bug in ::hash() [wb, 2009-09-09]
  * @changes    1.0.0b41  Fixed a bug in the last version that would cause issues with classes containing a custom class to table mapping [wb, 2009-09-01]
@@ -1131,11 +1132,8 @@ abstract class fActiveRecord
 			
 			if ($restriction_messages) {
 				throw new fValidationException(
-					sprintf(
-						"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-						self::compose('This %s can not be deleted because:', fORM::getRecordName($class)),
-						join("</li>\n<li>", $restriction_messages)
-					)
+					self::compose('This %s can not be deleted because:', fORM::getRecordName($class)),
+					$restriction_messages
 				);
 			}
 			
@@ -2418,11 +2416,8 @@ abstract class fActiveRecord
 		
 		if (!empty($validation_messages)) {
 			throw new fValidationException(
-				sprintf(
-					"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
-					self::compose("The following problems were found:"),
-					join("</li>\n<li>", $validation_messages)
-				)
+				'The following problems were found:',
+				$validation_messages
 			);
 		}
 	}
