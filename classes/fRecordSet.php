@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed ::map() to work with string-style static method callbacks in PHP 5.1 [wb, 2009-09-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - renamed ::buildFromRecords() to ::buildFromArray(). Added ::buildFromCall(), ::buildFromMap() and `::build{RelatedRecords}()` [wb, 2009-09-16]
  * @changes    1.0.0b23  Added an extra parameter to ::diff(), ::filter(), ::intersect(), ::slice() and ::unique() to save the number of records in the current set as the non-limited count for the new set [wb, 2009-09-15]
  * @changes    1.0.0b22  Changed ::__construct() to accept any Iterator instead of just an fResult object [wb, 2009-08-12]
@@ -1095,6 +1096,10 @@ class fRecordSet implements Iterator, Countable
 		
 		if (!$found_record) {
 			array_unshift($parameters_array, $this->records);
+		}
+		
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);
 		}
 		
 		array_unshift($parameters_array, $callback);

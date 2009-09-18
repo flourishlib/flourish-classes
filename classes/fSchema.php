@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Fixed MSSQL support to work with ODBC database connections [wb, 2009-09-18]
  * @changes    1.0.0b23  Fixed a bug where one-to-one relationships were being listed as many-to-one [wb, 2009-07-21]
  * @changes    1.0.0b22  PostgreSQL UNIQUE constraints that are created as indexes and not table constraints are now properly detected [wb, 2009-07-08]
  * @changes    1.0.0b21  Added support for the UUID data type in PostgreSQL [wb, 2009-06-18]
@@ -373,7 +374,7 @@ class fSchema
 						INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS cc ON ccu.constraint_name = cc.constraint_name AND ccu.constraint_catalog = cc.constraint_catalog
 					WHERE
 						c.table_name = '" . $table . "' AND
-						c.table_catalog = '" . $this->database->getDatabase() . "'";
+						c.table_catalog = DB_NAME()";
 		$result = $this->database->query($sql);
 		
 		foreach ($result as $row) {
@@ -509,7 +510,7 @@ class fSchema
 						INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS AS rc ON c.constraint_name = rc.constraint_name LEFT JOIN
 						INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS ccu ON ccu.constraint_name = rc.unique_constraint_name
 					WHERE
-						c.constraint_catalog = '" . $this->database->getDatabase() . "' AND
+						c.constraint_catalog = DB_NAME() AND
 						c.table_name != 'sysdiagrams'
 					ORDER BY
 						LOWER(c.table_name),
