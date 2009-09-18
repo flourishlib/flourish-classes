@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Updated code for new fRecordSet API [wb, 2009-09-16]
  * @changes    1.0.0b16  Fixed a bug with ::createRecord() not creating non-existent record when the related value is NULL [wb, 2009-08-25]
  * @changes    1.0.0b15  Fixed a bug with ::createRecord() where foreign keys with a different column and related column name would not load properly [wb, 2009-08-17]
  * @changes    1.0.0b14  Fixed a bug with ::createRecord() when a foreign key constraint is on a column other than the primary key [wb, 2009-08-10]
@@ -99,7 +100,7 @@ class fORMRelated
 			$record = new $related_class($record);	
 		}
 		
-		$records = fRecordSet::buildFromRecords($related_class, array($record));	
+		$records = fRecordSet::buildFromArray($related_class, array($record));	
 		$route   = fORMSchema::getRouteName($table, $related_table, $route, 'one-to-one');
 		
 		self::setRecordSet($class, $related_records, $related_class, $records, $route);
@@ -130,10 +131,10 @@ class fORMRelated
 			$records = clone $records_to_associate;
 		
 		} elseif (!sizeof($records_to_associate)) {
-			$records = fRecordSet::buildFromRecords($related_class, array());	
+			$records = fRecordSet::buildFromArray($related_class, array());
 		
 		} elseif ($records_to_associate[0] instanceof fActiveRecord) {
-			$records = fRecordSet::buildFromRecords($related_class, $records_to_associate);	
+			$records = fRecordSet::buildFromArray($related_class, $records_to_associate);
 		
 		// This indicates we are working with just primary keys, so we have to call a different method
 		} else {
@@ -179,7 +180,7 @@ class fORMRelated
 		
 		// Determine how we are going to build the sequence
 		if ($values[$relationship['column']] === NULL) {
-			$record_set = fRecordSet::buildFromRecords($related_class, array());
+			$record_set = fRecordSet::buildFromArray($related_class, array());
 		
 		} else {
 			// When joining to the same table, we have to use a different column
@@ -334,7 +335,7 @@ class fORMRelated
 			} else {
 				$records = array();
 			}	
-			$record_set = fRecordSet::buildFromRecords($related_class, $records);
+			$record_set = fRecordSet::buildFromArray($related_class, $records);
 			self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 			
 			if ($record_set->count()) {
@@ -760,7 +761,7 @@ class fORMRelated
 			fRequest::unfilter();
 		}
 		
-		$record_set = fRecordSet::buildFromRecords($related_class, $records);
+		$record_set = fRecordSet::buildFromArray($related_class, $records);
 		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 		self::flagForAssociation($class, $related_records, $related_class, $route);
 	}

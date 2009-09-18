@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b42
+ * @version    1.0.0b43
+ * @changes    1.0.0b43  Updated code for new fRecordSet API [wb, 2009-09-16]
  * @changes    1.0.0b42  Corrected a grammar bug in ::hash() [wb, 2009-09-09]
  * @changes    1.0.0b41  Fixed a bug in the last version that would cause issues with classes containing a custom class to table mapping [wb, 2009-09-01]
  * @changes    1.0.0b40  Added a check to the configuration part of ::__construct() to ensure modelled tables have primary keys [wb, 2009-08-26]
@@ -2116,7 +2117,7 @@ abstract class fActiveRecord
 				} else {
 					$records = $record_set->call('replicate');
 				}
-				$record_set = fRecordSet::buildFromRecords($related_class, $records);
+				$record_set = fRecordSet::buildFromArray($related_class, $records);
 				$record_set->call(
 					'set' . fGrammar::camelize($route, TRUE),
 					NULL
