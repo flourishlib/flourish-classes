@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added the `$http_timeout` parameter to ::__construct() [wb, 2009-09-16]
  * @changes    1.0.0b2  Added instance functionality for reading of XML files [wb, 2009-09-01]
  * @changes    1.0.0b   The initial implementation [wb, 2008-01-13]
  */
@@ -82,12 +83,13 @@ class fXML implements ArrayAccess
 	 * member access or array access when the element or attribute name does
 	 * not include a `:`.
 	 * 
-	 * @throws fValidationException  When the source XML is invalid
+	 * @throws fValidationException    When the source XML is invalid or does not exist
 	 * 
-	 * @param  fFile|string $source  The source of the XML, either an fFile object, a string of XML, a file path or a URL
+	 * @param  fFile|string  $source        The source of the XML, either an fFile object, a string of XML, a file path or a URL
+	 * @param  numeric       $http_timeout  The timeout to use in seconds when requesting an XML file from a URL
 	 * @return fXML
 	 */
-	public function __construct($source)
+	public function __construct($source, $http_timeout=NULL)
 	{
 		// Prevent spitting out errors to we can throw exceptions
 		$old_setting = libxml_use_internal_errors(TRUE);
@@ -100,6 +102,29 @@ class fXML implements ArrayAccess
 				
 			} elseif ($source instanceof fFile) {
 				$xml = simplexml_load_file($source->getPath());
+				
+			// This handles URLs specially by adding a reasonable timeout
+			} elseif (preg_match('#^(?P<protocol>http(s)?)://#', $source, $matches)) {
+				
+				if ($http_timeout === NULL) {
+					$http_timeout = ini_get('default_socket_timeout');	
+				}
+				
+				// We use the appropriate protocol here so PHP can supress IIS https:// warnings
+				$context = stream_context_create(array(
+					$matches['protocol'] => array('timeout' => $http_timeout)
+				));
+				
+				// If the URL is not loaded in time, this supresses the file_get_contents() warning
+				$old_level = error_reporting(error_reporting() & ~E_WARNING);
+				$xml = file_get_contents($source, 0, $context);
+				error_reporting($old_level);
+				
+				if (!$xml) {
+					throw new fExpectedException('The URL specified, %s, could not be loaded', $source);
+				}
+				
+				$xml = new SimpleXMLElement($xml);
 				
 			} else {
 				$is_path = $source && !preg_match('#^\s*<#', $source);
