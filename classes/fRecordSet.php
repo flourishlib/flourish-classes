@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Updated the documentation for ::build() and ::filter() to reflect new functionality [wb, 2009-09-21]
  * @changes    1.0.0b25  Fixed ::map() to work with string-style static method callbacks in PHP 5.1 [wb, 2009-09-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - renamed ::buildFromRecords() to ::buildFromArray(). Added ::buildFromCall(), ::buildFromMap() and `::build{RelatedRecords}()` [wb, 2009-09-16]
  * @changes    1.0.0b23  Added an extra parameter to ::diff(), ::filter(), ::intersect(), ::slice() and ::unique() to save the number of records in the current set as the non-limited count for the new set [wb, 2009-09-15]
@@ -69,7 +70,8 @@ class fRecordSet implements Iterator, Countable
 	 * 'column&~'                   => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' AND column LIKE '%VALUE2%' AND column ... )
 	 * 'column!~'                   => array(VALUE, VALUE2, ... )   // (column NOT LIKE '%VALUE%' AND column NOT LIKE '%VALUE2%' AND column ... )
 	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
-	 * 'column|column2><'           => array(VALUE, VALUE2)         // ((column <= VALUE AND column2 >= VALUE) OR (column <= VALUE2 AND column2 >= VALUE2) OR (column >= VALUE AND column2 <= VALUE2) OR (column2 IS NULL AND column >= VALUE AND column <= VALUE2)) 
+	 * 'column|column2><'           => array(VALUE, VALUE2)         // WHEN VALUE === NULL: ((column2 IS NULL AND column = VALUE) OR (column2 IS NOT NULL AND column <= VALUE AND column2 >= VALUE))
+	 *                                                              // WHEN VALUE !== NULL: ((column <= VALUE AND column2 >= VALUE) OR (column >= VALUE AND column <= VALUE2))
 	 * 'column|column2|column3~'    => VALUE                        // (column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%')
 	 * 'column|column2|column3~'    => array(VALUE, VALUE2, ... )   // ((column LIKE '%VALUE%' OR column2 LIKE '%VALUE%' OR column3 LIKE '%VALUE%') AND (column LIKE '%VALUE2%' OR column2 LIKE '%VALUE2%' OR column3 LIKE '%VALUE2%') AND ... )
 	 * }}}
@@ -817,24 +819,33 @@ class fRecordSet implements Iterator, Countable
 	 * 
 	 * {{{
 	 * // The following forms work for any $value that is not an array
-	 * 'methodName='                         => $value  // If the output is equal to $value
-	 * 'methodName!'                         => $value  // If the output is not equal to $value
-	 * 'methodName!='                        => $value  // If the output is not equal to $value
-	 * 'methodName<>'                        => $value  // If the output is not equal to $value
-	 * 'methodName<'                         => $value  // If the output is less than $value
-	 * 'methodName<='                        => $value  // If the output is less than or equal to $value
-	 * 'methodName>'                         => $value  // If the output is greater than $value
-	 * 'methodName>='                        => $value  // If the output is greater than or equal to $value
-	 * 'methodName~'                         => $value  // If the output contains the $value (case insensitive)
-	 * 'methodName|methodName2|methodName3~' => $value  // Parses $value as a search string and make sure each term is present in at least one output (case insensitive)
+	 * 'methodName='                           => $value  // If the output is equal to $value
+	 * 'methodName!'                           => $value  // If the output is not equal to $value
+	 * 'methodName!='                          => $value  // If the output is not equal to $value
+	 * 'methodName<>'                          => $value  // If the output is not equal to $value
+	 * 'methodName<'                           => $value  // If the output is less than $value
+	 * 'methodName<='                          => $value  // If the output is less than or equal to $value
+	 * 'methodName>'                           => $value  // If the output is greater than $value
+	 * 'methodName>='                          => $value  // If the output is greater than or equal to $value
+	 * 'methodName~'                           => $value  // If the output contains the $value (case insensitive)
+	 * 'methodName!~'                          => $value  // If the output does not contain the $value (case insensitive)
+	 * 'methodName|methodName2|methodName3~'   => $value  // Parses $value as a search string and make sure each term is present in at least one output (case insensitive)
 	 * 
 	 * // The following forms work for any $array that is an array
-	 * 'methodName='                         => $array  // If the output is equal to at least one value in $array
-	 * 'methodName!'                         => $array  // If the output is not equal to any value in $array
-	 * 'methodName!='                        => $array  // If the output is not equal to any value in $array
-	 * 'methodName<>'                        => $array  // If the output is not equal to any value in $array
-	 * 'methodName~'                         => $array  // If the output contains one of the strings in $array (case insensitive)
-	 * 'methodName|methodName2|methodName3~' => $array  // If each value in the array is present in the output of at least one method (case insensitive)
+	 * 'methodName='                           => $array  // If the output is equal to at least one value in $array
+	 * 'methodName!'                           => $array  // If the output is not equal to any value in $array
+	 * 'methodName!='                          => $array  // If the output is not equal to any value in $array
+	 * 'methodName<>'                          => $array  // If the output is not equal to any value in $array
+	 * 'methodName~'                           => $array  // If the output contains one of the strings in $array (case insensitive)
+	 * 'methodName!~'                          => $array  // If the output contains none of the strings in $array (case insensitive)
+	 * 'methodName&~'                          => $array  // If the output contains all of the strings in $array (case insensitive)
+	 * 'methodName|methodName2|methodName3~'   => $array  // If each value in the array is present in the output of at least one method (case insensitive)
+	 * 
+	 * // The following works for an equal number of methods and values in the array
+	 * 'methodName!|methodName2<|methodName3=' => array($value, $value2, $value3) // An OR statement - one of the method to value comparisons must be TRUE
+	 * 
+	 * // The following accepts exactly two methods and two values, although the second value may be NULL
+	 * 'methodName|methodName2><'              => array($value, $value2) // If the range of values from the methods intersects the range of $value and $value2 - should be dates, times, timestamps or numbers
 	 * }}} 
 	 * 
 	 * @param  callback|string|array $procedure                The way in which to filter the records - see method description for possible forms

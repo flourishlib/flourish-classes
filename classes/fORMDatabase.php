@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Streamlined intersection operator SQL and added support for the second value being NULL [wb, 2009-09-21]
  * @changes    1.0.0b14  Added support for the intersection operator `><` to ::createWhereClause() [wb, 2009-07-13]
  * @changes    1.0.0b13  Added support for the `AND LIKE` operator `&~` to ::createWhereClause() [wb, 2009-07-09]
  * @changes    1.0.0b12  Added support for the `NOT LIKE` operator `!~` to ::createWhereClause() [wb, 2009-07-08]
@@ -650,12 +651,15 @@ class fORMDatabase
 							);	
 						}
 															 
-						$part_1 = '(' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[0]) . ')';
-						$part_2 = '(' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[1]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[1]) . ')';
-						$part_3 = '(' . $columns[0] . ' >= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' <= ' . self::escapeBySchema($table, $columns[1], $values[1]) . ')';
-						$part_4 = '(' . $columns[1] . ' IS NULL AND ' . $columns[0] . ' >= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[1]) . ')';
+						if ($values[1] === NULL) {
+							$part_1 = '(' . $columns[1] . ' IS NULL AND ' . $columns[0] . ' = ' . self::escapeBySchema($table, $columns[0], $values[0]) . ')';
+							$part_2 = '(' . $columns[1] . ' IS NOT NULL AND ' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[0]) . ')';
+						} else {
+							$part_1 = '(' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[1] . ' >= ' . self::escapeBySchema($table, $columns[1], $values[0]) . ')';
+							$part_2 = '(' . $columns[0] . ' >= ' . self::escapeBySchema($table, $columns[0], $values[0]) . ' AND ' . $columns[0] . ' <= ' . self::escapeBySchema($table, $columns[0], $values[1]) . ')';
+						}
 						
-						$sql[] = ' (' . $part_1 . ' OR ' . $part_2 . ' OR ' . $part_3 . ' OR ' . $part_4 . ') ';
+						$sql[] = ' (' . $part_1 . ' OR ' . $part_2 . ') ';
 					
 					} else {
 						throw new fProgrammerException(

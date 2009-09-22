@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b44
+ * @version    1.0.0b45
+ * @changes    1.0.0b45  Added support for `!~`, `&~`, `><` and OR comparisons to ::checkConditions(), made object handling in ::checkConditions() more robust [wb, 2009-09-21]
  * @changes    1.0.0b44  Updated code for new fValidationException API [wb, 2009-09-18]
  * @changes    1.0.0b43  Updated code for new fRecordSet API [wb, 2009-09-16]
  * @changes    1.0.0b42  Corrected a grammar bug in ::hash() [wb, 2009-09-09]
@@ -176,6 +177,144 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Checks to see if a record matches a condition
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $operator  The record to check
+	 * @param  mixed  $value     The value to compare to
+	 * @param  mixed $result     The result of the method call(s)
+	 * @return boolean  If the comparison was successful
+	 */
+	static private function checkCondition($operator, $value, $result)
+	{
+		$was_array = is_array($value);
+		if (!$was_array) { $value = array($value); }
+		foreach ($value as $i => $_value) {
+			if (is_object($_value)) {
+				if ($_value instanceof fActiveRecord) {
+					continue;
+				}
+				if (method_exists($_value, '__toString')) {
+					$value[$i] = $_value->__toString();
+				}	
+			}	
+		}
+		if (!$was_array) { $value = $value[0]; }
+		
+		$was_array = is_array($result);
+		if (!$was_array) { $result = array($result); }
+		foreach ($result as $i => $_result) {
+			if (is_object($_result)) {
+				if ($_result instanceof fActiveRecord) {
+					continue;
+				}
+				if (method_exists($_result, '__toString')) {
+					$result[$i] = $_result->__toString();
+				}	
+			}	
+		}
+		if (!$was_array) { $result = $result[0]; }
+		
+		$match_all   = $operator == '&~';
+		$negate_like = $operator == '!~';
+		
+		switch ($operator) {
+			case '&~':
+			case '!~':
+			case '~':
+				if (!$match_all && !$negate_like && !is_array($value) && is_array($result)) {
+					$value = fORMDatabase::parseSearchTerms($value, TRUE);
+				}	
+					
+				settype($value, 'array');
+				settype($result, 'array');
+				
+				if (count($result) > 1) {
+					foreach ($value as $_value) {
+						$found = FALSE;
+						foreach ($result as $_result) {
+							if (fUTF8::ipos($_result, $_value) !== FALSE) {
+								$found = TRUE;
+							}
+						}
+						if (!$found) {
+							return FALSE;
+						}	
+					}
+				} else {
+					$found = FALSE;
+					foreach ($value as $_value) {
+						if (fUTF8::ipos($result[0], $_value) !== FALSE) {
+							$found = TRUE;
+						} elseif ($match_all) {
+							return FALSE;
+						}
+					}
+					if ((!$negate_like && !$found) || ($negate_like && $found)) {
+						return FALSE;
+					}
+				}    
+				break;
+			
+			case '=':
+				if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
+					if (get_class($value) != get_class($result) || !$value->exists() || !$result->exists() || self::hash($value) != self::hash($result)) {
+						return FALSE;
+					}
+					
+				} elseif (is_array($value) && !in_array($result, $value)) {
+					return FALSE;
+						
+				} elseif (!is_array($value) && $result != $value) {
+					return FALSE;	
+				}
+				break;
+				
+			case '!':
+				if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
+					if (get_class($value) == get_class($result) && $value->exists() && $result->exists() && self::hash($value) == self::hash($result)) {
+						return FALSE;
+					}
+					
+				} elseif (is_array($value) && in_array($result, $value)) {
+					return FALSE;	
+					
+				} elseif (!is_array($value) && $result == $value) {
+					return FALSE;	
+				}
+				break;
+			
+			case '<':
+				if ($result >= $value) {
+					return FALSE;	
+				}
+				break;
+			
+			case '<=':
+				if ($result > $value) {
+					return FALSE;	
+				}
+				break;
+			
+			case '>':
+				if ($result <= $value) {
+					return FALSE;	
+				}
+				break;
+			
+			case '>=':
+				if ($result < $value) {
+					return FALSE;	
+				}
+				break;
+		}
+		
+		return TRUE;		
+	}
+	
+	
+	/**
 	 * Checks to see if a record matches all of the conditions
 	 * 
 	 * @internal
@@ -189,7 +328,7 @@ abstract class fActiveRecord
 		foreach ($conditions as $method => $value) {
 			
 			// Split the operator off of the end of the method name
-			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>'))) {
+			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
 				$operator = strtr(
 					substr($method, -2),
 					array(
@@ -203,112 +342,128 @@ abstract class fActiveRecord
 				$method   = substr($method, 0, -1);
 			}
 			
-			$multi_method = FALSE;
-			
-			if ($operator == '~' && strpos($method, '|')) {
-				$multi_method = TRUE;
-				$result = array();
-				foreach(explode('|', $method) as $_method) {
-					$result[] = $record->$_method();	
+			if (preg_match('#(?<!\|)\|(?!\|)#', $method)) {
+				
+				$methods   = explode('|', $method);
+				$values    = $value;
+				$operators = array();
+				
+				foreach ($methods as &$_method) {
+					if (in_array(substr($_method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
+						$operators[] = strtr(
+							substr($_method, -2),
+							array(
+								'<>' => '!',
+								'!=' => '!'
+							)
+						);
+						$_method     = substr($_method, 0, -2);
+					} elseif (!ctype_alnum(substr($_method, -1))) {
+						$operators[] = substr($_method, -1);
+						$_method     = substr($_method, 0, -1);
+					}
 				}
+				$operators[] = $operator;
+				
+				
+				if (sizeof($operators) == 1) {
+				
+					// Handle fuzzy searches
+					if ($operator == '~') {
 					
+						$results = array();
+						foreach ($methods as $method) {
+							$results[] = $record->$method();	
+						}
+						if (!self::checkCondition($operator, $value, $results)) {
+							return FALSE;	
+						}
+					
+					// Handle intersection
+					} elseif ($operator == '><') {
+						
+						if (sizeof($methods) != 2 || sizeof($values) != 2) {
+							throw new fProgrammerException(
+								'The intersection operator, %s, requires exactly two methods and two values',
+								$operator
+							);	
+						}
+									
+						$results    = array();
+						$results[0] = $record->{$methods[0]}();
+						$results[1] = $record->{$methods[1]}();
+						
+						if ($results[1] === NULL && $values[1] === NULL) {
+							if (!self::checkCondition('=', $values[0], $results[0])) {
+								return FALSE;
+							}
+							
+							
+						} else {
+							
+							$starts_between_values = FALSE;
+							$overlaps_value_1      = FALSE;
+							
+							if ($values[1] !== NULL) {
+								$start_lt_value_1      = self::checkCondition('<', $values[0], $results[0]);
+								$start_gt_value_2      = self::checkCondition('>', $values[1], $results[0]);
+								$starts_between_values = !$start_lt_value_1 && !$start_gt_value_2;
+							}
+							if ($results[1] !== NULL) {
+								$start_gt_value_1 = self::checkCondition('>', $values[0], $results[0]);
+								$end_lt_value_1   = self::checkCondition('<', $values[0], $results[1]);
+								$overlaps_value_1 = !$start_gt_value_1 && !$end_lt_value_1;
+							}
+							
+							if (!$starts_between_values && !$overlaps_value_1) {
+								return FALSE;
+							}
+						}
+					
+					} else {
+						throw new fProgrammerException(
+							'An invalid comparison operator, %s, was specified for multiple columns',
+							$operator
+						);
+					}
+					
+				// Handle OR conditions
+				} else {
+					
+					if (sizeof($methods) != sizeof($values)) {
+						throw new fProgrammerException(
+							'When performing an %1$s comparison there must be an equal number of methods and values, however there are not',
+							'OR',
+							sizeof($methods),
+							sizeof($values)
+						);
+					}
+					
+					if (sizeof($methods) != sizeof($operators)) {
+						throw new fProgrammerException(
+							'When performing an %s comparison there must be a comparison operator for each column, however one or more is missing',
+							'OR'
+						);
+					}
+					
+					$results    = array();
+					$iterations = sizeof($methods);
+					for ($i=0; $i<$iterations; $i++) {
+						$results[] = self::checkCondition($operators[$i], $values[$i], $record->{$methods[$i]}());
+					}
+					
+					if (!array_filter($results)) {
+						return FALSE;	
+					}
+					
+				}
+				
+			// Single method comparisons	
 			} else {
 				$result = $record->$method();
-			}
-			
-			switch ($operator) {
-				case '~':
-					// This is a fuzzy search type operation since it is using the output of multiple methods
-					if ($multi_method) {
-						if (!is_array($value)) {
-							$value = fORMDatabase::parseSearchTerms($value, TRUE);
-						}	
-						
-						foreach ($value as $_value) {
-							$found = FALSE;
-							foreach ($result as $_result) {
-								if (fUTF8::ipos($_result, $_value) !== FALSE) {
-									$found = TRUE;
-								} 
-							}
-							if (!$found) {
-								return FALSE;
-							}	
-						}
-					
-					// This is a simple LIKE match against one or more values
-					} else {
-						// Ensure the method output is present in at least one value of the array
-						if (is_array($value)) {
-						
-							$found = FALSE;
-							foreach ($value as $_value) {
-								if (fUTF8::ipos($result, $_value) !== FALSE) {
-									$found = TRUE;
-								}	
-							}
-							if (!$found) {
-								return FALSE;	
-							}
-								
-						// Ensure the method is present in the value
-						} elseif (!is_array($value) && fUTF8::ipos($result, $value) === FALSE) {
-							return FALSE;	
-						}	
-					}
-					break;
-				
-				case '=':
-					if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
-						if (get_class($value) != get_class($result) || !$value->exists() || !$result->exists() || self::hash($value) != self::hash($result)) {
-							return FALSE;
-						}
-						
-					} elseif (is_array($value) && !in_array($result, $value)) {
-						return FALSE;
-							
-					} elseif (!is_array($value) && $result != $value) {
-						return FALSE;	
-					}
-					break;
-					
-				case '!':
-					if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
-						if (get_class($value) == get_class($result) && $value->exists() && $result->exists() && self::hash($value) == self::hash($result)) {
-							return FALSE;
-						}
-						
-					} elseif (is_array($value) && in_array($result, $value)) {
-						return FALSE;	
-						
-					} elseif (!is_array($value) && $result == $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '<':
-					if ($result >= $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '<=':
-					if ($result > $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '>':
-					if ($result <= $value) {
-						return FALSE;	
-					}
-					break;
-				
-				case '>=':
-					if ($result < $value) {
-						return FALSE;	
-					}
-					break;
+				if (!self::checkCondition($operator, $value, $result)) {
+					return FALSE;	
+				}
 			}	
 		}
 		
