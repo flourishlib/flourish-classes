@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug in ::countRecords() that would occur when multiple routes existed to the table being counted [wb, 2009-10-05]
  * @changes    1.0.0b17  Updated code for new fRecordSet API [wb, 2009-09-16]
  * @changes    1.0.0b16  Fixed a bug with ::createRecord() not creating non-existent record when the related value is NULL [wb, 2009-08-25]
  * @changes    1.0.0b15  Fixed a bug with ::createRecord() where foreign keys with a different column and related column name would not load properly [wb, 2009-08-17]
@@ -261,6 +262,11 @@ class fORMRelated
 			$value  = fORMDatabase::escapeBySchema($table, $relationship['column'], $values[$relationship['column']], '=');
 			
 			$primary_keys = fORMSchema::retrieve()->getKeys($related_table, 'primary');
+			
+			if ($route) {
+				$related_table .= '{' . $route . '}';
+			}
+			
 			$primary_keys = fORMDatabase::addTableToValues($related_table, $primary_keys);
 			$primary_keys = join(', ', $primary_keys);
 			
