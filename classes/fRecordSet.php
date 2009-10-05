@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Changed fRecordSet::build() to fix bad $page numbers instead of throwing an fProgrammerException [wb, 2009-10-05]
  * @changes    1.0.0b26  Updated the documentation for ::build() and ::filter() to reflect new functionality [wb, 2009-09-21]
  * @changes    1.0.0b25  Fixed ::map() to work with string-style static method callbacks in PHP 5.1 [wb, 2009-09-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - renamed ::buildFromRecords() to ::buildFromArray(). Added ::buildFromCall(), ::buildFromMap() and `::build{RelatedRecords}()` [wb, 2009-09-16]
@@ -209,10 +210,7 @@ class fRecordSet implements Iterator, Countable
 			if ($page !== NULL) {
 				
 				if (!is_numeric($page) || $page < 1) {
-					throw new fProgrammerException(
-						'The page specified, %s, is not a number or less than one',
-						$page
-					);
+					$page = 1;
 				}
 				
 				$sql .= ' OFFSET ' . (($page-1) * $limit);
