@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Removed duplicate MIME-Version headers that were being included in S/MIME encrypted emails [wb, 2009-10-05]
  * @changes    1.0.0b11  Updated to use the new fValidationException API [wb, 2009-09-17]
  * @changes    1.0.0b10  Fixed a bug with sending both an HTML and a plaintext body [bb-imarc, 2009-06-18]
  * @changes    1.0.0b9   Fixed a bug where the MIME headers were not being set for all emails [wb, 2009-06-12]
@@ -747,6 +748,7 @@ class fEmail
 		
 		$new_headers = preg_replace('#^To:[^\n]+\n( [^\n]+\n)*#mi', '', $new_headers);
 		$new_headers = preg_replace('#^Subject:[^\n]+\n( [^\n]+\n)*#mi', '', $new_headers);
+		$new_headers = preg_replace("#^MIME-Version: 1.0\r?\n#mi", '', $new_headers, 1);
 		$new_headers = preg_replace('#^Content-Type:\s+' . preg_quote($headers_array['Content-Type'], '#') . "\r?\n#mi", '', $new_headers);
 		$new_headers = preg_replace('#^Content-Transfer-Encoding:\s+' . preg_quote($headers_array['Content-Transfer-Encoding'], '#') . "\r?\n#mi", '', $new_headers);
 		
