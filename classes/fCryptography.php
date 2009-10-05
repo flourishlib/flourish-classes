@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed ::symmetricKeyEncrypt() to throw an fValidationException when the $secret_key is less than 8 characters [wb, 2009-09-30]
  * @changes    1.0.0b5  Fixed a bug where some windows machines would throw an exception when generating random strings or numbers [wb, 2009-06-09]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b3  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26]
@@ -484,15 +485,17 @@ class fCryptography
 	 *
 	 * Since this is symmetric-key cryptography, the same key is used for
 	 * encryption and decryption.
+	 * 
+	 * @throws fValidationException  When the $secret_key is less than 8 characters long
 	 *  
 	 * @param  string $plaintext   The content to be encrypted
-	 * @param  string $secret_key  The secret key to use for encryption
+	 * @param  string $secret_key  The secret key to use for encryption - must be at least 8 characters
 	 * @return string  An encrypted and base-64 encoded result containing a Flourish fingerprint and suitable for decryption using ::symmetricKeyDecrypt()
 	 */
 	static public function symmetricKeyEncrypt($plaintext, $secret_key)
 	{
 		if (strlen($secret_key) < 8) {
-			throw new fProgrammerException(
+			throw new fValidationException(
 				'The secret key specified does not meet the minimum requirement of being at least %s characters long',
 				8
 			);
