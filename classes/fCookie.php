@@ -2,20 +2,23 @@
 /**
  * Provides a consistent cookie API, HTTPOnly compatibility with older PHP versions and default parameters
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Nick Trew [nt]
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCookie
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added the ::delete() method [nt+wb, 2009-09-30]
  * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-01]
  */
 class fCookie
 {
 	// The following constants allow for nice looking callbacks to static methods
+	const delete             = 'fCookie::delete';
 	const get                = 'fCookie::get';
 	const reset              = 'fCookie::reset';
 	const set                = 'fCookie::set';
@@ -60,6 +63,21 @@ class fCookie
 	 * @var boolean
 	 */
 	static private $default_secure = FALSE;
+	
+	
+	/**
+	 * Deletes a cookie - uses default parameters set by the other set methods of this class
+	 * 
+	 * @param  string  $name    The cookie name to delete
+	 * @param  string  $path    The path of the cookie to delete
+	 * @param  string  $domain  The domain of the cookie to delete
+	 * @param  boolean $secure  If the cookie is a secure-only cookie
+	 * @return void
+	 */
+	static public function delete($name, $path=NULL, $domain=NULL, $secure=NULL)
+	{
+		self::set($name, '', time() - 86400, $path, $domain, $secure);
+	}
 	
 	
 	/**
@@ -115,7 +133,7 @@ class fCookie
 	 * @param  string|integer $expires   A relative string to be interpreted by [http://php.net/strtotime strtotime()] or an integer unix timestamp
 	 * @param  string         $path      The path this cookie applies to
 	 * @param  string         $domain    The domain this cookie applies to
-	 * @param  boolean        $secure    If the cookie should only be transmitted over a secure connectino
+	 * @param  boolean        $secure    If the cookie should only be transmitted over a secure connection
 	 * @param  boolean        $httponly  If the cookie should only be readable by HTTP connection, not javascript
 	 * @return void
 	 */
@@ -260,7 +278,7 @@ class fCookie
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
