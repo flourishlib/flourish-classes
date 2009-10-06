@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  SECURITY FIX: fixed issue with ::random() and ::randomString() not producing random output on OSX, made ::seedRandom() more robust [wb, 2009-10-06]
  * @changes    1.0.0b6  Changed ::symmetricKeyEncrypt() to throw an fValidationException when the $secret_key is less than 8 characters [wb, 2009-09-30]
  * @changes    1.0.0b5  Fixed a bug where some windows machines would throw an exception when generating random strings or numbers [wb, 2009-06-09]
  * @changes    1.0.0b4  Updated for new fCore API [wb, 2009-02-16]
@@ -395,7 +396,7 @@ class fCryptography
 		
 		// On linux/unix/solaris we should be able to use /dev/urandom
 		if (!fCore::checkOS('windows') && $handle = fopen('/dev/urandom', 'rb')) {
-			$bytes = fread($handle, 32);
+			$bytes = fread($handle, 4);
 			fclose($handle);
 				
 		// On windows we should be able to use the Cryptographic Application Programming Interface COM object
@@ -403,21 +404,20 @@ class fCryptography
 			try {
 				// This COM object no longer seems to work on PHP 5.2.9+, no response on the bug report yet
 				$capi  = new COM('CAPICOM.Utilities.1');
-				$bytes = base64_decode($capi->getrandom(32, 0));
+				$bytes = base64_decode($capi->getrandom(4, 0));
 				unset($capi);
 			} catch (Exception $e) { }
 		}
 		
 		// If we could not use the OS random number generators we get some of the most unique info we can		
 		if (!$bytes) {
-			$bytes = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);	
+			$string = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);
+			$bytes  = substr(pack('H*', md5($string)), 0, 4);
 		}
 		
 		error_reporting($old_level);
 		
-		$seed = md5($bytes);
-		$seed = base_convert($seed, 16, 10);
-		$seed = (double) substr($seed, 0, 13) + (double) substr($seed, 14, 13);
+		$seed = (int) (base_convert(bin2hex($bytes), 16, 10) - 2147483647);
 		
 		mt_srand($seed);
 		
