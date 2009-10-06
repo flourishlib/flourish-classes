@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a bug with ::fixISOWeek() not properly parsing some ISO week dates [wb, 2009-10-06]
  * @changes    1.0.0b7  Fixed a translation bug with ::getFuzzyDifference() [wb, 2009-07-11]
  * @changes    1.0.0b6  Added ::registerUnformatCallback() and ::callUnformatCallback() to allow for localization of date/time parsing [wb, 2009-06-01]
  * @changes    1.0.0b5  Backwards compatibility break - Removed ::getSecondsDifference() and ::getSeconds(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
@@ -161,9 +162,10 @@ class fTimestamp
 			$after  = $matches[5];
 			
 			$first_of_year  = strtotime($year . '-01-01');
-			$iso_year_start = strtotime('-' . date('N', $first_of_year) . ' days', $first_of_year);
+			$first_thursday = strtotime('thursday', $first_of_year);
+			$iso_year_start = strtotime('last monday', $first_thursday);
 			
-			$ymd = date('Y-m-d', strtotime('+' . ($week-1) . ' weeks +' . $day . ' days', $iso_year_start));	
+			$ymd = date('Y-m-d', strtotime('+' . ($week-1) . ' weeks +' . ($day-1) . ' days', $iso_year_start));	
 			
 			$date = $before . $ymd . $after;
 		}
