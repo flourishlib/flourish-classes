@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added ::filter() to allow for ignoring array file upload field entries that did not have a file uploaded [wb, 2009-10-06]
  * @changes    1.0.0b6  Updated ::move() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b5  Removed some unnecessary error suppression operators from ::move() [wb, 2009-01-05]
  * @changes    1.0.0b4  Updated ::validate() so it properly handles upload max filesize specified in human-readable notation [wb, 2009-01-05]
@@ -71,6 +72,35 @@ class fUpload
 		}
 		
 		return sizeof($_FILES[$field]['name']);
+	}
+	
+	
+	/**
+	 * Removes individual file upload entries from an array of file inputs in `$_FILES` when no file was uploaded
+	 * 
+	 * @param  string  $field  The field to filter
+	 * @return array  The indexes of the files that were uploaded
+	 */
+	static public function filter($field)
+	{
+		$indexes = array();
+		$columns = array('name', 'type', 'tmp_name', 'error', 'size');
+		
+		if (!self::count($field)) {
+			return;	
+		}
+		
+		foreach (array_keys($_FILES[$field]['name']) as $index) {
+			if ($_FILES[$field]['error'][$index] == UPLOAD_ERR_NO_FILE) {
+				foreach ($columns as $column) {
+					unset($_FILES[$field][$column][$index]);
+				}
+			} else {
+				$indexes[] = $index;
+			}	
+		}
+		
+		return $indexes;
 	}
 	
 	
@@ -149,8 +179,8 @@ class fUpload
 	/**
 	 * Returns the `$_FILES` array for the field specified.
 	 * 
-	 * @param  string  $field  The field to get the file array for
-	 * @param  integer $index  If the field is an array file upload field, use this to specify which array index to return
+	 * @param  string $field  The field to get the file array for
+	 * @param  mixed  $index  If the field is an array file upload field, use this to specify which array index to return
 	 * @return array  The file info array from `$_FILES`
 	 */
 	private function extractFileUploadArray($field, $index=NULL)
@@ -192,7 +222,7 @@ class fUpload
 	 * 
 	 * @param  string|fDirectory $directory  The directory to upload the file to
 	 * @param  string            $field      The file upload field to get the file from
-	 * @param  integer           $index      If the field was an array file upload field, upload the file corresponding to this index
+	 * @param  mixed             $index      If the field was an array file upload field, upload the file corresponding to this index
 	 * @return fFile  An fFile (or fImage) object
 	 */
 	public function move($directory, $field, $index=NULL)
@@ -267,7 +297,7 @@ class fUpload
 	 * @throws fValidationException  When no file is uploaded or the uploaded file violates the options set for this object
 	 * 
 	 * @param  string  $field  The field the file was uploaded through
-	 * @param  integer $index  If the field was an array of file uploads, this specifies which one to validate
+	 * @param  mixed   $index  If the field was an array of file uploads, this specifies which one to validate
 	 * @return void
 	 */
 	public function validate($field, $index=NULL)
