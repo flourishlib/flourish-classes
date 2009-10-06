@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Nick Trew [nt]
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added ::detectOpcodeCache() [nt+wb, 2009-10-06]
  * @changes    1.0.0b10  Fixed ::expose() to properly display when output includes non-UTF-8 binary data [wb, 2009-06-29]
  * @changes    1.0.0b9   Added ::disableContext() to remove context info for exception/error handling, tweaked output for exceptions/errors [wb, 2009-06-28]
  * @changes    1.0.0b8   ::enableErrorHandling() and ::enableExceptionHandling() now accept multiple email addresses, and a much wider range of emails [wb-imarc, 2009-06-01]
@@ -31,6 +33,7 @@ class fCore
 	const checkOS                 = 'fCore::checkOS';
 	const checkVersion            = 'fCore::checkVersion';
 	const debug                   = 'fCore::debug';
+	const detectOpcodeCache       = 'fCore::detectOpcodeCache';
 	const disableContext          = 'fCore::disableContext';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
@@ -427,6 +430,35 @@ class fCore
 				self::expose($message, FALSE);
 			}
 		}
+	}
+	
+	
+	/**
+	 * Detects if a PHP opcode cache is installed
+	 * 
+	 * The following opcode caches are currently detected:
+	 * 
+	 *  - [http://pecl.php.net/package/APC APC]
+	 *  - [http://eaccelerator.net eAccelerator]
+	 *  - [http://www.nusphere.com/products/phpexpress.htm Nusphere PhpExpress]
+	 *  - [http://turck-mmcache.sourceforge.net/index_old.html Turck MMCache]
+	 *  - [http://xcache.lighttpd.net XCache]
+	 *  - [http://www.zend.com/en/products/server/ Zend Server (Optimizer+)]
+	 *  - [http://www.zend.com/en/products/platform/ Zend Platform (Code Acceleration)]
+	 * 
+	 * @return boolean  If a PHP opcode cache is loaded
+	 */
+	static public function detectOpcodeCache()
+	{		
+		$apc              = ini_get('apc.enabled');
+		$eaccelerator     = ini_get('eaccelerator.enable');
+		$mmcache          = ini_get('mmcache.enable');
+		$phpexpress       = function_exists('phpexpress');
+		$xcache           = ini_get('xcache.size') > 0 && ini_get('xcache.cacher');
+		$zend_accelerator = ini_get('zend_accelerator.enabled');
+		$zend_plus        = ini_get('zend_optimizerplus.enable');
+		
+		return $apc || $eaccelerator || $mmcache || $phpexpress || $xcache || $zend_accelerator || $zend_plus;
 	}
 	
 	
