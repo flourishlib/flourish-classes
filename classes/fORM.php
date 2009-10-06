@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added support for fActiveRecord to ::getRecordName() [wb, 2009-10-06]
  * @changes    1.0.0b14  Updated documentation for ::registerActiveRecordMethod() to include info about prefix method matches [wb, 2009-08-07]
  * @changes    1.0.0b13  Updated documentation for ::registerRecordSetMethod() [wb, 2009-07-14]
  * @changes    1.0.0b12  Updated ::callReflectCallbacks() to accept a class name instead of an object [wb, 2009-07-13]
@@ -117,7 +118,9 @@ class fORM
 	 * 
 	 * @var array
 	 */
-	static private $record_names = array();
+	static private $record_names = array(
+		'fActiveRecord' => 'Active Record'
+	);
 	
 	/**
 	 * An array of `{method} => {callback}` mappings for fRecordSet
@@ -988,7 +991,9 @@ class fORM
 		self::$hook_callbacks                 = array();
 		self::$inspect_callbacks              = array();
 		self::$objectify_callbacks            = array();
-		self::$record_names                   = array();
+		self::$record_names                   = array(
+			'fActiveRecord' => 'Active Record'
+		);
 		self::$record_set_method_callbacks    = array();
 		self::$reflect_callbacks              = array();
 		self::$replicate_callbacks            = array();
