@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Fixed setting up the inspect callback in ::configureTimezoneColumn() [wb, 2009-10-11]
  * @changes    1.0.0b3  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b2  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
@@ -210,7 +211,7 @@ class fORMDate
 			fORM::registerHookCallback($class, 'pre::validate()', self::makeTimestampObjects);
 		}
 		
-		fORM::registerInspectCallback($class, $column, self::inspect);
+		fORM::registerInspectCallback($class, $timezone_column, self::inspect);
 		
 		fORM::registerActiveRecordMethod(
 			$class,
