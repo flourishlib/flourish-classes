@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b18  Fixed ::checkOnlyOneRule() and ::checkOneOrMoreRule() to consider blank strings as NULL [wb, 2009-08-21]
  * @changes    1.0.0b17  Added @internal methods ::removeStringReplacement() and ::removeRegexReplacement() [wb, 2009-07-29]
  * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addConditionalValidationRule() to ::addConditionalRule(), ::addManyToManyValidationRule() to ::addManyToManyRule(), ::addOneOrMoreValidationRule() to ::addOneOrMoreRule(), ::addOneToManyValidationRule() to ::addOneToManyRule(), ::addOnlyOneValidationRule() to ::addOnlyOneRule(), ::addValidValuesValidationRule() to ::addValidValuesRule() [wb, 2009-07-13]
@@ -174,6 +175,7 @@ class fORMValidation
 		}
 		
 		$route = fORMSchema::getRouteName(
+			fORMSchema::retrieve(),
 			fORM::tablize($class),
 			fORM::tablize($related_class),
 			$route,
@@ -229,6 +231,7 @@ class fORMValidation
 		}
 		
 		$route = fORMSchema::getRouteName(
+			fORMSchema::retrieve(),
 			fORM::tablize($class),
 			fORM::tablize($related_class),
 			$route,
@@ -367,7 +370,8 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
+		$schema      = fORMSchema::retrieve();
+		$column_info = $schema->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
 			return self::compose(
@@ -463,7 +467,8 @@ class fORMValidation
 	static private function checkDataType($class, $column, $value)
 	{
 		$table       = fORM::tablize($class);
-		$column_info = fORMSchema::retrieve()->getColumnInfo($table, $column);
+		$schema      = fORMSchema::retrieve();
+		$column_info = $schema->getColumnInfo($table, $column);
 		
 		if ($value !== NULL) {
 			switch ($column_info['type']) {
@@ -537,20 +542,26 @@ class fORMValidation
 			return;
 		}
 		
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
+		
 		$table        = fORM::tablize($class);
-		$foreign_keys = fORMSchema::retrieve()->getKeys($table, 'foreign');
+		$foreign_keys = $schema->getKeys($table, 'foreign');
 		
 		foreach ($foreign_keys AS $foreign_key) {
 			if ($foreign_key['column'] == $column) {
 				try {
-					$sql  = "SELECT " . $foreign_key['foreign_column'];
-					$sql .= " FROM " . $foreign_key['foreign_table'];
-					$sql .= " WHERE ";
-					$sql .= $column . fORMDatabase::escapeBySchema($table, $column, $values[$column], '=');
-					$sql  = str_replace('WHERE ' . $column, 'WHERE ' . $foreign_key['foreign_column'], $sql);
 					
-					$result = fORMDatabase::retrieve()->translatedQuery($sql);
+					$params = array(
+						"SELECT %r FROM %r WHERE " . fORMDatabase::makeCondition($schema, $table, $column, '=', $values[$column]),
+						$foreign_key['foreign_column'],
+						$foreign_key['foreign_table'],
+						$foreign_key['foreign_column'],
+						$values[$column]
+					);
+					$result = call_user_func_array($db->translatedQuery, $params);
 					$result->tossIfNoRows();
+					
 				} catch (fNoRowsException $e) {
 					return self::compose(
 						'%sThe value specified is invalid',
@@ -646,13 +657,16 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary');
-		$columns      = array();
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
+		
+		$pk_columns = $schema->getKeys($table, 'primary');
+		$columns    = array();
 		
 		$found_value  = FALSE;
-		foreach ($primary_keys as $primary_key) {
-			$columns[] = fORM::getColumnName($class, $primary_key);
-			if ($values[$primary_key]) {
+		foreach ($pk_columns as $pk_column) {
+			$columns[] = fORM::getColumnName($class, $pk_column);
+			if ($values[$pk_column]) {
 				$found_value = TRUE;	
 			}
 		}
@@ -662,13 +676,13 @@ class fORMValidation
 		}
 		
 		$different = FALSE;
-		foreach ($primary_keys as $primary_key) {
-			if (!fActiveRecord::hasOld($old_values, $primary_key)) {
+		foreach ($pk_columns as $pk_column) {
+			if (!fActiveRecord::hasOld($old_values, $pk_column)) {
 				continue;	
 			}
-			$old_value = fActiveRecord::retrieveOld($old_values, $primary_key);
-			$value     = $values[$primary_key];
-			if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($value) && self::stringlike($old_value)) {
+			$old_value = fActiveRecord::retrieveOld($old_values, $pk_column);
+			$value     = $values[$pk_column];
+			if (self::isCaseInsensitive($class, $pk_column) && self::stringlike($value) && self::stringlike($old_value)) {
 				if (fUTF8::lower($value) != fUTF8::lower($old_value)) {
 					$different = TRUE;
 				}	
@@ -682,18 +696,30 @@ class fORMValidation
 		}
 		
 		try {
-			$sql    = "SELECT " . join(', ', $primary_keys) . " FROM " . $table . " WHERE ";
+			$params = array(
+				"SELECT %r FROM %r WHERE ",
+				$pk_columns,
+				$table
+			);
+			
 			$conditions = array();
-			foreach ($primary_keys as $primary_key) {
-				if (self::isCaseInsensitive($class, $primary_key) && self::stringlike($values[$primary_key])) {
-					$conditions[] = 'LOWER(' . $primary_key . ')' . fORMDatabase::escapeBySchema($table, $primary_key, fUTF8::lower($values[$primary_key]), '=');
+			foreach ($pk_columns as $pk_column) {
+				$value = $values[$pk_column];
+				if (self::isCaseInsensitive($class, $pk_column) && self::stringlike($value)) {
+					$condition    = fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $value);
+					$conditions[] = str_replace('%r', 'LOWER(%r)', $condition);
+					$params[] = $pk_column;
+					$params[] = fUTF8::lower($value);
+					
 				} else {
-					$conditions[] = $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $values[$primary_key], '=');
+					$conditions[] = fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $value);
+					$params[] = $pk_column;
+					$params[] = $value;
 				} 
 			}
-			$sql .= join(' AND ', $conditions);
+			$params[0] .= join(' AND ', $conditions);
 			
-			$result = fORMDatabase::retrieve()->translatedQuery($sql);
+			$result = call_user_func_array($db->translatedQuery, $params);
 			$result->tossIfNoRows();
 			
 			return self::compose(
@@ -753,10 +779,13 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$key_info = fORMSchema::retrieve()->getKeys($table);
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
 		
-		$primary_keys = $key_info['primary'];
-		$unique_keys  = $key_info['unique'];
+		$key_info = $schema->getKeys($table);
+		
+		$pk_columns  = $key_info['primary'];
+		$unique_keys = $key_info['unique'];
 		
 		foreach ($unique_keys AS $unique_columns) {
 			settype($unique_columns, 'array');
@@ -772,27 +801,41 @@ class fORMValidation
 				continue;
 			}
 			
-			$sql = "SELECT " . join(', ', $key_info['primary']) . " FROM " . $table . " WHERE ";
-			$first = TRUE;
+			$params = array(
+				"SELECT %r FROM %r WHERE ",
+				$key_info['primary'],
+				$table	
+			);
+			
+			$conditions = array();
 			foreach ($unique_columns as $unique_column) {
-				if ($first) { $first = FALSE; } else { $sql .= " AND "; }
 				$value = $values[$unique_column];
 				if (self::isCaseInsensitive($class, $unique_column) && self::stringlike($value)) {
-					$sql .= 'LOWER(' . $unique_column . ')' . fORMDatabase::escapeBySchema($table, $unique_column, fUTF8::lower($value), '=');
+					$condition    = fORMDatabase::makeCondition($schema, $table, $unique_column, '=', $value);
+					$conditions[] = str_replace('%r', 'LOWER(%r)', $condition);
+					$params[] = $table . '.' . $unique_column;
+					$params[] = fUTF8::lower($value);
+					
 				} else {
-					$sql .= $unique_column . fORMDatabase::escapeBySchema($table, $unique_column, $value, '=');
+					$conditions[] = fORMDatabase::makeCondition($schema, $table, $unique_column, '=', $value);
+					$params[] = $table . '.' . $unique_column;
+					$params[] = $value;
 				}
 			}
 			
+			$params[0] .= join(' AND ', $conditions);
+			
 			if ($object->exists()) {
-				foreach ($primary_keys as $primary_key) {
-					$value = fActiveRecord::retrieveOld($old_values, $primary_key, $values[$primary_key]);
-					$sql  .= ' AND ' . $primary_key . fORMDatabase::escapeBySchema($table, $primary_key, $value, '<>');
+				foreach ($pk_columns as $pk_column) {
+					$value = fActiveRecord::retrieveOld($old_values, $pk_column, $values[$pk_column]);
+					$params[0] .= ' AND ' . fORMDatabase::makeCondition($schema, $table, $pk_column, '<>', $value);
+					$params[] = $table . '.' . $pk_column;
+					$params[] = $value;
 				}
 			}
 			
 			try {
-				$result = fORMDatabase::retrieve()->translatedQuery($sql);
+				$result = call_user_func_array($db->translatedQuery, $params);
 				$result->tossIfNoRows();
 			
 				// If an exception was not throw, we have existing values
@@ -1104,10 +1147,11 @@ class fORMValidation
 	 */
 	static public function setColumnCaseInsensitive($class, $column)
 	{
-		$class = fORM::getClass($class);
-		$table = fORM::tablize($class);
+		$class  = fORM::getClass($class);
+		$table  = fORM::tablize($class);
+		$schema = fORMSchema::retrieve();
 		
-		$type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$type = $schema->getColumnInfo($table, $column, 'type');
 		$valid_types = array('varchar', 'char', 'text');
 		if (!in_array($type, $valid_types)) {
 			throw new fProgrammerException(
@@ -1191,8 +1235,9 @@ class fORMValidation
 	 */
 	static public function validate($object, $values, $old_values)
 	{
-		$class = get_class($object);
-		$table = fORM::tablize($class);
+		$class  = get_class($object);
+		$table  = fORM::tablize($class);
+		$schema = fORMSchema::retrieve();
 		
 		self::initializeRuleArrays($class);
 		
@@ -1211,7 +1256,7 @@ class fORMValidation
 		$message = self::checkPrimaryKeys($object, $values, $old_values);
 		if ($message) { $validation_messages[] = $message; }
 		
-		$column_info = fORMSchema::retrieve()->getColumnInfo($table);
+		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			$message = self::checkAgainstSchema($object, $column, $values, $old_values);
 			if ($message) { $validation_messages[] = $message; }

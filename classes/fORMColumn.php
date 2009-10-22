@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b5  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b4  Updated code for new fORM API [wb, 2009-06-15]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -99,7 +100,8 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve();
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -136,7 +138,8 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve();
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -180,7 +183,8 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve();
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('integer', 'float');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -231,7 +235,8 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve();
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -298,7 +303,9 @@ class fORMColumn
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class       = get_class($object);
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
+		$schema      = fORMSchema::retrieve();
+		$table       = fORM::tablize($class);
+		$column_info = $schema->getColumnInfo($table, $column);
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -332,24 +339,24 @@ class fORMColumn
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
-		$table = fORM::tablize($class);
+		$class  = get_class($object);
+		$table  = fORM::tablize($class);
+		
+		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve();
 		
 		$settings = self::$random_columns[$class][$column];
 		
 		// Check to see if this is a unique column
-		$unique_keys      = fORMSchema::retrieve()->getKeys($table, 'unique');
+		$unique_keys      = $schema->getKeys($table, 'unique');
 		$is_unique_column = FALSE;
 		foreach ($unique_keys as $unique_key) {
 			if ($unique_key == array($column)) {
 				$is_unique_column = TRUE;
+				$sql = "SELECT %r FROM %r WHERE %r = %s";
 				do {
 					$value = fCryptography::randomString($settings['length'], $settings['type']);
-					
-					// See if this is unique
-					$sql = "SELECT " . $column . " FROM " . $table . " WHERE " . $column . " = " . fORMDatabase::retrieve()->escape('string', $value);
-				
-				} while (fORMDatabase::retrieve()->query($sql)->countReturnedRows());
+				} while ($db->query($sql, $column, $table, $column, $value)->countReturnedRows());
 			}
 		}
 		
@@ -472,7 +479,9 @@ class fORMColumn
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class       = get_class($object);
-		$column_info = fORMSchema::retrieve()->getColumnInfo(fORM::tablize($class), $column);
+		$table       = fORM::tablize($class);
+		$schema      = fORMSchema::retrieve();
+		$column_info = $schema->getColumnInfo($table, $column);
 		$value       = $values[$column];
 		
 		if ($value instanceof fNumber) {
@@ -527,11 +536,12 @@ class fORMColumn
 		
 		if (isset(self::$number_columns[$class])) {
 			
-			$table = fORM::tablize($class);
+			$table  = fORM::tablize($class);
+			$schema = fORMSchema::retrieve();
 			
 			foreach(self::$number_columns[$class] as $column => $enabled) {
 				$camelized_column = fGrammar::camelize($column, TRUE);
-				$type             = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+				$type             = $schema->getColumnInfo($table, $column, 'type');
 				
 				// Get and set methods
 				$signature = '';

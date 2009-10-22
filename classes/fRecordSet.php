@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Fixed ::prebuild() and ::precount() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b27  Changed fRecordSet::build() to fix bad $page numbers instead of throwing an fProgrammerException [wb, 2009-10-05]
  * @changes    1.0.0b26  Updated the documentation for ::build() and ::filter() to reflect new functionality [wb, 2009-09-21]
  * @changes    1.0.0b25  Fixed ::map() to work with string-style static method callbacks in PHP 5.1 [wb, 2009-09-18]
@@ -166,46 +167,60 @@ class fRecordSet implements Iterator, Countable
 		// Ensure that the class has been configured
 		fActiveRecord::forceConfigure($class);
 		
-		$table = fORM::tablize($class);
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
+		$table  = fORM::tablize($class);
 		
-		$sql = "SELECT " . $table . ".* FROM :from_clause";
+		$params = array($db->escape("SELECT %r.* FROM :from_clause", $table));
 		
 		if ($where_conditions) {
 			$having_conditions = fORMDatabase::splitHavingConditions($where_conditions);
-		
-			$sql .= ' WHERE ' . fORMDatabase::createWhereClause($table, $where_conditions);
+		} else {
+			$having_conditions = NULL;	
 		}
 		
-		$sql .= ' :group_by_clause ';
-		
-		if ($where_conditions && $having_conditions) {
-			$sql .= ' HAVING ' . fORMDatabase::createHavingClause($having_conditions);	
+		if ($where_conditions) {
+			$params[0] .= ' WHERE ';
+			$params = fORMDatabase::addWhereClause($db, $schema, $params, $table, $where_conditions);
 		}
 		
-		if ($order_bys) {
-			$sql .= ' ORDER BY ' . fORMDatabase::createOrderByClause($table, $order_bys);
+		$params[0] .= ' :group_by_clause ';
+		
+		if ($having_conditions) {
+			$params[0] .= ' HAVING ';
+			$params = fORMDatabase::addHavingClause($db, $schema, $params, $table, $having_conditions);	
+		}
 		
 		// If no ordering is specified, order by the primary key
-		} elseif ($primary_keys = fORMSchema::retrieve()->getKeys($table, 'primary')) {
-			$expressions = array();
-			foreach ($primary_keys as $primary_key) {
-				$expressions[] = $table . '.' . $primary_key . ' ASC';
+		if (!$order_bys) {
+			$order_bys = array();
+			foreach ($schema->getKeys($table, 'primary') as $pk_column) {
+				$order_bys[$table . '.' . $pk_column] = 'ASC';	
 			}
-			$sql .= ' ORDER BY ' . join(', ', $expressions);
 		}
 		
-		$sql = fORMDatabase::insertFromAndGroupByClauses($table, $sql);
+		$params[0] .= ' ORDER BY ';
+		$params = fORMDatabase::addOrderByClause($db, $schema, $params, $table, $order_bys);
+		
+		$params = fORMDatabase::injectFromAndGroupByClauses($db, $schema, $params, $table);
 		
 		// Add the limit clause and create a query to get the non-limited total
 		$non_limited_count_sql = NULL;
 		if ($limit !== NULL) {
-			$primary_key_fields = fORMSchema::retrieve()->getKeys($table, 'primary');
-			$primary_key_fields = fORMDatabase::addTableToValues($table, $primary_key_fields);
+			$pk_columns = array();
+			foreach ($schema->getKeys($table, 'primary') as $pk_column) {
+				$pk_columns[] = $table . '.' . $pk_column;	
+			}
 			
-			$non_limited_count_sql = str_replace('SELECT ' . $table . '.*', 'SELECT ' . join(', ', $primary_key_fields), $sql);
-			$non_limited_count_sql = 'SELECT count(*) FROM (' . $non_limited_count_sql . ') AS sq';
+			$non_limited_count_sql = str_replace(
+				$db->escape('SELECT %r.*', $table),
+				$db->escape('SELECT %r', $pk_columns),
+				$params[0]
+			);
+			$non_limited_count_sql = preg_replace('#\s+ORDER BY.*$#', '', $non_limited_count_sql);
+			$non_limited_count_sql = $db->escape('SELECT count(*) FROM (' . $non_limited_count_sql . ') subquery', array_slice($params, 1));
 			
-			$sql .= ' LIMIT ' . $limit;
+			$params[0] .= ' LIMIT ' . $limit;
 			
 			if ($page !== NULL) {
 				
@@ -213,11 +228,11 @@ class fRecordSet implements Iterator, Countable
 					$page = 1;
 				}
 				
-				$sql .= ' OFFSET ' . (($page-1) * $limit);
+				$params[0] .= ' OFFSET ' . (($page-1) * $limit);
 			}
 		}
 		
-		return new fRecordSet($class, fORMDatabase::retrieve()->translatedQuery($sql), $non_limited_count_sql);
+		return new fRecordSet($class, call_user_func_array($db->translatedQuery, $params), $non_limited_count_sql);
 	}
 	
 	
@@ -294,16 +309,18 @@ class fRecordSet implements Iterator, Countable
 	{
 		self::validateClass($class);
 		
-		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(\w+\.)?\*\s*FROM#i', $sql)) {
+		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(("?\w+"?\.)?"?\w+"?\.)?\*\s*FROM#i', $sql)) {
 			throw new fProgrammerException(
 				'The SQL statement specified, %s, does not appear to be in the form SELECT * FROM table',
 				$sql
 			);	
 		}
 		
+		$db = fORMDatabase::retrieve();
+		
 		return new fRecordSet(
 			$class,
-			fORMDatabase::retrieve()->translatedQuery($sql),
+			$db->translatedQuery($sql),
 			$non_limited_count_sql
 		);
 	}
@@ -493,6 +510,123 @@ class fRecordSet implements Iterator, Countable
 	
 	
 	/**
+	 * Adds an `ORDER BY` clause to the SQL for the primary keys of this record set
+	 * 
+	 * @param  fDatabase $db             The database the query will be executed on 
+	 * @param  fSchema   $schema         The schema for the database
+	 * @param  array     $params         The parameters for the fDatabase::query() call
+	 * @param  string    $related_class  The related class to add the order bys for
+	 * @param  string    $route          The route to this table from another table
+	 * @return array  The params with the `ORDER BY` clause added
+	 */
+	private function addOrderByParams($db, $schema, $params, $related_class, $route=NULL)
+	{
+		$table = fORM::tablize($this->class);
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
+		
+		$pk_columns      = $schema->getKeys($table, 'primary');
+		$first_pk_column = $pk_columns[0];
+		
+		$escaped_pk_columns = array();
+		foreach ($pk_columns as $pk_column) {
+			$escaped_pk_columns[$pk_column] = $db->escape('%r', $table_with_route . '.' . $pk_column);	
+		}
+		
+		$sql    = '';
+		$number = 0;
+		foreach ($this->getPrimaryKeys() as $primary_key) {
+			$sql .= 'WHEN ';
+			 
+			if (is_array($primary_key)) {
+				$conditions = array();
+				foreach ($pk_columns as $pk_column) {
+					$conditions[] = str_replace(
+						'%r',
+						$escaped_pk_columns[$pk_column],
+						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $primary_key[$pk_column])
+					);
+					$params[] = $primary_key[$pk_column];
+				}
+				$sql .= join(' AND ', $conditions);
+			
+			} else {
+				$sql .= str_replace(
+					'%r',
+					$escaped_pk_columns[$first_pk_column],
+					fORMDatabase::makeCondition($schema, $table, $first_pk_column, '=', $primary_key)
+				);
+				$params[] = $primary_key;
+			}
+			 
+			$sql .= ' THEN ' . $number . ' ';
+			 
+			$number++;
+		}
+		
+		$params[0] .= 'CASE ' . $sql . 'END ASC';
+		
+		if ($related_order_bys = fORMRelated::getOrderBys($this->class, $related_class, $route)) {
+			$params[0] .= ', ';
+			$params = fORMDatabase::addOrderByClause($db, $schema, $params, fORM::tablize($related_class), $related_order_bys);
+		}
+		
+		return $params;
+	}
+	
+	
+	/**
+	 * Adds `WHERE` params to the SQL for the primary keys of this record set
+	 * 
+	 * @param  fDatabase $db      The database the query will be executed on 
+	 * @param  fSchema   $schema  The schema for the database
+	 * @param  array     $params  The parameters for the fDatabase::query() call
+	 * @param  string    $route   The route to this table from another table
+	 * @return array  The params with the `WHERE` clause added
+	 */
+	private function addWhereParams($db, $schema, $params, $route=NULL)
+	{
+		$table = fORM::tablize($this->class);
+		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
+		
+		$pk_columns = $schema->getKeys($table, 'primary');
+		
+		// We have a multi-field primary key, making things kinda ugly
+		if (sizeof($pk_columns) > 1) {
+			
+			$escape_pk_columns = array();
+			foreach ($pk_columns as $pk_column) {
+				$escaped_pk_columns[$pk_column] = $db->escape('%r', $table_with_route . '.' . $pk_column);	
+			}
+			
+			$conditions = array();
+			 
+			foreach ($this->getPrimaryKeys() as $primary_key) {
+				$sub_conditions = array();
+				foreach ($pk_columns as $pk_column) {
+					$sub_conditions[] = str_replace(
+						'%r',
+						$escaped_pk_columns[$pk_column],
+						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $primary_key[$pk_column])
+					);
+					$params[] = $primary_key[$pk_column];
+				}
+				$conditions[] = join(' AND ', $sub_conditions);
+			}
+			$params[0] .= '(' . join(') OR (', $conditions) . ')';
+		 
+		// We have a single primary key field, making things nice and easy
+		} else {
+			$first_pk_column = $pk_columns[0];
+			$params[0] .= $db->escape('%r IN ', $table_with_route . '.' . $first_pk_column);
+			$params[0] .= '(' . $schema->getColumnInfo($table, $first_pk_column, 'placeholder') . ')';
+			$params[] = $this->getPrimaryKeys();
+		}
+		
+		return $params;
+	}
+	
+	
+	/**
 	 * Calls a specific method on each object, returning an fRecordSet of the results
 	 * 
 	 * @param  string $method     The method to call
@@ -594,89 +728,6 @@ class fRecordSet implements Iterator, Countable
 	
 	
 	/**
-	 * Creates an `ORDER BY` clause for the primary keys of this record set
-	 * 
-	 * @param  string $route  The route to this table from another table
-	 * @return string  The `ORDER BY` clause
-	 */
-	private function constructOrderByClause($route=NULL)
-	{
-		$table = fORM::tablize($this->class);
-		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
-		
-		$pk_columns      = fORMSchema::retrieve()->getKeys($table, 'primary');
-		$first_pk_column = $pk_columns[0];
-		
-		$sql = '';
-		
-		$number = 0;
-		foreach ($this->getPrimaryKeys() as $primary_key) {
-			$sql .= 'WHEN ';
-			 
-			if (is_array($primary_key)) {
-				$conditions = array();
-				foreach ($pk_columns as $pk_column) {
-					$conditions[] = $table_with_route . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
-				}
-				$sql .= join(' AND ', $conditions);
-			} else {
-				$sql .= $table_with_route . '.' . $first_pk_column . fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key, '=');
-			}
-			 
-			$sql .= ' THEN ' . $number . ' ';
-			 
-			$number++;
-		}
-		
-		return 'CASE ' . $sql . 'END ASC';
-	}
-	
-	
-	/**
-	 * Creates a `WHERE` clause for the primary keys of this record set
-	 * 
-	 * @param  string $route  The route to this table from another table
-	 * @return string  The `WHERE` clause
-	 */
-	private function constructWhereClause($route=NULL)
-	{
-		$table = fORM::tablize($this->class);
-		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
-		
-		$pk_columns = fORMSchema::retrieve()->getKeys($table, 'primary');
-		
-		$sql = '';
-		
-		// We have a multi-field primary key, making things kinda ugly
-		if (sizeof($pk_columns) > 1) {
-			
-			$conditions = array();
-			 
-			foreach ($this->getPrimaryKeys() as $primary_key) {
-				$sub_conditions = array();
-				foreach ($pk_columns as $pk_column) {
-					$sub_conditions[] = $table_with_route . '.' . $pk_column . fORMDatabase::escapeBySchema($table, $pk_column, $primary_key[$pk_column], '=');
-				}
-				$conditions[] = join(' AND ', $sub_conditions);
-			}
-			$sql .= '(' . join(') OR (', $conditions) . ')';
-		 
-		// We have a single primary key field, making things nice and easy
-		} else {
-			$first_pk_column = $pk_columns[0];
-		 
-			$values = array();
-			foreach ($this->getPrimaryKeys() as $primary_key) {
-				$values[] = fORMDatabase::escapeBySchema($table, $first_pk_column, $primary_key);
-			}
-			$sql .= $table_with_route . '.' . $first_pk_column . ' IN (' . join(', ', $values) . ')';
-		}
-		
-		return $sql;
-	}
-	
-	
-	/**
 	 * Checks if the record set contains the record specified
 	 * 
 	 * @param  fActiveRecord $record  The record to check, must exist in the database
@@ -724,7 +775,8 @@ class fRecordSet implements Iterator, Countable
 		
 		if (!is_numeric($this->non_limited_count)) {
 			try {
-				$this->non_limited_count = fORMDatabase::retrieve()->translatedQuery($this->non_limited_count)->fetchScalar();
+				$db = fORMDatabase::retrieve();
+				$this->non_limited_count = $db->translatedQuery($this->non_limited_count)->fetchScalar();
 			} catch (fExpectedException $e) {
 				$this->non_limited_count = $this->count();
 			}
@@ -958,7 +1010,8 @@ class fRecordSet implements Iterator, Countable
 		$this->validateSingleClass('get primary key');
 		
 		$table           = fORM::tablize($this->class);
-		$pk_columns      = fORMSchema::retrieve()->getKeys($table, 'primary');
+		$schema          = fORMSchema::retrieve();
+		$pk_columns      = $schema->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
 		$primary_keys = array();
@@ -1205,44 +1258,43 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
+		
 		$related_table = fORM::tablize($related_class);
 		$table         = fORM::tablize($this->class);
 		 
-		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
+		$route        = fORMSchema::getRouteName($schema, $table, $related_table, $route, '*-to-many');
+		$relationship = fORMSchema::getRoute($schema, $table, $related_table, $route, '*-to-many');
 		
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
 		
 		// Build the query out
-		$where_sql    = $this->constructWhereClause($route);
-		
-		$order_by_sql = $this->constructOrderByClause($route);
-		if ($related_order_bys = fORMRelated::getOrderBys($this->class, $related_class, $route)) {
-			$order_by_sql .= ', ' . fORMDatabase::createOrderByClause($related_table, $related_order_bys);
-		}
-		
-		$new_sql  = 'SELECT ' . $related_table . '.*';
+		$params = array($db->escape('SELECT %r.*', $related_table));
 		
 		// If we are going through a join table we need the related primary key for matching
 		if (isset($relationship['join_table'])) {
-			$new_sql .= ", " . $table_with_route . '.' . $relationship['column'];
+			$params[0] .= $db->escape(", %r", $table_with_route . '.' . $relationship['column']);
 		}
 		
-		$new_sql .= ' FROM :from_clause ';
-		$new_sql .= ' WHERE ' . $where_sql;
-		$new_sql .= ' :group_by_clause ';
-		$new_sql .= ' ORDER BY ' . $order_by_sql;
-		 
-		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql);
+		$params[0] .= ' FROM :from_clause WHERE ';
+		$params     = $this->addWhereParams($db, $schema, $params, $route);
+		$params[0] .= ' :group_by_clause ORDER BY ';
+		$params     = $this->addOrderByParams($db, $schema, $params, $related_class, $route);
+		
+		$params = fORMDatabase::injectFromAndGroupByClauses($db, $schema, $params, $related_table);
 		
 		// Add the joining column to the group by
-		if (strpos($new_sql, 'GROUP BY') !== FALSE) {
-			$new_sql = str_replace(' ORDER BY', ', ' . $table . '.' . $relationship['column'] . ' ORDER BY', $new_sql);
-		}
-		 
+		if (strpos($params[0], 'GROUP BY') !== FALSE) {
+			$params[0] = str_replace(
+				' ORDER BY',
+				$db->escape(', %r ORDER BY', $table . '.' . $relationship['column']),
+				$params[0]
+			);
+		} 
 		 
 		// Run the query and inject the results into the records
-		$result = fORMDatabase::retrieve()->translatedQuery($new_sql);
+		$result = call_user_func_array($db->translatedQuery, $params);
 		 
 		$total_records = sizeof($this->records);
 		for ($i=0; $i < $total_records; $i++) {
@@ -1262,7 +1314,7 @@ class fRecordSet implements Iterator, Countable
 			
 			// If it is a straight join, keep track of the value by the related column value
 			} else {
-				$method = 'get' . fGrammar::camelize($relationship['related_column'], TRUE);
+				$method = 'get' . fGrammar::camelize($relationship['column'], TRUE);
 				$keys[$relationship['related_column']] = $record->$method();
 			}
 			 
@@ -1316,38 +1368,44 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
+		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve();
+		
 		$related_table = fORM::tablize($related_class);
 		$table         = fORM::tablize($this->class);
 		 
-		$route        = fORMSchema::getRouteName($table, $related_table, $route, '*-to-many');
-		$relationship = fORMSchema::getRoute($table, $related_table, $route, '*-to-many');
-		
-		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
+		$route        = fORMSchema::getRouteName($schema, $table, $related_table, $route, '*-to-many');
+		$relationship = fORMSchema::getRoute($schema, $table, $related_table, $route, '*-to-many');
 		
 		// Build the query out
-		$where_sql    = $this->constructWhereClause($route);
-		$order_by_sql = $this->constructOrderByClause($route);
+		$table_and_column = $table . '.' . $relationship['column'];
 		
-		$related_table_keys = fORMSchema::retrieve()->getKeys($related_table, 'primary');
-		$related_table_keys = fORMDatabase::addTableToValues($related_table, $related_table_keys);
-		$related_table_keys = join(', ', $related_table_keys);
+		if (isset($relationship['join_table'])) {
+			$table_to_join  = $relationship['join_table'];
+			$column_to_join = $relationship['join_table'] . '.' . $relationship['join_column'];
+			
+		} else {
+			$table_to_join  = $related_table;
+			$column_to_join = $related_table . '.' . $relationship['related_column'];
+		}
 		
-		$column = $table_with_route . '.' . $relationship['column'];
+		$params = array($db->escape(
+			"SELECT count(*) AS flourish__count, %r AS flourish__column FROM %r INNER JOIN %r ON %r = %r WHERE ",
+			$table_and_column,
+			$table,
+			$table_to_join,
+			$table_and_column,
+			$column_to_join
+		));
+		$params = $this->addWhereParams($db, $schema, $params);
+		$params[0] .= $db->escape(' GROUP BY %r', $table_and_column);
 		
-		$new_sql  = 'SELECT count(' . $related_table_keys . ') AS __flourish_count, ' . $column . ' AS __flourish_column ';
-		$new_sql .= ' FROM :from_clause ';
-		$new_sql .= ' WHERE ' . $where_sql;
-		$new_sql .= ' GROUP BY ' . $column;
-		$new_sql .= ' ORDER BY ' . $column . ' ASC';
-		 
-		$new_sql = fORMDatabase::insertFromAndGroupByClauses($related_table, $new_sql);
-		 
 		// Run the query and inject the results into the records
-		$result = fORMDatabase::retrieve()->translatedQuery($new_sql);
+		$result = call_user_func_array($db->translatedQuery, $params);
 		
 		$counts = array();
 		foreach ($result as $row) {
-			$counts[$row['__flourish_column']] = (int) $row['__flourish_count'];
+			$counts[$row['flourish__column']] = (int) $row['flourish__count'];
 		}
 		
 		unset($result);
@@ -1387,6 +1445,7 @@ class fRecordSet implements Iterator, Countable
 		}
 		
 		$relationship = fORMSchema::getRoute(
+			fORMSchema::retrieve(),
 			fORM::tablize($this->class),
 			fORM::tablize($related_class),
 			$route,

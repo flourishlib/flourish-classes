@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Added support for escaping identifiers (column and table names) to ::escape(), added support for database schemas, rewrote internal SQL string spliting [wb, 2009-10-22]
  * @changes    1.0.0b18  Updated the class for the new fResult and fUnbufferedResult APIs, fixed ::unescape() to not touch NULLs [wb, 2009-08-12]
  * @changes    1.0.0b17  Added the ability to pass an array of all values as a single parameter to ::escape() instead of one value per parameter [wb, 2009-08-11]
  * @changes    1.0.0b16  Fixed PostgreSQL and Oracle from trying to get auto-incrementing values on inserts when explicit values were given [wb, 2009-08-06]
@@ -534,6 +535,7 @@ class fDatabase
 				$this->determineCharacterSet();
 			}
 			$this->query('SET TEXTSIZE 65536');
+			$this->query('SET QUOTED_IDENTIFIER ON');
 		}
 		
 		// Make PostgreSQL use UTF-8
@@ -784,6 +786,7 @@ class fDatabase
 	 *  - `'boolean'`
 	 *  - `'date'`
 	 *  - `'float'`
+	 *  - `'identifier'`
 	 *  - `'integer'`
 	 *  - `'string'` (also varchar, char or text)
 	 *  - `'varchar'`
@@ -799,6 +802,7 @@ class fDatabase
 	 *  - `%b` for a boolean
 	 *  - `%d` for a date
 	 *  - `%f` for a float
+	 *  - `%r` for an indentifier (table or column name)
 	 *  - `%i` for an integer
 	 *  - `%s` for a string
 	 *  - `%t` for a time
@@ -868,6 +872,10 @@ class fDatabase
 			case '%f':
 				$callback = $this->escapeFloat;
 				break;
+			case 'identifier':
+			case '%r':
+				$callback = $this->escapeIdentifier;
+				break;
 			case 'integer':
 			case '%i':
 				$callback = $this->escapeInteger;
@@ -906,100 +914,30 @@ class fDatabase
 		}
 		
 		// Separate the SQL from quoted values
-		preg_match_all("#(?:'([^']*(?:'')*)*?')|(?:[^']+)#", $sql_or_type, $matches);
+		$parts = $this->splitSQL($sql_or_type);
 		
 		$temp_sql = '';
 		$strings = array();
 		
-		// Replace strings with a placeholder so they don't mess use the regex parsing
-		foreach ($matches[0] as $match) {
-			if ($match[0] == "'") {
-				$strings[] = $match;
-				$match = ':string_' . (sizeof($strings)-1);
+		// Replace strings with a placeholder so they don't mess up the regex parsing
+		foreach ($parts as $part) {
+			if ($part[0] == "'") {
+				$strings[] = $part;
+				$part = ':string_' . (sizeof($strings)-1);
 			}
-			$temp_sql .= $match;
+			$temp_sql .= $part;
 		}
-		
-		$pieces = preg_split('#(%[lbdfistp])\b#', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
-		$sql = '';
 		
 		// If the values were passed as a single array, this handles that
-		if (count($values) == 0 && is_array($value)) {
-			$placeholders = 0;
-			foreach ($pieces as $piece) {
-				if (strlen($piece) == 2 && $piece[0] == '%') {
-					$placeholders++;
-				}	
-			}
-			
-			if ($placeholders == count($value)) {
-				$values = $value;
-				$value  = array_shift($values);	
-			}
+		$placeholders = preg_match_all('#%[lbdfristp]\b#', $temp_sql, $trash);
+		if (count($values) == 0 && is_array($value) && count($value) == $placeholders) {
+			$values = $value;
+			$value  = array_shift($values);	
 		}
 		
-		$missing_values = -1;
+		array_unshift($values, $value);
 		
-		foreach ($pieces as $piece) {
-			switch ($piece) {
-				case '%l':
-					$callback = $this->escapeBlob;
-					break;
-				case '%b':
-					$callback = $this->escapeBoolean;
-					break;
-				case '%d':
-					$callback = $this->escapeDate;
-					break;
-				case '%f':
-					$callback = $this->escapeFloat;
-					break;
-				case '%i':
-					$callback = $this->escapeInteger;
-					break;
-				case '%s':
-					$callback = $this->escapeString;
-					break;
-				case '%t':
-					$callback = $this->escapeTime;
-					break;
-				case '%p':
-					$callback = $this->escapeTimestamp;
-					break;
-				default:
-					$sql .= $piece;
-					continue 2;	
-			}
-			
-			if (is_array($value)) {
-				$sql .= join(', ', array_map($callback, $value));		
-			} else {
-				$sql .= call_user_func($callback, $value);
-			}
-					
-			if (sizeof($values)) {
-				$value = array_shift($values);
-			} else {
-				$value = NULL;
-				$missing_values++;	
-			}
-		}
-		
-		if ($missing_values > 0) {
-			throw new fProgrammerException(
-				'%1$s value(s) are missing for the placeholders in: %2$s',
-				$missing_values,
-				$sql_or_type
-			);	
-		}
-		
-		if (sizeof($values)) {
-			throw new fProgrammerException(
-				'%1$s extra value(s) were passed for the placeholders in: %2$s',
-				sizeof($values),
-				$sql_or_type
-			); 	
-		}
+		$sql = $this->escapeSQL($temp_sql, $values);
 		
 		$string_number = 0;
 		foreach ($strings as $string) {
@@ -1124,6 +1062,26 @@ class fDatabase
 	
 	
 	/**
+	 * Escapes an identifier for use in SQL, necessary for reserved words
+	 * 
+	 * @param  string $value  The identifier to escape
+	 * @return string  The escaped identifier
+	 */
+	private function escapeIdentifier($value)
+	{
+		$value = '"' . str_replace(
+			array('"', '.'),
+			array('',  '"."'),
+			$value
+		) . '"';
+		if ($this->type == 'oracle') {
+			$value = strtoupper($value);	
+		}
+		return $value;
+	}
+	
+	
+	/**
 	 * Escapes an integer for use in SQL
 	 * 
 	 * A `NULL` or invalid value will be returned as `'NULL'`
@@ -1139,10 +1097,10 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?[0-9]+$#D', $value)) {
+		if (!preg_match('#^([+\-]?[0-9]+)(\.[0-9]*)?$#D', $value, $matches)) {
 			return 'NULL';
 		}
-		return (string) $value;
+		return str_replace('+', '', $matches[1]);
 	}
 	
 	
@@ -1239,6 +1197,91 @@ class fDatabase
 		} elseif ($this->extension == 'pdo') {
 			return $this->connection->quote($value);
 		}
+	}
+	
+	
+	/**
+	 * Takes a SQL string and an array of values and replaces the placeholders with the value
+	 * 
+	 * @param string $sql     The SQL string containing placeholders
+	 * @param array  $values  An array of values to escape into the SQL
+	 * @return string  The SQL with the values escaped into it
+	 */
+	private function escapeSQL($sql, $values)
+	{
+		$original_sql = $sql;
+		$pieces = preg_split('#(%[lbdfristp])\b#', $sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+		
+		$sql   = '';
+		$value = array_shift($values);
+		
+		$missing_values = -1;
+		
+		foreach ($pieces as $piece) {
+			switch ($piece) {
+				case '%l':
+					$callback = $this->escapeBlob;
+					break;
+				case '%b':
+					$callback = $this->escapeBoolean;
+					break;
+				case '%d':
+					$callback = $this->escapeDate;
+					break;
+				case '%f':
+					$callback = $this->escapeFloat;
+					break;
+				case '%r':
+					$callback = $this->escapeIdentifier;
+					break;
+				case '%i':
+					$callback = $this->escapeInteger;
+					break;
+				case '%s':
+					$callback = $this->escapeString;
+					break;
+				case '%t':
+					$callback = $this->escapeTime;
+					break;
+				case '%p':
+					$callback = $this->escapeTimestamp;
+					break;
+				default:
+					$sql .= $piece;
+					continue 2;	
+			}
+			
+			if (is_array($value)) {
+				$sql .= join(', ', array_map($callback, $value));		
+			} else {
+				$sql .= call_user_func($callback, $value);
+			}
+					
+			if (sizeof($values)) {
+				$value = array_shift($values);
+			} else {
+				$value = NULL;
+				$missing_values++;	
+			}
+		}
+		
+		if ($missing_values > 0) {
+			throw new fProgrammerException(
+				'%1$s value(s) are missing for the placeholders in: %2$s',
+				$missing_values,
+				$original_sql
+			);	
+		}
+		
+		if (sizeof($values)) {
+			throw new fProgrammerException(
+				'%1$s extra value(s) were passed for the placeholders in: %2$s',
+				sizeof($values),
+				$original_sql
+			); 	
+		}	
+		
+		return $sql;
 	}
 	
 	
@@ -1599,31 +1642,43 @@ class fDatabase
 	 */
 	private function handleAutoIncrementedValue($result)
 	{
-		if (!preg_match('#^\s*INSERT\s+INTO\s+(?:`|"|\[)?(\w+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
+		if (!preg_match('#^\s*INSERT\s+INTO\s+(?:`|"|\[)?(["\w.]+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
 			$result->setAutoIncrementedValue(NULL);
 			return;
 		}
-		$table = strtolower($table_match[1]);
+		$quoted_table = $table_match[1];
+		$table        = str_replace('"', '', strtolower($table_match[1]));
 		
 		$insert_id = NULL;
 		
 		if ($this->type == 'oracle') {
 			if (!isset($this->schema_info['sequences'])) {
 				$sql = "SELECT
-								TABLE_NAME,
+								LOWER(OWNER) AS \"SCHEMA\",
+								LOWER(TABLE_NAME) AS \"TABLE\",
 								TRIGGER_BODY
 							FROM
-								USER_TRIGGERS
+								ALL_TRIGGERS
 							WHERE
 								TRIGGERING_EVENT = 'INSERT' AND
 								STATUS = 'ENABLED' AND
-								TRIGGER_NAME NOT LIKE 'BIN\$%'";
+								TRIGGER_NAME NOT LIKE 'BIN\$%' AND
+								OWNER IN (SELECT
+										username
+									FROM
+										dba_users
+									WHERE
+										default_tablespace NOT IN ('SYSTEM', 'SYSAUX'))";
 								
 				$this->schema_info['sequences'] = array();
 				
 				foreach ($this->query($sql) as $row) {
-					if (preg_match('#SELECT\s+(\w+).nextval\s+INTO\s+:new\.(\w+)\s+FROM\s+dual#i', $row['trigger_body'], $matches)) {
-						$this->schema_info['sequences'][strtolower($row['table_name'])] = array('sequence' => $matches[1], 'column' => $matches[2]);
+					if (preg_match('#SELECT\s+(["\w.]+).nextval\s+INTO\s+:new\.(\w+)\s+FROM\s+dual#i', $row['trigger_body'], $matches)) {
+						$table_name = $row['table'];
+						if ($row['schema'] != strtolower($this->username)) {
+							$table_name = $row['schema'] . '.' . $table_name;	
+						}
+						$this->schema_info['sequences'][$table_name] = array('sequence' => $matches[1], 'column' => str_replace('"', '', $matches[2]));
 					}
 				}
 				
@@ -1632,7 +1687,7 @@ class fDatabase
 				}
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '\b#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($quoted_table, '#') . '\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '(\b|")#i', $result->getSQL())) {
 				return;	
 			}
 			
@@ -1642,11 +1697,13 @@ class fDatabase
 		if ($this->type == 'postgresql') {
 			if (!isset($this->schema_info['sequences'])) {
 				$sql = "SELECT
-								pg_class.relname AS table_name,
+								pg_namespace.nspname AS \"schema\",
+								pg_class.relname AS \"table\",
 								pg_attribute.attname AS column
 							FROM
 								pg_attribute INNER JOIN
 								pg_class ON pg_attribute.attrelid = pg_class.oid INNER JOIN
+								pg_namespace ON pg_class.relnamespace = pg_namespace.oid INNER JOIN
 								pg_attrdef ON pg_class.oid = pg_attrdef.adrelid AND pg_attribute.attnum = pg_attrdef.adnum
 							WHERE
 								NOT pg_attribute.attisdropped AND
@@ -1655,7 +1712,11 @@ class fDatabase
 				$this->schema_info['sequences'] = array();
 				
 				foreach ($this->query($sql) as $row) {
-					$this->schema_info['sequences'][strtolower($row['table_name'])] = $row['column'];
+					$table_name = strtolower($row['table']);
+					if ($row['schema'] != 'public') {
+						$table_name = $row['schema'] . '.' . $table_name;	
+					}
+					$this->schema_info['sequences'][$table_name] = $row['column'];
 				}
 				
 				if ($this->cache) {
@@ -1663,7 +1724,7 @@ class fDatabase
 				}	
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($table, '#') . '\s+\([^\)]*?\b' . preg_quote($this->schema_info['sequences'][$table], '#') . '\b#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($quoted_table, '#') . '\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table], '#') . '(\b|")#i', $result->getSQL())) {
 				return;
 			} 		
 		}
@@ -1978,13 +2039,6 @@ class fDatabase
 			throw new fProgrammerException('No SQL statement passed');
 		}
 		
-		if ($values) {
-			$sql = call_user_func_array(
-				$this->escape,
-				array_merge(array($sql), $values)
-			);	
-		}
-		
 		// Fix \' in MySQL and PostgreSQL
 		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
 			$sql = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql);	
@@ -1995,14 +2049,16 @@ class fDatabase
 		$number  = 0;
 		
 		// Separate the SQL from quoted values
-		preg_match_all("#(?:'([^']*(?:'')*)*?')|(?:[^']+)#", $sql, $matches);
-		
-		foreach ($matches[0] as $match) {
-			if ($match[0] == "'") {
+		$parts = $this->splitSQL($sql);
+				
+		foreach ($parts as $part) {
+			// We split out all strings except for empty ones because Oracle
+			// has to translate empty strings to NULL
+			if ($part[0] == "'" && $part != "''") {
 				$queries[$number]  .= ':string_' . sizeof($strings[$number]);
-				$strings[$number][] = $match;	
+				$strings[$number][] = $part;	
 			} else {
-				$split_queries = preg_split('#(?<!\\\\);#', $match);
+				$split_queries = preg_split('#(?<!\\\\);#', $part);
 				
 				$queries[$number] .= $split_queries[0];
 				
@@ -2021,24 +2077,86 @@ class fDatabase
 			$queries[$number] = trim($queries[$number]);	
 		}
 		
-		// Translate the SQL queries, this takes care of unescaping and reinserting strings
-		if ($translate) {
-			$output = $this->getSQLTranslation()->translate($queries, $strings);
+		// If the values were passed as a single array, this handles that
+		$placeholders = preg_match_all('#%[lbdfristp]\b#', join(';', $queries), $trash);
+		if (count($values) == 1 && is_array($values[0]) && count($values[0]) == $placeholders) {
+			$values = array_shift($values);	
+		}
+		
+		// Loop through the queries, chunk the values and add blank strings back in
+		$chunked_values = array();
+		$value_number   = 0;
+		foreach (array_keys($queries) as $number) {
+			$pieces       = preg_split('#(%[lbdfristp])\b#', $queries[$number], -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+			$placeholders = 0;
 			
-		// For untranslated queries we need to unescape and reinsert strings
-		} else {
-			$output = array();
-			foreach ($queries as $number => $query) {
-				// Unescape literal semicolons in the queries
-				$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
-				// Put the strings back into the SQL
+			$new_sql = '';
+			$chunked_values[$number] = array();
+			
+			foreach ($pieces as $piece) {
+				
+				// A placeholder
+				if (strlen($piece) == 2 && $piece[0] == '%') {
+					
+					$value = $values[$value_number];
+					
+					// Here we put blank strings back into the SQL so they can be translated for Oracle
+					if ($piece == '%s' && $value !== NULL && ((string) $value) == '') {
+						$new_sql .= "''";
+						$value_number++;
+					
+					} elseif ($piece == '%r') {
+						if (is_array($value)) {
+							$new_sql .= join(', ', array_map($this->escapeIdentifier, $value));	
+						} else {
+							$new_sql .= $this->escapeIdentifier($value);
+						}
+						$value_number++;
+						
+					// Other placeholder/value combos just get added
+					} else {
+						$placeholders++;
+						$value_number++;
+						$new_sql .= $piece;
+						$chunked_values[$number][] = $value;
+					}
+				
+				// A piece of SQL
+				} else {
+					$new_sql .= $piece;	
+				}
+			}
+			
+			$queries[$number] = $new_sql;
+		}
+		
+		// Translate the SQL queries
+		if ($translate) {
+			$queries = $this->getSQLTranslation()->translate($queries);
+		}
+		
+		$output = array();
+		foreach (array_keys($queries) as $number => $key) {
+			$query = $queries[$key];
+			
+			// Escape the values into the SQL
+			if (isset($chunked_values[$number])) {
+				$query = $this->escapeSQL($query, $chunked_values[$number]);	
+			}
+			
+			// Unescape literal semicolons in the queries
+			$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
+			
+			// Put the strings back into the SQL
+			if (isset($strings[$number])) {
 				foreach ($strings[$number] as $index => $string) {
 					$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
 					$query  = preg_replace('#:string_' . $index . '\b#', $string, $query, 1);
 				}
-				$output[] = $query;
-			}	
-		}
+			}
+			
+			$output[$key] = $query;
+		}    
 		
 		return $output;
 	}
@@ -2218,6 +2336,51 @@ class fDatabase
 		} elseif (is_array($result->getResult())) {
 			$result->setReturnedRows(sizeof($result->getResult()));
 		}
+	}
+	
+	
+	/**
+	 * Splits SQL into pieces of SQL and quoted strings
+	 * 
+	 * @param  string $sql  The SQL to split
+	 * @return array  The pieces
+	 */
+	private function splitSQL($sql)
+	{
+		$parts = array();
+		$temp_sql      = $sql;
+		$start_pos     = 0;
+		$inside_string = FALSE;
+		do {
+			$pos = strpos($temp_sql, "'", $start_pos);
+			if ($pos !== FALSE) {
+				if (!$inside_string) {
+					$parts[]   = substr($temp_sql, 0, $pos);
+					$temp_sql  = substr($temp_sql, $pos);
+					$start_pos = 1;
+					$inside_string = TRUE;
+					 
+				} elseif ($pos == strlen($temp_sql)) {
+					$parts[]  = $temp_sql;
+					$temp_sql = '';
+					$pos = FALSE;	
+				
+				} elseif (strlen($temp_sql) > $pos+1 && $temp_sql[$pos+1] == "'") {
+					$start_pos = $pos+2;
+							
+				} else {
+					$parts[]   = substr($temp_sql, 0, $pos+1);
+					$temp_sql  = substr($temp_sql, $pos+1);
+					$start_pos = 0;
+					$inside_string = FALSE;
+				}
+			}
+		} while ($pos !== FALSE);
+		if ($temp_sql) {
+			$parts[] = $temp_sql;	
+		}
+		
+		return $parts;	
 	}
 	
 	

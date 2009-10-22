@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Added the placeholder element to the output of ::getColumnInfo(), added support for PostgreSQL, MSSQL and Oracle "schemas", added support for parsing quoted SQLite identifiers [wb, 2009-10-22]
  * @changes    1.0.0b25  One-to-one relationships utilizing the primary key as a foreign key are now properly detected [wb, 2009-09-22]
  * @changes    1.0.0b24  Fixed MSSQL support to work with ODBC database connections [wb, 2009-09-18]
  * @changes    1.0.0b23  Fixed a bug where one-to-one relationships were being listed as many-to-one [wb, 2009-07-21]
@@ -294,7 +295,7 @@ class fSchema
 				$keys = $this->fetchSQLiteKeys();
 				break;
 		}
-			
+		
 		$this->keys = $keys;
 		if ($this->cache) {
 			$this->cache->set($this->makeCachePrefix() . 'keys', $this->keys);	
@@ -305,28 +306,17 @@ class fSchema
 	/**
 	 * Gets the column info from a MSSQL database
 	 * 
-	 * The returned array is in the format:
-	 * 
-	 * {{{
-	 * array(
-	 *     (string) {column name} => array(
-	 *         'type'           => (string)  {data type},
-	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value-may contain special string CURRENT_TIMESTAMP},
-	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is an identity column}
-	 *     ), ...
-	 * )
-	 * }}}
-	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified - see method description for details
+	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
 	private function fetchMSSQLColumnInfo($table)
 	{
 		$column_info = array();
+		
+		$schema = 'dbo';
+		if (strpos($table, '.') !== FALSE) {
+			list ($schema, $table) = explode('.', $table);
+		}
 		
 		$data_type_mapping = array(
 			'bit'			    => 'boolean',
@@ -377,9 +367,11 @@ class fSchema
 						INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS ccu ON c.column_name = ccu.column_name AND c.table_name = ccu.table_name AND c.table_catalog = ccu.table_catalog LEFT JOIN
 						INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS cc ON ccu.constraint_name = cc.constraint_name AND ccu.constraint_catalog = cc.constraint_catalog
 					WHERE
-						c.table_name = '" . $table . "' AND
+						c.table_name = %s AND
+						c.table_schema = %s AND
 						c.table_catalog = DB_NAME()";
-		$result = $this->database->query($sql);
+		
+		$result = $this->database->query($sql, $table, $schema);
 		
 		foreach ($result as $row) {
 			
@@ -457,31 +449,7 @@ class fSchema
 	/**
 	 * Fetches the key info for an MSSQL database
 	 * 
-	 * The structure of the returned array is:
-	 * 
-	 * {{{
-	 * array(
-	 *      'primary' => array(
-	 *          {column name}, ...
-	 *      ),
-	 *      'unique'  => array(
-	 *          array(
-	 *              {column name}, ...
-	 *          ), ...
-	 *      ),
-	 *      'foreign' => array(
-	 *          array(
-	 *              'column'         => {column name},
-	 *              'foreign_table'  => {foreign table name},
-	 *              'foreign_column' => {foreign column name},
-	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
-	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ), ...
-	 *      )
-	 * )
-	 * }}}
-	 * 
-	 * @return array  The key info arrays for every table in the database - see method description for details
+	 * @return array  The key info arrays for every table in the database - see ::getKeys() for details
 	 */
 	private function fetchMSSQLKeys()
 	{
@@ -496,7 +464,8 @@ class fSchema
 		}
 		
 		$sql  = "SELECT
-						c.table_name AS 'table',
+						c.table_schema AS \"schema\",
+						c.table_name AS \"table\",
 						kcu.constraint_name AS constraint_name,
 						CASE c.constraint_type
 							WHEN 'PRIMARY KEY' THEN 'primary'
@@ -504,6 +473,7 @@ class fSchema
 							WHEN 'UNIQUE' THEN 'unique'
 						END AS 'type',
 						kcu.column_name AS 'column',
+						ccu.table_schema AS foreign_schema,
 						ccu.table_name AS foreign_table,
 						ccu.column_name AS foreign_column,
 						REPLACE(LOWER(rc.delete_rule), ' ', '_') AS on_delete,
@@ -517,6 +487,7 @@ class fSchema
 						c.constraint_catalog = DB_NAME() AND
 						c.table_name != 'sysdiagrams'
 					ORDER BY
+						LOWER(c.table_schema),
 						LOWER(c.table_name),
 						c.constraint_type,
 						LOWER(kcu.constraint_name),
@@ -548,6 +519,9 @@ class fSchema
 					
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
+					if ($row['foreign_schema'] != 'dbo') {
+						 $temp['foreign_table'] = $row['foreign_schema'] . '.' . $temp['foreign_table'];	
+					}
 					$temp['foreign_column'] = $row['foreign_column'];
 					$temp['on_delete']      = 'no_action';
 					$temp['on_update']      = 'no_action';
@@ -563,6 +537,9 @@ class fSchema
 				}
 				
 				$last_table = $row['table'];
+				if ($row['schema'] != 'dbo') {
+					$last_table = $row['schema'] . '.' . $last_table;	
+				}
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
 				
@@ -589,24 +566,8 @@ class fSchema
 	/**
 	 * Gets the column info from a MySQL database
 	 * 
-	 * The returned array is in the format:
-	 * 
-	 * {{{
-	 * array(
-	 *     (string) {column name} => array(
-	 *         'type'           => (string)  {data type},
-	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value-may contain special string CURRENT_TIMESTAMP},
-	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
-	 *     ), ...
-	 * )
-	 * }}}
-	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified - see method description for details
+	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
 	private function fetchMySQLColumnInfo($table)
 	{
@@ -726,31 +687,7 @@ class fSchema
 	/**
 	 * Fetches the keys for a MySQL database
 	 * 
-	 * The structure of the returned array is:
-	 * 
-	 * {{{
-	 * array(
-	 *      'primary' => array(
-	 *          {column name}, ...
-	 *      ),
-	 *      'unique'  => array(
-	 *          array(
-	 *              {column name}, ...
-	 *          ), ...
-	 *      ),
-	 *      'foreign' => array(
-	 *          array(
-	 *              'column'         => {column name},
-	 *              'foreign_table'  => {foreign table name},
-	 *              'foreign_column' => {foreign column name},
-	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
-	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ), ...
-	 *      )
-	 * )
-	 * }}}
-	 * 
-	 * @return array  The keys arrays for every table in the database - see method description for details
+	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
 	private function fetchMySQLKeys()
 	{
@@ -804,28 +741,17 @@ class fSchema
 	/**
 	 * Gets the column info from an Oracle database
 	 * 
-	 * The returned array is in the format:
-	 * 
-	 * {{{
-	 * array(
-	 *     (string) {column name} => array(
-	 *         'type'           => (string)  {data type},
-	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
-	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
-	 *     ), ...
-	 * )
-	 * }}}
-	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified - see method description for details
+	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
 	private function fetchOracleColumnInfo($table)
 	{
 		$table = strtoupper($table);
+		
+		$schema = strtoupper($this->database->getUsername());
+		if (strpos($table, '.') !== FALSE) {
+			list ($schema, $table) = explode('.', $table);
+		}
 		
 		$column_info = array();
 		
@@ -848,64 +774,68 @@ class fSchema
 		);
 		
 		$sql = "SELECT
-						LOWER(UTC.COLUMN_NAME) COLUMN_NAME,
+						LOWER(ATC.COLUMN_NAME) COLUMN_NAME,
 						CASE
 							WHEN
-								UTC.DATA_TYPE = 'NUMBER' AND
-								UTC.DATA_PRECISION IS NULL AND
-								UTC.DATA_SCALE = 0
+								ATC.DATA_TYPE = 'NUMBER' AND
+								ATC.DATA_PRECISION IS NULL AND
+								ATC.DATA_SCALE = 0
 							THEN
 								'integer'
 							WHEN
-								UTC.DATA_TYPE = 'NUMBER' AND
-								UTC.DATA_PRECISION = 1 AND
-								UTC.DATA_SCALE = 0
+								ATC.DATA_TYPE = 'NUMBER' AND
+								ATC.DATA_PRECISION = 1 AND
+								ATC.DATA_SCALE = 0
 							THEN
 								'boolean'
 							WHEN
-								UTC.DATA_TYPE = 'NUMBER' AND
-								UTC.DATA_PRECISION IS NOT NULL AND
-								UTC.DATA_SCALE != 0 AND
-								UTC.DATA_SCALE IS NOT NULL
+								ATC.DATA_TYPE = 'NUMBER' AND
+								ATC.DATA_PRECISION IS NOT NULL AND
+								ATC.DATA_SCALE != 0 AND
+								ATC.DATA_SCALE IS NOT NULL
 							THEN
 								'float'
 							ELSE
-								LOWER(UTC.DATA_TYPE)
+								LOWER(ATC.DATA_TYPE)
 							END DATA_TYPE,
 						CASE
 							WHEN
-								UTC.CHAR_LENGTH <> 0
+								ATC.CHAR_LENGTH <> 0
 							THEN
-								UTC.CHAR_LENGTH
+								ATC.CHAR_LENGTH
 							WHEN
-								UTC.DATA_TYPE = 'NUMBER' AND
-								UTC.DATA_PRECISION != 1 AND
-								UTC.DATA_SCALE != 0	AND
-								UTC.DATA_PRECISION IS NOT NULL
+								ATC.DATA_TYPE = 'NUMBER' AND
+								ATC.DATA_PRECISION != 1 AND
+								ATC.DATA_SCALE != 0	AND
+								ATC.DATA_PRECISION IS NOT NULL
 							THEN
-								UTC.DATA_SCALE	
+								ATC.DATA_SCALE	
 							ELSE
 								NULL
 							END LENGTH,
-						UTC.NULLABLE,
-						UTC.DATA_DEFAULT,
-						UC.SEARCH_CONDITION CHECK_CONSTRAINT
+						ATC.NULLABLE,
+						ATC.DATA_DEFAULT,
+						AC.SEARCH_CONDITION CHECK_CONSTRAINT
 					FROM
-						USER_TAB_COLUMNS UTC LEFT JOIN
-						USER_CONS_COLUMNS UCC ON
-							UTC.COLUMN_NAME = UCC.COLUMN_NAME AND
-							UTC.TABLE_NAME = UCC.TABLE_NAME AND
-							UCC.POSITION IS NULL LEFT JOIN
-						USER_CONSTRAINTS UC ON
-							UC.CONSTRAINT_NAME = UCC.CONSTRAINT_NAME AND
-							UC.CONSTRAINT_TYPE = 'C' AND
-							UC.STATUS = 'ENABLED'
+						ALL_TAB_COLUMNS ATC LEFT JOIN
+						ALL_CONS_COLUMNS ACC ON
+							ATC.OWNER = ACC.OWNER AND
+							ATC.COLUMN_NAME = ACC.COLUMN_NAME AND
+							ATC.TABLE_NAME = ACC.TABLE_NAME AND
+							ACC.POSITION IS NULL LEFT JOIN
+						ALL_CONSTRAINTS AC ON
+							AC.OWNER = ACC.OWNER AND
+							AC.CONSTRAINT_NAME = ACC.CONSTRAINT_NAME AND
+							AC.CONSTRAINT_TYPE = 'C' AND
+							AC.STATUS = 'ENABLED'
 					WHERE
-						UTC.TABLE_NAME = %s
+						ATC.TABLE_NAME = %s AND
+						ATC.OWNER = %s
 					ORDER BY
-						UTC.TABLE_NAME ASC,
-						UTC.COLUMN_ID ASC";
-		$result = $this->database->query($sql, $table);
+						ATC.TABLE_NAME ASC,
+						ATC.COLUMN_ID ASC";
+		
+		$result = $this->database->query($sql, $table, $schema);
 		
 		foreach ($result as $row) {
 			
@@ -984,15 +914,16 @@ class fSchema
 		$sql = "SELECT
 						TRIGGER_BODY
 					FROM
-						USER_TRIGGERS
+						ALL_TRIGGERS
 					WHERE
 						TRIGGERING_EVENT = 'INSERT' AND
 						STATUS = 'ENABLED' AND
 						TRIGGER_NAME NOT LIKE 'BIN\$%' AND
-						TABLE_NAME = %s";
+						TABLE_NAME = %s AND
+						OWNER = %s";
 						
-		foreach ($this->database->query($sql, $table) as $row) {
-			if (preg_match('#SELECT\s+(\w+).nextval\s+INTO\s+:new\.(\w+)\s+FROM\s+dual#i', $row['trigger_body'], $matches)) {
+		foreach ($this->database->query($sql, $table, $schema) as $row) {
+			if (preg_match('#SELECT\s+(["\w.]+).nextval\s+INTO\s+:new\.(\w+)\s+FROM\s+dual#i', $row['trigger_body'], $matches)) {
 				$column = strtolower($matches[2]);
 				$column_info[$column]['auto_increment'] = TRUE;
 			}
@@ -1005,35 +936,13 @@ class fSchema
 	/**
 	 * Fetches the key info for an Oracle database
 	 * 
-	 * The structure of the returned array is:
-	 * 
-	 * {{{
-	 * array(
-	 *      'primary' => array(
-	 *          {column name}, ...
-	 *      ),
-	 *      'unique'  => array(
-	 *          array(
-	 *              {column name}, ...
-	 *          ), ...
-	 *      ),
-	 *      'foreign' => array(
-	 *          array(
-	 *              'column'         => {column name},
-	 *              'foreign_table'  => {foreign table name},
-	 *              'foreign_column' => {foreign column name},
-	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
-	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ), ...
-	 *      )
-	 * )
-	 * }}}
-	 * 
-	 * @return array  The keys arrays for every table in the database - see method description for details
+	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
 	private function fetchOracleKeys()
 	{
 		$keys = array();
+		
+		$default_schema = strtolower($this->database->getUsername());
 		
 		$tables = $this->getTables();
 		foreach ($tables as $table) {
@@ -1043,34 +952,50 @@ class fSchema
 			$keys[$table]['foreign'] = array();
 		}
 		
+		$params = array();
+		
 		$sql  = "SELECT
-						 LOWER(UC.TABLE_NAME) \"TABLE\",
-						 UC.CONSTRAINT_NAME CONSTRAINT_NAME,
-						 CASE UC.CONSTRAINT_TYPE
+						 LOWER(AC.OWNER) \"SCHEMA\",
+						 LOWER(AC.TABLE_NAME) \"TABLE\",
+						 AC.CONSTRAINT_NAME CONSTRAINT_NAME,
+						 CASE AC.CONSTRAINT_TYPE
 							 WHEN 'P' THEN 'primary'
 							 WHEN 'R' THEN 'foreign'
 							 WHEN 'U' THEN 'unique'
 							 END TYPE,
-						 LOWER(UCC.COLUMN_NAME) \"COLUMN\",
+						 LOWER(ACC.COLUMN_NAME) \"COLUMN\",
+						 LOWER(FKC.OWNER) FOREIGN_SCHEMA,
 						 LOWER(FKC.TABLE_NAME) FOREIGN_TABLE,
 						 LOWER(FKC.COLUMN_NAME) FOREIGN_COLUMN,
-						 CASE WHEN FKC.TABLE_NAME IS NOT NULL THEN REPLACE(LOWER(UC.DELETE_RULE), ' ', '_') ELSE NULL END ON_DELETE
+						 CASE WHEN FKC.TABLE_NAME IS NOT NULL THEN REPLACE(LOWER(AC.DELETE_RULE), ' ', '_') ELSE NULL END ON_DELETE
 					 FROM
-						 USER_CONSTRAINTS UC INNER JOIN
-						 USER_CONS_COLUMNS UCC ON UC.CONSTRAINT_NAME = UCC.CONSTRAINT_NAME LEFT JOIN
-						 USER_CONSTRAINTS FK ON UC.R_CONSTRAINT_NAME = FK.CONSTRAINT_NAME LEFT JOIN
-						 USER_CONS_COLUMNS FKC ON FK.CONSTRAINT_NAME = FKC.CONSTRAINT_NAME
+						 ALL_CONSTRAINTS AC INNER JOIN
+						 ALL_CONS_COLUMNS ACC ON AC.CONSTRAINT_NAME = ACC.CONSTRAINT_NAME AND AC.OWNER = ACC.OWNER LEFT JOIN
+						 ALL_CONSTRAINTS FK ON AC.R_CONSTRAINT_NAME = FK.CONSTRAINT_NAME AND AC.OWNER = FK.OWNER LEFT JOIN
+						 ALL_CONS_COLUMNS FKC ON FK.CONSTRAINT_NAME = FKC.CONSTRAINT_NAME AND FK.OWNER = FKC.OWNER
 					 WHERE
-						 UC.CONSTRAINT_TYPE IN ('U', 'P', 'R') AND
-						 UC.STATUS = 'ENABLED' AND
-						 SUBSTR(UC.TABLE_NAME, 1, 4) <> 'BIN\$'
-					 ORDER BY
-						 UC.TABLE_NAME ASC,
-						 UC.CONSTRAINT_TYPE ASC,
-						 UC.CONSTRAINT_NAME ASC,
-						 UCC.POSITION ASC";
+						 AC.CONSTRAINT_TYPE IN ('U', 'P', 'R') AND ";
 		
-		$result = $this->database->query($sql);
+		$conditions = array();
+		foreach ($tables as $table) {
+			if (strpos($table, '.') === FALSE) {
+				$table = $default_schema . '.' . $table;
+			}	
+			list ($schema, $table) = explode('.', strtoupper($table));
+			$conditions[] = "AC.OWNER = %s AND AC.TABLE_NAME = %s";
+			$params[] = $schema;
+			$params[] = $table;
+		}
+		$sql .= '((' . join(') OR( ', $conditions) . '))';
+		
+		$sql .= " ORDER BY
+						 AC.OWNER ASC,
+						 AC.TABLE_NAME ASC,
+						 AC.CONSTRAINT_TYPE ASC,
+						 AC.CONSTRAINT_NAME ASC,
+						 ACC.POSITION ASC";
+		
+		$result = $this->database->query($sql, $params);
 		
 		$last_name  = '';
 		$last_table = '';
@@ -1092,6 +1017,9 @@ class fSchema
 					
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
+					if ($row['foreign_schema'] != $default_schema) {
+						$temp['foreign_table'] = $row['foreign_schema'] . '.' . $temp['foreign_table'];
+					}
 					$temp['foreign_column'] = $row['foreign_column'];
 					$temp['on_delete']      = 'no_action';
 					$temp['on_update']      = 'no_action';
@@ -1105,6 +1033,9 @@ class fSchema
 				}
 				
 				$last_table = $row['table'];
+				if ($row['schema'] != $default_schema) {
+					$last_table = $row['schema'] . '.' . $last_table;
+				}
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
 				
@@ -1128,28 +1059,17 @@ class fSchema
 	/**
 	 * Gets the column info from a PostgreSQL database
 	 * 
-	 * The returned array is in the format:
-	 * 
-	 * {{{
-	 * array(
-	 *     (string) {column name} => array(
-	 *         'type'           => (string)  {data type},
-	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
-	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
-	 *     ), ...
-	 * )
-	 * }}}
-	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified - see method description for details
+	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
 	private function fetchPostgreSQLColumnInfo($table)
 	{
 		$column_info = array();
+		
+		$schema = 'public';
+		if (strpos($table, '.') !== FALSE) {
+			list ($schema, $table) = explode('.', $table);	
+		}
 		
 		$data_type_mapping = array(
 			'boolean'			=> 'boolean',
@@ -1183,6 +1103,7 @@ class fSchema
 					FROM
 						pg_attribute LEFT JOIN
 						pg_class ON pg_attribute.attrelid = pg_class.oid LEFT JOIN
+						pg_namespace ON pg_class.relnamespace = pg_namespace.oid LEFT JOIN
 						pg_type ON pg_type.oid = pg_attribute.atttypid LEFT JOIN
 						pg_constraint ON pg_constraint.conrelid = pg_class.oid AND
 										 pg_attribute.attnum = ANY (pg_constraint.conkey) AND
@@ -1192,11 +1113,12 @@ class fSchema
 					WHERE
 						NOT pg_attribute.attisdropped AND
 						pg_class.relname = %s AND
+						pg_namespace.nspname = %s AND
 						pg_type.typname NOT IN ('oid', 'cid', 'xid', 'cid', 'xid', 'tid')
 					ORDER BY
 						pg_attribute.attnum,
 						pg_constraint.contype";
-		$result = $this->database->query($sql, $table);
+		$result = $this->database->query($sql, $table, $schema);
 		
 		foreach ($result as $row) {
 			
@@ -1272,31 +1194,7 @@ class fSchema
 	/**
 	 * Fetches the key info for a PostgreSQL database
 	 * 
-	 * The structure of the returned array is:
-	 * 
-	 * {{{
-	 * array(
-	 *      'primary' => array(
-	 *          {column name}, ...
-	 *      ),
-	 *      'unique'  => array(
-	 *          array(
-	 *              {column name}, ...
-	 *          ), ...
-	 *      ),
-	 *      'foreign' => array(
-	 *          array(
-	 *              'column'         => {column name},
-	 *              'foreign_table'  => {foreign table name},
-	 *              'foreign_column' => {foreign column name},
-	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
-	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ), ...
-	 *      )
-	 * )
-	 * }}}
-	 * 
-	 * @return array  The keys arrays for every table in the database - see method description for details
+	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
 	private function fetchPostgreSQLKeys()
 	{
@@ -1312,7 +1210,8 @@ class fSchema
 		
 		$sql  = "(
 				 SELECT
-						 t.relname AS table,
+						 s.nspname AS \"schema\",
+						 t.relname AS \"table\",
 						 con.conname AS constraint_name,
 						 CASE con.contype
 							 WHEN 'f' THEN 'foreign'
@@ -1320,6 +1219,7 @@ class fSchema
 							 WHEN 'u' THEN 'unique'
 						 END AS type,
 						 col.attname AS column,
+						 fs.nspname AS foreign_schema,
 						 ft.relname AS foreign_table,
 						 fc.attname AS foreign_column,
 						 CASE con.confdeltype
@@ -1340,9 +1240,11 @@ class fSchema
 					 FROM
 						 pg_attribute AS col INNER JOIN
 						 pg_class AS t ON col.attrelid = t.oid INNER JOIN
+						 pg_namespace AS s ON t.relnamespace = s.oid INNER JOIN
 						 pg_constraint AS con ON (col.attnum = ANY (con.conkey) AND
 												  con.conrelid = t.oid) LEFT JOIN
 						 pg_class AS ft ON con.confrelid = ft.oid LEFT JOIN
+						 pg_namespace AS fs ON ft.relnamespace = fs.oid LEFT JOIN
 						 pg_attribute AS fc ON (fc.attnum = ANY (con.confkey) AND
 												ft.oid = fc.attrelid)
 					 WHERE
@@ -1352,10 +1254,12 @@ class fSchema
 						  con.contype = 'u')
 				) UNION (
 				SELECT
-						t.relname AS table,
+						n.nspname AS \"schema\",
+						t.relname AS \"table\",
 						ic.relname AS constraint_name,
 						'unique' AS type,
 						col.attname AS column,
+						NULL AS foreign_schema,
 						NULL AS foreign_table,
 						NULL AS foreign_column,
 						NULL AS on_delete,
@@ -1373,7 +1277,7 @@ class fSchema
 						indisunique = TRUE AND
 						indisprimary = FALSE AND
 						con.oid IS NULL
-				) ORDER BY 1, 3, 2, 9";
+				) ORDER BY 1, 2, 4, 3, 11";
 		
 		$result = $this->database->query($sql);
 		
@@ -1397,6 +1301,9 @@ class fSchema
 					
 					$temp['column']         = $row['column'];
 					$temp['foreign_table']  = $row['foreign_table'];
+					if ($row['foreign_schema'] != 'public') {
+						$temp['foreign_table'] = $row['foreign_schema'] . '.' . $temp['foreign_table'];	
+					}
 					$temp['foreign_column'] = $row['foreign_column'];
 					$temp['on_delete']      = 'no_action';
 					$temp['on_update']      = 'no_action';
@@ -1414,6 +1321,9 @@ class fSchema
 				}
 				
 				$last_table = $row['table'];
+				if ($row['schema'] != 'public') {
+					$last_table = $row['schema'] . '.' . $last_table;	
+				}
 				$last_name  = $row['constraint_name'];
 				$last_type  = $row['type'];
 				
@@ -1437,24 +1347,8 @@ class fSchema
 	/**
 	 * Gets the column info from a SQLite database
 	 * 
-	 * The returned array is in the format:
-	 * 
-	 * {{{
-	 * array(
-	 *     (string) {column name} => array(
-	 *         'type'           => (string)  {data type},
-	 *         'not_null'       => (boolean) {if value can't be null},
-	 *         'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
-	 *         'valid_values'   => (array)   {the valid values for a char/varchar field},
-	 *         'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *         'decimal_places' => (integer) {the number of decimal places for a decimal field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is auto_increment}
-	 *     ), ...
-	 * )
-	 * }}}
-	 * 
 	 * @param  string $table  The table to fetch the column info for
-	 * @return array  The column info for the table specified - see method description for details
+	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
 	private function fetchSQLiteColumnInfo($table)
 	{
@@ -1490,7 +1384,7 @@ class fSchema
 			return array();			
 		}
 		
-		preg_match_all('#(?<=,|\()\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+\w+\s*\(\s*\w+\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?\w+["`\]]?\s*\(\s*["`\[]?\w+["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -1543,31 +1437,7 @@ class fSchema
 	/**
 	 * Fetches the key info for an SQLite database
 	 * 
-	 * The structure of the returned array is:
-	 * 
-	 * {{{
-	 * array(
-	 *      'primary' => array(
-	 *          {column name}, ...
-	 *      ),
-	 *      'unique'  => array(
-	 *          array(
-	 *              {column name}, ...
-	 *          ), ...
-	 *      ),
-	 *      'foreign' => array(
-	 *          array(
-	 *              'column'         => {column name},
-	 *              'foreign_table'  => {foreign table name},
-	 *              'foreign_column' => {foreign column name},
-	 *              'on_delete'      => {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
-	 *              'on_update'      => {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
-	 *          ), ...
-	 *      )
-	 * )
-	 * }}}
-	 * 
-	 * @return array  The keys arrays for every table in the database - see method description for details
+	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
 	private function fetchSQLiteKeys()
 	{
@@ -1585,7 +1455,7 @@ class fSchema
 			$create_sql = $row['sql'];
 			
 			// Get column level key definitions
-			preg_match_all('#(?<=,|\()\s*(\w+)\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(?:\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))|(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*["`\[]?(\w+)["`\]]?\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(?:\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))|(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
 				if (!empty($match[2])) {
@@ -1613,14 +1483,17 @@ class fSchema
 			}
 			
 			// Get table level primary key definitions
-			preg_match_all('#(?<=,|\()\s*PRIMARY\s+KEY\s*\(\s*((?:\s*\w+\s*,\s*)*\w+)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*PRIMARY\s+KEY\s*\(\s*((?:\s*["`\[]?\w+["`\]]?\s*,\s*)*["`\[]?\w+["`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
-				$keys[$table]['primary'] = preg_split('#\s*,\s*#', $match[1]);
+				$columns = preg_split('#\s*,\s*#', $match[1]);
+				foreach ($columns as $column) {
+					$keys[$table]['primary'][] = str_replace(array('[', '"', '`', ']'), '', $column);	
+				}
 			}
 			
 			// Get table level foreign key definitions
-			preg_match_all('#(?<=,|\()\s*FOREIGN\s+KEY\s*(?:(\w+)|\((\w+)\))\s+REFERENCES\s+(\w+)\s*\(\s*(\w+)\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*FOREIGN\s+KEY\s*(?:["`\[]?(\w+)["`\]]?|\(\s*["`\[]?(\w+)["`\]]?\s*\))\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
 				if (empty($match[1])) { $match[1] = $match[2]; }
@@ -1639,10 +1512,15 @@ class fSchema
 			}
 			
 			// Get table level unique key definitions
-			preg_match_all('#(?<=,|\()\s*UNIQUE\s*\(\s*((?:\s*\w+\s*,\s*)*\w+)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*UNIQUE\s*\(\s*((?:\s*["`\[]?\w+["`\]]?\s*,\s*)*["`\[]?\w+["`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
-				$keys[$table]['unique'][] = preg_split('#\s*,\s*#', $match[1]);
+				$columns = preg_split('#\s*,\s*#', $match[1]);
+				$key = array();
+				foreach ($columns as $column) {
+					$key[] = str_replace(array('[', '"', '`', ']'), '', $column);
+				}
+				$keys[$table]['unique'][] = $key;
 			}
 		}
 		
@@ -1777,6 +1655,7 @@ class fSchema
 	 * array(
 	 *     (string) {column name} => array(
 	 *         'type'           => (string)  {data type},
+	 *         'placeholder'    => (string)  {fDatabase::escape() placeholder for this data type},
 	 *         'not_null'       => (boolean) {if value can't be null},
 	 *         'default'        => (mixed)   {the default value},
 	 *         'valid_values'   => (array)   {the valid values for a varchar field},
@@ -1792,6 +1671,7 @@ class fSchema
 	 * {{{
 	 * array(
 	 *     'type'           => (string)  {data type},
+	 *     'placeholder'    => (string)  {fDatabase::escape() placeholder for this data type},
 	 *     'not_null'       => (boolean) {if value can't be null},
 	 *     'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
 	 *     'valid_values'   => (array)   {the valid values for a varchar field},
@@ -1818,7 +1698,7 @@ class fSchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return: `'type'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
+	 * @param  string $element  The element to return: `'type'`, `'placeholder'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
 	 * @return mixed  The column info for the table/column/element specified - see method description for format
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
@@ -2101,7 +1981,8 @@ class fSchema
 		switch ($this->database->getType()) {
 			case 'mssql':
 				$sql = "SELECT
-								TABLE_NAME
+								TABLE_SCHEMA AS \"schema\",
+								TABLE_NAME AS \"table\"
 							FROM
 								INFORMATION_SCHEMA.TABLES
 							WHERE
@@ -2116,18 +1997,26 @@ class fSchema
 			
 			case 'oracle':
 				$sql = "SELECT
-								LOWER(TABLE_NAME)
+								LOWER(OWNER) AS \"SCHEMA\",
+								LOWER(TABLE_NAME) AS \"TABLE\"
 							FROM
-								USER_TABLES
+								ALL_TABLES
 							WHERE
-								SUBSTR(TABLE_NAME, 1, 4) <> 'BIN\$'
+								OWNER IN (SELECT
+										username
+									FROM
+										dba_users
+									WHERE
+										default_tablespace NOT IN ('SYSTEM', 'SYSAUX')) AND
+								DROPPED = 'NO' 
 							ORDER BY
 								TABLE_NAME ASC";
 				break;
 			
 			case 'postgresql':
 				$sql = "SELECT
-								 tablename
+								 schemaname AS \"schema\",
+								 tablename as \"table\"
 							FROM
 								 pg_tables
 							WHERE
@@ -2153,10 +2042,35 @@ class fSchema
 		
 		$this->tables = array();
 		
-		foreach ($result as $row) {
-			$keys = array_keys($row);
-			$this->tables[] = $row[$keys[0]];
+		// For databases with schemas we only include the schema
+		// name if there are conflicting table names
+		if (!in_array($this->database->getType(), array('mysql', 'sqlite'))) {
+			
+			$default_schema_map = array(
+				'mssql'      => 'dbo',
+				'oracle'     => strtolower($this->database->getUsername()),
+				'postgresql' => 'public'
+			);
+			
+			$default_schema = $default_schema_map[$this->database->getType()];
+			
+			foreach ($result as $row) {
+				if ($row['schema'] == $default_schema) {
+					$this->tables[] = $row['table'];	
+				} else {
+					$this->tables[] = $row['schema'] . '.' . $row['table'];	
+				}
+			}
+				
+		// SQLite and MySQL don't support schemas
+		} else {
+			foreach ($result as $row) {
+				$keys = array_keys($row);
+				$this->tables[] = $row[$keys[0]];
+			}
 		}
+		
+		sort($this->tables);
 		
 		if ($this->cache) {
 			$this->cache->set($this->makeCachePrefix() . 'tables', $this->tables);
@@ -2260,6 +2174,25 @@ class fSchema
 				if (empty($info['type'])) {
 					throw new fProgrammerException('The data type for the column %1$s is empty', $column);	
 				}
+				
+				if (empty($this->merged_column_info[$table][$column]['placeholder'])) {
+					$this->merged_column_info[$table][$column]['placeholder'] = strtr(
+						$info['type'],
+						array(
+							'blob'      => '%l',
+							'boolean'   => '%b',
+							'date'      => '%d',
+							'float'     => '%f',
+							'integer'   => '%i',
+							'char'      => '%s',
+							'text'      => '%s',
+							'varchar'   => '%s',
+							'time'      => '%t',
+							'timestamp' => '%p'
+						)
+					);
+				}
+				
 				foreach ($optional_elements as $element) {
 					if (!isset($this->merged_column_info[$table][$column][$element])) {
 						$this->merged_column_info[$table][$column][$element] = ($element == 'auto_increment') ? FALSE : NULL;
@@ -2311,6 +2244,7 @@ class fSchema
 	 * associative array containing one or more of the following keys. Please
 	 * see ::getColumnInfo() for a description of each.
 	 *  - `'type'`
+	 *  - `'placeholder'`
 	 *  - `'not_null'`
 	 *  - `'default'`
 	 *  - `'valid_values'`
