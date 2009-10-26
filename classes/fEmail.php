@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed the class to work when safe mode is turned on [wb, 2009-10-23]
  * @changes    1.0.0b12  Removed duplicate MIME-Version headers that were being included in S/MIME encrypted emails [wb, 2009-10-05]
  * @changes    1.0.0b11  Updated to use the new fValidationException API [wb, 2009-09-17]
  * @changes    1.0.0b10  Fixed a bug with sending both an HTML and a plaintext body [bb-imarc, 2009-06-18]
@@ -981,13 +982,12 @@ class fEmail
 		
 		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
 		$parameters = NULL;
-		if (!fCore::checkOS('windows') && $this->bounce_to_email && !ini_get('safe_mode')) {
+		if (!fCore::checkOS('windows') && $this->bounce_to_email) {
 			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
 			$parameters = '-f ' . $matches[0];
-		}
 		
 		// Windows takes the Return-Path email from the sendmail_from ini setting
-		if (fCore::checkOS('windows') && $this->bounce_to_email) {
+		} elseif (fCore::checkOS('windows') && $this->bounce_to_email) {
 			$old_sendmail_from = ini_get('sendmail_from');
 			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
 			ini_set('sendmail_from', $matches[0]);
@@ -1028,7 +1028,11 @@ class fEmail
 			
 		// This is the normal way to send mail
 		} else {
-			$error = !mail($to, $subject, $body, $headers, $parameters);
+			if ($parameters) {
+				$error = !mail($to, $subject, $body, $headers, $parameters);
+			} else {
+				$error = !mail($to, $subject, $body, $headers);
+			}
 		}
 		
 		if (fCore::checkOS('windows') && $this->bounce_to_email) {
@@ -1054,6 +1058,9 @@ class fEmail
 	 */
 	public function setBounceToEmail($email)
 	{
+		if (ini_get('safe_mode') && !fCore::checkOS('windows')) {
+			throw new fProgrammerException('It is not possible to set a Bounce-To Email address when safe mode is enabled on a non-Windows server');
+		}
 		if (!$email) {
 			return;
 		}
