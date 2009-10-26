@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b46
+ * @version    1.0.0b47
+ * @changes    1.0.0b47  Changed `::associate{RelatedRecords}()`, `::link{RelatedRecords}()` and `::populate{RelatedRecords}()` to allow for method chaining [wb, 2009-10-22]
  * @changes    1.0.0b46  Changed SQL statements to use value placeholders and identifier escaping [wb, 2009-10-22]
  * @changes    1.0.0b45  Added support for `!~`, `&~`, `><` and OR comparisons to ::checkConditions(), made object handling in ::checkConditions() more robust [wb, 2009-09-21]
  * @changes    1.0.0b44  Updated code for new fValidationException API [wb, 2009-09-18]
@@ -787,11 +788,13 @@ abstract class fActiveRecord
 				
 				// This handles one-to-many and many-to-many relationships
 				if ($plural) {
-					return fORMRelated::associateRecords($class, $this->related_records, $subject, $records, $route);
-				}
+					fORMRelated::associateRecords($class, $this->related_records, $subject, $records, $route);
 				
 				// This handles one-to-one relationships
-				return fORMRelated::associateRecord($class, $this->related_records, $subject, $records, $route);
+				} else {
+					fORMRelated::associateRecord($class, $this->related_records, $subject, $records, $route);
+				}
+				return $this;
 			
 			case 'build':
 				$subject = fGrammar::singularize($subject);
@@ -840,9 +843,11 @@ abstract class fActiveRecord
 				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[0])) {
-					return fORMRelated::linkRecords($class, $this->related_records, $subject, $parameters[0]);
+					fORMRelated::linkRecords($class, $this->related_records, $subject, $parameters[0]);
+				} else {
+					fORMRelated::linkRecords($class, $this->related_records, $subject);
 				}
-				return fORMRelated::linkRecords($class, $this->related_records, $subject);
+				return $this;
 			
 			case 'list':
 				$subject = fGrammar::singularize($subject);
@@ -873,7 +878,8 @@ abstract class fActiveRecord
 				
 				$subject = fGrammar::camelize($subject, TRUE);
 				
-				return fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
+				fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
+				return $this;
 			
 			case 'tally':
 				if (sizeof($parameters) < 1) {
