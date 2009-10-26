@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  ::getDirectory(), ::getFilename() and ::getPath() now all work even if the file has been deleted [wb, 2009-10-22]
  * @changes    1.0.0b25  Fixed ::__construct() to throw an fValidationException when the file does not exist [wb, 2009-08-21]
  * @changes    1.0.0b24  Fixed a bug where deleting a file would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b23  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
@@ -744,8 +745,6 @@ class fFile implements Iterator
 	 */
 	public function getDirectory()
 	{
-		$this->tossIfException();
-		
 		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));
 	}
 	
@@ -757,8 +756,6 @@ class fFile implements Iterator
 	 */
 	public function getFilename()
 	{
-		$this->tossIfException();
-		
 		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
 		return fFilesystem::getPathInfo($this->file, 'basename');
 	}
@@ -901,8 +898,6 @@ class fFile implements Iterator
 	 */
 	public function getPath($translate_to_web_path=FALSE)
 	{
-		$this->tossIfException();
-		
 		if ($translate_to_web_path) {
 			return fFilesystem::translateToWebPath($this->file);
 		}
