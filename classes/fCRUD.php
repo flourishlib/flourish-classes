@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCRUD
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b3  Backwards Compatiblity Break - moved ::printOption() to fHTML::printOption(), ::showChecked() to fHTML::showChecked(), ::removeListItems() and ::reorderListItems() to fException::splitMessage(), ::generateRequestToken() to fRequest::generateCSRFToken(), and ::validateRequestToken() to fRequest::validateCSRFToken() [wb, 2009-05-08]
  * @changes    1.0.0b2  Fixed a bug preventing loaded search values from being included in redirects [wb, 2009-03-18]
@@ -90,7 +91,7 @@ class fCRUD
 	 */
 	static private function getPreviousSearchValue($column)
 	{
-		return fSession::get(fURL::get() . '::previous_search::' . $column, NULL, __CLASS__ . '::');
+		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_search::' . $column, NULL);
 	}
 	
 	
@@ -101,7 +102,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortColumn()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_column', NULL, __CLASS__ . '::');
+		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_sort_column', NULL);
 	}
 	
 	
@@ -112,7 +113,7 @@ class fCRUD
 	 */
 	static private function getPreviousSortDirection()
 	{
-		return fSession::get(fURL::get() . '::previous_sort_direction', NULL, __CLASS__ . '::');
+		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_sort_direction', NULL);
 	}
 	
 	
@@ -331,7 +332,7 @@ class fCRUD
 	 */
 	static private function setPreviousSearchValue($column, $value)
 	{
-		fSession::set(fURL::get() . '::previous_search::' . $column, $value, __CLASS__ . '::');
+		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_search::' . $column, $value);
 	}
 	
 	
@@ -343,7 +344,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortColumn($sort_column)
 	{
-		fSession::set(fURL::get() . '::previous_sort_column', $sort_column, __CLASS__ . '::');
+		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_sort_column', $sort_column);
 	}
 	
 	
@@ -355,7 +356,7 @@ class fCRUD
 	 */
 	static private function setPreviousSortDirection($sort_direction)
 	{
-		fSession::set(fURL::get() . '::previous_sort_direction', $sort_direction, __CLASS__ . '::');
+		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_sort_direction', $sort_direction);
 	}
 	
 	

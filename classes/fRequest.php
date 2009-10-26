@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b8  Casting to an integer or string in ::get() now properly casts when the `$key` isn't present in the request, added support for date, time, timestamp and `?` casts [wb, 2009-08-25] 
  * @changes    1.0.0b7  Fixed a bug with ::filter() not properly creating new `$_FILES` entries [wb, 2009-07-02]
  * @changes    1.0.0b6  ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
@@ -193,9 +194,7 @@ class fRequest
 		
 		$token  = fCryptography::randomString(16);
 		
-		$tokens = fSession::get($url . '::csrf_tokens', array(), __CLASS__ . '::');
-		$tokens[] = $token;
-		fSession::set($url . '::csrf_tokens', $tokens, __CLASS__ . '::');
+		fSession::add(__CLASS__ . '::' . $url . '::csrf_tokens', $token);
 		
 		return $token;
 	}
@@ -658,7 +657,8 @@ class fRequest
 			$url = fURL::get();	
 		}
 		
-		$tokens = fSession::get($url . '::csrf_tokens', array(), __CLASS__ . '::');
+		$key    = __CLASS__ . '::' . $url . '::csrf_tokens';
+		$tokens = fSession::get($key, array());
 		
 		if (!in_array($token, $tokens)) {
 			throw new fValidationException(
@@ -667,7 +667,7 @@ class fRequest
 		}
 		
 		$tokens = array_diff($tokens, array($token));;
-		fSession::set($url . '::csrf_tokens', $tokens, __CLASS__ . '::');
+		fSession::set($key, $tokens);
 	}
 	
 	

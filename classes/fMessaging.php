@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b5  Made the `$recipient` parameter optional for all methods [wb, 2009-07-08]
  * @changes    1.0.0b4  Added support for `'*'` and arrays of names to ::check() [wb, 2009-06-02] 
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
@@ -62,7 +63,7 @@ class fMessaging
 			return FALSE;
 		}
 		
-		return fSession::get($name, NULL, __CLASS__ . '::' . $recipient . '::') !== NULL;
+		return fSession::get(__CLASS__ . '::' . $recipient . '::' . $name, NULL) !== NULL;
 	}
 	
 	
@@ -84,7 +85,7 @@ class fMessaging
 			$recipient = '{default}';	
 		}
 		
-		fSession::set($name, $message, __CLASS__ . '::' . $recipient . '::');
+		fSession::set(__CLASS__ . '::' . $recipient . '::' . $name, $message);
 	}
 	
 	
@@ -114,9 +115,9 @@ class fMessaging
 			$recipient = '{default}';	
 		}
 		
-		$prefix  = __CLASS__ . '::' . $recipient . '::';
-		$message = fSession::get($name, NULL, $prefix);
-		fSession::delete($name, $prefix);
+		$key     = __CLASS__ . '::' . $recipient . '::' . $name;
+		$message = fSession::get($key, NULL);
+		fSession::delete($key);
 		return $message;
 	}
 	
