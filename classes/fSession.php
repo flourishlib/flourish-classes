@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
  * @changes    1.0.0b7  Backwards Compatibility Break - Removed the `$prefix` parameter from the methods ::delete(), ::get() and ::set() - added the methods ::add(), ::enablePersistence(), ::regenerateID() [wb+al, 2009-10-23]
  * @changes    1.0.0b6  Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
  * @changes    1.0.0b5  Added documentation about session cache limiter warnings [wb, 2009-05-04]
@@ -169,8 +170,8 @@ class fSession
 		if (isset($_COOKIE[session_name()])) {
 			$params = session_get_cookie_params();
 			setcookie(session_name(), '', time()-43200, $params['path'], $params['domain'], $params['secure']);
+			session_destroy();
 		}
-		session_destroy();
 	}
 	
 	

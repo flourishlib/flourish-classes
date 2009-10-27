@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Fixed some bugs with GD not properly handling transparent backgrounds and desaturation of .gif files [wb, 2009-10-27]
  * @changes    1.0.0b15  Added ::getDimensions() [wb, 2009-08-07]
  * @changes    1.0.0b14  Performance updates for checking image type and compatiblity [wb, 2009-07-31]
  * @changes    1.0.0b13  Updated class to work even if the file extension is wrong or not present, ::saveChanges() detects files that aren't writable [wb, 2009-07-29]
@@ -805,91 +806,122 @@ class fImage extends fFile
 	 */
 	private function processWithGD($output_file, $jpeg_quality)
 	{
-		$type = self::getImageType($this->file);
+		$type       = self::getImageType($this->file);
+		$save_alpha = FALSE;
+		
+		$path_info = fFilesystem::getPathInfo($output_file);
+		$new_type  = $path_info['extension'];
+		$new_type  = ($type == 'jpeg') ? 'jpg' : $type;
+		
+		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
+			$new_type = $type;	
+		}
 		
 		switch ($type) {
 			case 'gif':
 				$gd_res = imagecreatefromgif($this->file);
+				$save_alpha = TRUE;
 				break;
 			case 'jpg':
 				$gd_res = imagecreatefromjpeg($this->file);
 				break;
 			case 'png':
 				$gd_res = imagecreatefrompng($this->file);
+				$save_alpha = TRUE;
 				break;
 		}
 		
 		
 		foreach ($this->pending_modifications as $mod) {
 			
+			$new_gd_res = imagecreatetruecolor($mod['width'], $mod['height']);
+			if ($save_alpha) {
+				imagealphablending($new_gd_res, FALSE);
+				imagesavealpha($new_gd_res, TRUE);
+				if ($new_type == 'gif') {
+					$transparent = imagecolorallocatealpha($new_gd_res, 255, 255, 255, 127);
+					imagefilledrectangle($new_gd_res, 0, 0, $mod['width'], $mod['height'], $transparent);
+					imagecolortransparent($new_gd_res, $transparent);
+				}
+			}
+			
 			// Perform the resize operation
 			if ($mod['operation'] == 'resize') {
 				
-				$new_gd_res = imagecreatetruecolor($mod['width'], $mod['height']);
 				imagecopyresampled($new_gd_res,       $gd_res,
 								   0,                 0,
 								   0,                 0,
 								   $mod['width'],     $mod['height'],
 								   $mod['old_width'], $mod['old_height']);
-				imagedestroy($gd_res);
-				$gd_res = $new_gd_res;
-				
 				
 			// Perform the crop operation
 			} elseif ($mod['operation'] == 'crop') {
 			
-				$new_gd_res = imagecreatetruecolor($mod['width'], $mod['height']);
 				imagecopyresampled($new_gd_res,       $gd_res,
 								   0,                 0,
 								   $mod['start_x'],   $mod['start_y'],
 								   $mod['width'],     $mod['height'],
 								   $mod['width'],     $mod['height']);
-				imagedestroy($gd_res);
-				$gd_res = $new_gd_res;
-				
 				
 			// Perform the desaturate operation
 			} elseif ($mod['operation'] == 'desaturate') {
 			
-				$new_gd_res = imagecreate($mod['width'], $mod['height']);
-				
 				// Create a palette of grays
 				$grays = array();
 				for ($i=0; $i < 256; $i++) {
 					$grays[$i] = imagecolorallocate($new_gd_res, $i, $i, $i);
 				}
+				$transparent = imagecolorallocatealpha($new_gd_res, 255, 255, 255, 127);
 				
 				// Loop through every pixel and convert the rgb values to grays
 				for ($x=0; $x < $mod['width']; $x++) {
 					for ($y=0; $y < $mod['height']; $y++) {
 						
 						$color = imagecolorat($gd_res, $x, $y);
-						$red   = ($color >> 16) & 0xFF;
-						$green = ($color >> 8) & 0xFF;
-						$blue  = $color & 0xFF;
+						if ($type != 'gif') {
+							$red   = ($color >> 16) & 0xFF;
+							$green = ($color >> 8) & 0xFF;
+							$blue  = $color & 0xFF;
+							if ($save_alpha) {
+								$alpha = ($color >> 24) & 0x7F;
+							}
+						} else {
+							$color_info = imagecolorsforindex($gd_res, $color);
+							$red   = $color_info['red'];
+							$green = $color_info['green'];
+							$blue  = $color_info['blue'];
+							$alpha = $color_info['alpha'];
+						}
 						
-						// Get the appropriate gray (http://en.wikipedia.org/wiki/YIQ)
-						$yiq = round(($red * 0.299) + ($green * 0.587) + ($blue * 0.114));
-						imagesetpixel($new_gd_res, $x, $y, $grays[$yiq]);
+						if (!$save_alpha || $alpha != 127) {
+							
+							// Get the appropriate gray (http://en.wikipedia.org/wiki/YIQ)
+							$yiq = round(($red * 0.299) + ($green * 0.587) + ($blue * 0.114));
+							
+							if (!$save_alpha || $alpha == 0) {
+								$new_color = $grays[$yiq];	
+							} else {
+								$new_color = imagecolorallocatealpha($new_gd_res, $yiq, $yiq, $yiq, $alpha);	
+							}
+							
+						} else {
+							$new_color = $transparent;
+						}
+						
+						imagesetpixel($new_gd_res, $x, $y, $new_color);
 					}
 				}
-				
-				imagedestroy($gd_res);
-				$gd_res = $new_gd_res;
 			}
+			
+			imagedestroy($gd_res);
+				
+			$gd_res = $new_gd_res;	
 		}
 		
 		// Save the file
-		$path_info = fFilesystem::getPathInfo($output_file);
-		$new_type = $path_info['extension'];
-		$new_type = ($type == 'jpeg') ? 'jpg' : $type;
-		
-		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
-			$new_type = $type;	
-		}
-		
 		switch ($new_type) {
 			case 'gif':
+				imagetruecolortopalette($gd_res, TRUE, 256);
 				imagegif($gd_res, $output_file);
 				break;
 			case 'jpg':
