@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b4  Fixed setting up the inspect callback in ::configureTimezoneColumn() [wb, 2009-10-11]
  * @changes    1.0.0b3  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
@@ -333,7 +334,7 @@ class fORMDate
 			}
 			
 			if ($values[$timezone_column] === NULL) {
-				fActiveRecord::assign($values, $old_values, $timezone_column, $value->getTimezone());
+				fActiveRecord::assign($values, $old_values, $timezone_column, $value->format('e'));
 			}
 			 
 		// If there was some error creating the timestamp object, we just leave all values alone
@@ -470,7 +471,7 @@ class fORMDate
 		self::objectifyTimestampWithTimezone($values, $old_values, $column, $timezone_column);
 		
 		if ($value instanceof fTimestamp) {
-			fActiveRecord::assign($values, $old_values, $timezone_column, $value->getTimezone());
+			fActiveRecord::assign($values, $old_values, $timezone_column, $value->format('e'));
 		}	
 	}
 	
