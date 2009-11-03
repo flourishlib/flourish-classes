@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed ::reset() to properly reset the singularization and pluralization rules [wb, 2009-10-28]
  * @changes    1.0.0b4  Added caching for various methods - provided significant performance boost to ORM [wb, 2009-06-15] 
  * @changes    1.0.0b3  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b2  Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
@@ -448,10 +449,10 @@ class fGrammar
 		self::$plural_to_singular_rules = array(
 			'([ml])ice'                    => '\1ouse',
 			'(media|info(rmation)?|news)$' => '\1',
-			'quizzes$'                     => 'quiz',
-			'children$'                    => 'child',
-			'people$'                      => 'person',
-			'men$'                         => 'man',
+			'(q)uizzes$'                   => '\1uiz',
+			'(c)hildren$'                  => '\1hild',
+			'(p)eople$'                    => '\1erson',
+			'(m)en$'                       => '\1an',
 			'((?!sh).)oes$'                => '\1o',
 			'((?<!o)[ieu]s|[ieuo]x)es$'    => '\1',
 			'([cs]h)es$'                   => '\1',
@@ -469,10 +470,10 @@ class fGrammar
 			'([ml])ouse$'                  => '\1ice',
 			'(media|info(rmation)?|news)$' => '\1',
 			'(phot|log)o$'                 => '\1os',
-			'^(q)uiz$'                     => 'quizzes',
-			'child$'                       => 'children',
-			'person$'                      => 'people',
-			'man$'                         => 'men',
+			'^(q)uiz$'                     => '\1uizzes',
+			'(c)hild$'                     => '\1hildren',
+			'(p)erson$'                    => '\1eople',
+			'(m)an$'                       => '\1en',
 			'([ieu]s|[ieuo]x)$'            => '\1es',
 			'([cs]h)$'                     => '\1es',
 			'(ss)$'                        => '\1es',

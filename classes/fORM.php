@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addCustomClassToTableMapping() to ::mapClassToTable(). Added ::getDatabaseName() and ::mapClassToDatabase(). Updated code for new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b15  Added support for fActiveRecord to ::getRecordName() [wb, 2009-10-06]
  * @changes    1.0.0b14  Updated documentation for ::registerActiveRecordMethod() to include info about prefix method matches [wb, 2009-08-07]
  * @changes    1.0.0b13  Updated documentation for ::registerRecordSetMethod() [wb, 2009-07-14]
@@ -29,7 +30,6 @@
 class fORM
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const addCustomClassTableMapping = 'fORM::addCustomClassTableMapping';
 	const callHookCallbacks          = 'fORM::callHookCallbacks';
 	const callInspectCallbacks       = 'fORM::callInspectCallbacks';
 	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
@@ -40,8 +40,11 @@ class fORM
 	const getActiveRecordMethod      = 'fORM::getActiveRecordMethod';
 	const getClass                   = 'fORM::getClass';
 	const getColumnName              = 'fORM::getColumnName';
+	const getDatabaseName            = 'fORM::getDatabaseName';
 	const getRecordName              = 'fORM::getRecordName';
 	const getRecordSetMethod         = 'fORM::getRecordSetMethod';
+	const mapClassToDatabase         = 'fORM::mapClassToDatabase';
+	const mapClassToTable            = 'fORM::mapClassToTable';
 	const objectify                  = 'fORM::objectify';
 	const overrideColumnName         = 'fORM::overrideColumnName';
 	const overrideRecordName         = 'fORM::overrideRecordName';
@@ -76,6 +79,15 @@ class fORM
 		'parseMethod'           => array(),
 		'getActiveRecordMethod' => array(),
 		'objectify'             => array()
+	);
+	
+	/**
+	 * Custom mappings for class -> database
+	 * 
+	 * @var array
+	 */
+	static private $class_database_map = array(
+		'fActiveRecord' => 'default'
 	);
 	
 	/**
@@ -149,26 +161,6 @@ class fORM
 	 * @var array
 	 */
 	static private $scalarize_callbacks = array();
-	
-	
-	/**
-	 * Allows non-standard class to table mapping
-	 * 
-	 * By default, all database tables are assumed to be plural nouns in
-	 * `underscore_notation` and all class names are assumed to be singular
-	 * nouns in `UpperCamelCase`. This method allows arbitrary class to 
-	 * table mapping.
-	 * 
-	 * @param  mixed  $class  The name of the class, or an instance of it
-	 * @param  string $table  The name of the database table
-	 * @return void
-	 */
-	static public function addCustomClassTableMapping($class, $table)
-	{
-		$class = self::getClass($class);
-		
-		self::$class_table_map[$class] = $table;
-	}
 	
 	
 	/**
@@ -347,7 +339,10 @@ class fORM
 	/**
 	 * Will dynamically create an fActiveRecord-based class for a database table
 	 * 
-	 * Normally this would be called from an `__autoload()` function
+	 * Normally this would be called from an `__autoload()` function.
+	 * 
+	 * This method will only create classes for tables in the default ORM
+	 * database.
 	 * 
 	 * @param  string $class  The name of the class to create
 	 * @return void
@@ -357,8 +352,9 @@ class fORM
 		if (class_exists($class, FALSE)) {
 			return;
 		}
-		$tables = fORMSchema::retrieve()->getTables();
-		$table = self::tablize($class);
+		$schema = fORMSchema::retrieve();
+		$tables = $schema->getTables();
+		$table  = self::tablize($class);
 		if (in_array($table, $tables)) {
 			eval('class ' . $class . ' extends fActiveRecord { };');
 			return;
@@ -382,21 +378,28 @@ class fORM
 	 * 
 	 * This method should be called right after fORMDatabase::attach().
 	 *          
-	 * @param  fCache $cache  The object to cache schema information to
+	 * @param  fCache $cache          The object to cache schema information to
+	 * @param  string $database_name  The database to enable caching for
+	 * @param  string $key_token      This is a token that is used in cache keys to prevent conflicts for server-wide caches - when non-NULL the document root is used 
 	 * @return void
 	 */
-	static public function enableSchemaCaching($cache)
+	static public function enableSchemaCaching($cache, $database_name='default', $key_token=NULL)
 	{
-		$db = fORMDatabase::retrieve();
-		$db->enableCaching($cache);
+		if ($key_token === NULL) {
+			$key_token = $_SERVER['DOCUMENT_ROOT'];	
+		}
+		$token = 'fORM::' . $database_name . '::' . $key_token . '::';
+		
+		$db = fORMDatabase::retrieve('name:' . $database_name);
+		$db->enableCaching($cache, $token);
 		fException::registerCallback($db->clearCache, 'fUnexpectedException');
 		
 		$sql_translation = $db->getSQLTranslation();
-		$sql_translation->enableCaching($cache);
+		$sql_translation->enableCaching($cache, $token);
 		fException::registerCallback($sql_translation->clearCache, 'fUnexpectedException');
 		
-		$schema = fORMSchema::retrieve();
-		$schema->enableCaching($cache);
+		$schema = fORMSchema::retrieve('name:' . $database_name);
+		$schema->enableCaching($cache, $token);
 		fException::registerCallback($schema->clearCache, 'fUnexpectedException');	
 	}
 	
@@ -487,6 +490,24 @@ class fORM
 	
 	
 	/**
+	 * Returns the name for the database used by the class specified
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class   The class name to get the database name for
+	 * @return string  The name of the database to use
+	 */
+	static public function getDatabaseName($class)
+	{
+		if (!isset(self::$class_database_map[$class])) {
+			$class = 'fActiveRecord';	
+		}
+		
+		return self::$class_database_map[$class];
+	}
+	
+	
+	/**
 	 * Returns the record name for a class
 	 * 
 	 * The default record name is the result of calling fGrammar::humanize()
@@ -539,6 +560,44 @@ class fORM
 	
 	
 	/**
+	 * Sets a class to use a database other than the "default"
+	 * 
+	 * Multiple database objects can be attached for the ORM by passing a
+	 * unique `$name` to the ::attach() method.
+	 * 
+	 * @param  mixed  $class          The name of the class, or an instance of it
+	 * @param  string $database_name  The name given to the database when passed to ::attach()
+	 * @return void
+	 */
+	static public function mapClassToDatabase($class, $database_name)
+	{
+		$class = fORM::getClass($class);
+		
+		self::$class_database_map[$class] = $database_name;
+	}
+	
+	
+	/**
+	 * Allows non-standard class to table mapping
+	 * 
+	 * By default, all database tables are assumed to be plural nouns in
+	 * `underscore_notation` and all class names are assumed to be singular
+	 * nouns in `UpperCamelCase`. This method allows arbitrary class to 
+	 * table mapping.
+	 * 
+	 * @param  mixed  $class  The name of the class, or an instance of it
+	 * @param  string $table  The name of the database table
+	 * @return void
+	 */
+	static public function mapClassToTable($class, $table)
+	{
+		$class = self::getClass($class);
+		
+		self::$class_table_map[$class] = $table;
+	}
+	
+	
+	/**
 	 * Takes a scalar value and turns it into an object if applicable
 	 *
 	 * @internal
@@ -560,10 +619,11 @@ class fORM
 			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
 		}
 		
-		$table = self::tablize($class);
+		$table  = self::tablize($class);
+		$schema = fORMSchema::retrieve($class);
 		
 		// Turn date/time values into objects
-		$column_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$column_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		if (in_array($column_type, array('date', 'time', 'timestamp'))) {
 			
@@ -985,6 +1045,9 @@ class fORM
 			'parseMethod'           => array(),
 			'getActiveRecordMethod' => array(),
 			'objectify'             => array()
+		);
+		self::$class_database_map             = array(
+			'fActiveRecord' => 'default'
 		);
 		self::$class_table_map                = array();
 		self::$column_names                   = array();

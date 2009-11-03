@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b12  Backwards Compatibility Break - Removed date translation functionality, changed the signature of ::translate(), updated to support quoted identifiers, added support for PostgreSQL, MSSQL and Oracle schemas [wb, 2009-10-22]
  * @changes    1.0.0b11  Fixed a bug with translating MSSQL national columns over an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b10  Changed last bug fix to support PHP 5.1.6 [wb, 2009-09-18]
@@ -182,6 +183,13 @@ class fSQLTranslation
 	 * @var fCache
 	 */
 	private $cache;
+	
+	/**
+	 * The cache prefix to use for cache entries
+	 * 
+	 * @var string
+	 */
+	private $cache_prefix;
 	
 	/**
 	 * The fDatabase instance
@@ -437,9 +445,14 @@ class fSQLTranslation
 	 * @param  fCache  $cache  The cache to cache to
 	 * @return void
 	 */
-	public function enableCaching($cache)
+	public function enableCaching($cache, $key_token=NULL)
 	{
-		$this->cache       = $cache;
+		$this->cache = $cache;
+		
+		if ($key_token !== NULL) {
+			$this->cache_prefix = 'fSQLTranslation::' . $this->database->getType() . '::' . $key_token . '::';
+		}
+		
 		$this->schema_info = $this->cache->get($this->makeCachePrefix() . 'schema_info', array());
 	}
 	
@@ -695,22 +708,26 @@ class fSQLTranslation
 	/**
 	 * Creates a unique cache prefix to help prevent cache conflicts
 	 * 
-	 * @return void
+	 * @return string  The cache prefix to use
 	 */
 	private function makeCachePrefix()
 	{
-		$prefix  = 'fSQLTranslation::' . $this->database->getType() . '::';
-		if ($this->database->getHost()) {
-			$prefix .= $this->database->getHost() . '::';	
+		if (!$this->cache_prefix) {
+			$prefix  = 'fSQLTranslation::' . $this->database->getType() . '::';
+			if ($this->database->getHost()) {
+				$prefix .= $this->database->getHost() . '::';
+			}
+			if ($this->database->getPort()) {
+				$prefix .= $this->database->getPort() . '::';
+			}
+			$prefix .= $this->database->getDatabase() . '::';
+			if ($this->database->getUsername()) {
+				$prefix .= $this->database->getUsername() . '::';
+			}
+			$this->cache_prefix = $prefix;	
 		}
-		if ($this->database->getPort()) {
-			$prefix .= $this->database->getPort() . '::';	
-		}
-		$prefix .= $this->database->getDatabase() . '::';
-		if ($this->database->getUsername()) {
-			$prefix .= $this->database->getUsername() . '::';	
-		}
-		return $prefix;	
+		
+		return $this->cache_prefix;	
 	}
 	
 	

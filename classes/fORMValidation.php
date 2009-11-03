@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b19  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b18  Fixed ::checkOnlyOneRule() and ::checkOneOrMoreRule() to consider blank strings as NULL [wb, 2009-08-21]
  * @changes    1.0.0b17  Added @internal methods ::removeStringReplacement() and ::removeRegexReplacement() [wb, 2009-07-29]
@@ -175,7 +176,7 @@ class fORMValidation
 		}
 		
 		$route = fORMSchema::getRouteName(
-			fORMSchema::retrieve(),
+			fORMSchema::retrieve($class),
 			fORM::tablize($class),
 			fORM::tablize($related_class),
 			$route,
@@ -231,7 +232,7 @@ class fORMValidation
 		}
 		
 		$route = fORMSchema::getRouteName(
-			fORMSchema::retrieve(),
+			fORMSchema::retrieve($class),
 			fORM::tablize($class),
 			fORM::tablize($related_class),
 			$route,
@@ -370,7 +371,7 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$column_info = $schema->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
 		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
@@ -467,7 +468,7 @@ class fORMValidation
 	static private function checkDataType($class, $column, $value)
 	{
 		$table       = fORM::tablize($class);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$column_info = $schema->getColumnInfo($table, $column);
 		
 		if ($value !== NULL) {
@@ -542,8 +543,8 @@ class fORMValidation
 			return;
 		}
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		$table        = fORM::tablize($class);
 		$foreign_keys = $schema->getKeys($table, 'foreign');
@@ -657,8 +658,8 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		$pk_columns = $schema->getKeys($table, 'primary');
 		$columns    = array();
@@ -779,8 +780,8 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		$key_info = $schema->getKeys($table);
 		
@@ -1149,7 +1150,7 @@ class fORMValidation
 	{
 		$class  = fORM::getClass($class);
 		$table  = fORM::tablize($class);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		
 		$type = $schema->getColumnInfo($table, $column, 'type');
 		$valid_types = array('varchar', 'char', 'text');
@@ -1237,7 +1238,7 @@ class fORMValidation
 	{
 		$class  = get_class($object);
 		$table  = fORM::tablize($class);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		
 		self::initializeRuleArrays($class);
 		

@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b19  Added support for escaping identifiers (column and table names) to ::escape(), added support for database schemas, rewrote internal SQL string spliting [wb, 2009-10-22]
  * @changes    1.0.0b18  Updated the class for the new fResult and fUnbufferedResult APIs, fixed ::unescape() to not touch NULLs [wb, 2009-08-12]
  * @changes    1.0.0b17  Added the ability to pass an array of all values as a single parameter to ::escape() instead of one value per parameter [wb, 2009-08-11]
@@ -98,6 +99,13 @@ class fDatabase
 	 * @var fCache
 	 */
 	private $cache;
+	
+	/**
+	 * The cache prefix to use for cache entries
+	 * 
+	 * @var string
+	 */
+	private $cache_prefix;
 	
 	/**
 	 * Database connection resource or PDO object
@@ -739,12 +747,17 @@ class fDatabase
 	/**
 	 * Sets the schema info to be cached to the fCache object specified
 	 * 
-	 * @param  fCache $cache  The cache to cache to
+	 * @param  fCache $cache      The cache to cache to
+	 * @param  string $key_token  Internal use only! (this will be used in the cache key to uniquely identify the cache for this fDatabase object) 
 	 * @return void
 	 */
-	public function enableCaching($cache)
+	public function enableCaching($cache, $key_token=NULL)
 	{
 		$this->cache = $cache;
+		
+		if ($key_token !== NULL) {
+			$this->cache_prefix = 'fDatabase::' . $this->type . '::' . $key_token . '::';	
+		}
 		
 		$this->schema_info = $this->cache->get($this->makeCachePrefix() . 'schema_info', array());
 	}
@@ -2003,22 +2016,25 @@ class fDatabase
 	/**
 	 * Creates a unique cache prefix to help prevent cache conflicts
 	 * 
-	 * @return void
+	 * @return string  The cache prefix to use
 	 */
 	private function makeCachePrefix()
 	{
-		$prefix  = 'fDatabase::' . $this->type . '::';
-		if ($this->host) {
-			$prefix .= $this->host . '::';	
+		if (!$this->cache_prefix) {
+			$prefix  = 'fDatabase::' . $this->type . '::';
+			if ($this->host) {
+				$prefix .= $this->host . '::';
+			}
+			if ($this->port) {
+				$prefix .= $this->port . '::';
+			}
+			$prefix .= $this->database . '::';
+			if ($this->username) {
+				$prefix .= $this->username . '::';
+			}	
 		}
-		if ($this->port) {
-			$prefix .= $this->port . '::';	
-		}
-		$prefix .= $this->database . '::';
-		if ($this->username) {
-			$prefix .= $this->username . '::';	
-		}
-		return $prefix;	
+		
+		return $this->cache_prefix;
 	}
 	
 	

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b47
+ * @version    1.0.0b48
+ * @changes    1.0.0b48  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b47  Changed `::associate{RelatedRecords}()`, `::link{RelatedRecords}()` and `::populate{RelatedRecords}()` to allow for method chaining [wb, 2009-10-22]
  * @changes    1.0.0b46  Changed SQL statements to use value placeholders and identifier escaping [wb, 2009-10-22]
  * @changes    1.0.0b45  Added support for `!~`, `&~`, `><` and OR comparisons to ::checkConditions(), made object handling in ::checkConditions() more robust [wb, 2009-09-21]
@@ -537,7 +538,9 @@ abstract class fActiveRecord
 			$class = get_class($record);	
 		}
 		
-		$pk_columns = fORMSchema::retrieve()->getKeys(fORM::tablize($class), 'primary');
+		$schema     = fORMSchema::retrieve($class);
+		$table      = fORM::tablize($class);
+		$pk_columns = $schema->getKeys($table, 'primary');
 		
 		// Build an array of just the primary key data
 		$pk_data = array();
@@ -771,7 +774,7 @@ abstract class fActiveRecord
 				$plural  = FALSE;
 				
 				// one-to-many relationships need to use plural forms
-				$schema = fORMSchema::retrieve();
+				$schema = fORMSchema::retrieve($class);
 				if (in_array($subject, $schema->getTables())) {
 					if (fORMSchema::isOneToOne($schema, $table, $subject, $route)) {
 						throw new fProgrammerException(
@@ -863,7 +866,7 @@ abstract class fActiveRecord
 				$route = isset($parameters[0]) ? $parameters[0] : NULL;
 				
 				// one-to-many relationships need to use plural forms
-				$schema = fORMSchema::retrieve();
+				$schema = fORMSchema::retrieve($class);
 				if (in_array($subject, $schema->getTables())) {
 					if (fORMSchema::isOneToOne($schema, $table, $subject, $route)) {
 						throw new fProgrammerException(
@@ -956,7 +959,7 @@ abstract class fActiveRecord
 		}
 		
 		// If we have a single auto incrementing primary key, remove the value
-		$schema     = fORMSchema::retrieve();
+		$schema     = fORMSchema::retrieve($class);
 		$table      = fORM::tablize($class);
 		$pk_columns = $schema->getKeys($table, 'primary');
 		
@@ -978,7 +981,7 @@ abstract class fActiveRecord
 	public function __construct($key=NULL)
 	{
 		$class  = get_class($this);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		
 		// If the features of this class haven't been set yet, do it
 		if (!isset(self::$configured[$class])) {
@@ -1171,7 +1174,7 @@ abstract class fActiveRecord
 		$value_placeholders  = array();
 		
 		$class       = get_class($this);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
@@ -1209,7 +1212,7 @@ abstract class fActiveRecord
 	protected function constructUpdateParams()
 	{
 		$class       = get_class($this);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table);
@@ -1262,8 +1265,8 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'write');
+		$schema = fORMSchema::retrieve($class);
 		
 		fORM::callHookCallbacks(
 			$this,
@@ -1468,8 +1471,9 @@ abstract class fActiveRecord
 			);
 		}
 		
-		$schema      = fORMSchema::retrieve();
-		$table       = fORM::tablize(get_class($this));
+		$class       = get_class($this);
+		$schema      = fORMSchema::retrieve($class);
+		$table       = fORM::tablize($class);
 		$column_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		// Ensure the programmer is calling the function properly
@@ -1553,7 +1557,7 @@ abstract class fActiveRecord
 			return $this->__call('exists', array());
 		}
 		
-		$schema     = fORMSchema::retrieve();
+		$schema     = fORMSchema::retrieve($class);
 		$table      = fORM::tablize($class);
 		$pk_columns = $schema->getKeys($table, 'primary');
 		$exists     = FALSE;
@@ -1581,8 +1585,8 @@ abstract class fActiveRecord
 	{		
 		$class = get_class($this);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		try {
 			if ($values === array_combine(array_keys($values), array_fill(0, sizeof($values), NULL))) {
@@ -1651,7 +1655,7 @@ abstract class fActiveRecord
 		
 		$class  = get_class($this);
 		$table  = fORM::tablize($class);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		$info   = $schema->getColumnInfo($table, $column);
 		
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
@@ -1696,8 +1700,8 @@ abstract class fActiveRecord
 	public function load()
 	{
 		$class  = get_class($this);
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		if (fORM::getActiveRecordMethod($class, 'load')) {
 			return $this->__call('load', array());
@@ -1737,8 +1741,8 @@ abstract class fActiveRecord
 		$table  = fORM::tablize($class);
 		$row    = $result->current();
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		if (!isset(self::$unescape_map[$class])) {
 			self::$unescape_map[$class] = array();
@@ -1846,7 +1850,7 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
 		
 		$column_info = $schema->getColumnInfo($table);
@@ -1897,7 +1901,7 @@ abstract class fActiveRecord
 		
 		$class  = get_class($this);
 		$table  = fORM::tablize($class);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		
 		$column_info = $schema->getColumnInfo($table, $column);
 		$column_type = $column_info['type'];
@@ -1990,7 +1994,7 @@ abstract class fActiveRecord
 		
 		$class        = get_class($this);
 		$table        = fORM::tablize($class);
-		$schema       = fORMSchema::retrieve();
+		$schema       = fORMSchema::retrieve($class);
 		$columns_info = $schema->getColumnInfo($table);
 		foreach ($columns_info as $column => $column_info) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
@@ -2257,7 +2261,7 @@ abstract class fActiveRecord
 		
 		$class  = get_class($this);
 		$hash   = self::hash($this->values, $class);
-		$schema = fORMSchema::retrieve();
+		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
 			
 		// If the object has not been replicated yet, do it now
@@ -2406,7 +2410,7 @@ abstract class fActiveRecord
 		// Float and int columns that look like numbers with commas will have the commas removed
 		if (is_string($value)) {
 			$table  = fORM::tablize($class);
-			$schema = fORMSchema::retrieve();
+			$schema = fORMSchema::retrieve($class);
 			$type   = $schema->getColumnInfo($table, $column, 'type');
 			if (in_array($type, array('integer', 'float')) && preg_match('#^(\d+,)+\d+(\.\d+)?$#', $value)) {
 				$value = str_replace(',', '', $value);
@@ -2446,8 +2450,8 @@ abstract class fActiveRecord
 			$this->cache
 		);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'write');
+		$schema = fORMSchema::retrieve($class);
 		
 		try {
 			$table = fORM::tablize($class);

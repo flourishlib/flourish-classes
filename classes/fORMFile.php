@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b16  fImage method calls for file upload columns will no longer cause notices due to a missing image type [wb, 2009-09-09]
  * @changes    1.0.0b15  ::addFImageMethodCall() no longer requires column be an image upload column, inheritance to an image column now only happens for fImage objects [wb, 2009-07-29] 
  * @changes    1.0.0b14  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
@@ -272,7 +273,8 @@ class fORMFile
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve($class);
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
 		if (!in_array($data_type, $valid_data_types)) {

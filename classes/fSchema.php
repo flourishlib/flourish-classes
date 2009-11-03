@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b26  Added the placeholder element to the output of ::getColumnInfo(), added support for PostgreSQL, MSSQL and Oracle "schemas", added support for parsing quoted SQLite identifiers [wb, 2009-10-22]
  * @changes    1.0.0b25  One-to-one relationships utilizing the primary key as a foreign key are now properly detected [wb, 2009-09-22]
  * @changes    1.0.0b24  Fixed MSSQL support to work with ODBC database connections [wb, 2009-09-18]
@@ -45,6 +46,13 @@ class fSchema
 	 * @var fCache
 	 */
 	private $cache = NULL;
+	
+	/**
+	 * The cache prefix to use for cache entries
+	 * 
+	 * @var string
+	 */
+	private $cache_prefix;
 	
 	/**
 	 * The cached column info
@@ -196,14 +204,19 @@ class fSchema
 	/**
 	 * Sets the schema to be cached to the fCache object specified
 	 * 
-	 * @param  fCache $cache  The cache to cache to
+	 * @param  fCache $cache      The cache to cache to
+	 * @param  string $key_token  Internal use only! (this will be used in the cache key to uniquely identify the cache for this fSchema object) 
 	 * @return void
 	 */
-	public function enableCaching($cache)
+	public function enableCaching($cache, $key_token=NULL)
 	{
 		$this->cache = $cache;
 		
+		if ($key_token !== NULL) {
+			$this->cache_prefix = 'fSchema::' . $this->database->getType() . '::' . $key_token . '::';
+		}
 		$prefix = $this->makeCachePrefix();
+		
 		$this->column_info        = $this->cache->get($prefix . 'column_info',          array());
 		$this->databases          = $this->cache->get($prefix . 'databases',            NULL);
 		$this->keys               = $this->cache->get($prefix . 'keys',                 array());
@@ -1713,7 +1726,7 @@ class fSchema
 					throw new fProgrammerException(
 						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 						$element,
-						join(', ', array('type', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment'))
+						join(', ', array('type', 'placeholder', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment'))
 					);	
 				}
 				return $this->merged_column_info[$table][$column][$element];
@@ -2113,22 +2126,25 @@ class fSchema
 	/**
 	 * Creates a unique cache prefix to help prevent cache conflicts
 	 * 
-	 * @return void
+	 * @return string  The cache prefix to use
 	 */
 	private function makeCachePrefix()
 	{
-		$prefix  = 'fSchema::' . $this->database->getType() . '::';
-		if ($this->database->getHost()) {
-			$prefix .= $this->database->getHost() . '::';	
+		if (!$this->cache_prefix) {
+			$prefix  = 'fSchema::' . $this->database->getType() . '::';
+			if ($this->database->getHost()) {
+				$prefix .= $this->database->getHost() . '::';
+			}
+			if ($this->database->getPort()) {
+				$prefix .= $this->database->getPort() . '::';
+			}
+			$prefix .= $this->database->getDatabase() . '::';
+			if ($this->database->getUsername()) {
+				$prefix .= $this->database->getUsername() . '::';
+			}	
 		}
-		if ($this->database->getPort()) {
-			$prefix .= $this->database->getPort() . '::';	
-		}
-		$prefix .= $this->database->getDatabase() . '::';
-		if ($this->database->getUsername()) {
-			$prefix .= $this->database->getUsername() . '::';	
-		}
-		return $prefix;	
+		
+		return $this->cache_prefix;
 	}
 	
 	

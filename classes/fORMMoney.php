@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b4  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
  * @changes    1.0.0b2  Fixed bugs with objectifying money columns [wb, 2008-11-24]
@@ -82,7 +83,8 @@ class fORMMoney
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$data_type = fORMSchema::retrieve()->getColumnInfo($table, $column, 'type');
+		$schema    = fORMSchema::retrieve($class);
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('float');
 		if (!in_array($data_type, $valid_data_types)) {
@@ -95,7 +97,7 @@ class fORMMoney
 		}
 		
 		if ($currency_column !== NULL) {
-			$currency_column_data_type = fORMSchema::retrieve()->getColumnInfo($table, $currency_column, 'type');
+			$currency_column_data_type = $schema->getColumnInfo($table, $currency_column, 'type');
 			$valid_currency_column_data_types = array('varchar', 'char', 'text');
 			if (!in_array($currency_column_data_type, $valid_currency_column_data_types)) {
 				throw new fProgrammerException(

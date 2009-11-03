@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b28  Fixed ::prebuild() and ::precount() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b27  Changed fRecordSet::build() to fix bad $page numbers instead of throwing an fProgrammerException [wb, 2009-10-05]
  * @changes    1.0.0b26  Updated the documentation for ::build() and ::filter() to reflect new functionality [wb, 2009-09-21]
@@ -167,8 +168,8 @@ class fRecordSet implements Iterator, Countable
 		// Ensure that the class has been configured
 		fActiveRecord::forceConfigure($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
 		
 		$params = array($db->escape("SELECT %r.* FROM :from_clause", $table));
@@ -316,7 +317,7 @@ class fRecordSet implements Iterator, Countable
 			);	
 		}
 		
-		$db = fORMDatabase::retrieve();
+		$db = fORMDatabase::retrieve($class, 'read');
 		
 		return new fRecordSet(
 			$class,
@@ -775,7 +776,7 @@ class fRecordSet implements Iterator, Countable
 		
 		if (!is_numeric($this->non_limited_count)) {
 			try {
-				$db = fORMDatabase::retrieve();
+				$db = fORMDatabase::retrieve($this->class, 'read');
 				$this->non_limited_count = $db->translatedQuery($this->non_limited_count)->fetchScalar();
 			} catch (fExpectedException $e) {
 				$this->non_limited_count = $this->count();
@@ -1010,7 +1011,7 @@ class fRecordSet implements Iterator, Countable
 		$this->validateSingleClass('get primary key');
 		
 		$table           = fORM::tablize($this->class);
-		$schema          = fORMSchema::retrieve();
+		$schema          = fORMSchema::retrieve($this->class);
 		$pk_columns      = $schema->getKeys($table, 'primary');
 		$first_pk_column = $pk_columns[0];
 		
@@ -1258,8 +1259,8 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($this->class, 'read');
+		$schema = fORMSchema::retrieve($this->class);
 		
 		$related_table = fORM::tablize($related_class);
 		$table         = fORM::tablize($this->class);
@@ -1368,8 +1369,8 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($this->class, 'read');
+		$schema = fORMSchema::retrieve($this->class);
 		
 		$related_table = fORM::tablize($related_class);
 		$table         = fORM::tablize($this->class);
@@ -1445,7 +1446,7 @@ class fRecordSet implements Iterator, Countable
 		}
 		
 		$relationship = fORMSchema::getRoute(
-			fORMSchema::retrieve(),
+			fORMSchema::retrieve($this->class),
 			fORM::tablize($this->class),
 			fORM::tablize($related_class),
 			$route,

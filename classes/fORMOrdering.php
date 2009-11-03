@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b12  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b11  Fixed another bug with deleting records in the middle of a set, added support for reordering multiple records at once [dc-imarc, 2009-07-17]
  * @changes    1.0.0b10  Fixed a bug with deleting multiple in-memory records in the same set [dc-imarc, 2009-07-15]
@@ -81,7 +82,7 @@ class fORMOrdering
 	{
 		$class       = fORM::getClass($class);
 		$table       = fORM::tablize($class);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$data_type   = $schema->getColumnInfo($table, $column, 'type');
 		$unique_keys = $schema->getKeys($table, 'unique');
 		
@@ -198,8 +199,8 @@ class fORMOrdering
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'write');
+		$schema = fORMSchema::retrieve($class);
 		
 		$column        = self::$ordering_columns[$class]['column'];
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
@@ -307,8 +308,8 @@ class fORMOrdering
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		$info       = $schema->getColumnInfo($table, $column); 
 		$element    = (isset($parameters[0])) ? $parameters[0] : NULL;
@@ -435,8 +436,8 @@ class fORMOrdering
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'write');
+		$schema = fORMSchema::retrieve($class);
 		
 		$column        = self::$ordering_columns[$class]['column'];
 		$other_columns = self::$ordering_columns[$class]['other_columns'];
@@ -686,8 +687,8 @@ class fORMOrdering
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$db     = fORMDatabase::retrieve();
-		$schema = fORMSchema::retrieve();
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
 		
 		$column        = self::$ordering_columns[$class]['column'];
 		$other_columns = self::$ordering_columns[$class]['other_columns'];

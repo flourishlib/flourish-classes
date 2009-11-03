@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b6  Internal Backwards Compatibility Break - Added the `$schema` parameter to the beginning of ::getRoute(), ::getRouteName(), ::getRoutes() and ::isOneToOne() - added '!many-to-one' relationship type handling [wb, 2009-10-22]
  * @changes    1.0.0b5  Fixed some error messaging to not include {empty_string} in some situations [wb, 2009-07-31]
  * @changes    1.0.0b4  Added ::isOneToOne() [wb, 2009-07-21]
@@ -41,22 +42,23 @@ class fORMSchema
 	
 	
 	/**
-	 * The schema object to use for all ORM functionality
+	 * The schema objects to use for all ORM functionality
 	 * 
-	 * @var fSchema
+	 * @var array
 	 */
-	static private $schema_object = NULL;
+	static private $schema_objects = array();
 	
 	
 	/**
 	 * Allows attaching an fSchema-compatible object as the schema singleton for ORM code
 	 * 
 	 * @param  fSchema $schema  An object that is compatible with fSchema
+	 * @param  string  $name    The name of the database this schema is for
 	 * @return void
 	 */
-	static public function attach($schema)
+	static public function attach($schema, $name='default')
 	{
-		self::$schema_object = $schema;
+		self::$schema_objects[$name] = $schema;
 	}
 	
 	
@@ -337,21 +339,29 @@ class fORMSchema
 	 */
 	static public function reset()
 	{
-		self::$schema_object = NULL;
+		self::$schema_objects = array();
 	}
 	
 	
 	/**
 	 * Return the instance of the fSchema class
 	 * 
+	 * @param  string $class  The class the object will be used with
 	 * @return fSchema  The schema instance
 	 */
-	static public function retrieve()
+	static public function retrieve($class='fActiveRecord')
 	{
-		if (!self::$schema_object) {
-			self::$schema_object = new fSchema(fORMDatabase::retrieve());
+		if (substr($class, 0, 5) == 'name:') {
+			$database_name = substr($class, 5);
+		} else {
+			$database_name = fORM::getDatabaseName($class);
 		}
-		return self::$schema_object;
+		
+		if (!isset(self::$schema_objects[$database_name])) {
+			self::$schema_objects[$database_name] = new fSchema(fORMDatabase::retrieve($class));
+		}
+		
+		return self::$schema_objects[$database_name];
 	}
 	
 	

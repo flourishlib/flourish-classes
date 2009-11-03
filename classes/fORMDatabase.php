@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b16  Internal Backwards Compatibility Break - Renamed methods and significantly changed parameters and functionality for SQL statements to use value placeholders, identifier escaping and to handle schemas [wb, 2009-10-22]
  * @changes    1.0.0b15  Streamlined intersection operator SQL and added support for the second value being NULL [wb, 2009-09-21]
  * @changes    1.0.0b14  Added support for the intersection operator `><` to ::createWhereClause() [wb, 2009-07-13]
@@ -45,22 +46,56 @@ class fORMDatabase
 	
 	
 	/**
-	 * The instance of fDatabase
+	 * An array of fDatabase objects
 	 * 
-	 * @var fDatabase
+	 * @var array
 	 */
-	static private $database_object = NULL;
+	static private $database_objects = array();
 	
 	
 	/**
-	 * Allows attaching an fDatabase-compatible object as the database singleton for ORM code
+	 * Allows attaching an fDatabase-compatible objects for by ORM code
+	 * 
+	 * If a `$name` other than `default` is used, any fActiveRecord classes
+	 * that should use it will need to be configured by passing the class name
+	 * and `$name` to ::mapClassToDatabase(). The `$name` parameter should be
+	 * unique per database or database master/slave setup.
+	 * 
+	 * The `$role` is used by code to allow for master/slave database setups.
+	 * There can only be one database object attached for either of the roles,
+	 * `'read'` or `'write'`. If the role `'both'` is specified, it will
+	 * be applied to both the `'read'` and `'write'` roles. Any sort of logic
+	 * for picking one out of multiple databases should be done before this
+	 * method is called.
 	 * 
 	 * @param  fDatabase $database  An object that is compatible with fDatabase
+	 * @param  string    $name      The name for the database instance
+	 * @param  string    $role      If the database should be used for `'read'`, `'write'` or `'both'` operations
 	 * @return void
 	 */
-	static public function attach($database)
+	static public function attach($database, $name='default', $role='both')
 	{
-		self::$database_object = $database;
+		$valid_roles = array('both', 'write', 'read');
+		if (!in_array($role, $valid_roles)) {
+			throw new fProgrammerException(
+				'The role specified, %1$s, is invalid. Must be one of: %2$s.',
+				$role,
+				join(', ', $valid_roles)
+			);
+		}
+		
+		if (!isset(self::$database_objects[$name])) {
+			self::$database_objects[$name] = array();
+		}
+		
+		settype($role, 'array');
+		if ($role == array('both')) {
+			$role = array('write', 'read');
+		}
+		
+		foreach ($role as $_role) {
+			self::$database_objects[$name][$_role] = $database;
+		}
 	}
 	
 	
@@ -1106,25 +1141,58 @@ class fORMDatabase
 	 */
 	static public function reset()
 	{
-		self::$database_object = NULL;
+		self::$database_objects = array();
 	}
 	
 	
 	/**
 	 * Return the instance of the fDatabase class
 	 * 
+	 * @param  string $class  The class to retrieve the database for - if not specified, the default database will be returned
+	 * @param  string $role   If the database will be used for `'write'`, `'read'` or `'either'` operations
 	 * @return fDatabase  The database instance
 	 */
-	static public function retrieve()
+	static public function retrieve($class='fActiveRecord', $role='either')
 	{
-		if (!self::$database_object) {
+		if (substr($class, 0, 5) == 'name:') {
+			$database_name = substr($class, 5);
+		} else {
+			$database_name = fORM::getDatabaseName($class);
+		}
+		
+		if (!isset(self::$database_objects[$database_name])) {
 			throw new fProgrammerException(
-				'The method %1$s needs to be called before %2$s',
-				'attach()',
-				'retrieve()'
+				'The database object named "%s$1" has not been attached via %s$2 yet',
+				$database_name,
+				__CLASS__ . '::attach()'
 			);
 		}
-		return self::$database_object;
+		
+		if ($role == 'write' || $role == 'read') {
+			// If the user wants a read database but we are in a transaction on the write database, return
+			// the write database to allow for comparing data changed since the transaction started
+			if ($role == 'read' && isset(self::$database_objects[$database_name]['write']) && self::$database_objects[$database_name]['write']->isInsideTransaction()) {
+				$role = 'write';	
+			}
+			
+			if (!isset(self::$database_objects[$database_name][$role])) {
+				throw new fProgrammerException(
+					'The database object named "%s$1" for the %2$s role has not been attached via %s$3 yet',
+					$database_name,
+					$role,
+					__CLASS__ . '::attach()'
+				);			
+			}
+			
+			return self::$database_objects[$database_name][$role];
+		}
+			
+		if (isset(self::$database_objects[$database_name]['write'])) {
+			return self::$database_objects[$database_name]['write'];
+				
+		} elseif (isset(self::$database_objects[$database_name]['read'])) {
+			return self::$database_objects[$database_name]['read'];
+		}
 	}
 	
 	

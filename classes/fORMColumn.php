@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b6  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b5  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b4  Updated code for new fORM API [wb, 2009-06-15]
@@ -100,7 +101,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$schema    = fORMSchema::retrieve();
+		$schema    = fORMSchema::retrieve($class);
 		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
@@ -138,7 +139,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$schema    = fORMSchema::retrieve();
+		$schema    = fORMSchema::retrieve($class);
 		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
@@ -183,7 +184,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$schema    = fORMSchema::retrieve();
+		$schema    = fORMSchema::retrieve($class);
 		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('integer', 'float');
@@ -235,7 +236,7 @@ class fORMColumn
 	{
 		$class     = fORM::getClass($class);
 		$table     = fORM::tablize($class);
-		$schema    = fORMSchema::retrieve();
+		$schema    = fORMSchema::retrieve($class);
 		$data_type = $schema->getColumnInfo($table, $column, 'type');
 		
 		$valid_data_types = array('varchar', 'char', 'text');
@@ -303,7 +304,7 @@ class fORMColumn
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$class       = get_class($object);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table, $column);
 		$value       = $values[$column];
@@ -342,8 +343,8 @@ class fORMColumn
 		$class  = get_class($object);
 		$table  = fORM::tablize($class);
 		
-		$schema = fORMSchema::retrieve();
-		$db     = fORMDatabase::retrieve();
+		$schema = fORMSchema::retrieve($class);
+		$db     = fORMDatabase::retrieve($class, 'read');
 		
 		$settings = self::$random_columns[$class][$column];
 		
@@ -480,7 +481,7 @@ class fORMColumn
 		
 		$class       = get_class($object);
 		$table       = fORM::tablize($class);
-		$schema      = fORMSchema::retrieve();
+		$schema      = fORMSchema::retrieve($class);
 		$column_info = $schema->getColumnInfo($table, $column);
 		$value       = $values[$column];
 		
@@ -537,7 +538,7 @@ class fORMColumn
 		if (isset(self::$number_columns[$class])) {
 			
 			$table  = fORM::tablize($class);
-			$schema = fORMSchema::retrieve();
+			$schema = fORMSchema::retrieve($class);
 			
 			foreach(self::$number_columns[$class] as $column => $enabled) {
 				$camelized_column = fGrammar::camelize($column, TRUE);
