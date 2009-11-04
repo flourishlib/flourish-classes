@@ -12,8 +12,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b6
- * #changes    1.0.0b6  Updated ::showChecked() to require strict equality if one parameter is `NULL` [wb, 2009-06-02]
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a bug where some conditional comments were causing the regex in ::prepare() to break [wb, 2009-11-04]
+ * @changes    1.0.0b6  Updated ::showChecked() to require strict equality if one parameter is `NULL` [wb, 2009-06-02]
  * @changes    1.0.0b5  Fixed ::prepare() so it does not encode multi-line HTML comments [wb, 2009-05-09]
  * @changes    1.0.0b4  Added methods ::printOption() and ::showChecked() that were in fCRUD [wb, 2009-05-08]
  * @changes    1.0.0b3  Fixed a bug where ::makeLinks() would double-link some URLs [wb, 2009-01-08]
@@ -95,7 +96,7 @@ class fHTML
 	static public function makeLinks($content, $link_text_length=0)
 	{
 		// Find all a tags with contents, individual HTML tags and HTML comments
-		$reg_exp = "/<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*\/\s*a\s*>|<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|<\!--.*?-->/";
+		$reg_exp = "/<\s*a(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*>.*?<\s*\/\s*a\s*>|<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|<\!--.*?-->/s";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		
 		// Find all text
@@ -165,7 +166,7 @@ class fHTML
 	static public function prepare($content)
 	{
 		// Find all html tags, entities and comments
-		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--(.|\n)*?-->/";
+		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/s";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		
 		// Find all text
