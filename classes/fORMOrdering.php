@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b13  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b12  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b11  Fixed another bug with deleting records in the middle of a set, added support for reordering multiple records at once [dc-imarc, 2009-07-17]
@@ -138,14 +139,21 @@ class fORMOrdering
 	 */
 	static private function addOldOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values, &$old_values)
 	{
+		$column_info = $schema->getColumnInfo($table);
+		
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
-			$other_value = fActiveRecord::retrieveOld($old_values, $other_column, $values[$other_column]);
+			$value = fActiveRecord::retrieveOld($old_values, $other_column, $values[$other_column]);
+			
+			// This makes sure the query performs the way an insert will
+			if ($value === NULL && $column_info[$other_column]['not_null'] && $column_info[$other_column]['default'] !== NULL) {
+				$value = $column_info[$other_column]['default'];
+			}
 			
 			$params[] = $table . '.' . $other_column;
-			$params[] = $other_value;
+			$params[] = $value;
 			
-			$conditions[] = fORMDatabase::makeCondition($schema, $table, $other_column, '=', $other_value);
+			$conditions[] = fORMDatabase::makeCondition($schema, $table, $other_column, '=', $value);
 		}
 		
 		$params[0] .= join(', ', $conditions);
@@ -166,9 +174,16 @@ class fORMOrdering
 	 */
 	static private function addOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values)
 	{
+		$column_info = $schema->getColumnInfo($table);
+		
 		$conditions = array();
 		foreach ($other_columns as $other_column) {
 			$value = $values[$other_column];
+			
+			// This makes sure the query performs the way an insert will
+			if ($value === NULL && $column_info[$other_column]['not_null'] && $column_info[$other_column]['default'] !== NULL) {
+				$value = $column_info[$other_column]['default'];
+			}
 			
 			$params[] = $table . '.' . $other_column;
 			$params[] = $value;

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b48
+ * @version    1.0.0b49
+ * @changes    1.0.0b49  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b48  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b47  Changed `::associate{RelatedRecords}()`, `::link{RelatedRecords}()` and `::populate{RelatedRecords}()` to allow for method chaining [wb, 2009-10-22]
  * @changes    1.0.0b46  Changed SQL statements to use value placeholders and identifier escaping [wb, 2009-10-22]
@@ -1596,8 +1597,16 @@ abstract class fActiveRecord
 			$table  = fORM::tablize($class);
 			$params = array('SELECT * FROM %r WHERE ', $table);
 			
+			$column_info = $schema->getColumnInfo($table);
+			
 			$conditions = array();
 			foreach ($values as $column => $value) {
+				
+				// This makes sure the query performs the way an insert will
+				if ($value === NULL && $column_info[$column]['not_null'] && $column_info[$column]['default'] !== NULL) {
+					$value = $column_info[$column]['default'];
+				}
+				
 				$conditions[] = fORMDatabase::makeCondition($schema, $table, $column, '=', $value);
 				$params[] = $column;
 				$params[] = $value;	

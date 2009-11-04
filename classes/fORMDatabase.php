@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b17  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b16  Internal Backwards Compatibility Break - Renamed methods and significantly changed parameters and functionality for SQL statements to use value placeholders, identifier escaping and to handle schemas [wb, 2009-10-22]
  * @changes    1.0.0b15  Streamlined intersection operator SQL and added support for the second value being NULL [wb, 2009-09-21]
@@ -419,9 +420,16 @@ class fORMDatabase
 	{
 		$pk_columns = $schema->getKeys($table, 'primary');
 		
+		$column_info = $schema->getColumnInfo($table);
+		
 		$conditions = array();
 		foreach ($pk_columns as $pk_column) {
 			$value = fActiveRecord::retrieveOld($old_values, $pk_column, $values[$pk_column]);
+			
+			// This makes sure the query performs the way an insert will
+			if ($value === NULL && $column_info[$pk_column]['not_null'] && $column_info[$pk_column]['default'] !== NULL) {
+				$value = $column_info[$pk_column]['default'];
+			}
 			
 			$params[] = $table_alias . '.' . $pk_column;
 			$params[] = $value;

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b29  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b28  Fixed ::prebuild() and ::precount() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b27  Changed fRecordSet::build() to fix bad $page numbers instead of throwing an fProgrammerException [wb, 2009-10-05]
@@ -533,6 +534,8 @@ class fRecordSet implements Iterator, Countable
 			$escaped_pk_columns[$pk_column] = $db->escape('%r', $table_with_route . '.' . $pk_column);	
 		}
 		
+		$column_info = $schema->getColumnInfo($table);
+		
 		$sql    = '';
 		$number = 0;
 		foreach ($this->getPrimaryKeys() as $primary_key) {
@@ -541,12 +544,20 @@ class fRecordSet implements Iterator, Countable
 			if (is_array($primary_key)) {
 				$conditions = array();
 				foreach ($pk_columns as $pk_column) {
+					
+					$value = $primary_key[$pk_column];
+					
+					// This makes sure the query performs the way an insert will
+					if ($value === NULL && $column_info[$pk_column]['not_null'] && $column_info[$pk_column]['default'] !== NULL) {
+						$value = $column_info[$pk_column]['default'];
+					}
+					
 					$conditions[] = str_replace(
 						'%r',
 						$escaped_pk_columns[$pk_column],
-						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $primary_key[$pk_column])
+						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $value)
 					);
-					$params[] = $primary_key[$pk_column];
+					$params[] = $value;
 				}
 				$sql .= join(' AND ', $conditions);
 			
@@ -599,17 +610,26 @@ class fRecordSet implements Iterator, Countable
 				$escaped_pk_columns[$pk_column] = $db->escape('%r', $table_with_route . '.' . $pk_column);	
 			}
 			
+			$column_info = $schema->getColumnInfo($table);
+			
 			$conditions = array();
 			 
 			foreach ($this->getPrimaryKeys() as $primary_key) {
 				$sub_conditions = array();
 				foreach ($pk_columns as $pk_column) {
+					$value = $primary_key[$pk_column];
+					
+					// This makes sure the query performs the way an insert will
+					if ($value === NULL && $column_info[$pk_column]['not_null'] && $column_info[$pk_column]['default'] !== NULL) {
+						$value = $column_info[$pk_column]['default'];
+					}
+					
 					$sub_conditions[] = str_replace(
 						'%r',
 						$escaped_pk_columns[$pk_column],
-						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $primary_key[$pk_column])
+						fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $value)
 					);
-					$params[] = $primary_key[$pk_column];
+					$params[] = $value;
 				}
 				$conditions[] = join(' AND ', $sub_conditions);
 			}

@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b19  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b18  Fixed ::checkOnlyOneRule() and ::checkOneOrMoreRule() to consider blank strings as NULL [wb, 2009-08-21]
@@ -703,9 +704,17 @@ class fORMValidation
 				$table
 			);
 			
+			$column_info = $schema->getColumnInfo($table);
+			
 			$conditions = array();
 			foreach ($pk_columns as $pk_column) {
 				$value = $values[$pk_column];
+				
+				// This makes sure the query performs the way an insert will
+				if ($value === NULL && $column_info[$pk_column]['not_null'] && $column_info[$pk_column]['default'] !== NULL) {
+					$value = $column_info[$pk_column]['default'];
+				}
+				
 				if (self::isCaseInsensitive($class, $pk_column) && self::stringlike($value)) {
 					$condition    = fORMDatabase::makeCondition($schema, $table, $pk_column, '=', $value);
 					$conditions[] = str_replace('%r', 'LOWER(%r)', $condition);
@@ -808,9 +817,17 @@ class fORMValidation
 				$table	
 			);
 			
+			$column_info = $schema->getColumnInfo($table);
+			
 			$conditions = array();
 			foreach ($unique_columns as $unique_column) {
 				$value = $values[$unique_column];
+				
+				// This makes sure the query performs the way an insert will
+				if ($value === NULL && $column_info[$unique_column]['not_null'] && $column_info[$unique_column]['default'] !== NULL) {
+					$value = $column_info[$unique_column]['default'];
+				}
+				
 				if (self::isCaseInsensitive($class, $unique_column) && self::stringlike($value)) {
 					$condition    = fORMDatabase::makeCondition($schema, $table, $unique_column, '=', $value);
 					$conditions[] = str_replace('%r', 'LOWER(%r)', $condition);
