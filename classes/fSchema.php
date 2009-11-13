@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Fixed a bug with detecting some multi-column unique constraints in SQL Server databases [wb, 2009-11-13]
  * @changes    1.0.0b27  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b26  Added the placeholder element to the output of ::getColumnInfo(), added support for PostgreSQL, MSSQL and Oracle "schemas", added support for parsing quoted SQLite identifiers [wb, 2009-10-22]
  * @changes    1.0.0b25  One-to-one relationships utilizing the primary key as a foreign key are now properly detected [wb, 2009-09-22]
@@ -562,7 +563,7 @@ class fSchema
 		}
 		
 		if (isset($temp)) {
-			if ($last_type == 'foreign') {
+			if ($last_type == 'foreign' || $last_type == 'unique') {
 				if (!isset($keys[$last_table][$last_type])) {
 					$keys[$last_table][$last_type] = array();		
 				}

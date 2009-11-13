@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed a bug with ordering columns that are part of a multi-column unique constraint [wb, 2009-11-13]
  * @changes    1.0.0b14  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b13  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b12  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
@@ -156,7 +157,7 @@ class fORMOrdering
 			$conditions[] = fORMDatabase::makeCondition($schema, $table, $other_column, '=', $value);
 		}
 		
-		$params[0] .= join(', ', $conditions);
+		$params[0] .= join(' AND ', $conditions);
 		
 		return $params;
 	}
@@ -191,7 +192,7 @@ class fORMOrdering
 			$conditions[] = fORMDatabase::makeCondition($schema, $table, $other_column, '=', $value);
 		}
 		
-		$params[0] .= join(', ', $conditions);
+		$params[0] .= join(' AND ', $conditions);
 		
 		return $params;
 	}

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b49
+ * @version    1.0.0b50
+ * @changes    1.0.0b50  Fixed a bug with trying to load by a multi-column primary key where one of the columns was not specified [wb, 2009-11-13]
  * @changes    1.0.0b49  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b48  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b47  Changed `::associate{RelatedRecords}()`, `::link{RelatedRecords}()` and `::populate{RelatedRecords}()` to allow for method chaining [wb, 2009-10-22]
@@ -1051,7 +1052,7 @@ abstract class fActiveRecord
 				}	
 			}
 			
-			$wrong_keys = is_array($key) && array_diff(array_keys($key), $pk_columns);
+			$wrong_keys = is_array($key) && (count($key) != count($pk_columns) || array_diff(array_keys($key), $pk_columns));
 			$wrong_type = !is_array($key) && (sizeof($pk_columns) != 1 || !is_scalar($key));
 			
 			// If we didn't find a UNIQUE key and primary key doesn't look right we fail
