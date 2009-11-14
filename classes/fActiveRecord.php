@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b50
+ * @version    1.0.0b51
+ * @changes    1.0.0b51  Made ::changed() properly recognize that a blank string and NULL are equivalent due to the way that ::set() casts values [wb, 2009-11-14]
  * @changes    1.0.0b50  Fixed a bug with trying to load by a multi-column primary key where one of the columns was not specified [wb, 2009-11-13]
  * @changes    1.0.0b49  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b48  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -171,13 +172,19 @@ abstract class fActiveRecord
 			return FALSE;
 		}
 		
+		$oldest_value = $old_values[$column][0];
+		$new_value    = $values[$column];
+		
 		// We do a strict comparison when one of the values is NULL since
-		// NULL is almost always meant to be distinct from 0, FALSE, etc
-		if ($old_values[$column][0] === NULL || $values[$column] === NULL) {
-			return $old_values[$column][0] !== $values[$column];	
+		// NULL is almost always meant to be distinct from 0, FALSE, etc.
+		// However, since we cast blank strings to NULL in ::set() but a blank
+		// string could come out of the database, we consider them to be
+		// equivalent, so we don't do a strict comparison
+		if (($oldest_value === NULL && $new_value !== '') || ($new_value === NULL && $oldest_value !== '')) {
+			return $oldest_value !== $new_value;	
 		}
 		
-		return $old_values[$column][0] != $values[$column];	
+		return $oldest_value != $new_value;	
 	}
 	
 	
