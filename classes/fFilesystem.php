@@ -2,14 +2,16 @@
 /**
  * Handles filesystem-level tasks including filesystem transactions and the reference map to keep all fFile and fDirectory objects in sync
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Updated ::convertToBytes() to properly handle integers without a suffix and sizes with fractions [al+wb, 2009-11-14]
  * @changes    1.0.0b11  Corrected the API documentation for ::getPathInfo() [wb, 2009-09-09]
  * @changes    1.0.0b10  Updated ::updateExceptionMap() to not contain the Exception class parameter hint, allowing NULL to be passed [wb, 2009-08-20]
  * @changes    1.0.0b9   Added some performance tweaks to ::createObject() [wb, 2009-08-06]
@@ -166,19 +168,22 @@ class fFilesystem
 	/**
 	 * Takes a file size including a unit of measure (i.e. kb, GB, M) and converts it to bytes
 	 * 
+	 * Sizes are interpreted using base 2, not base 10. Sizes above 2GB may not
+	 * be accurately represented on 32 bit operating systems.
+	 * 
 	 * @param  string $size  The size to convert to bytes
 	 * @return integer  The number of bytes represented by the size
 	 */
 	static public function convertToBytes($size)
 	{
-		if (!preg_match('#^(\d+)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#D', strtolower(trim($size)), $matches)) {
+		if (!preg_match('#^(\d+(?:\.\d+)?)\s*(k|m|g|t)?(ilo|ega|era|iga)?( )?b?(yte(s)?)?$#D', strtolower(trim($size)), $matches)) {
 			throw new fProgrammerException(
 				'The size specified, %s, does not appears to be a valid size',
 				$size
 			);
 		}
 		
-		if ($matches[2] == '') {
+		if (empty($matches[2])) {
 			$matches[2] = 'b';
 		}
 		
@@ -187,7 +192,7 @@ class fFilesystem
 						  'm' => 1048576,
 						  'g' => 1073741824,
 						  't' => 1099511627776);
-		return $matches[1] * $size_map[$matches[2]];
+		return round($matches[1] * $size_map[$matches[2]]);
 	}
 	
 	
@@ -662,7 +667,7 @@ class fFilesystem
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
