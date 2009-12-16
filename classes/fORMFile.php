@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Fixed a few missed instances of old fFile method names [wb, 2009-12-16]
  * @changes    1.0.0b18  Updated code for the new fFile API [wb, 2009-12-16]
  * @changes    1.0.0b17  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b16  fImage method calls for file upload columns will no longer cause notices due to a missing image type [wb, 2009-09-09]
@@ -519,7 +520,7 @@ class fORMFile
 	{
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getFilename() : NULL;
+		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getName() : NULL;
 		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . $filename) !== FALSE) {
 			$filename = self::TEMP_DIRECTORY . $filename;
 		}
@@ -663,7 +664,7 @@ class fORMFile
 		$value                 = $values[$column];
 		
 		if ($value instanceof fFile) {
-			$path = ($translate_to_web_path) ? $value->getPath(TRUE) : $value->getFilename();
+			$path = ($translate_to_web_path) ? $value->getPath(TRUE) : $value->getName();
 		} else {
 			$path = NULL;
 		}
@@ -1153,7 +1154,7 @@ class fORMFile
 					$other_temp_dir   = self::prepareTempDir($other_upload_dir);
 					
 					if ($existing_temp_file) {
-						$other_file = fFilesystem::createObject($other_temp_dir->getPath() . $file->getFilename());
+						$other_file = fFilesystem::createObject($other_temp_dir->getPath() . $file->getName());
 					} else {
 						$other_file = $file->duplicate($other_temp_dir, FALSE);
 					}
