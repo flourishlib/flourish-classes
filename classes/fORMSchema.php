@@ -124,7 +124,7 @@ class fORMSchema
 	 * @param  string  $table              The main table we are searching on behalf of
 	 * @param  string  $related_table      The related table we are trying to find the routes for
 	 * @param  string  $route              The route that was preselected, will be verified if present
-	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'!many-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
+	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'!many-to-one'`, `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
 	 * @return string  The only route from the main table to the related table
 	 */
 	static public function getRouteName($schema, $table, $related_table, $route=NULL, $relationship_type=NULL)
@@ -226,7 +226,7 @@ class fORMSchema
 	 * @param  fSchema $schema             The schema object to get the routes for
 	 * @param  string  $table              The main table we are searching on behalf of
 	 * @param  string  $related_table      The related table we are trying to find the routes for
-	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'!many-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
+	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'!many-to-one'`, `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
 	 * @return array  All of the routes from the main table to the related table
 	 */
 	static public function getRoutes($schema, $table, $related_table, $relationship_type=NULL)

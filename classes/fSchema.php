@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Added on_delete and on_update elements to one-to-one relationship info retrieved by ::getRelationships() [wb, 2009-12-16]
  * @changes    1.0.0b28  Fixed a bug with detecting some multi-column unique constraints in SQL Server databases [wb, 2009-11-13]
  * @changes    1.0.0b27  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b26  Added the placeholder element to the output of ::getColumnInfo(), added support for PostgreSQL, MSSQL and Oracle "schemas", added support for parsing quoted SQLite identifiers [wb, 2009-10-22]
@@ -1597,10 +1598,8 @@ class fSchema
 			$temp['column']         = $key['foreign_column'];
 			$temp['related_table']  = $table;
 			$temp['related_column'] = $key['column'];
-			if ($type == 'one-to-many') {
-				$temp['on_delete']      = $key['on_delete'];
-				$temp['on_update']      = $key['on_update'];
-			}
+			$temp['on_delete']      = $key['on_delete'];
+			$temp['on_update']      = $key['on_update'];
 			$this->relationships[$key['foreign_table']][$type][] = $temp;
 		}
 	}
@@ -1621,6 +1620,10 @@ class fSchema
 			$temp['related_table']  = $key['foreign_table'];
 			$temp['related_column'] = $key['foreign_column'];
 			$type = ($this->checkForSingleColumnUniqueKey($table, $key['column'])) ? 'one-to-one' : 'many-to-one';
+			if ($type == 'one-to-one') {
+				$temp['on_delete'] = $key['on_delete'];
+				$temp['on_update'] = $key['on_update'];	
+			}
 			$this->relationships[$table][$type][] = $temp;
 		}
 	}
@@ -1902,7 +1905,9 @@ class fSchema
 	 *             'table'          => (string) {the name of the table this relationship is for},
 	 *             'column'         => (string) {the column in the specified table},
 	 *             'related_table'  => (string) {the related table},
-	 *             'related_column' => (string) {the related column}
+	 *             'related_column' => (string) {the related column},
+	 *             'on_delete'      => (string) {the ON DELETE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'},
+	 *             'on_update'      => (string) {the ON UPDATE action: 'no_action', 'restrict', 'cascade', 'set_null', or 'set_default'}
 	 *         ), ...
 	 *     ),
 	 *     'many-to-one' => array(

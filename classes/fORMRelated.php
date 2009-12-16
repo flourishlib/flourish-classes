@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Added support for the $force_cascade parameter of fActiveRecord::store(), added ::hasRecords() and fixed a bug with creating non-existent one-to-one related records [wb, 2009-12-16]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b19  Internal Backwards Compatibility Break - Added the `$class` parameter to ::storeManyToMany() - also fixed ::countRecords() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and support schemas [wb, 2009-10-22]
  * @changes    1.0.0b18  Fixed a bug in ::countRecords() that would occur when multiple routes existed to the table being counted [wb, 2009-10-05]
@@ -45,6 +46,7 @@ class fORMRelated
 	const flagForAssociation        = 'fORMRelated::flagForAssociation';
 	const getOrderBys               = 'fORMRelated::getOrderBys';
 	const getRelatedRecordName      = 'fORMRelated::getRelatedRecordName';
+	const hasRecords                = 'fORMRelated::hasRecords';
 	const linkRecords               = 'fORMRelated::linkRecords';
 	const overrideRelatedRecordName = 'fORMRelated::overrideRelatedRecordName';
 	const populateRecords           = 'fORMRelated::populateRecords';
@@ -361,7 +363,11 @@ class fORMRelated
 			
 			// If the value is NULL, don't pass it to the constructor because an fNotFoundException will be thrown
 			if ($values[$relationship['column']] !== NULL) {
-				$records = array(new $related_class(array($relationship['related_column'] => $values[$relationship['column']])));
+				try {
+					$records = array(new $related_class(array($relationship['related_column'] => $values[$relationship['column']])));
+				} catch (fNotFoundException $e) {
+					$records = array();	
+				}
 			} else {
 				$records = array();
 			}	
@@ -655,6 +661,38 @@ class fORMRelated
 		}
 		
 		return self::$related_record_names[$table][$related_class][$route];
+	}
+	
+	
+	/**
+	 * Indicates if a record has a one-to-one or any *-to-many related records
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class             The class to check related records for
+	 * @param  array  &$values           The values for the record we are checking 
+	 * @param  array  &$related_records  The related records for the record we are checking
+	 * @param  string $related_class     The related class we are checking for
+	 * @param  string $route             The route to the related class
+	 * @return void
+	 */
+	static public function hasRecords($class, &$values, &$related_records, $related_class, $route=NULL)
+	{
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		
+		$schema = fORMSchema::retrieve($class);
+		$route  = fORMSchema::getRouteName($schema, $table, $related_table, $route, '!many-to-one');
+		
+		if (!isset($related_records[$related_table][$route]['count'])) {
+			if (fORMSchema::isOneToOne($schema, $table, $related_table, $route)) {
+				self::createRecord($class, $values, $related_records, $related_class, $route);
+			} else {
+				self::countRecords($class, $values, $related_records, $related_class, $route);
+			}	
+		}
+		
+		return (boolean) $related_records[$related_table][$route]['count'];	
 	}
 	
 	
@@ -1245,12 +1283,13 @@ class fORMRelated
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $class             The class to store the related records for
-	 * @param  array  &$values           The current values for the main record being stored
-	 * @param  array  &$related_records  The related records array
+	 * @param  string  $class             The class to store the related records for
+	 * @param  array   &$values           The current values for the main record being stored
+	 * @param  array   &$related_records  The related records array
+	 * @param  boolean $force_cascade     This flag will be passed to the fActiveRecord::delete() method on related records that are being deleted
 	 * @return void
 	 */
-	static public function store($class, &$values, &$related_records)
+	static public function store($class, &$values, &$related_records, $force_cascade)
 	{
 		$table  = fORM::tablize($class);
 		$schema = fORMSchema::retrieve($class);
@@ -1265,7 +1304,7 @@ class fORMRelated
 				if (isset($relationship['join_table'])) {
 					fORMRelated::storeManyToMany($class, $values, $relationship, $related_info);
 				} else {
-					fORMRelated::storeOneToStar($class, $values, $related_records, fORM::classize($related_table), $route);
+					fORMRelated::storeOneToStar($class, $values, $related_records, fORM::classize($related_table), $route, $force_cascade);
 				}
 			}
 		}
@@ -1354,14 +1393,15 @@ class fORMRelated
 	 * @throws fValidationException  When one of the "many" records throws an exception from fActiveRecord::store()
 	 * @internal
 	 * 
-	 * @param  string $class             The class to store the related records for
-	 * @param  array  &$values           The current values for the main record being stored
-	 * @param  array  &$related_records  The related records array
-	 * @param  string $related_class     The related class being stored
-	 * @param  string $route             The route to the related class
+	 * @param  string  $class             The class to store the related records for
+	 * @param  array   &$values           The current values for the main record being stored
+	 * @param  array   &$related_records  The related records array
+	 * @param  string  $related_class     The related class being stored
+	 * @param  string  $route             The route to the related class
+	 * @param  boolean $force_cascade     This flag will be passed to the fActiveRecord::delete() method on related records that are being deleted
 	 * @return void
 	 */
-	static public function storeOneToStar($class, &$values, &$related_records, $related_class, $route)
+	static public function storeOneToStar($class, &$values, &$related_records, $related_class, $route, $force_cascade)
 	{
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
@@ -1390,7 +1430,7 @@ class fORMRelated
 		
 		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
 			$object_to_delete = new $related_class($primary_key_to_delete);
-			$object_to_delete->delete();
+			$object_to_delete->delete($force_cascade);
 		}
 		
 		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
