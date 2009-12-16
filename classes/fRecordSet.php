@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Added the ability to compare columns in ::build() with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b30  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b29  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b28  Fixed ::prebuild() and ::precount() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
@@ -66,6 +67,14 @@ class fRecordSet implements Iterator, Countable
 	 * 'column<='                   => VALUE                        // column <= VALUE
 	 * 'column>'                    => VALUE                        // column > VALUE
 	 * 'column>='                   => VALUE                        // column >= VALUE
+	 * 'column=:'                   => 'other_column'               // column = other_column
+	 * 'column!:'                   => 'other_column'               // column <> other_column
+	 * 'column!=:'                  => 'other_column'               // column <> other_column
+	 * 'column<>:'                  => 'other_column'               // column <> other_column
+	 * 'column<:'                   => 'other_column'               // column < other_column
+	 * 'column<=:'                  => 'other_column'               // column <= other_column
+	 * 'column>:'                   => 'other_column'               // column > other_column
+	 * 'column>=:'                  => 'other_column'               // column >= other_column
 	 * 'column='                    => array(VALUE, VALUE2, ... )   // column IN (VALUE, VALUE2, ... )
 	 * 'column!'                    => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
 	 * 'column!='                   => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
@@ -113,7 +122,8 @@ class fRecordSet implements Iterator, Countable
 	 * 
 	 * In addition to using plain column names for where conditions, it is also
 	 * possible to pass an aggregate function wrapped around a column in place
-	 * of a column name, but only for certain comparison types:
+	 * of a column name, but only for certain comparison types. //Note that for
+	 * column comparisons, the function may be placed on either column or both.//
 	 * 
 	 * {{{
 	 * 'function(column)='   => VALUE,                       // function(column) = VALUE
@@ -126,6 +136,14 @@ class fRecordSet implements Iterator, Countable
 	 * 'function(column)<='  => VALUE                        // function(column) <= VALUE
 	 * 'function(column)>'   => VALUE                        // function(column) > VALUE
 	 * 'function(column)>='  => VALUE                        // function(column) >= VALUE
+	 * 'function(column)=:'  => 'other_column'               // function(column) = other_column
+	 * 'function(column)!:'  => 'other_column'               // function(column) <> other_column
+	 * 'function(column)!=:' => 'other_column'               // function(column) <> other_column
+	 * 'function(column)<>:' => 'other_column'               // function(column) <> other_column
+	 * 'function(column)<:'  => 'other_column'               // function(column) < other_column
+	 * 'function(column)<=:' => 'other_column'               // function(column) <= other_column
+	 * 'function(column)>:'  => 'other_column'               // function(column) > other_column
+	 * 'function(column)>=:' => 'other_column'               // function(column) >= other_column
 	 * 'function(column)='   => array(VALUE, VALUE2, ... )   // function(column) IN (VALUE, VALUE2, ... )
 	 * 'function(column)!'   => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )
 	 * 'function(column)!='  => array(VALUE, VALUE2, ... )   // function(column) NOT IN (VALUE, VALUE2, ... )

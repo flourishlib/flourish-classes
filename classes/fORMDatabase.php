@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Added the ability to compare columns with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b18  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b17  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b16  Internal Backwards Compatibility Break - Renamed methods and significantly changed parameters and functionality for SQL statements to use value placeholders, identifier escaping and to handle schemas [wb, 2009-10-22]
@@ -133,9 +134,9 @@ class fORMDatabase
 		}
 		
 		list($table, $column) = self::getTableAndColumn($schema, $table, $column);
-		
-		if ($placeholder === NULL) {
-			$placeholder = $schema->getColumnInfo($table, $column, 'placeholder');	
+								 
+		if ($placeholder === NULL && !in_array($operator, array('=:', '!=:', '<:', '<=:', '>:', '>=:'))) {
+			$placeholder = $schema->getColumnInfo($table, $column, 'placeholder');
 		}
 		
 		// More than one value
@@ -225,6 +226,29 @@ class fORMDatabase
 			}
 								  
 			switch ($operator) {
+				case '!:':
+					$operator = '<>:';
+				case '=:':
+				case '<:':
+				case '<=:':
+				case '>:':
+				case '>=:':
+					$params[0] .= $escaped_column . ' ';
+					$params[0] .= substr($operator, 0, -1) . ' ';
+					
+					// If the column to match is a function, split the function
+					// name off so we can escape the column name
+					$prefix = '';
+					$suffix = '';
+					if (preg_match('#^([^(]+\()\s*([^\s]+)\s*(\))$#D', $value, $parts)) {
+						 $prefix = $parts[1];
+						 $value  = $parts[2];
+						 $suffix = $parts[3];
+					}
+					
+					$params[0] .= $prefix . $db->escape('%r', (strpos($value, '.') === FALSE) ? $table . '.' . $value : $value) . $suffix;
+					break;
+				
 				case '=':
 					if ($value === NULL) {
 						$operator = 'IS';	
@@ -299,13 +323,16 @@ class fORMDatabase
 			}
 			
 			// Splits the operator off of the end of the expression
-			if (in_array(substr($expression, -2), array('<=', '>=', '!=', '<>'))) {
+			if (in_array(substr($expression, -3), array('!=:', '>=:', '<=:', '<>:'))) {
+				$operator = strtr(
+					substr($expression, -3),
+					array('<>:' => '!:', '!=:' => '!:')
+				);
+				$expression = substr($expression, 0, -3);
+			} elseif (in_array(substr($expression, -2), array('<=', '>=', '!=', '<>', '=:', '!:', '<:', '>:'))) {
 				$operator   = strtr(
 					substr($expression, -2),
-					array(
-						'<>' => '!',
-						'!=' => '!'
-					)
+					array('<>' => '!', '!=' => '!')
 				);
 				$expression = substr($expression, 0, -2);
 			} else {
@@ -463,13 +490,16 @@ class fORMDatabase
 				$params[0] .= ' AND ';	
 			}
 			
-			if (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
+			if (in_array(substr($column, -3), array('!=:', '>=:', '<=:', '<>:'))) {
+				$operator = strtr(
+					substr($column, -3),
+					array('<>:' => '!:', '!=:' => '!:')
+				);
+				$column   = substr($column, 0, -3);
+			} elseif (in_array(substr($column, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><', '=:', '!:', '<:', '>:'))) {
 				$operator = strtr(
 					substr($column, -2),
-					array(
-						'<>' => '!',
-						'!=' => '!'
-					)
+					array('<>' => '!', '!=' => '!')
 				);
 				$column   = substr($column, 0, -2);
 			} else {
@@ -501,13 +531,16 @@ class fORMDatabase
 				$operators = array();
 				
 				foreach ($columns as &$_column) {
-					if (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>', '!~', '&~'))) {
+					if (in_array(substr($_column, -3), array('!=:', '>=:', '<=:', '<>:'))) {
+						$operators[] = strtr(
+							substr($_column, -3),
+							array('<>:' => '!:', '!=:' => '!:')
+						);
+						$_column     = substr($_column, 0, -3);
+					} elseif (in_array(substr($_column, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '=:', '!:', '<:', '>:'))) {
 						$operators[] = strtr(
 							substr($_column, -2),
-							array(
-								'<>' => '!',
-								'!=' => '!'
-							)
+							array('<>' => '!', '!=' => '!')
 						);
 						$_column     = substr($_column, 0, -2);
 					} elseif (!ctype_alnum(substr($_column, -1))) {
@@ -517,17 +550,17 @@ class fORMDatabase
 				}
 				$operators[] = $operator;
 				
-				// Make sure every column is qualified by a table name
-				$new_columns = array();
-				foreach ($columns as $column) {
-					if (strpos($column, '.') === FALSE) {
-						$column = $table . '.' . $column;
-					}
-					$new_columns[] = $column;	
-				}
-				$columns = $new_columns;
-				
 				if (sizeof($operators) == 1) {
+					
+					// Make sure every column is qualified by a table name
+					$new_columns = array();
+					foreach ($columns as $column) {
+						if (strpos($column, '.') === FALSE) {
+							$column = $table . '.' . $column;
+						}
+						$new_columns[] = $column;	
+					}
+					$columns = $new_columns;
 					
 					// Handle fuzzy searches
 					if ($operator == '~') {
@@ -1216,9 +1249,10 @@ class fORMDatabase
 	{
 		$having_conditions = array();
 		
-		foreach ($where_conditions as $column => $value)
-		{
-			if (preg_match('#^(count\(|max\(|avg\(|min\(|sum\()#i', $column)) {
+		foreach ($where_conditions as $column => $value) {
+			$column_has_aggregate             = preg_match('#^(count\(|max\(|avg\(|min\(|sum\()#i', $column);
+			$is_column_compare_with_aggregate = substr($column, -1) == ':' && preg_match('#^(count\(|max\(|avg\(|min\(|sum\()#i', $value);
+			if ($column_has_aggregate || $is_column_compare_with_aggregate) {
 				$having_conditions[$column] = $value;
 				unset($where_conditions[$column]);
 			}	
