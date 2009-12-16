@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Backwards Compatibility Break - renamed ::getFilename() to ::getName(), ::getFilesize() to ::getSize(), ::getDirectory() to ::getParent(), added ::move() [wb, 2009-12-16]
  * @changes    1.0.0b26  ::getDirectory(), ::getFilename() and ::getPath() now all work even if the file has been deleted [wb, 2009-10-22]
  * @changes    1.0.0b25  Fixed ::__construct() to throw an fValidationException when the file does not exist [wb, 2009-08-21]
  * @changes    1.0.0b24  Fixed a bug where deleting a file would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
@@ -466,7 +467,7 @@ class fFile implements Iterator
 	{
 		$this->tossIfException();
 		
-		$directory = $this->getDirectory();
+		$directory = $this->getParent();
 		
 		if (!$directory->isWritable()) {
 			throw new fEnvironmentException(
@@ -475,7 +476,7 @@ class fFile implements Iterator
 			);
 		}
 		
-		$file = fFilesystem::makeUniqueName($directory->getPath() . $this->getFilename());
+		$file = fFilesystem::makeUniqueName($directory->getPath() . $this->getName());
 		
 		copy($this->getPath(), $file);
 		chmod($file, fileperms($this->getPath()));
@@ -575,7 +576,7 @@ class fFile implements Iterator
 	public function __toString()
 	{
 		try {
-			return $this->getFilename();
+			return $this->getName();
 		} catch (Exception $e) {
 			return '';	
 		}
@@ -645,7 +646,7 @@ class fFile implements Iterator
 			return;
 		}
 		
-		if (!$this->getDirectory()->isWritable()) {
+		if (!$this->getParent()->isWritable()) {
 			throw new fEnvironmentException(
 				'The file, %s, can not be deleted because the directory containing it is not writable',
 				$this->file
@@ -686,14 +687,14 @@ class fFile implements Iterator
 		$this->tossIfException();
 		
 		if ($new_directory === NULL) {
-			$new_directory = $this->getDirectory();
+			$new_directory = $this->getParent();
 		}
 		
 		if (!is_object($new_directory)) {
 			$new_directory = new fDirectory($new_directory);
 		}
 		
-		$new_filename = $new_directory->getPath() . $this->getFilename();
+		$new_filename = $new_directory->getPath() . $this->getName();
 		
 		$check_dir_permissions = FALSE;
 		
@@ -706,7 +707,7 @@ class fFile implements Iterator
 				throw new fEnvironmentException(
 					'The new directory specified, %1$s, already contains a file with the name %2$s, but it is not writable',
 					$new_directory->getPath(),
-					$this->getFilename()
+					$this->getName()
 				);
 			}
 			
@@ -735,53 +736,6 @@ class fFile implements Iterator
 		}
 		
 		return $file;
-	}
-	
-	
-	/**
-	 * Gets the directory the file is located in
-	 * 
-	 * @return fDirectory  The directory containing the file
-	 */
-	public function getDirectory()
-	{
-		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));
-	}
-	
-	
-	/**
-	 * Gets the filename (i.e. does not include the directory)
-	 * 
-	 * @return string  The filename of the file
-	 */
-	public function getFilename()
-	{
-		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
-		return fFilesystem::getPathInfo($this->file, 'basename');
-	}
-	
-	
-	/**
-	 * Gets the size of the file
-	 * 
-	 * The return value may be incorrect for files over 2GB on 32-bit OSes.
-	 * 
-	 * @param  boolean $format          If the filesize should be formatted for human readability
-	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
-	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
-	 */
-	public function getFilesize($format=FALSE, $decimal_places=1)
-	{
-		$this->tossIfException();
-		
-		// This technique can overcome signed integer limit
-		$size = sprintf("%u", filesize($this->file));
-		
-		if (!$format) {
-			return $size;
-		}
-		
-		return fFilesystem::formatFilesize($size, $decimal_places);
 	}
 	
 	
@@ -888,6 +842,29 @@ class fFile implements Iterator
 	
 	
 	/**
+	 * Gets the filename (i.e. does not include the directory)
+	 * 
+	 * @return string  The filename of the file
+	 */
+	public function getName()
+	{
+		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
+		return fFilesystem::getPathInfo($this->file, 'basename');
+	}
+	
+	
+	/**
+	 * Gets the directory the file is located in
+	 * 
+	 * @return fDirectory  The directory containing the file
+	 */
+	public function getParent()
+	{
+		return new fDirectory(fFilesystem::getPathInfo($this->file, 'dirname'));
+	}
+	
+	
+	/**
 	 * Gets the file's current path (directory and filename)
 	 * 
 	 * If the web path is requested, uses translations set with
@@ -902,6 +879,30 @@ class fFile implements Iterator
 			return fFilesystem::translateToWebPath($this->file);
 		}
 		return $this->file;
+	}
+	
+	
+	/**
+	 * Gets the size of the file
+	 * 
+	 * The return value may be incorrect for files over 2GB on 32-bit OSes.
+	 * 
+	 * @param  boolean $format          If the filesize should be formatted for human readability
+	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
+	 * @return integer|string  If formatted a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+	 */
+	public function getSize($format=FALSE, $decimal_places=1)
+	{
+		$this->tossIfException();
+		
+		// This technique can overcome signed integer limit
+		$size = sprintf("%u", filesize($this->file));
+		
+		if (!$format) {
+			return $size;
+		}
+		
+		return fFilesystem::formatFilesize($size, $decimal_places);
 	}
 	
 	
@@ -942,6 +943,35 @@ class fFile implements Iterator
 	
 	
 	/**
+	 * Moves the current file to a different directory
+	 * 
+	 * Please note that ::rename() will rename a file in its directory or rename
+	 * it into a different directory.
+	 * 
+	 * If the current file's filename already exists in the new directory and
+	 * the overwrite flag is set to false, the filename will be changed to a
+	 * unique name.
+	 * 
+	 * This operation will be reverted if a filesystem transaction is in
+	 * progress and is later rolled back.
+	 * 
+	 * @throws fValidationException  When the directory passed is not a directory or is not readable
+	 * 
+	 * @param  fDirectory|string $new_directory  The directory to move this file into
+	 * @param  boolean           $overwrite      If the current filename already exists in the new directory, `TRUE` will cause the file to be overwritten, `FALSE` will cause the new filename to change
+	 * @return fFile  The file object, to allow for method chaining
+	 */
+	public function move($new_directory, $overwrite)
+	{
+		if (!$new_directory instanceof fDirectory) {
+			$new_directory = new fDirectory($new_directory);
+		}
+		
+		return $this->rename($new_directory->getPath() . $this->getName(), $overwrite);
+	}
+	
+	
+	/**
 	 * Advances to the next line in the file (required by iterator interface)
 	 * 
 	 * @throws fNoRemainingException  When there are no remaining lines in the file
@@ -971,7 +1001,10 @@ class fFile implements Iterator
 	 * Prints the contents of the file
 	 * 
 	 * This method is primarily intended for when PHP is used to control access
-	 * to files. 
+	 * to files.
+	 * 
+	 * Be sure to turn off output buffering and close the session, if open, to
+	 * prevent performance issues. 
 	 * 
 	 * @param  boolean $headers   If HTTP headers for the file should be included
 	 * @param  mixed   $filename  Present the file as an attachment instead of just outputting type headers - if a string is passed, that will be used for the filename, if `TRUE` is passed, the current filename will be used
@@ -994,11 +1027,11 @@ class fFile implements Iterator
 		
 		if ($headers) {
 			if ($filename !== NULL) {
-				if ($filename === TRUE) { $filename = $this->getFilename();	}
+				if ($filename === TRUE) { $filename = $this->getName();	}
 				header('Content-Disposition: attachment; filename="' . $filename . '"');		
 			}
 			header('Cache-Control: ');
-			header('Content-Length: ' . $this->getFilesize());
+			header('Content-Length: ' . $this->getSize());
 			header('Content-Type: ' . $this->getMimeType());
 			header('Expires: ');
 			header('Last-Modified: ' . $this->getMTime()->format('D, d M Y H:i:s'));
@@ -1047,7 +1080,7 @@ class fFile implements Iterator
 	{
 		$this->tossIfException();
 		
-		if (!$this->getDirectory()->isWritable()) {
+		if (!$this->getParent()->isWritable()) {
 			throw new fEnvironmentException(
 				'The file, %s, can not be renamed because the directory containing it is not writable',
 				$this->file
@@ -1056,7 +1089,7 @@ class fFile implements Iterator
 		
 		// If the filename does not contain any folder traversal, rename the file in the current directory
 		if (preg_match('#^[^/\\\\]+$#D', $new_filename)) {
-			$new_filename = $this->getDirectory()->getPath() . $new_filename;		
+			$new_filename = $this->getParent()->getPath() . $new_filename;		
 		}
 		
 		$info = fFilesystem::getPathInfo($new_filename);

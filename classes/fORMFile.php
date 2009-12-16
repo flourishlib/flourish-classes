@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Updated code for the new fFile API [wb, 2009-12-16]
  * @changes    1.0.0b17  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b16  fImage method calls for file upload columns will no longer cause notices due to a missing image type [wb, 2009-09-09]
  * @changes    1.0.0b15  ::addFImageMethodCall() no longer requires column be an image upload column, inheritance to an image column now only happens for fImage objects [wb, 2009-07-29] 
@@ -570,7 +571,7 @@ class fORMFile
 			}
 			
 			// If the file is in a temp dir, move it out
-			if (strpos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+			if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
 				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
 				$new_filename = fFilesystem::makeUniqueName($new_filename);
 				$value->rename($new_filename, FALSE);
@@ -902,7 +903,7 @@ class fORMFile
 		}
 		
 		// If the file we are replicating is in the temp dir, the copy can live there too
-		if (strpos($value->getDirectory()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+		if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
 			$value = clone $value;	
 		
 		// Otherwise, the copy of the file must be placed in the temp dir so it is properly cleaned up

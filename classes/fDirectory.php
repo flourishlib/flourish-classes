@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Backwards Compatibility Break - renamed ::getFilesize() to ::getSize(), added ::move() [wb, 2009-12-16]
  * @changes    1.0.0b7  Fixed ::__construct() to throw an fValidationException when the directory does not exist [wb, 2009-08-21]
  * @changes    1.0.0b6  Fixed a bug where deleting a directory would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
  * @changes    1.0.0b5  Added the ability to skip checks in ::__construct() for better performance in conjunction with fFilesystem::createObject() [wb, 2009-08-06]
@@ -211,31 +212,13 @@ class fDirectory
 	
 	
 	/**
-	 * Gets the disk usage of the directory and all files and folders contained within
+	 * Gets the name of the directory
 	 * 
-	 * This method may return incorrect results if files over 2GB exist and the
-	 * server uses a 32 bit operating system
-	 * 
-	 * @param  boolean $format          If the filesize should be formatted for human readability
-	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
-	 * @return integer|string  If formatted, a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+	 * @return string  The name of the directory
 	 */
-	public function getFilesize($format=FALSE, $decimal_places=1)
+	public function getName()
 	{
-		$this->tossIfException();
-		
-		$size = 0;
-		
-		$children = $this->scan();
-		foreach ($children as $child) {
-			$size += $child->getFilesize();
-		}
-		
-		if (!$format) {
-			return $size;
-		}
-		
-		return fFilesystem::formatFilesize($size, $decimal_places);
+		return fFilesystem::getPathInfo($this->directory, 'basename');
 	}
 	
 	
@@ -256,7 +239,7 @@ class fDirectory
 			);
 		}
 		
-		return new fDirectory();
+		return new fDirectory($dirname);
 	}
 	
 	
@@ -281,6 +264,35 @@ class fDirectory
 	
 	
 	/**
+	 * Gets the disk usage of the directory and all files and folders contained within
+	 * 
+	 * This method may return incorrect results if files over 2GB exist and the
+	 * server uses a 32 bit operating system
+	 * 
+	 * @param  boolean $format          If the filesize should be formatted for human readability
+	 * @param  integer $decimal_places  The number of decimal places to format to (if enabled)
+	 * @return integer|string  If formatted, a string with filesize in b/kb/mb/gb/tb, otherwise an integer
+	 */
+	public function getSize($format=FALSE, $decimal_places=1)
+	{
+		$this->tossIfException();
+		
+		$size = 0;
+		
+		$children = $this->scan();
+		foreach ($children as $child) {
+			$size += $child->getSize();
+		}
+		
+		if (!$format) {
+			return $size;
+		}
+		
+		return fFilesystem::formatFilesize($size, $decimal_places);
+	}
+	
+	
+	/**
 	 * Check to see if the current directory is writable
 	 * 
 	 * @return boolean  If the directory is writable
@@ -294,14 +306,47 @@ class fDirectory
 	
 	
 	/**
-	 * Renames the current directory, overwriting any existing file/directory
+	 * Moves the current directory into a different directory
+	 * 
+	 * Please note that ::rename() will rename a directory in its current
+	 * parent directory or rename it into a different parent directory.
+	 * 
+	 * If the current directory's name already exists in the new parent
+	 * directory and the overwrite flag is set to false, the name will be
+	 * changed to a unique name.
+	 * 
+	 * This operation will be reverted if a filesystem transaction is in
+	 * progress and is later rolled back.
+	 * 
+	 * @throws fValidationException  When the new parent directory passed is not a directory, is not readable or is a sub-directory of this directory
+	 * 
+	 * @param  fDirectory|string $new_parent_directory  The directory to move this directory into
+	 * @param  boolean           $overwrite             If the current filename already exists in the new directory, `TRUE` will cause the file to be overwritten, `FALSE` will cause the new filename to change
+	 * @return fDirectory  The directory object, to allow for method chaining
+	 */
+	public function move($new_parent_directory, $overwrite)
+	{
+		if (!$new_parent_directory instanceof fDirectory) {
+			$new_parent_directory = new fDirectory($new_parent_directory);
+		}
+		
+		if (strpos($new_parent_directory->getPath(), $this->getPath()) === 0) {
+			throw new fValidationException('It is not possible to move a directory into one of its sub-directories');	
+		}
+		
+		return $this->rename($new_parent_directory->getPath() . $this->getName(), $overwrite);
+	}
+	
+	
+	/**
+	 * Renames the current directory
 	 * 
 	 * This operation will NOT be performed until the filesystem transaction
 	 * has been committed, if a transaction is in progress. Any non-Flourish
 	 * code (PHP or system) will still see this directory (and all contained
 	 * files/dirs) as existing with the old paths until that point.
 	 * 
-	 * @param  string  $new_dirname  The new full path to the directory
+	 * @param  string  $new_dirname  The new full path to the directory or a new name in the current parent directory
 	 * @param  boolean $overwrite    If the new dirname already exists, TRUE will cause the file to be overwritten, FALSE will cause the new filename to change
 	 * @return void
 	 */
@@ -316,6 +361,11 @@ class fDirectory
 			);
 		}
 		
+		// If the dirname does not contain any folder traversal, rename the dir in the current parent directory
+		if (preg_match('#^[^/\\\\]+$#D', $new_dirname)) {
+			$new_dirname = $this->getParent()->getPath() . $new_dirname;	
+		}
+		
 		$info = fFilesystem::getPathInfo($new_dirname);
 		
 		if (!file_exists($info['dirname'])) {
@@ -324,9 +374,6 @@ class fDirectory
 				$new_dirname
 			);
 		}
-		
-		// Make the dirname absolute
-		$new_dirname = fDirectory::makeCanonical(realpath($new_dirname));
 		
 		if (file_exists($new_dirname)) {
 			if (!is_writable($new_dirname)) {
@@ -349,6 +396,9 @@ class fDirectory
 		}
 		
 		rename($this->directory, $new_dirname);
+		
+		// Make the dirname absolute
+		$new_dirname = fDirectory::makeCanonical(realpath($new_dirname));
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {
