@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Added support for some JPEG files created by Photoshop [wb, 2009-12-16]
  * @changes    1.0.0b27  Backwards Compatibility Break - renamed ::getFilename() to ::getName(), ::getFilesize() to ::getSize(), ::getDirectory() to ::getParent(), added ::move() [wb, 2009-12-16]
  * @changes    1.0.0b26  ::getDirectory(), ::getFilename() and ::getPath() now all work even if the file has been deleted [wb, 2009-10-22]
  * @changes    1.0.0b25  Fixed ::__construct() to throw an fValidationException when the file does not exist [wb, 2009-08-21]
@@ -137,12 +138,13 @@ class fFile implements Iterator
 	 */
 	static private function determineMimeTypeByContents($content, $extension)
 	{
-		$_0_8 = substr($content, 0, 8);
-		$_0_6 = substr($content, 0, 6);
-		$_0_5 = substr($content, 0, 5);
-		$_0_4 = substr($content, 0, 4);
-		$_0_3 = substr($content, 0, 3);
-		$_0_2 = substr($content, 0, 2);
+		$length = strlen($content);
+		$_0_8   = substr($content, 0, 8);
+		$_0_6   = substr($content, 0, 6);
+		$_0_5   = substr($content, 0, 5);
+		$_0_4   = substr($content, 0, 4);
+		$_0_3   = substr($content, 0, 3);
+		$_0_2   = substr($content, 0, 2);
 		
 		
 		// Images
@@ -162,7 +164,9 @@ class fFile implements Iterator
 			return 'image/x-ms-bmp';	
 		}
 		
-		if (strlen($content) > 10 && in_array(substr($content, 6, 4), array('JFIF', 'Exif'))) {
+		$normal_jpeg    = $length > 10 && in_array(substr($content, 6, 4), array('JFIF', 'Exif'));
+		$photoshop_jpeg = $length > 24 && $_0_4 == "\xFF\xD8\xFF\xED" && substr($content, 20, 4) == '8BIM';
+		if ($normal_jpeg || $photoshop_jpeg) {
 			return 'image/jpeg';	
 		}
 		
@@ -182,7 +186,7 @@ class fFile implements Iterator
 			}	
 		}
 		
-		if (strlen($content) > 8 && substr($content, 4, 4) == 'ftyp') {
+		if ($length > 8 && substr($content, 4, 4) == 'ftyp') {
 			
 			$_8_4 = substr($content, 8, 4);
 			$_8_3 = substr($content, 8, 3);
@@ -291,7 +295,7 @@ class fFile implements Iterator
 			return 'application/zip';	
 		}
 		
-		if (strlen($content) > 257) {
+		if ($length > 257) {
 			if (substr($content, 257, 6) == "ustar\x00") {
 				return 'application/x-tar';	
 			}
