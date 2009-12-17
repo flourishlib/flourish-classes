@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Fixed a bug where joining to a table two separate ways could cause table alias issues and incorrect SQL to be generated [wb, 2009-12-16]
  * @changes    1.0.0b19  Added the ability to compare columns with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b18  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b17  Added support for multiple databases [wb, 2009-10-28]
@@ -975,14 +976,25 @@ class fORMDatabase
 						
 						$join_name = $table . '_' . $related_table . '{' . $route . '}';
 						
+						$once_removed_table = $table_match[4];
+						
+						// Add the once removed table to the aliases in case we also join directly to it
+						// which may cause the replacements later in this method to convert first to the
+						// real table name and then from the real table to the real table's alias
+						if (!in_array($once_removed_table, $used_aliases)) {
+							$used_aliases[] = $once_removed_table;
+						}
+
 						self::createJoin($schema, $table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
-						$once_removed_table = $table_match[4];
 						$route = fORMSchema::getRouteName($schema, $related_table, $once_removed_table, $table_match[5]);
 						
 						$join_name = self::createJoin($schema, $related_table, $joins[$join_name]['table_alias'], $once_removed_table, $route, $joins, $used_aliases);
 						
 						$table_map[$table_match[1]] = $db->escape('%r', $joins[$join_name]['table_alias']);
+						
+						// Remove the once removed table from the aliases so we also join directly to it without an alias
+						unset($used_aliases[array_search($once_removed_table, $used_aliases)]);
 					
 					// This is a related table
 					} elseif (($table_match[4] != $table || fORMSchema::getRoutes($schema, $table, $table_match[4])) && $table_match[1] != $table) {
