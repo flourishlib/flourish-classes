@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed PostgreSQL to cast columns in LOWER() calls to VARCHAR to allow UUID columns (which are treated as a VARCHAR by fSchema) to work with default primary key ordering in fRecordSet [wb, 2009-12-16]
  * @changes    1.0.0b13  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b12  Backwards Compatibility Break - Removed date translation functionality, changed the signature of ::translate(), updated to support quoted identifiers, added support for PostgreSQL, MSSQL and Oracle schemas [wb, 2009-10-22]
  * @changes    1.0.0b11  Fixed a bug with translating MSSQL national columns over an ODBC connection [wb, 2009-09-18]
@@ -844,6 +845,7 @@ class fSQLTranslation
 		} elseif ($this->database->getType() == 'postgresql') {
 			$regex = array(
 				'#(?<!["\w.])(["\w.]+)\s+(not\s+)?like\b#i' => 'CAST(\1 AS VARCHAR) \2ILIKE',
+				'#\blower\(\s*(?<!["\w.])(["\w.]+)\s*\)#i'  => 'LOWER(CAST(\1 AS VARCHAR))',
 				'#\blike\b#i'                               => 'ILIKE'
 			);
 		
