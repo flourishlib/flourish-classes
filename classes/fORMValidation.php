@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Made the value checking for one-or-more and only-one rules more robust when detecting the absence of a value [wb, 2009-12-17]
  * @changes    1.0.0b21  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b19  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
@@ -578,18 +579,19 @@ class fORMValidation
 	/**
 	 * Validates against a one-or-more rule
 	 *
-	 * @param  string $class    The class the columns are part of
-	 * @param  array  &$values  An associative array of all values for the record
-	 * @param  array  $columns  The columns to check
+	 * @param  fSchema $schema   The schema object for the table
+	 * @param  string  $class    The class the columns are part of
+	 * @param  array   &$values  An associative array of all values for the record
+	 * @param  array   $columns  The columns to check
 	 * @return string  An error message for the rule
 	 */
-	static private function checkOneOrMoreRule($class, &$values, $columns)
+	static private function checkOneOrMoreRule($schema, $class, &$values, $columns)
 	{
 		settype($columns, 'array');
 		
 		$found_value = FALSE;
 		foreach ($columns as $column) {
-			if ($values[$column] !== NULL && $values[$column] !== '') {
+			if (self::hasValue($schema, $class, $values, $column)) {
 				$found_value = TRUE;
 			}
 		}
@@ -610,12 +612,13 @@ class fORMValidation
 	/**
 	 * Validates against an only-one rule
 	 *
-	 * @param  string $class    The class the columns are part of
-	 * @param  array  &$values  An associative array of all values for the record
-	 * @param  array  $columns  The columns to check
+	 * @param  fSchema $schema   The schema object for the table
+	 * @param  string  $class    The class the columns are part of
+	 * @param  array   &$values  An associative array of all values for the record
+	 * @param  array   $columns  The columns to check
 	 * @return string  An error message for the rule
 	 */
-	static private function checkOnlyOneRule($class, &$values, $columns)
+	static private function checkOnlyOneRule($schema, $class, &$values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -626,7 +629,7 @@ class fORMValidation
 		
 		$found_value = FALSE;
 		foreach ($columns as $column) {
-			if ($values[$column] !== NULL && $values[$column] !== '') {
+			if (self::hasValue($schema, $class, $values, $column)) {
 				if ($found_value) {
 					return self::compose(
 						'%sPlease enter a value for only one',
@@ -963,6 +966,79 @@ class fORMValidation
 	
 	
 	/**
+	 * Checks to see if a columns has a value, but based on the schema and if the column allows NULL
+	 * 
+	 * If the columns allows NULL values, than anything other than NULL
+	 * will be returned as TRUE. If the column does not allow NULL and
+	 * the value is anything other than the "empty" value for that data type,
+	 * then TRUE will be returned.
+	 * 
+	 * The values that are considered "empty" for each data type are as follows.
+	 * Please note that there is no "empty" value for dates, times or
+	 * timestamps.
+	 * 
+	 *  - Blob: ''
+	 *  - Boolean: FALSE
+	 *  - Float: 0.0
+	 *  - Integer: 0
+	 *  - String: ''
+	 *
+	 * @param  fSchema $schema   The schema object for the table
+	 * @param  string  $class    The class the column is part of
+	 * @param  array   &$values  An associative array of all values for the record
+	 * @param  array   $columns  The column to check
+	 * @return string  An error message for the rule
+	 */
+	static private function hasValue($schema, $class, &$values, $column)
+	{
+		$value = $values[$column];
+		
+		if ($value === NULL) {
+			return FALSE;	
+		}
+		
+		$table       = fORM::tablize($class);
+		$data_type   = $schema->getColumnInfo($table, $column, 'type');
+		$allows_null = !$schema->getColumnInfo($table, $column, 'not_null');
+		
+		if ($allows_null) {
+			return TRUE;
+		}
+		
+		switch ($data_type) {
+			case 'blob':
+			case 'char':
+			case 'text':
+			case 'varchar':
+				if ($value === '') {
+					return FALSE;	
+				}
+				break;
+			
+			case 'boolean':
+				if ($value === FALSE) {
+					return FALSE;	
+				}
+				break;
+			
+			case 'integer':
+				if ($value === 0 || $value === '0') {
+					return FALSE;	
+				}
+				break;
+			
+			case 'float':
+				if (preg_match('#^0(\.0*)?|\.0+$#D', $value)) {
+					return FALSE;	
+				}
+				break;
+		}
+		
+		return TRUE;
+	}
+	
+	
+	/**
 	 * Checks to see if a column has been set as case insensitive
 	 *
 	 * @internal
@@ -1294,12 +1370,12 @@ class fORMValidation
 		}
 		
 		foreach (self::$one_or_more_rules[$class] as $rule) {
-			$message = self::checkOneOrMoreRule($class, $values, $rule['columns']);
+			$message = self::checkOneOrMoreRule($schema, $class, $values, $rule['columns']);
 			if ($message) { $validation_messages[] = $message; }
 		}
 		
 		foreach (self::$only_one_rules[$class] as $rule) {
-			$message = self::checkOnlyOneRule($class, $values, $rule['columns']);
+			$message = self::checkOnlyOneRule($schema, $class, $values, $rule['columns']);
 			if ($message) { $validation_messages[] = $message; }
 		}
 		
