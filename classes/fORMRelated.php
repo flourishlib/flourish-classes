@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Fixed a bug with associating a non-contiguous array of fActiveRecord objects [wb, 2009-12-17]
  * @changes    1.0.0b21  Added support for the $force_cascade parameter of fActiveRecord::store(), added ::hasRecords() and fixed a bug with creating non-existent one-to-one related records [wb, 2009-12-16]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b19  Internal Backwards Compatibility Break - Added the `$class` parameter to ::storeManyToMany() - also fixed ::countRecords() to work across all databases, changed SQL statements to use value placeholders, identifier escaping and support schemas [wb, 2009-10-22]
@@ -139,7 +140,7 @@ class fORMRelated
 		} elseif (!sizeof($records_to_associate)) {
 			$records = fRecordSet::buildFromArray($related_class, array());
 		
-		} elseif ($records_to_associate[0] instanceof fActiveRecord) {
+		} elseif (reset($records_to_associate) instanceof fActiveRecord) {
 			$records = fRecordSet::buildFromArray($related_class, $records_to_associate);
 		
 		// This indicates we are working with just primary keys, so we have to call a different method
