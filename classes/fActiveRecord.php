@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b52
+ * @version    1.0.0b53
+ * @changes    1.0.0b53  Fixed a bug where related records with a primary key that contained a foreign key with an on update cascade clause would be deleted when changing the value of the column referenced by the foreign key [wb, 2009-12-17]
  * @changes    1.0.0b52  Backwards Compatibility Break - Added the $force_cascade parameter to ::delete() and ::store() - enabled calling ::prepare() and ::encode() for non-column get methods, added `::has{RelatedRecords}()` methods [wb, 2009-12-16]
  * @changes    1.0.0b51  Made ::changed() properly recognize that a blank string and NULL are equivalent due to the way that ::set() casts values [wb, 2009-11-14]
  * @changes    1.0.0b50  Fixed a bug with trying to load by a multi-column primary key where one of the columns was not specified [wb, 2009-11-13]
@@ -2651,6 +2652,51 @@ abstract class fActiveRecord
 				$this->set($pk_column, $result->getAutoIncrementedValue());
 			}
 			
+			
+			// Fix cascade updated columns for in-memory objects to prevent issues when saving
+			$one_to_one_relationships  = $schema->getRelationships($table, 'one-to-one');
+			$one_to_many_relationships = $schema->getRelationships($table, 'one-to-many');
+			
+			$relationships = array_merge($one_to_one_relationships, $one_to_many_relationships);
+			
+			foreach ($relationships as $relationship) {
+				$route = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
+				
+				$related_table = $relationship['related_table'];
+				$related_class = fORM::classize($related_table);
+				
+				if ($relationship['on_update'] != 'cascade') {
+					continue;
+				}
+				
+				$column = $relationship['column'];
+				if (!fActiveRecord::changed($this->values, $this->old_values, $column)) {
+					continue;
+				}
+				
+				if (!isset($this->related_records[$related_table][$route]['record_set'])) {
+					continue;
+				}
+				
+				$record_set     = $this->related_records[$related_table][$route]['record_set'];
+				$related_column = $relationship['related_column'];
+				
+				$old_value      = fActiveRecord::retrieveOld($this->old_values, $column);
+				$value          = $this->values[$column];
+				
+				foreach ($record_set as $record) {
+					if (isset($record->old_values[$related_column])) {
+						foreach (array_keys($record->old_values[$related_column]) as $key) {
+							if ($record->old_values[$related_column][$key] === $old_value) {
+								$record->old_values[$related_column][$key] = $value;
+							}
+						}
+					}
+					if ($record->values[$related_column] === $old_value) {
+						$record->values[$related_column] = $value;
+					}
+				}
+			}
 			
 			// Storing *-to-many relationships
 			fORMRelated::store($class, $this->values, $this->related_records, $force_cascade);
