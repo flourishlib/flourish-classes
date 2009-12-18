@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed a bug with MSSQL national character conversion when running a SQL statement with a sub-select containing joins [wb, 2009-12-18]
  * @changes    1.0.0b14  Changed PostgreSQL to cast columns in LOWER() calls to VARCHAR to allow UUID columns (which are treated as a VARCHAR by fSchema) to work with default primary key ordering in fRecordSet [wb, 2009-12-16]
  * @changes    1.0.0b13  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
  * @changes    1.0.0b12  Backwards Compatibility Break - Removed date translation functionality, changed the signature of ::translate(), updated to support quoted identifiers, added support for PostgreSQL, MSSQL and Oracle schemas [wb, 2009-10-22]
@@ -67,7 +68,7 @@ class fSQLTranslation
 		$aliases = array();
 		
 		// Turn comma joins into cross joins
-		if (preg_match('#^(?:"?\w+"?(?:\s+(?:as\s+)?(?:"?\w+"?))?)(?:\s*,\s*(?:"?\w+"?(?:\s+(?:as\s+)?(?:"?\w+"?))?))*$#isD', $sql)) {
+		if (preg_match('#^(?:"?:?\w+"?(?:\s+(?:as\s+)?(?:"?\w+"?))?)(?:\s*,\s*(?:"?\w+"?(?:\s+(?:as\s+)?(?:"?\w+"?))?))*$#isD', $sql)) {
 			$sql = str_replace(',', ' CROSS JOIN ', $sql);
 		}
 		
@@ -75,7 +76,7 @@ class fSQLTranslation
 		
 		foreach ($tables as $table) {
 			// This grabs the table name and alias (if there is one)
-			preg_match('#^\s*(["\w.]+|\(((?:[^()]+|\((?2)\))*)\))(?:\s+(?:as\s+)?((?!ON|USING)["\w.]+))?\s*(?:(?:ON|USING)\s+(.*))?\s*$#im', $table, $parts);
+			preg_match('#^\s*([":\w.]+|\(((?:[^()]+|\((?2)\))*)\))(?:\s+(?:as\s+)?((?!ON|USING)["\w.]+))?\s*(?:(?:ON|USING)\s+(.*))?\s*$#im', $table, $parts);
 			
 			$table_name  = $parts[1];
 			$table_alias = (!empty($parts[3])) ? $parts[3] : $parts[1]; 
@@ -535,9 +536,12 @@ class fSQLTranslation
 			$select_clause = trim($select[1]);
 			$from_clause   = trim($select[3]);
 			
-			// This recursively fixes sub-selects
-			if (preg_match('#\bselect\b#', $from_clause)) {
-				$from_clause = $this->fixMSSQLNationalColumns($from_clause);	
+			$sub_selects = array();
+			if (preg_match_all('#\((\s*SELECT\s+((?:[^()]+|\((?2)\))*))\)#i', $from_clause, $from_matches)) {
+				$sub_selects = $from_matches[0];
+				foreach ($sub_selects as $i => $sub_select) {
+					$from_clause = preg_replace('#' . preg_quote($sub_select, '#') . '#', ':sub_select_' . $i, $from_clause, 1);
+				}
 			}
 			
 			$table_aliases = self::parseTableAliases($from_clause);
@@ -672,7 +676,26 @@ class fSQLTranslation
 				}		
 			}
 			
-			$replace = preg_replace('#\bselect\s+' . preg_quote($select_clause, '#') . '#i', 'SELECT ' . strtr(join(', ', array_merge($selections, $additions)), array('\\' => '\\\\', '$' => '\\$')), $select);
+			foreach ($sub_selects as $i => $sub_select) {
+				$sql = preg_replace(
+					'#:sub_select_' . $i . '\b#',
+					strtr(
+						$this->fixMSSQLNationalColumns($sub_select),
+						array('\\' => '\\\\', '$' => '\\$')
+					),
+					$sql,
+					1
+				);	
+			}
+			
+			$replace = preg_replace(
+				'#\bselect\s+' . preg_quote($select_clause, '#') . '#i',
+				'SELECT ' . strtr(
+					join(', ', array_merge($selections, $additions)),
+					array('\\' => '\\\\', '$' => '\\$')
+				),
+				$select
+			);
 			$sql = str_replace($select, $replace, $sql);	
 		}
 		
