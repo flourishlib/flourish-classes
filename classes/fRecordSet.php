@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b31  Added the ability to compare columns in ::build() with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b30  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b29  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -1313,7 +1314,8 @@ class fRecordSet implements Iterator, Countable
 		
 		// If we are going through a join table we need the related primary key for matching
 		if (isset($relationship['join_table'])) {
-			$params[0] .= $db->escape(", %r", $table_with_route . '.' . $relationship['column']);
+			// We explicitly alias the column because of SQLite issues
+			$params[0] .= $db->escape(", %r AS %r", $table_with_route . '.' . $relationship['column'], $relationship['column']);
 		}
 		
 		$params[0] .= ' FROM :from_clause WHERE ';

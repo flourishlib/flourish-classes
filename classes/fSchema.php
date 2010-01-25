@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Fixed the class to work with lower privilege Oracle accounts and added detection of Oracle number columns [wb, 2010-01-25]
  * @changes    1.0.0b29  Added on_delete and on_update elements to one-to-one relationship info retrieved by ::getRelationships() [wb, 2009-12-16]
  * @changes    1.0.0b28  Fixed a bug with detecting some multi-column unique constraints in SQL Server databases [wb, 2009-11-13]
  * @changes    1.0.0b27  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
@@ -772,6 +773,7 @@ class fSchema
 		
 		$data_type_mapping = array(
 			'boolean'			=> 'boolean',
+			'number'            => 'integer',
 			'integer'			=> 'integer',
 			'timestamp'			=> 'timestamp',
 			'date'				=> 'date',
@@ -2021,12 +2023,32 @@ class fSchema
 							FROM
 								ALL_TABLES
 							WHERE
-								OWNER IN (SELECT
-										username
-									FROM
-										dba_users
-									WHERE
-										default_tablespace NOT IN ('SYSTEM', 'SYSAUX')) AND
+								OWNER NOT IN (
+									'SYS',
+									'SYSTEM',
+									'OUTLN',
+									'ANONYMOUS',
+									'AURORA\$ORB\$UNAUTHENTICATED',
+									'AWR_STAGE',
+									'CSMIG',
+									'CTXSYS',
+									'DBSNMP',
+									'DIP',
+									'DMSYS',
+									'DSSYS',
+									'EXFSYS',
+									'FLOWS_020100',
+									'FLOWS_FILES',
+									'LBACSYS',
+									'MDSYS',
+									'ORACLE_OCM',
+									'ORDPLUGINS',
+									'ORDSYS',
+									'PERFSTAT',
+									'TRACESVR',
+									'TSMSYS',
+									'XDB'
+								) AND
 								DROPPED = 'NO' 
 							ORDER BY
 								TABLE_NAME ASC";

@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b22  Fixed a bug with associating a non-contiguous array of fActiveRecord objects [wb, 2009-12-17]
  * @changes    1.0.0b21  Added support for the $force_cascade parameter of fActiveRecord::store(), added ::hasRecords() and fixed a bug with creating non-existent one-to-one related records [wb, 2009-12-16]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -574,7 +575,8 @@ class fORMRelated
 				
 				$new_related_pk_columns = array();
 				foreach ($related_pk_columns as $related_pk_column) {
-					$new_related_pk_columns[] = $related_table . '.' . $related_pk_column;	
+					// We explicitly alias the columns due to SQLite issues
+					$new_related_pk_columns[] = $db->escape("%r AS %r", $related_table . '.' . $related_pk_column, $related_pk_column);	
 				}
 				$related_pk_columns = $new_related_pk_columns;
 				
@@ -589,8 +591,10 @@ class fORMRelated
 				
 				$params = array(
 					$db->escape(
-						"SELECT %r FROM :from_clause WHERE %r = ",
-						$related_pk_columns,
+						sprintf(
+							"SELECT %s FROM :from_clause WHERE",
+							join(', ', $related_pk_columns)
+						) . " %r = ",
 						$table_with_route . '.' . $column
 					),
 				);
