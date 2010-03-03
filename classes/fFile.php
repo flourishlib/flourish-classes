@@ -2,14 +2,15 @@
 /**
  * Represents a file on the filesystem, also provides static file-related methods
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Fixed a couple of undefined variable errors in ::determineMimeTypeByContents() [wb, 2010-03-03]
  * @changes    1.0.0b28  Added support for some JPEG files created by Photoshop [wb, 2009-12-16]
  * @changes    1.0.0b27  Backwards Compatibility Break - renamed ::getFilename() to ::getName(), ::getFilesize() to ::getSize(), ::getDirectory() to ::getParent(), added ::move() [wb, 2009-12-16]
  * @changes    1.0.0b26  ::getDirectory(), ::getFilename() and ::getPath() now all work even if the file has been deleted [wb, 2009-10-22]
@@ -145,7 +146,7 @@ class fFile implements Iterator
 		$_0_4   = substr($content, 0, 4);
 		$_0_3   = substr($content, 0, 3);
 		$_0_2   = substr($content, 0, 2);
-		
+		$_8_4   = substr($content, 8, 4);
 		
 		// Images
 		if ($_0_4 == "MM\x00\x2A" || $_0_4 == "II\x2A\x00") {
@@ -188,7 +189,6 @@ class fFile implements Iterator
 		
 		if ($length > 8 && substr($content, 4, 4) == 'ftyp') {
 			
-			$_8_4 = substr($content, 8, 4);
 			$_8_3 = substr($content, 8, 3);
 			$_8_2 = substr($content, 8, 2);
 			
@@ -1236,7 +1236,7 @@ class fFile implements Iterator
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
