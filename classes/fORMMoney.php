@@ -2,14 +2,16 @@
 /**
  * Provides money functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Dan Collins, iMarc LLC [dc-imarc] <dan@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b4  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
  * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
@@ -462,7 +464,7 @@ class fORMMoney
 		
 		$class = get_class($object);
 		
-		if (!isset($parameters[0])) {
+		if (count($parameters) < 1) {
 			throw new fProgrammerException(
 				'The method, %s(), requires at least one parameter',
 				$method_name
@@ -501,7 +503,7 @@ class fORMMoney
 		
 		$class = get_class($object);
 		
-		if (!isset($parameters[0])) {
+		if (count($parameters) < 1) {
 			throw new fProgrammerException(
 				'The method, %s(), requires at least one parameter',
 				$method_name
@@ -550,16 +552,27 @@ class fORMMoney
 			if ($values[$column] instanceof fMoney || $values[$column] === NULL) {
 				continue;
 			}
+			
+			// Remove any previous validation warnings
+			$filtered_messages = array();
+			$column_name       = fValidationException::formatField(fORM::getColumnName($class, $currency_column));
+			foreach ($validation_messages as $validation_message) {
+				if (!preg_match('#^' . preg_quote($column_name, '#') . '#', $validation_message)) {
+					$filtered_messages[] = $validation_message;
+				}
+			}
+			$validation_messages = $filtered_messages;
+			
 			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
 				$validation_messages[] = self::compose(
 					'%sThe currency specified is invalid',
-					fValidationException::formatField(fORM::getColumnName($class, $currency_column))
+					$column_name
 				);	
 				
 			} else {
 				$validation_messages[] = self::compose(
 					'%sPlease enter a monetary value',
-					fValidationException::formatField(fORM::getColumnName($class, $column))
+					$column_name
 				);
 			}
 		}
@@ -577,7 +590,7 @@ class fORMMoney
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
