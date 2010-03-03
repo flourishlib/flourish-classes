@@ -2,14 +2,15 @@
 /**
  * Representation of a result from a query against the fDatabase class
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added support for prepared statements [wb, 2010-03-02]
  * @changes    1.0.0b8  Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b7  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
  * @changes    1.0.0b6  Fixed a bug where ::fetchAllRows() would throw a fNoRowsException [wb, 2009-06-30]
@@ -174,7 +175,9 @@ class fResult implements Iterator
 				break;
 				
 			case 'mysqli':
-				mysqli_free_result($this->result);
+				if (is_resource($this->result)) {
+					mysqli_free_result($this->result);
+				}
 				break;
 				
 			case 'pgsql':
@@ -220,7 +223,11 @@ class fResult implements Iterator
 				break;
 				
 			case 'mysqli':
-				$row = mysqli_fetch_assoc($this->result);
+				if (is_object($this->result)) {
+					$row = mysqli_fetch_assoc($this->result);
+				} else {
+					$row = $this->result[$this->pointer];
+				}
 				break;
 				
 			case 'pgsql':
@@ -622,7 +629,11 @@ class fResult implements Iterator
 				break;
 				
 			case 'mysqli':
-				$success = mysqli_data_seek($this->result, $row);
+				if (is_object($this->result)) {
+					$success = mysqli_data_seek($this->result, $row);
+				} else {
+					$success = TRUE;
+				}
 				break;
 				
 			case 'pgsql':
@@ -753,7 +764,7 @@ class fResult implements Iterator
 	{
 		if (!$this->returned_rows && !$this->affected_rows) {
 			if ($message === NULL) {
-				$message = self::compose('No rows were returned or affected by the query');	
+				$message = 'No rows were returned or affected by the query';
 			}
 			throw new fNoRowsException($message);
 		}
@@ -808,7 +819,7 @@ class fResult implements Iterator
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -2,14 +2,15 @@
 /**
  * Represents an image on the filesystem, also provides image manipulation functionality
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Fixed a couple of bug with using ImageMagick on Windows and BSD machines [wb, 2010-03-02]
  * @changes    1.0.0b16  Fixed some bugs with GD not properly handling transparent backgrounds and desaturation of .gif files [wb, 2009-10-27]
  * @changes    1.0.0b15  Added ::getDimensions() [wb, 2009-08-07]
  * @changes    1.0.0b14  Performance updates for checking image type and compatiblity [wb, 2009-07-31]
@@ -79,7 +80,7 @@ class fImage extends fFile
 		if (self::isOpenBaseDirRestricted($path)) {
 			exec($path . 'convert -version', $executable);
 		} else {
-			$executable = is_executable($path . 'convert');
+			$executable = is_executable($path . (fCore::checkOS('windows') ? 'convert.exe' : 'convert'));
 		}
 		
 		if (!$executable) {
@@ -154,7 +155,7 @@ class fImage extends fFile
 				
 				if (fCore::checkOS('windows')) {
 					
-						$win_search = 'dir /B "C:\Program Files\ImageMagick*"';
+						$win_search = 'dir /B "C:\Program Files\ImageMagick*" 2> NUL';
 						exec($win_search, $win_output);
 						$win_output = trim(join("\n", $win_output));
 						 
@@ -162,7 +163,7 @@ class fImage extends fFile
 							throw new Exception();
 						}
 						 
-						$path = 'C:\Program Files\\' . $win_output . '\\';
+						$path = 'C:\\Program Files\\' . $win_output . '\\';
 						
 				} elseif (fCore::checkOS('linux', 'bsd', 'solaris', 'osx')) {
 					
@@ -206,7 +207,7 @@ class fImage extends fFile
 					}
 					
 					// On linux and bsd can try whereis
-					if (!$found && fCore::checkOS('linux', 'bsd')) {
+					if (!$found && fCore::checkOS('linux', 'freebsd')) {
 						$nix_search = 'whereis -b convert';
 						exec($nix_search, $nix_output);
 						$nix_output = trim(str_replace('convert:', '', join("\n", $nix_output)));
@@ -219,7 +220,7 @@ class fImage extends fFile
 					}
 					
 					// OSX has a different whereis command
-					if (!$found && fCore::checkOS('osx')) {
+					if (!$found && fCore::checkOS('osx', 'netbsd', 'openbsd')) {
 						$osx_search = 'whereis convert';
 						exec($osx_search, $osx_output);
 						$osx_output = trim(join("\n", $osx_output));
@@ -946,8 +947,11 @@ class fImage extends fFile
 	private function processWithImageMagick($output_file, $jpeg_quality)
 	{
 		$type = self::getImageType($this->file);
-		
-		$command_line  = escapeshellcmd(self::$imagemagick_dir . 'convert');
+		if (fCore::checkOS('windows')) {
+			$command_line  = str_replace(' ', '" "', self::$imagemagick_dir . 'convert.exe');
+		} else {
+			$command_line  = escapeshellarg(self::$imagemagick_dir . 'convert');
+		}
 		
 		if (self::$imagemagick_temp_dir) {
 			$command_line .= ' -set registry:temporary-path ' . escapeshellarg(self::$imagemagick_temp_dir) . ' ';
@@ -1194,7 +1198,7 @@ class fImage extends fFile
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

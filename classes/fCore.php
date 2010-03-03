@@ -2,7 +2,7 @@
 /**
  * Provides low-level debugging, error and exception functionality
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond, others
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Nick Trew [nt]
@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Added ::getDebug() to check for the global debugging flag, added more specific BSD checks to ::checkOS() [wb, 2010-03-02]
  * @changes    1.0.0b11  Added ::detectOpcodeCache() [nt+wb, 2009-10-06]
  * @changes    1.0.0b10  Fixed ::expose() to properly display when output includes non-UTF-8 binary data [wb, 2009-06-29]
  * @changes    1.0.0b9   Added ::disableContext() to remove context info for exception/error handling, tweaked output for exceptions/errors [wb, 2009-06-28]
@@ -41,6 +42,7 @@ class fCore
 	const enableErrorHandling     = 'fCore::enableErrorHandling';
 	const enableExceptionHandling = 'fCore::enableExceptionHandling';
 	const expose                  = 'fCore::expose';
+	const getDebug                = 'fCore::getDebug';
 	const handleError             = 'fCore::handleError';
 	const handleException         = 'fCore::handleException';
 	const registerDebugCallback   = 'fCore::registerDebugCallback';
@@ -338,7 +340,7 @@ class fCore
 	{
 		$oses = func_get_args();
 		
-		$valid_oses = array('linux', 'bsd', 'osx', 'solaris', 'windows');
+		$valid_oses = array('linux', 'bsd', 'freebsd', 'openbsd', 'netbsd', 'osx', 'solaris', 'windows');
 		
 		if ($invalid_oses = array_diff($oses, $valid_oses)) {
 			throw new fProgrammerException(
@@ -353,8 +355,14 @@ class fCore
 		if (stripos($uname, 'linux') !== FALSE) {
 			return in_array('linux', $oses);
 		
-		} elseif (stripos($uname, 'bsd') !== FALSE) {
-			return in_array('bsd', $oses);
+		} elseif (stripos($uname, 'netbsd') !== FALSE) {
+			return in_array('netbsd', $oses) || in_array('bsd', $oses);
+		
+		} elseif (stripos($uname, 'openbsd') !== FALSE) {
+			return in_array('openbsd', $oses) || in_array('bsd', $oses);
+		
+		} elseif (stripos($uname, 'freebsd') !== FALSE) {
+			return in_array('freebsd', $oses) || in_array('bsd', $oses);
 		
 		} elseif (stripos($uname, 'solaris') !== FALSE || stripos($uname, 'sunos') !== FALSE) {
 			return in_array('solaris', $oses);
@@ -421,11 +429,11 @@ class fCore
 	 * @param  boolean $force    If debugging should be forced even when global debugging is off
 	 * @return void
 	 */
-	static public function debug($message, $force)
+	static public function debug($message, $force=FALSE)
 	{
 		if ($force || self::$debug) {
 			if (self::$debug_callback) {
-				call_user_func(self::$debug_callback, $message);	
+				call_user_func(self::$debug_callback, $message);
 			} else {
 				self::expose($message, FALSE);
 			}
@@ -707,6 +715,18 @@ class fCore
 	
 	
 	/**
+	 * If debugging is enabled
+	 * 
+	 * @param  boolean $force  If debugging is forced
+	 * @return boolean  If debugging is enabled
+	 */
+	static public function getDebug($force=FALSE)
+	{
+		return self::$debug || $force;
+	}
+	
+	
+	/**
 	 * Handles an error, creating the necessary context information and sending it to the specified destination
 	 * 
 	 * @internal
@@ -961,7 +981,7 @@ class fCore
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

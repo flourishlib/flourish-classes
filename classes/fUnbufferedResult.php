@@ -2,14 +2,15 @@
 /**
  * Representation of an unbuffered result from a query against the fDatabase class
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added support for prepared statements [wb, 2010-03-02]
  * @changes    1.0.0b7  Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b6  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
  * @changes    1.0.0b5  Added the method ::asObjects() to allow for returning objects instead of associative arrays [wb, 2009-06-23]
@@ -142,6 +143,16 @@ class fUnbufferedResult implements Iterator
 			return;
 		}
 		
+		// stdClass results are holders for prepared statements, so we don't
+		// want to free them since it would break fStatement
+		if ($this->result instanceof stdClass) {
+			if ($this->database->getExtension() == 'msyqli') {
+				$this->result->statement->free_result();
+			}
+			unset($this->result);
+			return;	
+		}
+		
 		switch ($this->database->getExtension()) {
 			case 'mssql':
 				mssql_free_result($this->result);
@@ -229,7 +240,25 @@ class fUnbufferedResult implements Iterator
 				break;
 				
 			case 'mysqli':
-				$row = mysqli_fetch_assoc($this->result);
+				if (!$this->result instanceof stdClass) {
+					$row = mysqli_fetch_assoc($this->result);
+				} else {
+					$meta = $statement->result_metadata();
+					$row_references = array();
+					while ($field = $meta->fetch_field())
+					{
+						$row_references[] = &$fetched_row[$field->name];
+					}
+
+					call_user_func_array(array($statement, 'bind_result'), $row_references);
+					$statement->fetch();
+					
+					$row = array();
+					foreach($fetched_row as $key => $val)
+					{
+						$row[$key] = $val;
+					}
+				}
 				break;
 				
 			case 'oci8':
@@ -237,7 +266,8 @@ class fUnbufferedResult implements Iterator
 				break;
 				
 			case 'odbc':
-				$row = odbc_fetch_array($this->result);
+				$resource = $this->result instanceof stdClass ? $this->result->statement : $this->result;
+				$row = odbc_fetch_array($resource);
 				break;
 				
 			case 'pgsql':
@@ -249,7 +279,8 @@ class fUnbufferedResult implements Iterator
 				break;
 				
 			case 'sqlsrv':
-				$row = sqlsrv_fetch_array($this->result, SQLSRV_FETCH_ASSOC);
+				$resource = $this->result instanceof stdClass ? $this->result->statement : $this->result;
+				$row = sqlsrv_fetch_array($resource, SQLSRV_FETCH_ASSOC);
 				break;
 				
 			case 'pdo':
@@ -678,7 +709,7 @@ class fUnbufferedResult implements Iterator
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

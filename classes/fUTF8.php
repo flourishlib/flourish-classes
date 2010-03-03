@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed ::clean() to work with PHP installs that use an iconv library that doesn't support //IGNORE [wb, 2010-03-02]
  * @changes    1.0.0b5  Changed ::ucwords() to also uppercase words right after various punctuation [wb, 2009-09-18]
  * @changes    1.0.0b4  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
  * @changes    1.0.0b3  Fixed a parameter name in ::rpos() from `$search` to `$needle` [wb, 2009-02-06]
@@ -51,6 +52,15 @@ class fUTF8
 	const upper    = 'fUTF8::upper';
 	const wordwrap = 'fUTF8::wordwrap';
 	
+	
+	/**
+	 * Depending how things are compiled, NetBSD and Solaris don't support //IGNORE in iconv()
+	 * 
+	 * If //IGNORE support is not provided strings with invalid characters will be truncated
+	 * 
+	 * @var boolean
+	 */
+	static private $can_ignore_invalid = NULL;
 	
 	/**
 	 * All lowercase UTF-8 characters mapped to uppercase characters
@@ -636,7 +646,21 @@ class fUTF8
 	static public function clean($value)
 	{
 		if (!is_array($value)) {
-			return iconv('UTF-8', 'UTF-8//IGNORE', (string) $value);
+			if (self::$can_ignore_invalid === NULL) {
+				ob_start();
+				phpinfo(INFO_MODULES);
+				$module_info = strip_tags(ob_get_contents());
+				ob_end_clean();
+				
+				self::$can_ignore_invalid = !preg_match('#iconv\s+implementation\s+(=>\s+)?unknown#ims', $module_info);	
+			}
+			if (!self::$can_ignore_invalid) {
+				$old_level = error_reporting(error_reporting() & ~E_NOTICE);
+			}
+			return iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
+			if (!self::$can_ignore_invalid) {
+				error_reporting($old_level);
+			}
 		}
 		
 		$keys = array_keys($value);
