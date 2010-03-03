@@ -5,14 +5,15 @@
  * The functionality of this class only works with single-field `FOREIGN KEY`
  * constraints.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Added the ability to associate a single record via primary key [wb, 2010-03-03]
  * @changes    1.0.0b23  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b22  Fixed a bug with associating a non-contiguous array of fActiveRecord objects [wb, 2009-12-17]
  * @changes    1.0.0b21  Added support for the $force_cascade parameter of fActiveRecord::store(), added ::hasRecords() and fixed a bug with creating non-existent one-to-one related records [wb, 2009-12-16]
@@ -103,12 +104,17 @@ class fORMRelated
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
-		if (!$record instanceof fActiveRecord) {
-			$record = new $related_class($record);	
+		if ($record !== NULL) {
+			if (!$record instanceof fActiveRecord) {
+				$record = new $related_class($record);	
+			}
+			$records = array($record);
+		} else {
+			$records = array();
 		}
 		
 		$schema  = fORMSchema::retrieve($class);
-		$records = fRecordSet::buildFromArray($related_class, array($record));	
+		$records = fRecordSet::buildFromArray($related_class, $records);
 		$route   = fORMSchema::getRouteName($schema, $table, $related_table, $route, 'one-to-one');
 		
 		self::setRecordSet($class, $related_records, $related_class, $records, $route);
@@ -896,7 +902,7 @@ class fORMRelated
 			$route_names = array();
 			
 			foreach ($routes as $route) {
-				$route_names[] = fORMSchema::getRouteNameFromRelationship('one-to-one', $route);
+				$route_names[] = fORMSchema::getRouteNameFromRelationship('*-to-one', $route);
 			}
 			
 			$signature = '';
@@ -1627,7 +1633,7 @@ class fORMRelated
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
