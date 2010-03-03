@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug in ::saveChanges() that would incorrectly cause new filenames to be created, added the $overwrite parameter to ::saveChanges(), added the $allow_upsizing parameter to ::resize() [wb, 2010-03-03]
  * @changes    1.0.0b17  Fixed a couple of bug with using ImageMagick on Windows and BSD machines [wb, 2010-03-02]
  * @changes    1.0.0b16  Fixed some bugs with GD not properly handling transparent backgrounds and desaturation of .gif files [wb, 2009-10-27]
  * @changes    1.0.0b15  Added ::getDimensions() [wb, 2009-08-07]
@@ -973,7 +974,11 @@ class fImage extends fFile
 			
 			// Perform the resize operation
 			if ($mod['operation'] == 'resize') {
-				$command_line .= ' -resize ' . $mod['width'] . 'x' . $mod['height'] . ' ';
+				$command_line .= ' -resize "' . $mod['width'] . 'x' . $mod['height'];
+				if ($mod['old_width'] < $mod['width'] || $mod['old_height'] < $mod['height']) {
+					$command_line .= '<';
+				}
+				$command_line .= '" ';
 				
 			// Perform the crop operation
 			} elseif ($mod['operation'] == 'crop') {
@@ -1018,11 +1023,12 @@ class fImage extends fFile
 	 * resized image is smooth in aappearance. Resizing does not occur until
 	 * ::saveChanges() is called.
 	 * 
-	 * @param  integer $canvas_width   The width of the canvas to fit the image on, `0` for no constraint
-	 * @param  integer $canvas_height  The height of the canvas to fit the image on, `0` for no constraint
+	 * @param  integer $canvas_width    The width of the canvas to fit the image on, `0` for no constraint
+	 * @param  integer $canvas_height   The height of the canvas to fit the image on, `0` for no constraint
+	 * @param  boolean $allow_upsizing  If the image is smaller than the desired canvas, the image will be increased in size
 	 * @return fImage  The image object, to allow for method chaining
 	 */
-	public function resize($canvas_width, $canvas_height)
+	public function resize($canvas_width, $canvas_height, $allow_upsizing=FALSE)
 	{
 		$this->tossIfException();
 		
@@ -1071,8 +1077,10 @@ class fImage extends fFile
 			}
 		}
 		
-		// If the size did not go down, don't even record the modification
-		if ($orig_width <= $new_width || $orig_height <= $new_height) {
+		// If the size did not change, don't even record the modification
+		$same_size   = $orig_width == $new_width || $orig_height == $new_height;
+		$wont_change = ($orig_width < $new_width || $orig_height < $new_height) && !$allow_upsizing;
+		if ($same_size || $wont_change) {
 			return $this;
 		}
 		
@@ -1101,11 +1109,21 @@ class fImage extends fFile
 	 * transaction is committed.
 	 * 
 	 * @param  string  $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
-	 * @param  integer $jpeg_quality    The quality setting to use for JPEG images
+	 * @param  integer $jpeg_quality    The quality setting to use for JPEG images - this may be ommitted
+	 * @param  boolean $overwrite       If an existing file with the same name and extension should be overwritten
+	 * @param  string  :$new_image_type
+	 * @param  boolean :$overwrite
 	 * @return fImage  The image object, to allow for method chaining
 	 */
-	public function saveChanges($new_image_type=NULL, $jpeg_quality=90)
+	public function saveChanges($new_image_type=NULL, $jpeg_quality=90, $overwrite=FALSE)
 	{
+		// This allows ommitting the $jpeg_quality parameter, which is very useful for non-jpegs
+		$args = func_get_args();
+		if (count($args) == 2 && is_bool($args[1])) {
+			$overwrite    = $args[1];
+			$jpeg_quality = 90;
+		}
+		
 		$this->tossIfException();
 		self::determineProcessor();
 		
@@ -1145,15 +1163,32 @@ class fImage extends fFile
 			);	
 		}
 		
-		if ($new_image_type) {
-			$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
-			$output_dir  = dirname($output_file);
-			if (!is_writable($output_dir)) {
-				throw new fEnvironmentException(
-					'Changes to the image can not be saved because the directory to save the new file, %s, is not writable',
-					$output_dir
-				);		
+		if ($new_image_type && fFilesystem::getPathInfo($this->file, 'extension') != $new_image_type) {
+			if ($overwrite) {
+				$path_info   = fFilesystem::getPathInfo($this->file);
+				$output_file = $path_info['dirname'] . $path_info['filename'] . '.' . $new_image_type;
+			} else {
+				$output_file = fFilesystem::makeUniqueName($this->file, $new_image_type);
 			}
+			
+			if (file_exists($output_file)) {
+				if (!is_writable($output_file)) {
+					throw new fEnvironmentException(
+						'Changes to the image can not be saved because the file, %s, is not writable',
+						$output_file
+					);
+				}
+				
+			} else {
+				$output_dir = dirname($output_file);
+				if (!is_writable($output_dir)) {
+					throw new fEnvironmentException(
+						'Changes to the image can not be saved because the directory to save the new file, %s, is not writable',
+						$output_dir
+					);
+				}
+			}
+			
 		} else {
 			$output_file = $this->file;
 			if (!is_writable($output_file)) {
