@@ -7,7 +7,7 @@
  * been sent to the browser. To prevent such a warning, explicitly call ::open()
  * before generating any output.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond, others
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
@@ -15,16 +15,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug in ::destroy() where sessions weren't always being properly destroyed [wb, 2009-12-08]
- * @changes    1.0.0b8  Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
- * @changes    1.0.0b7  Backwards Compatibility Break - Removed the `$prefix` parameter from the methods ::delete(), ::get() and ::set() - added the methods ::add(), ::enablePersistence(), ::regenerateID() [wb+al, 2009-10-23]
- * @changes    1.0.0b6  Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
- * @changes    1.0.0b5  Added documentation about session cache limiter warnings [wb, 2009-05-04]
- * @changes    1.0.0b4  The class now works with existing sessions [wb, 2009-05-04]
- * @changes    1.0.0b3  Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
- * @changes    1.0.0b2  Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed some documentation bugs [wb, 2010-03-03]
+ * @changes    1.0.0b9   Fixed a bug in ::destroy() where sessions weren't always being properly destroyed [wb, 2009-12-08]
+ * @changes    1.0.0b8   Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
+ * @changes    1.0.0b7   Backwards Compatibility Break - Removed the `$prefix` parameter from the methods ::delete(), ::get() and ::set() - added the methods ::add(), ::enablePersistence(), ::regenerateID() [wb+al, 2009-10-23]
+ * @changes    1.0.0b6   Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
+ * @changes    1.0.0b5   Added documentation about session cache limiter warnings [wb, 2009-05-04]
+ * @changes    1.0.0b4   The class now works with existing sessions [wb, 2009-05-04]
+ * @changes    1.0.0b3   Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
+ * @changes    1.0.0b2   Made ::open() public, fixed some consistency issues with setting session options through the class [wb, 2009-01-06]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fSession
 {
@@ -75,7 +76,7 @@ class fSession
 	
 	
 	/**
-	 *
+	 * Adds a value to an already-existing array value, or to a new array value
 	 *
 	 * @param  string $key     The name to access the array under
 	 * @param  mixed  $value   The value to add to the array
@@ -147,7 +148,7 @@ class fSession
 	/**
 	 * Deletes a value from the session
 	 * 
-	 * @param  string $key     The key of the value to delete
+	 * @param  string $key  The key of the value to delete
 	 * @return void
 	 */
 	static public function delete($key)
@@ -222,7 +223,7 @@ class fSession
 	
 	
 	/**
-	 * Gets data from the `$_SESSION` superglobal, prefixing it with `fSession::` to prevent issues with `$_REQUEST`
+	 * Gets data from the `$_SESSION` superglobal
 	 * 
 	 * @param  string $key            The name to get the value for
 	 * @param  mixed  $default_value  The default value to use if the requested key is not set
@@ -465,7 +466,7 @@ class fSession
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
