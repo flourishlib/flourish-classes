@@ -2,7 +2,7 @@
 /**
  * Holds a single instance of the fDatabase class and provides database manipulation functionality for ORM code
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond, others
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Craig Ruksznis, iMarc LLC [cr-imarc] <craigruk@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Changed ::injectFromAndGroupByClauses() to be able to handle table aliases that contain other aliases inside of them [wb, 2010-03-03]
  * @changes    1.0.0b20  Fixed a bug where joining to a table two separate ways could cause table alias issues and incorrect SQL to be generated [wb, 2009-12-16]
  * @changes    1.0.0b19  Added the ability to compare columns with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b18  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
@@ -1072,7 +1073,7 @@ class fORMDatabase
 				$temp_sql = preg_replace('#(\{\w+)"\."(\w+\})#', '\1.\2', $match);
 				
 				foreach ($table_map as $arrow_table => $alias) {
-					$temp_sql = str_replace($arrow_table, $alias, $temp_sql);
+					$temp_sql = preg_replace('#(?<![\w"])' . preg_quote($arrow_table, '#') . '(?!=[\w"])#', $alias, $temp_sql);
 				}
 				
 				// In the ORDER BY clause we need to wrap columns in
@@ -1285,7 +1286,7 @@ class fORMDatabase
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
