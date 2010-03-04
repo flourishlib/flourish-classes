@@ -7,7 +7,7 @@
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond, others
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b53
+ * @version    1.0.0b54
+ * @changes    1.0.0b54  Fixed detection of route name for one-to-one relationships in ::delete() [wb, 2010-03-03]
  * @changes    1.0.0b53  Fixed a bug where related records with a primary key that contained a foreign key with an on update cascade clause would be deleted when changing the value of the column referenced by the foreign key [wb, 2009-12-17]
  * @changes    1.0.0b52  Backwards Compatibility Break - Added the $force_cascade parameter to ::delete() and ::store() - enabled calling ::prepare() and ::encode() for non-column get methods, added `::has{RelatedRecords}()` methods [wb, 2009-12-16]
  * @changes    1.0.0b51  Made ::changed() properly recognize that a blank string and NULL are equivalent due to the way that ::set() casts values [wb, 2009-11-14]
@@ -1379,11 +1380,14 @@ abstract class fActiveRecord
 			foreach ($relationships as $relationship) {
 				
 				// Figure out how to check for related records
-				$type  = (isset($relationship['join_table'])) ? 'many-to-many' : 'one-to-many';
+				if (isset($relationship['join_table'])) {
+					$type = 'many-to-many';
+				} else {
+					$type = in_array($relationship, $one_to_one_relationships) ? 'one-to-one' : 'one-to-many';
+				}
 				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
 				
 				$related_class = fORM::classize($relationship['related_table']);
-				$type          = $type == 'one-to-many' && fORMSchema::isOneToOne($schema, $table, $relationship['related_table'], $route) ? 'one-to-one' : $type;
 				
 				if ($type == 'one-to-one') {
 					$method         = 'create' . $related_class;
@@ -2660,7 +2664,8 @@ abstract class fActiveRecord
 			$relationships = array_merge($one_to_one_relationships, $one_to_many_relationships);
 			
 			foreach ($relationships as $relationship) {
-				$route = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
+				$type  = in_array($relationship, $one_to_one_relationships) ? 'one-to-one' : 'one-to-many';
+				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
 				
 				$related_table = $relationship['related_table'];
 				$related_class = fORM::classize($related_table);
@@ -2698,7 +2703,7 @@ abstract class fActiveRecord
 				}
 			}
 			
-			// Storing *-to-many relationships
+			// Storing *-to-many and one-to-one relationships
 			fORMRelated::store($class, $this->values, $this->related_records, $force_cascade);
 			
 			
@@ -2844,7 +2849,7 @@ abstract class fActiveRecord
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

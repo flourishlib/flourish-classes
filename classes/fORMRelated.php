@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed a bug when storing a one-to-one related record with different column names on each end of the relationship [wb, 2010-03-04]
  * @changes    1.0.0b24  Added the ability to associate a single record via primary key [wb, 2010-03-03]
  * @changes    1.0.0b23  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b22  Fixed a bug with associating a non-contiguous array of fActiveRecord objects [wb, 2009-12-17]
@@ -1447,7 +1448,7 @@ class fORMRelated
 		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
 		
 		$first_pk_column = self::determineFirstPKColumn($class, $related_class, $route);
-		$filter          = self::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $relationship['related_column']);
+		$filter          = self::determineRequestFilter(fORM::classize($relationship['table']), $related_class, $route);
 		$pk_field        = $filter . $first_pk_column;
 		$input_keys      = array_keys(fRequest::get($pk_field, 'array', array()));
 		

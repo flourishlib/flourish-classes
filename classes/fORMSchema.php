@@ -2,14 +2,15 @@
 /**
  * Provides fSchema class related functions for ORM code
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added 'one-to-one' support to ::getRouteNameFromRelationship(), '!many-to-one' to ::getRoute() [wb, 2010-03-03]
  * @changes    1.0.0b7  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b6  Internal Backwards Compatibility Break - Added the `$schema` parameter to the beginning of ::getRoute(), ::getRouteName(), ::getRoutes() and ::isOneToOne() - added '!many-to-one' relationship type handling [wb, 2009-10-22]
  * @changes    1.0.0b5  Fixed some error messaging to not include {empty_string} in some situations [wb, 2009-07-31]
@@ -71,7 +72,7 @@ class fORMSchema
 	 * @param  string  $table              The main table we are searching on behalf of
 	 * @param  string  $related_table      The related table we are searching under
 	 * @param  string  $route              The route to get info about
-	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
+	 * @param  string  $relationship_type  The relationship type: `NULL`, `'*-to-many'`, `'*-to-one'`, `'!many-to-one'`, `'one-to-one'`, `'one-to-meny'`, `'many-to-one'`, `'many-to-many'`
 	 * @return void
 	 */
 	static public function getRoute($schema, $table, $related_table, $route, $relationship_type=NULL)
@@ -80,6 +81,7 @@ class fORMSchema
 			NULL,
 			'*-to-many',
 			'*-to-one',
+			'!many-to-one',
 			'many-to-many',
 			'many-to-one',
 			'one-to-many',
@@ -101,13 +103,13 @@ class fORMSchema
 		$routes = self::getRoutes($schema, $table, $related_table, $relationship_type);
 		
 		if (!isset($routes[$route])) {
-			$relationship_type .= ($relationship_type) ? ' ' : '';
 			throw new fProgrammerException(
-				'The route specified, %1$s, for the %2$srelationship between %3$s and %4$s does not exist',
+				'The route specified, %1$s, for the%2$srelationship between %3$s and %4$s does not exist. Must be one of: %5$s.',
 				$route,
-				$relationship_type,
+				($relationship_type) ? ' ' . $relationship_type . ' ' : ' ',
 				$table,
-				$related_table
+				$related_table,
+				join(', ', array_keys($routes))
 			);
 		}
 		
@@ -191,13 +193,13 @@ class fORMSchema
 	 * 
 	 * @internal
 	 * 
-	 * @param  string $type          The type of relationship: `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
+	 * @param  string $type          The type of relationship: `'*-to-one'`, `'one-to-one'`, `'one-to-many'`, `'many-to-one'`, `'many-to-many'`
 	 * @param  array  $relationship  The relationship array from fSchema::getKeys()
 	 * @return string  The name of the route
 	 */
 	static public function getRouteNameFromRelationship($type, $relationship)
 	{
-		$valid_types = array('one-to-one', 'one-to-many', 'many-to-one', 'many-to-many');
+		$valid_types = array('*-to-one', 'one-to-one', 'one-to-many', 'many-to-one', 'many-to-many');
 		if (!in_array($type, $valid_types)) {
 			throw new fProgrammerException(
 				'The relationship type specified, %1$s, is invalid. Must be one of: %2$s.',
@@ -376,7 +378,7 @@ class fORMSchema
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
