@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b54
+ * @version    1.0.0b55
+ * @changes    1.0.0b55  Fixed ::load() to that related records are cleared, requiring them to be loaded from the database [wb, 2010-03-04]
  * @changes    1.0.0b54  Fixed detection of route name for one-to-one relationships in ::delete() [wb, 2010-03-03]
  * @changes    1.0.0b53  Fixed a bug where related records with a primary key that contained a foreign key with an on update cascade clause would be deleted when changing the value of the column referenced by the foreign key [wb, 2009-12-17]
  * @changes    1.0.0b52  Backwards Compatibility Break - Added the $force_cascade parameter to ::delete() and ::store() - enabled calling ::prepare() and ::encode() for non-column get methods, added `::has{RelatedRecords}()` methods [wb, 2009-12-16]
@@ -1859,6 +1860,9 @@ abstract class fActiveRecord
 		}
 		
 		$this->loadFromResult($result, TRUE);
+		
+		// Clears the cached related records so they get pulled from the database
+		$this→related_records = array();
 		
 		return $this;
 	}
