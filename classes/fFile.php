@@ -2,14 +2,16 @@
 /**
  * Represents a file on the filesystem, also provides static file-related methods
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Changed the way files deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b29  Fixed a couple of undefined variable errors in ::determineMimeTypeByContents() [wb, 2010-03-03]
  * @changes    1.0.0b28  Added support for some JPEG files created by Photoshop [wb, 2009-12-16]
  * @changes    1.0.0b27  Backwards Compatibility Break - renamed ::getFilename() to ::getName(), ::getFilesize() to ::getSize(), ::getDirectory() to ::getParent(), added ::move() [wb, 2009-12-16]
@@ -439,6 +441,13 @@ class fFile implements Iterator
 	private $current_line_number = NULL;
 	
 	/**
+	 * A backtrace from when the file was deleted 
+	 * 
+	 * @var array
+	 */
+	protected $deleted = NULL;
+	
+	/**
 	 * The full path to the file
 	 * 
 	 * @var string
@@ -452,13 +461,6 @@ class fFile implements Iterator
 	 */
 	private $file_handle = NULL;
 	
-	/**
-	 * An exception to be thrown if an action is performed on the file
-	 * 
-	 * @var Exception
-	 */
-	protected $exception;
-	
 	
 	/**
 	 * Duplicates a file in the current directory when the object is cloned
@@ -469,7 +471,7 @@ class fFile implements Iterator
 	 */
 	public function __clone()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$directory = $this->getParent();
 		
@@ -485,8 +487,8 @@ class fFile implements Iterator
 		copy($this->getPath(), $file);
 		chmod($file, fileperms($this->getPath()));
 		
-		$this->file      =& fFilesystem::hookFilenameMap($file);
-		$this->exception =& fFilesystem::hookExceptionMap($file);
+		$this->file    =& fFilesystem::hookFilenameMap($file);
+		$this->deleted =& fFilesystem::hookDeletedMap($file);
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {
@@ -533,14 +535,13 @@ class fFile implements Iterator
 		// Store the file as an absolute path
 		$file = realpath($file);
 		
-		// Hook into the global file and exception maps
-		$this->file      =& fFilesystem::hookFilenameMap($file);
-		$this->exception =& fFilesystem::hookExceptionMap($file);
+		$this->file    =& fFilesystem::hookFilenameMap($file);
+		$this->deleted =& fFilesystem::hookDeletedMap($file);
 		
-		// If there is an exception and were not inside a transaction, but we've
-		// gotten to here, then the file exists, so the exception must be outdated
-		if ($this->exception !== NULL && !fFilesystem::isInsideTransaction()) {
-			fFilesystem::updateExceptionMap($file, NULL);
+		// If the file is listed as deleted and were not inside a transaction,
+		// but we've gotten to here, then the file exists, so we can wipe the backtrace
+		if ($this->deleted !== NULL && !fFilesystem::isInsideTransaction()) {
+			fFilesystem::updateDeletedMap($file, NULL);
 		}
 	}
 	
@@ -568,7 +569,7 @@ class fFile implements Iterator
 	 */
 	public function __sleep()
 	{
-		return array('exception', 'file');
+		return array('deleted', 'file');
 	}
 	
 	
@@ -596,14 +597,14 @@ class fFile implements Iterator
 	 */
 	public function __wakeup()
 	{
-		$file      = $this->file;
-		$exception = $this->exception;
+		$file    = $this->file;
+		$deleted = $this->deleted;
 		
-		$this->file      =& fFilesystem::hookFilenameMap($file);
-		$this->exception =& fFilesystem::hookExceptionMap($file);
+		$this->file    =& fFilesystem::hookFilenameMap($file);
+		$this->deleted =& fFilesystem::hookDeletedMap($file);
 		
-		if ($exception !== NULL) {
-			fFilesystem::updateExceptionMap($file, $exception);
+		if ($deleted !== NULL) {
+			fFilesystem::updateDeletedMap($file, $deleted);
 		}
 	}
 	
@@ -618,7 +619,7 @@ class fFile implements Iterator
 	 */
 	public function current()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		// Primes the result set
 		if ($this->file_handle === NULL) {
@@ -644,9 +645,7 @@ class fFile implements Iterator
 	 */
 	public function delete()
 	{
-		// The only kind of stored exception is if the file has already
-		// been deleted so in that case nothing needs to be done
-		if ($this->exception) {
+		if ($this->deleted) {
 			return;
 		}
 		
@@ -664,10 +663,8 @@ class fFile implements Iterator
 		
 		unlink($this->file);
 		
-		$exception = new fProgrammerException(
-			'The action requested can not be performed because the file has been deleted'
-		);
-		fFilesystem::updateExceptionMap($this->file, $exception);
+		fFilesystem::updateDeletedMap($this->file, debug_backtrace());
+		fFilesystem::updateFilenameMap($this->file, '*DELETED at ' . time() . ' with token ' . uniqid('', TRUE) . '* ' . $this->file);
 	}
 	
 	
@@ -688,7 +685,7 @@ class fFile implements Iterator
 	 */
 	public function duplicate($new_directory=NULL, $overwrite=NULL)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($new_directory === NULL) {
 			$new_directory = $this->getParent();
@@ -826,7 +823,7 @@ class fFile implements Iterator
 	 */
 	public function getMimeType()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		return self::determineMimeType($this->file);	
 	}
@@ -839,7 +836,7 @@ class fFile implements Iterator
 	 */
 	public function getMTime()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		return new fTimestamp(filemtime($this->file));	
 	}
@@ -897,7 +894,7 @@ class fFile implements Iterator
 	 */
 	public function getSize($format=FALSE, $decimal_places=1)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		// This technique can overcome signed integer limit
 		$size = sprintf("%u", filesize($this->file));
@@ -917,7 +914,7 @@ class fFile implements Iterator
 	 */
 	public function isWritable()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		return is_writable($this->file);
 	}
@@ -933,7 +930,7 @@ class fFile implements Iterator
 	 */
 	public function key()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($this->file_handle === NULL) {
 			$this->next();
@@ -985,7 +982,7 @@ class fFile implements Iterator
 	 */
 	public function next()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($this->file_handle === NULL) {
 			$this->file_handle         = fopen($this->file, 'r');
@@ -1016,7 +1013,7 @@ class fFile implements Iterator
 	 */
 	public function output($headers, $filename=NULL)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if (ob_get_level() > 0) {
 			throw new fProgrammerException(
@@ -1061,7 +1058,7 @@ class fFile implements Iterator
 	 */
 	public function read()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		return file_get_contents($this->file);
 	}
@@ -1082,7 +1079,7 @@ class fFile implements Iterator
 	 */
 	public function rename($new_filename, $overwrite)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if (!$this->getParent()->isWritable()) {
 			throw new fEnvironmentException(
@@ -1159,7 +1156,7 @@ class fFile implements Iterator
 	 */
 	public function rewind()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($this->file_handle !== NULL) {
 			rewind($this->file_handle);	
@@ -1168,14 +1165,17 @@ class fFile implements Iterator
 	
 	
 	/**
-	 * Throws the file exception if exists
+	 * Throws an fProgrammerException if the file has been deleted
 	 * 
 	 * @return void
 	 */
-	protected function tossIfException()
+	protected function tossIfDeleted()
 	{
-		if ($this->exception) {
-			throw $this->exception;
+		if ($this->deleted) {
+			throw new fProgrammerException(
+				"The action requested can not be performed because the file has been deleted\n\nBacktrace for fFile::delete() call:\n%s",
+				fCore::backtrace(0, $this->deleted)
+			);
 		}
 	}
 	
@@ -1189,7 +1189,7 @@ class fFile implements Iterator
 	 */
 	public function valid()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($this->file_handle === NULL) {
 			return TRUE;
@@ -1213,7 +1213,7 @@ class fFile implements Iterator
 	 */
 	public function write($data)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if (!$this->isWritable()) {
 			throw new fEnvironmentException(
@@ -1236,7 +1236,7 @@ class fFile implements Iterator
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

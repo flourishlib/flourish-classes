@@ -2,14 +2,16 @@
 /**
  * Represents a directory on the filesystem, also provides static directory-related methods
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed the way directories deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b8  Backwards Compatibility Break - renamed ::getFilesize() to ::getSize(), added ::move() [wb, 2009-12-16]
  * @changes    1.0.0b7  Fixed ::__construct() to throw an fValidationException when the directory does not exist [wb, 2009-08-21]
  * @changes    1.0.0b6  Fixed a bug where deleting a directory would prevent any future operations in the same script execution on a file or directory with the same path [wb, 2009-08-20]
@@ -91,18 +93,18 @@ class fDirectory
 	
 	
 	/**
+	 * A backtrace from when the file was deleted 
+	 * 
+	 * @var array
+	 */
+	protected $deleted = NULL;
+	
+	/**
 	 * The full path to the directory
 	 * 
 	 * @var string
 	 */
 	protected $directory;
-	
-	/**
-	 * An exception to be thrown after a deletion has happened
-	 * 
-	 * @var object
-	 */
-	protected $exception;
 	
 	
 	/**
@@ -142,12 +144,12 @@ class fDirectory
 		$directory = self::makeCanonical(realpath($directory));
 		
 		$this->directory =& fFilesystem::hookFilenameMap($directory);
-		$this->exception =& fFilesystem::hookExceptionMap($directory);
+		$this->deleted   =& fFilesystem::hookDeletedMap($directory);
 		
-		// If there is an exception and were not inside a transaction, but we've
-		// gotten to here, then the directory exists, so the exception must be outdated
-		if ($this->exception !== NULL && !fFilesystem::isInsideTransaction()) {
-			fFilesystem::updateExceptionMap($directory, NULL);
+		// If the directory is listed as deleted and we are not inside a transaction,
+		// but we've gotten to here, then the directory exists, so we can wipe the backtrace
+		if ($this->deleted !== NULL && !fFilesystem::isInsideTransaction()) {
+			fFilesystem::updateDeletedMap($directory, NULL);
 		}
 	}
 	
@@ -189,7 +191,9 @@ class fDirectory
 	 */
 	public function delete()
 	{
-		$this->tossIfException();
+		if ($this->deleted) {
+			return;	
+		}
 		
 		$files = $this->scan();
 		
@@ -204,10 +208,8 @@ class fDirectory
 		
 		rmdir($this->directory);
 		
-		$exception = new fProgrammerException(
-			'The action requested can not be performed because the directory has been deleted'
-		);
-		fFilesystem::updateExceptionMap($this->directory, $exception);
+		fFilesystem::updateDeletedMap($this->directory, debug_backtrace());
+		fFilesystem::updateFilenameMapForDirectory($this->directory, '*DELETED at ' . time() . ' with token ' . uniqid('', TRUE) . '* ' . $this->directory);
 	}
 	
 	
@@ -229,7 +231,7 @@ class fDirectory
 	 */
 	public function getParent()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$dirname = fFilesystem::getPathInfo($this->directory, 'dirname');
 		
@@ -254,7 +256,7 @@ class fDirectory
 	 */
 	public function getPath($translate_to_web_path=FALSE)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if ($translate_to_web_path) {
 			return fFilesystem::translateToWebPath($this->directory);
@@ -275,7 +277,7 @@ class fDirectory
 	 */
 	public function getSize($format=FALSE, $decimal_places=1)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$size = 0;
 		
@@ -299,7 +301,7 @@ class fDirectory
 	 */
 	public function isWritable()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		return is_writable($this->directory);
 	}
@@ -352,7 +354,7 @@ class fDirectory
 	 */
 	public function rename($new_dirname, $overwrite)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		if (!$this->getParent()->isWritable()) {
 			throw new fEnvironmentException(
@@ -417,7 +419,7 @@ class fDirectory
 	 */
 	public function scan($regex_filter=NULL)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$files = array_diff(scandir($this->directory), array('.', '..'));
 		$objects = array();
@@ -447,7 +449,7 @@ class fDirectory
 	 */
 	public function scanRecursive($regex_filter=NULL)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$files   = $this->scan();
 		$objects = $files;
@@ -476,14 +478,17 @@ class fDirectory
 	
 	
 	/**
-	 * Throws the directory exception if exists
+	 * Throws an exception if the directory has been deleted
 	 * 
 	 * @return void
 	 */
-	protected function tossIfException()
+	protected function tossIfDeleted()
 	{
-		if ($this->exception) {
-			throw $this->exception;
+		if ($this->deleted) {
+			throw new fProgrammerException(
+				"The action requested can not be performed because the directory has been deleted\n\nBacktrace for fDirectory::delete() call:\n%s",
+				fCore::backtrace(0, $this->deleted)
+			);
 		}
 	}
 }
@@ -491,7 +496,7 @@ class fDirectory
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -2,14 +2,15 @@
 /**
  * Represents an image on the filesystem, also provides image manipulation functionality
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Updated for the new fFile API [wb-imarc, 2010-03-05]
  * @changes    1.0.0b18  Fixed a bug in ::saveChanges() that would incorrectly cause new filenames to be created, added the $overwrite parameter to ::saveChanges(), added the $allow_upsizing parameter to ::resize() [wb, 2010-03-03]
  * @changes    1.0.0b17  Fixed a couple of bug with using ImageMagick on Windows and BSD machines [wb, 2010-03-02]
  * @changes    1.0.0b16  Fixed some bugs with GD not properly handling transparent backgrounds and desaturation of .gif files [wb, 2009-10-27]
@@ -566,7 +567,7 @@ class fImage extends fFile
 	 */
 	public function crop($crop_from_x, $crop_from_y, $new_width, $new_height)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		// Get the original dimensions for our parameter checking
 		$dim = $this->getCurrentDimensions();
@@ -633,7 +634,7 @@ class fImage extends fFile
 	 */
 	public function cropToRatio($ratio_width, $ratio_height)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		// Make sure the user input is valid
 		if ((!is_numeric($ratio_width) && $ratio_width !== NULL) || $ratio_width < 0) {
@@ -701,7 +702,7 @@ class fImage extends fFile
 	 */
 	public function desaturate()
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		$dim = $this->getCurrentDimensions();
 		
@@ -1030,7 +1031,7 @@ class fImage extends fFile
 	 */
 	public function resize($canvas_width, $canvas_height, $allow_upsizing=FALSE)
 	{
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		
 		// Make sure the user input is valid
 		if ((!is_int($canvas_width) && $canvas_width !== NULL) || $canvas_width < 0) {
@@ -1124,7 +1125,7 @@ class fImage extends fFile
 			$jpeg_quality = 90;
 		}
 		
-		$this->tossIfException();
+		$this->tossIfDeleted();
 		self::determineProcessor();
 		
 		if (self::$processor == 'none') {
@@ -1233,7 +1234,7 @@ class fImage extends fFile
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

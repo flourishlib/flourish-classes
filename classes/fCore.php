@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Added the `$backtrace` parameter to ::backtrace() [wb, 2010-03-05]
  * @changes    1.0.0b12  Added ::getDebug() to check for the global debugging flag, added more specific BSD checks to ::checkOS() [wb, 2010-03-02]
  * @changes    1.0.0b11  Added ::detectOpcodeCache() [nt+wb, 2009-10-06]
  * @changes    1.0.0b10  Fixed ::expose() to properly display when output includes non-UTF-8 binary data [wb, 2009-06-29]
@@ -139,9 +140,10 @@ class fCore
 	 * Creates a nicely formatted backtrace to the the point where this method is called
 	 * 
 	 * @param  integer $remove_lines  The number of trailing lines to remove from the backtrace
+	 * @param  array   $backtrace     A backtrace from [http://php.net/backtrace `debug_backtrace()`] to format - this is not usually required or desired
 	 * @return string  The formatted backtrace
 	 */
-	static public function backtrace($remove_lines=0)
+	static public function backtrace($remove_lines=0, $backtrace=NULL)
 	{
 		if ($remove_lines !== NULL && !is_numeric($remove_lines)) {
 			$remove_lines = 0;
@@ -152,7 +154,9 @@ class fCore
 		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
 		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 		
-		$backtrace = debug_backtrace();
+		if ($backtrace === NULL) {
+			$backtrace = debug_backtrace();
+		}
 		
 		while ($remove_lines > 0) {
 			array_shift($backtrace);
