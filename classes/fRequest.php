@@ -8,23 +8,24 @@
  * Please also note that using this class in a PUT or DELETE request will
  * cause the php://input stream to be consumed, and thus no longer available.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Updated class to use new fSession API [wb, 2009-10-23]
- * @changes    1.0.0b8  Casting to an integer or string in ::get() now properly casts when the `$key` isn't present in the request, added support for date, time, timestamp and `?` casts [wb, 2009-08-25] 
- * @changes    1.0.0b7  Fixed a bug with ::filter() not properly creating new `$_FILES` entries [wb, 2009-07-02]
- * @changes    1.0.0b6  ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
- * @changes    1.0.0b5  Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
- * @changes    1.0.0b4  Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
- * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
- * @changes    1.0.0b2  Added ::generateCSRFToken() from fCRUD::generateRequestToken() and ::validateCSRFToken() from fCRUD::validateRequestToken() [wb, 2009-05-08]
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::get() to not truncate integers to the 32bit integer limit [wb, 2010-03-05]
+ * @changes    1.0.0b9   Updated class to use new fSession API [wb, 2009-10-23]
+ * @changes    1.0.0b8   Casting to an integer or string in ::get() now properly casts when the `$key` isn't present in the request, added support for date, time, timestamp and `?` casts [wb, 2009-08-25] 
+ * @changes    1.0.0b7   Fixed a bug with ::filter() not properly creating new `$_FILES` entries [wb, 2009-07-02]
+ * @changes    1.0.0b6   ::filter() now works with empty prefixes and filtering the `$_FILES` superglobal has been fixed [wb, 2009-07-02]
+ * @changes    1.0.0b5   Changed ::filter() so that it can be called multiple times for multi-level filtering [wb, 2009-06-02]
+ * @changes    1.0.0b4   Added the HTML escaping functions ::encode() and ::prepare() [wb, 2009-05-27]
+ * @changes    1.0.0b3   Updated class to use new fSession API [wb, 2009-05-08]
+ * @changes    1.0.0b2   Added ::generateCSRFToken() from fCRUD::generateRequestToken() and ::validateCSRFToken() from fCRUD::validateRequestToken() [wb, 2009-05-08]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fRequest
 {
@@ -295,6 +296,10 @@ class fRequest
 			} else {
 				$value = TRUE;
 			}
+			
+		} elseif (($cast_to == 'int' || $cast_to == 'integer') && preg_match('#^-?\d+$#D', $value)) {
+			// If the cast is an integer and the value is digits, don't cast to prevent
+			// truncation due to 32 bit integer limits
 			
 		} elseif ($cast_to) {
 			settype($value, $cast_to);
@@ -682,7 +687,7 @@ class fRequest
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
