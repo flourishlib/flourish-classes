@@ -2,14 +2,15 @@
 /**
  * Provides special column functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Made the validation on link columns a bit more strict [wb, 2010-03-09]
  * @changes    1.0.0b7  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b6  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
  * @changes    1.0.0b5  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
@@ -447,7 +448,7 @@ class fORMColumn
 		$value = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
-		if (preg_match('#^([a-z0-9\\-]+\.)+[a-z]{2,}(/|$)#iD', $value)) {
+		if (!preg_match('#^https?://|/#iD', $value)) {
 			$value = 'http://' . $value;
 		}
 		
@@ -748,7 +749,11 @@ class fORMColumn
 			if (!strlen($values[$column])) {
 				continue;
 			}
-			if (!preg_match('#^(http(s)?://|/|([a-z0-9\\-]+\.)+[a-z]{2,})#i', $values[$column])) {
+			
+			$ip_regex       = '(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])';
+			$hostname_regex = '[a-z]+(?:[a-z0-9\-]*[a-z0-9]\.?|\.)*';
+			$domain_regex   = '([a-z]+([a-z0-9\-]*[a-z0-9])?\.)+[a-z]{2,}';
+			if (!preg_match('#^(https?://(' . $ip_regex . '|' . $hostname_regex . ')(?=/|$)|' . $domain_regex . '(?=/|$)|/)#i', $values[$column])) {
 				$validation_messages[] = self::compose(
 					'%sPlease enter a link in the form http://www.example.com',
 					fValidationException::formatField(fORM::getColumnName($class, $column))
@@ -769,7 +774,7 @@ class fORMColumn
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
