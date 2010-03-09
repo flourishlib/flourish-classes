@@ -2,14 +2,15 @@
 /**
  * Allows defining and checking user authentication via ACLs, authorization levels or a simple logged in/not logged in scheme
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fAuthorization
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added ::getLoginPage() [wb, 2010-03-09]
  * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b2  Fixed a bug with using named IP ranges in ::checkIP() [wb, 2009-01-10]
@@ -24,6 +25,7 @@ class fAuthorization
 	const checkIP          = 'fAuthorization::checkIP';
 	const checkLoggedIn    = 'fAuthorization::checkLoggedIn';
 	const destroyUserInfo  = 'fAuthorization::destroyUserInfo';
+	const getLoginPage     = 'fAuthorization::getLoginPage';
 	const getRequestedURL  = 'fAuthorization::getRequestedURL';
 	const getUserACLs      = 'fAuthorization::getUserACLs';
 	const getUserAuthLevel = 'fAuthorization::getUserAuthLevel';
@@ -234,6 +236,16 @@ class fAuthorization
 		fSession::delete(__CLASS__ . '::requested_url');
 	}
 	
+	
+	/**
+	 * Returns the login page set via ::setLoginPage()
+	 * 
+	 * @return string  The login page users are redirected to if they don't have the required authorization
+	 */
+	static public function getLoginPage()
+	{
+		return self::$login_page;
+	}
 	
 	/**
 	 * Returns the URL requested before the user was redirected to the login page
@@ -506,7 +518,7 @@ class fAuthorization
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
