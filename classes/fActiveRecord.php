@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b55
+ * @version    1.0.0b56
+ * @changes    1.0.0b56  Fixed `$force_cascade` in ::delete() to work even when the restricted relationship is once-removed through an unrestricted relationship [wb, 2010-03-09]
  * @changes    1.0.0b55  Fixed ::load() to that related records are cleared, requiring them to be loaded from the database [wb, 2010-03-04]
  * @changes    1.0.0b54  Fixed detection of route name for one-to-one relationships in ::delete() [wb, 2010-03-03]
  * @changes    1.0.0b53  Fixed a bug where related records with a primary key that contained a foreign key with an on update cascade clause would be deleted when changing the value of the column referenced by the foreign key [wb, 2009-12-17]
@@ -1409,48 +1410,46 @@ abstract class fActiveRecord
 					}
 				}
 				
-				if ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
+				// If we are focing the cascade we have to delete child records and join table entries before this record
+				if ($force_cascade) {
 					
-					// If we are focing the cascade we have to delete child records and join table entries before this record
-					if ($force_cascade) {
+					if ($type == 'one-to-one') {
+						$related_record->delete($force_cascade);
 						
-						if ($type == 'one-to-one') {
-							$related_record->delete($force_cascade);
-							
-						// For one-to-many we explicitly delete all of the records
-						} elseif ($type == 'one-to-many') {
-							foreach ($record_set as $record) {
-								if ($record->exists()) {
-									$record->delete($force_cascade);
-								}
+					// For one-to-many we explicitly delete all of the records
+					} elseif ($type == 'one-to-many') {
+						foreach ($record_set as $record) {
+							if ($record->exists()) {
+								$record->delete($force_cascade);
 							}
-						
-						// For many-to-many relationships we explicitly delete the join table entries
-						} elseif ($type == 'many-to-many') {
-							$join_column_placeholder = $schema->getColumnInfo($relationship['join_table'], $relationship['join_column'], 'placeholder');
-							$column_get_method       = 'get' . fGrammar::camelize($relationship['column'], TRUE);
-							
-							$db->translatedQuery(
-								$db->escape(
-									'DELETE FROM %r WHERE %r = ',
-									$relationship['join_table'],
-									$relationship['join_column']
-								) . $join_column_placeholder,
-								$this->$column_get_method()
-							);		
 						}
 					
-					// Otherwise we have a restriction and we can to create a nice error message for the user
-					} else {
-						$related_class_name  = fORM::classize($relationship['related_table']);
-						$related_record_name = fORM::getRecordName($related_class_name);
+					// For many-to-many relationships we explicitly delete the join table entries
+					} elseif ($type == 'many-to-many') {
+						$join_column_placeholder = $schema->getColumnInfo($relationship['join_table'], $relationship['join_column'], 'placeholder');
+						$column_get_method       = 'get' . fGrammar::camelize($relationship['column'], TRUE);
 						
-						if ($type == 'one-to-one') {
-							$restriction_messages[] = self::compose("A %s references it", $related_record_name);
-						} else {
-							$related_record_name = fGrammar::pluralize($related_record_name);
-							$restriction_messages[] = self::compose("One or more %s references it", $related_record_name);
-						}
+						$db->translatedQuery(
+							$db->escape(
+								'DELETE FROM %r WHERE %r = ',
+								$relationship['join_table'],
+								$relationship['join_column']
+							) . $join_column_placeholder,
+							$this->$column_get_method()
+						);		
+					}
+				
+				// Otherwise we have a restriction and we can to create a nice error message for the user
+				} elseif ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
+					
+					$related_class_name  = fORM::classize($relationship['related_table']);
+					$related_record_name = fORM::getRecordName($related_class_name);
+					
+					if ($type == 'one-to-one') {
+						$restriction_messages[] = self::compose("A %s references it", $related_record_name);
+					} else {
+						$related_record_name = fGrammar::pluralize($related_record_name);
+						$restriction_messages[] = self::compose("One or more %s references it", $related_record_name);
 					}
 				}
 			}
