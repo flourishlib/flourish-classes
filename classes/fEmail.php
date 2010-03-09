@@ -8,7 +8,7 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond, others
+ * @copyright  Copyright (c) 2008-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Bill Bushee, iMarc LLC [bb-imarc] <bill@imarc.net>
  * @license    http://flourishlib.com/license
@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed ::send() to not double `.`s at the beginning of lines on Windows since it seemed to break things rather than fix them [wb, 2010-03-05]
  * @changes    1.0.0b13  Fixed the class to work when safe mode is turned on [wb, 2009-10-23]
  * @changes    1.0.0b12  Removed duplicate MIME-Version headers that were being included in S/MIME encrypted emails [wb, 2009-10-05]
  * @changes    1.0.0b11  Updated to use the new fValidationException API [wb, 2009-09-17]
@@ -993,11 +994,6 @@ class fEmail
 			ini_set('sendmail_from', $matches[0]);
 		}
 		
-		// Apparently SMTP server strip a leading . from lines
-		if (fCore::checkOS('windows')) {
-			$body = str_replace("\r\n.", "\r\n..", $body);
-		}
-		
 		// Remove extra line breaks
 		$headers = trim($headers);
 		$body    = trim($body);
@@ -1318,7 +1314,7 @@ class fEmail
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
