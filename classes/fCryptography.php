@@ -2,14 +2,15 @@
 /**
  * Provides cryptography functionality, including hashing, symmetric-key encryption and public-key encryption
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed ::seedRandom() to pass a directory instead of a file to [http://php.net/disk_free_space `disk_free_space()`] [wb, 2010-03-09]
  * @changes    1.0.0b7  SECURITY FIX: fixed issue with ::random() and ::randomString() not producing random output on OSX, made ::seedRandom() more robust [wb, 2009-10-06]
  * @changes    1.0.0b6  Changed ::symmetricKeyEncrypt() to throw an fValidationException when the $secret_key is less than 8 characters [wb, 2009-09-30]
  * @changes    1.0.0b5  Fixed a bug where some windows machines would throw an exception when generating random strings or numbers [wb, 2009-06-09]
@@ -411,7 +412,7 @@ class fCryptography
 		
 		// If we could not use the OS random number generators we get some of the most unique info we can		
 		if (!$bytes) {
-			$string = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(__FILE__);
+			$string = microtime(TRUE) . uniqid('', TRUE) . join('', stat(__FILE__)) . disk_free_space(dirname(__FILE__));
 			$bytes  = substr(pack('H*', md5($string)), 0, 4);
 		}
 		
@@ -597,7 +598,7 @@ class fCryptography
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
