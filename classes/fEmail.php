@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added the `$unindent_expand_constants` parameter to ::setBody(), added ::loadBody() and ::loadHTMLBody(), fixed HTML emails with attachments [wb, 2010-03-14]
  * @changes    1.0.0b14  Changed ::send() to not double `.`s at the beginning of lines on Windows since it seemed to break things rather than fix them [wb, 2010-03-05]
  * @changes    1.0.0b13  Fixed the class to work when safe mode is turned on [wb, 2009-10-23]
  * @changes    1.0.0b12  Removed duplicate MIME-Version headers that were being included in S/MIME encrypted emails [wb, 2009-10-05]
@@ -506,7 +507,7 @@ class fEmail
 		$last_index = strlen($chars) - 1;
 		$output     = '';
 		
-		for ($i = 0; $i < 32; $i++) {
+		for ($i = 0; $i < 28; $i++) {
 			$output .= $chars[rand(0, $last_index)];
 		}
 		return $output;
@@ -555,7 +556,7 @@ class fEmail
 	private function createBody($boundary)
 	{
 		$mime_notice = self::compose(
-			"This message has been formatted using MIME. It does not appear that your email client supports MIME."
+			"This message has been formatted using MIME. It does not appear that your\r\nemail client supports MIME."
 		);
 		
 		$body = '';
@@ -563,23 +564,25 @@ class fEmail
 		// Build the multi-part/alternative section for the plaintext/HTML combo
 		if ($this->html_body) {
 			
+			$alternative_boundary = $boundary;
+			
 			// Depending on the other content, we may need to create a new boundary
 			if ($this->attachments) {
-				$boundary = $this->createBoundary();
-				$body    .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n\r\n";
+				$alternative_boundary = $this->createBoundary();
+				$body    .= 'Content-Type: multipart/alternative; boundary="' . $alternative_boundary . "\"\r\n\r\n";
 			} else {
 				$body .= $mime_notice . "\r\n";
 			}
 			
-			$body .= '--' . $boundary . "\r\n";
+			$body .= '--' . $alternative_boundary . "\r\n";
 			$body .= "Content-Type: text/plain; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";
-			$body .= '--' . $boundary . "\r\n";
+			$body .= '--' . $alternative_boundary . "\r\n";
 			$body .= "Content-Type: text/html; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			$body .= $this->makeQuotedPrintable($this->html_body) . "\r\n\r\n";
-			$body .= '--' . $boundary . "--\r\n";
+			$body .= '--' . $alternative_boundary . "--\r\n\r\n";
 		
 		// If there is no HTML, just encode the body
 		} else {
@@ -598,7 +601,7 @@ class fEmail
 			
 			$multipart_body  = $mime_notice . "\r\n";
 			$multipart_body .= '--' . $boundary . "\r\n";
-			$multipart_body .= $body . "\r\n";
+			$multipart_body .= $body;
 			
 			foreach ($this->attachments as $filename => $file_info) {
 				$multipart_body .= '--' . $boundary . "\r\n";
@@ -786,6 +789,60 @@ class fEmail
 	
 	
 	/**
+	 * Loads the plaintext version of the email body from a file and applies replacements
+	 * 
+	 * The should contain either ASCII or UTF-8 encoded text. Please see
+	 * http://flourishlib.com/docs/UTF-8 for more information.
+	 * 
+	 * @throws fValidationException  When no file was specified, the file does not exist or the path specified is not a file
+	 * 
+	 * @param  string|fFile $file          The plaintext version of the email body
+	 * @param  array        $replacements  The method will search the contents of the file for each key and replace it with the corresponding value
+	 * @return void
+	 */
+	public function loadBody($file, $replacements=array())
+	{
+		if (!$file instanceof fFile) {
+			$file = new fFile($file);	
+		}
+		
+		$plaintext = $file->read();
+		if ($replacements) {
+			$plaintext = strtr($plaintext, $replacements);	
+		}
+		
+		$this->plaintext_body = $plaintext;
+	}
+	
+	
+	/**
+	 * Loads the plaintext version of the email body from a file and applies replacements
+	 * 
+	 * The should contain either ASCII or UTF-8 encoded text. Please see
+	 * http://flourishlib.com/docs/UTF-8 for more information.
+	 * 
+	 * @throws fValidationException  When no file was specified, the file does not exist or the path specified is not a file
+	 * 
+	 * @param  string|fFile $file          The plaintext version of the email body
+	 * @param  array        $replacements  The method will search the contents of the file for each key and replace it with the corresponding value
+	 * @return void
+	 */
+	public function loadHTMLBody($file, $replacements=array())
+	{
+		if (!$file instanceof fFile) {
+			$file = new fFile($file);	
+		}
+		
+		$html = $file->read();
+		if ($replacements) {
+			$html = strtr($html, $replacements);	
+		}
+		
+		$this->html_body = $html;
+	}
+	
+	
+	/**
 	 * Encodes a string to base64
 	 * 
 	 * @param  string  $content  The content to encode
@@ -936,7 +993,7 @@ class fEmail
 			}
 			
 			// If we have too long a line, wrap it
-			if ($char != "\r" && $char != "\n" && $line_length + $char_length > 76) {
+			if ($char != "\r" && $char != "\n" && $line_length + $char_length > 75) {
 				$output .= "=\r\n";
 				$line_length = 0;
 			}
@@ -1045,6 +1102,36 @@ class fEmail
 	
 	
 	/**
+	 * Sets the plaintext version of the email body
+	 * 
+	 * This method accepts either ASCII or UTF-8 encoded text. Please see
+	 * http://flourishlib.com/docs/UTF-8 for more information.
+	 * 
+	 * @param  string  $plaintext                  The plaintext version of the email body
+	 * @param  boolean $unindent_expand_constants  If this is `TRUE`, the body will be unindented as much as possible and {CONSTANT_NAME} will be replaced with the value of the constant
+	 * @return void
+	 */
+	public function setBody($plaintext, $unindent_expand_constants=FALSE)
+	{
+		if ($unindent_expand_constants) {
+			$plaintext = preg_replace('#^[ \t]*\n|\n[ \t]*$#D', '', $plaintext);
+			
+			if (preg_match('#^[ \t]+(?=\S)#m', $plaintext, $match)) {
+				$plaintext = preg_replace('#^' . preg_quote($match[0]) . '#m', '', $plaintext);
+			}
+			
+			preg_match_all('#\{([a-z][a-z0-9_]*)\}#i', $plaintext, $constants, PREG_SET_ORDER);
+			foreach ($constants as $constant) {
+				if (!defined($constant[1])) { continue; }
+				$plaintext = preg_replace('#' . preg_quote($constant[0], '#') . '#', constant($constant[1]), $plaintext, 1);
+			}
+		}
+		
+		$this->plaintext_body = $plaintext;
+	}
+	
+	
+	/**
 	 * Adds the email address the email will be bounced to
 	 * 
 	 * This email address will be set to the `Return-Path` header.
@@ -1094,21 +1181,6 @@ class fEmail
 	public function setHTMLBody($html)
 	{
 		$this->html_body = $html;
-	}
-	
-	
-	/**
-	 * Sets the plaintext version of the email body
-	 * 
-	 * This method accepts either ASCII or UTF-8 encoded text. Please see
-	 * http://flourishlib.com/docs/UTF-8 for more information.
-	 * 
-	 * @param  string $plaintext  The plaintext version of the email body
-	 * @return void
-	 */
-	public function setBody($plaintext)
-	{
-		$this->plaintext_body = $plaintext;
 	}
 	
 	
