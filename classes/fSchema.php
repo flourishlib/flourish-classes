@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Fixed ::getTables() to not include views for MySQL [wb, 2010-03-14]
  * @changes    1.0.0b31  Fixed the creation of the default caching key for ::enableCaching() [wb, 2010-03-02]
  * @changes    1.0.0b30  Fixed the class to work with lower privilege Oracle accounts and added detection of Oracle number columns [wb, 2010-01-25]
  * @changes    1.0.0b29  Added on_delete and on_update elements to one-to-one relationship info retrieved by ::getRelationships() [wb, 2009-12-16]
@@ -2014,7 +2015,13 @@ class fSchema
 				break;
 			
 			case 'mysql':
-				$sql = 'SHOW TABLES';
+				$version = $this->database->query("SELECT version()")->fetchScalar();
+				$version = substr($version, 0, strpos($version, '.'));
+				if ($version <= 4) {
+					$sql = 'SHOW TABLES';
+				} else {
+					$sql = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE'";	
+				}
 				break;
 			
 			case 'oracle':
