@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Changed it so that PostgreSQL unique indexes containing functions are ignored since they can't be properly detected at this point [wb, 2010-03-14]
  * @changes    1.0.0b32  Fixed ::getTables() to not include views for MySQL [wb, 2010-03-14]
  * @changes    1.0.0b31  Fixed the creation of the default caching key for ::enableCaching() [wb, 2010-03-02]
  * @changes    1.0.0b30  Fixed the class to work with lower privilege Oracle accounts and added detection of Oracle number columns [wb, 2010-01-25]
@@ -1295,7 +1296,8 @@ class fSchema
 						n.nspname NOT IN ('pg_catalog', 'pg_toast') AND
 						indisunique = TRUE AND
 						indisprimary = FALSE AND
-						con.oid IS NULL
+						con.oid IS NULL AND
+						NOT ((ind.indkey)::int[] @> ARRAY[0])
 				) ORDER BY 1, 2, 4, 3, 11";
 		
 		$result = $this->database->query($sql);
