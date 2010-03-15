@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed email columns to be automatically trimmed if they are a value email address surrounded by whitespace [wb, 2010-03-14]
  * @changes    1.0.0b8  Made the validation on link columns a bit more strict [wb, 2010-03-09]
  * @changes    1.0.0b7  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b6  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
@@ -34,6 +35,7 @@ class fORMColumn
 	const prepareNumberColumn   = 'fORMColumn::prepareNumberColumn';
 	const reflect               = 'fORMColumn::reflect';
 	const reset                 = 'fORMColumn::reset';
+	const setEmailColumn        = 'fORMColumn::setEmailColumn';
 	const setRandomStrings      = 'fORMColumn::setRandomStrings';
 	const validateEmailColumns  = 'fORMColumn::validateEmailColumns';
 	const validateLinkColumns   = 'fORMColumn::validateLinkColumns';
@@ -114,6 +116,12 @@ class fORMColumn
 				join(', ', $valid_data_types)
 			);
 		}
+		
+		fORM::registerActiveRecordMethod(
+			$class,
+			'set' . fGrammar::camelize($column, TRUE),
+			self::setEmailColumn
+		);
 		
 		if (!fORM::checkHookCallback($class, 'post::validate()', self::validateEmailColumns)) {
 			fORM::registerHookCallback($class, 'post::validate()', self::validateEmailColumns);
@@ -648,6 +656,44 @@ class fORMColumn
 		self::$link_columns   = array();
 		self::$number_columns = array();
 		self::$random_columns = array();
+	}
+	
+	
+	/**
+	 * Sets the value for an email column, trimming the value if it is a valid email
+	 * 
+	 * @internal
+	 * 
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  array         &$cache            The cache array for the record
+	 * @param  string        $method_name       The method that was called
+	 * @param  array         $parameters        The parameters passed to the method
+	 * @return fActiveRecord  The record object, to allow for method chaining
+	 */
+	static public function setEmailColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	{
+		list ($action, $column) = fORM::parseMethod($method_name);
+		
+		$class = get_class($object);
+		
+		if (count($parameters) < 1) {
+			throw new fProgrammerException(
+				'The method, %s(), requires at least one parameter',
+				$method_name
+			);	
+		}
+		
+		$email = $parameters[0];
+		if (preg_match('#^\s*[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}\s*$#iD', $email)) {
+			$email = trim($email);	
+		}
+		
+		fActiveRecord::assign($values, $old_values, $column, $email);
+		
+		return $object;
 	}
 	
 	
