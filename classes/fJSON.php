@@ -10,14 +10,15 @@
  * object - such values are not valid according to the JSON spec, but the
  * functionality is included for compatiblity with the json extension.
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added the ::output() method [wb, 2010-03-15]
  * @changes    1.0.0b4  Fixed a bug with ::decode() where JSON objects could lose all but the first key: value pair [wb, 2009-05-06]
  * @changes    1.0.0b3  Updated the class to be consistent with PHP 5.2.9+ for encoding and decoding invalid data [wb, 2009-05-04]
  * @changes    1.0.0b2  Changed @ error suppression operator to `error_reporting()` calls [wb, 2009-01-26] 
@@ -28,6 +29,7 @@ class fJSON
 	// The following constants allow for nice looking callbacks to static methods
 	const decode     = 'fJSON::decode';
 	const encode     = 'fJSON::encode';
+	const output     = 'fJSON::output';
 	const sendHeader = 'fJSON::sendHeader';
 	
 	
@@ -633,6 +635,19 @@ class fJSON
 	}
 	
 	
+	/**
+	 * Sets the proper `Content-Type` header and outputs the value, encoded as JSON
+	 * 
+	 * @param  mixed $value  The PHP value to output as JSON
+	 * @return void
+	 */
+	static public function output($value)
+	{
+		self::sendHeader();
+		echo self::encode($value);
+	}
+	
+	
 	/** 
 	 * Decodes a scalar value
 	 *  
@@ -689,7 +704,7 @@ class fJSON
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
