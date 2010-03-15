@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed ::set() to perform column inheritance, just like ::upload() does [wb, 2010-03-15]
  * @changes    1.0.0b20  Fixed the `set` and `process` methods to return the record instance, changed `upload` methods to return the fFile object, updated ::reflect() with new return values [wb, 2010-03-15]
  * @changes    1.0.0b19  Fixed a few missed instances of old fFile method names [wb, 2009-12-16]
  * @changes    1.0.0b18  Updated code for the new fFile API [wb, 2009-12-16]
@@ -1004,9 +1005,9 @@ class fORMFile
 		if ($file_path instanceof fFile) {
 			$file_path = $file_path->getPath();	
 		} elseif (is_object($file_path) && is_callable(array($file_path, '__toString'))) {
-			$file_path = $file_path->__toString();	
+			$file_path = $file_path->__toString();
 		} elseif (is_object($file_path)) {
-			$file_path = (string) $file_path;	
+			$file_path = (string) $file_path;
 		}
 		
 		if ($file_path !== NULL && $file_path !== '' && $file_path !== FALSE) {
@@ -1040,10 +1041,17 @@ class fORMFile
 			$new_file = $file->duplicate($temp_dir);
 			
 		} else {
-			$new_file = NULL;	
+			$new_file = NULL;
 		}
 		
 		fActiveRecord::assign($values, $old_values, $column, $new_file);
+		
+		// Perform column inheritance
+		if (!empty(self::$column_inheritence[$class][$column])) {
+			foreach (self::$column_inheritence[$class][$column] as $other_column) {
+				self::set($object, $values, $old_values, $related_records, $cache, 'set' . fGrammar::camelize($other_column, TRUE), array($file));
+			}
+		}
 		
 		if ($new_file) {
 			self::processImage($class, $column, $new_file);
