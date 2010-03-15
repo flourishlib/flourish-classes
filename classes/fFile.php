@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b30  Changed the way files deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b29  Fixed a couple of undefined variable errors in ::determineMimeTypeByContents() [wb, 2010-03-03]
  * @changes    1.0.0b28  Added support for some JPEG files created by Photoshop [wb, 2009-12-16]
@@ -86,7 +87,9 @@ class fFile implements Iterator
 		
 		$file = new fFile($file_path);
 		
-		fFilesystem::recordCreate($file);
+		if (fFilesystem::isInsideTransaction()) {
+			fFilesystem::recordCreate($file);
+		}
 		
 		return $file;
 	}
@@ -606,6 +609,37 @@ class fFile implements Iterator
 		if ($deleted !== NULL) {
 			fFilesystem::updateDeletedMap($file, $deleted);
 		}
+	}
+	
+	
+	/**
+	 * Appends the provided data to the file
+	 * 
+	 * If a filesystem transaction is in progress and is rolled back, this
+	 * data will be removed.
+	 * 
+	 * @param  mixed $data  The data to append to the file
+	 * @return fFile  The file object, to allow for method chaining
+	 */
+	public function append($data)
+	{
+		$this->tossIfDeleted();
+		
+		if (!$this->isWritable()) {
+			throw new fEnvironmentException(
+				'This file, %s, can not be appended because it is not writable',
+				$this->file
+			);
+		}
+		
+		// Allow filesystem transactions
+		if (fFilesystem::isInsideTransaction()) {
+			fFilesystem::recordAppend($this, $data);
+		}
+		
+		file_put_contents($this->file, $data, FILE_APPEND);
+		
+		return $this;
 	}
 	
 	

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b19  Updated for the new fFile API [wb-imarc, 2010-03-05]
  * @changes    1.0.0b18  Fixed a bug in ::saveChanges() that would incorrectly cause new filenames to be created, added the $overwrite parameter to ::saveChanges(), added the $allow_upsizing parameter to ::resize() [wb, 2010-03-03]
  * @changes    1.0.0b17  Fixed a couple of bug with using ImageMagick on Windows and BSD machines [wb, 2010-03-02]
@@ -551,6 +552,18 @@ class fImage extends fFile
 				fGrammar::joinArray($valid_image_types, 'or')
 			);
 		}
+	}
+	
+	
+	/**
+	 * Prevents a programmer from trying to append an image
+	 * 
+	 * @param  mixed $data  The data to append to the image
+	 * @return void
+	 */
+	public function append($data)
+	{
+		throw new fProgrammerException('It is not possible to append an image');
 	}
 	
 	

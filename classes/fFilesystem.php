@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added ::recordAppend() [wb, 2010-03-15]
  * @changes    1.0.0b13  Changed the way files/directories deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b12  Updated ::convertToBytes() to properly handle integers without a suffix and sizes with fractions [al+wb, 2009-11-14]
  * @changes    1.0.0b11  Corrected the API documentation for ::getPathInfo() [wb, 2009-09-09]
@@ -40,6 +41,7 @@ class fFilesystem
 	const hookFilenameMap               = 'fFilesystem::hookFilenameMap';
 	const isInsideTransaction           = 'fFilesystem::isInsideTransaction';
 	const makeUniqueName                = 'fFilesystem::makeUniqueName';
+	const recordAppend                  = 'fFilesystem::recordAppend';
 	const recordCreate                  = 'fFilesystem::recordCreate';
 	const recordDelete                  = 'fFilesystem::recordDelete';
 	const recordDuplicate               = 'fFilesystem::recordDuplicate';
@@ -481,6 +483,25 @@ class fFilesystem
 	
 	
 	/**
+	 * Stores what data has been added to a file so it can be removed if there is a rollback
+	 * 
+	 * @internal
+	 * 
+	 * @param  fFile  $file  The file that is being written to
+	 * @param  string $data  The data being appended to the file
+	 * @return void
+	 */
+	static public function recordAppend($file, $data)
+	{
+		self::$rollback_operations[] = array(
+			'action'   => 'append',
+			'filename' => $file->getPath(),
+			'length'   => strlen($data)
+		);
+	}
+	
+	
+	/**
 	 * Keeps a record of created files so they can be deleted up in case of a rollback
 	 * 
 	 * @internal
@@ -586,8 +607,10 @@ class fFilesystem
 	static public function reset()
 	{
 		self::rollback();
+		self::$commit_operations     = NULL;
 		self::$deleted_map           = array();
 		self::$filename_map          = array();
+		self::$rollback_operations   = NULL;
 		self::$web_path_translations = array();	
 	}
 	
@@ -599,10 +622,21 @@ class fFilesystem
 	 */
 	static public function rollback()
 	{
+		if (self::$rollback_operations === NULL) {
+			return;	
+		}
+		
 		self::$rollback_operations = array_reverse(self::$rollback_operations);
 		
 		foreach (self::$rollback_operations as $operation) {
 			switch($operation['action']) {
+				
+				case 'append':
+					$current_length = filesize($operation['filename']);
+					$handle         = fopen($operation['filename'], 'r+');
+					ftruncate($handle, $current_length - $operation['length']);
+					fclose($handle);
+					break;
 				
 				case 'delete':
 					self::updateDeletedMap(
