@@ -8,14 +8,16 @@
  * Please also note that using this class in a PUT or DELETE request will
  * cause the php://input stream to be consumed, and thus no longer available.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added ::isAjax() [al, 2010-03-15]
  * @changes    1.0.0b10  Fixed ::get() to not truncate integers to the 32bit integer limit [wb, 2010-03-05]
  * @changes    1.0.0b9   Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b8   Casting to an integer or string in ::get() now properly casts when the `$key` isn't present in the request, added support for date, time, timestamp and `?` casts [wb, 2009-08-25] 
@@ -40,6 +42,7 @@ class fRequest
 	const getBestAcceptLanguage = 'fRequest::getBestAcceptLanguage';
 	const getBestAcceptType     = 'fRequest::getBestAcceptType';
 	const getValid              = 'fRequest::getValid';
+	const isAjax                = 'fRequest::isAjax';
 	const isDelete              = 'fRequest::isDelete';
 	const isGet                 = 'fRequest::isGet';
 	const isPost                = 'fRequest::isPost';
@@ -399,6 +402,17 @@ class fRequest
 	
 	
 	/**
+	 * Indicates if the URL was accessed via an XMLHttpRequest
+	 * 
+	 * @return boolean  If the URL was accessed via an XMLHttpRequest
+	 */
+	static public function isAjax()
+	{
+		return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+	}
+	
+	
+	/**
 	 * Indicates if the URL was accessed via the `DELETE` HTTP method
 	 * 
 	 * @return boolean  If the URL was accessed via the `DELETE` HTTP method
@@ -687,7 +701,7 @@ class fRequest
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
