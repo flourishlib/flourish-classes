@@ -2,14 +2,15 @@
 /**
  * Represents a date as a value object
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
  * @changes    1.0.0b7  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
  * @changes    1.0.0b6  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
@@ -210,10 +211,17 @@ class fDate
 	 *  - `29 days` would be represented as `1 month`, but `21 days` would be shown as `3 weeks`
 	 * 
 	 * @param  fDate|object|string|integer $other_date  The date to create the difference with, `NULL` is interpreted as today
+	 * @param  boolean                     $simple      When `TRUE`, the returned value will only include the difference in the two dates, but not `from now`, `ago`, `after` or `before`
+	 * @param  boolean                     :$simple
 	 * @return string  The fuzzy difference in time between the this date and the one provided
 	 */
-	public function getFuzzyDifference($other_date=NULL)
+	public function getFuzzyDifference($other_date=NULL, $simple=FALSE)
 	{
+		if (is_bool($other_date)) {
+			$simple     = $other_date;
+			$other_date = NULL;
+		}
+		
 		$relative_to_now = FALSE;
 		if ($other_date === NULL) {
 			$relative_to_now = TRUE;
@@ -251,20 +259,16 @@ class fDate
 			break;
 		}
 		
+		if ($simple) {
+			return self::compose('%1$s %2$s', $unit_diff, $units);
+		}
+		
 		if ($relative_to_now) {
 			if ($diff > 0) {
-				return self::compose(
-					'%1$s %2$s from now',
-					$unit_diff,
-					$units
-				);
+				return self::compose('%1$s %2$s from now', $unit_diff, $units);
 			}
 			
-			return self::compose(
-				'%1$s %2$s ago',
-				$unit_diff,
-				$units
-			);
+			return self::compose('%1$s %2$s ago', $unit_diff, $units);
 		}
 		
 		if ($diff > 0) {
@@ -350,7 +354,7 @@ class fDate
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

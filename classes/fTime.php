@@ -2,14 +2,15 @@
 /**
  * Represents a time of day as a value object
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
  * @changes    1.0.0b8  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
  * @changes    1.0.0b7  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
  * @changes    1.0.0b6  Fixed an outdated fCore method call [wb, 2009-02-23]
@@ -210,10 +211,17 @@ class fTime
 	 *  - `'55 minutes'` would be represented as `'1 hour'`, however `'45 minutes'` would not
 	 * 
 	 * @param  fTime|object|string|integer $other_time  The time to create the difference with, `NULL` is interpreted as now
+	 * @param  boolean                     $simple      When `TRUE`, the returned value will only include the difference in the two times, but not `from now`, `ago`, `after` or `before`
+	 * @param  boolean                     :$simple
 	 * @return string  The fuzzy difference in time between the this time and the one provided
 	 */
-	public function getFuzzyDifference($other_time=NULL)
+	public function getFuzzyDifference($other_time=NULL, $simple=FALSE)
 	{
+		if (is_bool($other_time)) {
+			$simple     = $other_time;
+			$other_time = NULL;
+		}
+		
 		$relative_to_now = FALSE;
 		if ($other_time === NULL) {
 			$relative_to_now = TRUE;
@@ -249,6 +257,10 @@ class fTime
 			$unit_diff = round(abs($diff)/$unit_info[0]);
 			$units     = fGrammar::inflectOnQuantity($unit_diff, $unit_info[1], $unit_info[2]);
 			break;
+		}
+		
+		if ($simple) {
+			return self::compose('%1$s %2$s', $unit_diff, $units);
 		}
 		
 		if ($relative_to_now) {
@@ -342,7 +354,7 @@ class fTime
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
