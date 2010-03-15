@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b57
+ * @version    1.0.0b58
+ * @changes    1.0.0b58  Fixed ::reflect() to specify the value returned from `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b57  Added the `post::loadFromIdentityMap()` hook and fixed ::__construct() to always call the `post::__construct()` hook [wb, 2010-03-14]
  * @changes    1.0.0b56  Fixed `$force_cascade` in ::delete() to work even when the restricted relationship is once-removed through an unrestricted relationship [wb, 2010-03-09]
  * @changes    1.0.0b55  Fixed ::load() to that related records are cleared, requiring them to be loaded from the database [wb, 2010-03-04]
@@ -2202,7 +2203,7 @@ abstract class fActiveRecord
 				$signature .= " * Sets the value for " . $column . "\n";
 				$signature .= " * \n";
 				$signature .= " * @param  " . $fixed_type . " \$" . $column . "  The new value\n";
-				$signature .= " * @return void\n";
+				$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 				$signature .= " */\n";
 			}
 			$set_method = 'set' . $camelized_column;

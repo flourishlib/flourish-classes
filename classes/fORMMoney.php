@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b4  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
@@ -387,7 +388,7 @@ class fORMMoney
 				$signature .= " * Sets the value for " . $column . "\n";
 				$signature .= " * \n";
 				$signature .= " * @param  fMoney|string|integer \$" . $column . "  The new value - a string or integer will be converted to the default currency (if defined)\n";
-				$signature .= " * @return void\n";
+				$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 				$signature .= " */\n";
 			}
 			$set_method = 'set' . $camelized_column;
@@ -456,7 +457,7 @@ class fORMMoney
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function setCurrencyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -480,6 +481,8 @@ class fORMMoney
 			self::$currency_columns[$class][$column],
 			$column
 		);
+		
+		return $object;
 	}
 	
 	
@@ -495,7 +498,7 @@ class fORMMoney
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function setMoneyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -524,6 +527,8 @@ class fORMMoney
 				fActiveRecord::assign($values, $old_values, $currency_column, $value->getCurrency());
 			}	
 		}
+		
+		return $object;
 	}
 	
 	

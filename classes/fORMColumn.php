@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed email columns to be automatically trimmed if they are a value email address surrounded by whitespace [wb, 2010-03-14]
- * @changes    1.0.0b8  Made the validation on link columns a bit more strict [wb, 2010-03-09]
- * @changes    1.0.0b7  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
- * @changes    1.0.0b6  Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
- * @changes    1.0.0b5  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
- * @changes    1.0.0b4  Updated code for new fORM API [wb, 2009-06-15]
- * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
- * @changes    1.0.0b2  Fixed a bug with objectifying number columns [wb, 2008-11-24]
- * @changes    1.0.0b   The initial implementation [wb, 2008-05-27]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::reflect() to specify the value returned from `set` and `generate` methods, changed ::generate() methods to return the newly generated string [wb, 2010-03-15]
+ * @changes    1.0.0b9   Changed email columns to be automatically trimmed if they are a value email address surrounded by whitespace [wb, 2010-03-14]
+ * @changes    1.0.0b8   Made the validation on link columns a bit more strict [wb, 2010-03-09]
+ * @changes    1.0.0b7   Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
+ * @changes    1.0.0b6   Changed SQL statements to use value placeholders, identifier escaping and schema support [wb, 2009-10-22]
+ * @changes    1.0.0b5   Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
+ * @changes    1.0.0b4   Updated code for new fORM API [wb, 2009-06-15]
+ * @changes    1.0.0b3   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b2   Fixed a bug with objectifying number columns [wb, 2008-11-24]
+ * @changes    1.0.0b    The initial implementation [wb, 2008-05-27]
  */
 class fORMColumn
 {
@@ -332,7 +333,7 @@ class fORMColumn
 	
 	
 	/**
-	 * Generates a new random value for the 
+	 * Generates a new random value for the column
 	 * 
 	 * @internal
 	 * 
@@ -343,7 +344,7 @@ class fORMColumn
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return string  The encoded number
+	 * @return string  The newly generated random value
 	 */
 	static public function generate($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -376,6 +377,8 @@ class fORMColumn
 		}
 		
 		fActiveRecord::assign($values, $old_values, $column, $value);
+		
+		return $value;
 	}
 	
 	
@@ -574,7 +577,7 @@ class fORMColumn
 					$signature .= " * Sets the value for " . $column . "\n";
 					$signature .= " * \n";
 					$signature .= " * @param  fNumber|string|integer \$" . $column . "  The new value - don't use floats since they are imprecise\n";
-					$signature .= " * @return void\n";
+					$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 					$signature .= " */\n";
 				}
 				$set_method = 'set' . $camelized_column;
@@ -631,7 +634,7 @@ class fORMColumn
 					$signature .= " * \n";
 					$signature .= " * If there is a UNIQUE constraint on the column and the value is not unique it will be regenerated until unique\n";
 					$signature .= " * \n";
-					$signature .= " * @return void\n";
+					$signature .= " * @return string  The randomly generated string\n";
 					$signature .= " */\n";
 				}
 				$generate_method = 'generate' . fGrammar::camelize($column, TRUE);

@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Fixed ::reflect() to show the proper return values for `associate`, `link` and `populate` methods [wb, 2010-03-15]
  * @changes    1.0.0b25  Fixed a bug when storing a one-to-one related record with different column names on each end of the relationship [wb, 2010-03-04]
  * @changes    1.0.0b24  Added the ability to associate a single record via primary key [wb, 2010-03-03]
  * @changes    1.0.0b23  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
@@ -953,7 +954,7 @@ class fORMRelated
 				if (sizeof($route_names) > 1) {
 					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
 				}
-				$signature .= " * @return void\n";
+				$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 				$signature .= " */\n";
 			}
 			$populate_method = 'populate' . $related_class;
@@ -974,7 +975,7 @@ class fORMRelated
 				if (sizeof($route_names) > 1) {
 					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
 				}
-				$signature .= " * @return void\n";
+				$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 				$signature .= " */\n";
 			}
 			$associate_method = 'associate' . $related_class;
@@ -1028,7 +1029,7 @@ class fORMRelated
 					if (sizeof($one_to_many_route_names) > 1) {
 						$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $one_to_many_route_names) . "'.\n";
 					}
-					$signature .= " * @return void\n";
+					$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 					$signature .= " */\n";
 				}
 				$populate_related_method = 'populate' . fGrammar::pluralize($related_class);
@@ -1053,7 +1054,7 @@ class fORMRelated
 					if (sizeof($many_to_many_route_names) > 1) {
 						$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $many_to_many_route_names) . "'.\n";
 					}
-					$signature .= " * @return void\n";
+					$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 					$signature .= " */\n";
 				}
 				$link_related_method = 'link' . fGrammar::pluralize($related_class);
@@ -1077,7 +1078,7 @@ class fORMRelated
 					if (sizeof($many_to_many_route_names) > 1) {
 						$signature .= " * @param  string           \$route  The route to the related class. Must be one of: '" . join("', '", $many_to_many_route_names) . "'.\n";
 					}
-					$signature .= " * @return void\n";
+					$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 					$signature .= " */\n";
 				}
 				$associate_related_method = 'associate' . fGrammar::pluralize($related_class);

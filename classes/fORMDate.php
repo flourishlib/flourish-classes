@@ -2,14 +2,15 @@
 /**
  * Provides additional date/time functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b4  Fixed setting up the inspect callback in ::configureTimezoneColumn() [wb, 2009-10-11]
@@ -446,7 +447,7 @@ class fORMDate
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function setTimestampColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -472,7 +473,9 @@ class fORMDate
 		
 		if ($value instanceof fTimestamp) {
 			fActiveRecord::assign($values, $old_values, $timezone_column, $value->format('e'));
-		}	
+		}
+		
+		return $object;
 	}
 	
 	
@@ -488,7 +491,7 @@ class fORMDate
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function setTimezoneColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -512,6 +515,8 @@ class fORMDate
 			self::$timezone_columns[$class][$column],
 			$column
 		);
+		
+		return $object;
 	}
 	
 	
@@ -567,7 +572,7 @@ class fORMDate
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

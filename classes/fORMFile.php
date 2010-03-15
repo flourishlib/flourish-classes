@@ -2,14 +2,15 @@
 /**
  * Provides file manipulation functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Fixed the `set` and `process` methods to return the record instance, changed `upload` methods to return the fFile object, updated ::reflect() with new return values [wb, 2010-03-15]
  * @changes    1.0.0b19  Fixed a few missed instances of old fFile method names [wb, 2009-12-16]
  * @changes    1.0.0b18  Updated code for the new fFile API [wb, 2009-12-16]
  * @changes    1.0.0b17  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -711,7 +712,7 @@ class fORMFile
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function process($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -720,6 +721,8 @@ class fORMFile
 		$class = get_class($object);
 		
 		self::processImage($class, $column, $values[$column]);
+		
+		return $object;
 	}
 	
 	
@@ -807,7 +810,7 @@ class fORMFile
 					$signature .= "/**\n";
 					$signature .= " * Takes the existing image and runs it through the prescribed fImage method calls\n";
 					$signature .= " * \n";
-					$signature .= " * @return void\n";
+					$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 					$signature .= " */\n";
 				}
 				$process_method = 'process' . $camelized_column;
@@ -845,7 +848,7 @@ class fORMFile
 					$signature .= " * Any fImage calls that were added to the column will be processed on the uploaded image.\n";
 					$signature .= " * \n";
 				}
-				$signature .= " * @return void\n";
+				$signature .= " * @return fFile  The uploaded file\n";
 				$signature .= " */\n";
 			}
 			$upload_method = 'upload' . $camelized_column;
@@ -862,7 +865,7 @@ class fORMFile
 					$signature .= " * Any fImage calls that were added to the column will be processed on the copied image.\n";
 					$signature .= " * \n";
 				}
-				$signature .= " * @return void\n";
+				$signature .= " * @return fActiveRecord  The record object, to allow for method chaining\n";
 				$signature .= " */\n";
 			}
 			$set_method = 'set' . $camelized_column;
@@ -978,7 +981,7 @@ class fORMFile
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	static public function set($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -1045,6 +1048,8 @@ class fORMFile
 		if ($new_file) {
 			self::processImage($class, $column, $new_file);
 		}
+		
+		return $object;
 	}
 	
 	
@@ -1088,7 +1093,7 @@ class fORMFile
 	 * @param  array         &$cache            The cache array for the record
 	 * @param  string        $method_name       The method that was called
 	 * @param  array         $parameters        The parameters passed to the method
-	 * @return void
+	 * @return fFile  The uploaded file
 	 */
 	static public function upload($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
@@ -1175,6 +1180,8 @@ class fORMFile
 		if (!$existing_temp_file && $file) {
 			self::processImage($class, $column, $file);
 		}
+		
+		return $file;
 	}
 	
 	
@@ -1228,7 +1235,7 @@ class fORMFile
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
