@@ -2,14 +2,15 @@
 /**
  * Provides session-based messaging for page-to-page communication
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a small PHPDoc error [wb, 2010-03-15]
  * @changes    1.0.0b6  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b5  Made the `$recipient` parameter optional for all methods [wb, 2009-07-08]
  * @changes    1.0.0b4  Added support for `'*'` and arrays of names to ::check() [wb, 2009-06-02] 
@@ -30,8 +31,8 @@ class fMessaging
 	/**
 	 * Checks to see if a message exists of the name specified for the recipient specified
 	 * 
-	 * @param  string $name         The name or array of names of the message(s) to check for, or `'*'` to check for any
-	 * @param  string [$recipient]  The intended recipient
+	 * @param  string $name       The name or array of names of the message(s) to check for, or `'*'` to check for any
+	 * @param  string $recipient  The intended recipient
 	 * @return boolean  If a message of the name and recipient specified exists
 	 */
 	static public function check($name, $recipient=NULL)
@@ -184,7 +185,7 @@ class fMessaging
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
