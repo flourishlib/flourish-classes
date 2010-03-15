@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Added the `post::loadFromIdentityMap()` hook [wb, 2010-03-14]
  * @changes    1.0.0b17  Changed ::enableSchemaCaching() to rely on fDatabase::clearCache() instead of explicitly calling fSQLTranslation::clearCache() [wb, 2010-03-09]
  * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addCustomClassToTableMapping() to ::mapClassToTable(). Added ::getDatabaseName() and ::mapClassToDatabase(). Updated code for new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
  * @changes    1.0.0b15  Added support for fActiveRecord to ::getRecordName() [wb, 2009-10-06]
@@ -777,6 +778,7 @@ class fORM
 	 *  - `'post-commit::delete()'`
 	 *  - `'post-rollback::delete()'`
 	 *  - `'post::delete()'`
+	 *  - `'post::loadFromIdentityMap()'`
 	 *  - `'post::loadFromResult()'`
 	 *  - `'pre::populate()'`
 	 *  - `'post::populate()'`
@@ -807,6 +809,7 @@ class fORM
 			'post-commit::delete()',
 			'post-rollback::delete()',
 			'post::delete()',
+			'post::loadFromIdentityMap()',
 			'post::loadFromResult()',
 			'pre::populate()',
 			'post::populate()',

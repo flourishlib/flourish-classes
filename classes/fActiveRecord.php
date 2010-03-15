@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b56
+ * @version    1.0.0b57
+ * @changes    1.0.0b57  Added the `post::loadFromIdentityMap()` hook and fixed ::__construct() to always call the `post::__construct()` hook [wb, 2010-03-14]
  * @changes    1.0.0b56  Fixed `$force_cascade` in ::delete() to work even when the restricted relationship is once-removed through an unrestricted relationship [wb, 2010-03-09]
  * @changes    1.0.0b55  Fixed ::load() to that related records are cleared, requiring them to be loaded from the database [wb, 2010-03-04]
  * @changes    1.0.0b54  Fixed detection of route name for one-to-one relationships in ::delete() [wb, 2010-03-03]
@@ -1092,9 +1093,7 @@ abstract class fActiveRecord
 		// Handle loading by a result object passed via the fRecordSet class
 		if ($key instanceof Iterator) {
 			
-			if ($this->loadFromResult($key)) {
-				return;
-			}
+			$this->loadFromResult($key);
 		
 		// Handle loading an object from the database
 		} elseif ($key !== NULL) {
@@ -1128,27 +1127,23 @@ abstract class fActiveRecord
 			if ($is_unique_key) {
 				
 				$result = $this->fetchResultFromUniqueKey($key);
-				if ($this->loadFromResult($result)) {
-					return;	
-				}
+				$this->loadFromResult($result);
 				
 			} else {
 				
 				$hash = self::hash($key, $class);
-				if ($this->loadFromIdentityMap($key, $hash)) {
-					return;
-				}
-				
-				// Assign the primary key values for loading
-				if (is_array($key)) {
-					foreach ($pk_columns as $pk_column) {
-						$this->values[$pk_column] = $key[$pk_column];
+				if (!$this->loadFromIdentityMap($key, $hash)) {
+					// Assign the primary key values for loading
+					if (is_array($key)) {
+						foreach ($pk_columns as $pk_column) {
+							$this->values[$pk_column] = $key[$pk_column];
+						}
+					} else {
+						$this->values[$pk_columns[0]] = $key;
 					}
-				} else {
-					$this->values[$pk_columns[0]] = $key;
+					
+					$this->load();
 				}
-				
-				$this->load();
 			}
 			
 		// Create an empty array for new objects
@@ -1963,6 +1958,16 @@ abstract class fActiveRecord
 		$this->values          = &$object->values;
 		$this->old_values      = &$object->old_values;
 		$this->related_records = &$object->related_records;
+		
+		fORM::callHookCallbacks(
+			$this,
+			'post::loadFromIdentityMap()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->cache
+		);
+		
 		return TRUE;
 	}
 	
