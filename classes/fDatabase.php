@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Resolved another bug with capturing auto-incrementing values for PostgreSQL and Oracle [wb, 2010-03-15]
  * @changes    1.0.0b22  Changed ::clearCache() to also clear the cache on the fSQLTranslation [wb, 2010-03-09]
  * @changes    1.0.0b21  Added ::execute() for result-less SQL queries, ::prepare() and ::translatedPrepare() to create fStatement objects for prepared statements, support for prepared statements in ::query() and ::unbufferedQuery(), fixed default caching key for ::enableCaching() [wb, 2010-03-02]
  * @changes    1.0.0b20  Added a parameter to ::enableCaching() to provide a key token that will allow cached values to be shared between multiple databases with the same schema [wb, 2009-10-28]
@@ -1686,7 +1687,7 @@ class fDatabase
 				}
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($quoted_table, '#') . '\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '(\b|")#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+"?' . preg_quote($quoted_table, '#') . '"?\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table]['column'], '#') . '(\b|")#i', $result->getSQL())) {
 				return;	
 			}
 			
@@ -1723,7 +1724,7 @@ class fDatabase
 				}	
 			}
 			
-			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+' . preg_quote($quoted_table, '#') . '\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table], '#') . '(\b|")#i', $result->getSQL())) {
+			if (!isset($this->schema_info['sequences'][$table]) || preg_match('#INSERT\s+INTO\s+"?' . preg_quote($quoted_table, '#') . '"?\s+\([^\)]*?(\b|")' . preg_quote($this->schema_info['sequences'][$table], '#') . '(\b|")#i', $result->getSQL())) {
 				return;
 			} 		
 		}
