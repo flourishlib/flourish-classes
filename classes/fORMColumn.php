@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a bug with ::prepareLinkColumn() returning `http://` for empty link columns and not adding `http://` to links that contained a /, but did not start with it [wb, 2010-03-16]
  * @changes    1.0.0b10  Fixed ::reflect() to specify the value returned from `set` and `generate` methods, changed ::generate() methods to return the newly generated string [wb, 2010-03-15]
  * @changes    1.0.0b9   Changed email columns to be automatically trimmed if they are a value email address surrounded by whitespace [wb, 2010-03-14]
  * @changes    1.0.0b8   Made the validation on link columns a bit more strict [wb, 2010-03-09]
@@ -459,7 +460,7 @@ class fORMColumn
 		$value = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
-		if (!preg_match('#^https?://|/#iD', $value)) {
+		if (strlen($value) && !preg_match('#^https?://|^/#iD', $value)) {
 			$value = 'http://' . $value;
 		}
 		
