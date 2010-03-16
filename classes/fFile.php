@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Fixed ::rename() to not fail when the new and old filename are the same [wb, 2010-03-16]
  * @changes    1.0.0b31  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b30  Changed the way files deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b29  Fixed a couple of undefined variable errors in ::determineMimeTypeByContents() [wb, 2010-03-03]
@@ -1168,6 +1169,10 @@ class fFile implements Iterator
 			}
 		}
 		
+        if ($this->file == $new_filename) {
+            return $this;   
+        }
+        
 		rename($this->file, $new_filename);
 		
 		// Allow filesystem transactions
