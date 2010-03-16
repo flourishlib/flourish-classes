@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed ::scan() to properly add trailing /s for directories [wb, 2010-03-16]
  * @changes    1.0.0b10  BackwardsCompatibilityBreak - Fixed ::scan() and ::scanRecursive() to strip the current directory's path before matching, added support for glob style matching [wb, 2010-03-05]
  * @changes    1.0.0b9   Changed the way directories deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b8   Backwards Compatibility Break - renamed ::getFilesize() to ::getSize(), added ::move() [wb, 2009-12-16]
@@ -451,7 +452,7 @@ class fDirectory
 		
 		foreach ($files as $file) {
 			if ($filter) {
-				$test_path = (is_dir($file)) ? $file . '/' : $file;
+				$test_path = (is_dir($this->directory . $file)) ? $file . '/' : $file;
 				if (!preg_match($filter, $test_path)) {
 					continue;
 				}
