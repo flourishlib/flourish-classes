@@ -2,7 +2,7 @@
 /**
  * Handles validation for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond, others
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added support for checking integers and floats to ensure they fit within the range imposed by the database schema [wb, 2010-03-17]
  * @changes    1.0.0b22  Made the value checking for one-or-more and only-one rules more robust when detecting the absence of a value [wb, 2009-12-17]
  * @changes    1.0.0b21  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
  * @changes    1.0.0b20  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -373,10 +374,10 @@ class fORMValidation
 		$class = get_class($object);
 		$table = fORM::tablize($class);
 		
-		$schema      = fORMSchema::retrieve($class);
-		$column_info = $schema->getColumnInfo($table, $column);
+		$schema = fORMSchema::retrieve($class);
+		$info   = $schema->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
-		if ($values[$column] === NULL && $column_info['not_null'] && $column_info['default'] === NULL && $column_info['auto_increment'] === FALSE) {
+		if ($values[$column] === NULL && $info['not_null'] && $info['default'] === NULL && $info['auto_increment'] === FALSE) {
 			return self::compose(
 				'%sPlease enter a value',
 				fValidationException::formatField(fORM::getColumnName($class, $column))
@@ -387,29 +388,39 @@ class fORMValidation
 		if ($message) { return $message; }
 		
 		// Make sure a valid value is chosen
-		if (isset($column_info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $column_info['valid_values'])) {
+		if (isset($info['valid_values']) && $values[$column] !== NULL && !in_array($values[$column], $info['valid_values'])) {
 			return self::compose(
 				'%1$sPlease choose from one of the following: %2$s',
 				fValidationException::formatField(fORM::getColumnName($class, $column)),
-				join(', ', $column_info['valid_values'])
+				join(', ', $info['valid_values'])
 			);
 		}
 		
 		// Make sure the value isn't too long
-		if ($column_info['type'] == 'varchar' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $column_info['max_length']) {
+		if ($info['type'] == 'varchar' && isset($info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) > $info['max_length']) {
 			return self::compose(
 				'%1$sPlease enter a value no longer than %2$s characters',
 				fValidationException::formatField(fORM::getColumnName($class, $column)),
-				$column_info['max_length']
+				$info['max_length']
 			);
 		}
 		
 		// Make sure the value is the proper length
-		if ($column_info['type'] == 'char' && isset($column_info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) != $column_info['max_length']) {
+		if ($info['type'] == 'char' && isset($info['max_length']) && $values[$column] !== NULL && is_string($values[$column]) && fUTF8::len($values[$column]) != $info['max_length']) {
 			return self::compose(
 				'%1$sPlease enter exactly %2$s characters',
 				fValidationException::formatField(fORM::getColumnName($class, $column)),
-				$column_info['max_length']
+				$info['max_length']
+			);
+		}
+		
+		// Make sure the value fits in the numeric range
+		if (self::stringlike($values[$column]) && in_array($info['type'], array('integer', 'float')) && $info['min_value'] && $info['max_value'] && ($info['min_value']->gt($values[$column]) || $info['max_value']->lt($values[$column]))) {
+			return self::compose(
+				'%1$sPlease enter a number between %2$s and %3$s',
+				fValidationException::formatField(fORM::getColumnName($class, $column)),
+				$info['min_value']->__toString(),
+				$info['max_value']->__toString()
 			);
 		}
 		
@@ -1418,7 +1429,7 @@ class fORMValidation
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
