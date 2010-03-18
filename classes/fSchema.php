@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Added `min_value` and `max_value` attributes to ::getColumnInfo() to specify the valid range for numeric columns [wb, 2010-03-16]
  * @changes    1.0.0b33  Changed it so that PostgreSQL unique indexes containing functions are ignored since they can't be properly detected at this point [wb, 2010-03-14]
  * @changes    1.0.0b32  Fixed ::getTables() to not include views for MySQL [wb, 2010-03-14]
  * @changes    1.0.0b31  Fixed the creation of the default caching key for ::enableCaching() [wb, 2010-03-02]
@@ -338,31 +339,43 @@ class fSchema
 		}
 		
 		$data_type_mapping = array(
-			'bit'			    => 'boolean',
+			'bit'               => 'boolean',
 			'tinyint'           => 'integer',
-			'smallint'			=> 'integer',
-			'int'				=> 'integer',
-			'bigint'			=> 'integer',
-			'datetime'			=> 'timestamp',
+			'smallint'          => 'integer',
+			'int'               => 'integer',
+			'bigint'            => 'integer',
+			'timestamp'         => 'integer',
+			'datetime'          => 'timestamp',
 			'smalldatetime'     => 'timestamp',
 			'datetime2'         => 'timestamp',
 			'date'              => 'date',
 			'time'              => 'time',
-			'varchar'	        => 'varchar',
+			'varchar'           => 'varchar',
 			'nvarchar'          => 'varchar',
-			'char'			    => 'char',
+			'uniqueidentifier'  => 'varchar',
+			'char'              => 'char',
 			'nchar'             => 'char',
-			'real'				=> 'float',
+			'real'              => 'float',
 			'float'             => 'float',
 			'money'             => 'float',
 			'smallmoney'        => 'float',
-			'decimal'			=> 'float',
-			'numeric'			=> 'float',
-			'binary'			=> 'blob',
+			'decimal'           => 'float',
+			'numeric'           => 'float',
+			'binary'            => 'blob',
 			'varbinary'         => 'blob',
 			'image'             => 'blob',
-			'text'				=> 'text',
-			'ntext'             => 'text'
+			'text'              => 'text',
+			'ntext'             => 'text',
+			'xml'               => 'text'
+		);
+		
+		$max_min_values = array(
+			'tinyint'    => array('min' => new fNumber(0),                       'max' => new fNumber(255)),
+			'smallint'   => array('min' => new fNumber(-32768),                  'max' => new fNumber(32767)),
+			'int'        => array('min' => new fNumber(-2147483648),             'max' => new fNumber(2147483647)),
+			'bigint'     => array('min' => new fNumber('-9223372036854775808'),  'max' => new fNumber('9223372036854775807')),
+			'smallmoney' => array('min' => new fNumber('-214748.3648'),          'max' => new fNumber('214748.3647')),
+			'money'      => array('min' => new fNumber('-922337203685477.5808'), 'max' => new fNumber('922337203685477.5807'))
 		);
 		
 		// Get the column info
@@ -372,6 +385,7 @@ class fSchema
 						c.is_nullable              AS nullable,
 						c.column_default           AS 'default',
 						c.character_maximum_length AS max_length,
+						c.numeric_precision        AS precision,
 						c.numeric_scale            AS decimal_places,
 						CASE
 							WHEN
@@ -398,18 +412,27 @@ class fSchema
 			
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($row['type'], $data_type) === 0) {
+					if (isset($max_min_values[$data_type])) {
+						$info['min_value'] = $max_min_values[$data_type]['min'];
+						$info['max_value'] = $max_min_values[$data_type]['max'];
+					}
 					$info['type'] = $mapped_data_type;
 					break;
 				}
 			}
 			
-			if (!isset($info['type'])) {
-				$info['type'] = $row['type'];
+			// Handle decimal places and min/max for numeric/decimals
+			if (in_array(strtolower($row['type']), array('decimal', 'numeric'))) {
+				$info['decimal_places'] = $row['decimal_places'];
+				$before_digits = str_pad('', $row['precision'] - $row['decimal_places'], '9');
+				$after_digits  = str_pad('', $row['decimal_places'], '9');
+				$max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+				$info['min_value'] = new fNumber('-' . $max_min);
+				$info['max_value'] = new fNumber($max_min);
 			}
 			
-			// Handle decimal places for numeric/decimals
-			if (in_array($row['type'], array('numeric', 'decimal'))) {
-				$info['decimal_places'] = $row['decimal_places'];
+			if (!isset($info['type'])) {
+				$info['type'] = $row['type'];
 			}
 			
 			// Handle decimal places for money/smallmoney
@@ -418,7 +441,12 @@ class fSchema
 			}
 			
 			// Handle the special data for varchar columns
-			if (in_array($info['type'], array('char', 'varchar'))) {
+			if (in_array($info['type'], array('char', 'varchar', 'text', 'blob'))) {
+				if ($row['type'] == 'uniqueidentifier') {
+					$row['max_length'] = 32;
+				} elseif ($row['max_length'] == -1) {
+					$row['max_length'] = $row['type'] == 'nvarchar' ? 1073741823 : 2147483647;
+				}
 				$info['max_length'] = $row['max_length'];
 			}
 			
@@ -619,6 +647,19 @@ class fSchema
 			'longtext'			=> 'text'
 		);
 		
+		$max_min_values = array(
+			'tinyint'             => array('min' => new fNumber(-128),                    'max' => new fNumber(127)),
+			'unsigned tinyint'    => array('min' => new fNumber(0),                       'max' => new fNumber(255)),
+			'smallint'            => array('min' => new fNumber(-32768),                  'max' => new fNumber(32767)),
+			'unsigned smallint'   => array('min' => new fNumber(0),                       'max' => new fNumber(65535)),
+			'mediumint'           => array('min' => new fNumber(-8388608),                'max' => new fNumber(8388607)),
+			'unsigned mediumint'  => array('min' => new fNumber(0),                       'max' => new fNumber(16777215)),
+			'int'                 => array('min' => new fNumber(-2147483648),             'max' => new fNumber(2147483647)),
+			'unsigned int'        => array('min' => new fNumber(0),                       'max' => new fNumber('4294967295')),
+			'bigint'              => array('min' => new fNumber('-9223372036854775808'),  'max' => new fNumber('9223372036854775807')),
+			'unsigned bigint'     => array('min' => new fNumber(0),                       'max' => new fNumber('18446744073709551615'))
+		);
+		
 		$column_info = array();
 		
 		$result     = $this->database->query('SHOW CREATE TABLE ' . $table);
@@ -627,10 +668,10 @@ class fSchema
 			$row        = $result->fetchRow();
 			$create_sql = $row['Create Table'];
 		} catch (fNoRowsException $e) {
-			return array();			
+			return array();
 		}
 		
-		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?(?: unsigned| zerofill){0,2})(?: character set [^ ]+)?(?: collate [^ ]+)?(?: NULL)?( NOT NULL)?(?: DEFAULT ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?( COMMENT \'(?:\'\'|[^\']+)*\')?( ON UPDATE CURRENT_TIMESTAMP)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?( unsigned)?(?: zerofill)?)(?: character set [^ ]+)?(?: collate [^ ]+)?(?: NULL)?( NOT NULL)?(?: DEFAULT ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?( COMMENT \'(?:\'\'|[^\']+)*\')?( ON UPDATE CURRENT_TIMESTAMP)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			
@@ -639,9 +680,15 @@ class fSchema
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($match[2], $data_type) === 0) {
 					if ($match[2] == 'tinyint' && $match[3] == 1) {
-						$mapped_data_type = 'boolean';	
+						$mapped_data_type = 'boolean';
+					
+					} elseif (preg_match('#((?:unsigned )?(?:tiny|small|medium|big)?int)#', $match[4] . ' ' . $data_type, $int_match)) {
+						if (isset($max_min_values[$int_match[1]])) {
+							$info['min_value'] = $max_min_values[$int_match[1]]['min'];
+							$info['max_value'] = $max_min_values[$int_match[1]]['max'];	
+						}
 					}
-				
+					
 					$info['type'] = $mapped_data_type;
 					break;
 				}
@@ -674,17 +721,22 @@ class fSchema
 			
 			// Grab the number of decimal places
 			if (stripos($match[2], 'decimal') === 0) {
-				if (preg_match('#^\s*\d+\s*,\s*(\d+)\s*$#D', $match[3], $data_type_info)) {
-					$info['decimal_places'] = $data_type_info[1];
+				if (preg_match('#^\s*(\d+)\s*,\s*(\d+)\s*$#D', $match[3], $data_type_info)) {
+					$info['decimal_places'] = $data_type_info[2];
+					$before_digits = str_pad('', $data_type_info[1] - $info['decimal_places'], '9');
+					$after_digits  = str_pad('', $info['decimal_places'], '9');
+					$max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+					$info['min_value'] = new fNumber('-' . $max_min);
+					$info['max_value'] = new fNumber($max_min);
 				}
 			}
 			
 			// Not null
-			$info['not_null'] = (!empty($match[4])) ? TRUE : FALSE;
+			$info['not_null'] = (!empty($match[5])) ? TRUE : FALSE;
 		
 			// Default values
-			if (!empty($match[5]) && $match[5] != 'NULL') {
-				$info['default'] = preg_replace("/^'|'\$/D", '', $match[5]);
+			if (!empty($match[6]) && $match[6] != 'NULL') {
+				$info['default'] = preg_replace("/^'|'\$/D", '', $match[6]);
 			}
 			
 			if ($info['type'] == 'boolean' && isset($info['default'])) {
@@ -692,7 +744,7 @@ class fSchema
 			}
 		
 			// Auto increment fields
-			if (!empty($match[6])) {
+			if (!empty($match[7])) {
 				$info['auto_increment'] = TRUE;
 			}
 		
@@ -829,10 +881,11 @@ class fSchema
 								ATC.DATA_SCALE != 0	AND
 								ATC.DATA_PRECISION IS NOT NULL
 							THEN
-								ATC.DATA_SCALE	
+								ATC.DATA_SCALE
 							ELSE
 								NULL
 							END LENGTH,
+						ATC.DATA_PRECISION PRECISION,
 						ATC.NULLABLE,
 						ATC.DATA_DEFAULT,
 						AC.SEARCH_CONDITION CHECK_CONSTRAINT
@@ -869,9 +922,9 @@ class fSchema
 			
 			if (isset($column_info[$column])) {
 				$info = $column_info[$column];
-				$duplicate = TRUE;	
+				$duplicate = TRUE;
 			} else {
-				$info = array();	
+				$info = array();
 			}
 			
 			if (!$duplicate) {
@@ -885,6 +938,15 @@ class fSchema
 				
 				if (!isset($info['type'])) {
 					$info['type'] = $row['data_type'];
+				}
+				
+				if ($row['data_type'] == 'float' && $row['precision']) {
+					$row['length'] = (int) $row['length'];
+					$before_digits = str_pad('', $row['precision'] - $row['length'], '9');
+					$after_digits  = str_pad('', $row['length'], '9');
+					$max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+					$info['min_value'] = new fNumber('-' . $max_min);
+					$info['max_value'] = new fNumber($max_min);	
 				}
 				
 				// Handle the length of decimal/numeric fields
@@ -1113,6 +1175,14 @@ class fSchema
 			'longtext'			=> 'text'
 		);
 		
+		$max_min_values = array(
+			'smallint'  => array('min' => new fNumber(-32768),                  'max' => new fNumber(32767)),
+			'int'       => array('min' => new fNumber(-2147483648),             'max' => new fNumber(2147483647)),
+			'bigint'    => array('min' => new fNumber('-9223372036854775808'),  'max' => new fNumber('9223372036854775807')),
+			'serial'    => array('min' => new fNumber(-2147483648),             'max' => new fNumber(2147483647)),
+			'bigserial' => array('min' => new fNumber('-9223372036854775808'),  'max' => new fNumber('9223372036854775807'))
+		);
+		
 		// PgSQL required this complicated SQL to get the column info
 		$sql = "SELECT
 						pg_attribute.attname                                        AS column,
@@ -1150,6 +1220,10 @@ class fSchema
 			foreach ($data_type_mapping as $data_type => $mapped_data_type) {
 				if (stripos($column_data_type[1], $data_type) === 0) {
 					$info['type'] = $mapped_data_type;
+					if (isset($max_min_values[$data_type])) {
+						$info['min_value'] = $max_min_values[$data_type]['min'];
+						$info['max_value'] = $max_min_values[$data_type]['max'];
+					}
 					break;
 				}
 			}
@@ -1161,6 +1235,11 @@ class fSchema
 			// Handle the length of decimal/numeric fields
 			if ($info['type'] == 'float' && isset($column_data_type[3]) && strlen($column_data_type[3]) > 0) {
 				$info['decimal_places'] = (int) $column_data_type[3];
+				$before_digits = str_pad('', $column_data_type[2] - $info['decimal_places'], '9');
+				$after_digits  = str_pad('', $info['decimal_places'], '9');
+				$max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+				$info['min_value'] = new fNumber('-' . $max_min);
+				$info['max_value'] = new fNumber($max_min);
 			}
 			
 			// Handle the special data for varchar fields
@@ -1425,6 +1504,11 @@ class fSchema
 			// Figure out how many decimal places for a decimal
 			if (in_array(strtolower($match[2]), array('decimal', 'numeric')) && !empty($match[4])) {
 				$info['decimal_places'] = $match[4];
+                $before_digits = str_pad('', $match[3] - $match[4], '9');
+                $after_digits  = str_pad('', $match[4], '9');
+                $max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+                $info['min_value'] = new fNumber('-' . $max_min);
+                $info['max_value'] = new fNumber($max_min);
 			}
 			
 			// Not null
@@ -1683,6 +1767,8 @@ class fSchema
 	 *         'default'        => (mixed)   {the default value},
 	 *         'valid_values'   => (array)   {the valid values for a varchar field},
 	 *         'max_length'     => (integer) {the maximum length in a varchar field},
+	 *         'min_value'      => (numeric) {the minimum value for an integer/float field},
+	 *         'max_value'      => (numeric) {the maximum value for an integer/float field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 *     ), ...
@@ -1699,7 +1785,9 @@ class fSchema
 	 *     'default'        => (mixed)   {the default value-may contain special strings CURRENT_TIMESTAMP, CURRENT_TIME or CURRENT_DATE},
 	 *     'valid_values'   => (array)   {the valid values for a varchar field},
 	 *     'max_length'     => (integer) {the maximum length in a char/varchar field},
-	 *     'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
+	 *     'min_value'      => (fNumber) {the minimum value for an integer/float field},
+	 *     'max_value'      => (fNumber) {the maximum value for an integer/float field},
+	  *    'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
 	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
 	 * )
 	 * }}}
@@ -2222,7 +2310,16 @@ class fSchema
 			}
 		}
 		
-		$optional_elements = array('not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment');
+		$optional_elements = array(
+			'not_null',
+			'default',
+			'valid_values',
+			'max_length',
+			'max_value',
+			'min_value',
+			'decimal_places',
+			'auto_increment'
+		);
 		
 		foreach ($this->merged_column_info as $table => $column_array) {
 			foreach ($column_array as $column => $info) {
@@ -2304,6 +2401,8 @@ class fSchema
 	 *  - `'default'`
 	 *  - `'valid_values'`
 	 *  - `'max_length'`
+	 *  - `'min_value'`
+	 *  - `'max_value'`
 	 *  - `'decimal_places'`
 	 *  - `'auto_increment'`
 	 * 
@@ -2312,6 +2411,8 @@ class fSchema
 	 *  - `'default'`
 	 *  - `'valid_values'`
 	 *  - `'max_length'`
+	 *  - `'min_value'`
+	 *  - `'max_value'`
 	 *  - `'decimal_places'`
 	 *  
 	 * The key `'auto_increment'` should be a boolean.
