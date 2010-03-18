@@ -46,7 +46,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Fixed an auto-incrementing transaction bug with Oracle and debugging issues with all databases [wb, 2010-03-17]
  * @changes    1.0.0b23  Resolved another bug with capturing auto-incrementing values for PostgreSQL and Oracle [wb, 2010-03-15]
  * @changes    1.0.0b22  Changed ::clearCache() to also clear the cache on the fSQLTranslation [wb, 2010-03-09]
  * @changes    1.0.0b21  Added ::execute() for result-less SQL queries, ::prepare() and ::translatedPrepare() to create fStatement objects for prepared statements, support for prepared statements in ::query() and ::unbufferedQuery(), fixed default caching key for ::enableCaching() [wb, 2010-03-02]
@@ -1746,7 +1747,7 @@ class fDatabase
 		
 		} elseif ($this->extension == 'oci8') {
 			$oci_statement = oci_parse($this->connection, $insert_id_sql);
-			oci_execute($oci_statement);
+			oci_execute($oci_statement, $this->inside_transaction ? OCI_DEFAULT : OCI_COMMIT_ON_SUCCESS);
 			$insert_id_row = oci_fetch_array($oci_statement, OCI_ASSOC);
 			$insert_id = $insert_id_row['INSERT_ID'];
 			oci_free_statement($oci_statement);
@@ -2621,7 +2622,7 @@ class fDatabase
 				self::compose(
 					'Query time was %1$s seconds for:%2$s',
 					$query_time,
-					"\n" . $result->getSQL()
+					"\n" . $sql
 				),
 				$this->debug
 			);
@@ -2633,7 +2634,7 @@ class fDatabase
 					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
 					$query_time,
 					$this->slow_query_threshold,
-					"\n" . $result->getSQL()
+					"\n" . $sql
 				),
 				E_USER_WARNING
 			);
