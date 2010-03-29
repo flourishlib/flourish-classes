@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b58
+ * @version    1.0.0b59
+ * @changes    1.0.0b59  Changed an extended UTF-8 arrow character into the correct `->` [wb, 2010-03-29]
  * @changes    1.0.0b58  Fixed ::reflect() to specify the value returned from `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b57  Added the `post::loadFromIdentityMap()` hook and fixed ::__construct() to always call the `post::__construct()` hook [wb, 2010-03-14]
  * @changes    1.0.0b56  Fixed `$force_cascade` in ::delete() to work even when the restricted relationship is once-removed through an unrestricted relationship [wb, 2010-03-09]
@@ -1857,7 +1858,7 @@ abstract class fActiveRecord
 		$this->loadFromResult($result, TRUE);
 		
 		// Clears the cached related records so they get pulled from the database
-		$this→related_records = array();
+		$this->related_records = array();
 		
 		return $this;
 	}
