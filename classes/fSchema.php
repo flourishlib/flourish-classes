@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Added `max_length` values for various text and blob data types across all databases [wb, 2010-03-29]
  * @changes    1.0.0b34  Added `min_value` and `max_value` attributes to ::getColumnInfo() to specify the valid range for numeric columns [wb, 2010-03-16]
  * @changes    1.0.0b33  Changed it so that PostgreSQL unique indexes containing functions are ignored since they can't be properly detected at this point [wb, 2010-03-14]
  * @changes    1.0.0b32  Fixed ::getTables() to not include views for MySQL [wb, 2010-03-14]
@@ -682,7 +683,7 @@ class fSchema
 					if ($match[2] == 'tinyint' && $match[3] == 1) {
 						$mapped_data_type = 'boolean';
 					
-					} elseif (preg_match('#((?:unsigned )?(?:tiny|small|medium|big)?int)#', $match[4] . ' ' . $data_type, $int_match)) {
+					} elseif (preg_match('#((?:unsigned )?(?:tiny|small|medium|big)?int)#', (isset($match[4]) ? $match[4] . ' ' : '') . $data_type, $int_match)) {
 						if (isset($max_min_values[$int_match[1]])) {
 							$info['min_value'] = $max_min_values[$int_match[1]]['min'];
 							$info['max_value'] = $max_min_values[$int_match[1]]['max'];	
@@ -695,6 +696,28 @@ class fSchema
 			}
 			if (!isset($info['type'])) {
 				$info['type'] = preg_replace('#^([a-z ]+).*$#iD', '\1', $match[2]);
+			}
+			
+			switch ($match[2]) {
+				case 'tinyblob':
+				case 'tinytext':
+					$info['max_length'] = 255;
+					break;
+				
+				case 'blob':
+				case 'text':
+					$info['max_length'] = 65535;
+					break;
+				
+				case 'mediumblob':
+				case 'mediumtext':
+					$info['max_length'] = 16777215;
+					break;
+				
+				case 'longblob':
+				case 'longtext':
+					$info['max_length'] = 4294967295;
+					break;
 			}
 		
 			if (stripos($match[2], 'enum') === 0) {
@@ -938,6 +961,10 @@ class fSchema
 				
 				if (!isset($info['type'])) {
 					$info['type'] = $row['data_type'];
+				}
+				
+				if (in_array($info['type'], array('blob', 'text'))) {
+					$info['max_length'] = 4294967295;
 				}
 				
 				if ($row['data_type'] == 'float' && $row['precision']) {
@@ -1232,6 +1259,10 @@ class fSchema
 				$info['type'] = $column_data_type[1];
 			}
 			
+			if ($info['type'] == 'blob' || $info['type'] == 'text') {
+				$info['max_length'] = 1073741824; 
+			}
+			
 			// Handle the length of decimal/numeric fields
 			if ($info['type'] == 'float' && isset($column_data_type[3]) && strlen($column_data_type[3]) > 0) {
 				$info['decimal_places'] = (int) $column_data_type[3];
@@ -1243,8 +1274,12 @@ class fSchema
 			}
 			
 			// Handle the special data for varchar fields
-			if (in_array($info['type'], array('char', 'varchar')) && !empty($column_data_type[2])) {
-				$info['max_length'] = $column_data_type[2];
+			if (in_array($info['type'], array('char', 'varchar'))) {
+				if (!empty($column_data_type[2])) {
+					$info['max_length'] = $column_data_type[2];
+				} else {
+					$info['max_length'] = 1073741824; 
+				}
 			}
 			
 			// In PostgreSQL, a UUID can be the 32 digits, 32 digits plus 4 hyphens or 32 digits plus 4 hyphens and 2 curly braces
@@ -1497,18 +1532,26 @@ class fSchema
 			}
 		
 			// Type specific information
-			if (in_array($info['type'], array('char', 'varchar')) && !empty($match[3])) {
-				$info['max_length'] = $match[3];
+			if (in_array($info['type'], array('char', 'varchar'))) {
+				if (!empty($match[3])) {
+					$info['max_length'] = $match[3];
+				} else {
+					$info['max_length'] = 1000000000;   
+				}
+			}
+			
+			if ($info['type'] == 'text' || $info['type'] == 'blob') {
+				$info['max_length'] = 1000000000;   
 			}
 			
 			// Figure out how many decimal places for a decimal
 			if (in_array(strtolower($match[2]), array('decimal', 'numeric')) && !empty($match[4])) {
 				$info['decimal_places'] = $match[4];
-                $before_digits = str_pad('', $match[3] - $match[4], '9');
-                $after_digits  = str_pad('', $match[4], '9');
-                $max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
-                $info['min_value'] = new fNumber('-' . $max_min);
-                $info['max_value'] = new fNumber($max_min);
+				$before_digits = str_pad('', $match[3] - $match[4], '9');
+				$after_digits  = str_pad('', $match[4], '9');
+				$max_min       = $before_digits . ($after_digits ? '.' : '') . $after_digits;
+				$info['min_value'] = new fNumber('-' . $max_min);
+				$info['max_value'] = new fNumber($max_min);
 			}
 			
 			// Not null
