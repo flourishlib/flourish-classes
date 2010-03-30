@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Fixed PostgreSQL to properly report explicit `NULL` default values via ::getColumnInfo() [wb, 2010-03-30]
  * @changes    1.0.0b35  Added `max_length` values for various text and blob data types across all databases [wb, 2010-03-29]
  * @changes    1.0.0b34  Added `min_value` and `max_value` attributes to ::getColumnInfo() to specify the valid range for numeric columns [wb, 2010-03-16]
  * @changes    1.0.0b33  Changed it so that PostgreSQL unique indexes containing functions are ignored since they can't be properly detected at this point [wb, 2010-03-14]
@@ -1301,7 +1302,9 @@ class fSchema
 				$info['auto_increment'] = TRUE;
 				
 			} elseif ($row['default'] !== NULL) {
-				if ($row['default'] == 'now()') {
+				if (preg_match('#^NULL::[\w\s]+$#', $row['default'])) {
+					$info['default'] = NULL;
+				} elseif ($row['default'] == 'now()') {
 					$info['default'] = 'CURRENT_TIMESTAMP';
 				} elseif ($row['default'] == "('now'::text)::date") {
 					$info['default'] = 'CURRENT_DATE';
