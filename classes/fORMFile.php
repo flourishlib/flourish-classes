@@ -629,7 +629,7 @@ class fORMFile
 		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
-			if (fUpload::check($column)) {
+			if (fUpload::check($column) || fRequest::check('existing-' . $column) || fRequest::check('delete-' . $column)) {
 				$method = 'upload' . fGrammar::camelize($column, TRUE);
 				$object->$method();
 			}
@@ -1109,13 +1109,18 @@ class fORMFile
 		
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
-		$upload_dir = self::$file_upload_columns[$class][$column];
-		$temp_dir   = self::prepareTempDir($upload_dir);
-		
 		$existing_temp_file = FALSE;
+		
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
+			if (!fUpload::check($column)) {
+				throw new fExpectedException('Please upload a file');	
+			}
+			
+			$upload_dir = self::$file_upload_columns[$class][$column];
+			$temp_dir   = self::prepareTempDir($upload_dir);
+			
 			$uploader = self::setUpFUpload($class, $column);
 			$file     = $uploader->move($temp_dir, $column);
 			
