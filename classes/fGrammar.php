@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added the `$return_error` parameter to ::pluralize() and ::singularize() [wb, 2010-03-30]
  * @changes    1.0.0b6  Added missing ::compose() method [wb, 2010-03-03]
  * @changes    1.0.0b5  Fixed ::reset() to properly reset the singularization and pluralization rules [wb, 2009-10-28]
  * @changes    1.0.0b4  Added caching for various methods - provided significant performance boost to ORM [wb, 2009-06-15] 
@@ -403,10 +404,11 @@ class fGrammar
 	/**
 	 * Returns the plural version of a singular noun
 	 * 
-	 * @param  string $singular_noun  The singular noun to pluralize
+	 * @param  string  $singular_noun  The singular noun to pluralize
+	 * @param  boolean $return_error   If this is `TRUE` and the noun can't be pluralized, `FALSE` will be returned instead
 	 * @return string  The pluralized noun
 	 */
-	static public function pluralize($singular_noun)
+	static public function pluralize($singular_noun, $return_error=FALSE)
 	{
 		if (isset(self::$cache['pluralize'][$singular_noun])) {
 			return self::$cache['pluralize'][$singular_noun];		
@@ -424,6 +426,10 @@ class fGrammar
 		}
 		
 		if (!$plural_noun) {
+			if ($return_error) {
+				self::$cache['pluralize'][$singular_noun] = FALSE;
+				return FALSE;
+			}
 			throw new fProgrammerException('The noun specified could not be pluralized');
 		}
 		
@@ -517,10 +523,11 @@ class fGrammar
 	/**
 	 * Returns the singular version of a plural noun
 	 * 
-	 * @param  string $plural_noun  The plural noun to singularize
+	 * @param  string  $plural_noun   The plural noun to singularize
+	 * @param  boolean $return_error  If this is `TRUE` and the noun can't be pluralized, `FALSE` will be returned instead
 	 * @return string  The singularized noun
 	 */
-	static public function singularize($plural_noun)
+	static public function singularize($plural_noun, $return_error=FALSE)
 	{
 		if (isset(self::$cache['singularize'][$plural_noun])) {
 			return self::$cache['singularize'][$plural_noun];		
@@ -538,6 +545,10 @@ class fGrammar
 		}
 		
 		if (!$singular_noun) {
+			if ($return_error) {
+				self::$cache['singularize'][$plural_noun] = FALSE;
+				return FALSE;
+			}
 			throw new fProgrammerException('The noun specified could not be singularized');
 		}
 		

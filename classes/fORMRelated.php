@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b26  Fixed ::reflect() to show the proper return values for `associate`, `link` and `populate` methods [wb, 2010-03-15]
  * @changes    1.0.0b25  Fixed a bug when storing a one-to-one related record with different column names on each end of the relationship [wb, 2010-03-04]
  * @changes    1.0.0b24  Added the ability to associate a single record via primary key [wb, 2010-03-03]
@@ -103,6 +104,9 @@ class fORMRelated
 	 */
 	static public function associateRecord($class, &$related_records, $related_class, $record, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -138,6 +142,9 @@ class fORMRelated
 	 */
 	static public function associateRecords($class, &$related_records, $related_class, $records_to_associate, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -183,6 +190,9 @@ class fORMRelated
 	 */
 	static public function buildRecords($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -259,6 +269,9 @@ class fORMRelated
 	 */
 	static public function countRecords($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$db     = fORMDatabase::retrieve($class, 'read');
 		$schema = fORMSchema::retrieve($class);
 		
@@ -338,6 +351,9 @@ class fORMRelated
 	 */
 	static public function createRecord($class, $values, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$schema        = fORMSchema::retrieve($class);
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
@@ -554,6 +570,9 @@ class fORMRelated
 	 */
 	static public function getPrimaryKeys($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -661,6 +680,9 @@ class fORMRelated
 	 */
 	static public function getRelatedRecordName($class, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -691,6 +713,9 @@ class fORMRelated
 	 */
 	static public function hasRecords($class, &$values, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -722,6 +747,9 @@ class fORMRelated
 	 */
 	static public function linkRecords($class, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -790,6 +818,9 @@ class fORMRelated
 	 */
 	static public function overrideRelatedRecordName($class, $related_class, $record_name, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$class         = fORM::getClass($class);
 		$table         = fORM::tablize($class);
 		$related_class = fORM::getClass($related_class);
@@ -823,6 +854,9 @@ class fORMRelated
 	 */
 	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table           = fORM::tablize($class);
 		$related_table   = fORM::tablize($related_class);
 		$schema          = fORMSchema::retrieve($class);
@@ -1165,6 +1199,9 @@ class fORMRelated
 	 */
 	static public function setOrderBys($class, $related_class, $order_bys, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$class         = fORM::getClass($class);
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
@@ -1199,6 +1236,9 @@ class fORMRelated
 	 */
 	static public function setCount($class, &$related_records, $related_class, $count, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -1237,6 +1277,9 @@ class fORMRelated
 	 */
 	static public function setPrimaryKeys($class, &$related_records, $related_class, $primary_keys, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		
@@ -1271,6 +1314,9 @@ class fORMRelated
 	 */
 	static public function setRecordSet($class, &$related_records, $related_class, fRecordSet $records, $route=NULL)
 	{
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$table         = fORM::tablize($class);
 		$related_table = fORM::tablize($related_class);
 		

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Added the method ::isClassMappedToTable() [wb, 2010-03-30]
  * @changes    1.0.0b18  Added the `post::loadFromIdentityMap()` hook [wb, 2010-03-14]
  * @changes    1.0.0b17  Changed ::enableSchemaCaching() to rely on fDatabase::clearCache() instead of explicitly calling fSQLTranslation::clearCache() [wb, 2010-03-09]
  * @changes    1.0.0b16  Backwards Compatibility Break - renamed ::addCustomClassToTableMapping() to ::mapClassToTable(). Added ::getDatabaseName() and ::mapClassToDatabase(). Updated code for new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -45,6 +46,7 @@ class fORM
 	const getDatabaseName            = 'fORM::getDatabaseName';
 	const getRecordName              = 'fORM::getRecordName';
 	const getRecordSetMethod         = 'fORM::getRecordSetMethod';
+	const isClassMappedToTable       = 'fORM::isClassMappedToTable';
 	const mapClassToDatabase         = 'fORM::mapClassToDatabase';
 	const mapClassToTable            = 'fORM::mapClassToTable';
 	const objectify                  = 'fORM::objectify';
@@ -557,6 +559,22 @@ class fORM
 		}
 		
 		return NULL;	
+	}
+	
+	
+	/**
+	 * Checks if a class has been mapped to a table
+	 * 
+	 * @internal
+	 * 
+	 * @param  mixed  $class  The name of the class
+	 * @return boolean  If the class has been mapped to a table
+	 */
+	static public function isClassMappedToTable($class)
+	{
+		$class = self::getClass($class);
+		
+		return isset(self::$class_table_map[$class]);
 	}
 	
 	

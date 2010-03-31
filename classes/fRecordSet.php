@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b32  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b31  Added the ability to compare columns in ::build() with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
  * @changes    1.0.0b30  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
@@ -183,9 +184,7 @@ class fRecordSet implements Iterator, Countable
 	 */
 	static public function build($class, $where_conditions=array(), $order_bys=array(), $limit=NULL, $page=NULL)
 	{
-		self::validateClass($class);
-		
-		// Ensure that the class has been configured
+		fActiveRecord::validateClass($class);
 		fActiveRecord::forceConfigure($class);
 		
 		$db     = fORMDatabase::retrieve($class, 'read');
@@ -270,10 +269,12 @@ class fRecordSet implements Iterator, Countable
 	{
 		if (is_array($class)) {
 			foreach ($class as $_class) {
-				self::validateClass($_class);	
+				fActiveRecord::validateClass($_class);
+				fActiveRecord::forceConfigure($_class);
 			}
 		} else {
-			self::validateClass($class);	
+			fActiveRecord::validateClass($class);
+			fActiveRecord::forceConfigure($class);
 		}
 		
 		if (!is_array($records)) {
@@ -328,7 +329,8 @@ class fRecordSet implements Iterator, Countable
 	 */
 	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
 	{
-		self::validateClass($class);
+		fActiveRecord::validateClass($class);
+		fActiveRecord::forceConfigure($class);
 		
 		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(("?\w+"?\.)?"?\w+"?\.)?\*\s*FROM#i', $sql)) {
 			throw new fProgrammerException(
@@ -367,25 +369,6 @@ class fRecordSet implements Iterator, Countable
 		} else {
 			return vsprintf($message, $args);
 		}
-	}
-	
-	
-	/**
-	 * Ensures a class extends fActiveRecord
-	 * 
-	 * @param  string $class  The class to verify
-	 * @return void
-	 */
-	static private function validateClass($class)
-	{
-		$is_active_record = $class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord');
-		if (!is_string($class) || !$class || !class_exists($class) || !$is_active_record) {
-			throw new fProgrammerException(
-				'The class specified, %1$s, does not appear to be a valid %2$s class',
-				$class,
-				'fActiveRecord'
-			);	
-		}	
 	}
 	
 	
@@ -465,7 +448,7 @@ class fRecordSet implements Iterator, Countable
 			case 'build':
 				if ($route) {
 					$this->precreate($related_class, $route);
-					$this->buildFromCall('create' . $related_class, $route);		
+					return $this->buildFromCall('create' . $related_class, $route);		
 				}
 				$this->precreate($related_class);
 				return $this->buildFromCall('create' . $related_class);
@@ -1298,6 +1281,9 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$db     = fORMDatabase::retrieve($this->class, 'read');
 		$schema = fORMSchema::retrieve($this->class);
 		
@@ -1409,6 +1395,9 @@ class fRecordSet implements Iterator, Countable
 			return $this;
 		}
 		
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
+		
 		$db     = fORMDatabase::retrieve($this->class, 'read');
 		$schema = fORMSchema::retrieve($this->class);
 		
@@ -1484,6 +1473,9 @@ class fRecordSet implements Iterator, Countable
 		if (!array_merge($this->getPrimaryKeys())) {
 			return $this;
 		}
+		
+		fActiveRecord::validateClass($related_class);
+		fActiveRecord::forceConfigure($related_class);
 		
 		$relationship = fORMSchema::getRoute(
 			fORMSchema::retrieve($this->class),
