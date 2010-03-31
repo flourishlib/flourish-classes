@@ -15,8 +15,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b60
- * @changes    1.0.0b60  Fixed issues with handling `populate` and `has` actions when working with mapped classes, added ::validateClass() [wb, 2010-03-30]
+ * @version    1.0.0b61
+ * @changes    1.0.0b61  Fixed issues with handling `populate` actions when working with mapped classes [wb, 2010-03-31]
+ * @changes    1.0.0b60  Fixed issues with handling `associate` and `has` actions when working with mapped classes, added ::validateClass() [wb, 2010-03-30]
  * @changes    1.0.0b59  Changed an extended UTF-8 arrow character into the correct `->` [wb, 2010-03-29]
  * @changes    1.0.0b58  Fixed ::reflect() to specify the value returned from `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b57  Added the `post::loadFromIdentityMap()` hook and fixed ::__construct() to always call the `post::__construct()` hook [wb, 2010-03-14]
@@ -195,6 +196,28 @@ abstract class fActiveRecord
 		}
 		
 		return $oldest_value != $new_value;	
+	}
+	
+	
+	/**
+	 * Ensures a class extends fActiveRecord
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $class  The class to check
+	 * @return boolean  If the class is an fActiveRecord descendant
+	 */
+	static public function checkClass($class)
+	{
+		if (isset(self::$configured[$class])) {
+			return TRUE;
+		}
+		
+		$is_active_record = $class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord');
+		if (!is_string($class) || !$class || !class_exists($class) || !$is_active_record) {
+			return FALSE;
+		}
+		return TRUE;
 	}
 	
 	
@@ -517,6 +540,58 @@ abstract class fActiveRecord
 	
 	
 	/**
+	 * Takes information from a method call and determines the subject, route and if subject was plural
+	 * 
+	 * @param string $class    The class the method was called on
+	 * @param string $subject  An underscore_notation subject - either a singular or plural class name
+	 * @param string $route    The route to the subject
+	 * @return array  An array with the structure: array(0 => $subject, 1 => $route, 2 => $plural)
+	 */
+	static private function determineSubject($class, $subject, $route)
+	{
+		$schema  = fORMSchema::retrieve($class);
+		$table   = fORM::tablize($class);
+		$type    = '*-to-many';
+		$plural  = FALSE;
+		
+		// one-to-many relationships need to use plural forms
+		$singular_form = fGrammar::singularize($subject, TRUE);
+		if ($singular_form && fORM::isClassMappedToTable(fGrammar::camelize($singular_form, TRUE))) {
+			$subject = fGrammar::camelize($singular_form, TRUE);
+			$plural  = TRUE;
+			
+		} elseif (fORM::isClassMappedToTable(fGrammar::camelize($subject, TRUE))) {
+			$subject = fGrammar::camelize($subject, TRUE);
+			
+		} else {
+			if (in_array($subject, $schema->getTables())) {
+				$subject = fGrammar::singularize($subject);
+				$plural  = TRUE;
+			}
+			$subject = fGrammar::camelize($subject, TRUE);
+		}
+		
+		$related_table = fORM::tablize($subject);
+		$one_to_one    = fORMSchema::isOneToOne($schema, $table, $related_table, $route);
+		if ($one_to_one) {
+			$type = 'one-to-one';
+		}
+		if (($one_to_one && $plural) || (!$plural && !$one_to_one)) {
+			throw new fProgrammerException(
+				'The table %1$s is not in a %2$srelationship with the table %3$s',
+				$table,
+				$type,
+				$related_table
+			); 
+		}
+		
+		$route = fORMSchema::getRouteName($schema, $table, $related_table, $route, $type);
+		
+		return array($subject, $route, $plural);
+	}
+	
+	
+	/**
 	 * Ensures that ::configure() has been called for the class
 	 *
 	 * @internal
@@ -660,8 +735,7 @@ abstract class fActiveRecord
 			return TRUE;
 		}
 		
-		$is_active_record = $class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord');
-		if (!is_string($class) || !$class || !class_exists($class) || !$is_active_record) {
+		if (!self::checkClass($class)) {
 			throw new fProgrammerException(
 				'The class specified, %1$s, does not appear to be a valid %2$s class',
 				$class,
@@ -814,45 +888,13 @@ abstract class fActiveRecord
 					);
 				}
 				
-				$schema  = fORMSchema::retrieve($class);
-				$table   = fORM::tablize($class);
 				$records = $parameters[0];
 				$route   = isset($parameters[1]) ? $parameters[1] : NULL;
-				$plural  = FALSE;
 				
-				// one-to-many relationships need to use plural forms
-				$singular_form = fGrammar::singularize($subject, TRUE);
-				if ($singular_form && fORM::isClassMappedToTable(fGrammar::camelize($singular_form, TRUE))) {
-					$subject = fGrammar::camelize($singular_form, TRUE);
-					$plural  = TRUE;
-					
-				} elseif (fORM::isClassMappedToTable(fGrammar::camelize($subject, TRUE))) {
-					$subject = fGrammar::camelize($subject, TRUE);
-					
-				} else {
-					if (in_array($subject, $schema->getTables())) {
-						$subject = fGrammar::singularize($subject);
-						$plural  = TRUE;
-					}
-					$subject = fGrammar::camelize($subject, TRUE);
-				}
+				list ($subject, $route, $plural) = self::determineSubject($class, $subject, $route);
 				
-				$related_table = fORM::tablize($subject);
-				$one_to_one    = fORMSchema::isOneToOne($schema, $table, $related_table, $route);
-				if (($one_to_one && $plural) || (!$plural && !$one_to_one)) {
-					throw new fProgrammerException(
-						'The table %1$s is not in a %2$srelationship with the table %3$s',
-						$table,
-						$plural ? '*-to-many ' : 'one-to-one',
-						$related_table
-					); 
-				}
-				
-				// This handles one-to-many and many-to-many relationships
 				if ($plural) {
 					fORMRelated::associateRecords($class, $this->related_records, $subject, $records, $route);
-				
-				// This handles one-to-one relationships
 				} else {
 					fORMRelated::associateRecord($class, $this->related_records, $subject, $records, $route);
 				}
@@ -885,44 +927,9 @@ abstract class fActiveRecord
 				return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject);
 				
 			case 'has':
-				$schema = fORMSchema::retrieve($class);
-				$table  = fORM::tablize($class);
-				$route  = isset($parameters[0]) ? $parameters[0] : NULL;
-				$type   = '*-to-many';
-				$plural = FALSE;
+				$route = isset($parameters[0]) ? $parameters[0] : NULL;
 				
-				// one-to-many relationships need to use plural forms
-				$singular_form = fGrammar::singularize($subject, TRUE);
-				if ($singular_form && fORM::isClassMappedToTable(fGrammar::camelize($singular_form, TRUE))) {
-					$subject = fGrammar::camelize($singular_form, TRUE);
-					$plural  = TRUE;
-					
-				} elseif (fORM::isClassMappedToTable(fGrammar::camelize($subject, TRUE))) {
-					$subject = fGrammar::camelize($subject, TRUE);
-					
-				} else {
-					if (in_array($subject, $schema->getTables())) {
-						$subject = fGrammar::singularize($subject);
-						$plural  = TRUE;
-					}
-					$subject = fGrammar::camelize($subject, TRUE);
-				}
-				
-				$related_table = fORM::tablize($subject);
-				$one_to_one    = fORMSchema::isOneToOne($schema, $table, $related_table, $route);
-				if (($one_to_one && $plural) || (!$plural && !$one_to_one)) {
-					throw new fProgrammerException(
-						'The table %1$s is not in a %2$srelationship with the table %3$s',
-						$table,
-						$plural ? '*-to-many ' : 'one-to-one',
-						$related_table
-					);
-				}
-				if ($one_to_one) {
-					$type = 'one-to-one';
-				}
-				
-				$route = fORMSchema::getRouteName($schema, $table, $related_table, $route, $type);
+				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
 				
 				return fORMRelated::hasRecords($class, $this->values, $this->related_records, $subject, $route);
 			 
@@ -963,37 +970,9 @@ abstract class fActiveRecord
 				return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject);
 			
 			case 'populate':
-				$table  = fORM::tablize($class);
-				$route  = isset($parameters[0]) ? $parameters[0] : NULL;
-				$schema = fORMSchema::retrieve($class);
+				$route = isset($parameters[0]) ? $parameters[0] : NULL;
 				
-				// Here the subject will either be a single class name for
-				// one-to-one relationships, or a plural class name for
-				// one-to-* relationships
-				$subject = fGrammar::camelize($subject, TRUE);
-				
-				$related_table = fORM::tablize($subject);
-				
-				// Here, only a non-plural class name will properly tablize,
-				// so if we don't find one matching we can simply singularize
-				if (!in_array($related_table, $schema->getTables())) {
-					$subject = fGrammar::singularize($subject);
-					
-					// This triggers an error if you try to use a plural form
-					// for a one-to-one relationship
-					if (fORMSchema::isOneToOne($schema, $table, $related_table, $route)) {
-						throw new fProgrammerException(
-							'The table %1$s is not in a%2$srelationship with the table %3$s',
-							$table,
-							' one-to-many ',
-							$subject
-						); 		
-					}
-					
-					$route = fORMSchema::getRouteName($schema, $table, fORM::tablize($subject), $route, '*-to-many');
-				} else {
-					$route = fORMSchema::getRouteName($schema, $table, $related_table, $route, 'one-to-one');	
-				}
+				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
 				
 				fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
 				return $this;
