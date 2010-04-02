@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b61
+ * @version    1.0.0b62
+ * @changes    1.0.0b62  Fixed a bug that could cause infinite recursion starting in v1.0.0b60 [wb, 2010-04-02]
  * @changes    1.0.0b61  Fixed issues with handling `populate` actions when working with mapped classes [wb, 2010-03-31]
  * @changes    1.0.0b60  Fixed issues with handling `associate` and `has` actions when working with mapped classes, added ::validateClass() [wb, 2010-03-30]
  * @changes    1.0.0b59  Changed an extended UTF-8 arrow character into the correct `->` [wb, 2010-03-29]
@@ -1078,8 +1079,8 @@ abstract class fActiveRecord
 		
 		// If the features of this class haven't been set yet, do it
 		if (!isset(self::$configured[$class])) {
-			$this->configure();
 			self::$configured[$class] = TRUE;
+			$this->configure();
 			
 			$table = fORM::tablize($class);
 			if (!$schema->getKeys($table, 'primary')) {
