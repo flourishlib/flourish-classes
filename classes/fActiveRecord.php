@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b62
+ * @version    1.0.0b63
+ * @changes    1.0.0b63  Changed how is_subclass_of() is used to work around a bug in 5.2.x [wb, 2010-04-06]
  * @changes    1.0.0b62  Fixed a bug that could cause infinite recursion starting in v1.0.0b60 [wb, 2010-04-02]
  * @changes    1.0.0b61  Fixed issues with handling `populate` actions when working with mapped classes [wb, 2010-03-31]
  * @changes    1.0.0b60  Fixed issues with handling `associate` and `has` actions when working with mapped classes, added ::validateClass() [wb, 2010-03-30]
@@ -214,8 +215,7 @@ abstract class fActiveRecord
 			return TRUE;
 		}
 		
-		$is_active_record = $class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord');
-		if (!is_string($class) || !$class || !class_exists($class) || !$is_active_record) {
+		if (!is_string($class) || !$class || !class_exists($class) || !($class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord'))) {
 			return FALSE;
 		}
 		return TRUE;
