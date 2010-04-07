@@ -5,14 +5,15 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated the class to automatically add a `__` prefix for the default namespace and to use that for attribute and child element access [wb, 2010-04-06]
  * @changes    1.0.0b3  Added the `$http_timeout` parameter to ::__construct() [wb, 2009-09-16]
  * @changes    1.0.0b2  Added instance functionality for reading of XML files [wb, 2009-09-01]
  * @changes    1.0.0b   The initial implementation [wb, 2008-01-13]
@@ -156,6 +157,10 @@ class fXML implements ArrayAccess
 		if (!$this->__dom) {
 			$this->__dom = dom_import_simplexml($xml);
 		}
+		
+		if ($this->__dom->namespaceURI && $this->__dom->prefix == '') {
+			$this->addCustomPrefix('__', $this->__dom->namespaceURI);
+		}
 	}
 	
 	
@@ -199,6 +204,9 @@ class fXML implements ArrayAccess
 			return array($this, $name);
 		}
 		
+		if ($this->__dom->namespaceURI && $this->__dom->prefix == '' && strpos($name, ':') === FALSE) {
+			$name = '__:' . $name;
+		}
 		$first_child = $this->query($name . '[1]');
 		if ($first_child->length) {
 			return $first_child->item(0)->textContent;
@@ -221,7 +229,10 @@ class fXML implements ArrayAccess
 	 */
 	public function __isset($name)
 	{
-		return (boolean) $this->query($name . '[1]')->length;	
+		if ($this->__dom->namespaceURI && $this->__dom->prefix == '' && strpos($name, ':') === FALSE) {
+			$name = '__:' . $name;
+		}
+		return (boolean) $this->query($name . '[1]')->length;
 	}
 	
 	
@@ -514,6 +525,9 @@ class fXML implements ArrayAccess
 			if ($element instanceof DOMElement) {
 				$child = new fXML($element);
 				$child->__custom_prefixes = $this->__custom_prefixes;
+				if ($child->__dom->namespaceURI && $child->__dom->prefix == '') {
+					$child->addCustomPrefix('__', $child->__dom->namespaceURI);
+				}
 				$output[] = $child;
 			
 			} elseif ($element instanceof DOMCharacterData) {
@@ -567,7 +581,7 @@ class fXML implements ArrayAccess
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
