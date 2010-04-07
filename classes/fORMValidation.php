@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Added ::addRequiredRule() for required columns that aren't automatically handled via schema detection [wb, 2010-04-06]
  * @changes    1.0.0b23  Added support for checking integers and floats to ensure they fit within the range imposed by the database schema [wb, 2010-03-17]
  * @changes    1.0.0b22  Made the value checking for one-or-more and only-one rules more robust when detecting the absence of a value [wb, 2009-12-17]
  * @changes    1.0.0b21  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
@@ -44,6 +45,7 @@ class fORMValidation
 	const addOneToManyRule         = 'fORMValidation::addOneToManyRule';
 	const addOnlyOneRule           = 'fORMValidation::addOnlyOneRule';
 	const addRegexReplacement      = 'fORMValidation::addRegexReplacement';
+	const addRequiredRule          = 'fORMValidation::addRequiredRule';
 	const addStringReplacement     = 'fORMValidation::addStringReplacement';
 	const addValidValuesRule       = 'fORMValidation::addValidValuesRule';
 	const inspect                  = 'fORMValidation::inspect';
@@ -106,6 +108,13 @@ class fORMValidation
 	 * @var array
 	 */
 	static private $related_one_or_more_rules = array();
+	
+	/**
+	 * Rules that require a value be present in a column even if the database schema doesn't require it
+	 * 
+	 * @var array
+	 */
+	static private $required_rules = array();
 	
 	/**
 	 * String replacements performed on each message
@@ -301,6 +310,34 @@ class fORMValidation
 	
 	
 	/**
+	 * Requires that a column have a non-`NULL` value
+	 * 
+	 * Before using this method, try setting the database column to `NOT NULL`
+	 * and remove any default value. Such a configuration will trigger the same
+	 * functionality as this method, and will enforce the rule on the database
+	 * level for any other code that queries it.
+	 *
+	 * @param  mixed $class    The class name or instance of the class the column(s) exists in
+	 * @param  array $columns  The column or columns to check - each column will require a value
+	 * @return void
+	 */
+	static public function addRequiredRule($class, $columns)
+	{
+		$class = fORM::getClass($class);
+		
+		settype($columns, 'array');
+		
+		if (!isset(self::$required_rules[$class])) {
+			self::$required_rules[$class] = array();
+		}
+		
+		foreach ($columns as $column) {
+			self::$required_rules[$class][$column] = TRUE;
+		}
+	}
+	
+	
+	/**
 	 * Adds a call to [http://php.net/str_replace `str_replace()`] for each message
 	 * 
 	 * String replacement is done after the `post::validate()` hook, and right
@@ -377,7 +414,9 @@ class fORMValidation
 		$schema = fORMSchema::retrieve($class);
 		$info   = $schema->getColumnInfo($table, $column);
 		// Make sure a value is provided for required columns
-		if ($values[$column] === NULL && $info['not_null'] && $info['default'] === NULL && $info['auto_increment'] === FALSE) {
+		$schema_not_null = $info['not_null'] && $info['default'] === NULL && $info['auto_increment'] === FALSE;
+		$rule_not_null   = isset(self::$required_rules[$class][$column]);
+		if ($values[$column] === NULL && ($schema_not_null || $rule_not_null)) {
 			return self::compose(
 				'%sPlease enter a value',
 				fValidationException::formatField(fORM::getColumnName($class, $column))
@@ -1238,6 +1277,7 @@ class fORMValidation
 		self::$only_one_rules            = array();
 		self::$regex_replacements        = array();
 		self::$related_one_or_more_rules = array();
+		self::$required_rules            = array();
 		self::$string_replacements       = array();
 		self::$valid_values_rules        = array();
 	}
