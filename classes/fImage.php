@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed ::resize() to allow dimensions to be numeric strings instead of just integers [wb, 2010-04-09]
  * @changes    1.0.0b20  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b19  Updated for the new fFile API [wb-imarc, 2010-03-05]
  * @changes    1.0.0b18  Fixed a bug in ::saveChanges() that would incorrectly cause new filenames to be created, added the $overwrite parameter to ::saveChanges(), added the $allow_upsizing parameter to ::resize() [wb, 2010-03-03]
@@ -1047,13 +1048,13 @@ class fImage extends fFile
 		$this->tossIfDeleted();
 		
 		// Make sure the user input is valid
-		if ((!is_int($canvas_width) && $canvas_width !== NULL) || $canvas_width < 0) {
+		if ((!is_numeric($canvas_width) && $canvas_width !== NULL) || $canvas_width < 0) {
 			throw new fProgrammerException(
 				'The canvas width specified, %s, is not an integer or is less than zero',
 				$canvas_width
 			);
 		}
-		if ((!is_int($canvas_height) && $canvas_height !== NULL) || $canvas_height < 0) {
+		if ((!is_numeric($canvas_height) && $canvas_height !== NULL) || $canvas_height < 0) {
 			throw new fProgrammerException(
 				'The canvas height specified, %s is not an integer or is less than zero',
 				$canvas_height
