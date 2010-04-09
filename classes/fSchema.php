@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Added Oracle support to ::getDatabases() [wb, 2010-04-09]
  * @changes    1.0.0b37  Fixed ::getDatabases() for MSSQL [wb, 2010-04-09]
  * @changes    1.0.0b36  Fixed PostgreSQL to properly report explicit `NULL` default values via ::getColumnInfo() [wb, 2010-03-30]
  * @changes    1.0.0b35  Added `max_length` values for various text and blob data types across all databases [wb, 2010-03-29]
@@ -1930,6 +1931,9 @@ class fSchema
 			case 'mysql':
 				$sql = 'SHOW DATABASES';
 				break;
+				
+			case 'oracle':
+				$sql = 'SELECT ora_database_name FROM dual';
 			
 			case 'postgresql':
 				$sql = "SELECT
