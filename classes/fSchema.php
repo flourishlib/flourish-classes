@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Fixed ::getDatabases() for MSSQL [wb, 2010-04-09]
  * @changes    1.0.0b36  Fixed PostgreSQL to properly report explicit `NULL` default values via ::getColumnInfo() [wb, 2010-03-30]
  * @changes    1.0.0b35  Added `max_length` values for various text and blob data types across all databases [wb, 2010-03-29]
  * @changes    1.0.0b34  Added `min_value` and `max_value` attributes to ::getColumnInfo() to specify the valid range for numeric columns [wb, 2010-03-16]
@@ -1923,12 +1924,7 @@ class fSchema
 		
 		switch ($this->database->getType()) {
 			case 'mssql':
-				$sql = 'SELECT
-								DISTINCT CATALOG_NAME
-							FROM
-								INFORMATION_SCHEMA.SCHEMATA
-							ORDER BY
-								LOWER(CATALOG_NAME)';
+				$sql = 'EXECUTE sp_databases';
 				break;
 			
 			case 'mysql':
