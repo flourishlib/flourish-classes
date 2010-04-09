@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed ::translateToWebPath() to handle Windows \s [wb, 2010-04-09]
  * @changes    1.0.0b14  Added ::recordAppend() [wb, 2010-03-15]
  * @changes    1.0.0b13  Changed the way files/directories deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
  * @changes    1.0.0b12  Updated ::convertToBytes() to properly handle integers without a suffix and sizes with fractions [al+wb, 2009-11-14]
@@ -690,7 +691,7 @@ class fFilesystem
 			);
 		}
 		
-		return $path;
+		return str_replace('\\', '/', $path);
 	}
 	
 	
