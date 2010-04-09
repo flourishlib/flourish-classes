@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Added an integer cast to ::count() to fix issues with the dblib MSSQL driver [wb, 2010-04-09]
  * @changes    1.0.0b33  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b32  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
  * @changes    1.0.0b31  Added the ability to compare columns in ::build() with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
@@ -799,7 +800,9 @@ class fRecordSet implements Iterator, Countable
 		if (!is_numeric($this->non_limited_count)) {
 			try {
 				$db = fORMDatabase::retrieve($this->class, 'read');
-				$this->non_limited_count = $db->translatedQuery($this->non_limited_count)->fetchScalar();
+				// The integer cast here is to solve issues with the broken dblib
+				// SQL Server driver that is sometimes present on Windows machines
+				$this->non_limited_count = (integer) $db->translatedQuery($this->non_limited_count)->fetchScalar();
 			} catch (fExpectedException $e) {
 				$this->non_limited_count = $this->count();
 			}
