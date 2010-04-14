@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b38
+ * @version    1.0.0b39
+ * @changes    1.0.0b39  Fixed a regression where key detection SQL was not compatible with PostgreSQL 8.1 [wb, 2010-04-13]
  * @changes    1.0.0b38  Added Oracle support to ::getDatabases() [wb, 2010-04-13]
  * @changes    1.0.0b37  Fixed ::getDatabases() for MSSQL [wb, 2010-04-09]
  * @changes    1.0.0b36  Fixed PostgreSQL to properly report explicit `NULL` default values via ::getColumnInfo() [wb, 2010-03-30]
@@ -1722,7 +1723,7 @@ class fSchema
 						indisunique = TRUE AND
 						indisprimary = FALSE AND
 						con.oid IS NULL AND
-						NOT ((ind.indkey)::int[] @> ARRAY[0])
+						0 != ALL ((ind.indkey)::int[])
 				) ORDER BY 1, 2, 4, 3, 11";
 		
 		$result = $this->database->query($sql);
