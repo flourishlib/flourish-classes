@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
- * @version    1.0.0b
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b   The initial implementation [wb, 2010-03-02]
  */
 class fStatement
@@ -112,6 +113,7 @@ class fStatement
 				$query = vsprintf($query, $named_placeholders);
 				break;
 				
+			case 'ibm_db2':
 			case 'mysqli':
 			case 'odbc':
 			case 'pdo':
@@ -144,6 +146,10 @@ class fStatement
 				$statement = $query;
 				break;
 				
+			case 'ibm_db2':
+				$statement = db2_prepare($connection, $query, array('cursor' => DB2_FORWARD_ONLY));
+				break;
+			
 			case 'mysqli':
 				$statement = mysqli_prepare($connection, $query);
 				break;
@@ -181,6 +187,10 @@ class fStatement
 		
 		if (!$statement) {
 			switch ($extension) {
+				case 'ibm_db2':
+					$message = db2_stmt_errormsg($statement);
+					break;
+				
 				case 'mysqli':
 					$message = mysqli_error($connection);
 					break;
@@ -210,6 +220,7 @@ class fStatement
 			}
 			
 			$db_type_map = array(
+				'db2'        => 'DB2',
 				'mssql'      => 'MSSQL',
 				'mysql'      => 'MySQL',
 				'oracle'     => 'Oracle',
@@ -243,11 +254,15 @@ class fStatement
 		}
 		
 		switch ($this->database->getExtension()) {
-			case  'pdo':
+			case 'ibm_db2':
+				db2_free_stmt($this->statement);
+				break;
+				
+			case 'pdo':
 				$this->statement->closeCursor();
 				break;
 				
-			case  'odbc':
+			case 'odbc':
 				odbc_free_result($this->statement);
 				break;
 				
@@ -302,6 +317,11 @@ class fStatement
 		$params = $this->prepareParams($params);
 				
 		switch ($extension) {
+			case 'ibm_db2':
+				$extra  = $statement;
+				$result = db2_execute($statement, $params);
+				break;
+				
 			case 'mssql':
 				$result = mssql_query($this->database->escape($statement, $params), $connection);
 				break;
@@ -370,14 +390,26 @@ class fStatement
 		$params = $this->prepareParams($params);
 				
 		switch ($extension) {
+			case 'ibm_db2':
+				$extra = $statement;
+				if (db2_execute($statement, $params)) {
+					$rows = array();
+					while ($row = db2_fetch_assoc($statement)) {
+						$rows[] = $row;
+					}
+					$result->setResult($rows);
+					unset($rows);
+				} else {
+					$result->setResult(FALSE);
+				}
+				break;
+				
 			case 'mssql':
 				$result->setResult(mssql_query($this->database->escape($statement, $params), $connection));
-		
 				break;
 			
 			case 'mysql':
 				$result->setResult(mysql_query($this->database->escape($statement, $params), $connection));
-		
 				break;
 			
 			case 'mysqli':
@@ -517,6 +549,15 @@ class fStatement
 		$statement_holder->statement = NULL;
 				
 		switch ($extension) {
+			case 'ibm_db2':
+				$extra = $statement;
+				if (db2_execute($statement, $params)) {
+					$statement_holder->statement = $statement;
+				} else {
+					$result->setResult(FALSE);
+				}
+				break;
+			
 			case 'mssql':
 				$result->setResult(mssql_query($result->getSQL(), $this->connection, 20));
 				break;
@@ -637,7 +678,7 @@ class fStatement
 				$params[$i] = $this->database->escape($placeholder, $params[$i]);
 				
 				// Dates, times, timestamps and some booleans need to be unquoted
-				if (in_array($placeholder, array('%d', '%t', '%p')) || (($type == 'mssql' || $type == 'sqlite') && $placeholder == '%b')) {
+				if (in_array($placeholder, array('%d', '%t', '%p')) || (($type == 'mssql' || $type == 'sqlite' || $type == 'db2') && $placeholder == '%b')) {
 					$params[$i] = substr($params[$i], 1, -1);	
 				
 				// Some booleans need to be converted to integers
@@ -658,6 +699,7 @@ class fStatement
 			// For the database extensions that require is, here we bind params
 			// to the actual statements using the appropriate data types
 			switch ($extension) {
+				
 				case 'mysqli':
 					switch ($placeholder) {
 						case '%l':

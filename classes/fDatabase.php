@@ -7,6 +7,7 @@
  * 
  * The following databases are supported:
  * 
+ *  - [http://ibm.com/db2 DB2]
  *  - [http://microsoft.com/sql/ MSSQL]
  *  - [http://mysql.com MySQL]
  *  - [http://oracle.com Oracle]
@@ -15,6 +16,8 @@
  * 
  * The class will automatically use the first of the following extensions it finds:
  * 
+ *  - DB2
+ *   - [http://php.net/ibm_db2 ibm_db2]
  *  - MSSQL (via ODBC)
  *   - [http://php.net/pdo_odbc pdo_odbc]
  *   - [http://php.net/odbc odbc]
@@ -39,6 +42,9 @@
  *   - [http://php.net/pdo_sqlite pdo_sqlite] (for v3.x)
  *   - [http://php.net/sqlite sqlite] (for v2.x)
  * 
+ * The `pdo_ibm`, `pdo_odbc` and `odbc` extensions are not currenlty support
+ * for DB2 due to various segmentation fault and UTF-8 support issues.
+ * 
  * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
@@ -46,7 +52,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b24  Fixed an auto-incrementing transaction bug with Oracle and debugging issues with all databases [wb, 2010-03-17]
  * @changes    1.0.0b23  Resolved another bug with capturing auto-incrementing values for PostgreSQL and Oracle [wb, 2010-03-15]
  * @changes    1.0.0b22  Changed ::clearCache() to also clear the cache on the fSQLTranslation [wb, 2010-03-09]
@@ -144,6 +151,7 @@ class fDatabase
 	 * 
 	 * Options include:
 	 * 
+	 *  - `'ibm_db2'`
 	 *  - `'mssql'`
 	 *  - `'mysql'`
 	 *  - `'mysqli'`
@@ -222,7 +230,7 @@ class fDatabase
 	private $translation;
 	
 	/**
-	 * The database type: `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, or `'sqlite'`
+	 * The database type: `'db2'`, `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, or `'sqlite'`
 	 * 
 	 * @var string
 	 */
@@ -246,7 +254,7 @@ class fDatabase
 	/**
 	 * Configures the connection to a database - connection is not made until the first query is executed
 	 * 
-	 * @param  string  $type      The type of the database: `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, `'sqlite'`
+	 * @param  string  $type      The type of the database: `'db2'`, `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, `'sqlite'`
 	 * @param  string  $database  Name of the database. If an ODBC connection `'dsn:'` concatenated with the DSN, if SQLite the path to the database file. MSSQL ODBC connections may also have a `\database_name` suffix of the database to initially switch to.
 	 * @param  string  $username  Database username - not used for SQLite
 	 * @param  string  $password  The password for the username specified - not used for SQLite
@@ -256,7 +264,7 @@ class fDatabase
 	 */
 	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
 	{
-		$valid_types = array('mssql', 'mysql', 'oracle', 'postgresql', 'sqlite');
+		$valid_types = array('db2', 'mssql', 'mysql', 'oracle', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
 			throw new fProgrammerException(
 				'The database type specified, %1$s, is invalid. Must be one of: %2$s.',
@@ -298,7 +306,9 @@ class fDatabase
 		if (!$this->connection) { return; }
 		
 		fCore::debug('Total query time: ' . $this->query_time . ' seconds', $this->debug);
-		if ($this->extension == 'mssql') {
+		if ($this->extension == 'ibm_db2') {
+			db2_close($this->connection);
+		} elseif ($this->extension == 'mssql') {
 			mssql_close($this->connection);
 		} elseif ($this->extension == 'mysql') {
 			mysql_close($this->connection);
@@ -346,7 +356,13 @@ class fDatabase
 	{
 		if ($result === FALSE || $result->getResult() === FALSE) {
 			
-			if ($this->extension == 'mssql') {
+			if ($this->extension == 'ibm_db2') {
+				if (is_resource($extra_info)) {
+					$message = db2_stmt_errormsg($extra_info);
+				} else {
+					$message = db2_stmt_errormsg();
+				}
+			} elseif ($this->extension == 'mssql') {
 				$message = $this->error;
 				unset($this->error);
 			} elseif ($this->extension == 'mysql') {
@@ -382,6 +398,7 @@ class fDatabase
 			}
 			
 			$db_type_map = array(
+				'db2'        => 'DB2',
 				'mssql'      => 'MSSQL',
 				'mysql'      => 'MySQL',
 				'oracle'     => 'Oracle',
@@ -432,6 +449,28 @@ class fDatabase
 		// Establish a connection to the database
 		if ($this->extension == 'pdo') {
 			$odbc = strtolower(substr($this->database, 0, 4)) == 'dsn:';
+			$username = $this->username;
+			$password = $this->password;
+			
+			/*
+			Currently all of the DB2 PDO drivers have issues on Windows or Linux
+			that prevent them from being used reliably for UTF-8 data
+			if ($this->type == 'db2') {
+				if ($odbc) {
+					$dsn = 'odbc:' . substr($this->database, 4);
+				} else {
+					if ($this->host === NULL && $this->port === NULL) {
+						$dsn = 'ibm:DSN:' . $this->database;
+					} else {
+						$dsn  = 'ibm:DRIVER={IBM DB2 ODBC DRIVER};DATABASE=' . $this->database . ';HOSTNAME=' . $this->host . ';';
+						$dsn .= 'PORT=' . ($this->port ? $this->port : 60000) . ';';
+						$dsn .= 'PROTOCOL=TCPIP;UID=' . $username . ';PWD=' . $password . ';';
+						$username = NULL;
+						$password = NULL;
+					}
+				}
+			}*/
+			
 			if ($this->type == 'mssql') {
 				if ($odbc) {
 					$dsn = substr($this->database, 4);
@@ -477,7 +516,7 @@ class fDatabase
 			}
 			
 			try {
-				$this->connection = new PDO($dsn, $this->username, $this->password);	
+				$this->connection = new PDO($dsn, $username, $password);	
 				if ($this->type == 'mysql') {
 					$this->connection->setAttribute(PDO::MYSQL_ATTR_DIRECT_QUERY, 1);	
 				}
@@ -488,6 +527,25 @@ class fDatabase
 		
 		if ($this->extension == 'sqlite') {
 			$this->connection = sqlite_open($this->database);
+		}
+		
+		if ($this->extension == 'ibm_db2') {
+			$username = $this->username;
+			$password = $this->password;
+			if ($this->host === NULL && $this->port === NULL) {
+				$connection_string = $this->database;
+			} else {
+				$connection_string  = 'DATABASE=' . $this->database . ';HOSTNAME=' . $this->host . ';';
+				$connection_string .= 'PORT=' . ($this->port ? $this->port : 60000) . ';';
+				$connection_string .= 'PROTOCOL=TCPIP;UID=' . $this->username . ';PWD=' . $this->password . ';';
+				$username = NULL;
+				$password = NULL;
+			}
+			$options = array(
+				'autocommit'    => DB2_AUTOCOMMIT_ON,
+				'DB2_ATTR_CASE' => DB2_CASE_LOWER
+			);
+			$this->connection = db2_connect($connection_string, $username, $password, $options);
 		}
 		
 		if ($this->extension == 'mssql') {
@@ -630,6 +688,42 @@ class fDatabase
 	protected function determineExtension()
 	{
 		switch ($this->type) {
+			
+			case 'db2':
+			
+				/*
+				The ODBC drivers on Windows seem to have issues with UTF-8
+				so they can't be reliably used until I can get some help with it
+				$odbc = strtolower(substr($this->database, 0, 4)) == 'dsn:';
+				
+				if ($odbc) {
+					if (extension_loaded('odbc')) {
+						$this->extension = 'odbc';
+						
+					} elseif (class_exists('PDO', FALSE) && in_array('odbc', PDO::getAvailableDrivers())) {
+						$this->extension = 'pdo';
+						
+					} else {
+						$type = 'DB2 (ODBC)';
+						$exts = 'odbc, pdo_odbc';
+					}
+					
+				}*/
+				/*
+				The PDO_IBM driver has segfault issues that prevent it from being supported by Flourish
+				if (class_exists('PDO', FALSE) && in_array('ibm', PDO::getAvailableDrivers())) {
+					$this->extension = 'pdo';
+					
+				}
+				*/
+				if (extension_loaded('ibm_db2')) {
+					$this->extension = 'ibm_db2';
+					
+				} else {
+					$type = 'DB2';
+					$exts = 'ibm_db2';
+				}
+				break;
 			
 			case 'mssql':
 			
@@ -1023,7 +1117,10 @@ class fDatabase
 		
 		$this->connectToDatabase();
 		
-		if ($this->type == 'mysql') {
+		if ($this->type == 'db2') {
+			return "BLOB(X'" . bin2hex($value) . "')";
+			
+		} elseif ($this->type == 'mysql') {
 			return "x'" . bin2hex($value) . "'";
 			
 		} elseif ($this->type == 'postgresql') {
@@ -1064,7 +1161,7 @@ class fDatabase
 		
 		if (in_array($this->type, array('postgresql', 'mysql'))) {
 			return ($value) ? 'TRUE' : 'FALSE';
-		} elseif (in_array($this->type, array('mssql', 'sqlite'))) {
+		} elseif (in_array($this->type, array('mssql', 'sqlite', 'db2'))) {
 			return ($value) ? "'1'" : "'0'";
 		} elseif ($this->type == 'oracle') {
 			return ($value) ? '1' : '0';	
@@ -1132,7 +1229,7 @@ class fDatabase
 			array('',  '"."'),
 			$value
 		) . '"';
-		if ($this->type == 'oracle') {
+		if (in_array($this->type, array('oracle', 'db2'))) {
 			$value = strtoupper($value);	
 		}
 		return $value;
@@ -1165,7 +1262,7 @@ class fDatabase
 	/**
 	 * Escapes a string for use in SQL, includes surrounding quotes
 	 * 
-	 * A `NULL` value will be returned as `'NULL'`
+	 * A `NULL` value will be returned as `'NULL'`.
 	 * 
 	 * @param  string $value  The string to escape
 	 * @return string  The escaped string
@@ -1178,7 +1275,9 @@ class fDatabase
 		
 		$this->connectToDatabase();
 		
-		if ($this->extension == 'mysql') {
+		if ($this->type == 'db2') {
+			return "'" . str_replace("'", "''", $value) . "'";
+		} elseif ($this->extension == 'mysql') {
 			return "'" . mysql_real_escape_string($value, $this->connection) . "'";
 		} elseif ($this->extension == 'mysqli') {
 			return "'" . mysqli_real_escape_string($this->connection, $value) . "'";
@@ -1730,7 +1829,13 @@ class fDatabase
 			} 		
 		}
 		
-		if ($this->extension == 'mssql') {
+		if ($this->extension == 'ibm_db2') {
+			$insert_id_res  = db2_exec($this->connection, "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1");
+			$insert_id_row  = db2_fetch_assoc($insert_id_res);
+			$insert_id      = current($insert_id_row);
+			db2_free_result($insert_id_res);
+		
+		} elseif ($this->extension == 'mssql') {
 			$insert_id_res = mssql_query("SELECT @@IDENTITY AS insert_id", $this->connection);
 			$insert_id     = mssql_result($insert_id_res, 0, 'insert_id');
 			mssql_free_result($insert_id_res);
@@ -1752,14 +1857,15 @@ class fDatabase
 			$insert_id = $insert_id_row['INSERT_ID'];
 			oci_free_statement($oci_statement);
 		
-		} elseif ($this->extension == 'odbc' && $this->type == 'mssql') {
-			$insert_id_res = odbc_exec($this->connection, "SELECT @@IDENTITY AS insert_id");
-			$insert_id     = odbc_result($insert_id_res, 'insert_id');
-			odbc_free_result($insert_id_res);
-		
-		} elseif ($this->extension == 'odbc' && $this->type == 'oracle') {
+		} elseif ($this->extension == 'odbc') {
+			if ($this->type == 'mssql') {
+				$insert_id_sql = "SELECT @@IDENTITY AS insert_id";	
+			} elseif ($this->type == 'db2') {
+				$insert_id_sql = "SELECT IDENTITY_VAL_LOCAL() AS insert_id FROM SYSIBM.SYSDUMMY1";	
+			}
 			$insert_id_res = odbc_exec($this->connection, $insert_id_sql);
-			$insert_id     = odbc_result($insert_id_res, 'insert_id');
+			$insert_id_row = odbc_fetch_array($insert_id_res);
+			$insert_id     = reset($insert_id_row);
 			odbc_free_result($insert_id_res);
 		
 		} elseif ($this->extension == 'pgsql') {
@@ -1781,6 +1887,13 @@ class fDatabase
 		} elseif ($this->extension == 'pdo') {
 			
 			switch ($this->type) {
+				case 'db2':
+					$insert_id_statement = $this->connection->query("SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1");
+					$insert_id_row = $insert_id_statement->fetch(PDO::FETCH_ASSOC);
+					$insert_id = array_shift($insert_id_row);
+					$insert_id_statement->closeCursor();
+					unset($insert_id_statement);
+					break;
 				
 				case 'mssql':
 					try {
@@ -1908,12 +2021,13 @@ class fDatabase
 		}
 		
 		// The PDO, OCI8, ODBC and SQLSRV extensions require special handling through methods and functions
-		$is_pdo    = $this->extension == 'pdo';
-		$is_oci    = $this->extension == 'oci8';
-		$is_odbc   = $this->extension == 'odbc';
-		$is_sqlsrv = $this->extension == 'sqlsrv';
+		$is_pdo     = $this->extension == 'pdo';
+		$is_oci     = $this->extension == 'oci8';
+		$is_odbc    = $this->extension == 'odbc';
+		$is_sqlsrv  = $this->extension == 'sqlsrv';
+		$is_ibm_db2 = $this->extension == 'ibm_db2';
 		
-		if (!$is_pdo && !$is_oci && !$is_odbc && !$is_sqlsrv) {
+		if (!$is_pdo && !$is_oci && !$is_odbc && !$is_sqlsrv && !$is_ibm_db2) {
 			return FALSE;
 		}
 		
@@ -1958,6 +2072,7 @@ class fDatabase
 			} catch (Exception $e) {
 				
 				$db_type_map = array(
+					'db2'        => 'DB2',
 					'mssql'      => 'MSSQL',
 					'mysql'      => 'MySQL',
 					'oracle'     => 'Oracle',
@@ -1998,7 +2113,18 @@ class fDatabase
 				sqlsrv_commit($this->connection);
 			} elseif ($rollback) {
 				sqlsrv_rollback($this->connection);
-			}	
+			}
+			
+		} elseif ($is_ibm_db2) {
+			if ($begin) {
+				db2_autocommit($this->connection, FALSE);
+			} elseif ($commit) {
+				db2_commit($this->connection);
+				db2_autocommit($this->connection, TRUE);
+			} elseif ($rollback) {
+				db2_rollback($this->connection);
+				db2_autocommit($this->connection, TRUE);
+			}
 		}
 		
 		if ($result_class) {
@@ -2077,6 +2203,8 @@ class fDatabase
 		$extra = NULL;
 		if (is_object($statement)) {
 			$result = $statement->execute($params, $extra, $statement != $this->statement);
+		} elseif ($this->extension == 'ibm_db2') {
+			$result = db2_exec($this->connection, $statement, array('cursor' => DB2_FORWARD_ONLY));
 		} elseif ($this->extension == 'mssql') {
 			$result = mssql_query($statement, $this->connection);
 		} elseif ($this->extension == 'mysql') {
@@ -2109,10 +2237,12 @@ class fDatabase
 		$this->restoreErrorHandler();
 		
 		if ($result === FALSE) {
-			$this->checkForError($result, $extra, $statement);
+			$this->checkForError($result, $extra, is_object($statement) ? $statement->getSQL() : $statement);
 			
-		} elseif (!is_bool($result)) {
-			if ($this->extension == 'mssql') {
+		} elseif (!is_bool($result) && $result !== NULL) {
+			if ($this->extension == 'ibm_db2') {
+				db2_free_result($result);
+			} elseif ($this->extension == 'mssql') {
 				mssql_free_result($result);
 			} elseif ($this->extension == 'mysql') {
 				mysql_free_result($result);
@@ -2146,6 +2276,19 @@ class fDatabase
 		$extra = NULL;
 		if (is_object($statement)) {
 			$statement->executeQuery($result, $params, $extra, $statement != $this->statement);
+			
+		} elseif ($this->extension == 'ibm_db2') {
+			$extra = db2_exec($this->connection, $statement, array('cursor' => DB2_FORWARD_ONLY));
+			if (is_resource($extra)) {
+				$rows = array();
+				while ($row = db2_fetch_assoc($extra)) {
+					$rows[] = $row;	
+				}
+				$result->setResult($rows);
+				unset($rows);
+			} else { 
+				$result->setResult($extra);	
+			}
 			
 		} elseif ($this->extension == 'mssql') {
 			$result->setResult(mssql_query($result->getSQL(), $this->connection));
@@ -2224,11 +2367,18 @@ class fDatabase
 		
 		$this->checkForError($result, $extra);
 		
-		if ($this->extension == 'pdo') {
+		if ($this->extension == 'ibm_db2') {
+			$this->setAffectedRows($result, $extra);
+			if ($extra && !is_object($statement)) {
+				db2_free_result($extra);
+			}
+			
+		} elseif ($this->extension == 'pdo') {
 			$this->setAffectedRows($result, $extra);
 			if ($extra && !is_object($statement)) {
 				$extra->closeCursor();
 			}
+			
 		} elseif ($this->extension == 'oci8') {
 			$this->setAffectedRows($result, $extra);
 			if ($extra && !is_object($statement)) {
@@ -2272,6 +2422,8 @@ class fDatabase
 		$extra = NULL;
 		if (is_object($statement)) {
 			$statement->executeUnbufferedQuery($result, $params, $extra, $statement != $this->statement);
+		} elseif ($this->extension == 'ibm_db2') {
+			$result->setResult(db2_exec($this->connection, $statement, array('cursor' => DB2_FORWARD_ONLY)));
 		} elseif ($this->extension == 'mssql') {
 			$result->setResult(mssql_query($result->getSQL(), $this->connection, 20));
 		} elseif ($this->extension == 'mysql') {
@@ -2673,12 +2825,15 @@ class fDatabase
 	 * Sets the number of rows affected by the query
 	 * 
 	 * @param  fResult $result    The result object for the query
-	 * @param  mixed   $resource  Only applicable for `pdo`, `oci8`, `odbc` and `sqlsrv` extentions or `mysqli` prepared statements - this is either the `PDOStatement` object, `mysqli_stmt` object or the `oci8`, `odbc` or `sqlsrv` resource
+	 * @param  mixed   $resource  Only applicable for `ibm_db2`, `pdo`, `oci8`, `odbc` and `sqlsrv` extentions or `mysqli` prepared statements - this is either the `PDOStatement` object, `mysqli_stmt` object or the `oci8`, `odbc` or `sqlsrv` resource
 	 * @return void
 	 */
 	private function setAffectedRows($result, $resource=NULL)
 	{
-		if ($this->extension == 'mssql') {
+		if ($this->extension == 'ibm_db2') {
+			$insert_update_delete = preg_match('#^\s*(INSERT|UPDATE|DELETE)\b#i', $result->getSQL());
+			$result->setAffectedRows(!$insert_update_delete ? 0 : db2_num_rows($resource));
+		} elseif ($this->extension == 'mssql') {
 			$affected_rows_result = mssql_query('SELECT @@ROWCOUNT AS rows', $this->connection);
 			$result->setAffectedRows((int) mssql_result($affected_rows_result, 0, 'rows'));
 		} elseif ($this->extension == 'mysql') {
@@ -3051,7 +3206,7 @@ class fDatabase
 			return pg_unescape_bytea($value);
 		} elseif ($this->extension == 'pdo' && is_resource($value)) {
 			return stream_get_contents($value);
-		} elseif ($this->type == 'mssql' && (substr($this->database, 0, 4) == 'dsn:')) {
+		} elseif (in_array($this->type, array('db2', 'mssql')) && (substr($this->database, 0, 4) == 'dsn:')) {
 			return pack('H*', $value);
 		} elseif ($this->extension == 'sqlite') {
 			return pack('H*', $value);

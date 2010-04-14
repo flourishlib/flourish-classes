@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Added support for IBM DB2, fixed an issue with building record sets or records that have recursive relationships [wb, 2010-04-13]
  * @changes    1.0.0b21  Changed ::injectFromAndGroupByClauses() to be able to handle table aliases that contain other aliases inside of them [wb, 2010-03-03]
  * @changes    1.0.0b20  Fixed a bug where joining to a table two separate ways could cause table alias issues and incorrect SQL to be generated [wb, 2009-12-16]
  * @changes    1.0.0b19  Added the ability to compare columns with the `=:`, `!:`, `<:`, `<=:`, `>:` and `>=:` operators [wb, 2009-12-08]
@@ -961,7 +962,7 @@ class fORMDatabase
 					}
 					$table_match[4] = self::cleanTableName($schema, $table_match[4]);
 					
-					if ($db->getType() == 'oracle') {
+					if (in_array($db->getType(), array('oracle', 'db2'))) {
 						foreach (array(2, 3, 4, 5) as $subpattern) {
 							if (isset($table_match[$subpattern])) {
 								$table_match[$subpattern] = strtolower($table_match[$subpattern]);	
@@ -998,7 +999,7 @@ class fORMDatabase
 						unset($used_aliases[array_search($once_removed_table, $used_aliases)]);
 					
 					// This is a related table
-					} elseif (($table_match[4] != $table || fORMSchema::getRoutes($schema, $table, $table_match[4])) && $table_match[1] != $table) {
+					} elseif (($table_match[4] != $table || fORMSchema::getRoutes($schema, $table, $table_match[4])) && self::cleanTableName($schema, $table_match[1]) != $table) {
 					
 						$related_table = $table_match[4];
 						$route = fORMSchema::getRouteName($schema, $table, $related_table, $table_match[5]);

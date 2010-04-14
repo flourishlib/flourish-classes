@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b8  Added support for prepared statements [wb, 2010-03-02]
  * @changes    1.0.0b7  Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
  * @changes    1.0.0b6  Added the method ::unescape(), changed ::tossIfNoRows() to return the object for chaining [wb, 2009-08-12]
@@ -154,6 +155,10 @@ class fUnbufferedResult implements Iterator
 		}
 		
 		switch ($this->database->getExtension()) {
+			case 'ibm_db2':
+				db2_free_result($this->result);
+				break;
+			
 			case 'mssql':
 				mssql_free_result($this->result);
 				break;
@@ -216,7 +221,14 @@ class fUnbufferedResult implements Iterator
 	 */
 	private function advanceCurrentRow()
 	{
-		switch ($this->database->getExtension()) {
+		$type      = $this->database->getType();
+		$extension = $this->database->getExtension();
+		
+		switch ($extension) {
+			case 'ibm_db2':
+				$row = db2_fetch_assoc($this->result);
+				break;
+			
 			case 'mssql':
 				// For some reason the mssql extension will return an empty row even
 				// when now rows were returned, so we have to explicitly check for this
@@ -289,7 +301,7 @@ class fUnbufferedResult implements Iterator
 		}
 		
 		// Fix uppercase column names to lowercase
-		if ($row && $this->database->getType() == 'oracle') {
+		if ($row && ($type == 'oracle' || ($type == 'db2' && $extension != 'ibm_db2'))) {
 			$new_row = array();
 			foreach ($row as $column => $value) {
 				$new_row[strtolower($column)] = $value;
@@ -299,14 +311,14 @@ class fUnbufferedResult implements Iterator
 		
 		// This is an unfortunate fix that required for databases that don't support limit
 		// clauses with an offset. It prevents unrequested columns from being returned.
-		if ($row && ($this->database->getType() == 'mssql' || $this->database->getType() == 'oracle')) {
+		if ($row && in_array($type, array('mssql', 'oracle', 'db2'))) {
 			if ($this->untranslated_sql !== NULL && isset($row['flourish__row__num'])) {
 				unset($row['flourish__row__num']);
 			}	
 		}
 		
 		// This decodes the data coming out of MSSQL into UTF-8
-		if ($row && $this->database->getType() == 'mssql') {
+		if ($row && $type == 'mssql') {
 			if ($this->character_set) {
 				foreach ($row as $key => $value) {
 					if (!is_string($value) || strpos($key, '__flourish_mssqln_') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xE-\x1F]#', $value)) {
