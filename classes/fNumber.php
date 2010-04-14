@@ -2,15 +2,16 @@
 /**
  * Provides large/precise number support
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fNumber
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-07-21]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug with parsing decimal numbers in scientific notation [wb, 2010-04-13]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-07-21]
  */
 class fNumber
 {
@@ -279,8 +280,8 @@ class fNumber
 					$fraction = '';
 					$integer  = $number;
 				} else {
-					$fraction = substr($number, strpos('.')+1);
-					$integer  = substr($number, 0, strpos('.'));
+					$fraction = substr($number, strpos($number, '.')+1);
+					$integer  = substr($number, 0, strpos($number, '.'));
 				}
 				
 				if (strlen($integer) < $exponent) {
@@ -1599,7 +1600,7 @@ class fNumber
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
