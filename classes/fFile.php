@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Fixed another situation where ::rename() with the same name would cause the file to be deleted [wb, 2010-04-13]
  * @changes    1.0.0b32  Fixed ::rename() to not fail when the new and old filename are the same [wb, 2010-03-16]
  * @changes    1.0.0b31  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b30  Changed the way files deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
@@ -1140,6 +1141,14 @@ class fFile implements Iterator
 		// Make the filename absolute
 		$new_filename = fDirectory::makeCanonical(realpath($info['dirname'])) . $info['basename'];
 		
+		if ($this->file == $new_filename && $overwrite) {
+			return $this;
+		}
+		
+		if (file_exists($new_filename) && !$overwrite) {
+			$new_filename = fFilesystem::makeUniqueName($new_filename);
+		}
+		
 		if (file_exists($new_filename)) {
 			if (!is_writable($new_filename)) {
 				throw new fEnvironmentException(
@@ -1148,16 +1157,11 @@ class fFile implements Iterator
 				);
 			}
 			
-			if (!$overwrite) {
-				$new_filename = fFilesystem::makeUniqueName($new_filename);
-			
-			} else {
-				if (fFilesystem::isInsideTransaction()) {
-					fFilesystem::recordWrite(new fFile($new_filename));
-				}
-				// Windows requires that the existing file be deleted before being replaced
-				unlink($new_filename);	
+			if (fFilesystem::isInsideTransaction()) {
+				fFilesystem::recordWrite(new fFile($new_filename));
 			}
+			// Windows requires that the existing file be deleted before being replaced
+			unlink($new_filename);
 				
 		} else {
 			$new_dir = new fDirectory($info['dirname']);
@@ -1169,10 +1173,6 @@ class fFile implements Iterator
 			}
 		}
 		
-        if ($this->file == $new_filename) {
-            return $this;   
-        }
-        
 		rename($this->file, $new_filename);
 		
 		// Allow filesystem transactions
