@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added ::hashHMAC() [wb, 2010-04-20]
  * @changes    1.0.0b8  Fixed ::seedRandom() to pass a directory instead of a file to [http://php.net/disk_free_space `disk_free_space()`] [wb, 2010-03-09]
  * @changes    1.0.0b7  SECURITY FIX: fixed issue with ::random() and ::randomString() not producing random output on OSX, made ::seedRandom() more robust [wb, 2009-10-06]
  * @changes    1.0.0b6  Changed ::symmetricKeyEncrypt() to throw an fValidationException when the $secret_key is less than 8 characters [wb, 2009-09-30]
@@ -23,6 +24,7 @@ class fCryptography
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const checkPasswordHash   = 'fCryptography::checkPasswordHash';
+	const hashHMAC            = 'fCryptography::hashHMAC';
 	const hashPassword        = 'fCryptography::hashPassword';
 	const publicKeyDecrypt    = 'fCryptography::publicKeyDecrypt';
 	const publicKeyEncrypt    = 'fCryptography::publicKeyEncrypt';
@@ -127,6 +129,35 @@ class fCryptography
 	
 	
 	/**
+	 * Provides a pure PHP implementation of `hash_hmac()` for when the hash extension is not installed
+	 * 
+	 * @internal
+	 * 
+	 * @param  string $algorithm  The hashing algorithm to use: `'md5'` or `'sha1'`
+	 * @param  string $data       The data to create an HMAC for
+	 * @param  string $key        The key to generate the HMAC with 
+	 * @return string  The HMAC
+	 */
+	static public function hashHMAC($algorithm, $data, $key)
+	{
+		if (function_exists('hash_hmac')) {
+			return hash_hmac($algorithm, $data, $key);
+		}
+		
+		// Algorithm from http://www.ietf.org/rfc/rfc2104.txt
+		if (strlen($key) > 64) {
+			$key = pack('H*', $algorithm($key));
+		}
+		$key  = str_pad($key, 64, "\x0");
+		
+		$ipad = str_repeat("\x36", 64);
+		$opad = str_repeat("\x5C", 64);
+		
+		return $algorithm(($key ^ $opad) . pack('H*', $algorithm(($key ^ $ipad) . $data)));
+	}
+	
+	
+	/**
 	 * Hashes a password using a loop of sha1 hashes and a salt, making rainbow table attacks infeasible
 	 * 
 	 * @param  string $password  The password to hash
@@ -201,7 +232,7 @@ class fCryptography
 			);
 		}
 		
-		$hmac = hash_hmac('sha1', $encrypted_key . $ciphertext, $plaintext);
+		$hmac = self::hashHMAC('sha1', $encrypted_key . $ciphertext, $plaintext);
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
@@ -241,7 +272,7 @@ class fCryptography
 			);
 		}
 		
-		$hmac = hash_hmac('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
+		$hmac = self::hashHMAC('sha1', $encrypted_keys[0] . $ciphertext, $plaintext);
 		
 		return 'fCryptography::public#' . base64_encode($encrypted_keys[0]) . '#' . base64_encode($ciphertext) . '#' . $hmac;
 	}
@@ -456,7 +487,7 @@ class fCryptography
 		$ciphertext    = base64_decode($elements[2]);
 		$provided_hmac = $elements[3];
 		
-		$hmac = hash_hmac('sha1', $iv . '#' . $ciphertext, $secret_key);
+		$hmac = self::hashHMAC('sha1', $iv . '#' . $ciphertext, $secret_key);
 		
 		// By verifying the HMAC we ensure the integrity of the data
 		if ($hmac != $provided_hmac) {
@@ -524,7 +555,7 @@ class fCryptography
 		mcrypt_module_close($module);
 		
 		// Here we are generating the HMAC for the encrypted data to ensure data integrity
-		$hmac = hash_hmac('sha1', $iv . '#' . $ciphertext, $secret_key);
+		$hmac = self::hashHMAC('sha1', $iv . '#' . $ciphertext, $secret_key);
 		
 		// All of the data is then encoded using base64 to prevent issues with character sets
 		$encoded_iv         = base64_encode($iv);
@@ -562,12 +593,6 @@ class fCryptography
 			throw new fEnvironmentException(
 				'The PHP %s extension is required, however is does not appear to be loaded',
 				'mcrypt'
-			);
-		}
-		if (!extension_loaded('hash')) {
-			throw new fEnvironmentException(
-				'The PHP %s extension is required, however is does not appear to be loaded',
-				'hash'
 			);
 		}
 		if (!function_exists('mcrypt_module_open')) {

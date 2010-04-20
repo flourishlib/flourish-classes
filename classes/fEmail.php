@@ -3,7 +3,8 @@
  * Allows creating and sending a single email containing plaintext, HTML, attachments and S/MIME encryption
  * 
  * Please note that this class uses the [http://php.net/function.mail mail()]
- * function, and thus would have poor performance if used for mass mailing.
+ * function by default. Developers that are sending multiple emails, or need
+ * SMTP support, should use fSMTP with this class.
  * 
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
@@ -16,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Added support for sending emails via fSMTP [wb, 2010-04-20]
  * @changes    1.0.0b15  Added the `$unindent_expand_constants` parameter to ::setBody(), added ::loadBody() and ::loadHTMLBody(), fixed HTML emails with attachments [wb, 2010-03-14]
  * @changes    1.0.0b14  Changed ::send() to not double `.`s at the beginning of lines on Windows since it seemed to break things rather than fix them [wb, 2010-03-05]
  * @changes    1.0.0b13  Fixed the class to work when safe mode is turned on [wb, 2009-10-23]
@@ -123,6 +125,9 @@ class fEmail
 	
 	/**
 	 * Sets the class to try and fix broken qmail implementations that add `\r` to `\r\n`
+	 * 
+	 * Before trying to fix qmail with this method, please try using fSMTP
+	 * to connect to `localhost` and pass the fSMTP object to ::send().
 	 * 
 	 * @return void
 	 */
@@ -466,7 +471,7 @@ class fEmail
 		}
 		
 		$first = TRUE;
-		$line = 0;
+		$line  = 1;
 		foreach ($emails as $email) {
 			if ($first) { $first = FALSE; } else { $header .= ', '; }
 			
@@ -789,6 +794,28 @@ class fEmail
 	
 	
 	/**
+	 * Extracts just the email addresses from an array of strings containing an
+	 * <email@address.com> or "Name" <email@address.com> combination.
+	 * 
+	 * @param array $list  The list of email or name/email to extract from
+	 * @return array  The email addresses
+	 */
+	private function extractEmails($list)
+	{
+		$output = array();
+		foreach ($list as $email) {
+			if (preg_match(self::NAME_EMAIL_REGEX, $email, $match)) {
+				$output[] = $match[2];
+			} else {
+				preg_match(self::EMAIL_REGEX, $email, $match);
+				$output[] = $match[0];
+			}
+		}
+		return $output;
+	}
+	
+	
+	/**
 	 * Loads the plaintext version of the email body from a file and applies replacements
 	 * 
 	 * The should contain either ASCII or UTF-8 encoded text. Please see
@@ -1018,9 +1045,10 @@ class fEmail
 	 * 
 	 * @throws fValidationException  When ::validate() throws an exception
 	 * 
+	 * @param  fSMTP $connection  The SMTP connection to send the message over
 	 * @return void
 	 */
-	public function send()
+	public function send($connection=NULL)
 	{
 		$this->validate();
 		
@@ -1054,6 +1082,15 @@ class fEmail
 		// Remove extra line breaks
 		$headers = trim($headers);
 		$body    = trim($body);
+		
+		if ($connection) {
+			$to_emails = $this->extractEmails($this->to_emails);
+			$to_emails = array_merge($to_emails, $this->extractEmails($this->cc_emails));
+			$to_emails = array_merge($to_emails, $this->extractEmails($this->bcc_emails));
+			$from = $this->bounce_to_email ? $this->bounce_to_email : current($this->extractEmails(array($this->from_email)));
+			$connection->send($from, $to_emails, "To: " . $to . "\r\nSubject: " . $subject . "\r\n" . $headers, $body);
+			return;
+		}
 		
 		// This is a gross qmail fix that is a last resort
 		if (self::$popen_sendmail || self::$convert_crlf) {
