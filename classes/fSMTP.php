@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2010-04-20]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
+ * @changes    1.0.0b   The initial implementation [wb, 2010-04-20]
  */
 class fSMTP
 {
@@ -325,7 +326,7 @@ class fSMTP
 		}
 		
 		// If STARTTLS is available, use it
-		if (!$this->secure && extension_loaded('openssl') && $this->find($response, '#^250-STARTTLS#')) {
+		if (!$this->secure && extension_loaded('openssl') && $this->find($response, '#^250[ -]STARTTLS#')) {
 			$response    = $this->write('STARTTLS', 1);
 			$affirmative = $this->find($response, '#^220 #');
 			if ($affirmative) {
