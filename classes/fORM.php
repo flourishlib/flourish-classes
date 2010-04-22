@@ -9,7 +9,7 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
  * @changes    1.0.0b19  Added the method ::isClassMappedToTable() [wb, 2010-03-30]
  * @changes    1.0.0b18  Added the `post::loadFromIdentityMap()` hook [wb, 2010-03-14]
  * @changes    1.0.0b17  Changed ::enableSchemaCaching() to rely on fDatabase::clearCache() instead of explicitly calling fSQLTranslation::clearCache() [wb, 2010-03-09]
@@ -443,6 +443,8 @@ class fORM
 			list($action, $subject) = self::parseMethod($method);
 			if (isset(self::$active_record_method_callbacks[$class][$action . '*'])) {
 				$callback = self::$active_record_method_callbacks[$class][$action . '*'];	
+			} elseif (isset(self::$active_record_method_callbacks['*'][$action . '*'])) {
+				$callback = self::$active_record_method_callbacks['*'][$action . '*'];	
 			}	
 		}
 		
