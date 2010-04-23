@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed error messages in ::retrieve() [wb, 2010-04-23]
  * @changes    1.0.0b22  Added support for IBM DB2, fixed an issue with building record sets or records that have recursive relationships [wb, 2010-04-13]
  * @changes    1.0.0b21  Changed ::injectFromAndGroupByClauses() to be able to handle table aliases that contain other aliases inside of them [wb, 2010-03-03]
  * @changes    1.0.0b20  Fixed a bug where joining to a table two separate ways could cause table alias issues and incorrect SQL to be generated [wb, 2009-12-16]
@@ -1217,7 +1218,7 @@ class fORMDatabase
 		
 		if (!isset(self::$database_objects[$database_name])) {
 			throw new fProgrammerException(
-				'The database object named "%s$1" has not been attached via %s$2 yet',
+				'The database object named "%1$s" has not been attached via %2$s yet',
 				$database_name,
 				__CLASS__ . '::attach()'
 			);
@@ -1232,7 +1233,7 @@ class fORMDatabase
 			
 			if (!isset(self::$database_objects[$database_name][$role])) {
 				throw new fProgrammerException(
-					'The database object named "%s$1" for the %2$s role has not been attached via %s$3 yet',
+					'The database object named "%1$s" for the %s$2 role has not been attached via %3$s yet',
 					$database_name,
 					$role,
 					__CLASS__ . '::attach()'
