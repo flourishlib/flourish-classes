@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Fixed ::isImageCompatible() to handle certain JPGs created with Photoshop [wb, 2010-04-03]
  * @changes    1.0.0b21  Fixed ::resize() to allow dimensions to be numeric strings instead of just integers [wb, 2010-04-09]
  * @changes    1.0.0b20  Added ::append() [wb, 2010-03-15]
  * @changes    1.0.0b19  Updated for the new fFile API [wb-imarc, 2010-03-05]
@@ -368,27 +369,28 @@ class fImage extends fFile
 		$contents = fread($handle, 12);
 		fclose($handle);
 		
-		$_0_8 = substr($contents, 0, 8);
-		$_0_4 = substr($contents, 0, 4);
-		$_6_4 = substr($contents, 6, 4);
+		$_0_8  = substr($contents, 0, 8);
+		$_0_4  = substr($contents, 0, 4);
+		$_6_4  = substr($contents, 6, 4);
+		$_20_4 = substr($contents, 20, 4);
 		
 		if ($_0_4 == "MM\x00\x2A" || $_0_4 == "II\x2A\x00") {
-			return 'tif';	
+			return 'tif';
 		}
 		
 		if ($_0_8 == "\x89PNG\x0D\x0A\x1A\x0A") {
-			return 'png';	
+			return 'png';
 		}
 		
 		if ($_0_4 == 'GIF8') {
-			return 'gif';	
+			return 'gif';
 		}
 		
-		if ($_6_4 == 'JFIF' || $_6_4 == 'Exif') {
-			return 'jpg';	
+		if ($_6_4 == 'JFIF' || $_6_4 == 'Exif' || ($_0_4 == "\xFF\xD8\xFF\xED" && $_20_4 == "8BIM")) {
+			return 'jpg';
 		}
 		
-		return NULL;	
+		return NULL;
 	}
 	
 	
