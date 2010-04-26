@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
  * @changes    1.0.0b2  Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
  * @changes    1.0.0b   The initial implementation [wb, 2010-04-20]
  */
@@ -310,7 +311,7 @@ class fSMTP
 		restore_error_handler();
 		
 		$response = $this->read(1);
-		if (!$this->find($response, '#^220 #')) {
+		if (!$this->find($response, '#^220[ -]#')) {
 			throw new fConnectivityException(
 				'Unknown SMTP welcome message, %1$s, from server %2$s on port %3$s',
 				join("\r\n", $response),
@@ -328,7 +329,7 @@ class fSMTP
 		// If STARTTLS is available, use it
 		if (!$this->secure && extension_loaded('openssl') && $this->find($response, '#^250[ -]STARTTLS#')) {
 			$response    = $this->write('STARTTLS', 1);
-			$affirmative = $this->find($response, '#^220 #');
+			$affirmative = $this->find($response, '#^220[ -]#');
 			if ($affirmative) {
 				do {
 					if (isset($res)) {
