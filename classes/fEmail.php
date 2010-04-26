@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added the static method ::unindentExpand() [wb, 2010-04-26]
  * @changes    1.0.0b16  Added support for sending emails via fSMTP [wb, 2010-04-20]
  * @changes    1.0.0b15  Added the `$unindent_expand_constants` parameter to ::setBody(), added ::loadBody() and ::loadHTMLBody(), fixed HTML emails with attachments [wb, 2010-03-14]
  * @changes    1.0.0b14  Changed ::send() to not double `.`s at the beginning of lines on Windows since it seemed to break things rather than fix them [wb, 2010-03-05]
@@ -38,8 +39,10 @@
 class fEmail
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const fixQmail = 'fEmail::fixQmail';
-	const reset    = 'fEmail::reset';
+	const fixQmail       = 'fEmail::fixQmail';
+	const reset          = 'fEmail::reset';
+	const unindentExpand = 'fEmail::unindentExpand';
+	
 	
 	/**
 	 * A regular expression to match an email address, exluding those with comments and folding whitespace
@@ -233,6 +236,30 @@ class fEmail
 		}
 		
 		return TRUE;
+	}
+	
+	
+	/**
+	 * Takes a block of text, unindents it and replaces {CONSTANT} tokens with the constant's value
+	 * 
+	 * @param string $text  The text to unindent and replace constants in
+	 * @return string  The unindented text
+	 */
+	static public function unindent($text)
+	{
+		$text = preg_replace('#^[ \t]*\n|\n[ \t]*$#D', '', $text);
+			
+		if (preg_match('#^[ \t]+(?=\S)#m', $text, $match)) {
+			$text = preg_replace('#^' . preg_quote($match[0]) . '#m', '', $text);
+		}
+		
+		preg_match_all('#\{([a-z][a-z0-9_]*)\}#i', $text, $constants, PREG_SET_ORDER);
+		foreach ($constants as $constant) {
+			if (!defined($constant[1])) { continue; }
+			$text = preg_replace('#' . preg_quote($constant[0], '#') . '#', constant($constant[1]), $text, 1);
+		}
+		
+		return $text;
 	}
 	
 	
@@ -1151,17 +1178,7 @@ class fEmail
 	public function setBody($plaintext, $unindent_expand_constants=FALSE)
 	{
 		if ($unindent_expand_constants) {
-			$plaintext = preg_replace('#^[ \t]*\n|\n[ \t]*$#D', '', $plaintext);
-			
-			if (preg_match('#^[ \t]+(?=\S)#m', $plaintext, $match)) {
-				$plaintext = preg_replace('#^' . preg_quote($match[0]) . '#m', '', $plaintext);
-			}
-			
-			preg_match_all('#\{([a-z][a-z0-9_]*)\}#i', $plaintext, $constants, PREG_SET_ORDER);
-			foreach ($constants as $constant) {
-				if (!defined($constant[1])) { continue; }
-				$plaintext = preg_replace('#' . preg_quote($constant[0], '#') . '#', constant($constant[1]), $plaintext, 1);
-			}
+			$plaintext = self::unindentExpand($plaintext);
 		}
 		
 		$this->plaintext_body = $plaintext;
