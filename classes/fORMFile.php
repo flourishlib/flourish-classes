@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Updated the TEMP_DIRECTORY constant to not include the trailing slash, code now uses DIRECTORY_SEPARATOR to fix issues on Windows [wb, 2010-04-28]
  * @changes    1.0.0b21  Fixed ::set() to perform column inheritance, just like ::upload() does [wb, 2010-03-15]
  * @changes    1.0.0b20  Fixed the `set` and `process` methods to return the record instance, changed `upload` methods to return the fFile object, updated ::reflect() with new return values [wb, 2010-03-15]
  * @changes    1.0.0b19  Fixed a few missed instances of old fFile method names [wb, 2009-12-16]
@@ -68,7 +69,7 @@ class fORMFile
 	 * 
 	 * @var string
 	 */
-	const TEMP_DIRECTORY = '__flourish_temp/';
+	const TEMP_DIRECTORY = '__flourish_temp';
 	
 	
 	/**
@@ -523,8 +524,8 @@ class fORMFile
 		list ($action, $column) = fORM::parseMethod($method_name);
 		
 		$filename = ($values[$column] instanceof fFile) ? $values[$column]->getName() : NULL;
-		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . $filename) !== FALSE) {
-			$filename = self::TEMP_DIRECTORY . $filename;
+		if ($filename && strpos($values[$column]->getPath(), self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR . $filename) !== FALSE) {
+			$filename = self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR . $filename;
 		}
 		
 		return fHTML::encode($filename);
@@ -574,8 +575,8 @@ class fORMFile
 			}
 			
 			// If the file is in a temp dir, move it out
-			if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
-				$new_filename = str_replace(self::TEMP_DIRECTORY, '', $value->getPath());
+			if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR) !== FALSE) {
+				$new_filename = str_replace(self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR, '', $value->getPath());
 				$new_filename = fFilesystem::makeUniqueName($new_filename);
 				$value->rename($new_filename, FALSE);
 			}
@@ -685,9 +686,9 @@ class fORMFile
 	{
 		// Let's clean out the upload temp dir
 		try {
-			$temp_dir = new fDirectory($folder->getPath() . self::TEMP_DIRECTORY);
+			$temp_dir = new fDirectory($folder->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 		} catch (fValidationException $e) {
-			$temp_dir = fDirectory::create($folder->getPath() . self::TEMP_DIRECTORY);
+			$temp_dir = fDirectory::create($folder->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 		}
 		
 		$temp_files = $temp_dir->scan();
@@ -908,7 +909,7 @@ class fORMFile
 		}
 		
 		// If the file we are replicating is in the temp dir, the copy can live there too
-		if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY) !== FALSE) {
+		if (strpos($value->getParent()->getPath(), self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR) !== FALSE) {
 			$value = clone $value;	
 		
 		// Otherwise, the copy of the file must be placed in the temp dir so it is properly cleaned up
@@ -916,9 +917,9 @@ class fORMFile
 			$upload_dir = self::$file_upload_columns[$class][$column];
 			
 			try {
-				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 			} catch (fValidationException $e) {
-				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
+				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 			}
 			
 			$value = $value->duplicate($temp_dir);	
@@ -1032,9 +1033,9 @@ class fORMFile
 			$upload_dir = self::$file_upload_columns[$class][$column];
 			
 			try {
-				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY);
+				$temp_dir = new fDirectory($upload_dir->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 			} catch (fValidationException $e) {
-				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY);
+				$temp_dir = fDirectory::create($upload_dir->getPath() . self::TEMP_DIRECTORY . DIRECTORY_SEPARATOR);
 			}
 			
 			$file     = fFilesystem::createObject($file_path);
