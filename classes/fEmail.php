@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed the name of the static method ::unindentExpand() [wb, 2010-04-28]
  * @changes    1.0.0b17  Added the static method ::unindentExpand() [wb, 2010-04-26]
  * @changes    1.0.0b16  Added support for sending emails via fSMTP [wb, 2010-04-20]
  * @changes    1.0.0b15  Added the `$unindent_expand_constants` parameter to ::setBody(), added ::loadBody() and ::loadHTMLBody(), fixed HTML emails with attachments [wb, 2010-03-14]
@@ -245,7 +246,7 @@ class fEmail
 	 * @param string $text  The text to unindent and replace constants in
 	 * @return string  The unindented text
 	 */
-	static public function unindent($text)
+	static public function unindentExpand($text)
 	{
 		$text = preg_replace('#^[ \t]*\n|\n[ \t]*$#D', '', $text);
 			
