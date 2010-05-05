@@ -12,8 +12,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2010-05-03]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added the missing ::enableDebugging() [wb, 2010-05-05]
+ * @changes    1.0.0b   The initial implementation [wb, 2010-05-05]
  */
 class fMailbox
 {
@@ -948,6 +949,18 @@ class fMailbox
 	
 	
 	/**
+	 * Sets if debug messages should be shown
+	 * 
+	 * @param  boolean $flag  If debugging messages should be shown
+	 * @return void
+	 */
+	public function enableDebugging($flag)
+	{
+		$this->debug = (boolean) $flag;
+	}
+	
+	
+	/**
 	 * Retrieves a single message from the server
 	 * 
 	 * The output includes the following keys:
@@ -1151,7 +1164,7 @@ class fMailbox
 					'size'     => $sizes[$i],
 					'date'     => $headers['date'],
 					'from'     => self::joinEmails(array($headers['from'])),
-					'subject'  => isset($headers['subject']) ? $headers['subject'] : '';
+					'subject'  => isset($headers['subject']) ? $headers['subject'] : ''
 				);
 				if (isset($headers['message-id'])) {
 					$output[$i]['message_id'] = $headers['message-id'];
