@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
  * @changes    1.0.0b3  Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
  * @changes    1.0.0b2  Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
  * @changes    1.0.0b   The initial implementation [wb, 2010-04-20]
@@ -59,6 +60,13 @@ class fSMTP
 	private $max_size;
 	
 	/**
+	 * The password to authenticate with
+	 * 
+	 * @var string
+	 */
+	private $password;
+	
+	/**
 	 * If the server supports pipelining
 	 * 
 	 * @var boolean
@@ -86,6 +94,13 @@ class fSMTP
 	 */
 	private $timeout;
 	
+	/**
+	 * The username to authenticate with
+	 * 
+	 * @var string
+	 */
+	private $username;
+	
 	
 	/**
 	 * Configures the SMTP connection
@@ -103,10 +118,20 @@ class fSMTP
 	 * @param integer $timeout  The timeout for the connection - defaults to the `default_socket_timeout` ini setting
 	 * @return fSMTP
 	 */
-	public function __construct($host, $port=25, $secure=FALSE, $timeout=NULL)
+	public function __construct($host, $port=NULL, $secure=FALSE, $timeout=NULL)
 	{
 		if ($timeout === NULL) {
 			$timeout = ini_get('default_socket_timeout');
+		}
+		if ($port === NULL) {
+			$port = !$secure ? 25 : 465;
+		}
+		
+		if ($secure && !extension_loaded('openssl')) {
+			throw new fEnvironmentException(
+				'A secure connection was requested, but the %s extension is not installed',
+				'openssl'
+			);
 		}
 		
 		$this->host    = $host;
@@ -157,14 +182,103 @@ class fSMTP
 	 */
 	public function authenticate($username, $password)
 	{
-		$this->connect();
-		
-		// If no auth methods are available, we don't need to even bother trying
-		if (!$this->auth_methods) {
+		$this->username = $username;
+		$this->password = $password;
+	}
+	
+	
+	/**
+	 * Closes the connection to the SMTP server
+	 * 
+	 * @return void
+	 */
+	public function close()
+	{
+		if (!$this->connection) {
 			return;
 		}
 		
-		if (in_array('DIGEST-MD5', $this->auth_methods)) {
+		$this->write('QUIT', 1);
+		fclose($this->connection);
+		$this->connection = NULL;
+	}
+	
+	
+	/**
+	 * Initiates the connection to the server
+	 * 
+	 * @return void
+	 */
+	private function connect()
+	{
+		if ($this->connection) {
+			return;
+		}
+		
+		$this->local_host = php_uname('n');
+		
+		set_error_handler($this->handleError);
+		
+		$host = ($this->secure) ? 'tls://' . $this->host : $this->host;
+		$this->connection = fsockopen($host, $this->port, $error_int, $error_string, $this->timeout);
+		if (!$this->connection) {
+			throw new fConnectivityException('There was an error connecting to the server');
+		}
+		
+		restore_error_handler();
+		
+		$response = $this->read('#^220 #');
+		if (!$this->find($response, '#^220[ -]#')) {
+			throw new fConnectivityException(
+				'Unknown SMTP welcome message, %1$s, from server %2$s on port %3$s',
+				join("\r\n", $response),
+				$this->host,
+				$this->port
+			);		
+		}
+		
+		// Try sending the ESMTP EHLO command, but fall back to normal SMTP HELO
+		$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
+		if ($this->find($response, '#^500#')) {
+			$response = $this->write('HELO ' . $this->local_host, 1);	
+		}
+		
+		// If STARTTLS is available, use it
+		if (!$this->secure && extension_loaded('openssl') && $this->find($response, '#^250[ -]STARTTLS#')) {
+			$response    = $this->write('STARTTLS', '#^220 #');
+			$affirmative = $this->find($response, '#^220[ -]#');
+			if ($affirmative) {
+				do {
+					if (isset($res)) {
+						sleep(0.1);	
+					}
+					$res = stream_socket_enable_crypto($this->connection, TRUE, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+				} while ($res === 0);
+			}
+			if (!$affirmative || $res === FALSE) {
+				throw new fConnectivityException('Error establishing secure connection');
+			}
+			$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
+		}
+		
+		$this->max_size = 0;
+		if ($match = $this->find($response, '#^250[ -]SIZE\s+(\d+)$#')) {
+			$this->max_size = $match[0][1];	
+		}
+		
+		$this->pipelining = (boolean) $this->find($response, '#^250[ -]PIPELINING$#');
+		
+		
+		$auth_methods = array();
+		if ($match = $this->find($response, '#^250[ -]AUTH[ =](.*)$#')) {
+			$auth_methods = array_map('strtoupper', explode(' ', $match[0][1]));	
+		}
+		
+		if (!$auth_methods || !$this->username) {
+			return;
+		}
+		
+		if (in_array('DIGEST-MD5', $auth_methods)) {
 			$response = $this->write('AUTH DIGEST-MD5', 1);
 			$this->handleErrors($response);
 			
@@ -197,13 +311,13 @@ class fSMTP
 			$nc         = '00000001';
 			$digest_uri = 'smtp/' . $this->host;
 			
-			$a1 = md5($username . ':' . $realm . ':' . $password, TRUE) . ':' . $nonce . ':' . $cnonce;	
+			$a1 = md5($this->username . ':' . $realm . ':' . $this->password, TRUE) . ':' . $nonce . ':' . $cnonce;	
 			$a2 = 'AUTHENTICATE:' . $digest_uri;
 			$response = md5(md5($a1) . ':' . $nonce . ':' . $nc . ':' . $cnonce . ':auth:' . md5($a2));
 			
 			$response_params = array(
 				'charset=utf-8',
-				'username="' . $username . '"',
+				'username="' . $this->username . '"',
 				'realm="' . $realm . '"',
 				'nonce="' . $nonce . '"',
 				'nc=' . $nc,
@@ -215,25 +329,22 @@ class fSMTP
 			
 			$response = $this->write(base64_encode(join(',', $response_params)), 2);
 		
-		} elseif (in_array('CRAM-MD5', $this->auth_methods)) {
+		} elseif (in_array('CRAM-MD5', $auth_methods)) {
 			$response = $this->write('AUTH CRAM-MD5', 1);
-			$this->handleErrors($response);
 			$match     = $this->find($response, '#^334 (.*)$#');
 			$challenge = base64_decode($match[0][1]);
-			$response  = $this->write(base64_encode($username . ' ' . fCryptography::hashHMAC('md5', $challenge, $password)), 1);
+			$response  = $this->write(base64_encode($this->username . ' ' . fCryptography::hashHMAC('md5', $challenge, $this->password)), 1);
 		
-		} elseif (in_array('LOGIN', $this->auth_methods)) {
+		} elseif (in_array('LOGIN', $auth_methods)) {
 			$response = $this->write('AUTH LOGIN', 1);
-			$this->handleErrors($response);
-			$this->write(base64_encode($username), 1);
-			$response = $this->write(base64_encode($password), 1);
+			$this->write(base64_encode($this->username), 1);
+			$response = $this->write(base64_encode($this->password), 1);
 			
-		} elseif (in_array('PLAIN', $this->auth_methods)) {
-			$response = $this->write('AUTH PLAIN ' . base64_encode($username . "\0" . $username . "\0" . $password), 1);
-			$this->handleErrors($response);
+		} elseif (in_array('PLAIN', $auth_methods)) {
+			$response = $this->write('AUTH PLAIN ' . base64_encode($this->username . "\0" . $this->username . "\0" . $this->password), 1);
 		}
 		
-		if ($this->find($response, '#^535 #')) {
+		if ($this->find($response, '#^535[ -]#')) {
 			throw new fValidationException(
 				'The username and password provided were not accepted for the SMTP server %1$s on port %2$s',
 				$this->host,
@@ -243,118 +354,6 @@ class fSMTP
 		if (!array_filter($response)) {
 			throw new fConnectivityException('No response was received for the authorization request');
 		}
-	}
-	
-	
-	/**
-	 * Closes the connection to the SMTP server
-	 * 
-	 * @return void
-	 */
-	public function close()
-	{
-		if (!$this->connection) {
-			return;
-		}
-		
-		$this->write('QUIT', 1);
-		fclose($this->connection);
-		$this->connection = NULL;
-	}
-	
-	
-	/**
-	 * Initiates the connection to the server
-	 * 
-	 * @return void
-	 */
-	private function connect()
-	{
-		if ($this->connection) {
-			return;
-		}
-		
-		// This attempts to get the fully qualified domain name for use in the message-id and EHLO/HELO
-		if (isset($_ENV['HOST'])) {
-			$this->local_host = $_ENV['HOST'];
-		}
-		if (strpos($this->local_host, '.') === FALSE && isset($_ENV['HOSTNAME'])) {
-			$this->local_host = $_ENV['HOSTNAME'];
-		}
-		if (strpos($this->local_host, '.') === FALSE) {
-			$this->local_host = php_uname('n');
-		}
-		if (strpos($this->local_host, '.') === FALSE && !in_array('exec', explode(',', ini_get('disable_functions'))) && !ini_get('safe_mode') && !ini_get('open_basedir')) {
-			if (fCore::checkOS('linux')) {
-				$this->local_host = trim(shell_exec('hostname --fqdn'));
-			} elseif (fCore::checkOS('windows')) {
-				$output = shell_exec('ipconfig /all');
-				if (preg_match('#DNS Suffix Search List[ .:]+([a-z0-9_.-]+)#i', $output, $match)) {
-					$this->local_host .= '.' . $match[1];
-				}
-			} elseif (fCore::checkOS('bsd', 'osx') && file_exists('/etc/resolv.conf')) {
-				$output = file_get_contents('/etc/resolv.conf');
-				if (preg_match('#^domain ([a-z0-9_.-]+)#im', $output, $match)) {
-					$this->local_host .= '.' . $match[1];
-				}
-			}
-		}
-		
-		set_error_handler($this->handleError);
-		
-		$host = ($this->secure) ? 'tls://' . $this->host : $this->host;
-		$this->connection = fsockopen($host, $this->port, $error_int, $error_string, $this->timeout);
-		if (!$this->connection) {
-			throw new fConnectivityException('There was an error connecting to the server');
-		}
-		
-		restore_error_handler();
-		
-		$response = $this->read(1);
-		if (!$this->find($response, '#^220[ -]#')) {
-			throw new fConnectivityException(
-				'Unknown SMTP welcome message, %1$s, from server %2$s on port %3$s',
-				join("\r\n", $response),
-				$this->host,
-				$this->port
-			);		
-		}
-		
-		// Try sending the ESMTP EHLO command, but fall back to normal SMTP HELO
-		$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
-		if ($this->find($response, '#^500#')) {
-			$response = $this->write('HELO ' . $this->local_host, 1);	
-		}
-		
-		// If STARTTLS is available, use it
-		if (!$this->secure && extension_loaded('openssl') && $this->find($response, '#^250[ -]STARTTLS#')) {
-			$response    = $this->write('STARTTLS', 1);
-			$affirmative = $this->find($response, '#^220[ -]#');
-			if ($affirmative) {
-				do {
-					if (isset($res)) {
-						sleep(0.1);	
-					}
-					$res = stream_socket_enable_crypto($this->connection, TRUE, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-				} while ($res === 0);
-			}
-			if (!$affirmative || $res === FALSE) {
-				throw new fConnectivityException('Error establishing secure connection');
-			}
-			$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
-		}
-		
-		$this->max_size = 0;
-		if ($match = $this->find($response, '#^250[ -]SIZE\s+(\d+)$#')) {
-			$this->max_size = $match[0][1];	
-		}
-		
-		$this->pipelining = (boolean) $this->find($response, '#^250[ -]PIPELINING$#');
-		
-		$this->auth_methods = array();
-		if ($match = $this->find($response, '#^250[ -]AUTH[ =](.*)$#')) {
-			$this->auth_methods = array_map('strtoupper', explode(' ', $match[0][1]));	
-		}	
 	}
 	
 	
@@ -457,7 +456,7 @@ class fSMTP
 			while (!feof($this->connection)) {
 				$read = array($this->connection);
 				$write = $except = NULL;
-				$response[] = rtrim(fgets($this->connection));
+				$response[] = substr(fgets($this->connection), 0, -2);
 				if ($expect !== NULL) {
 					$matched_number = is_int($expect) && sizeof($response) == $expect;
 					$matched_regex  = is_string($expect) && preg_match($expect, $response[sizeof($response)-1]);
@@ -470,7 +469,7 @@ class fSMTP
 			}
 		}
 		if (fCore::getDebug($this->debug)) {
-			fCore::debug("Recieved:\n  " . join("\n  ", $response), $this->debug);
+			fCore::debug("Received:\n" . join("\r\n", $response), $this->debug);
 		}
 		$this->handleErrors($response);
 		return $response;
@@ -500,9 +499,8 @@ class fSMTP
 		// Removed the Bcc header incase the SMTP server doesn't
 		$headers = preg_replace('#^Bcc:(.*?)\r\n([^ ])#mi', '\2', $headers);
 		
-		// Add the Date and Message-ID header
+		// Add the Date header
 		$headers = "Date: " . date('D, j M Y H:i:s O') . "\r\n" . $headers;
-		$headers = "Message-Id: <" . fCryptography::randomString(32, 'hexadecimal') . '@' . $this->local_host . ">\r\n" . $headers;
 		
 		$data = $headers . "\r\n\r\n" . $body;
 		if ($this->max_size && strlen($data) > $this->max_size) {
@@ -556,7 +554,7 @@ class fSMTP
 			$data .= "\r\n";
 		}
 		if (fCore::getDebug($this->debug)) {
-			fCore::debug("Sending:\n  " . str_replace("\r\n", "\n  ", trim($data)), $this->debug);
+			fCore::debug("Sending:\n" . trim($data), $this->debug);
 		}
 		$res = fwrite($this->connection, $data);
 		if ($res === FALSE) {

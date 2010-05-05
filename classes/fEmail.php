@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Changed ::send() to return the message id for the email, fixed the email regexes to require [] around IPs [wb, 2010-05-05]
  * @changes    1.0.0b18  Fixed the name of the static method ::unindentExpand() [wb, 2010-04-28]
  * @changes    1.0.0b17  Added the static method ::unindentExpand() [wb, 2010-04-26]
  * @changes    1.0.0b16  Added support for sending emails via fSMTP [wb, 2010-04-20]
@@ -56,13 +57,13 @@ class fEmail
 	 * 
 	 * @var string
 	 */
-	const EMAIL_REGEX = '~^[ \t]*(                                                                    # Allow leading whitespace
-						   (?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")                     # An "atom" or a quoted string
-						   (?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*  # A . plus another "atom" or a quoted string, any number of times
-						 )@(                                                                          # The @ symbol
-						   (?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                              # Domain name
-						   (?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])    # (or) IP addresses
-						 )[ \t]*$~ixD';                                                               # Allow Trailing whitespace
+	const EMAIL_REGEX = '~^[ \t]*(                                                                      # Allow leading whitespace
+						   (?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")                       # An "atom" or a quoted string
+						   (?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*    # A . plus another "atom" or a quoted string, any number of times
+						 )@(                                                                            # The @ symbol
+						   (?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                                # Domain name
+						   \[(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])\]  # (or) IP addresses
+						 )[ \t]*$~ixD';                                                                 # Allow Trailing whitespace
 	
 	/**
 	 * A regular expression to match a `name <email>` string, exluding those with comments and folding whitespace
@@ -85,7 +86,7 @@ class fEmail
 								(?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*          # A . plus another "atom" or a quoted string, any number of times
 							  )@(                                                                                  # The @ symbol
 								(?:[a-z0-9\\-]+\.)+[a-z]{2,}|                                                      # Domain nam
-								(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])            # (or) IP addresses
+								\[(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])\]        # (or) IP addresses
 							  ))[ \t]*>[ \t]*$~ixD';                                                               # Closing > and trailing whitespace
 	
 	
@@ -102,6 +103,11 @@ class fEmail
 	 * @var boolean
 	 */
 	static private $convert_crlf  = FALSE;
+	
+	/**
+	 * The local hostname, used for message ids
+	 */
+	static private $local_hostname;
 	
 	
 	/**
@@ -385,6 +391,44 @@ class fEmail
 	
 	
 	/**
+	 * Initializes fEmail for creating message ids
+	 * 
+	 * @return fEmail
+	 */
+	public function __construct()
+	{
+		if (self::$local_hostname !== NULL) {
+			return;
+		}
+		
+		if (isset($_ENV['HOST'])) {
+			self::$local_hostname = $_ENV['HOST'];
+		}
+		if (strpos(self::$local_hostname, '.') === FALSE && isset($_ENV['HOSTNAME'])) {
+			self::$local_hostname = $_ENV['HOSTNAME'];
+		}
+		if (strpos(self::$local_hostname, '.') === FALSE) {
+			self::$local_hostname = php_uname('n');
+		}
+		if (strpos(self::$local_hostname, '.') === FALSE && !in_array('exec', explode(',', ini_get('disable_functions'))) && !ini_get('safe_mode') && !ini_get('open_basedir')) {
+			if (fCore::checkOS('linux')) {
+				self::$local_hostname = trim(shell_exec('hostname --fqdn'));
+			} elseif (fCore::checkOS('windows')) {
+				$output = shell_exec('ipconfig /all');
+				if (preg_match('#DNS Suffix Search List[ .:]+([a-z0-9_.-]+)#i', $output, $match)) {
+					self::$local_hostname .= '.' . $match[1];
+				}
+			} elseif (fCore::checkOS('bsd', 'osx') && file_exists('/etc/resolv.conf')) {
+				$output = file_get_contents('/etc/resolv.conf');
+				if (preg_match('#^domain ([a-z0-9_.-]+)#im', $output, $match)) {
+					self::$local_hostname .= '.' . $match[1];
+				}
+			}
+		}
+	}
+	
+	
+	/**
 	 * All requests that hit this method should be requests for callbacks
 	 * 
 	 * @internal
@@ -604,18 +648,18 @@ class fEmail
 				$alternative_boundary = $this->createBoundary();
 				$body    .= 'Content-Type: multipart/alternative; boundary="' . $alternative_boundary . "\"\r\n\r\n";
 			} else {
-				$body .= $mime_notice . "\r\n";
+				$body .= $mime_notice . "\r\n\r\n";
 			}
 			
 			$body .= '--' . $alternative_boundary . "\r\n";
 			$body .= "Content-Type: text/plain; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";
+			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n";
 			$body .= '--' . $alternative_boundary . "\r\n";
 			$body .= "Content-Type: text/html; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-			$body .= $this->makeQuotedPrintable($this->html_body) . "\r\n\r\n";
-			$body .= '--' . $alternative_boundary . "--\r\n\r\n";
+			$body .= $this->makeQuotedPrintable($this->html_body) . "\r\n";
+			$body .= '--' . $alternative_boundary . "--\r\n";
 		
 		// If there is no HTML, just encode the body
 		} else {
@@ -626,13 +670,13 @@ class fEmail
 				$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			}
 			
-			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n\r\n";
+			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n";
 		}
 		
 		// If we have attachments, we need to wrap a multipart/mixed around the current body
 		if ($this->attachments) {
 			
-			$multipart_body  = $mime_notice . "\r\n";
+			$multipart_body  = $mime_notice . "\r\n\r\n";
 			$multipart_body .= '--' . $boundary . "\r\n";
 			$multipart_body .= $body;
 			
@@ -641,7 +685,7 @@ class fEmail
 				$multipart_body .= 'Content-Type: ' . $file_info['mime-type'] . "\r\n";
 				$multipart_body .= "Content-Transfer-Encoding: base64\r\n";
 				$multipart_body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
-				$multipart_body .= $this->makeBase64($file_info['contents']) . "\r\n\r\n";
+				$multipart_body .= $this->makeBase64($file_info['contents']) . "\r\n";
 			}
 			
 			$multipart_body .= '--' . $boundary . "--\r\n"; 
@@ -656,10 +700,11 @@ class fEmail
 	/**
 	 * Builds the headers for the email
 	 * 
-	 * @param  string $boundary  The boundary to use for the top level mime block
+	 * @param  string $boundary    The boundary to use for the top level mime block
+	 * @param  string $message_id  The message id for the message
 	 * @return string  The headers to be sent to the [http://php.net/function.mail mail()] function
 	 */
-	private function createHeaders($boundary)
+	private function createHeaders($boundary, $message_id)
 	{
 		$headers = '';
 		
@@ -681,6 +726,7 @@ class fEmail
 			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";
 		}
 		
+		$headers .= "Message-ID: " . $message_id . "\r\n";
 		$headers .= "MIME-Version: 1.0\r\n";
 		
 		if ($this->html_body && !$this->attachments) {
@@ -693,7 +739,7 @@ class fEmail
 		}
 		
 		if ($this->attachments) {
-			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n\r\n";
+			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n";
 		}
 		
 		return $headers . "\r\n";
@@ -809,6 +855,13 @@ class fEmail
 	 */
 	public function encrypt($recipients_smime_cert_file)
 	{
+		if (!extension_loaded('openssl')) {
+			throw new fEnvironmentException(
+				'S/MIME encryption was requested for an email, but the %s extension is not installed',
+				'openssl'
+			);
+		}
+		
 		if (!self::stringlike($recipients_smime_cert_file)) {
 			throw new fProgrammerException(
 				"The recipient's S/MIME certificate filename specified, %s, does not appear to be a valid filename",
@@ -1071,10 +1124,15 @@ class fEmail
 	/**
 	 * Sends the email
 	 * 
+	 * The return value is the message id, which should be included as the
+	 * `Message-ID` header of the email. While almost all SMTP servers will not
+	 * modify this value, testing has indicated at least one (smtp.live.com
+	 * for Windows Live Mail) does.
+	 * 
 	 * @throws fValidationException  When ::validate() throws an exception
 	 * 
 	 * @param  fSMTP $connection  The SMTP connection to send the message over
-	 * @return void
+	 * @return string  The message id for the message - see method description for details
 	 */
 	public function send($connection=NULL)
 	{
@@ -1082,8 +1140,9 @@ class fEmail
 		
 		$to = trim($this->buildMultiAddressHeader("", $this->to_emails));
 		
+		$message_id         = '<' . fCryptography::randomString(32, 'hexadecimal') . '@' . self::$local_hostname . '>';
 		$top_level_boundary = $this->createBoundary();
-		$headers            = $this->createHeaders($top_level_boundary);
+		$headers            = $this->createHeaders($top_level_boundary, $message_id);
 		
 		$subject = str_replace(array("\r", "\n"), '', $this->subject);
 		$subject = $this->makeEncodedWord($subject);
@@ -1117,7 +1176,7 @@ class fEmail
 			$to_emails = array_merge($to_emails, $this->extractEmails($this->bcc_emails));
 			$from = $this->bounce_to_email ? $this->bounce_to_email : current($this->extractEmails(array($this->from_email)));
 			$connection->send($from, $to_emails, "To: " . $to . "\r\nSubject: " . $subject . "\r\n" . $headers, $body);
-			return;
+			return $message_id;
 		}
 		
 		// This is a gross qmail fix that is a last resort
@@ -1163,6 +1222,8 @@ class fEmail
 				$this->subject
 			);
 		}
+		
+		return $message_id;
 	}
 	
 	
@@ -1301,6 +1362,13 @@ class fEmail
 	 */
 	public function sign($senders_smime_cert_file, $senders_smime_pk_file, $senders_smime_pk_password)
 	{
+		if (!extension_loaded('openssl')) {
+			throw new fEnvironmentException(
+				'An S/MIME signature was requested for an email, but the %s extension is not installed',
+				'openssl'
+			);
+		}
+		
 		if (!self::stringlike($senders_smime_cert_file)) {
 			throw new fProgrammerException(
 				"The sender's S/MIME certificate file specified, %s, does not appear to be a valid filename",
