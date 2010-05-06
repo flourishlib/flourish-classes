@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Updated ::associateRecords() to accept just a single fActiveRecord [wb, 2010-05-06]
  * @changes    1.0.0b27  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b26  Fixed ::reflect() to show the proper return values for `associate`, `link` and `populate` methods [wb, 2010-03-15]
  * @changes    1.0.0b25  Fixed a bug when storing a one-to-one related record with different column names on each end of the relationship [wb, 2010-03-04]
@@ -150,7 +151,10 @@ class fORMRelated
 		
 		$primary_keys = FALSE;
 		
-		if ($records_to_associate instanceof fRecordSet) {
+		if ($records_to_associate instanceof fActiveRecord) {
+			$records = fRecordSet::buildFromArray($related_class, array($records_to_associate));
+		
+		} elseif ($records_to_associate instanceof fRecordSet) {
 			$records = clone $records_to_associate;
 		
 		} elseif (!sizeof($records_to_associate)) {
