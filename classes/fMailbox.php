@@ -12,12 +12,18 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added missing static method callback constants [wb, 2010-05-11]
  * @changes    1.0.0b2  Added the missing ::enableDebugging() [wb, 2010-05-05]
  * @changes    1.0.0b   The initial implementation [wb, 2010-05-05]
  */
 class fMailbox
 {
+	const addSMIMEPair = 'fMailbox::addSMIMEPair';
+	const parseMessage = 'fMailbox::parseMessage';
+	const reset        = 'fMailbox::reset';
+	
+	
 	/**
 	 * S/MIME certificates and private keys for verification and decryption
 	 * 
