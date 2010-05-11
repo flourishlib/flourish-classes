@@ -9,13 +9,72 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
  * @changes    1.0.0b3  Fixed an issue with placing relative file path [wb, 2010-04-23]
  * @changes    1.0.0b2  Added the ::inject() method [wb, 2009-01-09]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fTemplating
 {
+	const create   = 'fTemplating::create';
+	const reset    = 'fTemplating::reset';
+	const retrieve = 'fTemplating::retrieve';
+	
+	
+	/**
+	 * Named fTemplating instances
+	 * 
+	 * @var array
+	 */
+	static $instances = array();
+	
+	
+	/**
+	 * Creates a named template that can be accessed from any scope via ::retrieve()
+	 * 
+	 * @param  string $name  The name for this template instance
+	 * @param  string $root  The filesystem path to use when accessing relative files, defaults to `$_SERVER['DOCUMENT_ROOT']`
+	 * @return fTemplating  The new fTemplating instance
+	 */
+	static public function create($name, $root=NULL)
+	{
+		self::$instances[$name] = new self($root);
+		return self::$instances[$name];
+	}
+	
+	
+	/**
+	 * Resets the configuration of the class
+	 * 
+	 * @internal
+	 * 
+	 * @return void
+	 */
+	static public function reset()
+	{
+		self::$instances = array();
+	}
+	
+	
+	/**
+	 * Retrieves a named template
+	 * 
+	 * @param  string $name  The name of the template to retrieve
+	 * @return fTemplating  The specified fTemplating instance
+	 */
+	static public function retrieve($name)
+	{
+		if (!isset(self::$instances[$name])) {
+			throw new fProgrammerException(
+				'The named template specified, %s, has not been created yet',
+				$name
+			);
+		}
+		return self::$instances[$name];
+	}
+	
+	
 	/**
 	 * The buffered object id, used for differentiating different instances when doing replacements
 	 * 
