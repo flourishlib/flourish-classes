@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Added ::getExtension() [wb, 2010-05-10]
  * @changes    1.0.0b33  Fixed another situation where ::rename() with the same name would cause the file to be deleted [wb, 2010-04-13]
  * @changes    1.0.0b32  Fixed ::rename() to not fail when the new and old filename are the same [wb, 2010-03-16]
  * @changes    1.0.0b31  Added ::append() [wb, 2010-03-15]
@@ -773,6 +774,17 @@ class fFile implements Iterator
 		}
 		
 		return $file;
+	}
+	
+	
+	/**
+	 * Gets the file extension
+	 * 
+	 * @return string  The extension of the file
+	 */
+	public function getExtension()
+	{
+		return fFilesystem::getPathInfo($this->file, 'extension');
 	}
 	
 	
