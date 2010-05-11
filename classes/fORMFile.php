@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed a bug with ::upload() that could cause a method called on a non-object error in relation to the upload directory not being defined [wb, 2010-05-10]
  * @changes    1.0.0b22  Updated the TEMP_DIRECTORY constant to not include the trailing slash, code now uses DIRECTORY_SEPARATOR to fix issues on Windows [wb, 2010-04-28]
  * @changes    1.0.0b21  Fixed ::set() to perform column inheritance, just like ::upload() does [wb, 2010-03-15]
  * @changes    1.0.0b20  Fixed the `set` and `process` methods to return the record instance, changed `upload` methods to return the fFile object, updated ::reflect() with new return values [wb, 2010-03-15]
@@ -1115,12 +1116,12 @@ class fORMFile
 		
 		// Try to upload the file putting it in the temp dir incase there is a validation problem with the record
 		try {
+			$upload_dir = self::$file_upload_columns[$class][$column];
+			$temp_dir   = self::prepareTempDir($upload_dir);
+			
 			if (!fUpload::check($column)) {
 				throw new fExpectedException('Please upload a file');	
 			}
-			
-			$upload_dir = self::$file_upload_columns[$class][$column];
-			$temp_dir   = self::prepareTempDir($upload_dir);
 			
 			$uploader = self::setUpFUpload($class, $column);
 			$file     = $uploader->move($temp_dir, $column);
