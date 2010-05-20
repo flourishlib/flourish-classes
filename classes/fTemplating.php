@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added ::encode() [wb, 2010-05-20]
  * @changes    1.0.0b4  Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
  * @changes    1.0.0b3  Fixed an issue with placing relative file path [wb, 2010-04-23]
  * @changes    1.0.0b2  Added the ::inject() method [wb, 2009-01-09]
@@ -236,6 +237,19 @@ class fTemplating
 		fBuffer::stop();
 		
 		$this->__destruct();
+	}
+	
+	
+	/**
+	 * Gets the value of an element and runs it through fHTML::encode()
+	 * 
+	 * @param  string $element        The element to get
+	 * @param  mixed  $default_value  The value to return if the element has not been set
+	 * @return mixed  The value of the element specified run through fHTML::encode(), or the default value if it has not been set
+	 */
+	public function encode($element, $default_value=NULL)
+	{
+		return fHTML::encode($this->get($element, $default_value));
 	}
 	
 	
