@@ -6,14 +6,15 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added the methods ::trim(), ::rtrim() and ::ltrim() [wb, 2010-05-11]
  * @changes    1.0.0b6  Fixed ::clean() to work with PHP installs that use an iconv library that doesn't support //IGNORE [wb, 2010-03-02]
  * @changes    1.0.0b5  Changed ::ucwords() to also uppercase words right after various punctuation [wb, 2009-09-18]
  * @changes    1.0.0b4  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
@@ -37,6 +38,7 @@ class fUTF8
 	const istr     = 'fUTF8::istr';
 	const len      = 'fUTF8::len';
 	const lower    = 'fUTF8::lower';
+	const ltrim    = 'fUTF8::ltrim';
 	const natcmp   = 'fUTF8::natcmp';
 	const ord      = 'fUTF8::ord';
 	const pad      = 'fUTF8::pad';
@@ -45,8 +47,10 @@ class fUTF8
 	const reset    = 'fUTF8::reset';
 	const rev      = 'fUTF8::rev';
 	const rpos     = 'fUTF8::rpos';
+	const rtrim    = 'fUTF8::rtrim';
 	const str      = 'fUTF8::str';
 	const sub      = 'fUTF8::sub';
+	const trim     = 'fUTF8::trim';
 	const ucfirst  = 'fUTF8::ucfirst';
 	const ucwords  = 'fUTF8::ucwords';
 	const upper    = 'fUTF8::upper';
@@ -1002,6 +1006,26 @@ class fUTF8
 	
 	
 	/**
+	 * Trims whitespace, or any specified characters, from the beginning of a string
+	 * 
+	 * @param  string $string    The string to trim
+	 * @param  string $charlist  The characters to trim
+	 * @return string  The trimmed string
+	 */
+	static public function ltrim($string, $charlist=NULL)
+	{
+		if (strlen($charlist) === 0) {
+			return ltrim($string);
+		}
+		
+		$search = preg_quote($charlist, '#');
+		$search = str_replace('-', '\-', $search);
+		$search = str_replace('\.\.', '-', $search);
+		return preg_replace('#^[' . $search . ']+#Du', '', $string);
+	}
+	
+	
+	/**
 	 * Compares strings using a natural order algorithm, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
 	 * 
 	 * Please note that this function sorts based on English language sorting
@@ -1312,6 +1336,26 @@ class fUTF8
 	
 	
 	/**
+	 * Trims whitespace, or any specified characters, from the end of a string
+	 * 
+	 * @param  string $string    The string to trim
+	 * @param  string $charlist  The characters to trim
+	 * @return string  The trimmed string
+	 */
+	static public function rtrim($string, $charlist=NULL)
+	{
+		if (strlen($charlist) === 0) {
+			return rtrim($string);
+		}
+		
+		$search = preg_quote($charlist, '#');
+		$search = str_replace('-', '\-', $search);
+		$search = str_replace('\.\.', '-', $search);
+		return preg_replace('#[' . $search . ']+$#Du', '', $string);
+	}
+	
+	
+	/**
 	 * Matches a string needle in the string haystack, returning a substring from the beginning of the needle to the end of the haystack
 	 * 
 	 * Can optionally return the part of the haystack before the needle.
@@ -1410,6 +1454,26 @@ class fUTF8
 		
 		$length = self::convertOffsetToBytes($string, $length);
 		return substr($string, 0, $length);
+	}
+	
+	
+	/**
+	 * Trims whitespace, or any specified characters, from the beginning and end of a string
+	 * 
+	 * @param  string $string    The string to trim
+	 * @param  string $charlist  The characters to trim, .. indicates a range
+	 * @return string  The trimmed string
+	 */
+	static public function trim($string, $charlist=NULL)
+	{
+		if (strlen($charlist) === 0) {
+			return trim($string);
+		}
+		
+		$search = preg_quote($charlist, '#');
+		$search = str_replace('-', '\-', $search);
+		$search = str_replace('\.\.', '-', $search);
+		return preg_replace('#^[' . $search . ']+|[' . $search . ']+$#Du', '', $string);
 	}
 	
 	
@@ -1523,7 +1587,7 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
