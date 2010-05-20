@@ -5,14 +5,15 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed ::encode() and ::prepare() to handle arrays of strings [wb, 2010-05-19]
  * @changes    1.0.0b7  Fixed a bug where some conditional comments were causing the regex in ::prepare() to break [wb, 2009-11-04]
  * @changes    1.0.0b6  Updated ::showChecked() to require strict equality if one parameter is `NULL` [wb, 2009-06-02]
  * @changes    1.0.0b5  Fixed ::prepare() so it does not encode multi-line HTML comments [wb, 2009-05-09]
@@ -77,11 +78,14 @@ class fHTML
 	/**
 	 * Converts all special characters to entites, using UTF-8.
 	 * 
-	 * @param  string $content  The content to encode
+	 * @param  string|array $content  The content to encode
 	 * @return string  The encoded content
 	 */
 	static public function encode($content)
 	{
+		if (is_array($content)) {
+			return array_map(array('fHTML', 'encode'), $content);
+		}
 		return htmlentities($content, ENT_QUOTES, 'UTF-8');
 	}
 	
@@ -160,11 +164,15 @@ class fHTML
 	/**
 	 * Prepares content for display in UTF-8 encoded HTML - allows HTML tags
 	 * 
-	 * @param  string $content  The content to prepare
+	 * @param  string|array $content  The content to prepare
 	 * @return string  The encoded html
 	 */
 	static public function prepare($content)
 	{
+		if (is_array($content)) {
+			return array_map(array('fHTML', 'prepare'), $content);
+		}
+		
 		// Find all html tags, entities and comments
 		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/s";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
@@ -288,7 +296,7 @@ class fHTML
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
