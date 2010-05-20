@@ -2,14 +2,15 @@
 /**
  * A lightweight, iterable set of fActiveRecord-based objects
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Added the ::chunk() and ::split() methods [wb, 2010-05-20]
  * @changes    1.0.0b34  Added an integer cast to ::count() to fix issues with the dblib MSSQL driver [wb, 2010-04-09]
  * @changes    1.0.0b33  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b32  Fixed a column aliasing issue with SQLite [wb, 2010-01-25]
@@ -746,6 +747,26 @@ class fRecordSet implements Iterator, Countable
 				$record->$method,
 				$parameters
 			);
+		}
+		return $output;
+	}
+	
+	
+	/**
+	 * Chunks the record set into an array of fRecordSet objects
+	 * 
+	 * Each fRecordSet would contain `$number` records, except for the last,
+	 * which will contain between 1 and `$number` records.
+	 * 
+	 * @param  integer $number  The number of fActiveRecord objects to place in each fRecordSet
+	 * @return array  An array of fRecordSet objects
+	 */
+	public function chunk($number)
+	{
+		$output = array();
+		$number_of_sets = ceil($this->count()/$number);
+		for ($i=0; $i < $number_of_sets; $i++) {
+			$output[] = new fRecordSet($this->class, array_slice($this->records, $i*$number, $number));
 		}
 		return $output;
 	}
@@ -1624,6 +1645,26 @@ class fRecordSet implements Iterator, Countable
 	
 	
 	/**
+	 * Splits the record set into an array of fRecordSet objects
+	 * 
+	 * Each fRecordSet would contain ceil(number of records/`$number`) records,
+	 * except for the last, which will contain between 1 and ceil(…) records.
+	 * 
+	 * @param  integer $number  The number of fRecordSet objects to create
+	 * @return array  An array of fRecordSet objects
+	 */
+	public function split($number)
+	{
+		$output = array();
+		$records_per_set = ceil($this->count()/$number);
+		for ($i=0; $i < $number; $i++) {
+			$output[] = new fRecordSet($this->class, array_slice($this->records, $i*$records_per_set, $records_per_set));
+		}
+		return $output;
+	}
+	
+	
+	/**
 	 * Throws an fEmptySetException if the record set is empty
 	 * 
 	 * @throws fEmptySetException  When there are no record in the set
@@ -1724,7 +1765,7 @@ class fRecordSet implements Iterator, Countable
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
