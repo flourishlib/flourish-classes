@@ -2,15 +2,16 @@
 /**
  * Provides a single, simplified interface for [http://php.net/outcontrol output buffering] to prevent nested buffering issues and provide a more logical API
  * 
- * @copyright  Copyright (c) 2008 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fBuffer
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2008-03-16]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added the `$gzip` parameter to ::start() [wb, 2010-05-19]
+ * @changes    1.0.0b   The initial implementation [wb, 2008-03-16]
  */
 class fBuffer
 {
@@ -144,9 +145,10 @@ class fBuffer
 	/**
 	 * Starts output buffering
 	 * 
+	 * @param  boolean $gzip  If the buffered output should be gzipped using [http://php.net/ob_gzhandler `ob_gzhandler()`]
 	 * @return void
 	 */
-	static public function start()
+	static public function start($gzip=FALSE)
 	{
 		if (self::$started) {
 			throw new fProgrammerException(
@@ -158,7 +160,7 @@ class fBuffer
 				'Output capturing is currently active and it must be stopped before the buffering can be started'
 			);
 		}
-		ob_start();
+		ob_start($gzip ? 'ob_gzhandler' : NULL);
 		self::$started = TRUE;
 	}
 	
@@ -238,7 +240,7 @@ class fBuffer
 
 
 /**
- * Copyright (c) 2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
