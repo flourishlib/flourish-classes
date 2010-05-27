@@ -2,19 +2,24 @@
 /**
  * An exception caused by a data not matching a rule or set of rules
  * 
- * @copyright  Copyright (c) 2007-2008 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidationException
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added ::removeFieldNames() [wb, 2010-05-26]
  * @changes    1.0.0b2  Added a custom ::__construct() to handle arrays of messages [wb, 2009-09-17]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fValidationException extends fExpectedException
 {
+	const formatField      = 'fValidationException::formatField';
+	const removeFieldNames = 'fValidationException::removeFieldNames';
+	const setFieldFormat   = 'fValidationException::setFieldFormat';
+	
 	/**
 	 * The formatting string to use for field names
 	 * 
@@ -32,6 +37,26 @@ class fValidationException extends fExpectedException
 	static public function formatField($field)
 	{
 		return sprintf(self::$field_format, $field);	
+	}
+	
+	
+	/**
+	 * Removes the field names from normal validation messages, leaving just the message part
+	 * 
+	 * @param array $messages  The messages to remove the field names from
+	 * @return array  The messages without field names
+	 */
+	static public function removeFieldNames($messages)
+	{
+		$token_field   = self::formatField('__TOKEN__');
+		$replace_regex = '#^' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '#';
+		
+		$output = array();
+		foreach ($messages as $column => $message) {
+			$output[$column] = preg_replace($replace_regex, '', $message);
+		}
+		
+		return $output;
 	}
 	
 	
@@ -57,7 +82,7 @@ class fValidationException extends fExpectedException
 				$format
 			);	
 		}
-		self::$field_format = $format;		
+		self::$field_format = $format;
 	}
 	
 	
@@ -130,7 +155,7 @@ class fValidationException extends fExpectedException
 
 
 /**
- * Copyright (c) 2007-2008 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

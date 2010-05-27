@@ -2,14 +2,15 @@
 /**
  * Provides validation and movement of uploaded files
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  BackwardsCompatiblityBreak - ::validate() no longer returns the `$_FILES` array for the file being validated - added `$return_message` parameter to ::validate(), fixed a bug with detection of mime type for text files [wb, 2010-05-26]
  * @changes    1.0.0b7  Added ::filter() to allow for ignoring array file upload field entries that did not have a file uploaded [wb, 2009-10-06]
  * @changes    1.0.0b6  Updated ::move() to use the new fFilesystem::createObject() method [wb, 2009-01-21]
  * @changes    1.0.0b5  Removed some unnecessary error suppression operators from ::move() [wb, 2009-01-05]
@@ -21,8 +22,9 @@
 class fUpload
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const check = 'fUpload::check';
-	const count = 'fUpload::count';
+	const check  = 'fUpload::check';
+	const count  = 'fUpload::count';
+	const filter = 'fUpload:filter';
 	
 	
 	/**
@@ -72,6 +74,29 @@ class fUpload
 		}
 		
 		return sizeof($_FILES[$field]['name']);
+	}
+	
+	
+	/**
+	 * Composes text using fText if loaded
+	 * 
+	 * @param  string  $message    The message to compose
+	 * @param  mixed   $component  A string or number to insert into the message
+	 * @param  mixed   ...
+	 * @return string  The composed and possible translated message
+	 */
+	static protected function compose($message)
+	{
+		$args = array_slice(func_get_args(), 1);
+		
+		if (class_exists('fText', FALSE)) {
+			return call_user_func_array(
+				array('fText', 'compose'),
+				array($message, $args)
+			);
+		} else {
+			return vsprintf($message, $args);
+		}
 	}
 	
 	
@@ -245,7 +270,12 @@ class fUpload
 			);
 		}
 		
-		$file_array = $this->validate($field, $index);
+		$file_array = $this->extractFileUploadArray($field, $index);
+		$error      = $this->validateField($file_array);
+		if ($error) {
+			throw new fValidationException($error);
+		}
+		
 		$file_name  = fFilesystem::makeURLSafe($file_array['name']);
 		
 		$file_name = $directory->getPath() . $file_name;
@@ -296,12 +326,20 @@ class fUpload
 	 * 
 	 * @throws fValidationException  When no file is uploaded or the uploaded file violates the options set for this object
 	 * 
-	 * @param  string  $field  The field the file was uploaded through
-	 * @param  mixed   $index  If the field was an array of file uploads, this specifies which one to validate
+	 * @param  string  $field           The field the file was uploaded through
+	 * @param  mixed   $index           If the field was an array of file uploads, this specifies which one to validate
+	 * @param  boolean $return_message  If any validation error should be returned as a string instead of being thrown as an fValidationException
+	 * @param  string  :$field
+	 * @param  boolean :$return_message
 	 * @return void
 	 */
-	public function validate($field, $index=NULL)
+	public function validate($field, $index=NULL, $return_message=NULL)
 	{
+		if (is_bool($index) && $return_message === NULL) {
+			$return_message = $index;
+			$index          = NULL;
+		}
+		
 		if (!self::check($field)) {
 			throw new fProgrammerException(
 				'The field specified, %s, does not appear to be a file upload field',
@@ -310,50 +348,67 @@ class fUpload
 		}
 		
 		$file_array = $this->extractFileUploadArray($field, $index);
-		
-		// Do some validation of the file provided
+		$error      = $this->validateField($file_array);
+		if ($error) {
+			if ($return_message) {
+				return $error;
+			}
+			throw new fValidationException($error);
+		}
+	}
+	
+	
+	/**
+	 * Validates a $_FILES array against the upload configuration
+	 * 
+	 * @param array $file_array  The $_FILES array for a single file
+	 * @return string  The validation error message
+	 */
+	private function validateField($file_array)
+	{
 		if (empty($file_array['name'])) {
-			throw new fValidationException('Please upload a file');
+			return self::compose('Please upload a file');
 		}
 		
 		if ($file_array['error'] == UPLOAD_ERR_FORM_SIZE || $file_array['error'] == UPLOAD_ERR_INI_SIZE) {
 			$max_size = (!empty($_POST['MAX_FILE_SIZE'])) ? $_POST['MAX_FILE_SIZE'] : ini_get('upload_max_filesize');
 			$max_size = (!is_numeric($max_size)) ? fFilesystem::convertToBytes($max_size) : $max_size;
-			throw new fValidationException(
+			return self::compose(
 				'The file uploaded is over the limit of %s',
 				fFilesystem::formatFilesize($max_size)
 			);
 		}
 		if ($this->max_file_size && $file_array['size'] > $this->max_file_size) {
-			throw new fValidationException(
+			return self::compose(
 				'The file uploaded is over the limit of %s',
 				fFilesystem::formatFilesize($this->max_file_size)
 			);
 		}
 		
 		if (empty($file_array['tmp_name']) || empty($file_array['size'])) {
-			throw new fValidationException('Please upload a file');	
+			return self::compose('Please upload a file');	
 		}
 		
-		if (!empty($this->mime_types) && file_exists($file_array['tmp_name']) && !in_array(fFile::determineMimeType($file_array['tmp_name']), $this->mime_types)) {
-			throw new fValidationException($this->mime_type_message);
+		if (!empty($this->mime_types) && file_exists($file_array['tmp_name'])) {
+			$contents = file_get_contents($file_array['tmp_name'], FALSE, NULL, 0, 4096);
+			if (!in_array(fFile::determineMimeType($file_array['name'], $contents), $this->mime_types)) {
+				return self::compose($this->mime_type_message);
+			}
 		}
 		
 		if (!$this->allow_php) {
 			$file_info = fFilesystem::getPathInfo($file_array['name']);
 			if (in_array(strtolower($file_info['extension']), array('php', 'php4', 'php5'))) {
-				throw new fValidationException('The file uploaded is a PHP file, but those are not permitted');
+				return self::compose('The file uploaded is a PHP file, but those are not permitted');
 			}
 		}
-		
-		return $file_array;
 	}
 }
 
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

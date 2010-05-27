@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -559,23 +560,18 @@ class fORMMoney
 			}
 			
 			// Remove any previous validation warnings
-			$filtered_messages = array();
-			$column_name       = fValidationException::formatField(fORM::getColumnName($class, $currency_column));
-			foreach ($validation_messages as $validation_message) {
-				if (!preg_match('#^' . preg_quote($column_name, '#') . '#', $validation_message)) {
-					$filtered_messages[] = $validation_message;
-				}
-			}
-			$validation_messages = $filtered_messages;
+			unset($validation_messages[$column]);
+			
+			$column_name = fValidationException::formatField(fORM::getColumnName($class, $currency_column));
 			
 			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
-				$validation_messages[] = self::compose(
+				$validation_messages[$column] = self::compose(
 					'%sThe currency specified is invalid',
 					$column_name
 				);	
 				
 			} else {
-				$validation_messages[] = self::compose(
+				$validation_messages[$column] = self::compose(
 					'%sPlease enter a monetary value',
 					$column_name
 				);

@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b63
+ * @version    1.0.0b64
+ * @changes    1.0.0b64  BackwardsCompatibilityBreak - changed ::validate()'s returned messages array to have field name keys - added the option to ::validate() to remove field names from messages [wb, 2010-05-26]
  * @changes    1.0.0b63  Changed how is_subclass_of() is used to work around a bug in 5.2.x [wb, 2010-04-06]
  * @changes    1.0.0b62  Fixed a bug that could cause infinite recursion starting in v1.0.0b60 [wb, 2010-04-02]
  * @changes    1.0.0b61  Fixed issues with handling `populate` actions when working with mapped classes [wb, 2010-03-31]
@@ -2824,10 +2825,11 @@ abstract class fActiveRecord
 	 * 
 	 * @throws fValidationException  When the record, or one of the associated records, violates one of the validation rules for the class or can not be properly stored in the database
 	 * 
-	 * @param  boolean $return_messages  If an array of validation messages should be returned instead of an exception being thrown
+	 * @param  boolean $return_messages      If an array of validation messages should be returned instead of an exception being thrown
+	 * @param  boolean $remove_column_names  If column names should be removed from the returned messages, leaving just the message itself
 	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned
 	 */
-	public function validate($return_messages=FALSE)
+	public function validate($return_messages=FALSE, $remove_column_names=FALSE)
 	{
 		$class = get_class($this);
 		
@@ -2871,6 +2873,9 @@ abstract class fActiveRecord
 		$validation_messages = fORMValidation::reorderMessages($class, $validation_messages);
 		
 		if ($return_messages) {
+			if ($remove_column_names) {
+				$validation_messages = fValidationException::removeFieldNames($validation_messages);
+			}
 			return $validation_messages;
 		}
 		

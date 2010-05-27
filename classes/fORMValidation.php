@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Added ::addRegexRule(), changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b24  Added ::addRequiredRule() for required columns that aren't automatically handled via schema detection [wb, 2010-04-06]
  * @changes    1.0.0b23  Added support for checking integers and floats to ensure they fit within the range imposed by the database schema [wb, 2010-03-17]
  * @changes    1.0.0b22  Made the value checking for one-or-more and only-one rules more robust when detecting the absence of a value [wb, 2009-12-17]
@@ -45,6 +46,7 @@ class fORMValidation
 	const addOneToManyRule         = 'fORMValidation::addOneToManyRule';
 	const addOnlyOneRule           = 'fORMValidation::addOnlyOneRule';
 	const addRegexReplacement      = 'fORMValidation::addRegexReplacement';
+	const addRegexRule             = 'fORMValidation::addRegexRule';
 	const addRequiredRule          = 'fORMValidation::addRequiredRule';
 	const addStringReplacement     = 'fORMValidation::addStringReplacement';
 	const addValidValuesRule       = 'fORMValidation::addValidValuesRule';
@@ -108,6 +110,13 @@ class fORMValidation
 	 * @var array
 	 */
 	static private $related_one_or_more_rules = array();
+	
+	/**
+	 * Rules that require a value to match a regular expression
+	 * 
+	 * @var array
+	 */
+	static private $regex_rules = array();
 	
 	/**
 	 * Rules that require a value be present in a column even if the database schema doesn't require it
@@ -280,7 +289,7 @@ class fORMValidation
 	
 	
 	/**
-	 * Adds a call to [http://php.net/oreg_replace `preg_replace()`] for each message
+	 * Adds a call to [http://php.net/preg_replace `preg_replace()`] for each message
 	 * 
 	 * Regex replacement is done after the `post::validate()` hook, and right
 	 * before the messages are reordered.
@@ -306,6 +315,30 @@ class fORMValidation
 		
 		self::$regex_replacements[$class]['search'][]  = $search;
 		self::$regex_replacements[$class]['replace'][] = $replace;
+	}
+	
+	
+	/**
+	 * Adds a rule to validate a column against a PCRE regular expression - the rule is not run if the value is `NULL`
+	 * 
+	 * @param  mixed  $class    The class name or instance of the class the columns exists in
+	 * @param  string $column   The column to match with the regex
+	 * @param  string $regex    The PCRE regex to match against - see http://php.net/pcre for details
+	 * @param  string $message  The message to use if the value does not match the regular expression
+	 * @return void
+	 */
+	static public function addRegexRule($class, $column, $regex, $message)
+	{
+		$class = fORM::getClass($class);
+		
+		if (!isset(self::$regex_rules[$class])) {
+			self::$regex_rules[$class] = array();
+		}
+		
+		self::$regex_rules[$class][$column] = array(
+			'regex'   => $regex,
+			'message' => $message
+		);
 	}
 	
 	
@@ -498,7 +531,7 @@ class fORMValidation
 		$messages = array();
 		foreach ($conditional_columns as $conditional_column) {
 			if ($values[$conditional_column] !== NULL) { continue; }
-			$messages[] = self::compose(
+			$messages[$conditional_column] = self::compose(
 				'%sPlease enter a value',
 				fValidationException::formatField(fORM::getColumnName($class, $conditional_column))
 			);
@@ -705,7 +738,7 @@ class fORMValidation
 	 * @param  fActiveRecord  $object       The instance of the class to check
 	 * @param  array          &$values      An associative array of all values going into the row (needs all for multi-field unique constraint checking)
 	 * @param  array          &$old_values  The old values for the record
-	 * @return string  An error message
+	 * @return array  A single element associative array with the key being the primary keys joined by ,s and the value being the error message
 	 */
 	static private function checkPrimaryKeys($object, &$values, &$old_values)
 	{
@@ -785,13 +818,40 @@ class fORMValidation
 			$result = call_user_func_array($db->translatedQuery, $params);
 			$result->tossIfNoRows();
 			
-			return self::compose(
+			return array(join(',', $pk_columns) => self::compose(
 				'Another %1$s with the same %2$s already exists',
 				fORM::getRecordName($class),
 				fGrammar::joinArray($columns, 'and')
-			);
+			));
 			
 		} catch (fNoRowsException $e) { }
+	}
+	
+	
+	/**
+	 * Validates against a regex rule
+	 *
+	 * @param  string  $class    The class the column is part of
+	 * @param  array   &$values  An associative array of all values for the record
+	 * @param  string  $column   The column to check
+	 * @param  string  $regex    The PCRE regular expression
+	 * @param  string  $message  The message to use if the value does not match the regular expression
+	 * @return string  An error message for the rule
+	 */
+	static private function checkRegexRule($class, &$values, $column, $regex, $message)
+	{
+		if ($values[$column] === NULL) {
+			return;
+		}
+		
+		if (preg_match($regex, $values[$column])) {
+			return;
+		}
+		
+		return self::compose(
+			'%s' . str_replace('%', '%%', $message),
+			fValidationException::formatField(fORM::getColumnName($class, $column))
+		);
 	}
 	
 	
@@ -835,7 +895,7 @@ class fORMValidation
 	 * @param  fActiveRecord  $object       The instance of the class to check
 	 * @param  array          &$values      The values to check
 	 * @param  array          &$old_values  The old values for the record
-	 * @return string  An error message for the unique constraints
+	 * @return array  An aray of error messages for the unique constraints
 	 */
 	static private function checkUniqueConstraints($object, &$values, &$old_values)
 	{
@@ -850,6 +910,7 @@ class fORMValidation
 		$pk_columns  = $key_info['primary'];
 		$unique_keys = $key_info['unique'];
 		
+		$messages = array();
 		foreach ($unique_keys AS $unique_columns) {
 			settype($unique_columns, 'array');
 			
@@ -915,12 +976,12 @@ class fORMValidation
 					$column_names[] = fORM::getColumnName($class, $unique_column);
 				}
 				if (sizeof($column_names) == 1) {
-					return self::compose(
+					$messages[join('', $unique_columns)] = self::compose(
 						'%sThe value specified must be unique, however it already exists',
 						fValidationException::formatField(join('', $column_names))
 					);
 				} else {
-					return self::compose(
+					$messages[join(',', $unique_columns)] = self::compose(
 						'%sThe values specified must be a unique combination, however the specified combination already exists',
 						fValidationException::formatField(join(', ', $column_names))
 					);
@@ -928,6 +989,8 @@ class fORMValidation
 			
 			} catch (fNoRowsException $e) { }
 		}
+		
+		return $messages;
 	}
 	
 	
@@ -948,7 +1011,7 @@ class fORMValidation
 		
 		if (!in_array($values[$column], $valid_values)) {
 			return self::compose(
-				 '%1$sPlease choose from one of the following: %2$s',
+				'%1$sPlease choose from one of the following: %2$s',
 				fValidationException::formatField(fORM::getColumnName($class, $column)),
 				join(', ', $valid_values)
 			);
@@ -992,6 +1055,7 @@ class fORMValidation
 		self::$conditional_rules[$class]         = (isset(self::$conditional_rules[$class]))         ? self::$conditional_rules[$class]         : array();
 		self::$one_or_more_rules[$class]         = (isset(self::$one_or_more_rules[$class]))         ? self::$one_or_more_rules[$class]         : array();
 		self::$only_one_rules[$class]            = (isset(self::$only_one_rules[$class]))            ? self::$only_one_rules[$class]            : array();
+		self::$regex_rules[$class]               = (isset(self::$regex_rules[$class]))               ? self::$regex_rules[$class]               : array();
 		self::$related_one_or_more_rules[$class] = (isset(self::$related_one_or_more_rules[$class])) ? self::$related_one_or_more_rules[$class] : array();
 		self::$valid_values_rules[$class]        = (isset(self::$valid_values_rules[$class]))        ? self::$valid_values_rules[$class]        : array();
 	}
@@ -1211,15 +1275,15 @@ class fORMValidation
 		$ordered_items = array_fill(0, sizeof($matches), array());
 		$other_items   = array();
 		
-		foreach ($messages as $message) {
+		foreach ($messages as $key => $message) {
 			foreach ($matches as $num => $match_string) {
 				if (fUTF8::ipos($message, $match_string) !== FALSE) {
-					$ordered_items[$num][] = $message;
+					$ordered_items[$num][$key] = $message;
 					continue 2;
 				}
 			}
 			
-			$other_items[] = $message;
+			$other_items[$key] = $message;
 		}
 		
 		$final_list = array();
@@ -1277,6 +1341,7 @@ class fORMValidation
 		self::$only_one_rules            = array();
 		self::$regex_replacements        = array();
 		self::$related_one_or_more_rules = array();
+		self::$regex_rules               = array();
 		self::$required_rules            = array();
 		self::$string_replacements       = array();
 		self::$valid_values_rules        = array();
@@ -1328,6 +1393,14 @@ class fORMValidation
 	static public function setMessageOrder($class, $matches)
 	{
 		$class = fORM::getClass($class);
+		
+		// Handle the alternate form allowed with fValidation::setMessageOrder()
+		$args = func_get_args();
+		array_shift($args);
+		if (sizeof($args) == 1 && is_array($args[0])) {
+			$matches = $args[0];
+		}
+		
 		uasort($matches, array('self', 'sortMessageMatches'));
 		self::$message_orders[$class] = $matches;
 	}
@@ -1398,21 +1471,26 @@ class fORMValidation
 			}
 		}
 		
-		$message = self::checkPrimaryKeys($object, $values, $old_values);
-		if ($message) { $validation_messages[] = $message; }
+		$message_array = self::checkPrimaryKeys($object, $values, $old_values);
+		if ($message_array) { $validation_messages[key($message_array)] = current($message_array); }
 		
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			$message = self::checkAgainstSchema($object, $column, $values, $old_values);
-			if ($message) { $validation_messages[] = $message; }
+			if ($message) { $validation_messages[$column] = $message; }
 		}
 		
-		$message = self::checkUniqueConstraints($object, $values, $old_values);
-		if ($message) { $validation_messages[] = $message; }
+		$messages = self::checkUniqueConstraints($object, $values, $old_values);
+		if ($messages) { $validation_messages = array_merge($validation_messages, $messages); }
 		
 		foreach (self::$valid_values_rules[$class] as $column => $valid_values) {
 			$message = self::checkValidValuesRule($class, $values, $column, $valid_values);
-			if ($message) { $validation_messages[] = $message; }
+			if ($message) { $validation_messages[$column] = $message; }
+		}
+		
+		foreach (self::$regex_rules[$class] as $column => $rule) {
+			$message = self::checkRegexRule($class, $values, $column, $rule['regex'], $rule['message']);
+			if ($message) { $validation_messages[$column] = $message; }
 		}
 		
 		foreach (self::$conditional_rules[$class] as $rule) {
@@ -1422,12 +1500,12 @@ class fORMValidation
 		
 		foreach (self::$one_or_more_rules[$class] as $rule) {
 			$message = self::checkOneOrMoreRule($schema, $class, $values, $rule['columns']);
-			if ($message) { $validation_messages[] = $message; }
+			if ($message) { $validation_messages[join(',', $rule['columns'])] = $message; }
 		}
 		
 		foreach (self::$only_one_rules[$class] as $rule) {
 			$message = self::checkOnlyOneRule($schema, $class, $values, $rule['columns']);
-			if ($message) { $validation_messages[] = $message; }
+			if ($message) { $validation_messages[join(',', $rule['columns'])] = $message; }
 		}
 		
 		return $validation_messages;
@@ -1455,7 +1533,7 @@ class fORMValidation
 		foreach (self::$related_one_or_more_rules[$class] as $related_class => $routes) {
 			foreach ($routes as $route => $enabled) {
 				$message = self::checkRelatedOneOrMoreRule($object, $values, $related_records, $related_class, $route);
-				if ($message) { $validation_messages[] = $message; }
+				if ($message) { $validation_messages[fORM::tablize($related_class)] = $message; }
 			}
 		}
 		

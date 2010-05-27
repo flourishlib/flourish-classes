@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
  * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
@@ -546,13 +547,13 @@ class fORMDate
 				continue;
 			}
 			if (!fTimestamp::isValidTimezone($values[$timezone_column])) {
-				$validation_messages[] = self::compose(
+				$validation_messages[$timezone_column] = self::compose(
 					'%sThe timezone specified is invalid',
 					fValidationException::formatField(fORM::getColumnName($class, $timezone_column))
 				);	
 				
 			} else {
-				$validation_messages[] = self::compose(
+				$validation_messages[$timestamp_column] = self::compose(
 					'%sPlease enter a date/time',
 					fValidationException::formatField(fORM::getColumnName($class, $timestamp_column))
 				);

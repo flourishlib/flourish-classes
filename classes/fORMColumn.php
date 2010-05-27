@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b11  Fixed a bug with ::prepareLinkColumn() returning `http://` for empty link columns and not adding `http://` to links that contained a /, but did not start with it [wb, 2010-03-16]
  * @changes    1.0.0b10  Fixed ::reflect() to specify the value returned from `set` and `generate` methods, changed ::generate() methods to return the newly generated string [wb, 2010-03-15]
  * @changes    1.0.0b9   Changed email columns to be automatically trimmed if they are a value email address surrounded by whitespace [wb, 2010-03-14]
@@ -765,7 +766,7 @@ class fORMColumn
 				continue;
 			}
 			if (!preg_match('#^[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}$#iD', $values[$column])) {
-				$validation_messages[] = self::compose(
+				$validation_messages[$column] = self::compose(
 					'%sPlease enter an email address in the form name@example.com',
 					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);
@@ -804,7 +805,7 @@ class fORMColumn
 			$hostname_regex = '[a-z]+(?:[a-z0-9\-]*[a-z0-9]\.?|\.)*';
 			$domain_regex   = '([a-z]+([a-z0-9\-]*[a-z0-9])?\.)+[a-z]{2,}';
 			if (!preg_match('#^(https?://(' . $ip_regex . '|' . $hostname_regex . ')(?=/|$)|' . $domain_regex . '(?=/|$)|/)#i', $values[$column])) {
-				$validation_messages[] = self::compose(
+				$validation_messages[$column] = self::compose(
 					'%sPlease enter a link in the form http://www.example.com',
 					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);

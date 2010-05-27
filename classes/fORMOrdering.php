@@ -2,7 +2,7 @@
 /**
  * Allows a column in an fActiveRecord class to be a relative sort order column
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond, others
+ * @copyright  Copyright (c) 2008-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Dan Collins, iMarc LLC [dc-imarc] <dan@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b16  Updated the class to allow for multiple ordering columns per class [dc-imarc, 2010-05-10]
  * @changes    1.0.0b15  Fixed a bug with ordering columns that are part of a multi-column unique constraint [wb, 2009-11-13]
  * @changes    1.0.0b14  Fixed a bug affecting where conditions with columns that are not null but have a default value [wb, 2009-11-03]
@@ -732,9 +733,9 @@ class fORMOrdering
 			
 			// Remove any previous validation warnings
 			$filtered_messages = array();
-			foreach ($validation_messages as $validation_message) {
-				if (!preg_match('#^' . str_replace('___', '(.*?)', preg_quote(fValidationException::formatField('___' . $column_name . '___'), '#')) . '#', $validation_message)) {
-					$filtered_messages[] = $validation_message;
+			foreach ($validation_messages as $validation_column => $validation_message) {
+				if (!preg_match('#(^|,)' . preg_quote($column, '#') . '(,|$)#D', $validation_column)) {
+					$filtered_messages[$validation_column] = $validation_message;
 				}
 			}
 			$validation_messages = $filtered_messages;
@@ -745,10 +746,10 @@ class fORMOrdering
 			}
 			
 			if (!is_numeric($current_value) || strlen((int) $current_value) != strlen($current_value)) {
-				$validation_messages[] = self::compose('%sPlease enter an integer', fValidationException::formatField($column_name));
+				$validation_messages[$column] = self::compose('%sPlease enter an integer', fValidationException::formatField($column_name));
 			
 			} elseif ($current_value < 1) {
-				$validation_messages[] = self::compose('%sThe value can not be less than 1', fValidationException::formatField($column_name));
+				$validation_messages[$column] = self::compose('%sThe value can not be less than 1', fValidationException::formatField($column_name));
 				
 			}
 		}
@@ -766,7 +767,7 @@ class fORMOrdering
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b28  Updated ::associateRecords() to accept just a single fActiveRecord [wb, 2010-05-06]
  * @changes    1.0.0b27  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
  * @changes    1.0.0b26  Fixed ::reflect() to show the proper return values for `associate`, `link` and `populate` methods [wb, 2010-03-15]
@@ -1590,16 +1591,16 @@ class fORMRelated
 			$records = self::buildRecords($class, $values, $related_records, $related_class, $route);
 		}
 		
-		// Ignore validation messages about the primary key since it will be added
-		$primary_key_name  = fValidationException::formatField(fORM::getColumnName($related_class, $route));
-		$primary_key_regex = '#^' . preg_quote($primary_key_name, '#') . '.*$#D';
-		fORMValidation::addRegexReplacement($related_class, $primary_key_regex, '');
-		
 		foreach ($records as $i => $record) {
 			fRequest::filter($filter, isset($input_keys[$i]) ? $input_keys[$i] : $i);
 			$record_messages = $record->validate(TRUE);
 			
-			foreach ($record_messages as $record_message) {
+			foreach ($record_messages as $column => $record_message) {
+				// Ignore validation messages about the primary key since it will be added
+				if ($column == $route) {
+					continue;
+				}
+				
 				$token_field           = fValidationException::formatField('__TOKEN__');
 				$extract_message_regex = '#' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '(.*)$#D';
 				preg_match($extract_message_regex, $record_message, $matches);
@@ -1620,7 +1621,7 @@ class fORMRelated
 					);	
 				}
 				
-				$messages[] = self::compose(
+				$messages[$related_table . '::' . $column] = self::compose(
 					'%1$s%2$s',
 					fValidationException::formatField($column_name),
 					$matches[2]
@@ -1628,8 +1629,6 @@ class fORMRelated
 			}
 			fRequest::unfilter();
 		}
-		
-		fORMValidation::removeRegexReplacement($related_class, $primary_key_regex, '');
 		
 		return $messages;
 	}
@@ -1655,7 +1654,7 @@ class fORMRelated
 		
 		foreach ($related_records as $record) {
 			if ((is_object($record) && !$record->exists()) || !$record) {
-				$messages[] = self::compose(
+				$messages[fORM::tablize($related_class)] = self::compose(
 					'%sPlease select a %3$s',
 					fValidationException::formatField(
 						self::compose(

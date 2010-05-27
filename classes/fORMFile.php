@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b23  Fixed a bug with ::upload() that could cause a method called on a non-object error in relation to the upload directory not being defined [wb, 2010-05-10]
  * @changes    1.0.0b22  Updated the TEMP_DIRECTORY constant to not include the trailing slash, code now uses DIRECTORY_SEPARATOR to fix issues on Windows [wb, 2010-04-28]
  * @changes    1.0.0b21  Fixed ::set() to perform column inheritance, just like ::upload() does [wb, 2010-03-15]
@@ -1220,9 +1221,11 @@ class fORMFile
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
 			$column_name = fORM::getColumnName($class, $column);
 			
-			$search_message  = self::compose('%sPlease enter a value', fValidationException::formatField($column_name));
-			$replace_message = self::compose('%sPlease upload a file', fValidationException::formatField($column_name));
-			$validation_messages = preg_replace('#^' . preg_quote($search_message, '#') . '$#', strtr($replace_message, array('\\' => '\\\\', '$' => '\\$')), $validation_messages);
+			if (isset($validation_messages[$column])) {
+				$search_message  = self::compose('%sPlease enter a value', fValidationException::formatField($column_name));
+				$replace_message = self::compose('%sPlease upload a file', fValidationException::formatField($column_name));
+				$validation_messages[$column] = str_replace($search_message, $replace_message, $validation_messages[$column]);
+			}
 			
 			// Grab the error that occured
 			try {
@@ -1232,7 +1235,7 @@ class fORMFile
 				}
 			} catch (fValidationException $e) {
 				if ($e->getMessage() != self::compose('Please upload a file')) {
-					$validation_messages[] = fValidationException::formatField($column_name) . $e->getMessage();
+					$validation_messages[$column] = fValidationException::formatField($column_name) . $e->getMessage();
 				}
 			}
 		}
