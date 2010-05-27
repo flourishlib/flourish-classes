@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added the ::stem() method [wb, 2010-05-27]
  * @changes    1.0.0b7  Added the `$return_error` parameter to ::pluralize() and ::singularize() [wb, 2010-03-30]
  * @changes    1.0.0b6  Added missing ::compose() method [wb, 2010-03-03]
  * @changes    1.0.0b5  Fixed ::reset() to properly reset the singularization and pluralization rules [wb, 2009-10-28]
@@ -32,6 +33,7 @@ class fGrammar
 	const registerJoinArrayCallback = 'fGrammar::registerJoinArrayCallback';
 	const reset                     = 'fGrammar::reset';
 	const singularize               = 'fGrammar::singularize';
+	const stem                      = 'fGrammar::stem';
 	const underscorize              = 'fGrammar::underscorize';
 	
 	
@@ -583,6 +585,124 @@ class fGrammar
 		}
 		
 		return array('', $string);
+	}
+	
+	
+	/**
+	 * Uses the Porter Stemming algorithm to create the stem of a word, which is useful for searching
+	 * 
+	 * See http://tartarus.org/~martin/PorterStemmer/ for details about the
+	 * algorithm.
+	 * 
+	 * @param string $word  The word to get the stem of
+	 * @return string  The stem of the word
+	 */
+	static public function stem($word)
+	{
+		$s_v  = '^([^aeiou][^aeiouy]*)?[aeiouy]';
+		$mgr0 = $s_v . '[aeiou]*[^aeiou][^aeiouy]*';
+		
+		$s_v_regex  = '#' . $s_v . '#';
+		$mgr0_regex = '#' . $mgr0 . '#';
+		$meq1_regex = '#' . $mgr0 . '([aeiouy][aeiou]*)?$#';
+		$mgr1_regex = '#' . $mgr0 . '[aeiouy][aeiou]*[^aeiou][^aeiouy]*#';
+		
+		$word = fUTF8::ascii($word);
+		$word = strtolower($word);
+		
+		if (strlen($word) < 3) {
+			return $word;
+		}
+		
+		if ($word[0] == 'y') {
+			$word = 'Y' . substr($word, 1);
+		}
+		
+		// Step 1a
+		$word = preg_replace('#^(.+?)(?:(ss|i)es|([^s])s)$#', '\1\2\3', $word);
+		
+		// Step 1b
+		if (preg_match('#^(.+?)eed$#', $word, $match)) {
+			if (preg_match($mgr0_regex, $match[1])) {
+				$word = substr($word, 0, -1);
+			}
+			
+		} elseif (preg_match('#^(.+?)(ed|ing)$#', $word, $match)) {
+			if (preg_match($s_v_regex, $match[1])) {
+				$word = $match[1];
+				if (preg_match('#(at|bl|iz)$#', $word)) {
+					$word .= 'e';
+				} elseif (preg_match('#([^aeiouylsz])\1$#', $word)) {
+					$word = substr($word, 0, -1);
+				} elseif (preg_match('#^[^aeiou][^aeiouy]*[aeiouy][^aeiouwxy]$#', $word)) {
+					$word .= 'e';
+				}
+			}
+		}
+		
+		// Step 1c
+		if (substr($word, -1) == 'y') {
+			$stem = substr($word, 0, -1);
+			if (preg_match($s_v_regex, $stem)) {
+				$word = $stem . 'i';
+			}
+		}
+		
+		// Step 2
+		if (preg_match('#^(.+?)(ational|tional|enci|anci|izer|bli|alli|entli|eli|ousli|ization|ation|ator|alism|iveness|fulness|ousness|aliti|iviti|biliti|logi)$#', $word, $match)) {
+			if (preg_match($mgr0_regex, $match[1])) {
+				$word = $match[1] . strtr(
+					$match[2],
+					array(
+						'ational' => 'ate',  'tional'  => 'tion', 'enci'    => 'ence',
+						'anci'    => 'ance', 'izer'    => 'ize',  'bli'     => 'ble',
+						'alli'    => 'al',   'entli'   => 'ent',  'eli'     => 'e',
+						'ousli'   => 'ous',  'ization' => 'ize',  'ation'   => 'ate',
+						'ator'    => 'ate',  'alism'   => 'al',   'iveness' => 'ive',
+						'fulness' => 'ful',  'ousness' => 'ous',  'aliti'   => 'al',
+						'iviti'   => 'ive',  'biliti'  => 'ble',  'logi'    => 'log'
+					)
+				);
+			}
+		}
+		
+		// Step 3
+		if (preg_match('#^(.+?)(icate|ative|alize|iciti|ical|ful|ness)$#', $word, $match)) {
+			if (preg_match($mgr0_regex, $match[1])) {
+				$word = $match[1] . strtr(
+					$match[2],
+					array(
+						'icate' => 'ic', 'ative' => '', 'alize' => 'al', 'iciti' => 'ic',
+						'ical'  => 'ic', 'ful'   => '', 'ness'  => ''
+					)
+				);
+			}
+		}
+		
+		// Step 4
+		if (preg_match('#^(.+?)(al|ance|ence|er|ic|able|ible|ant|ement|ment|ent|ou|ism|ate|iti|ous|ive|ize|(?<=[st])ion)$#', $word, $match) && preg_match($mgr1_regex, $match[1])) {
+			$word = $match[1];
+		}
+		
+		// Step 5
+		if (substr($word, -1) == 'e') {
+			$stem = substr($word, 0, -1);
+			if (preg_match($mgr1_regex, $stem)) {
+				$word = $stem;
+			} elseif (preg_match($meq1_regex, $stem) && !preg_match('#^[^aeiou][^aeiouy]*[aeiouy][^aeiouwxy]$#', $stem)) {
+				$word = $stem;
+			}
+		}
+		
+		if (preg_match('#ll$#', $word) && preg_match($mgr1_regex, $word)) {
+			$word = substr($word, 0, -1);
+		}
+		
+		if ($word[0] == 'Y') {
+			$word = 'y' . substr($word, 1);
+		}
+		
+		return $word;
 	}
 	
 	
