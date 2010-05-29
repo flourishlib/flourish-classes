@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Improved the error message for integers to say `whole number` instead of just `number` [wb, 2010-05-29]
  * @changes    1.0.0b25  Added ::addRegexRule(), changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b24  Added ::addRequiredRule() for required columns that aren't automatically handled via schema detection [wb, 2010-04-06]
  * @changes    1.0.0b23  Added support for checking integers and floats to ensure they fit within the range imposed by the database schema [wb, 2010-03-17]
@@ -570,6 +571,13 @@ class fORMValidation
 					}
 					break;
 				case 'integer':
+					if (!is_numeric($value)) {
+						return self::compose(
+							'%sPlease enter a whole number',
+							fValidationException::formatField(fORM::getColumnName($class, $column))
+						);
+					}
+					break;
 				case 'float':
 					if (!is_numeric($value)) {
 						return self::compose(

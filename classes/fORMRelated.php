@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Fixed a bug where related record error messages could be overwritten if there were multiple related records with the same error [wb, 2010-05-29]
  * @changes    1.0.0b29  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b28  Updated ::associateRecords() to accept just a single fActiveRecord [wb, 2010-05-06]
  * @changes    1.0.0b27  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
@@ -1621,7 +1622,7 @@ class fORMRelated
 					);	
 				}
 				
-				$messages[$related_table . '::' . $column] = self::compose(
+				$messages[$related_table . (!$one_to_one ? '[' . $i . ']' : '') . '::' . $column] = self::compose(
 					'%1$s%2$s',
 					fValidationException::formatField($column_name),
 					$matches[2]
