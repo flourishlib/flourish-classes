@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
  * @changes    1.0.0b19  Added the method ::isClassMappedToTable() [wb, 2010-03-30]
  * @changes    1.0.0b18  Added the `post::loadFromIdentityMap()` hook [wb, 2010-03-14]
  * @changes    1.0.0b17  Changed ::enableSchemaCaching() to rely on fDatabase::clearCache() instead of explicitly calling fSQLTranslation::clearCache() [wb, 2010-03-09]
