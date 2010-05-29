@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Updated the class to make sure ::enablePersistence() is called after ::ignoreSubdomain(), ::setLength() and ::setPath() [wb, 2010-05-29]
  * @changes    1.0.0b10  Fixed some documentation bugs [wb, 2010-03-03]
  * @changes    1.0.0b9   Fixed a bug in ::destroy() where sessions weren't always being properly destroyed [wb, 2009-12-08]
  * @changes    1.0.0b8   Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
@@ -214,6 +215,8 @@ class fSession
 		
 		call_user_func_array('session_set_cookie_params', $params);
 		
+		self::open();
+		
 		$_SESSION['fSession::type'] = 'persistent';
 		
 		if (isset($_COOKIE[session_name()])) {
@@ -248,10 +251,11 @@ class fSession
 	{
 		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s or %7$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::ignoreSubdomain()',
 				__CLASS__ . '::add()',
 				__CLASS__ . '::clear()',
+				__CLASS__ . '::enablePersistence()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
 				__CLASS__ . '::set()',
@@ -390,10 +394,11 @@ class fSession
 	{
 		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s or %7$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::setLength()',
 				__CLASS__ . '::add()',
 				__CLASS__ . '::clear()',
+				__CLASS__ . '::enablePersistence()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
 				__CLASS__ . '::set()',
@@ -429,10 +434,11 @@ class fSession
 	{
 		if (self::$open || isset($_SESSION)) {
 			throw new fProgrammerException(
-				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s or %7$s',
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::setPath()',
 				__CLASS__ . '::add()',
 				__CLASS__ . '::clear()',
+				__CLASS__ . '::enablePersistence()',
 				__CLASS__ . '::get()',
 				__CLASS__ . '::open()',
 				__CLASS__ . '::set()',
