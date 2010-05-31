@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added the ability to pass an array of replacements to ::addRegexReplacement() and ::addStringReplacement() [wb, 2010-05-31]
  * @changes    1.0.0b6  BackwardsCompatiblityBreak - moved one-or-more required fields from ::addRequiredFields() to ::addOneOrMoreRule(), moved conditional required fields from ::addRequiredFields() to ::addConditionalRule(), changed returned messages array to have field name keys - added lots of functionality [wb, 2010-05-26] 
  * @changes    1.0.0b5  Added the `$return_messages` parameter to ::validate() and updated code for new fValidationException API [wb, 2009-09-17]
  * @changes    1.0.0b4  Changed date checking from `strtotime()` to fTimestamp for better localization support [wb, 2009-06-01]
@@ -435,11 +436,16 @@ class fValidation
 	 * 
 	 * @param  string $search   The PCRE regex to search for - see http://php.net/pcre for details
 	 * @param  string $replace  The string to replace with - all $ and \ are used in back references and must be escaped with a \ when meant literally
+	 * @param  array  :$replacements  An associative array with keys being regular expressions to search for and values being the string to replace with
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
-	public function addRegexReplacement($search, $replace)
+	public function addRegexReplacement($search, $replace=NULL)
 	{
-		$this->regex_replacements[$search] = $replace;
+		if (is_array($search) && $replace === NULL) {
+			$this->regex_replacements = array_merge($this->regex_replacements, $search);
+		} else {
+			$this->regex_replacements[$search] = $replace;
+		}
 		
 		return $this;
 	}
@@ -490,9 +496,10 @@ class fValidation
 	 * 
 	 * @param  string $search   The string to search for
 	 * @param  string $replace  The string to replace with
+	 * @param  array  :$replacements  An associative array with keys being strings to search for and values being the string to replace with
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
-	public function addStringReplacement($search, $replace)
+	public function addStringReplacement($search, $replace=NULL)
 	{
 		$this->string_replacements[$search] = $replace;
 		
