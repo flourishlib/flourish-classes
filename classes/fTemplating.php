@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
  * @changes    1.0.0b5  Added ::encode() [wb, 2010-05-20]
  * @changes    1.0.0b4  Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
  * @changes    1.0.0b3  Fixed an issue with placing relative file path [wb, 2010-04-23]
@@ -170,7 +171,7 @@ class fTemplating
 	 * 
 	 * @param  string $element  The element to add to
 	 * @param  mixed  $value    The value to add
-	 * @return void
+	 * @return fTemplating  The template object, to allow for method chaining
 	 */
 	public function add($element, $value)
 	{
@@ -185,6 +186,8 @@ class fTemplating
 			);
 		}
 		$this->elements[$element][] = $value;
+		
+		return $this;
 	}
 	
 	
@@ -258,10 +261,26 @@ class fTemplating
 	 * 
 	 * @param  string $element        The element to get
 	 * @param  mixed  $default_value  The value to return if the element has not been set
-	 * @return mixed  The value of the element specified, or the default value if it has not been set
+	 * @param  array  |$elements      An array of elements to get, or an associative array where a string key is the element to get and the value is the default value
+	 * @return mixed  The value of the element(s) specified, or the default value(s) if it has not been set
 	 */
 	public function get($element, $default_value=NULL)
 	{
+		if (is_array($element)) {
+			$elements = $element;
+			
+			// Turn an array of elements into an array of elements with NULL default values
+			if (array_values($elements) === $elements) {
+				$elements = array_combine($elements, array_fill(0, count($elements), NULL));
+			}
+			
+			$output = array();
+			foreach ($elements as $element => $default_value) {
+				$output[$element] = (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;
+			}
+			return $output;
+		}
+		
 		return (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;
 	}
 	
@@ -528,13 +547,20 @@ class fTemplating
 	/**
 	 * Sets the value for an element
 	 * 
-	 * @param  string $element  The element to set
-	 * @param  mixed  $value    The value for the element
-	 * @return void
+	 * @param  string $element    The element to set
+	 * @param  mixed  $value      The value for the element
+	 * @param  array  :$elements  An associative array with the key being the `$element` to set and the value being the `$value` for that element
+	 * @return fTemplating  The template object, to allow for method chaining
 	 */
-	public function set($element, $value)
+	public function set($element, $value=NULL)
 	{
-		$this->elements[$element] = $value;
+		if ($value === NULL && is_array($element)) {
+			$this->elements = array_merge($this->elements, $element);
+		} else {
+			$this->elements[$element] = $value;
+		}
+		
+		return $this;
 	}
 	
 	
