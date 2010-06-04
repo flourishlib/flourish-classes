@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
  * @changes    1.0.0b3  Added missing static method callback constants [wb, 2010-05-11]
  * @changes    1.0.0b2  Added the missing ::enableDebugging() [wb, 2010-05-05]
  * @changes    1.0.0b   The initial implementation [wb, 2010-05-05]
@@ -599,6 +600,13 @@ class fMailbox
 		if (!$headers) {
 			list ($headers, $data) = explode("\r\n\r\n", $data, 2);
 			$headers = self::parseHeaders($headers);
+		}
+		
+		if (!isset($headers['content-type'])) {
+			$header['content-type'] = array(
+				'value'  => 'text/plain',
+				'fields' => array()
+			);
 		}
 		
 		list ($type, $subtype) = explode('/', strtolower($headers['content-type']['value']), 2);
