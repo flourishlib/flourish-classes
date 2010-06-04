@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed ::enableExceptionHandling() to only call fException::printMessage() when the destination is not `html` and no callback has been defined, added ::configureSMTP() to allow using fSMTP for error and exception emails [wb, 2010-06-04]
  * @changes    1.0.0b13  Added the `$backtrace` parameter to ::backtrace() [wb, 2010-03-05]
  * @changes    1.0.0b12  Added ::getDebug() to check for the global debugging flag, added more specific BSD checks to ::checkOS() [wb, 2010-03-02]
  * @changes    1.0.0b11  Added ::detectOpcodeCache() [nt+wb, 2009-10-06]
@@ -34,6 +35,7 @@ class fCore
 	const callback                = 'fCore::callback';
 	const checkOS                 = 'fCore::checkOS';
 	const checkVersion            = 'fCore::checkVersion';
+	const configureSMTP           = 'fCore::configureSMTP';
 	const debug                   = 'fCore::debug';
 	const detectOpcodeCache       = 'fCore::detectOpcodeCache';
 	const disableContext          = 'fCore::disableContext';
@@ -134,6 +136,20 @@ class fCore
 	 * @var boolean
 	 */
 	static private $show_context = TRUE;
+	
+	/**
+	 * An SMTP connection for sending error and exception emails
+	 * 
+	 * @var fSMTP
+	 */
+	static private $smtp_connection = NULL;
+	
+	/**
+	 * The email address to send error emails from
+	 * 
+	 * @var string
+	 */
+	static private $smtp_from_email = NULL;
 	
 	
 	/**
@@ -258,7 +274,7 @@ class fCore
 		
 		$parameters = array_slice(func_get_args(), 1);
 		if (sizeof($parameters) == 1 && is_array($parameters[0])) {
-			$parameters = $parameters[0];	
+			$parameters = $parameters[0];
 		}
 		
 		return call_user_func_array($callback, $parameters);
@@ -274,7 +290,7 @@ class fCore
 	static public function callback($callback)
 	{
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			return explode('::', $callback);	
+			return explode('::', $callback);
 		}
 		
 		return $callback;
@@ -351,7 +367,7 @@ class fCore
 				'One or more of the OSes specified, %$1s, is invalid. Must be one of: %2$s.',
 				join(' ', $invalid_oses),
 				join(', ', $valid_oses)
-			);		
+			);
 		}
 		
 		$uname = php_uname('s');
@@ -423,6 +439,20 @@ class fCore
 		} else {
 			return vsprintf($message, $args);
 		}
+	}
+	
+	
+	/**
+	 * Sets an fSMTP object to be used for sending error and exception emails
+	 * 
+	 * @param  fSMTP  $smtp        The SMTP connection to send emails over
+	 * @param  string $from_email  The email address to use in the `From:` header
+	 * @return void
+	 */
+	static public function configureSMTP($smtp, $from_email)
+	{
+		self::$smtp_connection = $smtp;
+		self::$smtp_from_email = $from_email;
 	}
 	
 	
@@ -668,7 +698,7 @@ class fCore
 	 * email address, the email will contain both exceptions and errors.
 	 * 
 	 * @param  string   $destination   The destination for the exception and context information - an email address, a file path or the string `'html'`
-	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer.
+	 * @param  callback $closing_code  This callback will happen after the exception is handled and before page execution stops. Good for printing a footer. If no callback is provided and the exception extends fException, fException::printMessage() will be called.
 	 * @param  array    $parameters    The parameters to send to `$closing_code`
 	 * @return void
 	 */
@@ -682,7 +712,7 @@ class fCore
 		if (!is_object($parameters)) {
 			settype($parameters, 'array');
 		} else {
-			$parameters = array($parameters);	
+			$parameters = array($parameters);
 		}
 		self::$exception_handler_parameters = $parameters;
 		set_exception_handler(self::callback(self::handleException));
@@ -748,7 +778,7 @@ class fCore
 			if (preg_match("#^Use of undefined constant (\w+) - assumed '\w+'\$#D", $error_string, $matches)) {
 				define($matches[1], $matches[1]);
 				return;
-			}		
+			}
 		}
 		
 		if ((error_reporting() & $error_number) == 0) {
@@ -820,14 +850,13 @@ class fCore
 		$info       = $trace . "\n" . $message . $code;
 		$headline   = self::compose("Uncaught") . " " . get_class($exception);
 		$info_block = $headline . "\n" . str_pad('', strlen($headline), '-') . "\n" . trim($info);
-		
-		if (self::$exception_destination != 'html' && $exception instanceof fException) {
-			$exception->printMessage();
-		}
 				
 		self::sendMessageToDestination('exception', $info_block);
 		
 		if (self::$exception_handler_callback === NULL) {
+			if (self::$exception_destination != 'html' && $exception instanceof fException) {
+				$exception->printMessage();
+			}
 			return;
 		}
 				
@@ -920,11 +949,22 @@ class fCore
 		
 		foreach ($messages as $destination => $message) {
 			if (self::$show_context) {
-				$message .= "\n\n" . self::generateContext();	
+				$message .= "\n\n" . self::generateContext();
 			}
 			
 			if (self::checkDestination($destination) == 'email') {
-				mail($destination, $subject, $message);
+				if (self::$smtp_connection) {
+					$email = new fEmail();
+					foreach (explode(',', $destination) as $recipient) {
+						$email->addRecipient($recipient);
+					}
+					$email->setFromEmail(self::$smtp_from_email);
+					$email->setSubject($subject);
+					$email->setBody($message);
+					$email->send(self::$smtp_connection);
+				} else {
+					mail($destination, $subject, $message);
+				}
 			
 			} else {
 				$handle = fopen($destination, 'a');
