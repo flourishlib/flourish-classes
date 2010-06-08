@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed ::reflect() to include some missing parameters [wb, 2010-06-08]
  * @changes    1.0.0b12  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b11  Fixed a bug with ::prepareLinkColumn() returning `http://` for empty link columns and not adding `http://` to links that contained a /, but did not start with it [wb, 2010-03-16]
  * @changes    1.0.0b10  Fixed ::reflect() to specify the value returned from `set` and `generate` methods, changed ::generate() methods to return the newly generated string [wb, 2010-03-15]
@@ -543,7 +544,7 @@ class fORMColumn
 					$signature .= " */\n";
 				}
 				$prepare_method = 'prepare' . fGrammar::camelize($column, TRUE);
-				$signature .= 'public function ' . $prepare_method . '()';
+				$signature .= 'public function ' . $prepare_method . '($create_link=FALSE)';
 				
 				$signatures[$prepare_method] = $signature;
 			}
@@ -602,7 +603,11 @@ class fORMColumn
 					$signature .= " */\n";
 				}
 				$encode_method = 'encode' . $camelized_column;
-				$signature .= 'public function ' . $encode_method . '()';
+				$signature .= 'public function ' . $encode_method . '(';
+				if ($type == 'float') {
+					$signature .= '$decimal_places=NULL';
+				}
+				$signature .= ')';
 				
 				$signatures[$encode_method] = $signature;
 				
@@ -621,7 +626,11 @@ class fORMColumn
 					$signature .= " */\n";
 				}
 				$prepare_method = 'prepare' . $camelized_column;
-				$signature .= 'public function ' . $prepare_method . '()';
+				$signature .= 'public function ' . $prepare_method . '(';
+				if ($type == 'float') {
+					$signature .= '$decimal_places=NULL';
+				}
+				$signature .= ')';
 				
 				$signatures[$prepare_method] = $signature;
 			}

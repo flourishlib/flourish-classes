@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Fixed ::reflect() to properly show parameters for associate methods [wb, 2010-06-08]
  * @changes    1.0.0b30  Fixed a bug where related record error messages could be overwritten if there were multiple related records with the same error [wb, 2010-05-29]
  * @changes    1.0.0b29  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b28  Updated ::associateRecords() to accept just a single fActiveRecord [wb, 2010-05-06]
@@ -1019,9 +1020,9 @@ class fORMRelated
 				$signature .= " */\n";
 			}
 			$associate_method = 'associate' . $related_class;
-			$signature .= 'public function ' . $associate_method . '(';
+			$signature .= 'public function ' . $associate_method . '($record';
 			if (sizeof($route_names) > 1) {
-				$signature .= '$route';
+				$signature .= ', $route';
 			}
 			$signature .= ')';
 			
@@ -1122,9 +1123,9 @@ class fORMRelated
 					$signature .= " */\n";
 				}
 				$associate_related_method = 'associate' . fGrammar::pluralize($related_class);
-				$signature .= 'public function ' . $associate_related_method . '(';
+				$signature .= 'public function ' . $associate_related_method . '($records_to_associate';
 				if (sizeof($many_to_many_route_names) > 1) {
-					$signature .= '$route';
+					$signature .= ', $route';
 				}
 				$signature .= ')';
 				

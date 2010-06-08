@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b64
+ * @version    1.0.0b65
+ * @changes    1.0.0b65  Fixed bugs with ::inspect() making some `min_value` and `max_value` elements available for non-numeric types, fixed ::reflect() to list the `min_value` and `max_value` elements [wb, 2010-06-08]
  * @changes    1.0.0b64  BackwardsCompatibilityBreak - changed ::validate()'s returned messages array to have field name keys - added the option to ::validate() to remove field names from messages [wb, 2010-05-26]
  * @changes    1.0.0b63  Changed how is_subclass_of() is used to work around a bug in 5.2.x [wb, 2010-04-06]
  * @changes    1.0.0b62  Fixed a bug that could cause infinite recursion starting in v1.0.0b60 [wb, 2010-04-02]
@@ -1832,6 +1833,11 @@ abstract class fActiveRecord
 			unset($info['auto_increment']);
 		}
 		
+		if (!in_array($info['type'], array('integer', 'float'))) {
+			unset($info['min_value']);
+			unset($info['max_value']);
+		}
+		
 		$info['feature'] = NULL;
 		
 		fORM::callInspectCallbacks(get_class($this), $column, $info);
@@ -2323,6 +2329,8 @@ abstract class fActiveRecord
 				}
 				if ($column_info['type'] == 'integer') {
 					$elements[] = 'auto_increment';
+					$elements[] = 'min_value';
+					$elements[] = 'max_value';
 				}
 				$signature .= " * @param  string \$element  The element to return. Must be one of: '" . join("', '", $elements) . "'.\n";
 				$signature .= " * @return mixed  The metadata array or a single element\n";
