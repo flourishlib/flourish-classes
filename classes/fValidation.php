@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added/fixed support for array-syntax fields names [wb, 2010-06-09]
  * @changes    1.0.0b7  Added the ability to pass an array of replacements to ::addRegexReplacement() and ::addStringReplacement() [wb, 2010-05-31]
  * @changes    1.0.0b6  BackwardsCompatibilityBreak - moved one-or-more required fields from ::addRequiredFields() to ::addOneOrMoreRule(), moved conditional required fields from ::addRequiredFields() to ::addConditionalRule(), changed returned messages array to have field name keys - added lots of functionality [wb, 2010-05-26] 
  * @changes    1.0.0b5  Added the `$return_messages` parameter to ::validate() and updated code for new fValidationException API [wb, 2009-09-17]
@@ -831,13 +832,20 @@ class fValidation
 		}
 		
 		$suffix = '';
-		if (strpos($field, '[') !== FALSE && preg_match('#^([^[]+)\[([^\]]+)\]$#', $field, $match)) {
-			$field = $match[1];
-			$index = $match[2];
-			if (is_numeric($index)) {
-				$suffix = ' #' . $index;	
-			} else {
-				$suffix = ' (' . fGrammar::humanize($index) . ')';
+		$bracket_pos = strpos($field, '[');
+		if ($bracket_pos !== FALSE) {
+			$array_dereference = substr($field, $bracket_pos);
+			$field             = substr($field, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			
+			foreach ($array_keys as $array_key) {
+				if (is_numeric($array_key)) {
+					$suffix .= ' #' . ($array_key+1);	
+				} else {
+					$suffix .= ' ' . fGrammar::humanize($array_key);
+				}
 			}
 		}
 		

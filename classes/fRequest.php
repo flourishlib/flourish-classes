@@ -239,12 +239,32 @@ class fRequest
 		self::initPutDelete();
 		
 		$value = $default_value;
+		
+		$array_dereference = NULL;
+		if (strpos($key, '[')) {
+			$bracket_pos       = strpos($key, '[');
+			$array_dereference = substr($key, $bracket_pos);
+			$key               = substr($key, 0, $bracket_pos);
+		}
+		
 		if (isset(self::$put_delete[$key])) {
 			$value = self::$put_delete[$key];
 		} elseif (isset($_POST[$key])) {
 			$value = $_POST[$key];
 		} elseif (isset($_GET[$key])) {
 			$value = $_GET[$key];
+		}
+		
+		if ($array_dereference) {
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			foreach ($array_keys as $array_key) {
+				if (!is_array($value) || !isset($value[$array_key])) {
+					$value = $default_value;
+					break;
+				}
+				$value = $value[$array_key];
+			}
 		}
 		
 		// This allows for data_type? casts to allow NULL through
@@ -591,6 +611,36 @@ class fRequest
 	
 	
 	/**
+	 * Recursively sets an array request value
+	 * 
+	 * @param mixed $existing_value  The existing value that the value will be added to, or overwrite
+	 * @param array $array_keys      An array of the keys to use for the value
+	 * @param mixed $value           The value to set the key to
+	 * @return array  The modified `$existing_value` with the new value added
+	 */
+	static private function recursiveSet($existing_value, $array_keys, $value)
+	{
+		if (!$array_keys) {
+			return $value;
+		}
+		
+		$key = array_shift($array_keys);
+		
+		if (!is_array($existing_value)) {
+			$existing_value = array();
+		}
+		
+		$existing_value[$key] = self::recursiveSet(
+			isset($existing_value[$key]) ? $existing_value[$key] : array(),
+			$array_keys,
+			$value
+		);
+		
+		return $existing_value;
+	}
+	
+	
+	/**
 	 * Resets the configuration and data of the class
 	 * 
 	 * @internal
@@ -618,6 +668,17 @@ class fRequest
 	 */
 	static public function set($key, $value)
 	{		
+		$array_dereference = NULL;
+		if (strpos($key, '[')) {
+			$bracket_pos       = strpos($key, '[');
+			$array_dereference = substr($key, $bracket_pos);
+			$key               = substr($key, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			$value = self::recursiveSet(self::get($key), $array_keys, $value);
+		}
+		
 		if (self::isPost()) {
 			$_POST[$key] = $value;	
 			return;
