@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug with ::camelize() and human-friendly strings [wb, 2010-06-08]
  * @changes    1.0.0b8  Added the ::stem() method [wb, 2010-05-27]
  * @changes    1.0.0b7  Added the `$return_error` parameter to ::pluralize() and ::singularize() [wb, 2010-03-30]
  * @changes    1.0.0b6  Added missing ::compose() method [wb, 2010-03-03]
@@ -205,7 +206,7 @@ class fGrammar
 	{
 		$upper = (int) $upper;
 		if (isset(self::$cache['camelize'][$upper][$string])) {
-			return self::$cache['camelize'][$upper][$string];		
+			return self::$cache['camelize'][$upper][$string];
 		}
 		
 		$original = $string;
@@ -217,23 +218,26 @@ class fGrammar
 				$string = strtoupper($camel[0]) . substr($camel, 1);
 			}
 		
-		// Make a humanized string like underscore notation
-		} elseif (strpos($string, ' ') !== FALSE) {
-			$string = strtolower(preg_replace('#\s+#', '_', $string));
-		
-		// Check to make sure this is not already camel case
-		} elseif (strpos($string, '_') === FALSE) {
-			if ($upper) {
-				$string = strtoupper($string[0]) . substr($string, 1);
+		} else {
+			// Make a humanized string like underscore notation
+			if (strpos($string, ' ') !== FALSE) {
+				$string = strtolower(preg_replace('#\s+#', '_', $string));
 			}
 			
-		// Handle underscore notation
-		} else {
-			$string = strtolower($string);
-			if ($upper) {
-				$string = strtoupper($string[0]) . substr($string, 1);
+			// Check to make sure this is not already camel case
+			if (strpos($string, '_') === FALSE) {
+				if ($upper) {
+					$string = ucfirst($string);
+				}
+				
+			// Handle underscore notation
+			} else {
+				$string = strtolower($string);
+				if ($upper) {
+					$string = ucfirst($string);
+				}
+				$string = preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
 			}
-			$string = preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);		
 		}
 		
 		self::$cache['camelize'][$upper][$original] = $string;
