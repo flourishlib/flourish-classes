@@ -2,14 +2,15 @@
 /**
  * Represents a monetary value - USD are supported by default and others can be added via ::defineCurrency()
  * 
- * @copyright  Copyright (c) 2008-2009 Will Bond
+ * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMoney
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added the `$remove_zero_fraction` parameter to ::format() [wb, 2010-06-09]
  * @changes    1.0.0b2  Fixed a bug with calling ::format() when a format callback is set, fixed `NULL` `$element` handling in ::getCurrencyInfo() [wb, 2009-03-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-08-10]
  */
@@ -141,7 +142,7 @@ class fMoney
 	/**
 	 * Allows setting a callback to translate or modify any return values from ::format()
 	 * 
-	 * @param  callback $callback  The callback to pass all fNumber objects to. Should accept an fNumber object and a string currency abbreviation and return a formatted string.
+	 * @param  callback $callback  The callback to pass all fNumber objects to. Should accept an fNumber object, a string currency abbreviation and a boolean indicating if a zero-fraction should be removed - it should return a formatted string.
 	 * @return void
 	 */
 	static public function registerFormatCallback($callback)
@@ -430,12 +431,13 @@ class fMoney
 	/**
 	 * Formats the amount by preceeding the amount with the currency symbol and adding thousands separators
 	 * 
+	 * @param  boolean $remove_zero_fraction  If `TRUE` and all digits after the decimal place are `0`, the decimal place and all zeros are removed
 	 * @return string  The formatted (and possibly converted) value
 	 */
-	public function format()
+	public function format($remove_zero_fraction=FALSE)
 	{
 		if (self::$format_callback !== NULL) {
-			return call_user_func(self::$format_callback, $this->amount, $this->currency);
+			return call_user_func(self::$format_callback, $this->amount, $this->currency, $remove_zero_fraction);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a
@@ -461,6 +463,10 @@ class fMoney
 		$symbol   = self::getCurrencyInfo($this->currency, 'symbol');
 		$integer  = join(',', $int_sections);
 		$fraction = (strlen($fraction)) ? '.' . $fraction : '';
+		
+		if ($remove_zero_fraction && rtrim($fraction, '.0') === '') {
+			$fraction = '';
+		}
 		
 		return $sign . $symbol . $integer . $fraction;
 	}
@@ -622,7 +628,7 @@ class fMoney
 
 
 /**
- * Copyright (c) 2008-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

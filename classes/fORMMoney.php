@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added the `$remove_zero_fraction` parameter to prepare methods [wb, 2010-06-09]
  * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
@@ -341,8 +342,13 @@ class fORMMoney
 		}
 		$value = $values[$column];
 		
+		$remove_zero_fraction = FALSE;
+		if (count($parameters)) {
+			$remove_zero_fraction = $parameters[0];
+		}
+		
 		if ($value instanceof fMoney) {
-			$value = $value->format();
+			$value = $value->format($remove_zero_fraction);
 		}
 		
 		return fHTML::prepare($value);
@@ -421,11 +427,12 @@ class fORMMoney
 				$signature .= " * If the value is an fMoney object, the ->format() method will be called\n";
 				$signature .= " * resulting in the value including the currency symbol and thousands separators\n";
 				$signature .= " * \n";
+				$signature .= " * @param  boolean \$remove_zero_fraction  If a fraction of all zeros should be removed\n";
 				$signature .= " * @return string  The HTML-ready value\n";
 				$signature .= " */\n";
 			}
 			$prepare_method = 'prepare' . $camelized_column;
-			$signature .= 'public function ' . $prepare_method . '()';
+			$signature .= 'public function ' . $prepare_method . '($remove_zero_fraction=FALSE)';
 			
 			$signatures[$prepare_method] = $signature;
 		}
