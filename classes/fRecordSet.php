@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Replaced create_function() with a private method call [wb, 2010-06-08]
  * @changes    1.0.0b35  Added the ::chunk() and ::split() methods [wb, 2010-05-20]
  * @changes    1.0.0b34  Added an integer cast to ::count() to fix issues with the dblib MSSQL driver [wb, 2010-04-09]
  * @changes    1.0.0b33  Updated the class to force configure classes before peforming actions with them [wb, 2010-03-30]
@@ -1616,16 +1617,29 @@ class fRecordSet implements Iterator, Countable
 			);
 		}
 		
-		// We will create an anonymous function here to handle the sort
-		$lambda_params = '$a,$b';
-		$lambda_funcs  = array(
-			'asc'  => 'return fUTF8::inatcmp($a->' . $method . '(), $b->' . $method . '());',
-			'desc' => 'return fUTF8::inatcmp($b->' . $method . '(), $a->' . $method . '());'
-		);
-		
-		$this->sortByCallback(create_function($lambda_params, $lambda_funcs[$direction]));
+		$this->sort_method    = $method;
+		$this->sort_direction = $direction;
+		$this->sortByCallback(array($this, 'sortCallback'));
+		unset($this->sort_method);
+		unset($this->sort_direction);
 		
 		return $this;
+	}
+	
+	
+	/**
+	 * A usort callback to sort by methods on records
+	 * 
+	 * @param fActiveRecord $a  The first record to compare
+	 * @param fActiveRecord $b  The second record to compare
+	 * @return integer  < 0 if `$a` is less than `$b`, 0 if `$a` = `$b`, > 0 if `$a` is greater than `$b`
+	 */
+	private function sortCallback($a, $b)
+	{
+		if ($this->sort_direction == 'asc') {
+			return fUTF8::inatcmp($a->{$this->sort_method}(), $b->{$this->sort_method}());
+		}
+		return fUTF8::inatcmp($b->{$this->sort_method}(), $a->{$this->sort_method}());
 	}
 	
 	

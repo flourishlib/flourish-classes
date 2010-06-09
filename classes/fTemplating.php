@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b6  Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
  * @changes    1.0.0b5  Added ::encode() [wb, 2010-05-20]
  * @changes    1.0.0b4  Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
@@ -521,13 +522,26 @@ class fTemplating
 		fBuffer::erase();
 		
 		// We are gonna use a regex replacement that is eval()'ed as PHP code
-		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)::(.*?)%%/e';
-		$replacement = 'fBuffer::startCapture() . $this->placeElement("$1", "$2") . fBuffer::stopCapture()';
+		$regex       = '/%%fTemplating::' . $this->buffered_id . '::(.*?)::(.*?)%%/';
 		
 		// Remove the buffered id, thus making any nested place() calls be executed immediately
 		$this->buffered_id = NULL;
 		
-		echo preg_replace($regex, $replacement, $contents);
+		echo preg_replace_callback($regex, array($this, 'placeBufferedCallback'), $contents);
+	}
+	
+	
+	/**
+	 * Performs a captured place of an element to use with buffer placing
+	 * 
+	 * @param array $match  A regex match from ::placeBuffered()
+	 * @return string  The output of placing the element
+	 */
+	private function placeBufferedCallback($match)
+	{
+		fBuffer::startCapture();
+		$this->placeElement($match[1], $match[2]);
+		return fBuffer::stopCapture();
 	}
 	
 	

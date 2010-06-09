@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug with ::camelize() and human-friendly strings [wb, 2010-06-08]
- * @changes    1.0.0b8  Added the ::stem() method [wb, 2010-05-27]
- * @changes    1.0.0b7  Added the `$return_error` parameter to ::pluralize() and ::singularize() [wb, 2010-03-30]
- * @changes    1.0.0b6  Added missing ::compose() method [wb, 2010-03-03]
- * @changes    1.0.0b5  Fixed ::reset() to properly reset the singularization and pluralization rules [wb, 2009-10-28]
- * @changes    1.0.0b4  Added caching for various methods - provided significant performance boost to ORM [wb, 2009-06-15] 
- * @changes    1.0.0b3  Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
- * @changes    1.0.0b2  Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
- * @changes    1.0.0b   The initial implementation [wb, 2007-09-25]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
+ * @changes    1.0.0b9   Fixed a bug with ::camelize() and human-friendly strings [wb, 2010-06-08]
+ * @changes    1.0.0b8   Added the ::stem() method [wb, 2010-05-27]
+ * @changes    1.0.0b7   Added the `$return_error` parameter to ::pluralize() and ::singularize() [wb, 2010-03-30]
+ * @changes    1.0.0b6   Added missing ::compose() method [wb, 2010-03-03]
+ * @changes    1.0.0b5   Fixed ::reset() to properly reset the singularization and pluralization rules [wb, 2009-10-28]
+ * @changes    1.0.0b4   Added caching for various methods - provided significant performance boost to ORM [wb, 2009-06-15] 
+ * @changes    1.0.0b3   Changed replacement values in preg_replace() calls to be properly escaped [wb, 2009-06-11]
+ * @changes    1.0.0b2   Fixed a bug where some words would lose capitalization with ::pluralize() and ::singularize() [wb, 2009-01-25]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-09-25]
  */
 class fGrammar
 {
@@ -236,12 +237,24 @@ class fGrammar
 				if ($upper) {
 					$string = ucfirst($string);
 				}
-				$string = preg_replace('/(_([a-z0-9]))/e', 'strtoupper("\2")', $string);
+				$string = preg_replace_callback('#_([a-z0-9])#', array('self', 'camelizeCallback'), $string);		
 			}
 		}
 		
 		self::$cache['camelize'][$upper][$original] = $string;
 		return $string;
+	}
+	
+	
+	/**
+	 * A callback used by ::camelize() to handle converting underscore to camelCase
+	 * 
+	 * @param array $match  The regular expression match
+	 * @return string  The value to replace the string with
+	 */
+	static private function camelizeCallback($match)
+	{
+		return strtoupper($match[1]);
 	}
 	
 	
@@ -293,9 +306,9 @@ class fGrammar
 				$string = self::underscorize($string);
 			}
 			
-			$string = preg_replace(
-				'/(\b(api|css|gif|html|id|jpg|js|mp3|pdf|php|png|sql|swf|url|xhtml|xml)\b|\b\w)/e',
-				'strtoupper("\1")',
+			$string = preg_replace_callback(
+				'/(\b(api|css|gif|html|id|jpg|js|mp3|pdf|php|png|sql|swf|url|xhtml|xml)\b|\b\w)/',
+				array('self', 'camelizeCallback'),
 				str_replace('_', ' ', $string)
 			);
 		}

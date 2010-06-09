@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b5  Added the ::output() method [wb, 2010-03-15]
  * @changes    1.0.0b4  Fixed a bug with ::decode() where JSON objects could lose all but the first key: value pair [wb, 2009-05-06]
  * @changes    1.0.0b3  Updated the class to be consistent with PHP 5.2.9+ for encoding and decoding invalid data [wb, 2009-05-04]
@@ -636,6 +637,18 @@ class fJSON
 	
 	
 	/**
+	 * Created a unicode code point from a JS escaped unicode character
+	 * 
+	 * @param array $match  A regex match containing the 4 digit code referenced by the key `1`
+	 * @return string  The U+{digits} unicode code point
+	 */
+	static private function makeUnicodeCodePoint($match)
+	{
+		return fUTF8::chr("U+" . $match[1]);
+	}
+	
+	
+	/**
 	 * Sets the proper `Content-Type` header and outputs the value, encoded as JSON
 	 * 
 	 * @param  mixed $value  The PHP value to output as JSON
@@ -675,7 +688,7 @@ class fJSON
 		if ($type == self::J_STRING || $type == self::J_KEY) {
 			$element = substr($element, 1, -1);
 			$element = strtr($element, array_flip(self::$control_character_map));
-			$element = preg_replace('#\\\\u([0-9a-fA-F]{4})#e', 'fUTF8::chr("U+\1")', $element);
+			$element = preg_replace_callback('#\\\\u([0-9a-fA-F]{4})#', array('self', 'makeUnicodeCodePoint'), $element);
 		}
 		
 		return $element;
