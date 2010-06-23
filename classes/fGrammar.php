@@ -216,7 +216,7 @@ class fGrammar
 		if (isset(self::$camelize_rules[$string])) {
 			$string = self::$camelize_rules[$string];
 			if ($upper) {
-				$string = strtoupper($camel[0]) . substr($camel, 1);
+				$string = ucfirst($string);
 			}
 		
 		} else {
