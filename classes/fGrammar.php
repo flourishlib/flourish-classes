@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed custom camelCase to underscore_notation rules [wb, 2010-06-23]
  * @changes    1.0.0b10  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b9   Fixed a bug with ::camelize() and human-friendly strings [wb, 2010-06-08]
  * @changes    1.0.0b8   Added the ::stem() method [wb, 2010-05-27]
