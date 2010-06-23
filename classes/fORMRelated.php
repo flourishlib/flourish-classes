@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Backwards Compatibility Break - related table populate action now use the underscore_notation version of the class name instead of the related table name, allowing for related tables in non-standard schemas [wb, 2010-06-23]
  * @changes    1.0.0b31  Fixed ::reflect() to properly show parameters for associate methods [wb, 2010-06-08]
  * @changes    1.0.0b30  Fixed a bug where related record error messages could be overwritten if there were multiple related records with the same error [wb, 2010-05-29]
  * @changes    1.0.0b29  Changed validation messages array to use column name keys [wb, 2010-05-26]
@@ -491,17 +492,17 @@ class fORMRelated
 		$primary_keys    = $schema->getKeys($related_table, 'primary');
 		$first_pk_column = $primary_keys[0];
 		
-		$filter_table            = $related_table;
-		$filter_table_with_route = $related_table . '{' . $route_name . '}';
+		$filter_class            = fGrammar::underscorize($related_class);
+		$filter_class_with_route = $filter_class . '{' . $route_name . '}';
 		
-		$pk_field            = $filter_table . '::' . $first_pk_column;
-		$pk_field_with_route = $filter_table_with_route . '::' . $first_pk_column;
+		$pk_field            = $filter_class . '::' . $first_pk_column;
+		$pk_field_with_route = $filter_class_with_route . '::' . $first_pk_column;
 		
 		if (!fRequest::check($pk_field) && fRequest::check($pk_field_with_route)) {
-			$filter_table = $filter_table_with_route;
+			$filter_class = $filter_class_with_route;
 		}
 		
-		return $filter_table . '::';
+		return $filter_class . '::';
 	}
 	
 	
