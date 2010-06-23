@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
  * @changes    1.0.0b3  Added missing static method callback constants [wb, 2010-05-11]
  * @changes    1.0.0b2  Added the missing ::enableDebugging() [wb, 2010-05-05]
@@ -84,8 +85,13 @@ class fMailbox
 	{
 		$parts = preg_split('#("[^"]+"|=\?[^\?]+\?[QB]\?[^\?]+\?=)#i', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
 		
+		$part_with_encoding = array();
 		$output = '';
 		foreach ($parts as $part) {
+			if ($part === '') {
+				continue;
+			}
+			
 			if (preg_match_all('#=\?([^\?]+)\?([QB])\?([^\?]+)\?=#i', $part, $matches, PREG_SET_ORDER)) {
 				foreach ($matches as $match) {
 					if (strtoupper($match[2]) == 'Q') {
@@ -99,12 +105,27 @@ class fMailbox
 					} else {
 						$part_string = base64_decode($match[3]);
 					}
-					$output .= iconv($match[1], 'UTF-8', $part_string);
+					$lower_encoding = strtolower($match[1]);
+					$last_key = count($part_with_encoding) - 1;
+					if (isset($part_with_encoding[$last_key]) && $part_with_encoding[$last_key]['encoding'] == $lower_encoding) {
+						$part_with_encoding[$last_key]['string'] .= $part_string;
+					} else {
+						$part_with_encoding[] = array('encoding' => $lower_encoding, 'string' => $part_string);
+					}
 				}
 				
 			} else {
-				$output .= iconv('ISO-8859-1', 'UTF-8', $part);	
+				$last_key = count($part_with_encoding) - 1;
+				if (isset($part_with_encoding[$last_key]) && $part_with_encoding[$last_key]['encoding'] == 'iso-8859-1') {
+					$part_with_encoding[$last_key]['string'] .= $part;
+				} else {
+					$part_with_encoding[] = array('encoding' => 'iso-8859-1', 'string' => $part);
+				}
 			}
+		}
+		
+		foreach ($part_with_encoding as $part) {
+			$output .= iconv($part['encoding'], 'UTF-8', $part['string']);
 		}
 		
 		return $output;
@@ -130,7 +151,10 @@ class fMailbox
 		if ($structure['type'] == 'application' && in_array($structure['subtype'], array('pkcs7-mime', 'x-pkcs7-mime'))) {
 			$to = NULL;
 			if (isset($info['headers']['to'][0])) {
-				$to = $info['headers']['to'][0]['mailbox'] . '@' . $info['headers']['to'][0]['host'];
+				$to = $info['headers']['to'][0]['mailbox'];
+				if (!empty($info['headers']['to'][0]['host'])) {
+					$to .= '@' . $info['headers']['to'][0]['host'];
+				}
 			}
 			if ($to && !empty(self::$smime_pairs[$to]['private_key'])) {
 				if (self::handleSMIMEDecryption($info, $structure, self::$smime_pairs[$to])) {
@@ -142,7 +166,10 @@ class fMailbox
 		if ($structure['type'] == 'application' && in_array($structure['subtype'], array('pkcs7-signature', 'x-pkcs7-signature'))) {
 			$from = NULL;
 			if (isset($info['headers']['from'])) {
-				$from = $info['headers']['from']['mailbox'] . '@' . $info['headers']['from']['host'];
+				$from = $info['headers']['from']['mailbox'];
+				if (!empty($info['headers']['from']['host'])) {
+					$from .= '@' . $info['headers']['from']['host'];
+				}
 			}
 			if ($from && !empty(self::$smime_pairs[$from]['certificate'])) {
 				if (self::handleSMIMEVerification($info, $structure, self::$smime_pairs[$from])) {
@@ -331,13 +358,16 @@ class fMailbox
 			if (!isset($email[0])) {
 				$email[0] = !empty($email['personal']) ? $email['personal'] : 'NIL';
 				$email[2] = $email['mailbox'];
-				$email[3] = $email['host'];
+				$email[3] = !empty($email['host']) ? $email['host'] : 'NIL';
 			}
 			
 			if ($email[0] != 'NIL') {
 				$output .= '"' . self::decodeHeader($email[0]) . '" <';
 			}
-			$output .= $email[2] . '@' . $email[3];
+			$output .= $email[2];
+			if ($email[3] != 'NIL') {
+				$output .= '@' . $email[3];
+			}
 			if ($email[0] != 'NIL') {
 				$output .= '>';
 			}
@@ -350,7 +380,7 @@ class fMailbox
 	 * Parses a string representation of an email into the persona, mailbox and host parts
 	 * 
 	 * @param  string $string  The email string to parse
-	 * @return array  An associative array with the keys `mailbox`, `host` and possibly `personal`
+	 * @return array  An associative array with the key `mailbox`, and possibly `host` and `personal`
 	 */
 	static private function parseEmail($string)
 	{
@@ -358,6 +388,10 @@ class fMailbox
 		$name_regex  = '((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*)(?:\.?[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*))*)';
 		
 		if (preg_match('~^[ \t]*' . $name_regex . '[ \t]*<[ \t]*' . $email_regex . '[ \t]*>[ \t]*$~ixD', $string, $match)) {
+			$match[1] = trim($match[1]);
+			if ($match[1][0] == '"' && substr($match[1], -1) == '"') {
+				$match[1] = substr($match[1], 1, -1);
+			}
 			return array('personal' => $match[1], 'mailbox' => $match[2], 'host' => $match[3]);
 		
 		} elseif (preg_match('~^[ \t]*(?:<[ \t]*)?' . $email_regex . '(?:[ \t]*>)?[ \t]*$~ixD', $string, $match)) {
@@ -366,11 +400,20 @@ class fMailbox
 		// This handles the outdated practice of including the personal
 		// part of the email in a comment after the email address
 		} elseif (preg_match('~^[ \t]*(?:<[ \t]*)?' . $email_regex . '(?:[ \t]*>)?[ \t]*\(([^)]+)\)[ \t]*$~ixD', $string, $match)) {
+			$match[3] = trim($match[1]);
+			if ($match[3][0] == '"' && substr($match[3], -1) == '"') {
+				$match[3] = substr($match[3], 1, -1);
+			}
+			
 			return array('personal' => $match[3], 'mailbox' => $match[1], 'host' => $match[2]);
 		}
 		
-		list ($mailbox, $host) = explode('@', $string, 2);
-		return array('mailbox' => $mailbox, 'host' => $host);
+		if (strpos($string, '@') !== FALSE) {
+			list ($mailbox, $host) = explode('@', $string, 2);
+			return array('mailbox' => $mailbox, 'host' => $host);
+		}
+		
+		return array('mailbox' => $string, 'host' => '');
 	}
 	
 	
@@ -391,7 +434,7 @@ class fMailbox
 		
 		$headers = array();
 		foreach ($header_lines as $header_line) {
-			$header_line = preg_replace("#\r\n\s+#", ' ', $header_line);
+			$header_line = preg_replace("#\r\n\s+#", '', $header_line);
 			$header_line = self::decodeHeader($header_line);
 			
 			list ($header, $value) = preg_split('#:\s*#', $header_line, 2);
@@ -441,7 +484,7 @@ class fMailbox
 				array_map('trim', $emails);
 				foreach ($strings as $i => $string) {
 					$emails = preg_replace(
-						'#:string' . $i . '\b#',
+						'#:string' . ($i+1) . '\b#',
 						strtr($string, array('\\' => '\\\\', '$' => '\\$')),
 						$emails,
 						1
@@ -520,6 +563,7 @@ class fMailbox
 		}
 		$info['raw_headers'] = $headers;
 		$info['raw_message'] = $message;
+		
 		$info = self::handlePart($info, self::parseStructure($body, $parsed_headers));
 		unset($info['raw_message']);
 		unset($info['raw_headers']);
@@ -534,10 +578,10 @@ class fMailbox
 		}
 		
 		if (isset($info['text'])) {
-			$info['text'] = rtrim($info['text']);
+			$info['text'] = preg_replace('#\r?\n$#D', '', $info['text']);
 		}
 		if (isset($info['html'])) {
-			$info['html'] = rtrim($info['html']);
+			$info['html'] = preg_replace('#\r?\n$#D', '', $info['html']);
 		}
 		
 		return $info;
@@ -833,6 +877,8 @@ class fMailbox
 		} else {
 			$this->write('QUIT', 1);
 		}
+		
+		$this->connection = NULL;
 	}
 	
 	
@@ -1015,14 +1061,19 @@ class fMailbox
 		
 		if ($this->type == 'imap') {
 			$response = $this->write('UID FETCH ' . $uid . ' (BODY[])');
-			$response = array_slice($response, 1, -1);
-			if ($response && $response[count($response)-1] == ')') {
-				$response = array_slice($response, 0, -1);
-			} elseif (substr($response[count($response)-1], -1) == ')') {
-				$response[count($response)-1] = substr($response[count($response)-1], 0, -1);
+			preg_match('#\{(\d+)\}$#', $response[0], $match);
+			
+			$message = '';
+			foreach ($response as $i => $line) {
+				if (!$i) { continue; }
+				if (strlen($message) + strlen($line) + 2 > $match[1]) {
+					$message .= substr($line . "\r\n", 0, $match[1] - strlen($message));
+				} else {
+					$message .= $line . "\r\n";
+				}
 			}
 			
-			$info = self::parseMessage(join("\r\n", $response), $convert_newlines);
+			$info = self::parseMessage($message, $convert_newlines);
 			$info['uid'] = $uid;
 			
 		} elseif ($this->type == 'pop3') {
@@ -1084,7 +1135,7 @@ class fMailbox
 			$total_messages = 0;
 			$response = $this->write('STATUS "INBOX" (MESSAGES)');
 			foreach ($response as $line) {
-				if (preg_match('#^\s*\*\s+STATUS\s+"INBOX"\s+\((.*)\)$#', $line, $match)) {
+				if (preg_match('#^\s*\*\s+STATUS\s+"?INBOX"?\s+\((.*)\)$#', $line, $match)) {
 					$details = self::parseResponse($match[1], TRUE);
 					$total_messages = $details['messages'];
 				}
@@ -1112,7 +1163,15 @@ class fMailbox
 					$envelope = $details['envelope'];
 					$info['date']    = $envelope[0] != 'NIL' ? $envelope[0] : '';
 					$info['from']    = self::joinEmails($envelope[2]);
-					$info['subject'] = $envelope[1] == 'NIL' ? '' : self::decodeHeader($envelope[1]);
+					if (preg_match('#=\?[^\?]+\?[QB]\?[^\?]+\?=#', $envelope[1])) {
+						do {
+							$last_subject = $envelope[1];
+							$envelope[1] = preg_replace('#(=\?([^\?]+)\?[QB]\?[^\?]+\?=) (\s*=\?\2)#', '\1\3', $envelope[1]);
+						} while ($envelope[1] != $last_subject);
+						$info['subject'] = self::decodeHeader($envelope[1]);
+					} else {
+						$info['subject'] = $envelope[1] == 'NIL' ? '' : self::decodeHeader($envelope[1]);
+					}
 					if ($envelope[9] != 'NIL') {
 						$info['message_id'] = $envelope[9];
 					}
@@ -1208,7 +1267,15 @@ class fMailbox
 		$write    = NULL;
 		$except   = NULL;
 		$response = array();
-		if (stream_select($read, $write, $except, $this->timeout)) {
+		
+		// Fixes an issue with stream_select throwing a warning on PHP 5.3 on Windows
+		if (fCore::checkOS('windows') && fCore::checkVersion('5.3.0')) {
+			$select = @stream_select($read, $write, $except, $this->timeout);
+		} else {
+			$select = stream_select($read, $write, $except, $this->timeout);
+		}
+		
+		if ($select) {
 			while (!feof($this->connection)) {
 				$line = substr(fgets($this->connection), 0, -2);
 				$response[] = $line;

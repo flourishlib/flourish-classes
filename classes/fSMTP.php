@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
  * @changes    1.0.0b3  Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
  * @changes    1.0.0b2  Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
@@ -452,7 +453,15 @@ class fSMTP
 		$write    = NULL;
 		$except   = NULL;
 		$response = array();
-		if (stream_select($read, $write, $except, $this->timeout)) {
+		
+		// Fixes an issue with stream_select throwing a warning on PHP 5.3 on Windows
+		if (fCore::checkOS('windows') && fCore::checkVersion('5.3.0')) {
+			$select = @stream_select($read, $write, $except, $this->timeout);
+		} else {
+			$select = stream_select($read, $write, $except, $this->timeout);
+		}
+		
+		if ($select) {
 			while (!feof($this->connection)) {
 				$read = array($this->connection);
 				$write = $except = NULL;

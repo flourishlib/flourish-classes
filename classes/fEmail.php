@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Fixed ::send() to only remove the name of a recipient when dealing with the `mail()` function on Windows and to leave it when using fSMTP [wb, 2010-06-22]
  * @changes    1.0.0b19  Changed ::send() to return the message id for the email, fixed the email regexes to require [] around IPs [wb, 2010-05-05]
  * @changes    1.0.0b18  Fixed the name of the static method ::unindentExpand() [wb, 2010-04-28]
  * @changes    1.0.0b17  Added the static method ::unindentExpand() [wb, 2010-04-26]
@@ -608,7 +609,7 @@ class fEmail
 		$email = preg_replace('#[\x0-\x19]+#', '', $email);
 		$name  = preg_replace('#[\x0-\x19]+#', '', $name);
 		
-		if (!$name || fCore::checkOS('windows')) {
+		if (!$name) {
 			return $email;
 		}
 		
@@ -1138,6 +1139,28 @@ class fEmail
 	{
 		$this->validate();
 		
+		// The mail() function on Windows doesn't support names in headers so
+		// we must strip them down to just the email address
+		if ($connection === NULL && fCore::checkOS('windows')) {
+			$vars = array('bcc_emails', 'bounce_to_email', 'cc_emails', 'from_email', 'reply_to_email', 'sender_email', 'to_emails');
+			foreach ($vars as $var) {
+				if (!is_array($this->$var)) {
+					if (preg_match(self::NAME_EMAIL_REGEX, $this->$var, $match)) {
+						$this->$var = $match[2];
+					}
+				} else {
+					$new_emails = array();
+					foreach ($this->$var as $email) {
+						if (preg_match(self::NAME_EMAIL_REGEX, $email, $match)) {
+							$email = $match[2];
+						}
+						$new_emails[] = $email;
+					}
+					$this->$var = $new_emails;
+				}
+			}
+		}
+		
 		$to = trim($this->buildMultiAddressHeader("", $this->to_emails));
 		
 		$message_id         = '<' . fCryptography::randomString(32, 'hexadecimal') . '@' . self::$local_hostname . '>';
@@ -1153,19 +1176,6 @@ class fEmail
 			list($headers, $body) = $this->createSMIMEBody($to, $subject, $headers, $body);
 		}
 		
-		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
-		$parameters = NULL;
-		if (!fCore::checkOS('windows') && $this->bounce_to_email) {
-			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
-			$parameters = '-f ' . $matches[0];
-		
-		// Windows takes the Return-Path email from the sendmail_from ini setting
-		} elseif (fCore::checkOS('windows') && $this->bounce_to_email) {
-			$old_sendmail_from = ini_get('sendmail_from');
-			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
-			ini_set('sendmail_from', $matches[0]);
-		}
-		
 		// Remove extra line breaks
 		$headers = trim($headers);
 		$body    = trim($body);
@@ -1177,6 +1187,19 @@ class fEmail
 			$from = $this->bounce_to_email ? $this->bounce_to_email : current($this->extractEmails(array($this->from_email)));
 			$connection->send($from, $to_emails, "To: " . $to . "\r\nSubject: " . $subject . "\r\n" . $headers, $body);
 			return $message_id;
+		}
+		
+		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
+		$parameters = NULL;
+		if (!fCore::checkOS('windows') && $this->bounce_to_email) {
+			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
+			$parameters = '-f ' . $matches[0];
+		
+		// Windows takes the Return-Path email from the sendmail_from ini setting
+		} elseif (fCore::checkOS('windows') && $this->bounce_to_email) {
+			$old_sendmail_from = ini_get('sendmail_from');
+			preg_match(self::EMAIL_REGEX, $this->bounce_to_email, $matches);
+			ini_set('sendmail_from', $matches[0]);
 		}
 		
 		// This is a gross qmail fix that is a last resort
