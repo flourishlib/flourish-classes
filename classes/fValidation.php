@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Enhanced all of the add fields methods to accept one field per parameter, or an array of fields [wb, 2010-06-24]
  * @changes    1.0.0b8  Added/fixed support for array-syntax fields names [wb, 2010-06-09]
  * @changes    1.0.0b7  Added the ability to pass an array of replacements to ::addRegexReplacement() and ::addStringReplacement() [wb, 2010-05-31]
  * @changes    1.0.0b6  BackwardsCompatibilityBreak - moved one-or-more required fields from ::addRequiredFields() to ::addOneOrMoreRule(), moved conditional required fields from ::addRequiredFields() to ::addConditionalRule(), changed returned messages array to have field name keys - added lots of functionality [wb, 2010-05-26] 
@@ -211,13 +212,18 @@ class fValidation
 	/**
 	 * Adds fields to be checked for 1/0, t/f, true/false, yes/no
 	 * 
-	 * @param  string $field  Any number of fields that should contain a boolean value
+	 * @param  string $field    A field that should contain a boolean value
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain a boolean value
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addBooleanFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		foreach ($args as $arg) {
 			$this->addRegexRule($arg, '#^0|1|t|f|true|false|yes|no$#iD', 'Please enter Yes or No');
 		}
@@ -276,13 +282,18 @@ class fValidation
 	 * 
 	 * Use ::addRequiredFields() disallow blank values.
 	 * 
-	 * @param  string $field  Any number of fields that should contain a valid date
+	 * @param  string $field    A field that should contain a valid date
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain a valid date
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addDateFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		$this->date_fields = array_merge($this->date_fields, $args);
 		
 		return $this;
@@ -294,13 +305,18 @@ class fValidation
 	 * 
 	 * Use ::addRequiredFields() disallow blank values.
 	 * 
-	 * @param  string $field  Any number of fields that should contain a valid email address
+	 * @param  string $field    A field that should contain a valid email address
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain a valid email address
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addEmailFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		foreach ($args as $arg) {
 			$this->addRegexRule($arg, fEmail::EMAIL_REGEX, 'Please enter an email address in the form name@example.com');
 		}
@@ -315,13 +331,18 @@ class fValidation
 	 * Every field that is included in email headers should be passed to this
 	 * method.
 	 * 
-	 * @param  string $field  Any number of fields to be checked for email injection
+	 * @param  string $field    A field to be checked for email injection
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields to be checked for email injection
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addEmailHeaderFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		foreach ($args as $arg) {
 			$this->addRegexRule($arg, '#^[^\r\n]*$#D', 'Line breaks are not allowed');
 		}
@@ -360,13 +381,18 @@ class fValidation
 	/**
 	 * Adds fields to be checked for float values
 	 * 
-	 * @param  string $field  Any number of fields that should contain a float value
+	 * @param  string $field    A field that should contain a float value
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain a float value
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addFloatFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		foreach ($args as $arg) {
 			$this->addRegexRule($arg, '#^([+\-]?)(?:\d*\.\d+|\d+\.?)(?:e([+\-]?)(\d+))?$#iD', 'Please enter a number');
 		}
@@ -378,13 +404,18 @@ class fValidation
 	/**
 	 * Adds fields to be checked for integer values
 	 * 
-	 * @param  string $field  Any number of fields that should contain an integer value
+	 * @param  string $field    A field that should contain an integer value
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain an integer value
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addIntegerFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		foreach ($args as $arg) {
 			$this->addRegexRule($arg, '#^[+\-]?\d+(?:e[+]?\d+)?$#iD', 'Please enter a whole number');
 		}
@@ -472,15 +503,20 @@ class fValidation
 	
 	
 	/**
-	 * Adds form fields to be required, taking each parameter as a field name
+	 * Adds form fields to be required
 	 * 
-	 * @param  mixed $field  Any number of fields to check
-	 * @param  mixed ...
+	 * @param  string $field    A field to require a value for
+	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields to require a value for
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addRequiredFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
+		
 		$this->required_fields = array_merge($this->required_fields, $args);
 		
 		return $this;
@@ -513,13 +549,17 @@ class fValidation
 	 * 
 	 * Use ::addRequiredFields() disallow blank values.
 	 * 
-	 * @param  string $field  Any number of fields that should contain a valid URL
+	 * @param  string $field    A field that should contain a valid URL
 	 * @param  string ...
+	 * @param  array  :$fields  Any number of fields that should contain a valid URL
 	 * @return fValidation  The validation object, to allow for method chaining
 	 */
 	public function addURLFields($field)
 	{
 		$args = func_get_args();
+		if (count($args) == 1 && is_array($args[0])) {
+			$args = $args[0];
+		}
 		
 		$ip_regex       = '(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])';
 		$hostname_regex = '[a-z]+(?:[a-z0-9\-]*[a-z0-9]\.?|\.)*';
