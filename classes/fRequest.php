@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed ::set() to work with `PUT` requests [wb, 2010-06-30]
  * @changes    1.0.0b12  Fixed a bug with ::getBestAcceptLanguage() returning the second-best language [wb, 2010-05-27]
  * @changes    1.0.0b11  Added ::isAjax() [al, 2010-03-15]
  * @changes    1.0.0b10  Fixed ::get() to not truncate integers to the 32bit integer limit [wb, 2010-03-05]
@@ -689,7 +690,7 @@ class fRequest
 			return;
 		}
 		
-		if (self::isDelete() || self::isDelete()) {
+		if (self::isDelete() || self::isPut()) {
 			self::initPutDelete();
 			self::$put_delete[$key] = $value;	
 			return;
