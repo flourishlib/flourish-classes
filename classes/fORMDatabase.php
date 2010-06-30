@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Fixed ::parseSearchTerms() to work with non-ascii terms [wb, 2010-06-30]
  * @changes    1.0.0b23  Fixed error messages in ::retrieve() [wb, 2010-04-23]
  * @changes    1.0.0b22  Added support for IBM DB2, fixed an issue with building record sets or records that have recursive relationships [wb, 2010-04-13]
  * @changes    1.0.0b21  Changed ::injectFromAndGroupByClauses() to be able to handle table aliases that contain other aliases inside of them [wb, 2010-03-03]
@@ -1169,7 +1170,7 @@ class fORMDatabase
 			
 			// Trim any punctuation off of the beginning and end of terms
 			} else {
-				$match = preg_replace('#(^[^a-z0-9]+|[^a-z0-9]+$)#iD', '', $match);	
+				$match = preg_replace('#(^[\pC\pC\pM\pP\pS\pZ]+|[\pC\pC\pM\pP\pS\pZ]+$)#iDu', '', $match);	
 			}
 			
 			if ($ignore_stop_words && in_array(strtolower($match), $stop_words)) {
