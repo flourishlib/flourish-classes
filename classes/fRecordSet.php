@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Fixed a typo/bug in ::reduce() [wb, 2010-06-30]
  * @changes    1.0.0b36  Replaced create_function() with a private method call [wb, 2010-06-08]
  * @changes    1.0.0b35  Added the ::chunk() and ::split() methods [wb, 2010-05-20]
  * @changes    1.0.0b34  Added an integer cast to ::count() to fix issues with the dblib MSSQL driver [wb, 2010-04-09]
@@ -1532,17 +1533,17 @@ class fRecordSet implements Iterator, Countable
 	 *  - The initial value and the first record for the first call
 	 *  - The result of the last call plus the next record for the second and subsequent calls
 	 * 
-	 * @param  callback $callback      The callback to pass the records to - see method description for details
-	 * @param  mixed    $inital_value  The initial value to seed reduce with
+	 * @param  callback $callback       The callback to pass the records to - see method description for details
+	 * @param  mixed    $initial_value  The initial value to seed reduce with
 	 * @return mixed  The result of the reduce operation
 	 */
-	public function reduce($callback, $inital_value=NULL)
+	public function reduce($callback, $initial_value=NULL)
 	{
 		if (!$this->records) {
 			return $initial_value;
 		}
 		
-		$result = $inital_value;
+		$result = $initial_value;
 		
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
 			$callback = explode('::', $callback);	
