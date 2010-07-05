@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b65
+ * @version    1.0.0b66
+ * @changes    1.0.0b66  Fixed a bug with ::store() and non-primary key auto-incrementing columns [wb, 2010-07-05]
  * @changes    1.0.0b65  Fixed bugs with ::inspect() making some `min_value` and `max_value` elements available for non-numeric types, fixed ::reflect() to list the `min_value` and `max_value` elements [wb, 2010-06-08]
  * @changes    1.0.0b64  BackwardsCompatibilityBreak - changed ::validate()'s returned messages array to have field name keys - added the option to ::validate() to remove field names from messages [wb, 2010-05-26]
  * @changes    1.0.0b63  Changed how is_subclass_of() is used to work around a bug in 5.2.x [wb, 2010-04-06]
@@ -1251,11 +1252,9 @@ abstract class fActiveRecord
 	/**
 	 * Creates the fDatabase::translatedQuery() insert statement params
 	 *
-	 * @param  boolean $new_autoincrementing_record  If the record is new and has an auto-incrementing primary key
-	 * @param  string  $pk_column                    The auto-incrementing primary key column for a new record
 	 * @return array  The parameters for an fDatabase::translatedQuery() SQL insert statement
 	 */
-	protected function constructInsertParams($new_autoincrementing_record, $pk_column)
+	protected function constructInsertParams()
 	{
 		$columns = array();
 		$values  = array();
@@ -1268,8 +1267,7 @@ abstract class fActiveRecord
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
-			// Most databases don't like the auto incrementing primary key to be set to NULL
-			if ($new_autoincrementing_record && $pk_column == $column && $this->values[$pk_column] === NULL) {
+			if ($schema->getColumnInfo($table, $column, 'auto_increment') && $schema->getColumnInfo($table, $column, 'not_null') && $this->values[$column] === NULL) {
 				continue;
 			}
 			
@@ -2690,7 +2688,7 @@ abstract class fActiveRecord
 			// Storing main table
 			
 			if (!$this->exists()) {
-				$params = $this->constructInsertParams($new_autoincrementing_record, $pk_column);
+				$params = $this->constructInsertParams();
 			} else {
 				$params = $this->constructUpdateParams();
 			}
