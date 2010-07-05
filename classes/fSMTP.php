@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated the class to use new fCore functionality [wb, 2010-07-05]
  * @changes    1.0.0b5  Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
  * @changes    1.0.0b3  Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
@@ -218,7 +219,7 @@ class fSMTP
 		
 		$this->local_host = php_uname('n');
 		
-		set_error_handler($this->handleError);
+		fCore::startErrorCapture();
 		
 		$host = ($this->secure) ? 'tls://' . $this->host : $this->host;
 		$this->connection = fsockopen($host, $this->port, $error_int, $error_string, $this->timeout);
@@ -226,7 +227,12 @@ class fSMTP
 			throw new fConnectivityException('There was an error connecting to the server');
 		}
 		
-		restore_error_handler();
+		foreach (fCore::stopErrorCapture() as $error) {
+			if (stripos($error['string'], 'ssl')) {
+				throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
+			}
+			trigger_error($error['string'], E_USER_ERROR);
+		}
 		
 		$response = $this->read('#^220 #');
 		if (!$this->find($response, '#^220[ -]#')) {
@@ -386,28 +392,6 @@ class fSMTP
 			}	
 		}
 		return $matches;
-	}
-	
-	
-	/**
-	 * Handles PHP errors during the connection to try and give a helpful message about secure/non-secure connections
-	 * 
-	 * @internal
-	 * 
-	 * @param  integer $error_number   The error type
-	 * @param  string  $error_string   The message for the error
-	 * @param  string  $error_file     The file the error occured in
-	 * @param  integer $error_line     The line the error occured on
-	 * @param  array   $error_context  A references to all variables in scope at the occurence of the error
-	 * @return void
-	 */
-	public function handleError($error_number, $error_string, $error_file=NULL, $error_line=NULL, $error_context=NULL)
-	{
-		if (stripos($error_string, 'ssl')) {
-			throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
-		}
-		restore_error_handler();
-		trigger_error($error_string, E_USER_ERROR);
 	}
 	
 	

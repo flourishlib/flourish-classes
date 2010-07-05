@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added ::startErrorCapture() and ::stopErrorCapture() [wb, 2010-07-05]
  * @changes    1.0.0b14  Changed ::enableExceptionHandling() to only call fException::printMessage() when the destination is not `html` and no callback has been defined, added ::configureSMTP() to allow using fSMTP for error and exception emails [wb, 2010-06-04]
  * @changes    1.0.0b13  Added the `$backtrace` parameter to ::backtrace() [wb, 2010-03-05]
  * @changes    1.0.0b12  Added ::getDebug() to check for the global debugging flag, added more specific BSD checks to ::checkOS() [wb, 2010-03-02]
@@ -51,7 +52,16 @@ class fCore
 	const registerDebugCallback   = 'fCore::registerDebugCallback';
 	const reset                   = 'fCore::reset';
 	const sendMessagesOnShutdown  = 'fCore::sendMessagesOnShutdown';
+	const startErrorCapture       = 'fCore::startErrorCapture';
+	const stopErrorCapture        = 'fCore::stopErrorCapture';
 	
+	
+	/**
+	 * An array of errors that have been captured
+	 * 
+	 * @var array
+	 */
+	static private $captured_errors = NULL;
 	
 	/**
 	 * If the context info has been shown
@@ -788,8 +798,6 @@ class fCore
 		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
 		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
 		
-		$error_file = str_replace($doc_root, '{doc_root}/', $error_file);
-		
 		$backtrace = self::backtrace(1);
 		
 		// Remove the reference to handleError
@@ -821,6 +829,19 @@ class fCore
 			case E_RECOVERABLE_ERROR: $type = self::compose('Recoverable Error'); break;
 			case E_DEPRECATED:        $type = self::compose('Deprecated');        break;
 			case E_USER_DEPRECATED:   $type = self::compose('User Deprecated');   break;
+		}
+		
+		if (is_array(self::$captured_errors)) {
+			self::$captured_errors[] = array(
+				'number'    => $error_number,
+				'type'      => $type,
+				'string'    => $error_string,
+				'file'      => str_replace($doc_root, '{doc_root}/', $error_file),
+				'line'      => $error_line,
+				'backtrace' => $backtrace,
+				'context'   => $error_context
+			);
+			return;
 		}
 		
 		$error = $type . "\n" . str_pad('', strlen($type), '-') . "\n" . $backtrace . "\n" . $error_string;
@@ -898,6 +919,11 @@ class fCore
 		restore_error_handler();
 		restore_exception_handler();
 		
+		if (is_array(self::$captured_errors)) {
+			restore_error_handler();
+		}
+		
+		self::$captured_errors              = NULL;
 		self::$context_shown                = FALSE;
 		self::$debug                        = NULL;
 		self::$debug_callback               = NULL;
@@ -1011,6 +1037,34 @@ class fCore
 		} else {
 			self::$exception_message = $message;
 		}
+	}
+	
+	
+	/**
+	 * Temporarily enables capturing error messages 
+	 * 
+	 * @return void
+	 */
+	static public function startErrorCapture()
+	{
+		self::$captured_errors = array();
+		set_error_handler(self::callback(self::handleError));
+	}
+	
+	
+	/**
+	 * Stops capturing error messages, returning all that have been captured
+	 * 
+	 * @return array  The captured error messages
+	 */
+	static public function stopErrorCapture()
+	{
+		$captures = self::$captured_errors;
+		self::$captured_errors = NULL;
+		
+		restore_error_handler();
+		
+		return $captures;
 	}
 	
 	

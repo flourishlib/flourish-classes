@@ -52,7 +52,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Updated the class to use new fCore functionality [wb, 2010-07-05]
  * @changes    1.0.0b25  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b24  Fixed an auto-incrementing transaction bug with Oracle and debugging issues with all databases [wb, 2010-03-17]
  * @changes    1.0.0b23  Resolved another bug with capturing auto-incrementing values for PostgreSQL and Oracle [wb, 2010-03-15]
@@ -1952,26 +1953,23 @@ class fDatabase
 	/**
 	 * Handles a PHP error to extract error information for the mssql extension
 	 * 
-	 * @internal
-	 * 
-	 * @param  integer $error_number   The error type
-	 * @param  string  $error_string   The message for the error
-	 * @param  string  $error_file     The file the error occured in
-	 * @param  integer $error_line     The line the error occured on
-	 * @param  array   $error_context  A references to all variables in scope at the occurence of the error
+	 * @param  array $errors  An array of error information from fCore::stopErrorCapture()
 	 * @return void
 	 */
-	public function handleError($error_number, $error_string, $error_file=NULL, $error_line=NULL, $error_context=NULL)
+	private function handleErrors($errors)
 	{
 		if ($this->extension != 'mssql') {
 			return;	
 		}
-		if (substr($error_string, 0, 14) == 'mssql_query():') {
-			if ($this->error) {
-				$this->error .= " ";	
+		
+		foreach ($errors as $error) {
+			if (substr($error['string'], 0, 14) == 'mssql_query():') {
+				if ($this->error) {
+					$this->error .= " ";	
+				}
+				$this->error .= preg_replace('#^mssql_query\(\): ([^:]+: )?#', '', $error['string']);	
 			}
-			$this->error .= preg_replace('#^mssql_query\(\): ([^:]+: )?#', '', $error_string);	
-		}		
+		}
 	}
 	
 	
@@ -2198,7 +2196,7 @@ class fDatabase
 	 */
 	private function perform($statement, $params)
 	{
-		$this->setErrorHandler();
+		fCore::startErrorCapture();
 		
 		$extra = NULL;
 		if (is_object($statement)) {
@@ -2234,7 +2232,7 @@ class fDatabase
 		}
 		$this->statement = $statement;
 		
-		$this->restoreErrorHandler();
+		$this->handleErrors(fCore::stopErrorCapture());
 		
 		if ($result === FALSE) {
 			$this->checkForError($result, $extra, is_object($statement) ? $statement->getSQL() : $statement);
@@ -2271,7 +2269,7 @@ class fDatabase
 	 */
 	private function performQuery($statement, $result, $params)
 	{
-		$this->setErrorHandler();
+		fCore::startErrorCapture();
 		
 		$extra = NULL;
 		if (is_object($statement)) {
@@ -2363,7 +2361,7 @@ class fDatabase
 		}
 		$this->statement = $statement;
 		
-		$this->restoreErrorHandler();
+		$this->handleErrors(fCore::stopErrorCapture());
 		
 		$this->checkForError($result, $extra);
 		
@@ -2417,7 +2415,7 @@ class fDatabase
 	 */
 	private function performUnbufferedQuery($statement, $result, $params)
 	{
-		$this->setErrorHandler();
+		fCore::startErrorCapture();
 		
 		$extra = NULL;
 		if (is_object($statement)) {
@@ -2455,7 +2453,7 @@ class fDatabase
 		}
 		$this->statement = $statement;
 		
-		$this->restoreErrorHandler();
+		$this->handleErrors(fCore::stopErrorCapture());
 		
 		$this->checkForError($result, $extra);
 	}
@@ -2719,17 +2717,6 @@ class fDatabase
 	
 	
 	/**
-	 * Restores the original error handler that existed before the internal one took over
-	 * 
-	 * @return void
-	 */
-	private function restoreErrorHandler()
-	{
-		restore_error_handler();
-	}
-	
-	
-	/**
 	 * Runs a single statement and times it, removes any old unbuffered queries before starting
 	 * 
 	 * @param  string|fStatement $statement    The SQL statement or prepared statement to execute
@@ -2872,17 +2859,6 @@ class fDatabase
 				}
 			}
 		}
-	}
-	
-	
-	/**
-	 * Sets an internal error handler to handle the error messages from the mssql extension
-	 * 
-	 * @return void
-	 */
-	private function setErrorHandler()
-	{
-		set_error_handler($this->handleError);
 	}
 	
 	
