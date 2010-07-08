@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Fixed the related table populate action to use the plural underscore_notation version of the related class name [wb, 2010-07-08]
  * @changes    1.0.0b32  Backwards Compatibility Break - related table populate action now use the underscore_notation version of the class name instead of the related table name, allowing for related tables in non-standard schemas [wb, 2010-06-23]
  * @changes    1.0.0b31  Fixed ::reflect() to properly show parameters for associate methods [wb, 2010-06-08]
  * @changes    1.0.0b30  Fixed a bug where related record error messages could be overwritten if there were multiple related records with the same error [wb, 2010-05-29]
@@ -492,7 +493,7 @@ class fORMRelated
 		$primary_keys    = $schema->getKeys($related_table, 'primary');
 		$first_pk_column = $primary_keys[0];
 		
-		$filter_class            = fGrammar::underscorize($related_class);
+		$filter_class            = fGrammar::pluralize(fGrammar::underscorize($related_class));
 		$filter_class_with_route = $filter_class . '{' . $route_name . '}';
 		
 		$pk_field            = $filter_class . '::' . $first_pk_column;
