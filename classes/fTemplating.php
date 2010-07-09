@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a bug with placing absolute file paths on Windows [wb, 2010-07-09]
  * @changes    1.0.0b7  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b6  Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
  * @changes    1.0.0b5  Added ::encode() [wb, 2010-05-20]
@@ -451,7 +452,7 @@ class fTemplating
 	protected function placePHP($element, $path)
 	{
 		// Check to see if the element is a relative path
-		if (!preg_match('#^(/|\\|[a-z]:(\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
+		if (!preg_match('#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
 			$path = $this->root . $path;
 		
 		// Check to see if the element is relative to the current script
