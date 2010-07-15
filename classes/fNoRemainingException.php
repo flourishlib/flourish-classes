@@ -1,6 +1,6 @@
 <?php
 /**
- * An exception caused when trying to a value from an iterator and there is nothing left
+ * An exception caused when trying to get a value from an iterator and there is nothing left
  * 
  * @copyright  Copyright (c) 2007-2008 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fNoRemainingException
  * 
- * @version    1.0.0b
- * @changes    1.0.0b  The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed a typo in the documentation [wb, 2010-07-14]
+ * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
  */
 class fNoRemainingException extends fExpectedException
 {
