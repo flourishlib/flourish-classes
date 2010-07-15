@@ -2,14 +2,16 @@
 /**
  * Allows for quick and flexible HTML templating
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Matt Nowack [mn] <mdnowack@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added the methods ::delete() and ::remove() [wb+mn, 2010-07-15]
  * @changes    1.0.0b8  Fixed a bug with placing absolute file paths on Windows [wb, 2010-07-09]
  * @changes    1.0.0b7  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b6  Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
@@ -220,6 +222,27 @@ class fTemplating
 		$this->buffered_id = $id_sequence;
 		
 		$id_sequence++;
+	}
+	
+	
+	/**
+	 * Deletes an element from the template
+	 * 
+	 * @param  string $element    The element to delete
+	 * @param  array  |$elements  The elements to delete
+	 * @return fTemplating  The template object, to allow for method chaining
+	 */
+	public function delete($element)
+	{
+		if (!is_array($element)) {
+			$element = array($element);
+		}
+		
+		foreach ($element as $key) {
+			unset($this->elements[$key]);
+		}
+		
+		return $this;
 	}
 	
 	
@@ -560,6 +583,39 @@ class fTemplating
 	
 	
 	/**
+	 * Removes a value from an array element
+	 *
+	 * @param string $element  The element to remove from
+	 * @param mixed  $value    The value to remove - compared in a non-strict manner, such that removing `0` will remove a blank string and false also
+	 * @return fTemplating  The template object, to allow for method chaining
+	 */
+	public function remove($element, $value)
+	{
+		if (!isset($this->elements[$element])) {
+			return $this;
+		}
+		
+		if (!is_array($this->elements[$element])) {
+			throw new fProgrammerException(
+				'%1$s was called for an element, %2$s, which is not an array',
+				'remove()',
+				$element
+			);
+		}
+		
+		$keys = array_keys($this->elements[$element], $value);
+		if ($keys) {
+			foreach ($keys as $key) {
+				unset($this->elements[$element][$key]);
+			}
+			$this->elements[$element] = array_values($this->elements[$element]);
+		}
+		
+		return $this;
+	}
+	
+	
+	/**
 	 * Sets the value for an element
 	 * 
 	 * @param  string $element    The element to set
@@ -638,7 +694,7 @@ class fTemplating
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
