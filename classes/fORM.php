@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed some documentation to reflect the API changes from v1.0.0b9 [wb, 2010-07-14]
  * @changes    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
  * @changes    1.0.0b19  Added the method ::isClassMappedToTable() [wb, 2010-03-30]
  * @changes    1.0.0b18  Added the `post::loadFromIdentityMap()` hook [wb, 2010-03-14]
@@ -624,7 +625,7 @@ class fORM
 	 *
 	 * @internal
 	 * 
-	 * @param  mixed  $class   The class name or instance of the class the column is part of
+	 * @param  string $class   The class name of the class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to possibly objectify
 	 * @return mixed  The scalar or object version of the value, depending on the column type and column options
@@ -1119,7 +1120,7 @@ class fORM
 	/**
 	 * Takes a class name (or class) and turns it into a table name - Uses custom mapping if set
 	 * 
-	 * @param  mixed $class  he class name or instance of the class
+	 * @param  string $class  The class name
 	 * @return string  The table name
 	 */
 	static public function tablize($class)
