@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Internal Backwards Compatiblity Break - changed the array keys for translated queries returned from ::translate() to include a number plus `:` before the original SQL, preventing duplicate keys [wb, 2010-07-14]
  * @changes    1.0.0b16  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b15  Fixed a bug with MSSQL national character conversion when running a SQL statement with a sub-select containing joins [wb, 2009-12-18]
  * @changes    1.0.0b14  Changed PostgreSQL to cast columns in LOWER() calls to VARCHAR to allow UUID columns (which are treated as a VARCHAR by fSchema) to work with default primary key ordering in fRecordSet [wb, 2009-12-16]
@@ -762,7 +763,7 @@ class fSQLTranslation
 	 * @internal
 	 * 
 	 * @param  array $statements  The SQL statements to translate
-	 * @return array  The translated SQL statements all ready for execution. Statements that have been translated will have string key of the original SQL, all other will have a numeric key.
+	 * @return array  The translated SQL statements all ready for execution. Statements that have been translated will have string key of the number, `:` and the original SQL, all other will have a numeric key.
 	 */
 	public function translate($statements)
 	{
@@ -811,7 +812,7 @@ class fSQLTranslation
 				);
 			}
 			
-			$output = array_merge($output, array($sql => $new_sql), $extra_statements);	
+			$output = array_merge($output, array($number . ':' . $sql => $new_sql), $extra_statements);	
 		}
 		
 		return $output;

@@ -52,7 +52,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Fixed a bug with running multiple copies of a SQL statement with string values through a single ::translatedQuery() call [wb, 2010-07-14]
  * @changes    1.0.0b26  Updated the class to use new fCore functionality [wb, 2010-07-05]
  * @changes    1.0.0b25  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b24  Fixed an auto-incrementing transaction bug with Oracle and debugging issues with all databases [wb, 2010-03-17]
@@ -2554,7 +2555,7 @@ class fDatabase
 	 * @param  string  $sql        The SQL to prepare
 	 * @param  array   $values     Literal values to escape into the SQL
 	 * @param  boolean $translate  If the SQL should be translated
-	 * @return array  The split out SQL queries, queries that have been translated will have a string key of the original SQL, non-translated SQL will have a numeric key
+	 * @return array  The split out SQL queries, queries that have been translated will have a string key of a number, `:` and the original SQL, non-translated SQL will have a numeric key
 	 */
 	private function prepareSQL($sql, $values, $translate)
 	{
@@ -2662,8 +2663,10 @@ class fDatabase
 		}
 		
 		$output = array();
-		foreach (array_keys($queries) as $number => $key) {
+		foreach (array_keys($queries) as $key) {
 			$query = $queries[$key];
+			$parts = explode(':', $key, 2);
+			$number = $parts[0];
 			
 			// Escape the values into the SQL
 			if (isset($chunked_values[$number])) {
@@ -2706,7 +2709,7 @@ class fDatabase
 		}
 		
 		$queries = $this->prepareSQL($statement, $params, FALSE);
-			
+		
 		$output = array();
 		foreach ($queries as $query) {
 			$output[] = $this->run($query, 'fResult');	
@@ -2991,10 +2994,11 @@ class fDatabase
 		);
 		
 		$output = array();
-		foreach ($queries as $original_query => $query) {
+		foreach ($queries as $key => $query) {
 			$result = $this->run($query, 'fResult');
-			if (!is_numeric($original_query)) {
-				$result->setUntranslatedSQL($original_query);	
+			if (!is_numeric($key)) {
+				list($number, $original_query) = explode(':', $key, 2);
+				$result->setUntranslatedSQL($original_query);
 			}
 			$output[] = $result;
 		}
@@ -3070,10 +3074,11 @@ class fDatabase
 			);
 		}
 		
-		$query_keys     = array_keys($queries);
-		$original_query = $query_keys[0];
+		$query_keys = array_keys($queries);
+		$key        = $query_keys[0];
+		list($number, $original_query) = explode(':', $key, 2);
 		
-		$result = $this->run($queries[$original_query], 'fUnbufferedResult');
+		$result = $this->run($queries[$key], 'fUnbufferedResult');
 		$result->setUntranslatedSQL($original_query);
 		
 		$this->unbuffered_result = $result;
