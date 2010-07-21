@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed the class to detect when exec() is disabled and the function has a space before or after in the list [wb, 2010-07-21]
  * @changes    1.0.0b22  Fixed ::isImageCompatible() to handle certain JPGs created with Photoshop [wb, 2010-04-03]
  * @changes    1.0.0b21  Fixed ::resize() to allow dimensions to be numeric strings instead of just integers [wb, 2010-04-09]
  * @changes    1.0.0b20  Added ::append() [wb, 2010-03-15]
@@ -154,8 +155,8 @@ class fImage extends fFile
 			try {
 				
 				// If exec is disabled we can't use imagemagick
-				if (in_array('exec', explode(',', ini_get('disable_functions')))) {
-					throw new Exception();	
+				if (in_array('exec', array_map('trim', explode(',', ini_get('disable_functions'))))) {
+					throw new Exception();
 				}
 				
 				if (fCore::checkOS('windows')) {
