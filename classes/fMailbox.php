@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
  * @changes    1.0.0b5  Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
  * @changes    1.0.0b3  Added missing static method callback constants [wb, 2010-05-11]
@@ -647,7 +648,7 @@ class fMailbox
 		}
 		
 		if (!isset($headers['content-type'])) {
-			$header['content-type'] = array(
+			$headers['content-type'] = array(
 				'value'  => 'text/plain',
 				'fields' => array()
 			);
