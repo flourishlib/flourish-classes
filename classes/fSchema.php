@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Fixed bugs in the documentation and error message of ::getColumnInfo() about what are valid elements [wb, 2010-07-21]
  * @changes    1.0.0b39  Fixed a regression where key detection SQL was not compatible with PostgreSQL 8.1 [wb, 2010-04-13]
  * @changes    1.0.0b38  Added Oracle support to ::getDatabases() [wb, 2010-04-13]
  * @changes    1.0.0b37  Fixed ::getDatabases() for MSSQL [wb, 2010-04-09]
@@ -2164,7 +2165,7 @@ class fSchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return: `'type'`, `'placeholder'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'decimal_places'`, `'auto_increment'`
+	 * @param  string $element  The element to return: `'type'`, `'placeholder'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'min_value'`, `'max_value'`, `'decimal_places'`, `'auto_increment'`
 	 * @return mixed  The column info for the table/column/element specified - see method description for format
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
@@ -2179,7 +2180,7 @@ class fSchema
 					throw new fProgrammerException(
 						'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 						$element,
-						join(', ', array('type', 'placeholder', 'not_null', 'default', 'valid_values', 'max_length', 'decimal_places', 'auto_increment'))
+						join(', ', array('type', 'placeholder', 'not_null', 'default', 'valid_values', 'max_length', 'min_value', 'max_value', 'decimal_places', 'auto_increment'))
 					);	
 				}
 				return $this->merged_column_info[$table][$column][$element];
