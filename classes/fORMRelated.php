@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Updated the class to work with fixes in fORMRelated [wb, 2010-07-22]
  * @changes    1.0.0b33  Fixed the related table populate action to use the plural underscore_notation version of the related class name [wb, 2010-07-08]
  * @changes    1.0.0b32  Backwards Compatibility Break - related table populate action now use the underscore_notation version of the class name instead of the related table name, allowing for related tables in non-standard schemas [wb, 2010-06-23]
  * @changes    1.0.0b31  Fixed ::reflect() to properly show parameters for associate methods [wb, 2010-06-08]
@@ -220,15 +221,7 @@ class fORMRelated
 			$record_set = fRecordSet::buildFromArray($related_class, array());
 		
 		} else {
-			// When joining to the same table, we have to use a different column
-			$same_class = $related_class == fORM::getClass($class);
-			if ($same_class && isset($relationship['join_table'])) {
-				$column = $table . '{' . $relationship['join_table'] . '}.' . $relationship['column'];
-			} elseif ($same_class) {
-				$column = $table . '{' . $route . '}.' . $relationship['related_column'];
-			} else {
-				$column = $table . '{' . $route . '}.' . $relationship['column'];
-			}
+			$column = $table . '{' . $route . '}.' . $relationship['column'];
 			
 			$where_conditions = array($column . '=' => $values[$relationship['column']]);
 			$order_bys        = self::getOrderBys($class, $related_class, $route);
@@ -318,10 +311,8 @@ class fORMRelated
 				);
 				$params[] = $value;
 				
-				$params[0] .= ' :group_by_clause';
-				
 				$params = fORMDatabase::injectFromAndGroupByClauses($db, $schema, $params, $related_table);
-			
+				
 			// Many-to-many relationships allow counting just from the join table
 			} else {
 				

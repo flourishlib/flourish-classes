@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed ::insertFromAndGroupByClauses() to properly handle recursive relationships [wb, 2010-07-22]
  * @changes    1.0.0b24  Fixed ::parseSearchTerms() to work with non-ascii terms [wb, 2010-06-30]
  * @changes    1.0.0b23  Fixed error messages in ::retrieve() [wb, 2010-04-23]
  * @changes    1.0.0b22  Added support for IBM DB2, fixed an issue with building record sets or records that have recursive relationships [wb, 2010-04-13]
@@ -823,8 +824,13 @@ class fORMDatabase
 				'on_clause_fields' => array()
 			);
 			
-			$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
-			$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['related_column'];
+			if ($table != $related_table) {
+				$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['column'];
+				$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['related_column'];
+			} else {
+				$join['on_clause_fields'][] = $table_alias . '.' . $routes[$route]['related_column'];
+				$join['on_clause_fields'][] = $join['table_alias'] . '.' . $routes[$route]['column'];
+			}
 		
 			$joins[$table . '_' . $related_table . '{' . $route . '}'] = $join;
 		
@@ -888,9 +894,11 @@ class fORMDatabase
 	 * Finds all of the table names in the SQL and creates the appropriate `FROM` and `GROUP BY` clauses with all necessary joins
 	 * 
 	 * The SQL string should contain two placeholders, `:from_clause` and
-	 * `:group_by_clause`. All columns should be qualified with their full table
-	 * name. Here is an example SQL string to pass in presumming that the
-	 * tables users and groups are in a relationship:
+	 * `:group_by_clause`, although the later may be omitted if necessary. All
+	 * columns should be qualified with their full table name.
+	 * 
+	 * Here is an example SQL string to pass in presumming that the tables
+	 * users and groups are in a relationship:
 	 * 
 	 * {{{
 	 * SELECT users.* FROM :from_clause WHERE groups.group_id = 5 :group_by_clause ORDER BY lower(users.first_name) ASC
@@ -913,14 +921,6 @@ class fORMDatabase
 			throw new fProgrammerException(
 				'No %1$s placeholder was found in:%2$s',
 				':from_clause',
-				"\n" . $params[0]
-			);
-		}
-		
-		if (strpos($params[0], ':group_by_clause') === FALSE && !preg_match('#group\s+by#i', $params[0])) {
-			throw new fProgrammerException(
-				'No %1$s placeholder was found in:%2$s',
-				':group_by_clause',
 				"\n" . $params[0]
 			);
 		}
@@ -1006,15 +1006,6 @@ class fORMDatabase
 						$related_table = $table_match[4];
 						$route = fORMSchema::getRouteName($schema, $table, $related_table, $table_match[5]);
 						
-						// If the related table is the current table and it is a one-to-many we don't want to join
-						if ($table_match[4] == $table) {
-							$one_to_many_routes = fORMSchema::getRoutes($schema, $table, $related_table, 'one-to-many');
-							if (isset($one_to_many_routes[$route])) {
-								$table_map[$table_match[1]] = $db->escape('%r', $table_alias);
-								continue;
-							}
-						}
-						
 						$join_name = self::createJoin($schema, $table, $table_alias, $related_table, $route, $joins, $used_aliases);
 						
 						$table_map[$table_match[1]] = $db->escape('%r', $joins[$join_name]['table_alias']);
@@ -1030,6 +1021,7 @@ class fORMDatabase
 				continue;
 			}
 			
+			// Many-to-many uses a join table
 			if (substr($name, -5) == '_join') {
 				$joined_to_many = TRUE;
 				break;
