@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Fixed ::insertFromAndGroupByClauses() to handle SQL where a table is references in more than one capitalization [wb, 2010-07-26]
  * @changes    1.0.0b25  Fixed ::insertFromAndGroupByClauses() to properly handle recursive relationships [wb, 2010-07-22]
  * @changes    1.0.0b24  Fixed ::parseSearchTerms() to work with non-ascii terms [wb, 2010-06-30]
  * @changes    1.0.0b23  Fixed error messages in ::retrieve() [wb, 2010-04-23]
@@ -711,7 +712,7 @@ class fORMDatabase
 				$table = $short_table;
 			}	
 		}
-		return $table;
+		return strtolower($table);
 	}
 	
 	
@@ -951,7 +952,6 @@ class fORMDatabase
 				// This removes quotes from around . in the {route} specified of a shorthand column name
 				$match = preg_replace('#(\{\w+)"\."(\w+\})#', '\1.\2', $match);
 				
-				//fCore::expose($match);
 				preg_match_all('#(?<!\w|"|=>)((?:"?((?:\w+"?\."?)?\w+)(?:\{([\w.]+)\})?"?=>)?("?(?:\w+"?\."?)?\w+)(?:\{([\w.]+)\})?"?)\."?\w+"?(?=[^\w".{])#m', $match, $table_matches, PREG_SET_ORDER);
 				foreach ($table_matches as $table_match) {
 					

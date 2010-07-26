@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Updated ::getPrimaryKeys() to always return primary keys in a consistent order when no order bys are specified [wb, 2010-07-26]
  * @changes    1.0.0b34  Updated the class to work with fixes in fORMRelated [wb, 2010-07-22]
  * @changes    1.0.0b33  Fixed the related table populate action to use the plural underscore_notation version of the related class name [wb, 2010-07-08]
  * @changes    1.0.0b32  Backwards Compatibility Break - related table populate action now use the underscore_notation version of the class name instead of the related table name, allowing for related tables in non-standard schemas [wb, 2010-06-23]
@@ -630,13 +631,17 @@ class fORMRelated
 				
 				$params[0] .= " :group_by_clause ";
 				
-				if ($order_bys = self::getOrderBys($class, $related_class, $route)) {
-					$params[0] .= " ORDER BY ";
-					$params = fORMDatabase::addOrderByClause($db, $schema, $params, $related_table, $order_bys);
+				if (!$order_bys = self::getOrderBys($class, $related_class, $route)) {
+					$order_bys = array();
+					foreach ($schema->getKeys($table, 'primary') as $pk_column) {
+						$order_bys[$table . '.' . $pk_column] = 'ASC';
+					}
 				}
+				$params[0] .= " ORDER BY ";
+				$params = fORMDatabase::addOrderByClause($db, $schema, $params, $related_table, $order_bys);
 				
 				$params = fORMDatabase::injectFromAndGroupByClauses($db, $schema, $params, $related_table);
-					
+				
 				$result = call_user_func_array($db->translatedQuery, $params);
 				
 				$primary_keys = array();
