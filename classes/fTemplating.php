@@ -10,16 +10,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Added the methods ::delete() and ::remove() [wb+mn, 2010-07-15]
- * @changes    1.0.0b8  Fixed a bug with placing absolute file paths on Windows [wb, 2010-07-09]
- * @changes    1.0.0b7  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
- * @changes    1.0.0b6  Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
- * @changes    1.0.0b5  Added ::encode() [wb, 2010-05-20]
- * @changes    1.0.0b4  Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
- * @changes    1.0.0b3  Fixed an issue with placing relative file path [wb, 2010-04-23]
- * @changes    1.0.0b2  Added the ::inject() method [wb, 2009-01-09]
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Updated ::place() to ignore URL query strings when detecting an element type [wb, 2010-07-26]
+ * @changes    1.0.0b9   Added the methods ::delete() and ::remove() [wb+mn, 2010-07-15]
+ * @changes    1.0.0b8   Fixed a bug with placing absolute file paths on Windows [wb, 2010-07-09]
+ * @changes    1.0.0b7   Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
+ * @changes    1.0.0b6   Changed ::set() and ::add() to return the object for method chaining, changed ::set() and ::get() to accept arrays of elements [wb, 2010-06-02]
+ * @changes    1.0.0b5   Added ::encode() [wb, 2010-05-20]
+ * @changes    1.0.0b4   Added ::create() and ::retrieve() for named fTemplating instances [wb, 2010-05-11]
+ * @changes    1.0.0b3   Fixed an issue with placing relative file path [wb, 2010-04-23]
+ * @changes    1.0.0b2   Added the ::inject() method [wb, 2009-01-09]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fTemplating
 {
@@ -665,6 +666,7 @@ class fTemplating
 		}
 		
 		$path = (is_array($value)) ? $value['path'] : $value;
+		$path = preg_replace('#\?.*$#D', '', $path);
 		$extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 		
 		// Allow some common variations on file extensions
