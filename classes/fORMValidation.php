@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Fixed ::hasValue() to properly detect zero-value floats, made ::hasValue() internal public [wb, 2010-07-26]
  * @changes    1.0.0b26  Improved the error message for integers to say `whole number` instead of just `number` [wb, 2010-05-29]
  * @changes    1.0.0b25  Added ::addRegexRule(), changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b24  Added ::addRequiredRule() for required columns that aren't automatically handled via schema detection [wb, 2010-04-06]
@@ -51,6 +52,7 @@ class fORMValidation
 	const addRequiredRule          = 'fORMValidation::addRequiredRule';
 	const addStringReplacement     = 'fORMValidation::addStringReplacement';
 	const addValidValuesRule       = 'fORMValidation::addValidValuesRule';
+	const hasValue                 = 'fORMValidation::hasValue';
 	const inspect                  = 'fORMValidation::inspect';
 	const removeStringReplacement  = 'fORMValidation::removeStringReplacement';
 	const removeRegexReplacement   = 'fORMValidation::removeRegexReplacement';
@@ -1105,13 +1107,15 @@ class fORMValidation
 	 *  - Integer: 0
 	 *  - String: ''
 	 *
+	 * @internal
+	 * 
 	 * @param  fSchema $schema   The schema object for the table
 	 * @param  string  $class    The class the column is part of
 	 * @param  array   &$values  An associative array of all values for the record
 	 * @param  array   $columns  The column to check
 	 * @return string  An error message for the rule
 	 */
-	static private function hasValue($schema, $class, &$values, $column)
+	static public function hasValue($schema, $class, &$values, $column)
 	{
 		$value = $values[$column];
 		
@@ -1150,7 +1154,7 @@ class fORMValidation
 				break;
 			
 			case 'float':
-				if (preg_match('#^0(\.0*)?|\.0+$#D', $value)) {
+				if (preg_match('#^0(\.0*)?$|^\.0+$#D', $value)) {
 					return FALSE;	
 				}
 				break;
