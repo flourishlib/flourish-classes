@@ -396,7 +396,7 @@ class fCryptography
 				throw new fProgrammerException(
 					'The type specified, %1$s, is invalid. Must be one of: %2$s.',
 					$type,
-					array('alphanumeric', 'alpha', 'numeric', 'hexadecimal')
+					join(', ', array('alphanumeric', 'alpha', 'numeric', 'hexadecimal'))
 				);
 		}
 		
