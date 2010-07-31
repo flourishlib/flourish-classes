@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Backwards Compatibility Break - removed ODBC support [wb, 2010-07-31]
  * @changes    1.0.0b10  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b9   Added support for prepared statements [wb, 2010-03-02]
  * @changes    1.0.0b8   Fixed a bug with decoding MSSQL national column when using an ODBC connection [wb, 2009-09-18]
@@ -244,7 +245,6 @@ class fResult implements Iterator
 				
 			case 'ibm_db2':
 			case 'oci8':
-			case 'odbc':
 			case 'pdo':
 			case 'sqlsrv':
 				$row = $this->result[$this->pointer];
@@ -466,7 +466,7 @@ class fResult implements Iterator
 		}
 		
 		foreach ($row as $key => $value) {
-			if ($value == ' ') {
+			if ($value === ' ') {
 				$row[$key] = '';
 				trigger_error(
 					self::compose(
@@ -652,7 +652,6 @@ class fResult implements Iterator
 				
 			case 'ibm_db2':
 			case 'oci8':
-			case 'odbc':
 			case 'pdo':
 			case 'sqlsrv':
 				// Do nothing since we already changed the pointer
