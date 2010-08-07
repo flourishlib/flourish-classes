@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
  * @changes    1.0.0b6  Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
@@ -452,9 +453,10 @@ class fORMDate
 	 */
 	static public function setTimestampColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
 		
 		if (!isset($parameters[0])) {
 			throw new fProgrammerException(
@@ -496,9 +498,10 @@ class fORMDate
 	 */
 	static public function setTimezoneColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
 		
 		if (!isset($parameters[0])) {
 			throw new fProgrammerException(

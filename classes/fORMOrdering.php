@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b18  Changed ::configureOrderingColumn() to ensure the column specified can store negative values [wb, 2010-07-21]
  * @changes    1.0.0b17  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b16  Updated the class to allow for multiple ordering columns per class [dc-imarc, 2010-05-10]
@@ -332,10 +333,11 @@ class fORMOrdering
 	 */ 
 	static public function inspect($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters) 
 	{ 
-		list ($action, $column) = fORM::parseMethod($method_name); 
+		list ($action, $subject) = fORM::parseMethod($method_name); 
 		
-		$class = get_class($object);
-		$table = fORM::tablize($class);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
+		$table  = fORM::tablize($class);
 		
 		$db     = fORMDatabase::retrieve($class, 'read');
 		$schema = fORMSchema::retrieve($class);

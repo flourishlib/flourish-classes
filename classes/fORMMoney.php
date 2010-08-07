@@ -10,16 +10,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Added the `$remove_zero_fraction` parameter to prepare methods [wb, 2010-06-09]
- * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
- * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
- * @changes    1.0.0b6  Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
- * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
- * @changes    1.0.0b4  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
- * @changes    1.0.0b3  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
- * @changes    1.0.0b2  Fixed bugs with objectifying money columns [wb, 2008-11-24]
- * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Updated code to work with the new fORM API [wb, 2010-08-06]
+ * @changes    1.0.0b9   Added the `$remove_zero_fraction` parameter to prepare methods [wb, 2010-06-09]
+ * @changes    1.0.0b8   Changed validation messages array to use column name keys [wb, 2010-05-26]
+ * @changes    1.0.0b7   Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
+ * @changes    1.0.0b6   Fixed duplicate validation messages and fProgrammerException object being thrown when NULL is set [dc-imarc+wb, 2010-03-03]
+ * @changes    1.0.0b5   Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
+ * @changes    1.0.0b4   Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
+ * @changes    1.0.0b3   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b2   Fixed bugs with objectifying money columns [wb, 2008-11-24]
+ * @changes    1.0.0b    The initial implementation [wb, 2008-09-05]
  */
 class fORMMoney
 {
@@ -193,9 +194,10 @@ class fORMMoney
 	 */
 	static public function encodeMoneyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$value = $values[$column];
+		$column = fGrammar::underscorize($subject);
+		$value  = $values[$column];
 		
 		if ($value instanceof fMoney) {
 			$value = $value->__toString();
@@ -335,8 +337,9 @@ class fORMMoney
 	 */
 	static public function prepareMoneyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
+		$column = fGrammar::underscorize($subject);
 		if (empty($values[$column])) {
 			return $values[$column];
 		}
@@ -469,9 +472,10 @@ class fORMMoney
 	 */
 	static public function setCurrencyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
 		
 		if (count($parameters) < 1) {
 			throw new fProgrammerException(
@@ -510,9 +514,10 @@ class fORMMoney
 	 */
 	static public function setMoneyColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
 		
 		if (count($parameters) < 1) {
 			throw new fProgrammerException(

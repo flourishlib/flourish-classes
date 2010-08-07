@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b13  Fixed ::reflect() to include some missing parameters [wb, 2010-06-08]
  * @changes    1.0.0b12  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b11  Fixed a bug with ::prepareLinkColumn() returning `http://` for empty link columns and not adding `http://` to links that contained a /, but did not start with it [wb, 2010-03-16]
@@ -314,8 +315,9 @@ class fORMColumn
 	 */
 	static public function encodeNumberColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
+		$column      = fGrammar::underscorize($subject);
 		$class       = get_class($object);
 		$schema      = fORMSchema::retrieve($class);
 		$table       = fORM::tablize($class);
@@ -351,8 +353,9 @@ class fORMColumn
 	 */
 	static public function generate($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
+		$column = fGrammar::underscorize($subject);
 		$class  = get_class($object);
 		$table  = fORM::tablize($class);
 		
@@ -457,9 +460,10 @@ class fORMColumn
 	 */
 	static public function prepareLinkColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$value = $values[$column];
+		$column = fGrammar::underscorize($subject);
+		$value  = $values[$column];
 		
 		// Fix domains that don't have the protocol to start
 		if (strlen($value) && !preg_match('#^https?://|^/#iD', $value)) {
@@ -492,8 +496,9 @@ class fORMColumn
 	 */
 	static public function prepareNumberColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
+		$column      = fGrammar::underscorize($subject);
 		$class       = get_class($object);
 		$table       = fORM::tablize($class);
 		$schema      = fORMSchema::retrieve($class);
@@ -689,9 +694,10 @@ class fORMColumn
 	 */
 	static public function setEmailColumn($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
 	{
-		list ($action, $column) = fORM::parseMethod($method_name);
+		list ($action, $subject) = fORM::parseMethod($method_name);
 		
-		$class = get_class($object);
+		$column = fGrammar::underscorize($subject);
+		$class  = get_class($object);
 		
 		if (count($parameters) < 1) {
 			throw new fProgrammerException(

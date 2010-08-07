@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b37  Fixed a typo/bug in ::reduce() [wb, 2010-06-30]
  * @changes    1.0.0b36  Replaced create_function() with a private method call [wb, 2010-06-08]
  * @changes    1.0.0b35  Added the ::chunk() and ::split() methods [wb, 2010-05-20]
@@ -439,20 +440,20 @@ class fRecordSet implements Iterator, Countable
 			);	
 		}
 		
-		list($action, $element) = fORM::parseMethod($method_name);
+		list($action, $subject) = fORM::parseMethod($method_name);
 		
 		$route = ($parameters) ? $parameters[0] : NULL;
 		
 		// This check prevents fGrammar exceptions being thrown when an unknown method is called
 		if (in_array($action, array('build', 'prebuild', 'precount', 'precreate'))) {
-			$related_class = fGrammar::singularize(fGrammar::camelize($element, TRUE));
+			$related_class = fGrammar::singularize($subject);
 		}
 		 
 		switch ($action) {
 			case 'build':
 				if ($route) {
 					$this->precreate($related_class, $route);
-					return $this->buildFromCall('create' . $related_class, $route);		
+					return $this->buildFromCall('create' . $related_class, $route);
 				}
 				$this->precreate($related_class);
 				return $this->buildFromCall('create' . $related_class);

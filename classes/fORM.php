@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Internal Backwards Compatibility Break - changed ::parseMethod() to not underscorize the subject of the method [wb, 2010-08-06]
  * @changes    1.0.0b21  Fixed some documentation to reflect the API changes from v1.0.0b9 [wb, 2010-07-14]
  * @changes    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
  * @changes    1.0.0b19  Added the method ::isClassMappedToTable() [wb, 2010-03-30]
@@ -735,7 +736,7 @@ class fORM
 				$method
 			);	
 		}
-		self::$cache['parseMethod'][$method] = array($matches[1], fGrammar::underscorize($matches[2]));
+		self::$cache['parseMethod'][$method] = array($matches[1], $matches[2]);
 		return self::$cache['parseMethod'][$method];
 	}
 	

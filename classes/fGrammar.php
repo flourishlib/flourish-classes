@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Updated ::singularize() and ::pluralize() to be able to handle underscore_CamelCase [wb, 2010-08-06]
  * @changes    1.0.0b11  Fixed custom camelCase to underscore_notation rules [wb, 2010-06-23]
  * @changes    1.0.0b10  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b9   Fixed a bug with ::camelize() and human-friendly strings [wb, 2010-06-08]
@@ -234,11 +235,11 @@ class fGrammar
 				
 			// Handle underscore notation
 			} else {
-				$string = strtolower($string);
+				$string[0] = strtolower($string[0]);
 				if ($upper) {
 					$string = ucfirst($string);
 				}
-				$string = preg_replace_callback('#_([a-z0-9])#', array('self', 'camelizeCallback'), $string);		
+				$string = preg_replace_callback('#_([a-z0-9])#i', array('self', 'camelizeCallback'), $string);		
 			}
 		}
 		
@@ -598,7 +599,7 @@ class fGrammar
 		}
 		
 		// Handle camel case
-		if (preg_match('#(.*)((?<=[a-zA-Z]|^)(?:[0-9]+|[A-Z][a-z]*)|(?<=[0-9A-Z]|^)(?:[A-Z][a-z]*))$#D', $string, $match)) {
+		if (preg_match('#(.*)((?<=[a-zA-Z_]|^)(?:[0-9]+|[A-Z][a-z]*)|(?<=[0-9A-Z_]|^)(?:[A-Z][a-z]*))$#D', $string, $match)) {
 			return array($match[1], $match[2]);
 		}
 		
@@ -744,7 +745,7 @@ class fGrammar
 			$string = self::$underscorize_rules[$string];
 		
 		// If the string is already underscore notation then leave it
-		} elseif (strpos($string, '_') !== FALSE) {
+		} elseif (strpos($string, '_') !== FALSE && strtolower($string) == $string) {
 		
 		// Allow humanized string to be passed in
 		} elseif (strpos($string, ' ') !== FALSE) {

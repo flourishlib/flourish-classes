@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b66
+ * @version    1.0.0b67
+ * @changes    1.0.0b67  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b66  Fixed a bug with ::store() and non-primary key auto-incrementing columns [wb, 2010-07-05]
  * @changes    1.0.0b65  Fixed bugs with ::inspect() making some `min_value` and `max_value` elements available for non-numeric types, fixed ::reflect() to list the `min_value` and `max_value` elements [wb, 2010-06-08]
  * @changes    1.0.0b64  BackwardsCompatibilityBreak - changed ::validate()'s returned messages array to have field name keys - added the option to ::validate() to remove field names from messages [wb, 2010-05-26]
@@ -560,19 +561,13 @@ abstract class fActiveRecord
 		
 		// one-to-many relationships need to use plural forms
 		$singular_form = fGrammar::singularize($subject, TRUE);
-		if ($singular_form && fORM::isClassMappedToTable(fGrammar::camelize($singular_form, TRUE))) {
-			$subject = fGrammar::camelize($singular_form, TRUE);
+		if ($singular_form && fORM::isClassMappedToTable($singular_form)) {
+			$subject = $singular_form;
 			$plural  = TRUE;
 			
-		} elseif (fORM::isClassMappedToTable(fGrammar::camelize($subject, TRUE))) {
-			$subject = fGrammar::camelize($subject, TRUE);
-			
-		} else {
-			if (in_array($subject, $schema->getTables())) {
-				$subject = fGrammar::singularize($subject);
-				$plural  = TRUE;
-			}
-			$subject = fGrammar::camelize($subject, TRUE);
+		} elseif (!fORM::isClassMappedToTable($subject) && in_array(fGrammar::underscorize($subject), $schema->getTables())) {
+			$subject = fGrammar::singularize($subject);
+			$plural  = TRUE;
 		}
 		
 		$related_table = fORM::tablize($subject);
@@ -841,6 +836,11 @@ abstract class fActiveRecord
 		
 		if (!isset(self::$method_name_cache[$method_name])) {
 			list ($action, $subject) = fORM::parseMethod($method_name);
+			if (in_array($action, array('get', 'encode', 'prepare', 'inspect', 'set'))) {
+				$subject = fGrammar::underscorize($subject);
+			} elseif (in_array($action, array('build', 'count', 'inject', 'link', 'list', 'tally'))) {
+				$subject = fGrammar::singularize($subject);
+			}
 			self::$method_name_cache[$method_name] = array(
 				'action'  => $action,
 				'subject' => $subject
@@ -905,26 +905,18 @@ abstract class fActiveRecord
 				return $this;
 			
 			case 'build':
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				
 				if (isset($parameters[0])) {
 					return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject);
 			
 			case 'count':
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				
 				if (isset($parameters[0])) {
 					return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject);
 			
 			case 'create':
-				$subject = fGrammar::camelize($subject, TRUE);
-				
 				if (isset($parameters[0])) {
 					return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
@@ -945,18 +937,12 @@ abstract class fActiveRecord
 					);
 				}
 				
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				 
 				if (isset($parameters[1])) {
 					return fORMRelated::setRecordSet($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelated::setRecordSet($class, $this->related_records, $subject, $parameters[0]);
 
 			case 'link':
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				
 				if (isset($parameters[0])) {
 					fORMRelated::linkRecords($class, $this->related_records, $subject, $parameters[0]);
 				} else {
@@ -965,9 +951,6 @@ abstract class fActiveRecord
 				return $this;
 			
 			case 'list':
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
-				
 				if (isset($parameters[0])) {
 					return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
@@ -988,9 +971,6 @@ abstract class fActiveRecord
 						$method_name
 					);
 				}
-				
-				$subject = fGrammar::singularize($subject);
-				$subject = fGrammar::camelize($subject, TRUE);
 				
 				if (isset($parameters[1])) {
 					return fORMRelated::setCount($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
