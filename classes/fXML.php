@@ -5,14 +5,16 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Craig Ruksznis [cr-imarc] <craigruk@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added the `$fix_entities_encoding` parameter to ::__construct() [cr-imarc+wb, 2010-08-08]
  * @changes    1.0.0b4  Updated the class to automatically add a `__` prefix for the default namespace and to use that for attribute and child element access [wb, 2010-04-06]
  * @changes    1.0.0b3  Added the `$http_timeout` parameter to ::__construct() [wb, 2009-09-16]
  * @changes    1.0.0b2  Added instance functionality for reading of XML files [wb, 2009-09-01]
@@ -86,17 +88,29 @@ class fXML implements ArrayAccess
 	 * 
 	 * @throws fValidationException    When the source XML is invalid or does not exist
 	 * 
-	 * @param  fFile|string  $source        The source of the XML, either an fFile object, a string of XML, a file path or a URL
-	 * @param  numeric       $http_timeout  The timeout to use in seconds when requesting an XML file from a URL
+	 * @param  fFile|string  $source                 The source of the XML, either an fFile object, a string of XML, a file path or a URL
+	 * @param  numeric       $http_timeout           The timeout to use in seconds when requesting an XML file from a URL
+	 * @param  boolean       $fix_entities_encoding  This will fix two common XML authoring errors and should only be used when experiencing decoding issues - HTML entities that haven't been encoded as XML, and XML content published in ISO-8859-1 or Windows-1252 encoding without an explicit encoding attribute
+	 * @param  fFile|string  :$source
+	 * @param  boolean       :$fix_entities_encoding
 	 * @return fXML
 	 */
-	public function __construct($source, $http_timeout=NULL)
+	public function __construct($source, $http_timeout=NULL, $fix_entities_encoding=NULL)
 	{
+		if (is_bool($http_timeout)) {
+			$fix_entities_encoding = $http_timeout;
+			$http_timeout = NULL;
+		}
+		
 		// Prevent spitting out errors to we can throw exceptions
 		$old_setting = libxml_use_internal_errors(TRUE);
 		
 		$exception_message = NULL;
 		try {
+			if ($source instanceof fFile && $fix_entities_encoding) {
+				$source = $source->read();
+			}
+			
 			if ($source instanceof DOMElement) {
 				$this->__dom = $source;
 				$xml         = TRUE;
@@ -125,10 +139,23 @@ class fXML implements ArrayAccess
 					throw new fExpectedException('The URL specified, %s, could not be loaded', $source);
 				}
 				
+				if ($fix_entities_encoding) {
+					$xml = $this->fixEntitiesEncoding($xml);
+				}
+				
 				$xml = new SimpleXMLElement($xml);
 				
 			} else {
 				$is_path = $source && !preg_match('#^\s*<#', $source);
+				
+				if ($fix_entities_encoding) {
+					if ($is_path) {
+						$source = file_get_contents($source);
+						$is_path = FALSE;
+					}
+					$source = $this->fixEntitiesEncoding($source);
+				}
+				
 				$xml     = new SimpleXMLElement($source, 0, $is_path);
 			}
 		
@@ -141,7 +168,7 @@ class fXML implements ArrayAccess
 		if ($xml === FALSE) {
 			$errors = libxml_get_errors();
 			foreach ($errors as $error) {
-				$exception_message .= "\n" . $error->message;	
+				$exception_message .= "\n" . rtrim($error->message);	
 			}
 			// If internal errors were off before, turn them back off
 			if (!$old_setting) {
@@ -323,6 +350,66 @@ class fXML implements ArrayAccess
 		if ($this->__xpath) {
 			$this->__xpath->registerNamespace($ns_prefix, $namespace);
 		}
+	}
+	
+	
+	/**
+	 * Fixes HTML entities that aren't XML encoded and fixes ISO-8859-1/Windows-1252 encoded content that does not have an encoding attribute
+	 *
+	 * @param string $xml  The XML to fix
+	 * @return string  The fixed XML
+	 */
+	private function fixEntitiesEncoding($xml)
+	{
+		preg_match('#^<\?xml.*? encoding="([^"]+)".*?\?>#i', $xml, $match);
+		$encoding = empty($match[1]) ? NULL : $match[1];
+		
+		// Try to detect the encoding via the BOM
+		if ($encoding === NULL) {
+			if (substr($xml, 0, 3) == "\x0\x0\xFE\xFF") {
+				$encoding = 'UTF-32BE';
+			} elseif (substr($xml, 0, 3) == "\xFF\xFE\x0\x0") {
+				$encoding = 'UTF-32LE';
+			} elseif (substr($xml, 0, 2) == "\xFE\xFF") {
+				$encoding = 'UTF-16BE';
+			} elseif (substr($xml, 0, 2) == "\xFF\xFE") {
+				$encoding = 'UTF-16LE';
+			} else {
+				$encoding = 'UTF-8';
+			}
+		}
+		
+		// This fixes broken encodings where the XML author puts ISO-8859-1 or
+		// Windows-1252 into an XML file without an encoding or UTF-8 encoding
+		if (preg_replace('#[^a-z0-9]#', '', strtolower($encoding)) == 'utf8') {
+			// Remove the UTF-8 BOM if present
+			$xml = preg_replace("#^\xEF\xBB\xBF#", '', $xml);
+			$old_level = error_reporting(error_reporting() & ~E_NOTICE);
+			$cleaned = iconv('UTF-8', 'UTF-8', $xml);
+			if ($cleaned != $xml) {
+				$xml = iconv('Windows-1252', 'UTF-8', $xml);
+			}
+			error_reporting($old_level);
+		}
+		
+		$num_matches = preg_match_all('#&(?!gt|lt|amp|quot|apos)\w+;#', $xml, $matches, PREG_SET_ORDER);
+		if ($num_matches) {
+			// We convert non-UTF-* content to UTF-8 because some character sets
+			// don't have characters for all HTML entities
+			if (substr(strtolower($encoding), 0, 3) != 'utf') {
+				$xml = iconv($encoding, 'UTF-8', $xml);
+				$xml = preg_replace('#^(<\?xml.*?) encoding="[^"]+"(.*?\?>)#', '\1 encoding="UTF-8"\2', $xml);
+				$encoding = 'UTF-8';
+			}
+			
+			$entities = array();
+			foreach ($matches as $match) {
+				$entities[$match[0]] = html_entity_decode($match[0], ENT_COMPAT, $encoding);
+			}
+			$xml = strtr($xml, $entities);
+		}
+		
+		return $xml;
 	}
 	
 	
@@ -581,7 +668,7 @@ class fXML implements ArrayAccess
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
