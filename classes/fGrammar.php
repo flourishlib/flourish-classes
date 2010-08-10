@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed the pluralization of video [wb, 2010-08-10]
  * @changes    1.0.0b12  Updated ::singularize() and ::pluralize() to be able to handle underscore_CamelCase [wb, 2010-08-06]
  * @changes    1.0.0b11  Fixed custom camelCase to underscore_notation rules [wb, 2010-06-23]
  * @changes    1.0.0b10  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
@@ -109,7 +110,7 @@ class fGrammar
 	static private $singular_to_plural_rules = array(
 		'([ml])ouse$'                  => '\1ice',
 		'(media|info(rmation)?|news)$' => '\1',
-		'(phot|log)o$'                 => '\1os',
+		'(phot|log|vide)o$'            => '\1os',
 		'^(q)uiz$'                     => '\1uizzes',
 		'(c)hild$'                     => '\1hildren',
 		'(p)erson$'                    => '\1eople',
@@ -520,7 +521,7 @@ class fGrammar
 		self::$singular_to_plural_rules = array(
 			'([ml])ouse$'                  => '\1ice',
 			'(media|info(rmation)?|news)$' => '\1',
-			'(phot|log)o$'                 => '\1os',
+			'(phot|log|vide)o$'            => '\1os',
 			'^(q)uiz$'                     => '\1uizzes',
 			'(c)hild$'                     => '\1hildren',
 			'(p)erson$'                    => '\1eople',
