@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Added the `$types` and `$regex` parameters to ::startErrorCapture() and the `$regex` parameter to ::stopErrorCapture() [wb, 2010-08-09]
  * @changes    1.0.0b15  Added ::startErrorCapture() and ::stopErrorCapture() [wb, 2010-07-05]
  * @changes    1.0.0b14  Changed ::enableExceptionHandling() to only call fException::printMessage() when the destination is not `html` and no callback has been defined, added ::configureSMTP() to allow using fSMTP for error and exception emails [wb, 2010-06-04]
  * @changes    1.0.0b13  Added the `$backtrace` parameter to ::backtrace() [wb, 2010-03-05]
@@ -55,6 +56,27 @@ class fCore
 	const startErrorCapture       = 'fCore::startErrorCapture';
 	const stopErrorCapture        = 'fCore::stopErrorCapture';
 	
+	
+	/**
+	 * A regex to match errors to capture
+	 * 
+	 * @var string
+	 */
+	static private $captured_error_regex = NULL;
+	
+	/**
+	 * The previous error handler
+	 * 
+	 * @var callback
+	 */
+	static private $captured_errors_previous_handler = NULL;
+	
+	/**
+	 * The types of errors to capture
+	 * 
+	 * @var integer
+	 */
+	static private $captured_error_types = NULL;
 	
 	/**
 	 * An array of errors that have been captured
@@ -139,6 +161,13 @@ class fCore
 	 * @var boolean
 	 */
 	static private $handles_errors = FALSE;
+	
+	/**
+	 * If this class is handling exceptions
+	 * 
+	 * @var boolean
+	 */
+	static private $handles_exceptions = FALSE;
 	
 	/**
 	 * If the context info should be shown with errors/exceptions
@@ -717,6 +746,7 @@ class fCore
 		if (!self::checkDestination($destination)) {
 			return;
 		}
+		self::$handles_exceptions           = TRUE;
 		self::$exception_destination        = $destination;
 		self::$exception_handler_callback   = $closing_code;
 		if (!is_object($parameters)) {
@@ -791,7 +821,10 @@ class fCore
 			}
 		}
 		
-		if ((error_reporting() & $error_number) == 0) {
+		$capturing   = is_array(self::$captured_errors);
+		$level_match = (bool) (error_reporting() & $error_number);
+		
+		if (!$capturing && !$level_match) {
 			return;
 		}
 		
@@ -831,17 +864,34 @@ class fCore
 			case E_USER_DEPRECATED:   $type = self::compose('User Deprecated');   break;
 		}
 		
-		if (is_array(self::$captured_errors)) {
-			self::$captured_errors[] = array(
-				'number'    => $error_number,
-				'type'      => $type,
-				'string'    => $error_string,
-				'file'      => str_replace($doc_root, '{doc_root}/', $error_file),
-				'line'      => $error_line,
-				'backtrace' => $backtrace,
-				'context'   => $error_context
-			);
-			return;
+		if ($capturing) {
+			$type_to_capture   = (bool) (self::$captured_error_types & $error_number);
+			$string_to_capture = !self::$captured_error_regex || (self::$captured_error_regex && preg_match(self::$captured_error_regex, $error_string));
+			if ($type_to_capture && $string_to_capture) {
+				self::$captured_errors[] = array(
+					'number'    => $error_number,
+					'type'      => $type,
+					'string'    => $error_string,
+					'file'      => str_replace($doc_root, '{doc_root}/', $error_file),
+					'line'      => $error_line,
+					'backtrace' => $backtrace,
+					'context'   => $error_context
+				);
+				return;
+			}
+			
+			// If the old handler is not this method, then we must have been trying to match a regex and failed
+			// so we pass the error on to the original handler to do its thing
+			if (self::$captured_errors_previous_handler != array('fCore', 'handleError')) {
+				if (self::$captured_errors_previous_handler === NULL) {
+					return FALSE;
+				}
+				return call_user_func(self::$captured_errors_previous_handler, $error_number, $error_string, $error_file, $error_line, $error_context);
+			
+			// If we get here, this method is the error handler, but we don't want to actually report the error so we return
+			} elseif (!$level_match) {
+				return;
+			}
 		}
 		
 		$error = $type . "\n" . str_pad('', strlen($type), '-') . "\n" . $backtrace . "\n" . $error_string;
@@ -916,26 +966,34 @@ class fCore
 	 */
 	static public function reset()
 	{
-		restore_error_handler();
-		restore_exception_handler();
+		if (self::$handles_errors) {
+			restore_error_handler();
+		}
+		if (self::$handles_exceptions) {
+			restore_exception_handler();
+		}
 		
 		if (is_array(self::$captured_errors)) {
 			restore_error_handler();
 		}
 		
-		self::$captured_errors              = NULL;
-		self::$context_shown                = FALSE;
-		self::$debug                        = NULL;
-		self::$debug_callback               = NULL;
-		self::$dynamic_constants            = FALSE;
-		self::$error_destination            = 'html';
-		self::$error_message_queue          = array();
-		self::$exception_destination        = 'html';
-		self::$exception_handler_callback   = NULL;
-		self::$exception_handler_parameters = array();
-		self::$exception_message            = NULL;
-		self::$handles_errors               = FALSE;
-		self::$show_context                 = TRUE;
+		self::$captured_error_regex             = NULL;
+		self::$captured_errors_previous_handler = NULL;
+		self::$captured_error_types             = NULL;
+		self::$captured_errors                  = NULL;
+		self::$context_shown                    = FALSE;
+		self::$debug                            = NULL;
+		self::$debug_callback                   = NULL;
+		self::$dynamic_constants                = FALSE;
+		self::$error_destination                = 'html';
+		self::$error_message_queue              = array();
+		self::$exception_destination            = 'html';
+		self::$exception_handler_callback       = NULL;
+		self::$exception_handler_parameters     = array();
+		self::$exception_message                = NULL;
+		self::$handles_errors                   = FALSE;
+		self::$handles_exceptions               = FALSE;
+		self::$show_context                     = TRUE;
 	}
 	
 	
@@ -1043,26 +1101,46 @@ class fCore
 	/**
 	 * Temporarily enables capturing error messages 
 	 * 
+	 * @param  integer $types  The error types to capture - this should be as specific as possible - defaults to all (E_ALL | E_STRICT)
+	 * @param  string  $regex  A PCRE regex to match against the error message
 	 * @return void
 	 */
-	static public function startErrorCapture()
+	static public function startErrorCapture($types=NULL, $regex=NULL)
 	{
-		self::$captured_errors = array();
-		set_error_handler(self::callback(self::handleError));
+		if ($types === NULL) {
+			$types = E_ALL | E_STRICT;
+		}
+		self::$captured_error_types             = $types;
+		self::$captured_errors                  = array();
+		self::$captured_errors_previous_handler = set_error_handler(self::callback(self::handleError));
+		self::$captured_error_regex             = $regex;
 	}
 	
 	
 	/**
 	 * Stops capturing error messages, returning all that have been captured
 	 * 
+	 * @param  string $regex  A PCRE regex to filter messages by
 	 * @return array  The captured error messages
 	 */
-	static public function stopErrorCapture()
+	static public function stopErrorCapture($regex=NULL)
 	{
 		$captures = self::$captured_errors;
-		self::$captured_errors = NULL;
+		self::$captured_error_regex             = NULL;
+		self::$captured_errors_previous_handler = NULL;
+		self::$captured_error_types             = NULL;
+		self::$captured_errors                  = NULL;
 		
 		restore_error_handler();
+		
+		if ($regex) {
+			$new_captures = array();
+			foreach ($captures as $capture) {
+				if (!preg_match($regex, $capture['string'])) { continue; }
+				$new_captures[] = $capture;
+			}
+			$captures = $new_captures;
+		}
 		
 		return $captures;
 	}

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b3  Backwards Compatibility Break - removed ODBC support. Fixed UTF-8 support for the `pdo_dblib` extension. [wb, 2010-07-31]
  * @changes    1.0.0b2  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b   The initial implementation [wb, 2010-03-02]
@@ -140,7 +141,7 @@ class fStatement
 		
 		$connection = $this->database->getConnection();
 		
-		$old_level = error_reporting(error_reporting() & ~E_WARNING);
+		fCore::startErrorCapture(E_WARNING);
 		
 		switch ($extension) {
 			// These database extensions don't have prepared statements
@@ -192,7 +193,7 @@ class fStatement
 				break;
 		}
 		
-		error_reporting($old_level);
+		fCore::stopErrorCapture();
 		
 		if (!$statement) {
 			switch ($extension) {

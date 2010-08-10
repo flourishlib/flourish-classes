@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b5  Added the `$fix_entities_encoding` parameter to ::__construct() [cr-imarc+wb, 2010-08-08]
  * @changes    1.0.0b4  Updated the class to automatically add a `__` prefix for the default namespace and to use that for attribute and child element access [wb, 2010-04-06]
  * @changes    1.0.0b3  Added the `$http_timeout` parameter to ::__construct() [wb, 2009-09-16]
@@ -131,9 +132,9 @@ class fXML implements ArrayAccess
 				));
 				
 				// If the URL is not loaded in time, this supresses the file_get_contents() warning
-				$old_level = error_reporting(error_reporting() & ~E_WARNING);
+				fCore::startErrorCapture(E_WARNING);
 				$xml = file_get_contents($source, 0, $context);
-				error_reporting($old_level);
+				fCore::stopErrorCapture();
 				
 				if (!$xml) {
 					throw new fExpectedException('The URL specified, %s, could not be loaded', $source);
@@ -384,12 +385,12 @@ class fXML implements ArrayAccess
 		if (preg_replace('#[^a-z0-9]#', '', strtolower($encoding)) == 'utf8') {
 			// Remove the UTF-8 BOM if present
 			$xml = preg_replace("#^\xEF\xBB\xBF#", '', $xml);
-			$old_level = error_reporting(error_reporting() & ~E_NOTICE);
+			fCore::startErrorCapture(E_NOTICE);
 			$cleaned = iconv('UTF-8', 'UTF-8', $xml);
 			if ($cleaned != $xml) {
 				$xml = iconv('Windows-1252', 'UTF-8', $xml);
 			}
-			error_reporting($old_level);
+			fCore::stopErrorCapture();
 		}
 		
 		$num_matches = preg_match_all('#&(?!gt|lt|amp|quot|apos)\w+;#', $xml, $matches, PREG_SET_ORDER);

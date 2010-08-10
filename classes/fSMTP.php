@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Updated class to use new fCore::startErrorCapture() functionality [wb, 2010-08-09]
  * @changes    1.0.0b6  Updated the class to use new fCore functionality [wb, 2010-07-05]
  * @changes    1.0.0b5  Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
@@ -219,19 +220,17 @@ class fSMTP
 		
 		$this->local_host = php_uname('n');
 		
-		fCore::startErrorCapture();
+		fCore::startErrorCapture(E_WARNING);
 		
 		$host = ($this->secure) ? 'tls://' . $this->host : $this->host;
 		$this->connection = fsockopen($host, $this->port, $error_int, $error_string, $this->timeout);
-		if (!$this->connection) {
-			throw new fConnectivityException('There was an error connecting to the server');
+		
+		foreach (fCore::stopErrorCapture('#ssl#i') as $error) {
+			throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
 		}
 		
-		foreach (fCore::stopErrorCapture() as $error) {
-			if (stripos($error['string'], 'ssl')) {
-				throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
-			}
-			trigger_error($error['string'], E_USER_ERROR);
+		if (!$this->connection) {
+			throw new fConnectivityException('There was an error connecting to the server');
 		}
 		
 		$response = $this->read('#^220 #');

@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b23  Fixed the class to detect when exec() is disabled and the function has a space before or after in the list [wb, 2010-07-21]
  * @changes    1.0.0b22  Fixed ::isImageCompatible() to handle certain JPGs created with Photoshop [wb, 2010-04-03]
  * @changes    1.0.0b21  Fixed ::resize() to allow dimensions to be numeric strings instead of just integers [wb, 2010-04-09]
@@ -315,9 +316,9 @@ class fImage extends fFile
 			}	
 		}
 		
-		$old_level  = error_reporting(error_reporting() & ~E_WARNING);
+		fCore::startErrorCapture(E_WARNING);
 		$image_info = getimagesize($image_path);
-		error_reporting($old_level);
+		fCore::stopErrorCapture();
 		
 		if ($image_info == FALSE) {
 			throw new fValidationException(

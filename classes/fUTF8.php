@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b8  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b7  Added the methods ::trim(), ::rtrim() and ::ltrim() [wb, 2010-05-11]
  * @changes    1.0.0b6  Fixed ::clean() to work with PHP installs that use an iconv library that doesn't support //IGNORE [wb, 2010-03-02]
@@ -660,11 +661,11 @@ class fUTF8
 				self::$can_ignore_invalid = !preg_match('#iconv\s+implementation\s+(=>\s+)?unknown#ims', $module_info);	
 			}
 			if (!self::$can_ignore_invalid) {
-				$old_level = error_reporting(error_reporting() & ~E_NOTICE);
+				fCore::startErrorCapture(E_NOTICE);
 			}
 			return iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
 			if (!self::$can_ignore_invalid) {
-				error_reporting($old_level);
+				fCore::stopErrorCapture();
 			}
 		}
 		
