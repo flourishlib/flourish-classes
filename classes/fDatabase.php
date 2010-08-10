@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Backwards Compatibility Break - removed ::enableSlowQueryWarnings(), added ability to replicate via ::registerHookCallback() [wb, 2010-08-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - removed ODBC support. Added support for the `pdo_ibm` extension. [wb, 2010-07-31]
  * @changes    1.0.0b27  Fixed a bug with running multiple copies of a SQL statement with string values through a single ::translatedQuery() call [wb, 2010-07-14]
  * @changes    1.0.0b26  Updated the class to use new fCore functionality [wb, 2010-07-05]
@@ -165,6 +166,23 @@ class fDatabase
 	protected $extension;
 	
 	/**
+	 * Hooks callbacks to be used for accessing and modifying queries
+	 * 
+	 * This array will have the structure:
+	 * 
+	 * {{{
+	 * array(
+	 *     'unmodified' => array({callbacks}),
+	 *     'extracted'  => array({callbacks}),
+	 *     'run'        => array({callbacks})
+	 * )
+	 * }}}
+	 * 
+	 * @var array
+	 */
+	private $hook_callbacks;
+	
+	/**
 	 * The host the database server is located on
 	 * 
 	 * @var string
@@ -205,13 +223,6 @@ class fDatabase
 	 * @var array 
 	 */
 	protected $schema_info;
-	
-	/**
-	 * The millisecond threshold for triggering a warning about SQL performance
-	 * 
-	 * @var integer
-	 */
-	private $slow_query_threshold;
 	
 	/**
 	 * The last executed fStatement object
@@ -285,6 +296,12 @@ class fDatabase
 		$this->password = $password;
 		$this->host     = $host;
 		$this->port     = $port;
+		
+		$this->hook_callbacks = array(
+			'unmodified' => array(),
+			'extracted'  => array(),
+			'run'        => array()
+		);
 		
 		$this->schema_info = array();
 		
@@ -819,21 +836,6 @@ class fDatabase
 	public function enableDebugging($flag)
 	{
 		$this->debug = (boolean) $flag;
-	}
-	
-	
-	/**
-	 * Sets a flag to trigger a PHP warning message whenever a query takes longer than the millisecond threshold specified
-	 * 
-	 * It is recommended to use the error handling features of
-	 * fCore::enableErrorHandling() to log or email these warnings.
-	 * 
-	 * @param  integer $threshold  The limit (in milliseconds) of how long an SQL query can take before a warning is triggered
-	 * @return void
-	 */
-	public function enableSlowQueryWarnings($threshold)
-	{
-		$this->slow_query_threshold = (int) $threshold;
 	}
 	
 	
@@ -2309,6 +2311,20 @@ class fDatabase
 			throw new fProgrammerException('No SQL statement passed');
 		}
 		
+		// This is just to keep the callback method signature consistent
+		$values = array();
+		
+		if ($this->hook_callbacks['unmodified']) {
+			foreach ($this->hook_callbacks['unmodified'] as $callback) {
+				$params = array(
+					$this,
+					&$sql,
+					&$values
+				);
+				call_user_func_array($callback, $params);
+			}
+		}
+		
 		// Fix \' in MySQL and PostgreSQL
 		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
 			$sql = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql);	
@@ -2329,6 +2345,18 @@ class fDatabase
 			} else {
 				$query .= $part;	
 			} 		
+		}
+		
+		if ($this->hook_callbacks['extracted']) {
+			foreach ($this->hook_callbacks['extracted'] as $callback) {
+				$params = array(
+					$this,
+					&$query,
+					&$values,
+					&$strings
+				);
+				call_user_func_array($callback, $params);
+			}
 		}
 		
 		$pieces       = preg_split('#(%[lbdfistp])\b#', $query, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
@@ -2379,6 +2407,17 @@ class fDatabase
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
 			throw new fProgrammerException('No SQL statement passed');
+		}
+		
+		if ($this->hook_callbacks['unmodified']) {
+			foreach ($this->hook_callbacks['unmodified'] as $callback) {
+				$params = array(
+					$this,
+					&$sql,
+					&$values
+				);
+				call_user_func_array($callback, $params);
+			}
 		}
 		
 		// Fix \' in MySQL and PostgreSQL
@@ -2472,6 +2511,23 @@ class fDatabase
 			$queries[$number] = $new_sql;
 		}
 		
+		if ($this->hook_callbacks['extracted']) {
+			foreach (array_keys($queries) as $number) {
+				foreach ($this->hook_callbacks['extracted'] as $callback) {
+					if (!isset($chunked_values[$number])) {
+						$chunked_values[$number] = array();
+					}
+					$params = array(
+						$this,
+						&$queries[$number],
+						&$chunked_values[$number],
+						&$strings[$number]
+					);
+					call_user_func_array($callback, $params);
+				}
+			}
+		}
+		
 		// Translate the SQL queries
 		if ($translate) {
 			$queries = $this->getSQLTranslation()->translate($queries);
@@ -2484,7 +2540,7 @@ class fDatabase
 			$number = $parts[0];
 			
 			// Escape the values into the SQL
-			if (isset($chunked_values[$number])) {
+			if (!empty($chunked_values[$number])) {
 				$query = $this->escapeSQL($query, $chunked_values[$number]);	
 			}
 			
@@ -2531,6 +2587,63 @@ class fDatabase
 		}
 		
 		return sizeof($output) == 1 ? $output[0] : $output;
+	}
+	
+	
+	/**
+	 * Registers a callback for one of the various query hooks - multiple callbacks can be registered for each hook
+	 * 
+	 * The following hooks are available:
+	 *  - `'unmodified'`: The original SQL passed to fDatabase, for prepared statements this is called just once before the fStatement object is created
+	 *  - `'extracted'`: The SQL after all non-empty strings have been extracted and replaced with `:string_{number}` placeholders
+	 *  - `'run'`: After the SQL has been run
+	 * 
+	 * Methods for the `'unmodified'` hook should have the following signature:
+	 * 
+	 *  - **`$database`**:  The fDatabase instance
+	 *  - **`&$sql`**:      The original, unedited SQL
+	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL - this will be empty for prepared statements
+	 * 
+	 * Methods for the `'extracted'` hook should have the following signature:
+	 * 
+	 *  - **`$database`**:  The fDatabase instance
+	 *  - **`&$sql`**:      The original, unedited SQL
+	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL - this will be empty for prepared statements
+	 *  - **`&$strings`**   The literal strings that were extracted from the SQL
+	 * 
+	 * The `extracted` hook is the best place to modify the SQL since there is
+	 * no risk of breaking string literals. Please note that there may be empty
+	 * strings (`''`) present in the SQL since some database treat those as
+	 * `NULL`.
+	 * 
+	 * Methods for the `'run'` hook should have the following signature:
+	 * 
+	 *  - **`$database`**:    The fDatabase instance
+	 *  - **`$query`**:       The (string) SQL or `array(0 => {fStatement object}, 1 => {values array})` 
+	 *  - **`$query_time`**:  The (float) number of seconds the query took
+	 *  - **`$result`**       The fResult or fUnbufferedResult object, or `FALSE` if no result
+	 * 
+	 * @param  string   $hook      The hook to register for
+	 * @param  callback $callback  The callback to register - see the method description for details about the method signature
+	 * @return void
+	 */
+	public function registerHookCallback($hook, $callback)
+	{
+		$valid_hooks = array(
+			'unmodified',
+			'extracted',
+			'run'
+		);
+		
+		if (!in_array($hook, $valid_hooks)) {
+			throw new fProgrammerException(
+				'The hook specified, %1$s, should be one of: %2$s.',
+				$hook,
+				join(', ', $valid_hooks)
+			);
+		}
+		
+		$this->hook_callbacks[$hook][] = $callback;
 	}
 	
 	
@@ -2585,16 +2698,16 @@ class fDatabase
 			);
 		}
 		
-		if ($this->slow_query_threshold && $query_time > $this->slow_query_threshold) {
-			trigger_error(
-				self::compose(
-					'The following query took %1$s milliseconds, which is above the slow query threshold of %2$s:%3$s',
+		if ($this->hook_callbacks['run']) {
+			foreach ($this->hook_callbacks['run'] as $callback) {
+				$callback_params = array(
+					$this,
+					is_object($statement) ? array($statement, $params) : $sql,
 					$query_time,
-					$this->slow_query_threshold,
-					"\n" . $sql
-				),
-				E_USER_WARNING
-			);
+					$result
+				);
+				call_user_func_array($callback, $callback_params);
+			}
 		}
 		
 		if ($result_type) {
