@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a bug with the elements not being initialized to a blank array [wb, 2010-08-12]
  * @changes    1.0.0b10  Updated ::place() to ignore URL query strings when detecting an element type [wb, 2010-07-26]
  * @changes    1.0.0b9   Added the methods ::delete() and ::remove() [wb+mn, 2010-07-15]
  * @changes    1.0.0b8   Fixed a bug with placing absolute file paths on Windows [wb, 2010-07-09]
