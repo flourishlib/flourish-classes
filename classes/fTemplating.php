@@ -136,6 +136,7 @@ class fTemplating
 		
 		$this->root        = $root;
 		$this->buffered_id = NULL;
+		$this->elements    = array();
 	}
 	
 	
