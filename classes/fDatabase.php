@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Fixed the pgsql, mssql and mysql extensions to force a new connection instead of reusing an existing one [wb, 2010-08-17]
  * @changes    1.0.0b29  Backwards Compatibility Break - removed ::enableSlowQueryWarnings(), added ability to replicate via ::registerHookCallback() [wb, 2010-08-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - removed ODBC support. Added support for the `pdo_ibm` extension. [wb, 2010-07-31]
  * @changes    1.0.0b27  Fixed a bug with running multiple copies of a SQL statement with string values through a single ::translatedQuery() call [wb, 2010-07-14]
@@ -540,7 +541,7 @@ class fDatabase
 		
 		if ($this->extension == 'mssql') {
 			$separator        = (fCore::checkOS('windows')) ? ',' : ':';
-			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password);
+			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password, TRUE);
 			if ($this->connection !== FALSE && mssql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
 			}
@@ -554,7 +555,7 @@ class fDatabase
 			} else {
 				$host = $this->host;	
 			}
-			$this->connection = mysql_connect($host, $this->username, $this->password);
+			$this->connection = mysql_connect($host, $this->username, $this->password, TRUE);
 			if ($this->connection !== FALSE && mysql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
 			}
@@ -588,7 +589,7 @@ class fDatabase
 			if ($this->port) {
 				$connection_string .= " port='" . $this->port . "'";
 			}
-			$this->connection = pg_connect($connection_string);
+			$this->connection = pg_connect($connection_string, PGSQL_CONNECT_FORCE_NEW);
 		}
 		
 		if ($this->extension == 'sqlsrv') {
