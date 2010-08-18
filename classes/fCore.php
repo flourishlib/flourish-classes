@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Fixed a bug with ::backtrace() triggering notices when an argument is not UTF-8 [wb, 2010-08-17]
  * @changes    1.0.0b16  Added the `$types` and `$regex` parameters to ::startErrorCapture() and the `$regex` parameter to ::stopErrorCapture() [wb, 2010-08-09]
  * @changes    1.0.0b15  Added ::startErrorCapture() and ::stopErrorCapture() [wb, 2010-07-05]
  * @changes    1.0.0b14  Changed ::enableExceptionHandling() to only call fException::printMessage() when the destination is not `html` and no callback has been defined, added ::configureSMTP() to allow using fSMTP for error and exception emails [wb, 2010-06-04]
@@ -255,9 +256,11 @@ class fCore
 						} elseif (is_string($arg)) {
 							// Shorten the UTF-8 string if it is too long
 							if (strlen(utf8_decode($arg)) > 18) {
-								preg_match('#^(.{0,15})#us', $arg, $short_arg);
-								$arg  = (isset($short_arg[1])) ? $short_arg[1] : $short_arg[0];
-								$arg .= '...';
+								// If we can't match as unicode, try single byte
+								if (!preg_match('#^(.{0,15})#us', $arg, $short_arg)) {
+									preg_match('#^(.{0,15})#s', $arg, $short_arg);
+								}
+								$arg  = $short_arg[0] . '...';
 							}
 							$bt_string .= "'" . $arg . "'";
 						} else {
