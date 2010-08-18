@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Enhanced ::configureColumnInheritance() to ensure both columns specified have been set up as file upload columns [wb, 2010-08-18]
  * @changes    1.0.0b25  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b24  Changed validation messages array to use column name keys [wb, 2010-05-26]
  * @changes    1.0.0b23  Fixed a bug with ::upload() that could cause a method called on a non-object error in relation to the upload directory not being defined [wb, 2010-05-10]
@@ -375,6 +376,20 @@ class fORMFile
 	static public function configureColumnInheritance($class, $column, $inherit_from_column)
 	{
 		$class = fORM::getClass($class);
+		
+		if (empty(self::$file_upload_columns[$class][$column])) {
+			throw new fProgrammerException(
+				'The column specified, %s, has not been configured as a file upload column',
+				$column
+			);
+		}
+		
+		if (empty(self::$file_upload_columns[$class][$inherit_from_column])) {
+			throw new fProgrammerException(
+				'The column specified, %s, has not been configured as a file upload column',
+				$column
+			);
+		}
 		
 		if (empty(self::$column_inheritence[$class])) {
 			self::$column_inheritence[$class] = array();
