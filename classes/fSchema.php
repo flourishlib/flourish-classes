@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b40
+ * @version    1.0.0b41
+ * @changes    1.0.0b41  Fixed handling MySQL table names that require quoting [wb, 2010-08-24]
  * @changes    1.0.0b40  Fixed bugs in the documentation and error message of ::getColumnInfo() about what are valid elements [wb, 2010-07-21]
  * @changes    1.0.0b39  Fixed a regression where key detection SQL was not compatible with PostgreSQL 8.1 [wb, 2010-04-13]
  * @changes    1.0.0b38  Added Oracle support to ::getDatabases() [wb, 2010-04-13]
@@ -974,7 +975,7 @@ class fSchema
 		
 		$column_info = array();
 		
-		$result     = $this->database->query('SHOW CREATE TABLE ' . $table);
+		$result     = $this->database->query('SHOW CREATE TABLE %r', $table);
 		
 		try {
 			$row        = $result->fetchRow();
@@ -1106,7 +1107,7 @@ class fSchema
 			$keys[$table]['foreign'] = array();
 			$keys[$table]['unique']  = array();
 			
-			$result = $this->database->query('SHOW CREATE TABLE `' . substr($this->database->escape('string', $table), 1, -1) . '`');
+			$result = $this->database->query('SHOW CREATE TABLE %r', $table);
 			$row    = $result->fetchRow();
 			
 			// Primary keys
