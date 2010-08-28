@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed some bugs with the mysqli extension and prepared statements [wb, 2010-08-28]
  * @changes    1.0.0b10  Backwards Compatibility Break - removed ODBC support [wb, 2010-07-31]
  * @changes    1.0.0b9   Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b8   Added support for prepared statements [wb, 2010-03-02]
@@ -252,21 +253,21 @@ class fUnbufferedResult implements Iterator
 				if (!$this->result instanceof stdClass) {
 					$row = mysqli_fetch_assoc($this->result);
 				} else {
-					$meta = $statement->result_metadata();
+					$meta = $this->result->statement->result_metadata();
 					$row_references = array();
-					while ($field = $meta->fetch_field())
-					{
+					while ($field = $meta->fetch_field()) {
 						$row_references[] = &$fetched_row[$field->name];
 					}
 
-					call_user_func_array(array($statement, 'bind_result'), $row_references);
-					$statement->fetch();
+					call_user_func_array(array($this->result->statement, 'bind_result'), $row_references);
+					$this->result->statement->fetch();
 					
 					$row = array();
-					foreach($fetched_row as $key => $val)
-					{
+					foreach($fetched_row as $key => $val) {
 						$row[$key] = $val;
 					}
+					unset($row_references);
+					$meta->free_result();
 				}
 				break;
 				

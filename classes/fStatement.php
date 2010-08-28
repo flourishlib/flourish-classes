@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Fixed an edge case where the mysqli extension would leak memory when fetching a `TEXT` or `BLOB` column [wb, 2010-08-28]
  * @changes    1.0.0b4  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b3  Backwards Compatibility Break - removed ODBC support. Fixed UTF-8 support for the `pdo_dblib` extension. [wb, 2010-07-31]
  * @changes    1.0.0b2  Added IBM DB2 support [wb, 2010-04-13]
@@ -442,12 +443,12 @@ class fStatement
 			case 'mysqli':
 				$extra = $this->statement;
 				if ($statement->execute()) {
+					$statement->store_result();
 					$rows = array();
 					$meta = $statement->result_metadata();
 					if ($meta) {
 						$row_references = array();
-						while ($field = $meta->fetch_field())
-						{
+						while ($field = $meta->fetch_field()) {
 							$row_references[] = &$row[$field->name];
 						}
 
@@ -460,7 +461,9 @@ class fStatement
 								$copied_row[$key] = $val;
 							}
 							$rows[] = $copied_row;
-						} 
+						}
+						unset($row_references);
+						$meta->free_result();
 					}
 					$result->setResult($rows);
 					$statement->free_result();
