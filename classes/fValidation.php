@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Enhanced all of the add fields methods to accept one field per parameter, or an array of fields [wb, 2010-06-24]
- * @changes    1.0.0b8  Added/fixed support for array-syntax fields names [wb, 2010-06-09]
- * @changes    1.0.0b7  Added the ability to pass an array of replacements to ::addRegexReplacement() and ::addStringReplacement() [wb, 2010-05-31]
- * @changes    1.0.0b6  BackwardsCompatibilityBreak - moved one-or-more required fields from ::addRequiredFields() to ::addOneOrMoreRule(), moved conditional required fields from ::addRequiredFields() to ::addConditionalRule(), changed returned messages array to have field name keys - added lots of functionality [wb, 2010-05-26] 
- * @changes    1.0.0b5  Added the `$return_messages` parameter to ::validate() and updated code for new fValidationException API [wb, 2009-09-17]
- * @changes    1.0.0b4  Changed date checking from `strtotime()` to fTimestamp for better localization support [wb, 2009-06-01]
- * @changes    1.0.0b3  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b2  Added support for validating date and URL fields [wb, 2009-01-23]
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
+ * @changes    1.0.0b9   Enhanced all of the add fields methods to accept one field per parameter, or an array of fields [wb, 2010-06-24]
+ * @changes    1.0.0b8   Added/fixed support for array-syntax fields names [wb, 2010-06-09]
+ * @changes    1.0.0b7   Added the ability to pass an array of replacements to ::addRegexReplacement() and ::addStringReplacement() [wb, 2010-05-31]
+ * @changes    1.0.0b6   BackwardsCompatibilityBreak - moved one-or-more required fields from ::addRequiredFields() to ::addOneOrMoreRule(), moved conditional required fields from ::addRequiredFields() to ::addConditionalRule(), changed returned messages array to have field name keys - added lots of functionality [wb, 2010-05-26] 
+ * @changes    1.0.0b5   Added the `$return_messages` parameter to ::validate() and updated code for new fValidationException API [wb, 2009-09-17]
+ * @changes    1.0.0b4   Changed date checking from `strtotime()` to fTimestamp for better localization support [wb, 2009-06-01]
+ * @changes    1.0.0b3   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b2   Added support for validating date and URL fields [wb, 2009-01-23]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fValidation
 {
@@ -493,7 +494,10 @@ class fValidation
 	 */
 	public function addRegexRule($field, $regex, $message)
 	{
-		$this->regex_rules[$field] = array(
+		if (!isset($this->regex_rules[$field])) {
+			$this->regex_rules[$field] = array();
+		}
+		$this->regex_rules[$field][] = array(
 			'regex'   => $regex,
 			'message' => $message
 		);
@@ -786,13 +790,15 @@ class fValidation
 	 */
 	private function checkRegexRules(&$messages)
 	{
-		foreach ($this->regex_rules as $field => $rule) {
+		foreach ($this->regex_rules as $field => $rules) {
 			$value = fRequest::get($field);
-			if (self::stringlike($value) && !preg_match($rule['regex'], $value)) {
-				$messages[$field] = self::compose(
-					'%s' . $rule['message'],
-					fValidationException::formatField($this->makeFieldName($field))
-				);
+			foreach ($rules as $rule) {
+				if (self::stringlike($value) && !preg_match($rule['regex'], $value)) {
+					$messages[$field] = self::compose(
+						'%s' . $rule['message'],
+						fValidationException::formatField($this->makeFieldName($field))
+					);
+				}
 			}
 		}
 	}
