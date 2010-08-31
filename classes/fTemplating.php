@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Added ::enableMinification(), ::enablePHPShortTags(), the ability to be able to place child fTemplating objects via a new magic element `__main__` and the `$main_element` parameter for ::__construct() [wb, 2010-08-31]
  * @changes    1.0.0b11  Fixed a bug with the elements not being initialized to a blank array [wb, 2010-08-12]
  * @changes    1.0.0b10  Updated ::place() to ignore URL query strings when detecting an element type [wb, 2010-07-26]
  * @changes    1.0.0b9   Added the methods ::delete() and ::remove() [wb+mn, 2010-07-15]
@@ -98,20 +99,56 @@ class fTemplating
 	private $elements;
 	
 	/**
+	 * The directory to store minified code in
+	 * 
+	 * @var string
+	 */
+	private $minification_directory;
+	
+	/**
+	 * The path prefix to prepend to CSS and JS paths to find them on the filesystem
+	 * 
+	 * @var string
+	 */
+	private $minification_prefix;
+	
+	/**
+	 * The minification mode: development or production
+	 * 
+	 * @var string
+	 */
+	private $minification_mode;
+	
+	/**
 	 * The directory to look for files
 	 * 
 	 * @var string
 	 */
 	protected $root;
 	
+	/**
+	 * The directory to store PHP files with short tags fixed
+	 * 
+	 * @var string
+	 */
+	private $short_tag_directory;
+	
+	/**
+	 * The short tag mode: development or production
+	 * 
+	 * @var string
+	 */
+	private $short_tag_mode;
+	
 	
 	/**
 	 * Initializes this templating engine
 	 * 
-	 * @param  string $root  The filesystem path to use when accessing relative files, defaults to `$_SERVER['DOCUMENT_ROOT']`
+	 * @param  string $root          The filesystem path to use when accessing relative files, defaults to `$_SERVER['DOCUMENT_ROOT']`
+	 * @param  string $main_element  The value for the `__main__` element - this is used when calling ::place() without an element, or when placing fTemplating objects as children
 	 * @return fTemplating
 	 */
-	public function __construct($root=NULL)
+	public function __construct($root=NULL, $main_element=NULL)
 	{
 		if ($root === NULL) {
 			$root = $_SERVER['DOCUMENT_ROOT'];
@@ -135,9 +172,13 @@ class fTemplating
 			$root .= DIRECTORY_SEPARATOR;
 		}
 		
-		$this->root        = $root;
-		$this->buffered_id = NULL;
-		$this->elements    = array();
+		$this->buffered_id    = NULL;
+		$this->elements       = array();
+		$this->root           = $root;
+		
+		if ($main_element !== NULL) {
+			$this->set('__main__', $main_element);
+		}
 	}
 	
 	
@@ -272,6 +313,100 @@ class fTemplating
 	
 	
 	/**
+	 * Enables minified output for CSS and JS elements
+	 * 
+	 * For CSS and JS, compilation means that the file will be minified and
+	 * cached. The filename will change whenever the content change, allowing
+	 * for far-futures expire headers.
+	 * 
+	 * Please note that this option requires that all CSS and JS paths be
+	 * relative to the $_SERVER['DOCUMENT_ROOT'] and start with a `/`. Also
+	 * this class will not clean up old cached files out of the cache
+	 * directory.
+	 * 
+	 * This functionality will be inherited by all child fTemplating objects
+	 * that do not have their own explicit minification settings.
+	 * 
+	 * @param  string             $mode             The compilation mode - `'development'` means that file modification times will be checked on each load, `'production'` means that the cache files will only be regenerated when missing
+	 * @param  fDirectory|string  $cache_directory  The directory to cache the compiled files into - this needs to be inside the document root or a path added to fFilesystem::addWebPathTranslation()
+	 * @param  fDirectory|string  $path_prefix      The directory to prepend to all CSS and JS paths to load the files from the filesystem - this defaults to `$_SERVER['DOCUMENT_ROOT']`
+	 * @return void
+	 */
+	public function enableMinification($mode, $cache_directory, $path_prefix=NULL)
+	{
+		$valid_modes = array('development', 'production');
+		if (!in_array($mode, $valid_modes)) {
+			throw new fProgrammerException(
+				'The mode specified, %1$s, is invalid. Must be one of: %2$s.',
+				$mode,
+				join(', ', $valid_modes)
+			);
+		}
+		
+		$cache_directory = $cache_directory instanceof fDirectory ? $cache_directory->getPath() : $cache_directory;
+		if (!is_writable($cache_directory)) {
+			throw new fEnvironmentException(
+				'The cache directory specified, %s, is not writable',
+				$cache_directory
+			);
+		}
+		
+		$path_prefix = $path_prefix instanceof fDirectory ? $path_prefix->getPath() : $path_prefix;
+		if ($path_prefix === NULL) {
+			$path_prefix = $_SERVER['DOCUMENT_ROOT'];
+		}
+		
+		$this->minification_mode      = $mode;
+		$this->minification_directory = fDirectory::makeCanonical($cache_directory);
+		$this->minification_prefix    = $path_prefix;
+	}
+	
+	
+	/**
+	 * Converts PHP short tags to long tags when short tags are turned off
+	 * 
+	 * Please note that this only affects PHP files that are **directly**
+	 * evaluated with ::place() or ::inject(). It will not affect PHP files that
+	 * have been evaluated via `include` or `require` statements inside of the
+	 * directly evaluated PHP files.
+	 * 
+	 * This functionality will be inherited by all child fTemplating objects
+	 * that do not have their own explicit short tag settings.
+	 * 
+	 * @param  string             $mode             The compilation mode - `'development'` means that file modification times will be checked on each load, `'production'` means that the cache files will only be regenerated when missing
+	 * @param  fDirectory|string  $cache_directory  The directory to cache the compiled files into - this directory should not be accessible from the web
+	 * @return void
+	 */
+	public function enablePHPShortTags($mode, $cache_directory)
+	{
+		// This does not need to be enabled if short tags are on
+		if (ini_get('short_open_tag') && strtolower(ini_get('short_open_tag')) != 'off') {
+			return;
+		}
+		
+		$valid_modes = array('development', 'production');
+		if (!in_array($mode, $valid_modes)) {
+			throw new fProgrammerException(
+				'The mode specified, %1$s, is invalid. Must be one of: %2$s.',
+				$mode,
+				join(', ', $valid_modes)
+			);
+		}
+		
+		$cache_directory = $cache_directory instanceof fDirectory ? $cache_directory->getPath() : $cache_directory;
+		if (!is_writable($cache_directory)) {
+			throw new fEnvironmentException(
+				'The cache directory specified, %s, is not writable',
+				$cache_directory
+			);
+		}
+		
+		$this->short_tag_mode      = $mode;
+		$this->short_tag_directory = fDirectory::makeCanonical($cache_directory);
+	}
+	
+	
+	/**
 	 * Gets the value of an element and runs it through fHTML::encode()
 	 * 
 	 * @param  string $element        The element to get
@@ -281,6 +416,91 @@ class fTemplating
 	public function encode($element, $default_value=NULL)
 	{
 		return fHTML::encode($this->get($element, $default_value));
+	}
+	
+	
+	/**
+	 * Takes an array of PHP files and caches a version with all short tags converted to regular tags
+	 * 
+	 * @param array $values  The file paths to the PHP files
+	 * @return array  An array of file paths to the corresponding converted PHP files
+	 */
+	private function fixShortTags($values)
+	{
+		$fixed_paths = array();
+		foreach ($values as $value) {
+			// Check to see if the element is a path relative to the template root
+			if (!preg_match('#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i', $value)) {
+				$value = $this->root . $value;
+			}
+			
+			$real_value = realpath($value);
+			$cache_path = $this->short_tag_directory . sha1($real_value);
+			
+			$fixed_paths[] = $cache_path;
+			if (file_exists($cache_path) && ($this->short_tag_mode == 'production' || filemtime($cache_path) >= filemtime($real_value))) {
+				continue;
+			}
+			
+			$code = file_get_contents($real_value);
+			$output = '';
+
+			do {
+				if (!preg_match('#/\*|//|\\#|\'|"|<<<[a-z_]\w*|<<<\'[a-z_]\w*\'#i', $code, $match)) {
+					$part  = $code;
+					$code  = '';
+					$token = NULL;
+				
+				} else {
+					$token = $match[0];
+					$pos   = strpos($code, $token);
+					if ($pos === FALSE) {
+						break;
+					}
+					$part  = substr($code, 0, $pos);
+					$code  = substr($code, $pos);
+				}
+				
+				$regex = NULL;
+				if ($token == "//") {
+					$regex = '#^//.*(\n|$)#D';
+				} elseif ($token == "#") {
+					$regex = '@^#.*(\n|$)@D';
+				} elseif ($token == "/*") {
+					$regex = '#^.{2}.*?(\*/|$)#sD';
+				} elseif ($token == "'") {
+					$regex = '#^\'((\\\\.)+|[^\\\\\']+)*(\'|$)#sD';
+				} elseif ($token == '"') {
+					$regex = '#^"((\\\\.)+|[^\\\\"]+)*("|$)#sD';
+				} elseif ($token) {
+					$regex = '#\A<<<\'?([a-zA-Z_]\w*)\'?.*?^\1;\n#sm';
+				}
+				
+				$part = str_replace('<?=', '<?php echo', $part);
+				$part = preg_replace('#<\?(?!php)#i', '<?php', $part);
+				
+				// This makes sure that __FILE__ and __DIR__ stay as the
+				// original value since the cached file will be in a different
+				// place with a different filename
+				$part = preg_replace('#(?<=[^a-zA-Z0-9]|^)__FILE__(?=[^a-zA-Z0-9]|$)#iD', "'" . $real_value . "'", $part);
+				if (fCore::checkVersion('5.3')) {
+					$part = preg_replace('#(?<=[^a-zA-Z0-9]|^)__DIR__(?=[^a-zA-Z0-9]|$)#iD', "'" . dirname($real_value) . "'", $part);
+				}
+				
+				$output .= $part;
+				
+				if ($regex) {
+					preg_match($regex, $code, $match);
+					$output .= $match[0];
+					$code = substr($code, strlen($match[0]));
+				}
+				
+			} while (strlen($code));
+			
+			file_put_contents($cache_path, $output);
+		}
+		
+		return $fixed_paths;
 	}
 	
 	
@@ -314,6 +534,96 @@ class fTemplating
 	
 	
 	/**
+	 * Combines an array of CSS or JS files and places them as a single file
+	 * 
+	 * @param string $type     The type of compilation, 'css' or 'js'
+	 * @param string $element  The element name
+	 * @param array  $values   An array of file paths
+	 * @return void
+	 */
+	protected function handleMinified($type, $element, $values)
+	{
+		$paths = array();
+		$media = NULL;
+		foreach ($values as $value) {
+			if (is_array($value)) {
+				$paths[] = $this->minification_prefix . $value['path'];
+				if ($type == 'css') {
+					$media = !empty($value['media']) ? $value['media'] : NULL;
+				}
+			} else {
+				$paths[] = $this->minification_prefix . $value;
+			}
+		}
+		
+		$hash       = sha1(join('|', $paths));
+		$cache_file = $this->minification_directory . $hash . '.' . $type;
+		
+		$regenerate    = FALSE;
+		$checked_paths = FALSE;
+		if (!file_exists($cache_file)) {
+			$regenerate = TRUE;
+		} elseif ($this->minification_mode == 'development') {
+			$cache_mtime   = filemtime($cache_file);
+			$checked_paths = TRUE;
+			
+			foreach ($paths as $path) {
+				if (!file_exists($path)) {
+					throw new fEnvironmentException(
+						'The file specified, %s, does not exist under the $path_prefix specified',
+						preg_replace('#^' . preg_quote($this->minification_prefix, '#') . '#', '', $path)
+					);
+				}
+				if (filemtime($path) > $cache_mtime) {
+					$regenerate = TRUE;
+					break;
+				}
+			}
+			
+		}
+		
+		if ($regenerate) {
+			$minified = '';
+			
+			foreach ($paths as $path) {
+				$path_cache_file = $this->minification_directory . sha1($path) . '.' . $type;
+				
+				if ($checked_paths && !file_exists($path)) {
+					throw new fEnvironmentException(
+						'The file specified, %s, does not exist under the $path_prefix specified',
+						preg_replace('#^' . preg_quote($this->minification_prefix, '#') . '#', '', $path)
+					);
+				}
+				
+				// Checks if this path has been cached
+				if (file_exists($path_cache_file) && filemtime($path_cache_file) >= filemtime($path)) {
+					$minified_path = file_get_contents($path_cache_file);
+				} else {
+					$minified_path = trim($this->minify(file_get_contents($path), $type));
+					file_put_contents($path_cache_file, $minified_path);
+				}
+				
+				$minified .= "\n" . $minified_path;
+			}
+			
+			file_put_contents($cache_file, substr($minified, 1));
+		}
+		
+		$version        = filemtime($cache_file);
+		$compiled_value = fFilesystem::translateToWebPath($cache_file) . '?v=' . $version;
+		if ($type == 'css' && $media) {
+			$compiled_value = array(
+				'path'  => $compiled_value,
+				'media' => $media
+			);
+		}
+		
+		$method = 'place' . strtoupper($type);
+		$this->$method($compiled_value);
+	}
+	
+	
+	/**
 	 * Includes the file specified - this is identical to ::place() except a filename is specified instead of an element
 	 * 
 	 * Please see the ::place() method for more details about functionality.
@@ -333,6 +643,220 @@ class fTemplating
 		
 		$this->set($element, $file_path);
 		$this->place($element, $file_type);
+	}
+	
+	
+	/**
+	 * Minifies JS or CSS
+	 * 
+	 * For JS, this function is based on the JSMin algorithm (not the code) from
+	 * http://www.crockford.com/javascript/jsmin.html with the addition of
+	 * preserving /*! comment blocks for things like licenses. Some other
+	 * versions of JSMin change the contents of special comment blocks, but
+	 * this version does not.
+	 * 
+	 * @param string $code  The code to minify
+	 * @param string $type  The type of code, 'css' or 'js'
+	 * @return string  The minified code
+	 */
+	protected function minify($code, $type)
+	{
+		$output = '';
+		$buffer = '';
+		$stack  = array();
+			
+		$token_regex  = '#/\*|\'|"';
+		if ($type == 'js') {
+			$token_regex .= '|//';
+			$token_regex .= '|/';
+		} elseif ($type == 'css') {
+			$token_regex .= '|url\(';
+		}
+		$token_regex .= '#i';
+		
+		do {
+			if (!preg_match($token_regex, $code, $match)) {
+				$part  = $code;
+				$code  = '';
+				$token = NULL;
+			
+			} else {
+				$token = $match[0];
+				$pos   = strpos($code, $token);
+				if ($pos === FALSE) {
+					break;
+				}
+				$part  = substr($code, 0, $pos);
+				$code  = substr($code, $pos);
+			}
+			
+			$regex = NULL;
+			if ($token == '/') {
+				if (!preg_match('#[(,=:[!&|?{};\n]\s*$#D', $part)) {
+					$part .= $token;
+					$code = substr($code, 1);
+				} else {
+					$regex = '#^/((\\\\.)+|[^\\\\/]+)*(/|$)#sD';
+				}
+			} elseif ($token == "url(") {
+				$regex = '#^url\(((\\\\.)+|[^\\\\\\)]+)*(\)|$)#sD';
+			} elseif ($token == "//") {
+				$regex = '#^//.*(\n|$)#D';
+			} elseif ($token == "/*") {
+				$regex = '#^.{2}.*?(\*/|$)#sD';
+			} elseif ($token == "'") {
+				$regex = '#^\'((\\\\.)+|[^\\\\\']+)*(\'|$)#sD';
+			} elseif ($token == '"') {
+				$regex = '#^"((\\\\.)+|[^\\\\"]+)*("|$)#sD';
+			}
+			
+			$this->minifyCode($part, $buffer, $stack, $type);
+			$output .= $buffer;
+			$buffer  = $part;
+			
+			if ($regex) {
+				preg_match($regex, $code, $match);
+				$code = substr($code, strlen($match[0]));
+				$this->minifyLiteral($match[0], $buffer, $type);
+				$output .= $buffer;
+				$buffer  = $match[0];
+			} else {
+				$output .= $buffer;
+			}
+			
+		} while (strlen($code));
+		
+		return $output;
+	}
+	
+	
+	/**
+	 * Takes a block of CSS or JS and reduces the number of characters
+	 * 
+	 * @param string &$part    The part of code to minify
+	 * @param string &$buffer  A buffer containing the last code or literal encountered
+	 * @param array  $stack    A stack used to keep track of the nesting level of CSS
+	 * @param mixed  $type     The type of code, `'css'` or `'js'`
+	 * @return void
+	 */
+	protected function minifyCode(&$part, &$buffer, &$stack, $type='js')
+	{
+		// This pulls in the end of the last match for useful context
+		$end_buffer = substr($buffer, -1);
+		$lookbehind = in_array($end_buffer, array(' ', "\n")) ? substr($buffer, -2) : $end_buffer;
+		$buffer     = substr($buffer, 0, 0-strlen($lookbehind));
+		$part       = $lookbehind . $part;
+		
+		if ($type == 'js') {
+			
+			// All whitespace and control characters are collapsed
+			$part = preg_replace('#[\x00-\x09\x0B\x0C\x0E-\x20]+#', ' ', $part);
+			$part = preg_replace('#[\n\r]+#', "\n", $part);
+			
+			// Whitespace is removed where not needed
+			$part = preg_replace('#(?<![a-z0-9\x80-\xFF\\\\$_])[ ]+#i', '', $part);
+			$part = preg_replace('#[ ]+(?![a-z0-9\x80-\xFF\\\\$_])#i', '', $part);
+			
+			$part = preg_replace('#(?<![a-z0-9\x80-\xFF\\\\$_}\\])"\'+-])\n+#i', '', $part);
+			$part = preg_replace('#\n+(?![a-z0-9\x80-\xFF\\\\$_{[(+-])#i', '', $part);
+					
+		} elseif ($type == 'css') {
+			
+			// All whitespace is collapsed
+			$part = preg_replace('#\s+#', ' ', $part);
+			
+			// Whitespace is removed where not needed
+			$part = preg_replace('#\s*([;{},>+])\s*#', '\1', $part);
+				
+			// This keeps track of the current scope since some minification
+			// rules are different if inside or outside of a rule block 
+			$new_part = '';
+			do {
+				if (!preg_match('#@media|\{|\}#', $part, $match)) {
+					$chunk = $part;
+					$part  = '';
+					$token = NULL;
+				} else {
+					$token = $match[0];
+					$pos = strpos($part, $token);
+					if ($pos === FALSE) {
+						break;
+					}
+					$chunk = substr($part, 0, $pos+strlen($token));
+					$part  = substr($part, $pos+strlen($token));
+				}
+				
+				if (end($stack) == 'rule_block') {
+					
+					// Colons don't need space inside of a block
+					$chunk = preg_replace('#\s*:\s*#', ':', $chunk);
+					
+					// Useless semi-colons are removed
+					$chunk = str_replace(';}', '}', $chunk);
+					
+					// All zero units are reduces to just 0
+					$chunk = preg_replace('#((?<!\d|\.)0+(\.0+)?|(?<!\d)\.0+)(?=\D|$)((%|in|cm|mm|em|ex|pt|pc|px)(\b|$))?#iD', '0', $chunk);
+					
+					// All .0 decimals are removed
+					$chunk = preg_replace('#(\d+)\.0+(?=\D)#iD', '\1', $chunk);
+					
+					// All leading zeros are removed
+					$chunk = preg_replace('#(?<!\d)0+(\.\d+)(?=\D)#iD', '\1', $chunk);
+					
+					// All measurements that contain the same value 4 times are reduced to a single
+					$chunk = preg_replace('#(?<!\d|\.)([\d\.]+(?:%|in|cm|mm|em|ex|pt|pc|px))(\s*\1){3}#i', '\1', $chunk);
+					
+					// Hex color codes are reduced if possible
+					$chunk = preg_replace('@#([a-f0-9])\1([a-f0-9])\2([a-f0-9])\3@iD', '#\1\2\3', $chunk);
+					
+					$chunk = str_ireplace('! important', '!important', $chunk);
+					
+				
+				} else {
+					
+					// This handles an IE6 edge-case
+					$chunk = preg_replace('#(:first-l(etter|ine))\{#', '\1 {', $chunk);
+					
+				}
+				
+				$new_part .= $chunk;
+				
+				if ($token == '@media') {
+					$stack[] = 'media_rule';
+				} elseif ($token == '{' && end($stack) == 'media_rule') {
+					$stack = array('media_block');
+				} elseif ($token == '{') {
+					$stack[] = 'rule_block';
+				} elseif ($token) {
+					array_pop($stack);
+				}
+				
+			} while (strlen($part));
+			
+			$part = $new_part;
+		}
+	}
+	
+	
+	/**
+	 * Takes a literal and either discards or keeps it
+	 * 
+	 * @param mixed  &$part    The literal to process
+	 * @param mixed  &$buffer  The last literal or code processed
+	 * @param string $type     The language the literal is in, `'css'` or `'js'`
+	 * @return void
+	 */
+	protected function minifyLiteral(&$part, &$buffer, $type)
+	{
+		// Comments are skipped unless they are special
+		if (substr($part, 0, 2) == '/*' && substr($part, 0, 3) != '/*!') {
+			$part = $buffer . ' ';
+			$buffer = '';
+		}
+		if ($type == 'js' && substr($part, 0, 2) == '//') {
+			$part = $buffer . "\n";
+			$buffer = '';
+		}
 	}
 	
 	
@@ -367,7 +891,7 @@ class fTemplating
 	 * @param  string $file_type  Will force the element to be placed as this type of file instead of auto-detecting the file type. Valid types include: `'css'`, `'js'`, `'php'` and `'rss'`.
 	 * @return void
 	 */
-	public function place($element, $file_type=NULL)
+	public function place($element='__main__', $file_type=NULL)
 	{
 		// Put in a buffered placeholder
 		if ($this->buffered_id) {
@@ -420,33 +944,82 @@ class fTemplating
 		}
 		$values = array_values($values);
 		
-		foreach ($values as $value) {
-			
+		$value_groups = array();
+		
+		$last_type     = NULL;
+		$last_location = NULL;
+		$last_media    = NULL;
+		foreach ($values as $i => $value) {	
 			$type = $this->verifyValue($element, $value, $file_type);
 			
-			switch ($type) {
-				case 'css':
-					$this->placeCSS($value);
-					break;
-				
-				case 'js':
-					$this->placeJS($value);
-					break;
+			$media    = is_array($value) && isset($value['media']) ? $value['media'] : NULL;
+			$path     = is_array($value) ? $value['path'] : $value;
+			$location = is_string($path) && preg_match('#^https?://#', $path) ? 'http' : 'local';
+			
+			if ($type != $last_type || $location != $last_location || $media != $last_media) {
+				$value_groups[] = array(
+					'type'     => $type,
+					'location' => $location,
+					'values'   => array()
+				);
+			}
+			$value_groups[count($value_groups)-1]['values'][] = $value;
+			
+			$last_type     = $type;
+			$last_location = $location;
+			$last_media    = $media;
+		}
+		
+		foreach ($value_groups as $value_group) {
+			if ($value_group['location'] == 'local') {
+				if ($this->minification_directory && in_array($value_group['type'], array('js', 'css'))) {
+					$this->handleMinified($value_group['type'], $element, $value_group['values']);
+					continue;
+				}
+				if ($this->short_tag_directory && $value_group['type'] == 'php') {
+					$value_group['values'] = $this->fixShortTags($value_group['values']);
+				}
+			}
+			
+			foreach ($value_group['values'] as $value) {
+				switch ($value_group['type']) {
+					case 'css':
+						$this->placeCSS($value);
+						break;
 					
-				case 'php':
-					$this->placePHP($element, $value);
-					break;
+					case 'fTemplating':
+						// This causes children to inherit settings if they aren't already set
+						if ($value->minification_directory === NULL) {
+							$value->minification_directory = $this->minification_directory;
+							$value->minification_mode      = $this->minification_mode;
+							$value->minification_prefix    = $this->minification_prefix;
+						}
+						if ($value->short_tag_directory === NULL) {
+							$value->short_tag_directory = $this->short_tag_directory;
+							$value->short_tag_mode      = $this->short_tag_mode;
+						}
+						$value->place();
+						break;
 					
-				case 'rss':
-					$this->placeRSS($value);
-					break;
-					
-				default:
-					throw new fProgrammerException(
-						'The file type specified, %1$s, is invalid. Must be one of: %2$s.',
-						$type,
-						'css, js, php, rss'
-					);
+					case 'js':
+						$this->placeJS($value);
+						break;
+						
+					case 'php':
+						$this->placePHP($element, $value);
+						break;
+						
+					case 'rss':
+						$this->placeRSS($value);
+						break;
+						
+					default:
+						throw new fProgrammerException(
+							'The file type specified, %1$s, is invalid. Must be one of: %2$s.',
+							$type,
+							'css, js, php, rss'
+						);
+				}
 			}
 		}
 	}
@@ -477,13 +1050,9 @@ class fTemplating
 	 */
 	protected function placePHP($element, $path)
 	{
-		// Check to see if the element is a relative path
+		// Check to see if the element is a path relative to the template root
 		if (!preg_match('#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i', $path)) {
 			$path = $this->root . $path;
-		
-		// Check to see if the element is relative to the current script
-		} elseif (preg_match('#^(\./|\.\\\\)#', $path)) {
-			$path = pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_DIRNAME) . substr($path, 1);
 		}
 		
 		if (!file_exists($path)) {
@@ -621,7 +1190,7 @@ class fTemplating
 	/**
 	 * Sets the value for an element
 	 * 
-	 * @param  string $element    The element to set
+	 * @param  string $element    The element to set - the magic element `__main__` is used for placing the current fTemplating object as a child of another fTemplating object 
 	 * @param  mixed  $value      The value for the element
 	 * @param  array  :$elements  An associative array with the key being the `$element` to set and the value being the `$value` for that element
 	 * @return fTemplating  The template object, to allow for method chaining
@@ -665,6 +1234,10 @@ class fTemplating
 		
 		if ($file_type) {
 			return $file_type;
+		}
+		
+		if ($value instanceof self) {
+			return 'fTemplating';
 		}
 		
 		$path = (is_array($value)) ? $value['path'] : $value;
