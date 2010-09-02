@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Added a check to prevent permissions warnings when getting the FQDN on Windows machines [wb, 2010-09-02]
  * @changes    1.0.0b20  Fixed ::send() to only remove the name of a recipient when dealing with the `mail()` function on Windows and to leave it when using fSMTP [wb, 2010-06-22]
  * @changes    1.0.0b19  Changed ::send() to return the message id for the email, fixed the email regexes to require [] around IPs [wb, 2010-05-05]
  * @changes    1.0.0b18  Fixed the name of the static method ::unindentExpand() [wb, 2010-04-28]
@@ -411,10 +412,10 @@ class fEmail
 		if (strpos(self::$local_hostname, '.') === FALSE) {
 			self::$local_hostname = php_uname('n');
 		}
-		if (strpos(self::$local_hostname, '.') === FALSE && !in_array('exec', explode(',', ini_get('disable_functions'))) && !ini_get('safe_mode') && !ini_get('open_basedir')) {
+		if (strpos(self::$local_hostname, '.') === FALSE && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && !ini_get('safe_mode') && !ini_get('open_basedir')) {
 			if (fCore::checkOS('linux')) {
 				self::$local_hostname = trim(shell_exec('hostname --fqdn'));
-			} elseif (fCore::checkOS('windows')) {
+			} elseif (fCore::checkOS('windows') && is_executable($_SERVER['WINDIR'] . '\system32\ipconfig.exe')) {
 				$output = shell_exec('ipconfig /all');
 				if (preg_match('#DNS Suffix Search List[ .:]+([a-z0-9_.-]+)#i', $output, $match)) {
 					self::$local_hostname .= '.' . $match[1];
