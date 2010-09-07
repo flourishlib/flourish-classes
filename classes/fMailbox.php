@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed a typo in ::read() [wb, 2010-09-07]
  * @changes    1.0.0b6  Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
  * @changes    1.0.0b5  Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
  * @changes    1.0.0b4  Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
@@ -1296,7 +1297,7 @@ class fMailbox
 			}
 		}
 		if (fCore::getDebug($this->debug)) {
-			fCore::debug("Recieved:\n" . join("\r\n", $response), $this->debug);
+			fCore::debug("Received:\n" . join("\r\n", $response), $this->debug);
 		}
 		
 		if ($this->type == 'pop3') {
