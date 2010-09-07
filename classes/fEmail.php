@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Revamped the FQDN code and added ::getFQDN() [wb, 2010-09-07]
  * @changes    1.0.0b21  Added a check to prevent permissions warnings when getting the FQDN on Windows machines [wb, 2010-09-02]
  * @changes    1.0.0b20  Fixed ::send() to only remove the name of a recipient when dealing with the `mail()` function on Windows and to leave it when using fSMTP [wb, 2010-06-22]
  * @changes    1.0.0b19  Changed ::send() to return the message id for the email, fixed the email regexes to require [] around IPs [wb, 2010-05-05]
@@ -44,6 +45,7 @@ class fEmail
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const fixQmail       = 'fEmail::fixQmail';
+	const getFQDN        = 'fEmail::getFQDN';
 	const reset          = 'fEmail::reset';
 	const unindentExpand = 'fEmail::unindentExpand';
 	
@@ -93,13 +95,6 @@ class fEmail
 	
 	
 	/**
-	 * Flags if the class should use [http://php.net/popen popen()] to send mail via sendmail
-	 * 
-	 * @var boolean
-	 */
-	static private $popen_sendmail = FALSE;
-	
-	/**
 	 * Flags if the class should convert `\r\n` to `\n` for qmail. This makes invalid email headers that may work.
 	 * 
 	 * @var boolean
@@ -107,9 +102,16 @@ class fEmail
 	static private $convert_crlf  = FALSE;
 	
 	/**
-	 * The local hostname, used for message ids
+	 * The local fully-qualified domain name
 	 */
-	static private $local_hostname;
+	static private $fqdn;
+	
+	/**
+	 * Flags if the class should use [http://php.net/popen popen()] to send mail via sendmail
+	 * 
+	 * @var boolean
+	 */
+	static private $popen_sendmail = FALSE;
 	
 	
 	/**
@@ -219,6 +221,75 @@ class fEmail
 	
 	
 	/**
+	 * Returns the fully-qualified domain name of the server
+	 * 
+	 * @internal
+	 * 
+	 * @return string  The fully-qualified domain name of the server
+	 */
+	static public function getFQDN()
+	{
+		if (self::$fqdn !== NULL) {
+			return self::$fqdn;
+		}
+		
+		if (isset($_ENV['HOST'])) {
+			self::$fqdn = $_ENV['HOST'];
+		}
+		if (strpos(self::$fqdn, '.') === FALSE && isset($_ENV['HOSTNAME'])) {
+			self::$fqdn = $_ENV['HOSTNAME'];
+		}
+		if (strpos(self::$fqdn, '.') === FALSE) {
+			self::$fqdn = php_uname('n');
+		}
+		
+		if (strpos(self::$fqdn, '.') === FALSE) {
+			
+			$can_exec = !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && !ini_get('safe_mode');
+			if (fCore::checkOS('linux') && $can_exec) {
+				self::$fqdn = trim(shell_exec('hostname --fqdn'));
+				
+			} elseif (fCore::checkOS('windows')) {
+				$shell = new COM('WScript.Shell');
+				$tcpip_key = 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip';
+				try {
+					$domain = $shell->RegRead($tcpip_key . '\Parameters\NV Domain');
+				} catch (com_exception $e) {
+					try {
+						$domain = $shell->RegRead($tcpip_key . '\Parameters\DhcpDomain');
+					} catch (com_exception $e) {
+						try {
+							$adapters = $shell->RegRead($tcpip_key . '\Linkage\Route');
+							foreach ($adapters as $adapter) {
+								if ($adapter[0] != '{') { continue; }
+								try {
+									$domain = $shell->RegRead($tcpip_key . '\Interfaces\\' . $adapter . '\Domain');
+								} catch (com_exception $e) {
+									try {
+										$domain = $shell->RegRead($tcpip_key . '\Interfaces\\' . $adapter . '\DhcpDomain');
+									} catch (com_exception $e) { }
+								}
+							}
+						} catch (com_exception $e) { }
+					}
+				}
+				if ($domain) {
+					self::$fqdn = '.' . $domain;
+				} 
+				
+			} elseif (!fCore::checkOS('bsd', 'osx', 'linux', 'solaris') && !ini_get('open_basedir') && file_exists('/etc/resolv.conf')) {
+				$output = file_get_contents('/etc/resolv.conf');
+				if (preg_match('#^domain ([a-z0-9_.-]+)#im', $output, $match)) {
+					self::$fqdn .= '.' . $match[1];
+				}
+			}
+		}
+		
+		return self::$fqdn;
+	}
+	
+	
+	/**
 	 * Resets the configuration of the class
 	 * 
 	 * @internal
@@ -227,8 +298,9 @@ class fEmail
 	 */
 	static public function reset()
 	{
-		self::$popen_sendmail = FALSE;
 		self::$convert_crlf   = FALSE;
+		self::$fqdn           = NULL;
+		self::$popen_sendmail = FALSE;
 	}
 	
 	
@@ -399,34 +471,7 @@ class fEmail
 	 */
 	public function __construct()
 	{
-		if (self::$local_hostname !== NULL) {
-			return;
-		}
 		
-		if (isset($_ENV['HOST'])) {
-			self::$local_hostname = $_ENV['HOST'];
-		}
-		if (strpos(self::$local_hostname, '.') === FALSE && isset($_ENV['HOSTNAME'])) {
-			self::$local_hostname = $_ENV['HOSTNAME'];
-		}
-		if (strpos(self::$local_hostname, '.') === FALSE) {
-			self::$local_hostname = php_uname('n');
-		}
-		if (strpos(self::$local_hostname, '.') === FALSE && !in_array('exec', array_map('trim', explode(',', ini_get('disable_functions')))) && !ini_get('safe_mode') && !ini_get('open_basedir')) {
-			if (fCore::checkOS('linux')) {
-				self::$local_hostname = trim(shell_exec('hostname --fqdn'));
-			} elseif (fCore::checkOS('windows') && is_executable($_SERVER['WINDIR'] . '\system32\ipconfig.exe')) {
-				$output = shell_exec('ipconfig /all');
-				if (preg_match('#DNS Suffix Search List[ .:]+([a-z0-9_.-]+)#i', $output, $match)) {
-					self::$local_hostname .= '.' . $match[1];
-				}
-			} elseif (fCore::checkOS('bsd', 'osx') && file_exists('/etc/resolv.conf')) {
-				$output = file_get_contents('/etc/resolv.conf');
-				if (preg_match('#^domain ([a-z0-9_.-]+)#im', $output, $match)) {
-					self::$local_hostname .= '.' . $match[1];
-				}
-			}
-		}
 	}
 	
 	
@@ -1164,7 +1209,7 @@ class fEmail
 		
 		$to = trim($this->buildMultiAddressHeader("", $this->to_emails));
 		
-		$message_id         = '<' . fCryptography::randomString(32, 'hexadecimal') . '@' . self::$local_hostname . '>';
+		$message_id         = '<' . fCryptography::randomString(32, 'hexadecimal') . '@' . self::getFQDN() . '>';
 		$top_level_boundary = $this->createBoundary();
 		$headers            = $this->createHeaders($top_level_boundary, $message_id);
 		

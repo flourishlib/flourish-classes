@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
  * @changes    1.0.0b7  Updated class to use new fCore::startErrorCapture() functionality [wb, 2010-08-09]
  * @changes    1.0.0b6  Updated the class to use new fCore functionality [wb, 2010-07-05]
  * @changes    1.0.0b5  Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
@@ -47,13 +48,6 @@ class fSMTP
 	 * @var string
 	 */
 	private $host;
-	
-	/**
-	 * The local host name
-	 * 
-	 * @var string
-	 */
-	private $local_host;
 	
 	/**
 	 * The maximum size message the SMTP server supports
@@ -218,7 +212,7 @@ class fSMTP
 			return;
 		}
 		
-		$this->local_host = php_uname('n');
+		$fqdn = fEmail::getFQDN();
 		
 		fCore::startErrorCapture(E_WARNING);
 		
@@ -244,9 +238,9 @@ class fSMTP
 		}
 		
 		// Try sending the ESMTP EHLO command, but fall back to normal SMTP HELO
-		$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
+		$response = $this->write('EHLO ' . $fqdn, '#^250 #m');
 		if ($this->find($response, '#^500#')) {
-			$response = $this->write('HELO ' . $this->local_host, 1);	
+			$response = $this->write('HELO ' . $fqdn, 1);	
 		}
 		
 		// If STARTTLS is available, use it
@@ -264,7 +258,7 @@ class fSMTP
 			if (!$affirmative || $res === FALSE) {
 				throw new fConnectivityException('Error establishing secure connection');
 			}
-			$response = $this->write('EHLO ' . $this->local_host, '#^250 #m');
+			$response = $this->write('EHLO ' . $fqdn, '#^250 #m');
 		}
 		
 		$this->max_size = 0;
