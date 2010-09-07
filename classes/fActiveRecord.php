@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b67
+ * @version    1.0.0b68
+ * @changes    1.0.0b68  Added hooks to ::replicate() [wb, 2010-09-07]
  * @changes    1.0.0b67  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b66  Fixed a bug with ::store() and non-primary key auto-incrementing columns [wb, 2010-07-05]
  * @changes    1.0.0b65  Fixed bugs with ::inspect() making some `min_value` and `max_value` elements available for non-numeric types, fixed ::reflect() to list the `min_value` and `max_value` elements [wb, 2010-06-08]
@@ -2427,6 +2428,16 @@ abstract class fActiveRecord
 	 */
 	public function replicate($related_class=NULL)
 	{
+		fORM::callHookCallbacks(
+			$this,
+			'pre::replicate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->cache,
+			fActiveRecord::$replicate_level
+		);
+		
 		fActiveRecord::$replicate_level++;
 		
 		$class  = get_class($this);
@@ -2548,6 +2559,26 @@ abstract class fActiveRecord
 			}
 			fActiveRecord::$replicate_map = array();	
 		}
+		
+		fORM::callHookCallbacks(
+			$this,
+			'post::replicate()',
+			$this->values,
+			$this->old_values,
+			$this->related_records,
+			$this->cache,
+			fActiveRecord::$replicate_level
+		);
+		
+		fORM::callHookCallbacks(
+			$clone,
+			'cloned::replicate()',
+			$clone->values,
+			$clone->old_values,
+			$clone->related_records,
+			$clone->cache,
+			fActiveRecord::$replicate_level
+		);
 		
 		return $clone;
 	}

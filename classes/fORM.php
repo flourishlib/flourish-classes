@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added the `'pre::replicate()'`, `'post::replicate()'` and `'cloned::replicate()'` hooks [wb, 2010-09-07]
  * @changes    1.0.0b22  Internal Backwards Compatibility Break - changed ::parseMethod() to not underscorize the subject of the method [wb, 2010-08-06]
  * @changes    1.0.0b21  Fixed some documentation to reflect the API changes from v1.0.0b9 [wb, 2010-07-14]
  * @changes    1.0.0b20  Added the ability to register a wildcard active record method for all classes [wb, 2010-04-22]
@@ -788,9 +789,15 @@ class fORM
 	 *  - **`&$related_records`**: The related records array for the record
 	 *  - **`&$cache`**:           The cache array for the record
 	 * 
-	 * The `'pre::validate()'` and `'post::validate()'` hooks have an extra parameter:
+	 * The `'pre::validate()'` and `'post::validate()'` hooks have an extra
+	 * parameter:
 	 * 
 	 *  - **`&$validation_messages`**: An ordered array of validation errors that will be returned or tossed as an fValidationException
+	 * 
+	 * The `'pre::replicate()'`, `'post::replicate()'` and
+	 * `'cloned::replicate()'` hooks have an extra parameter:
+	 * 
+	 *  - **`$replication_level`**: An integer representing the level of recursion - the object being replicated will be `0`, children will be `1`, grandchildren `2` and so on.
 	 *  
 	 * Below is a list of all valid hooks:
 	 * 
@@ -805,6 +812,9 @@ class fORM
 	 *  - `'post::loadFromResult()'`
 	 *  - `'pre::populate()'`
 	 *  - `'post::populate()'`
+	 *  - `'pre::replicate()'`
+	 *  - `'post::replicate()'`
+	 *  - `'cloned::replicate()'`
 	 *  - `'pre::store()'`
 	 *  - `'post-begin::store()'`
 	 *  - `'post-validate::store()'`
@@ -836,6 +846,9 @@ class fORM
 			'post::loadFromResult()',
 			'pre::populate()',
 			'post::populate()',
+			'pre::replicate()',
+			'post::replicate()',
+			'cloned::replicate()',
 			'pre::store()',
 			'post-begin::store()',
 			'post-validate::store()',
