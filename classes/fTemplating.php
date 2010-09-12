@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Backwards Compatibility Break - ::add(), ::delete(), ::get() and ::set() now interpret `[` and `]` as array shorthand and thus they can not be used in element names, renamed ::remove() to ::filter() - added `$beginning` parameter to ::add() and added ::remove() method [wb, 2010-09-12]
  * @changes    1.0.0b12  Added ::enableMinification(), ::enablePHPShortTags(), the ability to be able to place child fTemplating objects via a new magic element `__main__` and the `$main_element` parameter for ::__construct() [wb, 2010-08-31]
  * @changes    1.0.0b11  Fixed a bug with the elements not being initialized to a blank array [wb, 2010-08-12]
  * @changes    1.0.0b10  Updated ::place() to ignore URL query strings when detecting an element type [wb, 2010-07-26]
@@ -217,23 +218,55 @@ class fTemplating
 	/**
 	 * Adds a value to an array element
 	 * 
-	 * @param  string $element  The element to add to
-	 * @param  mixed  $value    The value to add
+	 * @param  string  $element    The element to add to
+	 * @param  mixed   $value      The value to add
+	 * @param  boolean $beginning  If the value should be added to the beginning of the element
 	 * @return fTemplating  The template object, to allow for method chaining
 	 */
-	public function add($element, $value)
+	public function add($element, $value, $beginning=FALSE)
 	{
-		if (!isset($this->elements[$element])) {
-			$this->elements[$element] = array();
+		$tip =& $this->elements;
+		
+		if ($bracket_pos = strpos($element, '[')) {
+			$original_element  = $element;
+			$array_dereference = substr($element, $bracket_pos);
+			$element           = substr($element, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			array_unshift($array_keys, $element);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key])) {
+					$tip[$array_key] = array();
+				} elseif (!is_array($tip[$array_key])) {
+					throw new fProgrammerException(
+						'%1$s was called for an element, %2$s, which is not an array',
+						'add()',
+						$original_element
+					);
+				}
+				$tip =& $tip[$array_key];
+			}
+			$element = end($array_keys);
 		}
-		if (!is_array($this->elements[$element])) {
+		
+		
+		if (!isset($tip[$element])) {
+			$tip[$element] = array();
+		} elseif (!is_array($tip[$element])) {
 			throw new fProgrammerException(
 				'%1$s was called for an element, %2$s, which is not an array',
 				'add()',
 				$element
 			);
 		}
-		$this->elements[$element][] = $value;
+		
+		if ($beginning) {
+			array_unshift($tip[$element], $value);
+		} else {
+			$tip[$element][] = $value;
+		}
 		
 		return $this;
 	}
@@ -278,13 +311,40 @@ class fTemplating
 	 */
 	public function delete($element)
 	{
-		if (!is_array($element)) {
-			$element = array($element);
+		$tip =& $this->elements;
+		
+		if ($bracket_pos = strpos($element, '[')) {
+			$original_element  = $element;
+			$array_dereference = substr($element, $bracket_pos);
+			$element           = substr($element, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			array_unshift($array_keys, $element);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key])) {
+					return $this;
+				} elseif (!is_array($tip[$array_key])) {
+					throw new fProgrammerException(
+						'%1$s was called for an element, %2$s, which is not an array',
+						'delete()',
+						$original_element
+					);
+				}
+				$tip =& $tip[$array_key];
+			}
+			$element = end($array_keys);
 		}
 		
-		foreach ($element as $key) {
-			unset($this->elements[$key]);
+		if (is_array($element)) {
+			foreach ($element as $key) {
+				$this->delete($key);
+			}
+			return $this;
 		}
+		
+		unset($tip[$element]);
 		
 		return $this;
 	}
@@ -420,6 +480,63 @@ class fTemplating
 	
 	
 	/**
+	 * Removes a value from an array element
+	 *
+	 * @param string $element  The element to remove from
+	 * @param mixed  $value    The value to remove - compared in a non-strict manner, such that removing `0` will remove a blank string and false also
+	 * @return fTemplating  The template object, to allow for method chaining
+	 */
+	public function filter($element, $value)
+	{
+		$tip =& $this->elements;
+		
+		if ($bracket_pos = strpos($element, '[')) {
+			$original_element  = $element;
+			$array_dereference = substr($element, $bracket_pos);
+			$element           = substr($element, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			array_unshift($array_keys, $element);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key])) {
+					return $this;
+				} elseif (!is_array($tip[$array_key])) {
+					throw new fProgrammerException(
+						'%1$s was called for an element, %2$s, which is not an array',
+						'filter()',
+						$original_element
+					);
+				}
+				$tip =& $tip[$array_key];
+			}
+			$element = end($array_keys);
+		}
+		
+		if (!isset($tip[$element])) {
+			return $this;
+		} elseif (!is_array($tip[$element])) {
+			throw new fProgrammerException(
+				'%1$s was called for an element, %2$s, which is not an array',
+				'filter()',
+				$element
+			);
+		}
+		
+		$keys = array_keys($tip[$element], $value);
+		if ($keys) {
+			foreach ($keys as $key) {
+				unset($tip[$element][$key]);
+			}
+			$tip[$element] = array_values($tip[$element]);
+		}
+		
+		return $this;
+	}
+	
+	
+	/**
 	 * Takes an array of PHP files and caches a version with all short tags converted to regular tags
 	 * 
 	 * @param array $values  The file paths to the PHP files
@@ -524,12 +641,35 @@ class fTemplating
 			
 			$output = array();
 			foreach ($elements as $element => $default_value) {
-				$output[$element] = (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;
+				$output[$element] = $this->get($element, $default_value);
 			}
 			return $output;
 		}
 		
-		return (isset($this->elements[$element])) ? $this->elements[$element] : $default_value;
+		$array_dereference = NULL;
+		if ($bracket_pos = strpos($element, '[')) {
+			$array_dereference = substr($element, $bracket_pos);
+			$element           = substr($element, 0, $bracket_pos);
+		}
+		
+		if (!isset($this->elements[$element])) {
+			return $default_value;
+		}
+		$value = $this->elements[$element];
+		
+		if ($array_dereference) {
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			foreach ($array_keys as $array_key) {
+				if (!is_array($value) || !isset($value[$array_key])) {
+					$value = $default_value;
+					break;
+				}
+				$value = $value[$array_key];
+			}
+		}
+		
+		return $value;
 	}
 	
 	
@@ -1155,19 +1295,44 @@ class fTemplating
 	
 	
 	/**
-	 * Removes a value from an array element
-	 *
-	 * @param string $element  The element to remove from
-	 * @param mixed  $value    The value to remove - compared in a non-strict manner, such that removing `0` will remove a blank string and false also
-	 * @return fTemplating  The template object, to allow for method chaining
+	 * Removes and returns the value from the end of an array element
+	 * 
+	 * @param  string  $element    The element to remove from to
+	 * @param  boolean $beginning  If the value should be removed from the beginning of the element
+	 * @return mixed  The value that was removed
 	 */
-	public function remove($element, $value)
+	public function remove($element, $beginning=FALSE)
 	{
-		if (!isset($this->elements[$element])) {
-			return $this;
+		$tip =& $this->elements;
+		
+		if ($bracket_pos = strpos($element, '[')) {
+			$original_element  = $element;
+			$array_dereference = substr($element, $bracket_pos);
+			$element           = substr($element, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			array_unshift($array_keys, $element);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key])) {
+					return NULL;
+				} elseif (!is_array($tip[$array_key])) {
+					throw new fProgrammerException(
+						'%1$s was called for an element, %2$s, which is not an array',
+						'remove()',
+						$original_element
+					);
+				}
+				$tip =& $tip[$array_key];
+			}
+			$element = end($array_keys);
 		}
 		
-		if (!is_array($this->elements[$element])) {
+		
+		if (!isset($tip[$element])) {
+			return NULL;
+		} elseif (!is_array($tip[$element])) {
 			throw new fProgrammerException(
 				'%1$s was called for an element, %2$s, which is not an array',
 				'remove()',
@@ -1175,15 +1340,11 @@ class fTemplating
 			);
 		}
 		
-		$keys = array_keys($this->elements[$element], $value);
-		if ($keys) {
-			foreach ($keys as $key) {
-				unset($this->elements[$element][$key]);
-			}
-			$this->elements[$element] = array_values($this->elements[$element]);
+		if ($beginning) {
+			return array_shift($tip[$element]);
 		}
-		
-		return $this;
+			
+		return array_pop($tip[$element]);
 	}
 	
 	
@@ -1198,10 +1359,32 @@ class fTemplating
 	public function set($element, $value=NULL)
 	{
 		if ($value === NULL && is_array($element)) {
-			$this->elements = array_merge($this->elements, $element);
-		} else {
-			$this->elements[$element] = $value;
+			foreach ($element as $key => $value) {
+				$this->set($key, $value);
+			}
+			return $this;
 		}
+		
+		$tip =& $this->elements;
+		
+		if ($bracket_pos = strpos($element, '[')) {
+			$array_dereference = substr($element, $bracket_pos);
+			$element               = substr($element, 0, $bracket_pos);
+			
+			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
+			$array_keys = array_map('current', $array_keys);
+			array_unshift($array_keys, $element);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key]) || !is_array($tip[$array_key])) {
+					$tip[$array_key] = array();
+				}
+				$tip =& $tip[$array_key];
+			}
+			$element = end($array_keys);
+		}
+		
+		$tip[$element] = $value;
 		
 		return $this;
 	}

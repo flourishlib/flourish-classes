@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Rewrote ::set() to not require recursion for array syntax [wb, 2010-09-12]
  * @changes    1.0.0b13  Fixed ::set() to work with `PUT` requests [wb, 2010-06-30]
  * @changes    1.0.0b12  Fixed a bug with ::getBestAcceptLanguage() returning the second-best language [wb, 2010-05-27]
  * @changes    1.0.0b11  Added ::isAjax() [al, 2010-03-15]
@@ -612,36 +613,6 @@ class fRequest
 	
 	
 	/**
-	 * Recursively sets an array request value
-	 * 
-	 * @param mixed $existing_value  The existing value that the value will be added to, or overwrite
-	 * @param array $array_keys      An array of the keys to use for the value
-	 * @param mixed $value           The value to set the key to
-	 * @return array  The modified `$existing_value` with the new value added
-	 */
-	static private function recursiveSet($existing_value, $array_keys, $value)
-	{
-		if (!$array_keys) {
-			return $value;
-		}
-		
-		$key = array_shift($array_keys);
-		
-		if (!is_array($existing_value)) {
-			$existing_value = array();
-		}
-		
-		$existing_value[$key] = self::recursiveSet(
-			isset($existing_value[$key]) ? $existing_value[$key] : array(),
-			$array_keys,
-			$value
-		);
-		
-		return $existing_value;
-	}
-	
-	
-	/**
 	 * Resets the configuration and data of the class
 	 * 
 	 * @internal
@@ -669,31 +640,33 @@ class fRequest
 	 */
 	static public function set($key, $value)
 	{		
-		$array_dereference = NULL;
-		if (strpos($key, '[')) {
-			$bracket_pos       = strpos($key, '[');
+		if (self::isPost()) {
+			$tip =& $_POST;
+		} elseif (self::isGet()) {
+			$tip =& $_GET;
+		} elseif (self::isDelete() || self::isPut()) {
+			self::initPutDelete();
+			$tip =& self::$put_delete;
+		}
+		
+		if ($bracket_pos = strpos($key, '[')) {
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
 			
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
-			$value = self::recursiveSet(self::get($key), $array_keys, $value);
-		}
-		
-		if (self::isPost()) {
-			$_POST[$key] = $value;	
-			return;
-		}
-		
-		if (self::isGet()) {
-			$_GET[$key] = $value;	
-			return;
-		}
-		
-		if (self::isDelete() || self::isPut()) {
-			self::initPutDelete();
-			self::$put_delete[$key] = $value;	
-			return;
+			array_unshift($array_keys, $key);
+			
+			foreach (array_slice($array_keys, 0, -1) as $array_key) {
+				if (!isset($tip[$array_key]) || !is_array($tip[$array_key])) {
+					$tip[$array_key] = array();
+				}
+				$tip =& $tip[$array_key];
+			}
+			$tip[end($array_keys)] = $value;
+			
+		} else {
+			$tip[$key] = $value;
 		}
 	}
 	
