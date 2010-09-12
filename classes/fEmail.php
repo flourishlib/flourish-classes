@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Fixed a bug on Windows where emails starting with a `.` would have the `.` removed [wb, 2010-09-11]
  * @changes    1.0.0b22  Revamped the FQDN code and added ::getFQDN() [wb, 2010-09-07]
  * @changes    1.0.0b21  Added a check to prevent permissions warnings when getting the FQDN on Windows machines [wb, 2010-09-02]
  * @changes    1.0.0b20  Fixed ::send() to only remove the name of a recipient when dealing with the `mail()` function on Windows and to leave it when using fSMTP [wb, 2010-06-22]
@@ -1274,6 +1275,12 @@ class fEmail
 			
 		// This is the normal way to send mail
 		} else {
+			// On Windows, mail() sends directly to an SMTP server and will
+			// strip a leading . from the body
+			if (fCore::checkOS('windows')) {
+				$body = preg_replace('#^\.#', '..', $body);
+			}
+			
 			if ($parameters) {
 				$error = !mail($to, $subject, $body, $headers, $parameters);
 			} else {

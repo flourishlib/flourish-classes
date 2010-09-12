@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
  * @changes    1.0.0b8  Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
  * @changes    1.0.0b7  Updated class to use new fCore::startErrorCapture() functionality [wb, 2010-08-09]
  * @changes    1.0.0b6  Updated the class to use new fCore functionality [wb, 2010-07-05]
@@ -479,8 +480,9 @@ class fSMTP
 	{
 		$this->connect();
 		
-		// Fixes bare . to prevent accidental end of message
-		$body = preg_replace('#^\.$#m', '..', $body);
+		// Lines starting with . need to start with two .s because the leading
+		// . will be stripped
+		$body = preg_replace('#^\.#m', '..', $body);
 		
 		// Removed the Bcc header incase the SMTP server doesn't
 		$headers = preg_replace('#^Bcc:(.*?)\r\n([^ ])#mi', '\2', $headers);
