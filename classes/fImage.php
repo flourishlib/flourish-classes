@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed the class to not generate multiple files when saving a JPG from an animated GIF or a TIF with a thumbnail [wb, 2010-09-12]
  * @changes    1.0.0b24  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b23  Fixed the class to detect when exec() is disabled and the function has a space before or after in the list [wb, 2010-07-21]
  * @changes    1.0.0b22  Fixed ::isImageCompatible() to handle certain JPGs created with Photoshop [wb, 2010-04-03]
@@ -977,7 +978,21 @@ class fImage extends fFile
 			$command_line .= ' -set registry:temporary-path ' . escapeshellarg(self::$imagemagick_temp_dir) . ' ';
 		}
 		
-		$command_line .= ' ' . escapeshellarg($this->file) . ' ';
+		// Determining in what format the file is going to be saved
+		$path_info = fFilesystem::getPathInfo($output_file);
+		$new_type = $path_info['extension'];
+		$new_type = ($new_type == 'jpeg') ? 'jpg' : $new_type;
+		
+		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
+			$new_type = $type;	
+		}
+		
+		$file = $this->file;
+		if ($type != 'gif' || $new_type != 'gif') {
+			$file .= '[0]';
+		}
+		
+		$command_line .= ' ' . escapeshellarg($file) . ' ';
 		
 		// Animated gifs need to be coalesced
 		if ($this->isAnimatedGif()) {
@@ -1014,15 +1029,6 @@ class fImage extends fFile
 		// Default to the RGB colorspace
 		if (strpos($command_line, ' -colorspace ')) {
 			$command_line .= ' -colorspace RGB ';
-		}
-		
-		// Set up jpeg compression
-		$path_info = fFilesystem::getPathInfo($output_file);
-		$new_type = $path_info['extension'];
-		$new_type = ($new_type == 'jpeg') ? 'jpg' : $new_type;
-		
-		if (!in_array($new_type, array('gif', 'jpg', 'png'))) {
-			$new_type = $type;	
 		}
 		
 		if ($new_type == 'jpg') {
