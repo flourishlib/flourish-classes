@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
  * @changes    1.0.0b13  Backwards Compatibility Break - ::add(), ::delete(), ::get() and ::set() now interpret `[` and `]` as array shorthand and thus they can not be used in element names, renamed ::remove() to ::filter() - added `$beginning` parameter to ::add() and added ::remove() method [wb, 2010-09-12]
  * @changes    1.0.0b12  Added ::enableMinification(), ::enablePHPShortTags(), the ability to be able to place child fTemplating objects via a new magic element `__main__` and the `$main_element` parameter for ::__construct() [wb, 2010-08-31]
  * @changes    1.0.0b11  Fixed a bug with the elements not being initialized to a blank array [wb, 2010-08-12]
@@ -218,7 +219,7 @@ class fTemplating
 	/**
 	 * Adds a value to an array element
 	 * 
-	 * @param  string  $element    The element to add to
+	 * @param  string  $element    The element to add to - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  mixed   $value      The value to add
 	 * @param  boolean $beginning  If the value should be added to the beginning of the element
 	 * @return fTemplating  The template object, to allow for method chaining
@@ -305,7 +306,7 @@ class fTemplating
 	/**
 	 * Deletes an element from the template
 	 * 
-	 * @param  string $element    The element to delete
+	 * @param  string $element    The element to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  array  |$elements  The elements to delete
 	 * @return fTemplating  The template object, to allow for method chaining
 	 */
@@ -469,7 +470,7 @@ class fTemplating
 	/**
 	 * Gets the value of an element and runs it through fHTML::encode()
 	 * 
-	 * @param  string $element        The element to get
+	 * @param  string $element        The element to get - array elements can be accessed via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  mixed  $default_value  The value to return if the element has not been set
 	 * @return mixed  The value of the element specified run through fHTML::encode(), or the default value if it has not been set
 	 */
@@ -482,7 +483,7 @@ class fTemplating
 	/**
 	 * Removes a value from an array element
 	 *
-	 * @param string $element  The element to remove from
+	 * @param string $element  The element to remove from - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param mixed  $value    The value to remove - compared in a non-strict manner, such that removing `0` will remove a blank string and false also
 	 * @return fTemplating  The template object, to allow for method chaining
 	 */
@@ -624,7 +625,7 @@ class fTemplating
 	/**
 	 * Gets the value of an element
 	 * 
-	 * @param  string $element        The element to get
+	 * @param  string $element        The element to get - array elements can be accessed via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  mixed  $default_value  The value to return if the element has not been set
 	 * @param  array  |$elements      An array of elements to get, or an associative array where a string key is the element to get and the value is the default value
 	 * @return mixed  The value of the element(s) specified, or the default value(s) if it has not been set
@@ -1284,7 +1285,7 @@ class fTemplating
 	/**
 	 * Gets the value of an element and runs it through fHTML::prepare()
 	 * 
-	 * @param  string $element        The element to get
+	 * @param  string $element        The element to get - array elements can be access via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  mixed  $default_value  The value to return if the element has not been set
 	 * @return mixed  The value of the element specified run through fHTML::prepare(), or the default value if it has not been set
 	 */
@@ -1297,7 +1298,7 @@ class fTemplating
 	/**
 	 * Removes and returns the value from the end of an array element
 	 * 
-	 * @param  string  $element    The element to remove from to
+	 * @param  string  $element    The element to remove from to - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  boolean $beginning  If the value should be removed from the beginning of the element
 	 * @return mixed  The value that was removed
 	 */
@@ -1351,7 +1352,7 @@ class fTemplating
 	/**
 	 * Sets the value for an element
 	 * 
-	 * @param  string $element    The element to set - the magic element `__main__` is used for placing the current fTemplating object as a child of another fTemplating object 
+	 * @param  string $element    The element to set - the magic element `__main__` is used for placing the current fTemplating object as a child of another fTemplating object - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
 	 * @param  mixed  $value      The value for the element
 	 * @param  array  :$elements  An associative array with the key being the `$element` to set and the value being the `$value` for that element
 	 * @return fTemplating  The template object, to allow for method chaining
