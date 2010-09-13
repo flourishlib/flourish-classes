@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Fixed another bug with minifying JS regex literals [wb, 2010-09-13]
  * @changes    1.0.0b15  Fixed a bug with minifying JS regex literals that occur after a reserved word [wb, 2010-09-12]
  * @changes    1.0.0b14  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
  * @changes    1.0.0b13  Backwards Compatibility Break - ::add(), ::delete(), ::get() and ::set() now interpret `[` and `]` as array shorthand and thus they can not be used in element names, renamed ::remove() to ::filter() - added `$beginning` parameter to ::add() and added ::remove() method [wb, 2010-09-12]
@@ -834,7 +835,7 @@ class fTemplating
 			
 			$regex = NULL;
 			if ($token == '/') {
-				if (!preg_match('#[(,=:[!&|?{};\n]\s*$| $#D', $part)) {
+				if (!preg_match('#([(,=:[!&|?{};\n]|\breturn)\s*$#D', $part)) {
 					$part .= $token;
 					$code = substr($code, 1);
 				} else {
@@ -862,7 +863,7 @@ class fTemplating
 				$this->minifyLiteral($match[0], $buffer, $type);
 				$output .= $buffer;
 				$buffer  = $match[0];
-			} else {
+			} elseif (!$token) {
 				$output .= $buffer;
 			}
 			
