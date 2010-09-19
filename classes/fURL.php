@@ -6,14 +6,15 @@
  * the original URL entered by the user will be used, or that any rewrites
  * will **not** be reflected by this class.
  * 
- * @copyright  Copyright (c) 2007-2009 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
  * @changes    1.0.0b5  Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
  * @changes    1.0.0b4  ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
  * @changes    1.0.0b3  ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
@@ -88,10 +89,11 @@ class fURL
 	/**
 	 * Changes a string into a URL-friendly string
 	 * 
-	 * @param  string $string  The string to convert
-	 * @return void
+	 * @param  string   $string      The string to convert
+	 * @param  interger $max_length  The maximum length of the friendly URL
+	 * @return string  The URL-friendly version of the string
 	 */
-	static public function makeFriendly($string)
+	static public function makeFriendly($string, $max_length=NULL)
 	{
 		$string = fHTML::decode(fUTF8::ascii($string));
 		$string = strtolower(trim($string));
@@ -99,7 +101,18 @@ class fURL
 		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
 		$string = preg_replace('#_{2,}#', '_', $string);
 		$string = preg_replace('#_-_#', '-', $string);
-		return preg_replace('#(^_+|_+$)#D', '', $string);
+		$string = preg_replace('#(^_+|_+$)#D', '', $string);
+		
+		$length = strlen($string);
+		if ($max_length && $length > $max_length) {
+			$last_pos = strrpos($string, '_', ($length - $max_length - 1) * -1);
+			if ($last_pos < ceil($max_length / 2)) {
+				$last_pos = $max_length;
+			}
+			$string = substr($string, 0, $last_pos);
+		}
+		
+		return $string;
 	}
 	
 	
@@ -206,7 +219,7 @@ class fURL
 
 
 /**
- * Copyright (c) 2007-2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
