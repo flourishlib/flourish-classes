@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Changed ::delete() to return the value of the key being deleted [wb, 2010-09-19]
  * @changes    1.0.0b15  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
  * @changes    1.0.0b14  Backwards Compatibility Break - ::add(), ::delete(), ::get() and ::set() now interpret `[` and `]` as array shorthand and thus they can not be used in keys - added `$beginning` parameter to ::add(), added ::remove() method [wb, 2010-09-12]
  * @changes    1.0.0b13  Fixed a bug that prevented working with existing sessions since they did not have the `fSession::expires` key [wb, 2010-08-24]
@@ -185,12 +186,15 @@ class fSession
 	/**
 	 * Deletes a value from the session
 	 * 
-	 * @param  string $key  The key of the value to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in key names
-	 * @return void
+	 * @param  string $key            The key of the value to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in key names
+	 * @param  mixed  $default_value  The value to return if the `$key` is not set
+	 * @return mixed  The value of the `$key` that was deleted
 	 */
-	static public function delete($key)
+	static public function delete($key, $default_value=NULL)
 	{
 		self::open();
+		
+		$value = $default_value;
 		
 		if ($bracket_pos = strpos($key, '[')) {
 			$original_key      = $key;
@@ -198,7 +202,7 @@ class fSession
 			$key               = substr($key, 0, $bracket_pos);
 			
 			if (!isset($_SESSION[$key])) {
-				return;
+				return $value;
 			}
 			
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
@@ -208,7 +212,7 @@ class fSession
 			
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key])) {
-					return;
+					return $value;
 				} elseif (!is_array($tip[$array_key])) {
 					throw new fProgrammerException(
 						'%1$s was called for an element, %2$s, which is not an array',
@@ -218,11 +222,19 @@ class fSession
 				}
 				$tip =& $tip[$array_key];
 			}
-			unset($tip[end($array_keys)]);
+			
+			$key = end($array_keys);
 			
 		} else {
-			unset($_SESSION[$key]);
+			$tip =& $_SESSION;
 		}
+		
+		if (isset($tip[$key])) {
+			$value = $tip[$key];
+			unset($tip[$key]);
+		}
+		
+		return $value;
 	}
 	
 	

@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Backwards Compatibility Break - ::delete() now returns the values of the element or elements that were deleted instead of returning the fTemplating instance [wb, 2010-09-19]
  * @changes    1.0.0b16  Fixed another bug with minifying JS regex literals [wb, 2010-09-13]
  * @changes    1.0.0b15  Fixed a bug with minifying JS regex literals that occur after a reserved word [wb, 2010-09-12]
  * @changes    1.0.0b14  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
@@ -308,13 +309,33 @@ class fTemplating
 	/**
 	 * Deletes an element from the template
 	 * 
-	 * @param  string $element    The element to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
-	 * @param  array  |$elements  The elements to delete
-	 * @return fTemplating  The template object, to allow for method chaining
+	 * @param  string $element        The element to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in element names
+	 * @param  mixed  $default_value  The value to return if the `$element` is not set
+	 * @param  array  |$elements      The elements to delete - an array of element names or an associative array of keys being element names and the values being the default values
+	 * @return mixed  The value of the `$element` that was deleted - an associative array of deleted elements will be returned if an array of `$elements` was specified
 	 */
-	public function delete($element)
+	public function delete($element, $default_value=NULL)
 	{
-		$tip =& $this->elements;
+		if (is_array($element)) {
+			$elements = $element;
+			
+			if (is_numeric(key($elements))) {
+				$new_elements = array();
+				foreach ($elements as $element) {
+					$new_elements[$element] = NULL;
+				}
+				$elements = $new_elements;
+			}
+			
+			$output = array();
+			foreach ($elements as $key => $default_value) {
+				$output[$key] = $this->delete($key, $default_value);
+			}
+			return $output;
+		}
+		
+		$tip   =& $this->elements;
+		$value =  $default_value;
 		
 		if ($bracket_pos = strpos($element, '[')) {
 			$original_element  = $element;
@@ -327,7 +348,7 @@ class fTemplating
 			
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key])) {
-					return $this;
+					return $value;
 				} elseif (!is_array($tip[$array_key])) {
 					throw new fProgrammerException(
 						'%1$s was called for an element, %2$s, which is not an array',
@@ -340,16 +361,12 @@ class fTemplating
 			$element = end($array_keys);
 		}
 		
-		if (is_array($element)) {
-			foreach ($element as $key) {
-				$this->delete($key);
-			}
-			return $this;
+		if (isset($tip[$element])) {
+			$value = $tip[$element];
+			unset($tip[$element]);
 		}
 		
-		unset($tip[$element]);
-		
-		return $this;
+		return $value;
 	}
 	
 	
