@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed ::parseMessage() to be able to handle non-text/non-html multipart parts that do not have a `Content-disposition` header [wb, 2010-09-18]
  * @changes    1.0.0b7  Fixed a typo in ::read() [wb, 2010-09-07]
  * @changes    1.0.0b6  Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
  * @changes    1.0.0b5  Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
@@ -220,8 +221,22 @@ class fMailbox
 			return $info;
 		}
 		
+		
+		$has_disposition = !empty($structure['disposition']);
+		$is_text         = $structure['type'] == 'text' && $structure['subtype'] == 'plain';
+		$is_html         = $structure['type'] == 'text' && $structure['subtype'] == 'html';
+		
+		// If the part doesn't have a disposition and is not the default text or html, set the disposition to inline
+		if (!$has_disposition && ((!$is_text || !empty($info['text']) && (!$is_html || !empty($info['html']))))) {
+			$is_web_image = $structure['type'] == 'image' && in_array($structure['subtype'], array('gif', 'png', 'jpeg', 'pjpeg'));
+			$structure['disposition'] = $is_text || $is_html || $is_web_image ? 'inline' : 'attachment';
+			$structure['disposition_fields'] = array();
+			$has_disposition = TRUE;
+		}
+		
+		
 		// Attachments or inline content
-		if ($structure['disposition']) {
+		if ($has_disposition) {
 			
 			$filename = '';
 			foreach ($structure['disposition_fields'] as $field => $value) {
@@ -249,12 +264,12 @@ class fMailbox
 			return $info;
 		}
 		
-		if ($structure['type'] == 'text' && $structure['subtype'] == 'plain') {
+		if ($is_text) {
 			$info['text'] = $content;
 			return $info;
 		}
 		
-		if ($structure['type'] == 'text' && $structure['subtype'] == 'html') {
+		if ($is_html) {
 			$info['html'] = $content;
 			return $info;
 		}
