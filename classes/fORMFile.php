@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Fixed column inheritance to properly handle non-images and inheriting into image upload columns [wb, 2010-09-18]
  * @changes    1.0.0b26  Enhanced ::configureColumnInheritance() to ensure both columns specified have been set up as file upload columns [wb, 2010-08-18]
  * @changes    1.0.0b25  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b24  Changed validation messages array to use column name keys [wb, 2010-05-26]
@@ -1188,8 +1189,8 @@ class fORMFile
 				if ($file) {
 					
 					// Image columns will only inherit if it is an fImage object
-					if (!$file instanceof fImage && isset(self::$image_upload_columns[$class][$other_column])) {
-						continue;		
+					if (!$file instanceof fImage && isset(self::$image_upload_columns[$class]) && array_key_exists($other_column, self::$image_upload_columns[$class])) {
+						continue;
 					}
 					
 					$other_upload_dir = self::$file_upload_columns[$class][$other_column];
