@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed a bug in ::parseMessage() that could cause HTML alternate content to be included in the `inline` content array instead of the `html` element [wb, 2010-09-20]
  * @changes    1.0.0b8  Fixed ::parseMessage() to be able to handle non-text/non-html multipart parts that do not have a `Content-disposition` header [wb, 2010-09-18]
  * @changes    1.0.0b7  Fixed a typo in ::read() [wb, 2010-09-07]
  * @changes    1.0.0b6  Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
@@ -227,7 +228,7 @@ class fMailbox
 		$is_html         = $structure['type'] == 'text' && $structure['subtype'] == 'html';
 		
 		// If the part doesn't have a disposition and is not the default text or html, set the disposition to inline
-		if (!$has_disposition && ((!$is_text || !empty($info['text']) && (!$is_html || !empty($info['html']))))) {
+		if (!$has_disposition && ((!$is_text || !empty($info['text'])) && (!$is_html || !empty($info['html'])))) {
 			$is_web_image = $structure['type'] == 'image' && in_array($structure['subtype'], array('gif', 'png', 'jpeg', 'pjpeg'));
 			$structure['disposition'] = $is_text || $is_html || $is_web_image ? 'inline' : 'attachment';
 			$structure['disposition_fields'] = array();
