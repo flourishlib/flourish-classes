@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMSchema
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Enhanced various exception messages [wb, 2010-09-19]
  * @changes    1.0.0b8  Added 'one-to-one' support to ::getRouteNameFromRelationship(), '!many-to-one' to ::getRoute() [wb, 2010-03-03]
  * @changes    1.0.0b7  Added support for multiple databases [wb, 2009-10-28]
  * @changes    1.0.0b6  Internal Backwards Compatibility Break - Added the `$schema` parameter to the beginning of ::getRoute(), ::getRouteName(), ::getRoutes() and ::isOneToOne() - added '!many-to-one' relationship type handling [wb, 2009-10-22]
@@ -169,10 +170,11 @@ class fORMSchema
 		
 		if (sizeof($keys) > 1) {
 			throw new fProgrammerException(
-				'There is more than one route for the%1$srelationship between %2$s and %3$s',
+				'There is more than one route for the%1$srelationship between %2$s and %3$s. Please specify one of the following: %4$s.',
 				($relationship_type) ? ' ' . $relationship_type . ' ' : ' ',
 				$table,
-				$related_table
+				$related_table,
+				join(', ', array_keys($routes))
 			);
 		}
 		if (sizeof($keys) == 0) {
@@ -259,6 +261,13 @@ class fORMSchema
 		
 		$all_relationships = $schema->getRelationships($table);
 		
+		if (!in_array($related_table, $schema->getTables())) {
+			throw new fProgrammerException(
+				'The related table specified, %1$s, does not exist in the database',
+				$related_table
+			);
+		}
+		
 		$routes = array();
 		
 		foreach ($all_relationships as $type => $relationships) {
@@ -312,10 +321,11 @@ class fORMSchema
 		
 		if ($route === NULL && sizeof($relationships) > 1) {
 			throw new fProgrammerException(
-				'There is more than one route for the%1$srelationship between %2$s and %3$s',
+				'There is more than one route for the%1$srelationship between %2$s and %3$s. Please specify one of the following: %4$s.',
 				' one-to-one ',
 				$table,
-				$related_table
+				$related_table,
+				join(', ', array_keys($relationships))
 			);
 		}
 		if (!$relationships) {
