@@ -9,7 +9,7 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40  Added the ::tally() method [wb, 2010-09-28]
  * @changes    1.0.0b39  Backwards Compatibility Break - removed the methods ::fetchRecord(), ::current(), ::key(), ::next(), ::rewind() and ::valid() and the Iterator interface - and the `$pointer` parameter for callbacks registered via fORM::registerRecordSetMethod() was replaced with the `$method_name` parameter - added the methods ::getIterator(), ::getLimit(), ::getPage(), ::getPages(), ::getRecord(), ::offsetExists(), ::offsetGet(), ::offsetSet() and ::offsetUnset() and the IteratorAggregate and ArrayAccess interfaces [wb, 2010-09-28]
  * @changes    1.0.0b38  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b37  Fixed a typo/bug in ::reduce() [wb, 2010-06-30]
@@ -378,6 +378,55 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 			return vsprintf($message, $args);
 		}
 	}
+	
+	
+	/**
+     * Counts the number of records that match the conditions specified
+     * 
+     * @param  string  $class             The class of records to count
+     * @param  mixed   $where_conditions  An array of where clause parameters in the same format as ::build()
+     * @return integer  The number of records
+     */
+    static public function tally($class, $where_conditions=array())
+    {
+        fActiveRecord::validateClass($class);
+		fActiveRecord::forceConfigure($class);
+		
+		$db     = fORMDatabase::retrieve($class, 'read');
+		$schema = fORMSchema::retrieve($class);
+		$table  = fORM::tablize($class);
+		
+		$pk_columns = array();
+        foreach ($schema->getKeys($table, 'primary') as $pk_column) {
+            $pk_columns[] = $table . '.' . $pk_column;    
+        }
+        
+        $params = array($db->escape("SELECT COUNT(*) FROM (SELECT %r FROM :from_clause", $pk_columns));
+		
+		if ($where_conditions) {
+			$having_conditions = fORMDatabase::splitHavingConditions($where_conditions);
+		} else {
+			$having_conditions = NULL;	
+		}
+		
+		if ($where_conditions) {
+			$params[0] .= ' WHERE ';
+			$params = fORMDatabase::addWhereClause($db, $schema, $params, $table, $where_conditions);
+		}
+		
+		$params[0] .= ' :group_by_clause ';
+		
+		if ($having_conditions) {
+			$params[0] .= ' HAVING ';
+			$params = fORMDatabase::addHavingClause($db, $schema, $params, $table, $having_conditions);	
+		}
+        
+        $params[0] .= ') subquery';
+		
+		$params = fORMDatabase::injectFromAndGroupByClauses($db, $schema, $params, $table);
+		
+		return call_user_func_array($db->translatedQuery, $params)->fetchScalar();
+    }
 	
 	
 	/**
