@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b68
+ * @version    1.0.0b69
+ * @changes    1.0.0b69  Backwards Compatibility Break - changed ::validate() to return a nested array of validation messages when there are validation errors on child records [wb-imarc+wb, 2010-10-03]
  * @changes    1.0.0b68  Added hooks to ::replicate() [wb, 2010-09-07]
  * @changes    1.0.0b67  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b66  Fixed a bug with ::store() and non-primary key auto-incrementing columns [wb, 2010-07-05]
@@ -2883,8 +2884,6 @@ abstract class fActiveRecord
 			$this->cache,
 			$validation_messages
 		);
-		
-		$validation_messages = array_unique($validation_messages);
 		
 		$validation_messages = fORMValidation::replaceMessages($class, $validation_messages);
 		$validation_messages = fORMValidation::reorderMessages($class, $validation_messages);

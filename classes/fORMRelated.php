@@ -5,14 +5,16 @@
  * The functionality of this class only works with single-field `FOREIGN KEY`
  * constraints.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
  * @version    1.0.0b35
+ * @changes    1.0.0b35  Backwards Compatibility Break - changed the validation messages array to use nesting for child records [wb-imarc+wb, 2010-10-03]
  * @changes    1.0.0b35  Updated ::getPrimaryKeys() to always return primary keys in a consistent order when no order bys are specified [wb, 2010-07-26]
  * @changes    1.0.0b34  Updated the class to work with fixes in fORMRelated [wb, 2010-07-22]
  * @changes    1.0.0b33  Fixed the related table populate action to use the plural underscore_notation version of the related class name [wb, 2010-07-08]
@@ -52,28 +54,29 @@
 class fORMRelated
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const associateRecords          = 'fORMRelated::associateRecords';
-	const buildRecords              = 'fORMRelated::buildRecords';
-	const countRecords              = 'fORMRelated::countRecords';
-	const createRecord              = 'fORMRelated::createRecord';
-	const determineRequestFilter    = 'fORMRelated::determineRequestFilter';
-	const flagForAssociation        = 'fORMRelated::flagForAssociation';
-	const getOrderBys               = 'fORMRelated::getOrderBys';
-	const getRelatedRecordName      = 'fORMRelated::getRelatedRecordName';
-	const hasRecords                = 'fORMRelated::hasRecords';
-	const linkRecords               = 'fORMRelated::linkRecords';
-	const overrideRelatedRecordName = 'fORMRelated::overrideRelatedRecordName';
-	const populateRecords           = 'fORMRelated::populateRecords';
-	const reflect                   = 'fORMRelated::reflect';
-	const reset                     = 'fORMRelated::reset';
-	const setOrderBys               = 'fORMRelated::setOrderBys';
-	const setCount                  = 'fORMRelated::setCount';
-	const setPrimaryKeys            = 'fORMRelated::setPrimaryKeys';
-	const setRecordSet              = 'fORMRelated::setRecordSet';
-	const store                     = 'fORMRelated::store';
-	const storeManyToMany           = 'fORMRelated::storeManyToMany';
-	const storeOneToMany            = 'fORMRelated::storeOneToMany';
-	const validate                  = 'fORMRelated::validate';
+	const associateRecords             = 'fORMRelated::associateRecords';
+	const buildRecords                 = 'fORMRelated::buildRecords';
+	const countRecords                 = 'fORMRelated::countRecords';
+	const createRecord                 = 'fORMRelated::createRecord';
+	const determineRequestFilter       = 'fORMRelated::determineRequestFilter';
+	const flagForAssociation           = 'fORMRelated::flagForAssociation';
+	const getOrderBys                  = 'fORMRelated::getOrderBys';
+	const getRelatedRecordName         = 'fORMRelated::getRelatedRecordName';
+	const hasRecords                   = 'fORMRelated::hasRecords';
+	const linkRecords                  = 'fORMRelated::linkRecords';
+	const overrideRelatedRecordName    = 'fORMRelated::overrideRelatedRecordName';
+	const populateRecords              = 'fORMRelated::populateRecords';
+	const reflect                      = 'fORMRelated::reflect';
+	const registerValidationNameMethod = 'fORMRelated::registerValidationNameMethod';
+	const reset                        = 'fORMRelated::reset';
+	const setOrderBys                  = 'fORMRelated::setOrderBys';
+	const setCount                     = 'fORMRelated::setCount';
+	const setPrimaryKeys               = 'fORMRelated::setPrimaryKeys';
+	const setRecordSet                 = 'fORMRelated::setRecordSet';
+	const store                        = 'fORMRelated::store';
+	const storeManyToMany              = 'fORMRelated::storeManyToMany';
+	const storeOneToMany               = 'fORMRelated::storeOneToMany';
+	const validate                     = 'fORMRelated::validate';
 	
 	
 	/**
@@ -96,6 +99,13 @@ class fORMRelated
 	 * @var array
 	 */
 	static private $related_record_names = array();
+	
+	/**
+	 * Methods to use for getting the name of related records when performing validation
+	 * 
+	 * @var array
+	 */
+	static private $validation_name_methods = array();
 	
 	
 	/**
@@ -383,7 +393,7 @@ class fORMRelated
 		if ($one_to_one) {
 			if (isset($related_records[$related_table][$route]['record_set'])) {
 				if ($related_records[$related_table][$route]['record_set']->count()) {
-					return $related_records[$related_table][$route]['record_set']->current();
+					return $related_records[$related_table][$route]['record_set'][0];
 				}
 				return new $related_class();
 			}
@@ -402,7 +412,7 @@ class fORMRelated
 			self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 			
 			if ($record_set->count()) {
-				return $record_set->current();		
+				return $record_set[0];		
 			}
 			return new $related_class();	
 		}
@@ -1179,6 +1189,33 @@ class fORMRelated
 	
 	
 	/**
+	 * Registers a method to use to get a name for a related record when doing validation
+	 * 
+	 * @param string|fActiveRecord $class          The class to register the method for
+	 * @param string               $related_class  The related class to register the method for
+	 * @param string               $method         The method to be called on the related class that will return the name
+	 * @param string               $route          The route to the related class
+	 */
+	static public function registerValidationNameMethod($class, $related_class, $method, $route=NULL)
+	{
+		$class         = fORM::getClass($class);
+		$table         = fORM::tablize($class);
+		$related_table = fORM::tablize($related_class);
+		$schema        = fORMSchema::retrieve($class);
+		$route         = fORMSchema::getRouteName($schema, $table, $related_table, $route, 'one-to-many');
+		
+		if (!isset(self::$validation_name_methods[$class])) {
+			self::$validation_name_methods[$class] = array();
+		}
+		if (!isset(self::$validation_name_methods[$class][$related_class])) {
+			self::$validation_name_methods[$class][$related_class] = array();
+		}
+		
+		self::$validation_name_methods[$class][$related_class][$route] = $method;
+	}
+	
+	
+	/**
 	 * Resets the configuration of the class
 	 * 
 	 * @internal
@@ -1601,31 +1638,41 @@ class fORMRelated
 					continue;
 				}
 				
-				$token_field           = fValidationException::formatField('__TOKEN__');
-				$extract_message_regex = '#' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '(.*)$#D';
-				preg_match($extract_message_regex, $record_message, $matches);
-				
 				if ($one_to_one) {
+					$token_field           = fValidationException::formatField('__TOKEN__');
+					$extract_message_regex = '#' . str_replace('__TOKEN__', '(.*?)', preg_quote($token_field, '#')) . '(.*)$#D';
+					preg_match($extract_message_regex, $record_message, $matches);
+				
 					$column_name = self::compose(
 						'%1$s %2$s',
 						$related_record_name,
 						$matches[1]
 					);
 					
+					$messages[$related_table . '::' . $column] = self::compose(
+						'%1$s%2$s',
+						fValidationException::formatField($column_name),
+						$matches[2]
+					);
+					
 				} else {
-					$column_name = self::compose(
-						'%1$s #%2$s %3$s',
-						$related_record_name,
-						$i+1,
-						$matches[1]
-					);	
+					$main_key = $related_table . '[' . $i . ']';
+					if (!isset($messages[$main_key])) {
+						if (isset(self::$validation_name_methods[$class][$related_class][$route])) {
+							$name = $record->{self::$validation_name_methods[$class][$related_class][$route]}($i+1);
+						} else {
+							$name = $related_record_name . ' #' . ($i+1);
+						}
+						$messages[$main_key] = array(
+							'name'   => $name,
+							'errors' => array()
+						);
+					}
+					
+					$messages[$main_key]['errors'][$column] = $record_message;
 				}
 				
-				$messages[$related_table . (!$one_to_one ? '[' . $i . ']' : '') . '::' . $column] = self::compose(
-					'%1$s%2$s',
-					fValidationException::formatField($column_name),
-					$matches[2]
-				);
+				
 			}
 			fRequest::unfilter();
 		}
@@ -1684,7 +1731,7 @@ class fORMRelated
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

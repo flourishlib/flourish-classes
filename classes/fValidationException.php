@@ -2,14 +2,16 @@
 /**
  * An exception caused by a data not matching a rule or set of rules
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidationException
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Added support for nested error arrays [wb-imarc, 2010-10-03]
  * @changes    1.0.0b3  Added ::removeFieldNames() [wb, 2010-05-26]
  * @changes    1.0.0b2  Added a custom ::__construct() to handle arrays of messages [wb, 2009-09-17]
  * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
@@ -53,7 +55,12 @@ class fValidationException extends fExpectedException
 		
 		$output = array();
 		foreach ($messages as $column => $message) {
-			$output[$column] = preg_replace($replace_regex, '', $message);
+			if (is_array($message)) {
+				$message['errors'] = self::removeFieldNames($message['errors']);
+				$output[$column] = $message;
+			} else {
+				$output[$column] = preg_replace($replace_regex, '', $message);
+			}
 		}
 		
 		return $output;
@@ -132,11 +139,14 @@ class fValidationException extends fExpectedException
 		$params = func_get_args();
 		
 		if ((count($params) == 2 || count($params) == 3) && is_string($params[0]) && is_array($params[1])) {
+			
+			
 			$message = sprintf(
 				"<p>%1\$s</p>\n<ul>\n<li>%2\$s</li>\n</ul>",
 				self::compose($params[0]),
-				join("</li>\n<li>", $params[1])
+				join("</li>\n<li>", $this->formatErrorArray($params[1]))
 			);
+			
 			$params = array_merge(
 				// This escapes % signs since fException is going to look for sprintf formatting codes
 				array(str_replace('%', '%%', $message)),
@@ -150,12 +160,36 @@ class fValidationException extends fExpectedException
 			$params
 		);		
 	}
+	
+	
+	/**
+	 * Takes an error array that may or may not be nested and returns a HTML string representation 
+	 * 
+	 * @param  array $errors  An array of (possibly nested) child record errors
+	 * @return array  An array of string error messages
+	 */
+	private function formatErrorArray($errors)
+	{
+		$new_errors = array();
+		foreach ($errors as $error) {
+			if (!is_array($error)) {
+				$new_errors[] = $error;	
+			} else {
+				$new_errors[] = sprintf(
+					"<span>%1\$s</span>\n<ul>\n<li>%2\$s</li>\n</ul>",
+					$error['name'],
+					join("</li>\n<li>", $this->formatErrorArray($error['errors']))
+				);
+			}
+		}
+		return $new_errors;
+	}
 }
 
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
