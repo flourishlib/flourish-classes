@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug with CSS minification and black hex codes [wb, 2010-10-10]
  * @changes    1.0.0b17  Backwards Compatibility Break - ::delete() now returns the values of the element or elements that were deleted instead of returning the fTemplating instance [wb, 2010-09-19]
  * @changes    1.0.0b16  Fixed another bug with minifying JS regex literals [wb, 2010-09-13]
  * @changes    1.0.0b15  Fixed a bug with minifying JS regex literals that occur after a reserved word [wb, 2010-09-12]
@@ -955,7 +956,7 @@ class fTemplating
 					$chunk = str_replace(';}', '}', $chunk);
 					
 					// All zero units are reduces to just 0
-					$chunk = preg_replace('#((?<!\d|\.)0+(\.0+)?|(?<!\d)\.0+)(?=\D|$)((%|in|cm|mm|em|ex|pt|pc|px)(\b|$))?#iD', '0', $chunk);
+					$chunk = preg_replace('#((?<!\d|\.|\#)0+(\.0+)?|(?<!\d)\.0+)(?=\D|$)((%|in|cm|mm|em|ex|pt|pc|px)(\b|$))?#iD', '0', $chunk);
 					
 					// All .0 decimals are removed
 					$chunk = preg_replace('#(\d+)\.0+(?=\D)#iD', '\1', $chunk);
@@ -967,7 +968,7 @@ class fTemplating
 					$chunk = preg_replace('#(?<!\d|\.)([\d\.]+(?:%|in|cm|mm|em|ex|pt|pc|px))(\s*\1){3}#i', '\1', $chunk);
 					
 					// Hex color codes are reduced if possible
-					$chunk = preg_replace('@#([a-f0-9])\1([a-f0-9])\2([a-f0-9])\3@iD', '#\1\2\3', $chunk);
+					$chunk = preg_replace('@#([a-f0-9])\1([a-f0-9])\2([a-f0-9])\3(?!\d)@iD', '#\1\2\3', $chunk);
 					
 					$chunk = str_ireplace('! important', '!important', $chunk);
 					
