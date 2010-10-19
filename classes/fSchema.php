@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b41
+ * @version    1.0.0b42
+ * @changes    1.0.0b42  Fixed a bug with MySQL detecting default `ON DELETE` clauses [wb, 2010-10-19]
  * @changes    1.0.0b41  Fixed handling MySQL table names that require quoting [wb, 2010-08-24]
  * @changes    1.0.0b40  Fixed bugs in the documentation and error message of ::getColumnInfo() about what are valid elements [wb, 2010-07-21]
  * @changes    1.0.0b39  Fixed a regression where key detection SQL was not compatible with PostgreSQL 8.1 [wb, 2010-04-13]
@@ -1130,10 +1131,10 @@ class fSchema
 							  'foreign_column' => $match[3],
 							  'on_delete'      => 'no_action',
 							  'on_update'      => 'no_action');
-				if (isset($match[4])) {
+				if (!empty($match[4])) {
 					$temp['on_delete'] = strtolower(str_replace(' ', '_', $match[4]));
 				}
-				if (isset($match[5])) {
+				if (!empty($match[5])) {
 					$temp['on_update'] = strtolower(str_replace(' ', '_', $match[5]));
 				}
 				$keys[$table]['foreign'][] = $temp;
