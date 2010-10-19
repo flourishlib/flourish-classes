@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Fixed ::addWhereClause() to ignore fuzzy search clauses with no values to match [wb, 2010-10-19]
  * @changes    1.0.0b26  Fixed ::insertFromAndGroupByClauses() to handle SQL where a table is references in more than one capitalization [wb, 2010-07-26]
  * @changes    1.0.0b25  Fixed ::insertFromAndGroupByClauses() to properly handle recursive relationships [wb, 2010-07-22]
  * @changes    1.0.0b24  Fixed ::parseSearchTerms() to work with non-ascii terms [wb, 2010-06-30]
@@ -575,6 +576,12 @@ class fORMDatabase
 						// If the value to search is a single string value, parse it for search terms
 						if (sizeof($values) == 1 && is_string($values[0])) {
 							$values = self::parseSearchTerms($values[0], TRUE);	
+						}
+						
+						// Skip fuzzy matches with no values to match
+						if ($values === array()) {
+							$params[0] .= ' 1 = 1 ';
+							continue;
 						}
 						
 						$condition = array();
