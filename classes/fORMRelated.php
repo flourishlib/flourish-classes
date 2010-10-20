@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Fixed ::getPrimaryKeys() to not throw SQL exceptions [wb, 2010-10-20]
  * @changes    1.0.0b35  Backwards Compatibility Break - changed the validation messages array to use nesting for child records [wb-imarc+wb, 2010-10-03]
  * @changes    1.0.0b35  Updated ::getPrimaryKeys() to always return primary keys in a consistent order when no order bys are specified [wb, 2010-07-26]
  * @changes    1.0.0b34  Updated the class to work with fixes in fORMRelated [wb, 2010-07-22]
@@ -611,12 +612,11 @@ class fORMRelated
 				$column_info        = $schema->getColumnInfo($related_table);
 				$column             = $relationship['column'];
 				
-				$new_related_pk_columns = array();
+				$aliased_related_pk_columns = array();
 				foreach ($related_pk_columns as $related_pk_column) {
 					// We explicitly alias the columns due to SQLite issues
-					$new_related_pk_columns[] = $db->escape("%r AS %r", $related_table . '.' . $related_pk_column, $related_pk_column);	
+					$aliased_related_pk_columns[] = $db->escape("%r AS %r", $related_table . '.' . $related_pk_column, $related_pk_column);	
 				}
-				$related_pk_columns = $new_related_pk_columns;
 				
 				if (isset($relationship['join_table'])) {
 					$table_with_route = $table . '{' . $relationship['join_table'] . '}';	
@@ -631,7 +631,7 @@ class fORMRelated
 					$db->escape(
 						sprintf(
 							"SELECT %s FROM :from_clause WHERE",
-							join(', ', $related_pk_columns)
+							join(', ', $aliased_related_pk_columns)
 						) . " %r = ",
 						$table_with_route . '.' . $column
 					),
@@ -643,8 +643,8 @@ class fORMRelated
 				
 				if (!$order_bys = self::getOrderBys($class, $related_class, $route)) {
 					$order_bys = array();
-					foreach ($schema->getKeys($table, 'primary') as $pk_column) {
-						$order_bys[$table . '.' . $pk_column] = 'ASC';
+					foreach ($related_pk_columns as $related_pk_column) {
+						$order_bys[$related_pk_column] = 'ASC';
 					}
 				}
 				$params[0] .= " ORDER BY ";
