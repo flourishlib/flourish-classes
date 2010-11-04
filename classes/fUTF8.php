@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Updated the class to not using phpinfo() to determine the iconv implementation [wb, 2010-11-04]
  * @changes    1.0.0b10  Fixed a bug with capitalizing a lowercase i resulting in a dotted upper-case I [wb, 2010-11-01]
  * @changes    1.0.0b9   Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b8   Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
@@ -653,12 +654,7 @@ class fUTF8
 	{
 		if (!is_array($value)) {
 			if (self::$can_ignore_invalid === NULL) {
-				ob_start();
-				phpinfo(INFO_MODULES);
-				$module_info = strip_tags(ob_get_contents());
-				ob_end_clean();
-				
-				self::$can_ignore_invalid = !preg_match('#iconv\s+implementation\s+(=>\s+)?unknown#ims', $module_info);	
+				self::$can_ignore_invalid = strtolower(ICONV_IMPL) != 'unknown';	
 			}
 			if (!self::$can_ignore_invalid) {
 				fCore::startErrorCapture(E_NOTICE);
