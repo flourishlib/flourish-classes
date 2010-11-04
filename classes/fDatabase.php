@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Fixed handling auto-incrementing values for MySQL when the `INTO` keyword is left out of an `INSERT` statement [wb, 2010-11-04]
  * @changes    1.0.0b30  Fixed the pgsql, mssql and mysql extensions to force a new connection instead of reusing an existing one [wb, 2010-08-17]
  * @changes    1.0.0b29  Backwards Compatibility Break - removed ::enableSlowQueryWarnings(), added ability to replicate via ::registerHookCallback() [wb, 2010-08-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - removed ODBC support. Added support for the `pdo_ibm` extension. [wb, 2010-07-31]
@@ -1574,7 +1575,7 @@ class fDatabase
 	 */
 	private function handleAutoIncrementedValue($result, $resource=NULL)
 	{
-		if (!preg_match('#^\s*INSERT\s+INTO\s+(?:`|"|\[)?(["\w.]+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
+		if (!preg_match('#^\s*INSERT\s+(?:INTO\s+)?(?:`|"|\[)?(["\w.]+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
 			$result->setAutoIncrementedValue(NULL);
 			return;
 		}
