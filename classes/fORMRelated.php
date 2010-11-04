@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Fixed a documentation typo [wb, 2010-11-04]
  * @changes    1.0.0b36  Fixed ::getPrimaryKeys() to not throw SQL exceptions [wb, 2010-10-20]
  * @changes    1.0.0b35  Backwards Compatibility Break - changed the validation messages array to use nesting for child records [wb-imarc+wb, 2010-10-03]
  * @changes    1.0.0b35  Updated ::getPrimaryKeys() to always return primary keys in a consistent order when no order bys are specified [wb, 2010-07-26]
@@ -359,7 +360,7 @@ class fORMRelated
 	 * @param  array  &$related_records  The related records for the record
 	 * @param  string $related_class     The related class name
 	 * @param  string $route             The route to the related class
-	 * @return fActiveRecord  An instace of the class specified
+	 * @return fActiveRecord  An instance of the class specified
 	 */
 	static public function createRecord($class, $values, &$related_records, $related_class, $route=NULL)
 	{

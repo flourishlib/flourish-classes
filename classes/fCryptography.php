@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed an inline comment that incorrectly references AES-256 [wb, 2010-11-04]
  * @changes    1.0.0b11  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b10  Added a missing parameter to an fProgrammerException in ::randomString() [wb, 2010-07-29]
  * @changes    1.0.0b9   Added ::hashHMAC() [wb, 2010-04-20]
@@ -499,7 +500,7 @@ class fCryptography
 			);
 		}
 		
-		// Set up the main encryption, we are gonna use AES-256 (also know as rijndael-256) in cipher feedback mode
+		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192) in cipher feedback mode
 		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
 		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		mcrypt_generic_init($module, $key, $iv);
