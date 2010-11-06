@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Updated documentation about symmetric-key encryption to explicitly state block and key sizes, added base64 type to ::randomString() [wb, 2010-11-06]
  * @changes    1.0.0b12  Fixed an inline comment that incorrectly references AES-256 [wb, 2010-11-04]
  * @changes    1.0.0b11  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b10  Added a missing parameter to an fProgrammerException in ::randomString() [wb, 2010-07-29]
@@ -364,7 +365,7 @@ class fCryptography
 	 * Returns a random string of the type and length specified
 	 * 
 	 * @param  integer $length  The length of string to return
-	 * @param  string  $type    The type of string to return: `'alphanumeric'`, `'alpha'`, `'numeric'`, or `'hexadecimal'`
+	 * @param  string  $type    The type of string to return: `'base64'`, `'alphanumeric'`, `'alpha'`, `'numeric'`, or `'hexadecimal'`
 	 * @return string  A random string of the type and length specified
 	 */
 	static public function randomString($length, $type='alphanumeric')
@@ -378,6 +379,10 @@ class fCryptography
 		}
 		
 		switch ($type) {
+			case 'base64':
+				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/';
+				break;
+			
 			case 'alphanumeric':
 				$alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 				break;
@@ -500,7 +505,7 @@ class fCryptography
 			);
 		}
 		
-		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192) in cipher feedback mode
+		// This code uses the Rijndael cipher with a 192 bit block size and a 256 bit key in cipher feedback mode
 		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
 		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		mcrypt_generic_init($module, $key, $iv);
@@ -539,9 +544,10 @@ class fCryptography
 		
 		self::verifySymmetricKeyEnvironment();
 		
-		// Set up the main encryption, we are gonna use AES-192 (also know as rijndael-192)
-		// in cipher feedback mode. Cipher feedback mode is chosen because no extra padding
-		// is added, ensuring we always get the exact same plaintext out of the decrypt method
+		// This code uses the Rijndael cipher with a 192 bit block size and a
+		// 256 bit key in cipher feedback mode. Cipher feedback mode is chosen
+		// because no extra padding is added, ensuring we always get the exact
+		// same plaintext out of the decrypt method
 		$module   = mcrypt_module_open('rijndael-192', '', 'cfb', '');
 		$key      = substr(sha1($secret_key), 0, mcrypt_enc_get_key_size($module));
 		srand();
