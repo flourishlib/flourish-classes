@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b24  Backwards Compatibility Break - Callbacks registered via ::registerRecordSetMethod() should now accept the `$method_name` in the position where the `$pointer` parameter used to be passed [wb, 2010-09-28]
  * @changes    1.0.0b23  Added the `'pre::replicate()'`, `'post::replicate()'` and `'cloned::replicate()'` hooks [wb, 2010-09-07]
  * @changes    1.0.0b22  Internal Backwards Compatibility Break - changed ::parseMethod() to not underscorize the subject of the method [wb, 2010-08-06]
@@ -531,7 +532,14 @@ class fORM
 	static public function getRecordName($class)
 	{
 		if (!isset(self::$record_names[$class])) {
-			self::$record_names[$class] = fGrammar::humanize($class);
+			self::$record_names[$class] = fGrammar::humanize(
+				// Strip the namespace off the class name
+				preg_replace(
+					'#^.*\\\\#',
+					'',
+					$class
+				)
+			);
 		}
 		
 		return self::$record_names[$class];
@@ -1141,7 +1149,14 @@ class fORM
 	static public function tablize($class)
 	{
 		if (!isset(self::$class_table_map[$class])) {
-			self::$class_table_map[$class] = fGrammar::underscorize(fGrammar::pluralize($class));
+			self::$class_table_map[$class] = fGrammar::underscorize(fGrammar::pluralize(
+				// Strip the namespace off the class name
+				preg_replace(
+					'#^.*\\\\#',
+					'',
+					$class
+				)
+			));
 		}
 		return self::$class_table_map[$class];
 	}
