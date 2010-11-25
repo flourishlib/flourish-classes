@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b38
+ * @version    1.0.0b39
+ * @changes    1.0.0b39  Fixed a bug with ::validate() not properly removing validation messages about a related primary key value not being present yet, if the column and related column names were different [wb, 2010-11-24]
  * @changes    1.0.0b38  Updated ::overrideRelatedRecordName() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
  * @changes    1.0.0b37  Fixed a documentation typo [wb, 2010-11-04]
  * @changes    1.0.0b36  Fixed ::getPrimaryKeys() to not throw SQL exceptions [wb, 2010-10-20]
@@ -1616,6 +1617,7 @@ class fORMRelated
 		$schema              = fORMSchema::retrieve($class);
 		$table               = fORM::tablize($class);
 		$related_table       = fORM::tablize($related_class);
+		$relationship        = fORMSchema::getRoute($schema, $table, $related_table, $route);
 		
 		$first_pk_column     = self::determineFirstPKColumn($class, $related_class, $route);
 		$filter              = self::determineRequestFilter($class, $related_class, $route);
@@ -1640,8 +1642,8 @@ class fORMRelated
 			
 			foreach ($record_messages as $column => $record_message) {
 				// Ignore validation messages about the primary key since it will be added
-				if ($column == $route) {
-					continue;
+				if ($column == $relationship['related_column']) {
+				    continue;
 				}
 				
 				if ($one_to_one) {
