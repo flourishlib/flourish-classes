@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Fixed a bug in the fProgrammerException that is thrown when an improperly formatted OR condition is provided [wb, 2010-11-24]
  * @changes    1.0.0b27  Fixed ::addWhereClause() to ignore fuzzy search clauses with no values to match [wb, 2010-10-19]
  * @changes    1.0.0b26  Fixed ::insertFromAndGroupByClauses() to handle SQL where a table is references in more than one capitalization [wb, 2010-07-26]
  * @changes    1.0.0b25  Fixed ::insertFromAndGroupByClauses() to properly handle recursive relationships [wb, 2010-07-22]
@@ -646,7 +647,7 @@ class fORMDatabase
 				} else {
 					if (sizeof($columns) != sizeof($values)) {
 						throw new fProgrammerException(
-							'When creating an %1$s where clause there must be an equal number of columns and values, however there are not',
+							'When creating an %1$s where clause there must be an equal number of columns and values, however %2$s column(s) and %3$s value(s) were provided',
 							'OR',
 							sizeof($columns),
 							sizeof($values)
