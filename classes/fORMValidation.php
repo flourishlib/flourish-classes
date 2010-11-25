@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Updated ::addManyToManyRule() and ::addOneToManyRule() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
  * @changes    1.0.0b28  Updated the class to work with the new nested array structure for validation messages [wb, 2010-10-03]
  * @changes    1.0.0b27  Fixed ::hasValue() to properly detect zero-value floats, made ::hasValue() internal public [wb, 2010-07-26]
  * @changes    1.0.0b26  Improved the error message for integers to say `whole number` instead of just `number` [wb, 2010-05-29]
@@ -190,7 +191,8 @@ class fORMValidation
 	 */
 	static public function addManyToManyRule($class, $related_class, $route=NULL)
 	{
-		$class = fORM::getClass($class);
+		$class         = fORM::getClass($class);
+		$related_class = fORM::getRelatedClass($class, $related_class);
 		
 		if (!isset(self::$related_one_or_more_rules[$class])) {
 			self::$related_one_or_more_rules[$class] = array();
@@ -246,7 +248,8 @@ class fORMValidation
 	 */
 	static public function addOneToManyRule($class, $related_class, $route=NULL)
 	{
-		$class = fORM::getClass($class);
+		$class         = fORM::getClass($class);
+		$related_class = fORM::getRelatedClass($class, $related_class);
 		
 		if (!isset(self::$related_one_or_more_rules[$class])) {
 			self::$related_one_or_more_rules[$class] = array();

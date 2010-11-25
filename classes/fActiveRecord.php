@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b70
+ * @version    1.0.0b71
+ * @changes    1.0.0b71  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b70  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b69  Backwards Compatibility Break - changed ::validate() to return a nested array of validation messages when there are validation errors on child records [wb-imarc+wb, 2010-10-03]
  * @changes    1.0.0b68  Added hooks to ::replicate() [wb, 2010-09-07]
@@ -845,10 +846,7 @@ abstract class fActiveRecord
 				if (in_array($action, array('build', 'count', 'inject', 'link', 'list', 'tally'))) {
 					$subject = fGrammar::singularize($subject);
 				}
-				if (strpos($class, '\\') !== FALSE) {
-					$reflection = new ReflectionClass($class);
-	                $subject = $reflection->getNamespaceName() . '\\' . $subject;
-				}
+				$subject = fORM::getRelatedClass($class, $subject);
 			}
 			self::$method_name_cache[$method_name] = array(
 				'action'  => $action,

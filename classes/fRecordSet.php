@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b41
+ * @version    1.0.0b42
+ * @changes    1.0.0b42  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b41  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b40  Added the ::tally() method [wb, 2010-09-28]
  * @changes    1.0.0b39  Backwards Compatibility Break - removed the methods ::fetchRecord(), ::current(), ::key(), ::next(), ::rewind() and ::valid() and the Iterator interface - and the `$pointer` parameter for callbacks registered via fORM::registerRecordSetMethod() was replaced with the `$method_name` parameter - added the methods ::getIterator(), ::getLimit(), ::getPage(), ::getPages(), ::getRecord(), ::offsetExists(), ::offsetGet(), ::offsetSet() and ::offsetUnset() and the IteratorAggregate and ArrayAccess interfaces [wb, 2010-09-28]
@@ -509,9 +510,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 		if (in_array($action, array('build', 'prebuild', 'precount', 'precreate'))) {
 			$related_class = fGrammar::singularize($subject);
 			$related_class_sans_namespace = $related_class;
-			if (!is_array($this->class) && strpos($this->class, '\\') !== FALSE) {
-				$reflection = new ReflectionClass($this->class);
-                $related_class = $reflection->getNamespaceName() . '\\' . $related_class;
+			if (!is_array($this->class)) {
+				$related_class = fORM::getRelatedClass($this->class, $related_class);
 			}
 		}
 		 

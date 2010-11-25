@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Updated ::overrideRelatedRecordName() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
  * @changes    1.0.0b37  Fixed a documentation typo [wb, 2010-11-04]
  * @changes    1.0.0b36  Fixed ::getPrimaryKeys() to not throw SQL exceptions [wb, 2010-10-20]
  * @changes    1.0.0b35  Backwards Compatibility Break - changed the validation messages array to use nesting for child records [wb-imarc+wb, 2010-10-03]
@@ -839,7 +840,9 @@ class fORMRelated
 		
 		$class         = fORM::getClass($class);
 		$table         = fORM::tablize($class);
+		
 		$related_class = fORM::getClass($related_class);
+		$related_class = fORM::getRelatedClass($class, $related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$schema = fORMSchema::retrieve($class);
@@ -1247,6 +1250,8 @@ class fORMRelated
 		
 		$class         = fORM::getClass($class);
 		$table         = fORM::tablize($class);
+		
+		$related_class = fORM::getRelatedClass($class, $related_class);
 		$related_table = fORM::tablize($related_class);
 		
 		$schema = fORMSchema::retrieve($class);
@@ -1693,7 +1698,7 @@ class fORMRelated
 	 */
 	static private function validateManyToMany($class, $related_class, $route, $related_info)
 	{
-		$related_record_name = fORMRelated::getRelatedRecordName($class, $related_class, $route);
+		$related_record_name = self::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
 		
 		$messages = array();
