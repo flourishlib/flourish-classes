@@ -12,16 +12,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug in ::parseMessage() that could cause HTML alternate content to be included in the `inline` content array instead of the `html` element [wb, 2010-09-20]
- * @changes    1.0.0b8  Fixed ::parseMessage() to be able to handle non-text/non-html multipart parts that do not have a `Content-disposition` header [wb, 2010-09-18]
- * @changes    1.0.0b7  Fixed a typo in ::read() [wb, 2010-09-07]
- * @changes    1.0.0b6  Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
- * @changes    1.0.0b5  Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
- * @changes    1.0.0b4  Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
- * @changes    1.0.0b3  Added missing static method callback constants [wb, 2010-05-11]
- * @changes    1.0.0b2  Added the missing ::enableDebugging() [wb, 2010-05-05]
- * @changes    1.0.0b   The initial implementation [wb, 2010-05-05]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed ::parseMessage() to properly handle a header format edge case and properly set the `text` and `html` keys even when the email has an explicit `Content-disposition: inline` header [wb, 2010-11-25]
+ * @changes    1.0.0b9   Fixed a bug in ::parseMessage() that could cause HTML alternate content to be included in the `inline` content array instead of the `html` element [wb, 2010-09-20]
+ * @changes    1.0.0b8   Fixed ::parseMessage() to be able to handle non-text/non-html multipart parts that do not have a `Content-disposition` header [wb, 2010-09-18]
+ * @changes    1.0.0b7   Fixed a typo in ::read() [wb, 2010-09-07]
+ * @changes    1.0.0b6   Fixed a typo from 1.0.0b4 [wb, 2010-07-21]
+ * @changes    1.0.0b5   Fixes for increased compatibility with various IMAP and POP3 servers, hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
+ * @changes    1.0.0b4   Added code to handle emails without an explicit `Content-type` header [wb, 2010-06-04]
+ * @changes    1.0.0b3   Added missing static method callback constants [wb, 2010-05-11]
+ * @changes    1.0.0b2   Added the missing ::enableDebugging() [wb, 2010-05-05]
+ * @changes    1.0.0b    The initial implementation [wb, 2010-05-05]
  */
 class fMailbox
 {
@@ -253,6 +254,18 @@ class fMailbox
 				}
 			}
 			
+			// This automatically handles primary content that has a content-disposition header on it
+			if ($structure['disposition'] == 'inline' && $filename === '') {
+				if ($is_text && !isset($info['text'])) {
+					$info['text'] = $content;
+					return $info;
+				}
+				if ($is_html && !isset($info['html'])) {
+					$info['html'] = $content;
+					return $info;
+				}
+			}
+			
 			if (!isset($info[$structure['disposition']])) {
 				$info[$structure['disposition']] = array();
 			}
@@ -474,7 +487,7 @@ class fMailbox
 				
 				$fields = array();
 				if (!empty($pieces[1])) {
-					preg_match_all('#(\w+)=("([^"]+)"|(\S+))(?=;|$)#', $pieces[1], $matches, PREG_SET_ORDER);
+					preg_match_all('#(\w+)=("([^"]+)"|([^\s;]+))(?=;|$)#', $pieces[1], $matches, PREG_SET_ORDER);
 					foreach ($matches as $match) {
 						$fields[$match[1]] = !empty($match[4]) ? $match[4] : $match[3];
 					}
