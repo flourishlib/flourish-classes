@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Backwards Compatibility Break - changed the parameter order in ::crop() from `$crop_from_x`, `$crop_from_y`, `$new_width`, `$new_height` to `$new_width`, `$new_height`, `$crop_from_x`, `$crop_from_y` - added `$horizontal_position` and `$vertical_position` parameters to ::cropToRatio() [wb-imarc, 2010-11-09]
  * @changes    1.0.0b26  Fixed a bug where processing via ImageMagick was not properly setting the default RGB colorspace [wb, 2010-10-19]
  * @changes    1.0.0b25  Fixed the class to not generate multiple files when saving a JPG from an animated GIF or a TIF with a thumbnail [wb, 2010-09-12]
  * @changes    1.0.0b24  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
@@ -579,13 +581,13 @@ class fImage extends fFile
 	 * 
 	 * The crop does not occur until ::saveChanges() is called.
 	 * 
-	 * @param  numeric $crop_from_x  The number of pixels from the left of the image to start the crop from
-	 * @param  numeric $crop_from_y  The number of pixels from the top of the image to start the crop from
-	 * @param  numeric $new_width    The width in pixels to crop the image to
-	 * @param  numeric $new_height   The height in pixels to crop the image to
+	 * @param  numeric        $new_width    The width in pixels to crop the image to
+	 * @param  numeric        $new_height   The height in pixels to crop the image to
+	 * @param  numeric|string $crop_from_x  The number of pixels from the left of the image to start the crop from, or a horizontal position of `'left'`, `'center'` or `'right'`
+	 * @param  numeric|string $crop_from_y  The number of pixels from the top of the image to start the crop from, or a vertical position of `'top'`, `'center'` or `'bottom'`
 	 * @return fImage  The image object, to allow for method chaining
 	 */
-	public function crop($crop_from_x, $crop_from_y, $new_width, $new_height)
+	public function crop($new_width, $new_height, $crop_from_x, $crop_from_y)
 	{
 		$this->tossIfDeleted();
 		
@@ -593,6 +595,46 @@ class fImage extends fFile
 		$dim = $this->getCurrentDimensions();
 		$orig_width  = $dim['width'];
 		$orig_height = $dim['height'];
+		
+		if (is_string($crop_from_x) && !is_numeric($crop_from_x)) {
+			switch (strtolower($crop_from_x)) {
+				case 'left':
+					$crop_from_x = 0;
+					break;
+				case 'center':
+					$crop_from_x = floor(max($orig_width-$new_width, 0)/2);
+					break;
+				case 'right':
+					$crop_from_x = max($orig_width-$new_width, 0);
+					break;
+				default:
+					throw new fProgrammerException(
+						'The crop-from x specified, %1$s, is not a valid horizontal position. Must be one of: %2$s.',
+						$crop_from_x,
+						array('left', 'center', 'right')
+					);
+			}
+		}
+		
+		if (is_string($crop_from_y) && !is_numeric($crop_from_y)) {
+			switch (strtolower($crop_from_y)) {
+				case 'top':
+					$crop_from_y = 0;
+					break;
+				case 'center':
+					$crop_from_y = floor(max($orig_height-$new_height, 0)/2);
+					break;
+				case 'bottom':
+					$crop_from_y = max($orig_height-$new_height, 0);
+					break;
+				default:
+					throw new fProgrammerException(
+						'The crop-from y specified, %1$s, is not a valid vertical position. Must be one of: %2$s.',
+						$crop_from_y,
+						array('top', 'center', 'bottom')
+					);
+			}
+		}
 		
 		// Make sure the user input is valid
 		if (!is_numeric($crop_from_x) || $crop_from_x < 0 || $crop_from_x > $orig_width - 1) {
@@ -648,11 +690,13 @@ class fImage extends fFile
 	 * 
 	 * The crop does not occur until ::saveChanges() is called.
 	 * 
-	 * @param  numeric $ratio_width   The width ratio to crop the image to
-	 * @param  numeric $ratio_height  The height ratio to crop the image to
+	 * @param  numeric $ratio_width          The width ratio to crop the image to
+	 * @param  numeric $ratio_height         The height ratio to crop the image to
+	 * @param  string  $horizontal_position  A horizontal position of `'left'`, `'center'` or `'right'`
+	 * @param  string  $vertical_position    A vertical position of `'top'`, `'center'` or `'bottom'`
 	 * @return fImage  The image object, to allow for method chaining
 	 */
-	public function cropToRatio($ratio_width, $ratio_height)
+	public function cropToRatio($ratio_width, $ratio_height, $horizontal_position='center', $vertical_position='center')
 	{
 		$this->tossIfDeleted();
 		
@@ -667,6 +711,26 @@ class fImage extends fFile
 			throw new fProgrammerException(
 				'The ratio height specified, %s, is not a number or is less than or equal to zero',
 				$ratio_height
+			);
+		}
+		
+		
+		// Make sure 
+		$valid_horizontal_positions = array('left', 'center', 'right');
+		if (!in_array(strtolower($horizontal_position), $valid_horizontal_positions)) {
+			throw new fProgrammerException(
+				'The horizontal position specified, %1$s, is not valid. Must be one of: %2$s.',
+				$horizontal_position,
+				$valid_horizontal_positions
+			);
+		}
+		
+		$valid_vertical_positions = array('top', 'center', 'bottom');
+		if (!in_array(strtolower($vertical_position), $valid_vertical_positions)) {
+			throw new fProgrammerException(
+				'The vertical position specified, %1$s, is not valid. Must be one of: %2$s.',
+				$vertical_position,
+				$valid_vertical_positions
 			);
 		}
 		
@@ -686,30 +750,7 @@ class fImage extends fFile
 			$new_height = round($new_width / $new_ratio);
 		}
 			
-		// Figure out where to crop from
-		$crop_from_x = floor(($orig_width - $new_width) / 2);
-		$crop_from_y = floor(($orig_height - $new_height) / 2);
-		
-		$crop_from_x = ($crop_from_x < 0) ? 0 : $crop_from_x;
-		$crop_from_y = ($crop_from_y < 0) ? 0 : $crop_from_y;
-			
-		// If nothing changed, don't even record the modification
-		if ($orig_width == $new_width && $orig_height == $new_height) {
-			return $this;
-		}
-		
-		// Record what we are supposed to do
-		$this->pending_modifications[] = array(
-			'operation'  => 'crop',
-			'start_x'    => $crop_from_x,
-			'start_y'    => $crop_from_y,
-			'width'      => $new_width,
-			'height'     => $new_height,
-			'old_width'  => $orig_width,
-			'old_height' => $orig_height
-		);
-		
-		return $this;
+		return $this->crop($new_width, $new_height, $horizontal_position, $vertical_position);
 	}
 	
 	
