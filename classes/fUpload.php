@@ -2,14 +2,17 @@
 /**
  * Provides validation and movement of uploaded files
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed the ::filter() callback constant [wb, 2010-11-24]
+ * @changes    1.0.0b11  Added ::setImageDimensions() and ::setImageRatio() [wb-imarc, 2010-11-11]
  * @changes    1.0.0b10  BackwardsCompatibilityBreak - renamed ::setMaxFilesize() to ::setMaxSize() to be consistent with fFile::getSize() [wb, 2010-05-30]
  * @changes    1.0.0b9   BackwardsCompatibilityBreak - the class no longer accepts uploaded files that start with a `.` unless ::allowDotFiles() is called - added ::setOptional() [wb, 2010-05-30]
  * @changes    1.0.0b8   BackwardsCompatibilityBreak - ::validate() no longer returns the `$_FILES` array for the file being validated - added `$return_message` parameter to ::validate(), fixed a bug with detection of mime type for text files [wb, 2010-05-26]
@@ -26,7 +29,7 @@ class fUpload
 	// The following constants allow for nice looking callbacks to static methods
 	const check  = 'fUpload::check';
 	const count  = 'fUpload::count';
-	const filter = 'fUpload:filter';
+	const filter = 'fUpload::filter';
 	
 	
 	/**
@@ -144,6 +147,20 @@ class fUpload
 	 * @var boolean
 	 */
 	private $allow_php = FALSE;
+	
+	/**
+	 * The dimension restrictions for uploaded images
+	 * 
+	 * @var array
+	 */
+	private $image_dimensions = array();
+	
+	/**
+	 * The dimension ratio restriction for uploaded images
+	 * 
+	 * @var array
+	 */
+	private $image_ratio = array();
 	
 	/**
 	 * If existing files of the same name should be overwritten
@@ -331,6 +348,102 @@ class fUpload
 	
 	
 	/**
+	 * Sets the allowable dimensions for an uploaded image
+	 * 
+	 * @param  integer $min_width   The minimum width - `0` for no minimum
+	 * @param  integer $min_height  The minimum height - `0` for no minimum
+	 * @param  integer $max_width   The maximum width - `0` for no maximum
+	 * @param  integer $max_height  The maximum height - `0` for no maximum
+	 * @return void
+	 */
+	public function setImageDimensions($min_width, $min_height, $max_width=0, $max_height=0)
+	{
+		if (!is_numeric($min_width) || $min_width < 0) {
+			throw new fProgrammerException(
+				'The minimum width specified, %s, is not an integer, or is less than 0',
+				$min_width
+			);
+		}
+		if (!is_numeric($min_height) || $min_height < 0) {
+			throw new fProgrammerException(
+				'The minimum height specified, %s, is not an integer, or is less than 0',
+				$min_height
+			);
+		}
+		if (!is_numeric($max_width) || $max_width < 0) {
+			throw new fProgrammerException(
+				'The maximum width specified, %s, is not an integer, or is less than 0',
+				$max_width
+			);
+		}
+		if (!is_numeric($max_height) || $max_height < 0) {
+			throw new fProgrammerException(
+				'The maximum height specified, %s, is not an integer, or is less than 0',
+				$max_height
+			);
+		}
+		
+		settype($min_width,  'int');
+		settype($min_height, 'int');
+		settype($max_width,  'int');
+		settype($max_height, 'int');
+		
+		// If everything is 0 then there are no restrictions
+		if (!$min_width && !$min_height && !$max_width && !$max_height) {
+			$this->image_dimensions = array();
+			return;
+		}
+		
+		$this->image_dimensions = array(
+			'min_width'  => $min_width,
+			'min_height' => $min_height,
+			'max_width'  => $max_width,
+			'max_height' => $max_height
+		);
+	}
+	
+	
+	/**
+	 * Sets the allowable dimensions for an uploaded image
+	 * 
+	 * @param  numeric $width                   The minimum ratio width
+	 * @param  numeric $height                  The minimum ratio height
+	 * @param  string  $allow_excess_dimension  The dimension that should allow for excess pixels
+	 * @return void
+	 */
+	public function setImageRatio($width, $height, $allow_excess_dimension)
+	{
+		if (!is_numeric($width) || $width <= 0) {
+			throw new fProgrammerException(
+				'The width specified, %s, is not a number, or is less than or equal to 0',
+				$width
+			);
+		}
+		if (!is_numeric($height) || $height <= 0) {
+			throw new fProgrammerException(
+				'The height specified, %s, is not a number, or is less than or equal to 0',
+				$height
+			);
+		}
+		
+		$valid_dimensions = array('width', 'height');
+		if (!in_array($allow_excess_dimension, $valid_dimensions)) {
+			throw new fProgrammerException(
+				'The allow excess dimension specified, %1$s, is not valid. Must be one of: %2$s.',
+				$allow_excess_dimension,
+				$valid_dimensions
+			);
+		}
+		
+		$this->image_ratio = array(
+			'width'                  => $width,
+			'height'                 => $height,
+			'allow_excess_dimension' => $allow_excess_dimension
+		);
+	}
+	
+	
+	/**
 	 * Sets the maximum size the uploaded file may be
 	 * 
 	 * This method should be used with the
@@ -488,13 +601,69 @@ class fUpload
 				return self::compose('The name of the uploaded file may not being with a .');
 			}
 		}
+		
+		if ($this->image_dimensions && file_exists($file_array['tmp_name'])) {
+			if (fImage::isImageCompatible($file_array['tmp_name'])) {
+				list($width, $height, $other) = getimagesize($file_array['tmp_name']);
+				
+				if ($this->image_dimensions['min_width'] && $width < $this->image_dimensions['min_width']) {
+					return self::compose(
+						'The uploaded image is narrower than the minimum width of %spx',
+						$this->image_dimensions['min_width']
+					);
+				}
+				
+				if ($this->image_dimensions['min_height'] && $height < $this->image_dimensions['min_height']) {
+					return self::compose(
+						'The uploaded image is shorter than the minimum height of %spx',
+						$this->image_dimensions['min_height']
+					);
+				}
+				
+				if ($this->image_dimensions['max_width'] && $width > $this->image_dimensions['max_width']) {
+					return self::compose(
+						'The uploaded image is wider than the maximum width of %spx',
+						$this->image_dimensions['max_width']
+					);
+				}
+				
+				if ($this->image_dimensions['max_height'] && $height > $this->image_dimensions['max_height']) {
+					return self::compose(
+						'The uploaded image is taller than the maximum height of %spx',
+						$this->image_dimensions['max_height']
+					);
+				}
+			}
+		}
+		
+		if ($this->image_ratio && file_exists($file_array['tmp_name'])) {
+			if (fImage::isImageCompatible($file_array['tmp_name'])) {
+				list($width, $height, $other) = getimagesize($file_array['tmp_name']);
+				
+				if ($this->image_ratio['allow_excess_dimension'] == 'width' && $width/$height < $this->image_ratio['width']/$this->image_ratio['height']) {
+					return self::compose(
+						'The uploaded image is too narrow for its height. The required ratio is %1$sx%2$s or wider.',
+						$this->image_ratio['width'],
+						$this->image_ratio['height']
+					);
+				}
+				
+				if ($this->image_ratio['allow_excess_dimension'] == 'height' && $width/$height > $this->image_ratio['width']/$this->image_ratio['height']) {
+					return self::compose(
+						'The uploaded image is too short for its width. The required ratio is %1$sx%2$s or taller.',
+						$this->image_ratio['width'],
+						$this->image_ratio['height']
+					);
+				}
+			}
+		}
 	}
 }
 
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
