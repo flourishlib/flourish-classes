@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b42
+ * @version    1.0.0b43
+ * @changes    1.0.0b43  Added the `comment` element to the information returned by ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b42  Fixed a bug with MySQL detecting default `ON DELETE` clauses [wb, 2010-10-19]
  * @changes    1.0.0b41  Fixed handling MySQL table names that require quoting [wb, 2010-08-24]
  * @changes    1.0.0b40  Fixed bugs in the documentation and error message of ::getColumnInfo() about what are valid elements [wb, 2010-07-21]
@@ -139,6 +140,15 @@ class fSchema
 	 */
 	private $tables = NULL;
 	
+	/**
+	 * The version of the database being queried
+	 * 
+	 * This is currently only used for MSSQL and MySQL
+	 * 
+	 * @var integer
+	 */
+	private $version = NULL;
+	
 	
 	/**
 	 * Sets the database
@@ -235,6 +245,7 @@ class fSchema
 		$this->column_info        = $this->cache->get($prefix . 'column_info',          array());
 		$this->databases          = $this->cache->get($prefix . 'databases',            NULL);
 		$this->keys               = $this->cache->get($prefix . 'keys',                 array());
+		$this->version            = $this->cache->get($prefix . 'version',              NULL);
 		
 		if (!$this->column_info_override && !$this->keys_override) {
 			$this->merged_column_info = $this->cache->get($prefix . 'merged_column_info',   array());
@@ -346,7 +357,8 @@ class fSchema
 					C.LENGTH AS MAX_LENGTH,
 					C.SCALE,
 					CASE WHEN C.IDENTITY = 'Y' AND (C.GENERATED = 'D' OR C.GENERATED = 'A') THEN '1' ELSE '0' END AS AUTO_INCREMENT,
-					CH.TEXT AS \"CONSTRAINT\"
+					CH.TEXT AS \"CONSTRAINT\",
+					C.REMARKS AS \"COMMENT\"
 				FROM
 					SYSCAT.COLUMNS AS C LEFT JOIN
 					SYSCAT.COLCHECKS AS CC ON C.TABSCHEMA = CC.TABSCHEMA AND C.TABNAME = CC.TABNAME AND C.COLNAME = CC.COLNAME AND CC.USAGE = 'R' LEFT JOIN
@@ -433,6 +445,8 @@ class fSchema
 			
 			// Handle not null
 			$info['not_null'] = ($row['nullable'] == 'N') ? TRUE : FALSE;
+			
+			$info['comment'] = $row['comment'];
 			
 			$column_info[$row['column']] = $info;
 		}
@@ -692,6 +706,13 @@ class fSchema
 			'money'      => array('min' => new fNumber('-922337203685477.5808'), 'max' => new fNumber('922337203685477.5807'))
 		);
 		
+		if (!$this->version) {
+			$this->version = (int) $this->database->query("SELECT CAST(SERVERPROPERTY('productversion') AS VARCHAR(20))")->fetchScalar();
+			if ($this->cache) {
+				$this->cache->set($this->makeCachePrefix() . 'version', $this->version);
+			}
+		}
+		
 		// Get the column info
 		$sql = "SELECT
 						c.column_name              AS 'column',
@@ -708,11 +729,20 @@ class fSchema
 							THEN '1'
 							ELSE '0'
 						  END AS auto_increment,
-						cc.check_clause AS 'constraint'
+						cc.check_clause AS 'constraint',
+						CAST(ex.value AS VARCHAR(7500)) AS 'comment'
 					FROM
 						INFORMATION_SCHEMA.COLUMNS AS c LEFT JOIN
 						INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE AS ccu ON c.column_name = ccu.column_name AND c.table_name = ccu.table_name AND c.table_catalog = ccu.table_catalog LEFT JOIN
-						INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS cc ON ccu.constraint_name = cc.constraint_name AND ccu.constraint_catalog = cc.constraint_catalog
+						INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS cc ON ccu.constraint_name = cc.constraint_name AND ccu.constraint_catalog = cc.constraint_catalog";
+		
+		if ($this->version < 9) {
+			$sql .= " LEFT JOIN sysproperties AS ex ON ex.id = OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)) AND ex.smallid = c.ordinal_position AND ex.name = 'MS_Description' AND OBJECTPROPERTY(OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)), 'IsMsShipped') = 0 ";
+		} else {
+			$sql .= " LEFT JOIN SYS.EXTENDED_PROPERTIES AS ex ON ex.major_id = OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)) AND ex.minor_id = c.ordinal_position AND ex.name = 'MS_Description' AND OBJECTPROPERTY(OBJECT_ID(QUOTENAME(c.table_schema) + '.' + QUOTENAME(c.table_name)), 'IsMsShipped') = 0 ";
+		}
+		
+		$sql .= "
 					WHERE
 						c.table_name = %s AND
 						c.table_schema = %s AND
@@ -799,6 +829,8 @@ class fSchema
 			
 			// Handle not null
 			$info['not_null'] = ($row['nullable'] == 'NO') ? TRUE : FALSE;
+			
+			$info['comment'] = $row['comment'];
 			
 			$column_info[$row['column']] = $info;
 		}
@@ -1083,6 +1115,11 @@ class fSchema
 			if (!empty($match[7])) {
 				$info['auto_increment'] = TRUE;
 			}
+			
+			// Column comments
+			if (!empty($match[8])) {
+				$info['comment'] = str_replace("''", "'", substr($match[8], 10, -1));
+			}
 		
 			$column_info[$match[1]] = $info;
 		}
@@ -1224,7 +1261,8 @@ class fSchema
 						ATC.DATA_PRECISION PRECISION,
 						ATC.NULLABLE,
 						ATC.DATA_DEFAULT,
-						AC.SEARCH_CONDITION CHECK_CONSTRAINT
+						AC.SEARCH_CONDITION CHECK_CONSTRAINT,
+						ACCM.COMMENTS
 					FROM
 						ALL_TAB_COLUMNS ATC LEFT JOIN
 						ALL_CONS_COLUMNS ACC ON
@@ -1236,7 +1274,11 @@ class fSchema
 							AC.OWNER = ACC.OWNER AND
 							AC.CONSTRAINT_NAME = ACC.CONSTRAINT_NAME AND
 							AC.CONSTRAINT_TYPE = 'C' AND
-							AC.STATUS = 'ENABLED'
+							AC.STATUS = 'ENABLED' LEFT JOIN
+						ALL_COL_COMMENTS ACCM ON
+							ATC.OWNER = ACCM.OWNER AND
+							ATC.COLUMN_NAME = ACCM.COLUMN_NAME AND
+							ATC.TABLE_NAME = ACCM.TABLE_NAME
 					WHERE
 						ATC.TABLE_NAME = %s AND
 						ATC.OWNER = %s
@@ -1328,6 +1370,8 @@ class fSchema
 			
 				// Not null values
 				$info['not_null'] = ($row['nullable'] == 'N') ? TRUE : FALSE;
+				
+				$info['comment'] = $row['comments'];
 			}
 			
 			$column_info[$column] = $info;
@@ -1529,7 +1573,8 @@ class fSchema
 						format_type(pg_attribute.atttypid, pg_attribute.atttypmod)  AS data_type,
 						pg_attribute.attnotnull                                     AS not_null,
 						pg_attrdef.adsrc                                            AS default,
-						pg_get_constraintdef(pg_constraint.oid)                     AS constraint
+						pg_get_constraintdef(pg_constraint.oid)                     AS constraint,
+						col_description(pg_class.oid, pg_attribute.attnum)          AS comment              
 					FROM
 						pg_attribute LEFT JOIN
 						pg_class ON pg_attribute.attrelid = pg_class.oid LEFT JOIN
@@ -1632,6 +1677,8 @@ class fSchema
 			
 			// Not null values
 			$info['not_null'] = ($row['not_null'] == 't') ? TRUE : FALSE;
+			
+			$info['comment'] = $row['comment'];
 			
 			$column_info[$row['column']] = $info;
 		}
@@ -1834,7 +1881,7 @@ class fSchema
 			return array();			
 		}
 		
-		preg_match_all('#(?<=,|\()\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?\w+["`\]]?\s*\(\s*["`\[]?\w+["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?\w+["`\]]?\s*\(\s*["`\[]?\w+["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?([ \t]*--[^\n]+)?\s*(?:,([ \t]*--[^\n]+)?|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -1888,6 +1935,12 @@ class fSchema
 			// Auto increment fields
 			if (!empty($match[8]) && (stripos($match[8], 'autoincrement') !== FALSE || $info['type'] == 'integer')) {
 				$info['auto_increment'] = TRUE;
+			}
+			
+			// Column comments
+			if (!empty($match[11]) || !empty($match[12])) {
+				$comment = empty($match[12]) ? $match[11] : $match[12];
+				$info['comment'] = ltrim(substr(trim($comment), 2));
 			}
 		
 			$column_info[$match[1]] = $info;
@@ -2128,7 +2181,8 @@ class fSchema
 	 *         'min_value'      => (numeric) {the minimum value for an integer/float field},
 	 *         'max_value'      => (numeric) {the maximum value for an integer/float field},
 	 *         'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
-	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
+	 *         'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column},
+	 *         'comment'        => (string)  {the SQL comment/description for the column}
 	 *     ), ...
 	 * )
 	 * }}}
@@ -2146,7 +2200,8 @@ class fSchema
 	 *     'min_value'      => (fNumber) {the minimum value for an integer/float field},
 	 *     'max_value'      => (fNumber) {the maximum value for an integer/float field},
 	  *    'decimal_places' => (integer) {the number of decimal places for a decimal/numeric/money/smallmoney field},
-	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column}
+	 *     'auto_increment' => (boolean) {if the integer primary key column is a serial/autoincrement/auto_increment/indentity column},
+	 *     'comment'        => (string)  {the SQL comment/description for the column}
 	 * )
 	 * }}}
 	 * 
@@ -2164,6 +2219,46 @@ class fSchema
 	 *  - `'time'`
 	 *  - `'boolean'`
 	 *  - `'blob'`
+	 * 
+	 * Please note that MySQL reports boolean data types as `tinyint(1)`, so
+	 * all `tinyint(1)` columns will be listed as `boolean`. This can be fixed
+	 * by calling: 
+	 * 
+	 * {{{
+	 * #!php
+	 * $schema->setColumnInfoOverride(
+	 *     array(
+	 *         'type'        => 'integer',
+	 *         'placeholder' => '%i',
+	 *         'default'     => {default integer},
+	 *         'min_value'   => new fNumber(-128),
+	 *         'max_value'   => new fNumber(127)
+	 *     ),
+	 *     '{table name}',
+	 *     '{column name}'
+	 * );
+	 * }}}
+	 * 
+	 * The `'comment'` element pulls from the database's column comment facility
+	 * with the exception of MSSQL and SQLite.
+	 * 
+	 * For MSSQL, the comment is pulled from the `MS_Description` extended
+	 * property, which can be added via the `Description` field in SQL Server
+	 * Management Studio, or via the `sp_addextendedproperty` stored procedure.
+	 * 
+	 * For SQLite, the comment is extracted from any SQL comment that is placed
+	 * at the end of the line on which the column is defined:
+	 * 
+	 * {{{
+	 * #!sql
+	 * CREATE TABLE users (
+	 *     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+	 *     name VARCHAR(200) NOT NULL -- This is the full name
+	 * );
+	 * }}}
+	 * 
+	 * For the SQLite `users` table defined above, the `name` column will have
+	 * the comment `This is the full name`.
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
@@ -2478,9 +2573,14 @@ class fSchema
 				break;
 			
 			case 'mysql':
-				$version = $this->database->query("SELECT version()")->fetchScalar();
-				$version = substr($version, 0, strpos($version, '.'));
-				if ($version <= 4) {
+				if (!$this->version) {
+					$this->version = $this->database->query("SELECT version()")->fetchScalar();
+					$this->version = substr($this->version, 0, strpos($this->version, '.'));
+					if ($this->cache) {
+						$this->cache->set($this->makeCachePrefix() . 'version', $this->version);
+					}
+				}
+				if ($this->version <= 4) {
 					$sql = 'SHOW TABLES';
 				} else {
 					$sql = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE'";	
@@ -2692,7 +2792,8 @@ class fSchema
 			'max_value',
 			'min_value',
 			'decimal_places',
-			'auto_increment'
+			'auto_increment',
+			'comment'
 		);
 		
 		foreach ($this->merged_column_info as $table => $column_array) {
@@ -2779,6 +2880,7 @@ class fSchema
 	 *  - `'max_value'`
 	 *  - `'decimal_places'`
 	 *  - `'auto_increment'`
+	 *  - `'comment'`
 	 * 
 	 * The following keys may be set to `NULL`:
 	 *  - `'not_null'`
@@ -2788,6 +2890,7 @@ class fSchema
 	 *  - `'min_value'`
 	 *  - `'max_value'`
 	 *  - `'decimal_places'`
+	 *  - `'comment'`
 	 *  
 	 * The key `'auto_increment'` should be a boolean.
 	 * 

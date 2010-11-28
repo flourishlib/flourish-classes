@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b71
+ * @version    1.0.0b72
+ * @changes    1.0.0b72  Added the new `comment` element to the reflection signature for `inspect` methods [wb, 2010-11-28]
  * @changes    1.0.0b71  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b70  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b69  Backwards Compatibility Break - changed ::validate() to return a nested array of validation messages when there are validation errors on child records [wb-imarc+wb, 2010-10-03]
@@ -2304,7 +2305,7 @@ abstract class fActiveRecord
 				$signature .= "/**\n";
 				$signature .= " * Returns metadata about " . $column . "\n";
 				$signature .= " * \n";
-				$elements = array('type', 'not_null', 'default');
+				$elements = array('type', 'not_null', 'default', 'comment');
 				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
 					$elements[] = 'valid_values';
 					$elements[] = 'max_length';
