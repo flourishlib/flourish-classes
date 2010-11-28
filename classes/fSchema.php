@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b43
+ * @version    1.0.0b44
+ * @changes    1.0.0b44  Fixed the list of valid elements for ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b43  Added the `comment` element to the information returned by ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b42  Fixed a bug with MySQL detecting default `ON DELETE` clauses [wb, 2010-10-19]
  * @changes    1.0.0b41  Fixed handling MySQL table names that require quoting [wb, 2010-08-24]
@@ -2262,7 +2263,7 @@ class fSchema
 	 * 
 	 * @param  string $table    The table to get the column info for
 	 * @param  string $column   The column to get the info for
-	 * @param  string $element  The element to return: `'type'`, `'placeholder'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'min_value'`, `'max_value'`, `'decimal_places'`, `'auto_increment'`
+	 * @param  string $element  The element to return: `'type'`, `'placeholder'`, `'not_null'`, `'default'`, `'valid_values'`, `'max_length'`, `'min_value'`, `'max_value'`, `'decimal_places'`, `'auto_increment'`, `'comment'`
 	 * @return mixed  The column info for the table/column/element specified - see method description for format
 	 */
 	public function getColumnInfo($table, $column=NULL, $element=NULL)
