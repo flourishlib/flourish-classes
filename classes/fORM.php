@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Added links to the detailed documentation for the parameters passed to hooks [wb, 2010-11-27]
  * @changes    1.0.0b26  Added ::getRelatedClass() for handling related classes in PHP 5.3 namespaces [wb, 2010-11-17]
  * @changes    1.0.0b25  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b24  Backwards Compatibility Break - Callbacks registered via ::registerRecordSetMethod() should now accept the `$method_name` in the position where the `$pointer` parameter used to be passed [wb, 2010-09-28]
@@ -828,15 +829,15 @@ class fORM
 	 * The method signature should include the follow parameters:
 	 * 
 	 *  - **`$object`**:           The fActiveRecord instance
-	 *  - **`&$values`**:          The values array for the record
-	 *  - **`&$old_values`**:      The old values array for the record
-	 *  - **`&$related_records`**: The related records array for the record
-	 *  - **`&$cache`**:           The cache array for the record
+	 *  - **`&$values`**:          The values array for the record - see the [http://flourishlib.com/docs/fORM#values $values] documentation for details
+	 *  - **`&$old_values`**:      The old values array for the record - see the [http://flourishlib.com/docs/fORM#old_values $old_values] documentation for details
+	 *  - **`&$related_records`**: The related records array for the record - see the [http://flourishlib.com/docs/fORM#related_records $related_records] documentation for details
+	 *  - **`&$cache`**:           The cache array for the record - see the [http://flourishlib.com/docs/fORM#cache $cache] documentation for details
 	 * 
 	 * The `'pre::validate()'` and `'post::validate()'` hooks have an extra
 	 * parameter:
 	 * 
-	 *  - **`&$validation_messages`**: An ordered array of validation errors that will be returned or tossed as an fValidationException
+	 *  - **`&$validation_messages`**: An ordered array of validation errors that will be returned or tossed as an fValidationException - see the [http://flourishlib.com/docs/fORM#validation_messages $validation_messages] documentation for details
 	 * 
 	 * The `'pre::replicate()'`, `'post::replicate()'` and
 	 * `'cloned::replicate()'` hooks have an extra parameter:
