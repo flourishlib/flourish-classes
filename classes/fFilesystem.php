@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Added a call to clearstatcache() to ::rollback() to prevent incorrect data from being returned by fFile::getMTime() and fFile::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b15  Fixed ::translateToWebPath() to handle Windows \s [wb, 2010-04-09]
  * @changes    1.0.0b14  Added ::recordAppend() [wb, 2010-03-15]
  * @changes    1.0.0b13  Changed the way files/directories deleted in a filesystem transaction are handled, including improvements to the exception that is thrown [wb+wb-imarc, 2010-03-05]
@@ -629,6 +630,7 @@ class fFilesystem
 		
 		self::$rollback_operations = array_reverse(self::$rollback_operations);
 		
+		$clear_cache = FALSE;
 		foreach (self::$rollback_operations as $operation) {
 			switch($operation['action']) {
 				
@@ -637,6 +639,7 @@ class fFilesystem
 					$handle         = fopen($operation['filename'], 'r+');
 					ftruncate($handle, $current_length - $operation['length']);
 					fclose($handle);
+					$clear_cache = TRUE;
 					break;
 				
 				case 'delete':
@@ -650,6 +653,7 @@ class fFilesystem
 					
 				case 'write':
 					file_put_contents($operation['filename'], $operation['old_data']);
+					$clear_cache = TRUE;
 					break;
 					
 				case 'rename':
@@ -670,6 +674,10 @@ class fFilesystem
 		
 		self::$commit_operations   = NULL;
 		self::$rollback_operations = NULL;
+		
+		if ($clear_cache) {
+			clearstatcache();
+		}
 	}
 	
 	

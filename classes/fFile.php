@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Added calls to clearstatcache() in ::append() and ::write() to prevent incorrect data from being returned by ::getMTime() and ::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b34  Added ::getExtension() [wb, 2010-05-10]
  * @changes    1.0.0b33  Fixed another situation where ::rename() with the same name would cause the file to be deleted [wb, 2010-04-13]
  * @changes    1.0.0b32  Fixed ::rename() to not fail when the new and old filename are the same [wb, 2010-03-16]
@@ -641,6 +642,7 @@ class fFile implements Iterator
 		}
 		
 		file_put_contents($this->file, $data, FILE_APPEND);
+		clearstatcache();
 		
 		return $this;
 	}
@@ -1279,6 +1281,7 @@ class fFile implements Iterator
 		}
 		
 		file_put_contents($this->file, $data);
+		clearstatcache();
 		
 		return $this;
 	}
