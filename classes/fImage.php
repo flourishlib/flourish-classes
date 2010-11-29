@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Added the ::rotate() method, added code to try and prevent fatal errors due to hitting the memory limit when using GD [wb, 2010-11-29]
  * @changes    1.0.0b27  Backwards Compatibility Break - changed the parameter order in ::crop() from `$crop_from_x`, `$crop_from_y`, `$new_width`, `$new_height` to `$new_width`, `$new_height`, `$crop_from_x`, `$crop_from_y` - added `$horizontal_position` and `$vertical_position` parameters to ::cropToRatio() [wb-imarc, 2010-11-09]
  * @changes    1.0.0b26  Fixed a bug where processing via ImageMagick was not properly setting the default RGB colorspace [wb, 2010-10-19]
  * @changes    1.0.0b25  Fixed the class to not generate multiple files when saving a JPG from an animated GIF or a TIF with a thumbnail [wb, 2010-09-12]
@@ -771,7 +772,9 @@ class fImage extends fFile
 		$this->pending_modifications[] = array(
 			'operation'  => 'desaturate',
 			'width'      => $dim['width'],
-			'height'     => $dim['height']
+			'height'     => $dim['height'],
+			'old_width'  => $dim['width'],
+			'old_height' => $dim['height']
 		);
 		
 		return $this;
@@ -881,6 +884,23 @@ class fImage extends fFile
 			$new_type = $type;	
 		}
 		
+		// We will estimate memory usage at 3MB if we can't actually check it
+		$beginning_memory_usage = 3145728;
+		if (function_exists('memory_get_usage')) {
+			$beginning_memory_usage = memory_get_usage();
+		}
+		$memory_limit_bytes = fFilesystem::convertToBytes(ini_get('memory_limit'));
+		
+		// Estimate the memory usage and throw an exception if we will run out
+		$load_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
+		if ($load_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
+			throw new fEnvironmentException(
+				'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
+				$load_byte_usage + $beginning_memory_usage,
+				$memory_limit_bytes
+			);
+		}
+		
 		switch ($type) {
 			case 'gif':
 				$gd_res = imagecreatefromgif($this->file);
@@ -896,7 +916,17 @@ class fImage extends fFile
 		}
 		
 		
-		foreach ($this->pending_modifications as $mod) {
+		foreach ($this->pending_modifications as $num => $mod) {
+			
+			$old_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
+			$new_byte_usage = $this->pending_modifications[0]['width'] * $this->pending_modifications[0]['height'] * 4;
+			if ($old_byte_usage + $new_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
+				throw new fEnvironmentException(
+					'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
+					$old_byte_usage + $new_byte_usage + $beginning_memory_usage,
+					$memory_limit_bytes
+				);
+			}
 			
 			$new_gd_res = imagecreatetruecolor($mod['width'], $mod['height']);
 			if ($save_alpha) {
@@ -973,6 +1003,74 @@ class fImage extends fFile
 						}
 						
 						imagesetpixel($new_gd_res, $x, $y, $new_color);
+					}
+				}
+			
+			// Perform the rotate operation
+			} elseif ($mod['operation'] == 'rotate') {
+				// The imagerotate() function is only available if the PHP-bundled
+				// version of GD is used, which is not always the case (e.g. debian/ubuntu)
+				if (function_exists('imagerotate')) {
+					// For some reason imagerotate() seem to rotate counter-clockwise
+					if ($mod['degrees'] == 90) {
+						$mod['degrees'] = 270;
+					} elseif ($mod['degrees'] == 270) {
+						$mod['degrees'] = 90;
+					}
+					
+					// If the source image is not true color, we need to convert
+					// to a true color image first, otherwise imagerotate() fails
+					// and returns false, causing no image to be saved
+					if (imagecolorstotal($gd_res)) {
+						imagecopy($new_gd_res, $gd_res, 0, 0, 0, 0, $mod['width'], $mod['height']);
+						imagedestroy($gd_res);
+						$gd_res = $new_gd_res;
+						unset($new_gd_res);
+					}
+					
+					$new_gd_res = imagerotate($gd_res, $mod['degrees'], -1);
+					
+					// If you don't set the alpha mode for PNG, images that
+					// contain transparency and are rotated will be distored
+					// in odd ways
+					if ($new_type == 'png') {
+						imagealphablending($new_gd_res, false);
+						imagesavealpha($new_gd_res, true);
+					}
+					
+				} else {
+					switch ($mod['degrees']) {
+						case 90: 
+				            for ($x=0; $x < $mod['width']; $x++) { 
+				                for ($y=0; $y < $mod['height']; $y++) { 
+				                    imagecopy($new_gd_res, $gd_res, $mod['height'] - $y - 1, $x, $x, $y, 1, 1);
+								}
+							}
+				            break; 
+
+				        case 180:
+				        	// Rather than copying one pixel at a time, like with 90
+				        	// and 270 degrees, for 180 degrees we can copy one rpw
+				        	// at a time for better performance
+				            for ($x=0; $x < $mod['width']; $x++) {
+				                imagecopy($new_gd_res, $gd_res, $mod['width'] - $x - 1, 0, $x, 0, 1, $mod['height']);
+							}
+				            $row = imagecreatetruecolor($mod['width'], 1);
+				            for ($y=0; $y < $mod['height']/2; $y++) {
+				                imagecopy($row, $new_gd_res, 0, 0, 0, $mod['height'] - $y - 1, $mod['width'], 1);
+				                imagecopy($new_gd_res, $new_gd_res, 0, $mod['height'] - $y - 1, 0, $y, $mod['width'], 1);
+				                imagecopy($new_gd_res, $row, 0, $y, 0, 0, $mod['width'], 1);
+				            }
+				            imagedestroy($row);
+				            break; 
+
+				        case 270: 
+				            for ($x=0; $x < $mod['width']; $x++) { 
+				                for ($y=0; $y < $mod['height']; $y++) {
+				                    imagecopy($new_gd_res, $gd_res, $y, $mod['width'] - $x - 1, $x, $y, 1, 1);
+								}
+							} 
+				            break;
 					}
 				}
 			}
@@ -1065,6 +1163,10 @@ class fImage extends fFile
 			// Perform the desaturate operation
 			} elseif ($mod['operation'] == 'desaturate') {
 				$command_line .= ' -colorspace GRAY ';
+			
+			// Perform the rotate operation
+			} elseif ($mod['operation'] == 'rotate') {
+				$command_line .= ' -rotate ' . $mod['degrees'] . ' ';
 			}
 		}
 		
@@ -1087,7 +1189,7 @@ class fImage extends fFile
 	 * Sets the image to be resized proportionally to a specific size canvas
 	 * 
 	 * Will only size down an image. This method uses resampling to ensure the
-	 * resized image is smooth in aappearance. Resizing does not occur until
+	 * resized image is smooth in appearance. Resizing does not occur until
 	 * ::saveChanges() is called.
 	 * 
 	 * @param  integer $canvas_width    The width of the canvas to fit the image on, `0` for no constraint
@@ -1154,6 +1256,54 @@ class fImage extends fFile
 		// Record what we are supposed to do
 		$this->pending_modifications[] = array(
 			'operation'  => 'resize',
+			'width'      => $new_width,
+			'height'     => $new_height,
+			'old_width'  => $orig_width,
+			'old_height' => $orig_height
+		);
+		
+		return $this;
+	}
+	
+	
+	/**
+	 * Sets the image to be rotated
+	 * 
+	 * Rotation does not occur until ::saveChanges() is called.
+	 * 
+	 * @param  integer $degrees   The number of degrees to rotate - 90, 180, or 270
+	 */
+	public function rotate($degrees)
+	{
+		$this->tossIfDeleted();
+		
+		// Make sure the user input is valid
+		$valid_degrees = array(90, 180, 270);
+		if (!in_array($degrees, $valid_degrees)) {
+			throw new fProgrammerException(
+				'The number of degrees specified, %1$s, is not valid. Must be one of: %2$s.',
+				$degrees,
+				$valid_degrees
+			);
+		}
+		
+		// Calculate what the new dimensions will be
+		$dim = $this->getCurrentDimensions();
+		$orig_width  = $dim['width'];
+		$orig_height = $dim['height'];
+		
+		if ($degrees == 180) {
+			$new_width  = $dim['width'];
+			$new_height = $dim['height'];
+		} else {
+			$new_width  = $dim['height'];
+			$new_height = $dim['width'];
+		}
+		
+		// Record what we are supposed to do
+		$this->pending_modifications[] = array(
+			'operation'  => 'rotate',
+			'degrees'    => $degrees,
 			'width'      => $new_width,
 			'height'     => $new_height,
 			'old_width'  => $orig_width,
