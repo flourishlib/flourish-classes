@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b72
+ * @version    1.0.0b73
+ * @changes    1.0.0b73  Backwards Compatibility Break - changed column set methods to treat strings of all whitespace the same as empty string and convert them to `NULL` [wb, 2010-11-29]
  * @changes    1.0.0b72  Added the new `comment` element to the reflection signature for `inspect` methods [wb, 2010-11-28]
  * @changes    1.0.0b71  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b70  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
@@ -2607,8 +2608,8 @@ abstract class fActiveRecord
 			);
 		}
 		
-		// We consider an empty string to be equivalent to NULL
-		if ($value === '') {
+		// We consider an empty string or a string of spaces to be equivalent to NULL
+		if ($value === '' || (is_string($value) && trim($value) === '')) {
 			$value = NULL;
 		}
 		
