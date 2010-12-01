@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Backwards Compatiblity Break - changed ::get() to remove binary characters when casting to a `string`, changed `int` and `integer` to cast to a real integer when possible, added new types of `binary` and `integer!` [wb, 2010-11-30]
  * @changes    1.0.0b15  Added documentation about `[sub-key]` syntax, added `[sub-key]` support to ::check() [wb, 2010-09-12]
  * @changes    1.0.0b14  Rewrote ::set() to not require recursion for array syntax [wb, 2010-09-12]
  * @changes    1.0.0b13  Fixed ::set() to work with `PUT` requests [wb, 2010-06-30]
@@ -244,7 +245,8 @@ class fRequest
 	 * become `NULL`.
 	 * 
 	 * Valid `$cast_to` types include:
-	 *  - `'string'`,
+	 *  - `'string'`
+	 *  - `'binary'`
 	 *  - `'int'`
 	 *  - `'integer'`
 	 *  - `'bool'`
@@ -258,8 +260,21 @@ class fRequest
 	 * whenever the `$key` was not specified in the request, or if the value
 	 * was a blank string.
 	 *  
-	 * All text values are interpreted as UTF-8 string and appropriately
-	 * cleaned.
+	 * All `string`, `array` or unspecified `$cast_to` will result in the value(s)
+	 * being interpreted as UTF-8 string and appropriately cleaned of invalid
+	 * byte sequences. Also, all low-byte, non-printable characters will be
+	 * stripped from the value. This includes all bytes less than the value of
+	 * 32 (Space) other than Tab (`\t`), Newline (`\n`) and Cariage Return
+	 * (`\r`).
+	 * 
+	 * To preserve low-byte, non-printable characters, or get the raw value
+	 * without cleaning invalid UTF-8 byte sequences, plase use the value of
+	 * `binary` for the `$cast_to` parameter.
+	 * 
+	 * Any integers that are beyond the range of 32bit storage will be returned
+	 * as a string. The returned value can be forced to always be a real
+	 * integer, which may cause truncation of the value, by passing `integer!`
+	 * as the `$cast_to`.
 	 * 
 	 * @param  string $key            The key to get the value of - array elements can be accessed via `[sub-key]` syntax
 	 * @param  string $cast_to        Cast the value to this data type - see method description for details
@@ -354,15 +369,20 @@ class fRequest
 			}
 			
 		} elseif (($cast_to == 'int' || $cast_to == 'integer') && preg_match('#^-?\d+$#D', $value)) {
-			// If the cast is an integer and the value is digits, don't cast to prevent
-			// truncation due to 32 bit integer limits
+			// Only explicitly cast integers than can be represented by a real
+			// PHP integer to prevent truncation due to 32 bit integer limits
+			if (strval(intval($value)) == $value) {
+				$value = (int) $value;
+			}
 			
-		} elseif ($cast_to) {
+		} elseif ($cast_to != 'binary' && $cast_to !== NULL) {
+			$cast_to = str_replace('integer!', 'integer', $cast_to);
 			settype($value, $cast_to);
 		}
 		
 		// Clean values coming in to ensure we don't have invalid UTF-8
 		if (($cast_to === NULL || $cast_to == 'string' || $cast_to == 'array') && $value !== NULL) {
+			$value = preg_replace('#[\x00-\x08\x0B\x0C\x0E-\x1F]#', '', $value);
 			$value = fUTF8::clean($value);
 		}
 		

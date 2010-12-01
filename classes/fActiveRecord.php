@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b73
+ * @version    1.0.0b74
+ * @changes    1.0.0b74  Updated ::populate() to use the `binary` type for fRequest::get() [wb, 2010-11-30]
  * @changes    1.0.0b73  Backwards Compatibility Break - changed column set methods to treat strings of all whitespace the same as empty string and convert them to `NULL` [wb, 2010-11-29]
  * @changes    1.0.0b72  Added the new `comment` element to the reflection signature for `inspect` methods [wb, 2010-11-28]
  * @changes    1.0.0b71  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
@@ -2024,7 +2025,8 @@ abstract class fActiveRecord
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
 				$method = 'set' . fGrammar::camelize($column, TRUE);
-				$this->$method(fRequest::get($column));
+				$cast_to = ($info['type'] == 'blob') ? 'binary' : NULL;
+				$this->$method(fRequest::get($column, $cast_to));
 			}
 		}
 		
