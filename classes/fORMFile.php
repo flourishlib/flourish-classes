@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Backwards Compatibility Break - ::configureImageUploadColumn() no longer accepts the optional `$image_type` as the fourth parameter, instead ::addFImageMethodCall() must be called with `saveChanges` as the `$method` and the image type as the first parameter [wb, 2010-11-30]
  * @changes    1.0.0b27  Fixed column inheritance to properly handle non-images and inheriting into image upload columns [wb, 2010-09-18]
  * @changes    1.0.0b26  Enhanced ::configureColumnInheritance() to ensure both columns specified have been set up as file upload columns [wb, 2010-08-18]
  * @changes    1.0.0b25  Updated code to work with the new fORM API [wb, 2010-08-06]
@@ -122,6 +123,10 @@ class fORMFile
 	
 	/**
 	 * Adds an fImage method call to the image manipulation for a column if an image file is uploaded
+	 * 
+	 * Any call to fImage::saveChanges() will be called last. If no explicit
+	 * method call to fImage::saveChanges() is made, it will be called
+	 * implicitly with default parameters.
 	 * 
 	 * @param  mixed  $class       The class name or instance of the class
 	 * @param  string $column      The column to call the method for
@@ -410,24 +415,15 @@ class fORMFile
 	 * This method works exactly the same as ::configureFileUploadColumn()
 	 * except that only image files are accepted.
 	 * 
+	 * To alter an image, including the file type, use ::addFImageMethodCall().
+	 * 
 	 * @param  mixed             $class       The class name or instance of the class
 	 * @param  string            $column      The column to set as a file upload column
 	 * @param  fDirectory|string $directory   The directory to upload to
-	 * @param  string            $image_type  The image type to save the image as: `NULL`, `'gif'`, `'jpg'`, `'png'`
 	 * @return void
 	 */
-	static public function configureImageUploadColumn($class, $column, $directory, $image_type=NULL)
+	static public function configureImageUploadColumn($class, $column, $directory)
 	{
-		$valid_image_types = array(NULL, 'gif', 'jpg', 'png');
-		if (!in_array($image_type, $valid_image_types)) {
-			$valid_image_types[0] = '{null}';
-			throw new fProgrammerException(
-				'The image type specified, %1$s, is not valid. Must be one of: %2$s.',
-				$image_type,
-				join(', ', $valid_image_types)
-			);
-		}
-		
 		self::configureFileUploadColumn($class, $column, $directory);
 		
 		$class = fORM::getClass($class);
@@ -444,7 +440,7 @@ class fORMFile
 			self::$image_upload_columns[$class] = array();
 		}
 		
-		self::$image_upload_columns[$class][$column] = $image_type;
+		self::$image_upload_columns[$class][$column] = TRUE;
 		
 		self::addFUploadMethodCall(
 			$class,
@@ -767,9 +763,14 @@ class fORMFile
 			return;
 		}
 		
+		$save_changes_called = FALSE;
+		
 		// Manipulate the image
 		if (!empty(self::$fimage_method_calls[$class][$column])) {
 			foreach (self::$fimage_method_calls[$class][$column] as $method_call) {
+				if ($method_call['method'] == 'saveChanges') {
+					$save_changes_called = TRUE;
+				}
 				$callback   = array($image, $method_call['method']);
 				$parameters = $method_call['parameters'];
 				if (!is_callable($callback)) {
@@ -782,11 +783,9 @@ class fORMFile
 			}
 		}
 		
-		// Save the changes
-		call_user_func(
-			array($image, 'saveChanges'),
-			isset(self::$image_upload_columns[$class][$column]) ? self::$image_upload_columns[$class][$column] : NULL
-		);
+		if (!$save_changes_called) {
+			call_user_func($image->saveChanges);
+		}
 	}
 	
 	
