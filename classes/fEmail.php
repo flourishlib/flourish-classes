@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Backwards Compatibility Break - the `$contents` parameter of ::addAttachment() is now first instead of third, ::addAttachment() will now accept fFile objects for the `$contents` parameter, added ::addRelatedFile() [wb, 2010-12-01]
  * @changes    1.0.0b23  Fixed a bug on Windows where emails starting with a `.` would have the `.` removed [wb, 2010-09-11]
  * @changes    1.0.0b22  Revamped the FQDN code and added ::getFQDN() [wb, 2010-09-07]
  * @changes    1.0.0b21  Added a check to prevent permissions warnings when getting the FQDN on Windows machines [wb, 2010-09-02]
@@ -274,7 +275,7 @@ class fEmail
 						} catch (com_exception $e) { }
 					}
 				}
-				if ($domain) {
+				if (!empty($domain)) {
 					self::$fqdn = '.' . $domain;
 				} 
 				
@@ -388,6 +389,13 @@ class fEmail
 	private $html_body = NULL;
 	
 	/**
+	 * The Message-ID header for the email
+	 * 
+	 * @var string
+	 */
+	private $message_id = NULL;
+	
+	/**
 	 * The plaintext body of the email
 	 * 
 	 * @var string
@@ -400,6 +408,13 @@ class fEmail
 	 * @var string
 	 */
 	private $recipients_smime_cert_file = NULL;
+	
+	/**
+	 * The files to include as multipart/related
+	 * 
+	 * @var array
+	 */
+	private $related_files = array();
 	
 	/**
 	 * The email address to reply to
@@ -472,7 +487,7 @@ class fEmail
 	 */
 	public function __construct()
 	{
-		
+		$this->message_id = '<' . fCryptography::randomString(10, 'hexadecimal') . '.' . time() . '@' . self::getFQDN() . '>';
 	}
 	
 	
@@ -495,34 +510,57 @@ class fEmail
 	 * 
 	 * If a duplicate filename is detected, it will be changed to be unique.
 	 * 
-	 * @param  string $filename   The name of the file to attach
-	 * @param  string $mime_type  The mime type of the file
-	 * @param  string $contents   The contents of the file
+	 * @param  string|fFile $contents   The contents of the file
+	 * @param  string       $filename   The name to give the attachement - optional if `$contents` is an fFile object
+	 * @param  string       $mime_type  The mime type of the file - this allows overriding the mime type of the file if incorrectly detected
 	 * @return void
 	 */
-	public function addAttachment($filename, $mime_type, $contents)
+	public function addAttachment($contents, $filename=NULL, $mime_type=NULL)
 	{
-		if (!self::stringlike($filename)) {
-			throw new fProgrammerException(
-				'The filename specified, %s, does not appear to be a valid filename',
-				$filename
-			);
-		}
+		$this->extrapolateFileInfo($contents, $filename, $mime_type);
 		
-		$filename = (string) $filename;
-		
-		$i = 1;
 		while (isset($this->attachments[$filename])) {
-			$filename_info = fFilesystem::getPathInfo($filename);
-			$extension     = ($filename_info['extension']) ? '.' . $filename_info['extension'] : '';
-			$filename      = preg_replace('#_copy\d+$#D', '', $filename_info['filename']) . '_copy' . $i . $extension;
-			$i++;
+			$this->generateNewFilename($filename);
 		}
 		
 		$this->attachments[$filename] = array(
 			'mime-type' => $mime_type,
 			'contents'  => $contents
 		);
+	}
+	
+	
+	/**
+	 * Adds a “related” file to the email, returning the `Content-ID` for use in HTML
+	 * 
+	 * The purpose of a related file is to be able to reference it in part of
+	 * the HTML body. Image `src` URLs can reference a related file by starting
+	 * the URL with `cid:` and then inserting the `Content-ID`.
+	 * 
+	 * If a duplicate filename is detected, it will be changed to be unique.
+	 * 
+	 * @param  string|fFile $contents   The contents of the file
+	 * @param  string       $filename   The name to give the attachement - optional if `$contents` is an fFile object
+	 * @param  string       $mime_type  The mime type of the file - this allows overriding the mime type of the file if incorrectly detected
+	 * @return string  The fully-formed `cid:` URL for use in HTML `src` attributes
+	 */
+	public function addRelatedFile($contents, $filename=NULL, $mime_type=NULL)
+	{
+		$this->extrapolateFileInfo($contents, $filename, $mime_type);
+		
+		while (isset($this->related_files[$filename])) {
+			$this->generateNewFilename($filename);
+		}
+		
+		$cid = count($this->related_files) . '.' . substr($this->message_id, 1, -1);
+		
+		$this->related_files[$filename] = array(
+			'mime-type'  => $mime_type,
+			'contents'   => $contents,
+			'content-id' => '<' . $cid . '>'
+		);
+		
+		return 'cid:' . $cid;
 	}
 	
 	
@@ -680,65 +718,77 @@ class fEmail
 	 */
 	private function createBody($boundary)
 	{
+		$boundary_stack = array($boundary);
+		
 		$mime_notice = self::compose(
 			"This message has been formatted using MIME. It does not appear that your\r\nemail client supports MIME."
 		);
 		
 		$body = '';
 		
-		// Build the multi-part/alternative section for the plaintext/HTML combo
-		if ($this->html_body) {
-			
-			$alternative_boundary = $boundary;
-			
-			// Depending on the other content, we may need to create a new boundary
-			if ($this->attachments) {
-				$alternative_boundary = $this->createBoundary();
-				$body    .= 'Content-Type: multipart/alternative; boundary="' . $alternative_boundary . "\"\r\n\r\n";
-			} else {
-				$body .= $mime_notice . "\r\n\r\n";
-			}
-			
-			$body .= '--' . $alternative_boundary . "\r\n";
+		if ($this->html_body || $this->attachments) {
+			$body .= $mime_notice . "\r\n\r\n";
+		}
+		
+		if ($this->html_body && $this->related_files && $this->attachments) {
+			$body    .= '--' . end($boundary_stack) . "\r\n";
+			$boundary_stack[] = $this->createBoundary();
+			$body .= 'Content-Type: multipart/related; boundary="' . end($boundary_stack) . "\"\r\n\r\n";
+		}
+		
+		if ($this->html_body && ($this->attachments || $this->related_files)) {
+			$body    .= '--' . end($boundary_stack) . "\r\n";
+			$boundary_stack[] = $this->createBoundary();
+			$body    .= 'Content-Type: multipart/alternative; boundary="' . end($boundary_stack) . "\"\r\n\r\n";
+		}
+		
+		if ($this->html_body || $this->attachments) {
+			$body .= '--' . end($boundary_stack) . "\r\n";
 			$body .= "Content-Type: text/plain; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n";
-			$body .= '--' . $alternative_boundary . "\r\n";
+		}
+		
+		$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n";
+		
+		if ($this->html_body) {
+			$body .= '--' . end($boundary_stack) . "\r\n";
 			$body .= "Content-Type: text/html; charset=utf-8\r\n";
 			$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
 			$body .= $this->makeQuotedPrintable($this->html_body) . "\r\n";
-			$body .= '--' . $alternative_boundary . "--\r\n";
-		
-		// If there is no HTML, just encode the body
-		} else {
-			
-			// Depending on the other content, these headers may be inline or in the real headers
-			if ($this->attachments) {
-				$body .= "Content-Type: text/plain; charset=utf-8\r\n";
-				$body .= "Content-Transfer-Encoding: quoted-printable\r\n\r\n";
-			}
-			
-			$body .= $this->makeQuotedPrintable($this->plaintext_body) . "\r\n";
 		}
 		
-		// If we have attachments, we need to wrap a multipart/mixed around the current body
+		if ($this->related_files) {
+			$body .= '--' . end($boundary_stack) . "--\r\n";
+			array_pop($boundary_stack);
+			
+			foreach ($this->related_files as $filename => $file_info) {
+				$body .= '--' . end($boundary_stack) . "\r\n";
+				$body .= 'Content-Type: ' . $file_info['mime-type'] . '; name="' . $filename . "\"\r\n";
+				$body .= "Content-Transfer-Encoding: base64\r\n";
+				$body .= 'Content-ID: ' . $file_info['content-id'] . "\r\n\r\n";
+				$body .= $this->makeBase64($file_info['contents']) . "\r\n";
+			}
+		}
+		
 		if ($this->attachments) {
 			
-			$multipart_body  = $mime_notice . "\r\n\r\n";
-			$multipart_body .= '--' . $boundary . "\r\n";
-			$multipart_body .= $body;
-			
-			foreach ($this->attachments as $filename => $file_info) {
-				$multipart_body .= '--' . $boundary . "\r\n";
-				$multipart_body .= 'Content-Type: ' . $file_info['mime-type'] . "\r\n";
-				$multipart_body .= "Content-Transfer-Encoding: base64\r\n";
-				$multipart_body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
-				$multipart_body .= $this->makeBase64($file_info['contents']) . "\r\n";
+			if ($this->html_body) {
+				$body .= '--' . end($boundary_stack) . "--\r\n";
+				array_pop($boundary_stack);
 			}
 			
-			$multipart_body .= '--' . $boundary . "--\r\n"; 
-			
-			$body = $multipart_body;
+			foreach ($this->attachments as $filename => $file_info) {
+				$body .= '--' . end($boundary_stack) . "\r\n";
+				$body .= 'Content-Type: ' . $file_info['mime-type'] . "\r\n";
+				$body .= "Content-Transfer-Encoding: base64\r\n";
+				$body .= 'Content-Disposition: attachment; filename="' . $filename . "\";\r\n\r\n";
+				$body .= $this->makeBase64($file_info['contents']) . "\r\n";
+			}
+		}
+		
+		if ($this->html_body || $this->attachments) {
+			$body .= '--' . end($boundary_stack) . "--\r\n";
+			array_pop($boundary_stack);
 		}
 		
 		return $body;
@@ -777,16 +827,18 @@ class fEmail
 		$headers .= "Message-ID: " . $message_id . "\r\n";
 		$headers .= "MIME-Version: 1.0\r\n";
 		
-		if ($this->html_body && !$this->attachments) {
-			$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n";
-		}
-		
 		if (!$this->html_body && !$this->attachments) {
 			$headers .= "Content-Type: text/plain; charset=utf-8\r\n";
 			$headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
-		}
 		
-		if ($this->attachments) {
+		} elseif ($this->html_body && !$this->attachments) {
+			if ($this->related_files) {
+				$headers .= 'Content-Type: multipart/related; boundary="' . $boundary . "\"\r\n";
+			} else {
+				$headers .= 'Content-Type: multipart/alternative; boundary="' . $boundary . "\"\r\n";
+			}
+		
+		} elseif ($this->attachments) {
 			$headers .= 'Content-Type: multipart/mixed; boundary="' . $boundary . "\"\r\n";
 		}
 		
@@ -945,6 +997,61 @@ class fEmail
 	
 	
 	/**
+	 * Extracts the filename and mime-type from an fFile object
+	 * 
+	 * @param  string|fFile &$contents   The file to extrapolate the info from
+	 * @param  string       &$filename   The filename to use for the file
+	 * @param  string       &$mime_type  The mime type of the file
+	 * @return void
+	 */
+	private function extrapolateFileInfo(&$contents, &$filename, &$mime_type)
+	{
+		if ($contents instanceof fFile) {
+			if ($filename === NULL) {
+				$filename = $contents->getName();
+			}
+			if ($mime_type === NULL) {
+				$mime_type = $contents->getMimeType();
+			}
+			$contents = $contents->read();
+			
+		} else {
+			if (!self::stringlike($filename)) {
+				throw new fProgrammerException(
+					'The filename specified, %s, does not appear to be a valid filename',
+					$filename
+				);
+			}
+			
+			$filename = (string) $filename;
+			
+			if ($mime_type === NULL) {
+				$mime_type = fFile::determineMimeType($filename, $contents);
+			}
+		}
+	}
+	
+	
+	/**
+	 * Generates a new filename in an attempt to create a unique name
+	 * 
+	 * @param  string $filename  The filename to generate another name for
+	 * @return string  The newly generated filename
+	 */
+	private function generateNewFilename($filename)
+	{
+		$filename_info = fFilesystem::getPathInfo($filename);
+		if (preg_match('#_copy(\d+)($|\.)#D', $filename_info['filename'], $match)) {
+			$i = $match[1] + 1;
+		} else {
+			$i = 1;
+		}
+		$extension = ($filename_info['extension']) ? '.' . $filename_info['extension'] : '';
+		return preg_replace('#_copy\d+$#D', '', $filename_info['filename']) . '_copy' . $i . $extension;
+	}
+	
+	
+	/**
 	 * Loads the plaintext version of the email body from a file and applies replacements
 	 * 
 	 * The should contain either ASCII or UTF-8 encoded text. Please see
@@ -1022,6 +1129,11 @@ class fEmail
 		$content = str_replace("\r\n", "\n", $content);
 		$content = str_replace("\r", "\n", $content);
 		$content = str_replace("\n", "\r\n", $content);
+		
+		// Encoded word is not required if all characters are ascii
+		if (!preg_match('#[\x80-\xFF]#', $content)) {
+			return $content;
+		}
 		
 		// A quick a dirty hex encoding
 		$content = rawurlencode($content);
@@ -1210,9 +1322,8 @@ class fEmail
 		
 		$to = trim($this->buildMultiAddressHeader("", $this->to_emails));
 		
-		$message_id         = '<' . fCryptography::randomString(32, 'hexadecimal') . '@' . self::getFQDN() . '>';
 		$top_level_boundary = $this->createBoundary();
-		$headers            = $this->createHeaders($top_level_boundary, $message_id);
+		$headers            = $this->createHeaders($top_level_boundary, $this->message_id);
 		
 		$subject = str_replace(array("\r", "\n"), '', $this->subject);
 		$subject = $this->makeEncodedWord($subject);
@@ -1233,7 +1344,7 @@ class fEmail
 			$to_emails = array_merge($to_emails, $this->extractEmails($this->bcc_emails));
 			$from = $this->bounce_to_email ? $this->bounce_to_email : current($this->extractEmails(array($this->from_email)));
 			$connection->send($from, $to_emails, "To: " . $to . "\r\nSubject: " . $subject . "\r\n" . $headers, $body);
-			return $message_id;
+			return $this->message_id;
 		}
 		
 		// Sendmail when not in safe mode will allow you to set the envelope from address via the -f parameter
@@ -1299,7 +1410,7 @@ class fEmail
 			);
 		}
 		
-		return $message_id;
+		return $this->message_id;
 	}
 	
 	
