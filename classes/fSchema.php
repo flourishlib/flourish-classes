@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b44
+ * @version    1.0.0b45
+ * @changes    1.0.0b45  Fixed Oracle auto incrementing detection to work with `INSERT OR UPDATE` triggers, fixed detection of dynamic default date/time/timestamp values for DB2 and Oracle [wb, 2010-12-04]
  * @changes    1.0.0b44  Fixed the list of valid elements for ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b43  Added the `comment` element to the information returned by ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b42  Fixed a bug with MySQL detecting default `ON DELETE` clauses [wb, 2010-10-19]
@@ -435,7 +436,9 @@ class fSchema
 			if ($row['default'] !== NULL) {
 				if ($row['default'] == 'NULL') {
 					$info['default'] = NULL;
-				} elseif (in_array($info['type'], array('char', 'varchar', 'text', 'timestamp')) ) {
+				} elseif (in_array($info['type'], array('timestamp', 'date', 'time')) && $row['default'][0] != "'") {
+					$info['default'] = str_replace(' ', '_', $row['default']);
+				} elseif (in_array($info['type'], array('char', 'varchar', 'text', 'timestamp', 'date', 'time')) ) {
 					$info['default'] = substr($row['default'], 1, -1);
 				} elseif ($info['type'] == 'boolean') {
 					$info['default'] = (boolean) substr($row['default'], 1, -1);
@@ -1355,7 +1358,10 @@ class fSchema
 			if (!$duplicate) {
 				// Handle default values
 				if ($row['data_default'] !== NULL) {
-					if (in_array($info['type'], array('char', 'varchar', 'text'))) {
+					if (in_array($info['type'], array('date', 'time', 'timestamp')) && $row['data_default'][0] != "'") {
+						$info['default'] = trim(preg_replace('#^SYS#', 'CURRENT_', $row['data_default']));
+						
+					} elseif (in_array($info['type'], array('char', 'varchar', 'text', 'date', 'time', 'timestamp'))) {
 						$info['default'] = str_replace("''", "'", substr(trim($row['data_default']), 1, -1));
 						
 					} elseif ($info['type'] == 'boolean') {
@@ -1383,7 +1389,7 @@ class fSchema
 					FROM
 						ALL_TRIGGERS
 					WHERE
-						TRIGGERING_EVENT = 'INSERT' AND
+						TRIGGERING_EVENT LIKE 'INSERT%' AND
 						STATUS = 'ENABLED' AND
 						TRIGGER_NAME NOT LIKE 'BIN\$%' AND
 						TABLE_NAME = %s AND

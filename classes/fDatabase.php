@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Fixed handling auto-incrementing values for Oracle when the trigger was on `INSERT OR UPDATE` instead of just `INSERT` [wb, 2010-12-04]
  * @changes    1.0.0b31  Fixed handling auto-incrementing values for MySQL when the `INTO` keyword is left out of an `INSERT` statement [wb, 2010-11-04]
  * @changes    1.0.0b30  Fixed the pgsql, mssql and mysql extensions to force a new connection instead of reusing an existing one [wb, 2010-08-17]
  * @changes    1.0.0b29  Backwards Compatibility Break - removed ::enableSlowQueryWarnings(), added ability to replicate via ::registerHookCallback() [wb, 2010-08-10]
@@ -1593,7 +1594,7 @@ class fDatabase
 							FROM
 								ALL_TRIGGERS
 							WHERE
-								TRIGGERING_EVENT = 'INSERT' AND
+								TRIGGERING_EVENT LIKE 'INSERT%' AND
 								STATUS = 'ENABLED' AND
 								TRIGGER_NAME NOT LIKE 'BIN\$%' AND
 								OWNER NOT IN (
