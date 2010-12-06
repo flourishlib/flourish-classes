@@ -2755,6 +2755,9 @@ abstract class fActiveRecord
 				$old_value      = fActiveRecord::retrieveOld($this->old_values, $column);
 				$value          = $this->values[$column];
 				
+				if ($old_value === NULL) {
+					continue;
+				}
 				foreach ($record_set as $record) {
 					if (isset($record->old_values[$related_column])) {
 						foreach (array_keys($record->old_values[$related_column]) as $key) {
