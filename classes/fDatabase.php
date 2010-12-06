@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Added code to explicitly set the connection encoding for the mysql and mysqli extensions since some PHP installs don't see to fully respect `SET NAMES` [wb, 2010-12-06]
  * @changes    1.0.0b32  Fixed handling auto-incrementing values for Oracle when the trigger was on `INSERT OR UPDATE` instead of just `INSERT` [wb, 2010-12-04]
  * @changes    1.0.0b31  Fixed handling auto-incrementing values for MySQL when the `INTO` keyword is left out of an `INSERT` statement [wb, 2010-11-04]
  * @changes    1.0.0b30  Fixed the pgsql, mssql and mysql extensions to force a new connection instead of reusing an existing one [wb, 2010-08-17]
@@ -561,6 +562,11 @@ class fDatabase
 			if ($this->connection !== FALSE && mysql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
 			}
+			if ($this->connection && function_exists('mysql_set_charset') && !mysql_set_charset('utf8', $this->connection)) {
+                throw new fConnectivityException(
+                	'There was an error setting the database connection to use UTF-8'
+				);
+            }
 		}
 			
 		if ($this->extension == 'mysqli') {
@@ -571,6 +577,11 @@ class fDatabase
 			} else {
 				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database);
 			}
+			if ($this->connection && !mysqli_set_charset($this->connection, 'utf8')) {
+                throw new fConnectivityException(
+                	'There was an error setting the database connection to use UTF-8'
+                );
+            }
 		}
 		
 		if ($this->extension == 'oci8') {
