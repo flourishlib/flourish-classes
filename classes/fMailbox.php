@@ -5,14 +5,15 @@
  * All headers, text and html content returned by this class are encoded in
  * UTF-8. Please see http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2010 Will Bond
+ * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved connectivity error handling and timeouts while reading data [wb, 2011-01-10]
  * @changes    1.0.0b10  Fixed ::parseMessage() to properly handle a header format edge case and properly set the `text` and `html` keys even when the email has an explicit `Content-disposition: inline` header [wb, 2010-11-25]
  * @changes    1.0.0b9   Fixed a bug in ::parseMessage() that could cause HTML alternate content to be included in the `inline` content array instead of the `html` element [wb, 2010-09-20]
  * @changes    1.0.0b8   Fixed ::parseMessage() to be able to handle non-text/non-html multipart parts that do not have a `Content-disposition` header [wb, 2010-09-18]
@@ -924,6 +925,8 @@ class fMailbox
 			return;
 		}
 		
+		fCore::startErrorCapture(E_WARNING);
+		
 		$this->connection = fsockopen(
 			$this->secure ? 'tls://' . $this->host : $this->host,
 			$this->port,
@@ -931,6 +934,17 @@ class fMailbox
 			$error_string,
 			$this->timeout
 		);
+		
+		foreach (fCore::stopErrorCapture('#ssl#i') as $error) {
+			throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
+		}
+		
+		if (!$this->connection) {
+			throw new fConnectivityException('There was an error connecting to the server');
+		}
+		
+		stream_set_timeout($this->connection, $this->timeout);
+		
 		
 		if ($this->type == 'imap') {
 			if (!$this->secure && extension_loaded('openssl')) {
@@ -979,6 +993,9 @@ class fMailbox
 						}
 						$res = stream_socket_enable_crypto($this->connection, TRUE, STREAM_CRYPTO_METHOD_TLS_CLIENT);
 					} while ($res === 0);
+					if ($res === FALSE) {
+						throw new fConnectivityException('Error establishing secure connection');
+					}
 				}
 			}
 			
@@ -1299,16 +1316,51 @@ class fMailbox
 		$except   = NULL;
 		$response = array();
 		
+		// PHP 5.2.0 to 5.2.5 has a bug on amd64 linux where stream_select()
+		// fails, so we have to fake it - http://bugs.php.net/bug.php?id=42682
+		static $broken_select = NULL;
+		if ($broken_select === NULL) {
+			$broken_select = strpos(php_uname('m'), '64') !== FALSE && fCore::checkVersion('5.2.0') && !fCore::checkVersion('5.2.6');
+		}
+		
 		// Fixes an issue with stream_select throwing a warning on PHP 5.3 on Windows
 		if (fCore::checkOS('windows') && fCore::checkVersion('5.3.0')) {
 			$select = @stream_select($read, $write, $except, $this->timeout);
+		
+		} elseif ($broken_select) {
+			$broken_select_buffer = NULL;
+			$start_time = microtime(TRUE);
+			$i = 0;
+			do {
+				if ($i) {
+					usleep(50000);
+				}
+				$char = fgetc($this->connection);
+				if ($char != "\x00" && $char !== FALSE) {
+					$broken_select_buffer = $char;
+				}
+				$i++;
+			} while ($broken_select_buffer === NULL && microtime(TRUE) - $start_time < $this->timeout);
+			$select = $broken_select_buffer !== NULL;
+			
 		} else {
 			$select = stream_select($read, $write, $except, $this->timeout);
 		}
 		
 		if ($select) {
 			while (!feof($this->connection)) {
-				$line = substr(fgets($this->connection), 0, -2);
+				$line = fgets($this->connection);
+				if ($line === FALSE) {
+					break;
+				}
+				$line = substr($line, 0, -2);
+				
+				// When we fake select, we have to handle what we've retrieved
+				if ($broken_select && $broken_select_buffer !== NULL) {
+					$line = $broken_select_buffer . $line;
+					$broken_select_buffer = NULL;
+				}
+				
 				$response[] = $line;
 				
 				// Automatically stop at the termination octet or a bad response
@@ -1390,3 +1442,25 @@ class fMailbox
 		}
 	}
 }
+
+/**
+ * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */

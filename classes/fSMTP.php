@@ -2,23 +2,24 @@
 /**
  * Creates a connection to an SMTP server to be used by fEmail
  * 
- * @copyright  Copyright (c) 2010 Will Bond
+ * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
- * @changes    1.0.0b8  Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
- * @changes    1.0.0b7  Updated class to use new fCore::startErrorCapture() functionality [wb, 2010-08-09]
- * @changes    1.0.0b6  Updated the class to use new fCore functionality [wb, 2010-07-05]
- * @changes    1.0.0b5  Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
- * @changes    1.0.0b4  Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
- * @changes    1.0.0b3  Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
- * @changes    1.0.0b2  Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
- * @changes    1.0.0b   The initial implementation [wb, 2010-04-20]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved timeouts while reading data [wb, 2011-01-10]
+ * @changes    1.0.0b9   Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
+ * @changes    1.0.0b8   Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
+ * @changes    1.0.0b7   Updated class to use new fCore::startErrorCapture() functionality [wb, 2010-08-09]
+ * @changes    1.0.0b6   Updated the class to use new fCore functionality [wb, 2010-07-05]
+ * @changes    1.0.0b5   Hacked around a bug in PHP 5.3 on Windows [wb, 2010-06-22]
+ * @changes    1.0.0b4   Updated the class to not connect and authenticate until a message is sent, moved message id generation in fEmail [wb, 2010-05-05]
+ * @changes    1.0.0b3   Fixed a bug with connecting to servers that send an initial response of `220-` and instead of `220 ` [wb, 2010-04-26]
+ * @changes    1.0.0b2   Fixed a bug where `STARTTLS` would not be triggered if it was last in the SMTP server's list of supported extensions [wb, 2010-04-20]
+ * @changes    1.0.0b    The initial implementation [wb, 2010-04-20]
  */
 class fSMTP
 {
@@ -228,6 +229,7 @@ class fSMTP
 			throw new fConnectivityException('There was an error connecting to the server');
 		}
 		
+		stream_set_timeout($this->connection, $this->timeout);
 		$response = $this->read('#^220 #');
 		if (!$this->find($response, '#^220[ -]#')) {
 			throw new fConnectivityException(
@@ -268,7 +270,6 @@ class fSMTP
 		}
 		
 		$this->pipelining = (boolean) $this->find($response, '#^250[ -]PIPELINING$#');
-		
 		
 		$auth_methods = array();
 		if ($match = $this->find($response, '#^250[ -]AUTH[ =](.*)$#')) {
@@ -427,30 +428,26 @@ class fSMTP
 	 */
 	private function read($expect)
 	{
-		$read     = array($this->connection);
-		$write    = NULL;
-		$except   = NULL;
 		$response = array();
-		
-		// Fixes an issue with stream_select throwing a warning on PHP 5.3 on Windows
-		if (fCore::checkOS('windows') && fCore::checkVersion('5.3.0')) {
-			$select = @stream_select($read, $write, $except, $this->timeout);
-		} else {
-			$select = stream_select($read, $write, $except, $this->timeout);
-		}
-		
-		if ($select) {
+		if ($result = $this->select($this->timeout, 0)) {
 			while (!feof($this->connection)) {
-				$read = array($this->connection);
-				$write = $except = NULL;
-				$response[] = substr(fgets($this->connection), 0, -2);
+				$line = fgets($this->connection);
+				if ($line === FALSE) {
+					break;
+				}
+				$line = substr($line, 0, -2);
+				if (is_string($result)) {
+					$line = $result . $line;
+				}
+				$response[] = $line;
 				if ($expect !== NULL) {
+					$result = NULL;
 					$matched_number = is_int($expect) && sizeof($response) == $expect;
 					$matched_regex  = is_string($expect) && preg_match($expect, $response[sizeof($response)-1]);
 					if ($matched_number || $matched_regex) {
 						break;
 					}
-				} elseif (!stream_select($read, $write, $except, 0, 200000)) {
+				} elseif (!($result = $this->select(0, 200000))) {
 					break;
 				}
 			}
@@ -460,6 +457,57 @@ class fSMTP
 		}
 		$this->handleErrors($response);
 		return $response;
+	}
+	
+	
+	/**
+	 * Performs a "fixed" stream_select() for the connection
+	 * 
+	 * @param integer $timeout   The number of seconds in the timeout
+	 * @param integer $utimeout  The number of microseconds in the timeout
+	 * @return boolean|string  TRUE (or a character) is the connection is ready to be read from, FALSE if not
+	 */
+	private function select($timeout, $utimeout)
+	{
+		$read     = array($this->connection);
+		$write    = NULL;
+		$except   = NULL;
+		
+		// PHP 5.2.0 to 5.2.5 had a bug on amd64 linux where stream_select()
+		// fails, so we have to fake it - http://bugs.php.net/bug.php?id=42682
+		static $broken_select = NULL;
+		if ($broken_select === NULL) {
+			$broken_select = strpos(php_uname('m'), '64') !== FALSE && fCore::checkVersion('5.2.0') && !fCore::checkVersion('5.2.6');
+		}
+		
+		// Fixes an issue with stream_select throwing a warning on PHP 5.3 on Windows
+		if (fCore::checkOS('windows') && fCore::checkVersion('5.3.0')) {
+			$select = @stream_select($read, $write, $except, $timeout, $utimeout);
+		
+		} elseif ($broken_select) {
+			$broken_select_buffer = NULL;
+			$start_time = microtime(TRUE);
+			$i = 0;
+			do {
+				if ($i) {
+					usleep(50000);
+				}
+				$char = fgetc($this->connection);
+				if ($char != "\x00" && $char !== FALSE) {
+					$broken_select_buffer = $char;
+				}
+				$i++;
+				if ($i > 2) {
+					break;
+				}
+			} while ($broken_select_buffer === NULL && microtime(TRUE) - $start_time < ($timeout + ($utimeout/1000000)));
+			$select = $broken_select_buffer === NULL ? FALSE : $broken_select_buffer;
+			
+		} else {
+			$select = stream_select($read, $write, $except, $timeout, $utimeout);
+		}
+		
+		return $select;
 	}
 	
 	
@@ -555,7 +603,7 @@ class fSMTP
 
 
 /**
- * Copyright (c) 2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
