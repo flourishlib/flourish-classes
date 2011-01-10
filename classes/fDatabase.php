@@ -41,14 +41,15 @@
  * encoding and stability issues on Windows, and functionality on non-Windows
  * operating systems.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Fixed a bug with creating translated prepared statements [wb, 2011-01-09]
  * @changes    1.0.0b33  Added code to explicitly set the connection encoding for the mysql and mysqli extensions since some PHP installs don't see to fully respect `SET NAMES` [wb, 2010-12-06]
  * @changes    1.0.0b32  Fixed handling auto-incrementing values for Oracle when the trigger was on `INSERT OR UPDATE` instead of just `INSERT` [wb, 2010-12-04]
  * @changes    1.0.0b31  Fixed handling auto-incrementing values for MySQL when the `INTO` keyword is left out of an `INSERT` statement [wb, 2010-11-04]
@@ -2389,7 +2390,8 @@ class fDatabase
 		
 		$untranslated_sql = NULL;
 		if ($translate) {
-			list($query) = $t->gethisSQLTranslation()->translate(array($query));
+			$query = $this->getSQLTranslation()->translate(array($query));
+			$query = current($query);
 			$untranslated_sql = $sql;
 		}
 		
@@ -2693,6 +2695,11 @@ class fDatabase
 				} else {
 					$this->performUnbufferedQuery($statement, $result, $params);	
 				}
+				
+				if ($statement instanceof fStatement && $statement->getUntranslatedSQL()) {
+					$result->setUntranslatedSQL($statement->getUntranslatedSQL());
+				}
+				
 			} else {
 				$this->perform($statement, $params);	
 			}
@@ -3201,7 +3208,7 @@ class fDatabase
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

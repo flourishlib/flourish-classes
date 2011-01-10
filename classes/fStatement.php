@@ -2,14 +2,15 @@
 /**
  * Representation of a prepared statement for use with the fDatabase class
  * 
- * @copyright  Copyright (c) 2010 Will Bond
+ * @copyright  Copyright (c) 2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Added ::getUntranslatedSQL() [wb, 2011-01-09]
  * @changes    1.0.0b5  Fixed an edge case where the mysqli extension would leak memory when fetching a `TEXT` or `BLOB` column [wb, 2010-08-28]
  * @changes    1.0.0b4  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b3  Backwards Compatibility Break - removed ODBC support. Fixed UTF-8 support for the `pdo_dblib` extension. [wb, 2010-07-31]
@@ -674,6 +675,17 @@ class fStatement
 	
 	
 	/**
+	 * Returns the untranslated SQL for the prepared statement
+	 * 
+	 * @return string  The untranslated SQL statement
+	 */
+	public function getUntranslatedSQL()
+	{
+		return $this->untranslated_sql;	
+	}
+	
+	
+	/**
 	 * Takes an array of parameters and prepares them for use in a prepared statement
 	 * 
 	 * @param  array $params  The parameters
@@ -848,7 +860,7 @@ class fStatement
 
 
 /**
- * Copyright (c) 2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
