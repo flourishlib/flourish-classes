@@ -2,7 +2,7 @@
 /**
  * Represents a file on the filesystem, also provides static file-related methods
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Added the `$remove_extension` parameter to ::getName() [wb, 2011-01-10]
  * @changes    1.0.0b35  Added calls to clearstatcache() in ::append() and ::write() to prevent incorrect data from being returned by ::getMTime() and ::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b34  Added ::getExtension() [wb, 2010-05-10]
  * @changes    1.0.0b33  Fixed another situation where ::rename() with the same name would cause the file to be deleted [wb, 2010-04-13]
@@ -895,12 +896,13 @@ class fFile implements Iterator
 	/**
 	 * Gets the filename (i.e. does not include the directory)
 	 * 
+	 * @param  boolean $remove_extension  If the extension should be removed from the filename
 	 * @return string  The filename of the file
 	 */
-	public function getName()
+	public function getName($remove_extension=FALSE)
 	{
 		// For some reason PHP calls the filename the basename, where filename is the filename minus the extension
-		return fFilesystem::getPathInfo($this->file, 'basename');
+		return fFilesystem::getPathInfo($this->file, $remove_extension ? 'filename' : 'basename');
 	}
 	
 	
@@ -1290,7 +1292,7 @@ class fFile implements Iterator
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
