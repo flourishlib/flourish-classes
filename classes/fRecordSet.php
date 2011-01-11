@@ -2,14 +2,15 @@
 /**
  * A lightweight, iterable set of fActiveRecord-based objects
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b42
+ * @version    1.0.0b43
+ * @changes    1.0.0b43  Added the ability to pass SQL and values to ::buildFromSQL(), added the ability to manually pass the `$limit` and `$page` to ::buildFromArray() and ::buildFromSQL(), changed ::slice() to remember `$limit` and `$page` if possible when `$remember_original_count` is `TRUE` [wb, 2011-01-11]
  * @changes    1.0.0b42  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b41  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
  * @changes    1.0.0b40  Added the ::tally() method [wb, 2010-09-28]
@@ -272,11 +273,14 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 
 	 * @internal
 	 * 
-	 * @param  string|array $class    The class or classes of the records
-	 * @param  array        $records  The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  string|array $class          The class or classes of the records
+	 * @param  array        $records        The records to create the set from, the order of the record set will be the same as the order of the array.
+	 * @param  integer      $total_records  The total number of records - this should only be provided if the array is a segment of a larger array - this is informational only and does not affect the array
+	 * @param  integer      $limit          The maximum number of records the array was limited to - this is informational only and does not affect the array
+	 * @param  integer      $page           The page of records the array is from - this is informational only and does not affect the array
 	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
-	static public function buildFromArray($class, $records)
+	static public function buildFromArray($class, $records, $total_records=NULL, $limit=NULL, $page=1)
 	{
 		if (is_array($class)) {
 			foreach ($class as $_class) {
@@ -292,7 +296,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 			throw new fProgrammerException('The records specified are not in an array');	
 		}
 		
-		return new fRecordSet($class, $records);
+		return new fRecordSet($class, $records, $total_records, $limit, $page);
 	}
 	
 	
@@ -333,17 +337,34 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * The `$non_limited_count_sql` is used when ::count() is called with `TRUE`
 	 * passed as the parameter.
 	 * 
-	 * @param  string $class                  The class to create the fRecordSet of
-	 * @param  string $sql                    The SQL to create the set from
-	 * @param  string $non_limited_count_sql  An SQL statement to get the total number of rows that would have been returned if a `LIMIT` clause had not been used. Should only be passed if a `LIMIT` clause is used.
+	 * Both the `$sql` and `$non_limited_count_sql` can be passed as a string
+	 * SQL statement, or an array containing a SQL statement and the values to
+	 * escape into it:
+	 * 
+	 * {{{
+	 * #!php
+	 * fRecordSet::buildFromSQL(
+	 *     'User',
+	 *     array("SELECT * FROM users WHERE date_created > %d LIMIT %i OFFSET %i", $start_date, 10, 10*($page-1)),
+	 *     array("SELECT * FROM users WHERE date_created > %d", $start_date),
+	 *     10,
+	 *     $page
+	 * )
+	 * }}}
+	 * 
+	 * @param  string        $class                  The class to create the fRecordSet of
+	 * @param  string|array  $sql                    The SQL to create the set from, or an array of the SQL statement plus values to escape
+	 * @param  string|array  $non_limited_count_sql  An SQL statement, or an array of the SQL statement plus values to escape, to get the total number of rows that would have been returned if a `LIMIT` clause had not been used. Should only be passed if a `LIMIT` clause is used in `$sql`.
+	 * @param  integer       $limit                  The number of records the SQL statement was limited to - this is information only and does not affect the SQL
+	 * @param  integer       $page                   The page of records the SQL statement returned - this is information only and does not affect the SQL    
 	 * @return fRecordSet  A set of fActiveRecord objects
 	 */
-	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL)
+	static public function buildFromSQL($class, $sql, $non_limited_count_sql=NULL, $limit=NULL, $page=1)
 	{
 		fActiveRecord::validateClass($class);
 		fActiveRecord::forceConfigure($class);
 		
-		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(("?\w+"?\.)?"?\w+"?\.)?\*\s*FROM#i', $sql)) {
+		if (!preg_match('#^\s*SELECT\s*(DISTINCT|ALL)?\s*(("?\w+"?\.)?"?\w+"?\.)?\*\s*FROM#i', is_array($sql) ? $sql[0] : $sql)) {
 			throw new fProgrammerException(
 				'The SQL statement specified, %s, does not appear to be in the form SELECT * FROM table',
 				$sql
@@ -352,10 +373,22 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 		
 		$db = fORMDatabase::retrieve($class, 'read');
 		
+		if (is_array($sql)) {
+			$result = call_user_func_array($db->translatedQuery, $sql);;
+		} else {
+			$result = $db->translatedQuery($sql);
+		}
+		
+		if (is_array($non_limited_count_sql)) {
+			$non_limited_count_sql = call_user_func_array($db->escape, $non_limited_count_sql);
+		}
+		
 		return new fRecordSet(
 			$class,
-			$db->translatedQuery($sql),
-			$non_limited_count_sql
+			$result,
+			$non_limited_count_sql,
+			$limit,
+			$page
 		);
 	}
 	
@@ -1730,10 +1763,20 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 			}
 		}
 		
+		$limit = NULL;
+		$page  = 1;
+		
+		if ($remember_original_count && $length !== NULL && $offset % $length == 0) {
+			$limit = $length;
+			$page  = ($offset / $length) + 1;
+		}
+		
 		return new fRecordSet(
 			$this->class,
 			array_slice($this->records, $offset, $length),
-			$remember_original_count ? $this->count() : NULL
+			$remember_original_count ? $this->count() : NULL,
+			$limit,
+			$page
 		);
 	}
 	
@@ -1906,7 +1949,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
