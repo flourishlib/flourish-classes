@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Updated the class to replace `LIMIT` and `OFFSET` value placeholders in the SQL with their values before translating since most databases that translate `LIMIT` statements need to move or add values together [wb, 2011-01-11]
  * @changes    1.0.0b34  Fixed a bug with creating translated prepared statements [wb, 2011-01-09]
  * @changes    1.0.0b33  Added code to explicitly set the connection encoding for the mysql and mysqli extensions since some PHP installs don't see to fully respect `SET NAMES` [wb, 2010-12-06]
  * @changes    1.0.0b32  Fixed handling auto-incrementing values for Oracle when the trigger was on `INSERT OR UPDATE` instead of just `INSERT` [wb, 2010-12-04]
@@ -2497,8 +2498,13 @@ class fDatabase
 					
 					$value = $values[$value_number];
 					
+					// Here we put numbers for LIMIT and OFFSET into the SQL so they can be translated properly
+					if ($piece == '%i' && preg_match('#\b(LIMIT|OFFSET)\s+#Di', $new_sql)) {
+						$new_sql .= (int) $value;
+						$value_number++;
+					
 					// Here we put blank strings back into the SQL so they can be translated for Oracle
-					if ($piece == '%s' && $value !== NULL && ((string) $value) == '') {
+					} elseif ($piece == '%s' && $value !== NULL && ((string) $value) == '') {
 						$new_sql .= "''";
 						$value_number++;
 					
