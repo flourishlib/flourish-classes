@@ -2,7 +2,7 @@
 /**
  * Represents an image on the filesystem, also provides image manipulation functionality
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Added checks for AIX [wb, 2011-01-19]
  * @changes    1.0.0b28  Added the ::rotate() method, added code to try and prevent fatal errors due to hitting the memory limit when using GD [wb, 2010-11-29]
  * @changes    1.0.0b27  Backwards Compatibility Break - changed the parameter order in ::crop() from `$crop_from_x`, `$crop_from_y`, `$new_width`, `$new_height` to `$new_width`, `$new_height`, `$crop_from_x`, `$crop_from_y` - added `$horizontal_position` and `$vertical_position` parameters to ::cropToRatio() [wb-imarc, 2010-11-09]
  * @changes    1.0.0b26  Fixed a bug where processing via ImageMagick was not properly setting the default RGB colorspace [wb, 2010-10-19]
@@ -177,7 +178,7 @@ class fImage extends fFile
 						 
 						$path = 'C:\\Program Files\\' . $win_output . '\\';
 						
-				} elseif (fCore::checkOS('linux', 'bsd', 'solaris', 'osx')) {
+				} elseif (fCore::checkOS('linux', 'bsd', 'solaris', 'osx', 'aix')) {
 					
 					$found = FALSE;
 					
@@ -218,8 +219,8 @@ class fImage extends fFile
 						throw new Exception();
 					}
 					
-					// On linux and bsd can try whereis
-					if (!$found && fCore::checkOS('linux', 'freebsd')) {
+					
+					if (!$found && fCore::checkOS('linux', 'freebsd', 'aix')) {
 						$nix_search = 'whereis -b convert';
 						exec($nix_search, $nix_output);
 						$nix_output = trim(str_replace('convert:', '', join("\n", $nix_output)));
@@ -231,7 +232,6 @@ class fImage extends fFile
 						$path = preg_replace('#^(.*)convert$#i', '\1', $nix_output);
 					}
 					
-					// OSX has a different whereis command
 					if (!$found && fCore::checkOS('osx', 'netbsd', 'openbsd')) {
 						$osx_search = 'whereis convert';
 						exec($osx_search, $osx_output);
@@ -1450,7 +1450,7 @@ class fImage extends fFile
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

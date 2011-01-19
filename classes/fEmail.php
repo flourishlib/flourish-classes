@@ -9,7 +9,7 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond, others
+ * @copyright  Copyright (c) 2008-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Bill Bushee, iMarc LLC [bb-imarc] <bill@imarc.net>
  * @license    http://flourishlib.com/license
@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  Fixed a bug with finding the FQDN on non-Windows machines [wb, 2011-01-19]
  * @changes    1.0.0b24  Backwards Compatibility Break - the `$contents` parameter of ::addAttachment() is now first instead of third, ::addAttachment() will now accept fFile objects for the `$contents` parameter, added ::addRelatedFile() [wb, 2010-12-01]
  * @changes    1.0.0b23  Fixed a bug on Windows where emails starting with a `.` would have the `.` removed [wb, 2010-09-11]
  * @changes    1.0.0b22  Revamped the FQDN code and added ::getFQDN() [wb, 2010-09-07]
@@ -279,7 +280,7 @@ class fEmail
 					self::$fqdn = '.' . $domain;
 				} 
 				
-			} elseif (!fCore::checkOS('bsd', 'osx', 'linux', 'solaris') && !ini_get('open_basedir') && file_exists('/etc/resolv.conf')) {
+			} elseif (!fCore::checkOS('windows') && !ini_get('open_basedir') && file_exists('/etc/resolv.conf')) {
 				$output = file_get_contents('/etc/resolv.conf');
 				if (preg_match('#^domain ([a-z0-9_.-]+)#im', $output, $match)) {
 					self::$fqdn .= '.' . $match[1];
@@ -1696,7 +1697,7 @@ class fEmail
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
