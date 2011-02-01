@@ -7,7 +7,7 @@
  * been sent to the browser. To prevent such a warning, explicitly call ::open()
  * before generating any output.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Updated ::ignoreSubdomain() to use `$_SERVER['HTTP_HOST']` when `$_SERVER['SERVER_NAME']` is not set [wb, 2011-02-01]
  * @changes    1.0.0b16  Changed ::delete() to return the value of the key being deleted [wb, 2010-09-19]
  * @changes    1.0.0b15  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
  * @changes    1.0.0b14  Backwards Compatibility Break - ::add(), ::delete(), ::get() and ::set() now interpret `[` and `]` as array shorthand and thus they can not be used in keys - added `$beginning` parameter to ::add(), added ::remove() method [wb, 2010-09-12]
@@ -366,10 +367,23 @@ class fSession
 		
 		$current_params = session_get_cookie_params();
 		
+		if (isset($_SERVER['SERVER_NAME'])) {
+			$domain = $_SERVER['SERVER_NAME'];
+		} elseif (isset($_SERVER['HTTP_HOST'])) {
+			$domain = $_SERVER['HTTP_HOST'];
+		} else {
+			throw new fEnvironmentException(
+				'The domain name could not be found in %1$s or %2$s. Please set one of these keys to use %3$s.',
+				'$_SERVER[\'SERVER_NAME\']',
+				'$_SERVER[\'HTTP_HOST\']',
+				__CLASS__ . '::ignoreSubdomain()'
+			);
+		}
+		
 		$params = array(
 			$current_params['lifetime'],
 			$current_params['path'],
-			preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $_SERVER['SERVER_NAME']),
+			preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $domain),
 			$current_params['secure']
 		);
 		
@@ -646,7 +660,7 @@ class fSession
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
