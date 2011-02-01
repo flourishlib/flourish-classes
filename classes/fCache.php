@@ -2,14 +2,15 @@
 /**
  * A simple interface to cache data using different backends
  * 
- * @copyright  Copyright (c) 2009 Will Bond
+ * @copyright  Copyright (c) 2009-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
  * 
- * @version    1.0.0b
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Fixed API calls to the memcache extension to pass the TTL as the correct parameter [wb, 2011-02-01]
  * @changes    1.0.0b   The initial implementation [wb, 2009-04-28]
  */
 class fCache
@@ -179,7 +180,7 @@ class fCache
 				if ($ttl > 2592000) {
 					$ttl = time() + 2592000;		
 				}
-				return $this->data_store->add($key, serialize($value), $ttl);
+				return $this->data_store->add($key, serialize($value), 0, $ttl);
 			
 			case 'xcache':
 				if (xcache_isset($key)) {
@@ -347,11 +348,11 @@ class fCache
 			
 			case 'memcache':
 				if ($ttl > 2592000) {
-					$ttl = time() + 2592000;		
+					$ttl = time() + 2592000;
 				}
 				$value = serialize($value);
-				if (!$this->data_store->replace($key, $value, $ttl)) {
-					$this->data_store->set($key, $value, $ttl);
+				if (!$this->data_store->replace($key, $value, 0, $ttl)) {
+					$this->data_store->set($key, $value, 0, $ttl);
 				}
 				return;
 			
@@ -365,7 +366,7 @@ class fCache
 
 
 /**
- * Copyright (c) 2009 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2009-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
