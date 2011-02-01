@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b35
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Updated ::escape() and methods that use ::escape() to handle float values that don't contain a digit before or after the . [wb, 2011-02-01]
  * @changes    1.0.0b35  Updated the class to replace `LIMIT` and `OFFSET` value placeholders in the SQL with their values before translating since most databases that translate `LIMIT` statements need to move or add values together [wb, 2011-01-11]
  * @changes    1.0.0b34  Fixed a bug with creating translated prepared statements [wb, 2011-01-09]
  * @changes    1.0.0b33  Added code to explicitly set the connection encoding for the mysql and mysqli extensions since some PHP installs don't see to fully respect `SET NAMES` [wb, 2010-12-06]
@@ -1135,9 +1136,13 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?([0-9]+(\.[0-9]+)?|(\.[0-9]+))$#D', $value)) {
+		if (!preg_match('#^[+\-]?([0-9]+(\.([0-9]+)?)?|(\.[0-9]+))$#D', $value)) {
 			return 'NULL';
 		}
+		
+		$value = rtrim($value, '.');
+		$value = preg_replace('#(?<![0-9])\.#', '0.', $value);
+		
 		return (string) $value;
 	}
 	
