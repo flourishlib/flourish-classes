@@ -2,14 +2,15 @@
 /**
  * Provides large/precise number support
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fNumber
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added the `$remove_zero_fraction` parameter to ::format() [wb, 2011-02-02]
  * @changes    1.0.0b2  Fixed a bug with parsing decimal numbers in scientific notation [wb, 2010-04-13]
  * @changes    1.0.0b   The initial implementation [wb, 2008-07-21]
  */
@@ -751,7 +752,13 @@ class fNumber
 	/**
 	 * Allows setting a callback to translate or modify any return values from ::format()
 	 * 
-	 * @param  callback $callback  The callback to pass the fNumber value to. Should accept a string value and return a single string.
+	 * The callback should accept two parameters:
+	 *  - `$value`: the string value of the number
+	 *  - `$remove_zero_fraction`: a boolean indicating if a zero fraction should be removed
+	 * 
+	 * The callback should return a string, the formatted `$value`.
+	 * 
+	 * @param  callback $callback  The callback to pass the fNumber value to - see method description for parameters
 	 * @return void
 	 */
 	static public function registerFormatCallback($callback)
@@ -1108,12 +1115,13 @@ class fNumber
 	/**
 	 * Formats the number to include thousands separators
 	 * 
+	 * @param  boolean $remove_zero_fraction  If `TRUE` and all digits after the decimal place are `0`, the decimal place and all zeros are removed
 	 * @return string  The formatted value
 	 */
-	public function format()
+	public function format($remove_zero_fraction=FALSE)
 	{
 		if (self::$format_callback !== NULL) {
-			return call_user_func(self::$format_callback, $this->value);
+			return call_user_func(self::$format_callback, $this->value, $remove_zero_fraction);
 		}
 		
 		// We can't use number_format() since it takes a float and we have a
@@ -1134,6 +1142,10 @@ class fNumber
 		
 		$integer  = join(',', $int_sections);
 		$fraction = (strlen($fraction)) ? '.' . $fraction : '';
+		
+		if ($remove_zero_fraction && rtrim($fraction, '.0') === '') {
+			$fraction = '';
+		}
 		
 		return $sign . $integer . $fraction;
 	}
@@ -1600,7 +1612,7 @@ class fNumber
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
