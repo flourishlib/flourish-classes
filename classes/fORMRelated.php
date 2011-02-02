@@ -5,7 +5,7 @@
  * The functionality of this class only works with single-field `FOREIGN KEY`
  * constraints.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Updated ::getRelatedRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b39  Fixed a bug with ::validate() not properly removing validation messages about a related primary key value not being present yet, if the column and related column names were different [wb, 2010-11-24]
  * @changes    1.0.0b38  Updated ::overrideRelatedRecordName() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
  * @changes    1.0.0b37  Fixed a documentation typo [wb, 2010-11-04]
@@ -711,6 +712,14 @@ class fORMRelated
 			  !isset(self::$related_record_names[$table][$related_class]) ||
 			  !isset(self::$related_record_names[$table][$related_class][$route])) {
 			return fORM::getRecordName($related_class);
+		}
+		
+		// If fText is loaded, use it
+		if (class_exists('fText', FALSE)) {
+			return call_user_func(
+				array('fText', 'compose'),
+				str_replace('%', '%%', self::$related_record_names[$table][$related_class][$route])
+			);
 		}
 		
 		return self::$related_record_names[$table][$related_class][$route];
@@ -1739,7 +1748,7 @@ class fORMRelated
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

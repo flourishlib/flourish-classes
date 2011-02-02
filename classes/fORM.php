@@ -2,14 +2,15 @@
 /**
  * Dynamically handles many centralized object-relational mapping tasks
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Updated ::getColumnName() and ::getRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b27  Added links to the detailed documentation for the parameters passed to hooks [wb, 2010-11-27]
  * @changes    1.0.0b26  Added ::getRelatedClass() for handling related classes in PHP 5.3 namespaces [wb, 2010-11-17]
  * @changes    1.0.0b25  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
@@ -506,6 +507,14 @@ class fORM
 			self::$column_names[$class][$column] = fGrammar::humanize($column);
 		}
 		
+		// If fText is loaded, use it
+		if (class_exists('fText', FALSE)) {
+			return call_user_func(
+				array('fText', 'compose'),
+				str_replace('%', '%%', self::$column_names[$class][$column])
+			);
+		}
+		
 		return self::$column_names[$class][$column];
 	}
 	
@@ -549,6 +558,14 @@ class fORM
 					'',
 					$class
 				)
+			);
+		}
+		
+		// If fText is loaded, use it
+		if (class_exists('fText', FALSE)) {
+			return call_user_func(
+				array('fText', 'compose'),
+				str_replace('%', '%%', self::$record_names[$class])
 			);
 		}
 		
@@ -1210,7 +1227,7 @@ class fORM
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
