@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Added ::addCustomerHeader() [wb, 2011-02-02]
  * @changes    1.0.0b25  Fixed a bug with finding the FQDN on non-Windows machines [wb, 2011-01-19]
  * @changes    1.0.0b24  Backwards Compatibility Break - the `$contents` parameter of ::addAttachment() is now first instead of third, ::addAttachment() will now accept fFile objects for the `$contents` parameter, added ::addRelatedFile() [wb, 2010-12-01]
  * @changes    1.0.0b23  Fixed a bug on Windows where emails starting with a `.` would have the `.` removed [wb, 2010-09-11]
@@ -376,6 +377,13 @@ class fEmail
 	private $cc_emails = array();
 	
 	/**
+	 * Custom headers
+	 * 
+	 * @var array
+	 */
+	private $custom_headers = array();
+	
+	/**
 	 * The email address being sent from
 	 * 
 	 * @var string
@@ -600,6 +608,35 @@ class fEmail
 	
 	
 	/**
+	 * Allows adding a custom header to the email
+	 * 
+	 * If the method is called multiple times with the same name, the last
+	 * value will be used.
+	 * 
+	 * Please note that this class will properly format the header, including
+	 * adding the `:` between the name and value and wrapping values that are
+	 * too long for a single line.
+	 * 
+	 * @param string $name      The name of the header
+	 * @param string $value     The value of the header
+	 * @param array  :$headers  An associative array of `{name} => {value}`
+	 * @return void
+	 */
+	public function addCustomHeader($name, $value=NULL)
+	{
+		if ($value === NULL && is_array($name)) {
+			foreach ($name as $key => $value) {
+				$this->addCustomHeader($key, $value);
+			}
+			return;	
+		}
+		
+		$lower_name = fUTF8::lower($name);
+		$this->custom_headers[$lower_name] = array($name, $value);
+	}
+	
+	
+	/**
 	 * Adds an email recipient
 	 * 
 	 * @param  string $email  The email address to send to
@@ -625,17 +662,16 @@ class fEmail
 	 */
 	private function buildMultiAddressHeader($header, $emails)
 	{
-		if ($header) {
-			$header .= ': ';
-		}
+		$header .= ': ';
 		
 		$first = TRUE;
 		$line  = 1;
 		foreach ($emails as $email) {
 			if ($first) { $first = FALSE; } else { $header .= ', '; }
 			
-			// Make sure we don't go past the 978 char limit for email headers
-			if (strlen($header . $email) / 950 > $line) {
+			// Try to stay within the recommended 78 character line limit
+			$last_crlf_pos = (integer) strrpos($header, "\r\n");
+			if (strlen($header . $email) - $last_crlf_pos > 78) {
 				$header .= "\r\n ";
 				$line++;
 			}
@@ -702,7 +738,9 @@ class fEmail
 		// If the name contains any non-ascii bytes or stuff not allowed
 		// in quoted strings we just make an encoded word out of it
 		if (preg_replace('#[\x80-\xff\x5C\x22]#', '', $name) != $name) {
-			$name = $this->makeEncodedWord($name);
+			// The longest header name that will contain email addresses is
+			// "Bcc: ", which is 5 characters long
+			$name = $this->makeEncodedWord($name, 5);
 		} else {
 			$name = '"' . $name . '"';	
 		}
@@ -823,6 +861,11 @@ class fEmail
 		
 		if ($this->sender_email) {
 			$headers .= "Sender: " . trim($this->sender_email) . "\r\n";
+		}
+		
+		foreach ($this->custom_headers as $header_info) {
+			$header_prefix = $header_info[0] . ': ';
+			$headers .= $header_prefix . $this->makeEncodedWord($header_info[1], strlen($header_prefix)) . "\r\n";  
 		}
 		
 		$headers .= "Message-ID: " . $message_id . "\r\n";
@@ -1121,10 +1164,11 @@ class fEmail
 	/**
 	 * Encodes a string to UTF-8 encoded-word
 	 * 
-	 * @param  string  $content  The content to encode
+	 * @param  string  $content                   The content to encode
+	 * @param  integer $first_line_prefix_length  The length of any prefix applied to the first line of the encoded word - this allows properly accounting for a header name
 	 * @return string  The encoded string
 	 */
-	private function makeEncodedWord($content)
+	private function makeEncodedWord($content, $first_line_prefix_length)
 	{
 		// Homogenize the line-endings to CRLF
 		$content = str_replace("\r\n", "\n", $content);
@@ -1166,7 +1210,7 @@ class fEmail
 		// This loop goes through and ensures we are wrapping by 75 chars
 		// including the encoded word delimiters
 		$output = $prefix;
-		$line_length = $prefix_length;
+		$line_length = $prefix_length + $first_line_prefix_length;
 		
 		for ($i=0; $i<$length; $i++) {
 			
@@ -1321,13 +1365,13 @@ class fEmail
 			}
 		}
 		
-		$to = trim($this->buildMultiAddressHeader("", $this->to_emails));
+		$to = substr(trim($this->buildMultiAddressHeader("To", $this->to_emails)), 4);
 		
 		$top_level_boundary = $this->createBoundary();
 		$headers            = $this->createHeaders($top_level_boundary, $this->message_id);
 		
 		$subject = str_replace(array("\r", "\n"), '', $this->subject);
-		$subject = $this->makeEncodedWord($subject);
+		$subject = $this->makeEncodedWord($subject, 9);
 		
 		$body = $this->createBody($top_level_boundary);
 		
