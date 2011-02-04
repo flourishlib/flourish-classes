@@ -2,7 +2,7 @@
 /**
  * Holds a single instance of the fDatabase class and provides database manipulation functionality for ORM code
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Craig Ruksznis, iMarc LLC [cr-imarc] <craigruk@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Fixed ::insertFromAndGroupByClauses() to insert `MAX()` around columns in related tables in the `ORDER BY` clause when a `GROUP BY` is used [wb, 2011-02-03]
  * @changes    1.0.0b29  Added code to handle old PCRE engines that don't support unicode character properties [wb, 2010-12-06]
  * @changes    1.0.0b28  Fixed a bug in the fProgrammerException that is thrown when an improperly formatted OR condition is provided [wb, 2010-11-24]
  * @changes    1.0.0b27  Fixed ::addWhereClause() to ignore fuzzy search clauses with no values to match [wb, 2010-10-19]
@@ -931,6 +932,7 @@ class fORMDatabase
 	 */
 	static public function injectFromAndGroupByClauses($db, $schema, $params, $table)
 	{
+		$table_with_schema = $table;
 		$table = self::cleanTableName($schema, $table);
 		$joins = array();
 		
@@ -1052,7 +1054,6 @@ class fORMDatabase
 				break;
 			}
 		}
-		$found_order_by = FALSE;
 		
 		$from_clause     = self::createFromClauseFromJoins($db, $joins);
 		
@@ -1074,7 +1075,7 @@ class fORMDatabase
 		// Put the SQL back together
 		$new_sql = '';
 		
-		$preg_table_pattern = preg_quote($table, '#') . '\.|' . preg_quote('"' . $table . '"', '#') . '\.';
+		$preg_table_pattern = preg_quote($table_with_schema, '#') . '\.|' . preg_quote('"' . trim($table_with_schema, '"') . '"', '#') . '\.';
 		foreach ($matches[0] as $match) {
 			$temp_sql = $match;
 			
@@ -1087,16 +1088,12 @@ class fORMDatabase
 					$temp_sql = preg_replace('#(?<![\w"])' . preg_quote($arrow_table, '#') . '(?!=[\w"])#', $alias, $temp_sql);
 				}
 				
-				// In the ORDER BY clause we need to wrap columns in
-				if ($found_order_by && $joined_to_many) {
-					$temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\(|cast\(|case |when |"|avg\("|count\("|max\("|min\("|sum\("|cast\("|case "|when "|\{)\b((?!' . $preg_table_pattern . ')("?\w+"?\.)?"?\w+"?\."?\w+"?)(?![^\w."])#i', 'max(\1)', $temp_sql);
-				}
-				
+				// This automatically adds max() around column from other tables when a group by is used
 				if ($joined_to_many && preg_match('#order\s+by#i', $temp_sql)) {
 					$order_by_found = TRUE;
 					
 					$parts = preg_split('#(order\s+by)#i', $temp_sql, -1, PREG_SPLIT_DELIM_CAPTURE);
-					$parts[2] = $temp_sql = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\(|cast\(|case |when |"|avg\("|count\("|max\("|min\("|sum\("|cast\("|case "|when "|\{)\b((?!' . $preg_table_pattern . ')("?\w+"?\.)?"?\w+"?\."?\w+"?)(?![^\w."])#i', 'max(\1)', $parts[2]);
+					$parts[2] = preg_replace('#(?<!avg\(|count\(|max\(|min\(|sum\(|cast\(|case |when |"|avg\("|count\("|max\("|min\("|sum\("|cast\("|case "|when "|\{|\.)((?!' . $preg_table_pattern . ')((?:"|\b)\w+"?\.)?(?:"|\b)\w+"?\."?\w+"?)(?![\w."])#i', 'max(\1)', $parts[2]);
 					
 					$temp_sql = join('', $parts);
 				}
@@ -1307,7 +1304,7 @@ class fORMDatabase
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
