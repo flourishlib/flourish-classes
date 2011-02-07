@@ -2,14 +2,15 @@
 /**
  * Gets schema information for the selected database
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b45
+ * @version    1.0.0b46
+ * @changes    1.0.0b46  Enhanced SQLite schema detection to cover situations where `UNIQUE` constraints are defined separately from the table and when comments are used in `CREATE TABLE` statements [wb, 2011-02-06]
  * @changes    1.0.0b45  Fixed Oracle auto incrementing detection to work with `INSERT OR UPDATE` triggers, fixed detection of dynamic default date/time/timestamp values for DB2 and Oracle [wb, 2010-12-04]
  * @changes    1.0.0b44  Fixed the list of valid elements for ::getColumnInfo() [wb, 2010-11-28]
  * @changes    1.0.0b43  Added the `comment` element to the information returned by ::getColumnInfo() [wb, 2010-11-28]
@@ -1888,7 +1889,7 @@ class fSchema
 			return array();			
 		}
 		
-		preg_match_all('#(?<=,|\()\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?\w+["`\]]?\s*\(\s*["`\[]?\w+["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?([ \t]*--[^\n]+)?\s*(?:,([ \t]*--[^\n]+)?|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\(|\*/|\n)\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+([a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+([^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?\w+["`\]]?\s*\(\s*["`\[]?\w+["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?([ \t]*(?:/\*(?:(?!\*/).)*\*/))?\s*(?:,([ \t]*--[^\n]*\n)?|(--[^\n]*\n)?\s*(?=\)))#msi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			$info = array();
@@ -1945,9 +1946,17 @@ class fSchema
 			}
 			
 			// Column comments
-			if (!empty($match[11]) || !empty($match[12])) {
-				$comment = empty($match[12]) ? $match[11] : $match[12];
-				$info['comment'] = ltrim(substr(trim($comment), 2));
+			if (!empty($match[11]) || !empty($match[12]) || !empty($match[13])) {
+				if (!empty($match[11])) {
+					$comment = $match[11];
+				} elseif (!empty($match[12])) {
+					$comment = $match[12];
+				} else {
+					$comment = $match[13];
+				}
+				$comment = trim($comment);
+				$comment = substr($comment, 0, 2) == '--' ? substr($comment, 2) : substr($comment, 2, -2);
+				$info['comment'] = trim($comment);
 			}
 		
 			$column_info[$match[1]] = $info;
@@ -1976,6 +1985,15 @@ class fSchema
 			$result     = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = %s", $table);
 			$row        = $result->fetchRow();
 			$create_sql = $row['sql'];
+			
+			// Collapse strings into empty string to make the matching simpler
+			$create_sql = preg_replace('#\'(?:\'\'|[^\']+)*\'#', "''", $create_sql);
+			
+			// Remove single-line comments
+			$create_sql = preg_replace('#--[^\n]*\n#', "\n", $create_sql);
+			
+			// Remove multi-line comments
+			$create_sql = preg_replace('#/\*((?!\*/).)*\*/#', '', $create_sql);
 			
 			// Get column level key definitions
 			preg_match_all('#(?<=,|\()\s*["`\[]?(\w+)["`\]]?\s+(?:[a-z]+)(?:\((?:\d+)\))?(?:(?:\s+NOT\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))|(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
@@ -2016,7 +2034,7 @@ class fSchema
 			}
 			
 			// Get table level foreign key definitions
-			preg_match_all('#(?<=,|\()\s*FOREIGN\s+KEY\s*(?:["`\[]?(\w+)["`\]]?|\(\s*["`\[]?(\w+)["`\]]?\s*\))\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\()\s*FOREIGN\s+KEY\s*(?:["`\[]?(\w+)["`\]]?|\(\s*["`\[]?(\w+)["`\]]?\s*\))\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))?(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|\s*(?=\)))#mis', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
 				if (empty($match[1])) { $match[1] = $match[2]; }
@@ -2038,6 +2056,21 @@ class fSchema
 			preg_match_all('#(?<=,|\()\s*UNIQUE\s*\(\s*((?:\s*["`\[]?\w+["`\]]?\s*,\s*)*["`\[]?\w+["`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 			
 			foreach ($matches as $match) {
+				$columns = preg_split('#\s*,\s*#', $match[1]);
+				$key = array();
+				foreach ($columns as $column) {
+					$key[] = str_replace(array('[', '"', '`', ']'), '', $column);
+				}
+				$keys[$table]['unique'][] = $key;
+			}
+			
+			// Get all CREATE UNIQUE INDEX statements
+			$result = $this->database->query("SELECT sql FROM sqlite_master WHERE type = 'index' AND sql <> '' AND tbl_name = %s", $table);
+			foreach ($result as $row) {
+				$create_sql = $row['sql'];
+				if (!preg_match('#^\s*CREATE\s+UNIQUE\s+INDEX\s+(?:\w+\.)?\w+\s+ON\s+\w+\s*\(\s*((?:\s*["`\[]?\w+["`\]]?\s*,\s*)*["`\[]?\w+["`\]]?)\s*\)$#Di', $create_sql, $match)) {
+					continue;
+				}
 				$columns = preg_split('#\s*,\s*#', $match[1]);
 				$key = array();
 				foreach ($columns as $column) {
@@ -2972,7 +3005,7 @@ class fSchema
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
