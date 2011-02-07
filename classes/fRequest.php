@@ -16,9 +16,10 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
  * @changes    1.0.0b17  Fixed support for 3+ dimensional input arrays, added a fixed for the PHP DoS float bug #53632, added support for type-casted arrays in ::get() [wb, 2011-01-09]
- * @changes    1.0.0b16  Backwards Compatiblity Break - changed ::get() to remove binary characters when casting to a `string`, changed `int` and `integer` to cast to a real integer when possible, added new types of `binary` and `integer!` [wb, 2010-11-30]
+ * @changes    1.0.0b16  Backwards Compatibility Break - changed ::get() to remove binary characters when casting to a `string`, changed `int` and `integer` to cast to a real integer when possible, added new types of `binary` and `integer!` [wb, 2010-11-30]
  * @changes    1.0.0b15  Added documentation about `[sub-key]` syntax, added `[sub-key]` support to ::check() [wb, 2010-09-12]
  * @changes    1.0.0b14  Rewrote ::set() to not require recursion for array syntax [wb, 2010-09-12]
  * @changes    1.0.0b13  Fixed ::set() to work with `PUT` requests [wb, 2010-06-30]
@@ -456,46 +457,70 @@ class fRequest
 	/**
 	 * Returns the HTTP `Accept-Language`s sorted by their `q` values (from high to low)
 	 * 
-	 * @return array  An associative array of `{language} => {q value}` sorted (in a stable-fashion) from highest to lowest `q`
+	 * @return array  An associative array of `{language} => {q value}` sorted (in a stable-fashion) from highest to lowest `q` - if no header was sent, an empty array will be returned
 	 */
 	static public function getAcceptLanguages()
 	{
-		return self::processAcceptHeader($_SERVER['HTTP_ACCEPT_LANGUAGE']);
+		return self::processAcceptHeader('HTTP_ACCEPT_LANGUAGE');
 	}
 	
 	
 	/**
 	 * Returns the HTTP `Accept` types sorted by their `q` values (from high to low)
 	 * 
-	 * @return array  An associative array of `{type} => {q value}` sorted (in a stable-fashion) from highest to lowest `q`
+	 * @return array  An associative array of `{type} => {q value}` sorted (in a stable-fashion) from highest to lowest `q` - if no header was sent, an empty array will be returned
 	 */
 	static public function getAcceptTypes()
 	{
-		return self::processAcceptHeader($_SERVER['HTTP_ACCEPT']);
+		return self::processAcceptHeader('HTTP_ACCEPT');
 	}
 	
 	
 	/**
 	 * Returns the best HTTP `Accept-Language` (based on `q` value) - can be filtered to only allow certain languages
 	 * 
-	 * @param  array $filter  An array of languages that are valid to return
-	 * @return string  The best language listed in the `Accept-Language` header
+	 * Special conditions affecting the return value:
+	 *  - If no `$filter` is provided and the client does not send the `Accept-Language` header, `NULL` will be returned
+	 *  - If no `$filter` is provided and the client specifies `*` with the highest `q`, `NULL` will be returned
+	 *  - If `$filter` contains one or more values, but the `Accept-Language` header does not match any, `FALSE` will be returned
+	 *  - If `$filter` contains one or more values, but the client does not send the `Accept-Language` header, the first entry from `$filter` will be returned
+	 *  - If `$filter` contains two or more values, and two of the values have the same `q` value, the one listed first in `$filter` will be returned
+	 *  
+	 * @param  array  $filter     An array of languages that are valid to return - these should be in the form `{language}-{territory}`, e.g. `en-us`
+	 * @param  string |$language  A language that is valid to return
+	 * @param  string |...
+	 * @return string|NULL|FALSE  The best language listed in the `Accept-Language` header - see method description for edge cases
 	 */
 	static public function getBestAcceptLanguage($filter=array())
 	{
-		return self::pickBestAcceptItem($_SERVER['HTTP_ACCEPT_LANGUAGE'], $filter);
+		if (!is_array($filter)) {
+			$filter = func_get_args();
+		}
+		return self::pickBestAcceptItem('HTTP_ACCEPT_LANGUAGE', $filter);
 	}
 	
 	
 	/**
 	 * Returns the best HTTP `Accept` type (based on `q` value) - can be filtered to only allow certain types
 	 * 
-	 * @param  array $filter  An array of types that are valid to return
-	 * @return string  The best type listed in the `Accept` header
+	 * Special conditions affecting the return value:
+	 *  - If no `$filter` is provided and the client does not send the `Accept` header, `NULL` will be returned
+	 *  - If no `$filter` is provided and the client specifies `{@*}*` with the highest `q`, `NULL` will be returned
+	 *  - If `$filter` contains one or more values, but the `Accept` header does not match any, `FALSE` will be returned
+	 *  - If `$filter` contains one or more values, but the client does not send the `Accept` header, the first entry from `$filter` will be returned
+	 *  - If `$filter` contains two or more values, and two of the values have the same `q` value, the one listed first in `$filter` will be returned
+	 * 
+	 * @param  array  $filter  An array of types that are valid to return
+	 * @param  string |$type   A type that is valid to return
+	 * @param  string |...
+	 * @return string|NULL|FALSE  The best type listed in the `Accept` header - see method description for edge cases
 	 */
 	static public function getBestAcceptType($filter=array())
 	{
-		return self::pickBestAcceptItem($_SERVER['HTTP_ACCEPT'], $filter);
+		if (!is_array($filter)) {
+			$filter = func_get_args();
+		}
+		return self::pickBestAcceptItem('HTTP_ACCEPT', $filter);
 	}
 	
 	
@@ -627,46 +652,58 @@ class fRequest
 	/**
 	 * Returns the best HTTP `Accept-*` header item match (based on `q` value), optionally filtered by an array of options
 	 * 
-	 * @param  string $header   The `Accept-*` header to pick the best item from
-	 * @param  array  $options  A list of supported options to pick the best from
-	 * @return string  The best accept item, `NULL` if an options array is specified and none are valid
+	 * @param  string $header_name  The key in `$_SERVER` that contains the `Accept-*` header to pick the best item from
+	 * @param  array  $options      A list of supported options to pick the best from
+	 * @return string  The best accept item, `FALSE` if an options array is specified and none are valid, `NULL` if anything is accepted
 	 */
-	static private function pickBestAcceptItem($header, $options)
+	static private function pickBestAcceptItem($header_name, $options)
 	{
 		settype($options, 'array');
 		
-		$items = self::processAcceptHeader($header);
+		if (!isset($_SERVER[$header_name]) || !strlen($_SERVER[$header_name])) {
+			if (empty($options)) {
+				return NULL;
+			}
+			return reset($options);
+		}
+		
+		$items = self::processAcceptHeader($header_name);
 		reset($items);
 		
 		if (!$options) {
-			return key($items);		
+			$result = key($items);
+			if ($result == '*/*' || $result == '*') {
+				$result = NULL;
+			}
+			return $result;
 		}
 		
 		$top_q    = 0;
-		$top_item = NULL;
+		$top_item = FALSE;
 		
-		foreach ($items as $item => $q) {
-			if ($q < $top_q) {
-				continue;	
-			}
-			
-			// Type matches have /s
-			if (strpos($item, '/') !== FALSE) {
-				$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';
-			
-			// Language matches that don't have a - are a wildcard
-			} elseif (strpos($item, '-') === FALSE) {
-				$regex = '#^' . str_replace('*', '.*', $item) . '(-.*)?$#iD';	
+		foreach ($options as $option) {
+			foreach ($items as $item => $q) {
+				if ($q < $top_q) {
+					continue;	
+				}
 				
-			// Non-wildcard languages are straight-up matches
-			} else {
-				$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';	
-			}
-			foreach ($options as $option) {
+				// Type matches have /s
+				if (strpos($item, '/') !== FALSE) {
+					$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';
+				
+				// Language matches that don't have a - are a wildcard
+				} elseif (strpos($item, '-') === FALSE) {
+					$regex = '#^' . str_replace('*', '.*', $item) . '(-.*)?$#iD';	
+					
+				// Non-wildcard languages are straight-up matches
+				} else {
+					$regex = '#^' . str_replace('*', '.*', $item) . '$#iD';	
+				}
+			
 				if (preg_match($regex, $option) && $top_q < $q) {
 					$top_q = $q;
 					$top_item = $option;
-					continue 2;
+					continue;
 				}	
 			}
 		}
@@ -692,11 +729,16 @@ class fRequest
 	/**
 	 * Returns an array of values from one of the HTTP `Accept-*` headers
 	 * 
-	 * @return array  An associative array of `{value} => {quality}` sorted (in a stable-fashion) from highest to lowest `q`
+	 * @param  string $header_name  The key in `$_SERVER` to get the header value from
+	 * @return array  An associative array of `{value} => {quality}` sorted (in a stable-fashion) from highest to lowest `q` - an empty array is returned if the header is empty
 	 */
-	static private function processAcceptHeader($header)
+	static private function processAcceptHeader($header_name)
 	{
-		$types  = explode(',', $header);
+		if (!isset($_SERVER[$header_name]) || !strlen($_SERVER[$header_name])) {
+			return array();
+		}
+		
+		$types  = explode(',', $_SERVER[$header_name]);
 		$output = array();
 		
 		// We use this suffix to force stable sorting with the built-in sort function
