@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Backwards Compatibility Break - Updated ::expose() to not wrap the data in HTML when running via CLI, and instead just append a newline [wb, 2011-02-24]
  * @changes    1.0.0b19  Added detection of AIX to ::checkOS() [wb, 2011-01-19]
  * @changes    1.0.0b18  Updated ::expose() to be able to accept multiple parameters [wb, 2011-01-10]
  * @changes    1.0.0b17  Fixed a bug with ::backtrace() triggering notices when an argument is not UTF-8 [wb, 2010-08-17]
@@ -772,7 +773,12 @@ class fCore
 	
 	
 	/**
-	 * Prints the ::dump() of a value in a pre tag with the class `exposed`
+	 * Prints the ::dump() of a value
+	 *
+	 * The dump will be printed in a `<pre>` tag with the class `exposed` if
+	 * PHP is running anywhere but via the command line (cli). If PHP is
+	 * running via the cli, the data will be printed, followed by a single
+	 * line break (`\n`).
 	 * 
 	 * If multiple parameters are passed, they are exposed as an array.
 	 * 
@@ -786,7 +792,11 @@ class fCore
 		if (count($args) > 1) {
 			$data = $args;
 		}
-		echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data), ENT_QUOTES) . '</pre>';
+		if (PHP_SAPI != 'cli') {
+			echo '<pre class="exposed">' . htmlspecialchars((string) self::dump($data), ENT_QUOTES) . '</pre>';
+		} else {
+			echo self::dump($data) . "\n";
+		}
 	}
 	
 	
