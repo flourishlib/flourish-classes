@@ -10,7 +10,7 @@
  * @link       http://flourishlib.com/fGrammar
  * 
  * @version    1.0.0b14
- * @changes    1.0.0b14  Fixed a bug in pluralization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
+ * @changes    1.0.0b14  Fixed a bug in singularization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
  * @changes    1.0.0b13  Fixed the pluralization of video [wb, 2010-08-10]
  * @changes    1.0.0b12  Updated ::singularize() and ::pluralize() to be able to handle underscore_CamelCase [wb, 2010-08-06]
  * @changes    1.0.0b11  Fixed custom camelCase to underscore_notation rules [wb, 2010-06-23]
