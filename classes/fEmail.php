@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b26
+ * @version    1.0.0b27
+ * @changes    1.0.0b27  Fixed a bug with generating FQDNs on some Windows machines [wb, 2011-02-24]
  * @changes    1.0.0b26  Added ::addCustomerHeader() [wb, 2011-02-02]
  * @changes    1.0.0b25  Fixed a bug with finding the FQDN on non-Windows machines [wb, 2011-01-19]
  * @changes    1.0.0b24  Backwards Compatibility Break - the `$contents` parameter of ::addAttachment() is now first instead of third, ::addAttachment() will now accept fFile objects for the `$contents` parameter, added ::addRelatedFile() [wb, 2010-12-01]
@@ -278,7 +279,7 @@ class fEmail
 					}
 				}
 				if (!empty($domain)) {
-					self::$fqdn = '.' . $domain;
+					self::$fqdn .= '.' . $domain;
 				} 
 				
 			} elseif (!fCore::checkOS('windows') && !ini_get('open_basedir') && file_exists('/etc/resolv.conf')) {
