@@ -2,14 +2,15 @@
 /**
  * Provides english word inflection, notation conversion, grammar helpers and internationlization support
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Fixed a bug in pluralization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
  * @changes    1.0.0b13  Fixed the pluralization of video [wb, 2010-08-10]
  * @changes    1.0.0b12  Updated ::singularize() and ::pluralize() to be able to handle underscore_CamelCase [wb, 2010-08-06]
  * @changes    1.0.0b11  Fixed custom camelCase to underscore_notation rules [wb, 2010-06-23]
@@ -82,7 +83,7 @@ class fGrammar
 	 * @var array
 	 */
 	static private $plural_to_singular_rules = array(
-		'([ml])ice'                    => '\1ouse',
+		'([ml])ice$'                   => '\1ouse',
 		'(media|info(rmation)?|news)$' => '\1',
 		'(q)uizzes$'                   => '\1uiz',
 		'(c)hildren$'                  => '\1hild',
@@ -499,7 +500,7 @@ class fGrammar
 		self::$humanize_rules           = array();
 		self::$join_array_callback      = NULL;
 		self::$plural_to_singular_rules = array(
-			'([ml])ice'                    => '\1ouse',
+			'([ml])ice$'                   => '\1ouse',
 			'(media|info(rmation)?|news)$' => '\1',
 			'(q)uizzes$'                   => '\1uiz',
 			'(c)hildren$'                  => '\1hild',
@@ -779,7 +780,7 @@ class fGrammar
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
