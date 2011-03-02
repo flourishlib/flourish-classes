@@ -6,14 +6,15 @@
  * the original URL entered by the user will be used, or that any rewrites
  * will **not** be reflected by this class.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed ::redirect() to be able to handle unqualified and relative paths [wb, 2011-03-02]
  * @changes    1.0.0b6  Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
  * @changes    1.0.0b5  Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
  * @changes    1.0.0b4  ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
@@ -131,8 +132,30 @@ class fURL
 	{
 		if (strpos($url, '/') === 0) {
 			$url = self::getDomain() . $url;
+
 		} elseif (!preg_match('#^https?://#i', $url)) {
-			$url = self::getDomain() . self::get() . $url;
+			
+			$prefix = self::getDomain() . self::get();
+			
+			// All URLs that have more than the query string need to
+			// be appended to the current directory name
+			if ($url[0] != '?') {
+				$prefix = preg_replace('#(?<=/)[^/]+$#D', '', $prefix);
+			}
+
+			// Clean up ./ relative URLS
+			if (substr($url, 0, 2) == './') {
+				$url = substr($url, 2);
+			}
+
+			// Resolve ../ relative paths as far as possible
+			while (substr($url, 0, 3) == '../') {
+				if ($prefix == self::getDomain() . '/') { break; }
+				$prefix = preg_replace('#(?<=/)[^/]+/?$#D', '', $prefix);
+				$url    = substr($url, 3);
+			}
+
+			$url = $prefix . $url;
 		}
 		
 		// Strip the ? if there are no query string parameters
@@ -219,7 +242,7 @@ class fURL
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
