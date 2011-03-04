@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Fixed usage of the mysqli extension to only call mysqli_set_charset() if it exists [wb, 2011-03-04]
  * @changes    1.0.0b36  Updated ::escape() and methods that use ::escape() to handle float values that don't contain a digit before or after the . [wb, 2011-02-01]
  * @changes    1.0.0b35  Updated the class to replace `LIMIT` and `OFFSET` value placeholders in the SQL with their values before translating since most databases that translate `LIMIT` statements need to move or add values together [wb, 2011-01-11]
  * @changes    1.0.0b34  Fixed a bug with creating translated prepared statements [wb, 2011-01-09]
@@ -580,7 +581,7 @@ class fDatabase
 			} else {
 				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database);
 			}
-			if ($this->connection && !mysqli_set_charset($this->connection, 'utf8')) {
+			if ($this->connection && function_exists('mysqli_set_charset') && !mysqli_set_charset($this->connection, 'utf8')) {
                 throw new fConnectivityException(
                 	'There was an error setting the database connection to use UTF-8'
                 );
