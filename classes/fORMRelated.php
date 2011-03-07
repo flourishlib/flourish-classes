@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b40
+ * @version    1.0.0b41
+ * @changes    1.0.0b41  Fixed a bug in generating errors messages for many-to-many relationships [wb, 2011-03-07]
  * @changes    1.0.0b40  Updated ::getRelatedRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b39  Fixed a bug with ::validate() not properly removing validation messages about a related primary key value not being present yet, if the column and related column names were different [wb, 2010-11-24]
  * @changes    1.0.0b38  Updated ::overrideRelatedRecordName() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
@@ -1719,7 +1720,7 @@ class fORMRelated
 		foreach ($related_records as $record) {
 			if ((is_object($record) && !$record->exists()) || !$record) {
 				$messages[fORM::tablize($related_class)] = self::compose(
-					'%sPlease select a %3$s',
+					'%1$sPlease select a %2$s',
 					fValidationException::formatField(
 						self::compose(
 							'%1$s #%2$s',
