@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b36
+ * @version    1.0.0b37
+ * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
  * @changes    1.0.0b36  Added the `$remove_extension` parameter to ::getName() [wb, 2011-01-10]
  * @changes    1.0.0b35  Added calls to clearstatcache() in ::append() and ::write() to prevent incorrect data from being returned by ::getMTime() and ::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b34  Added ::getExtension() [wb, 2010-05-10]
@@ -171,7 +172,7 @@ class fFile implements Iterator
 			return 'image/gif';	
 		}
 		
-		if ($_0_2 == 'BM' && strlen($content) > 14 && array($content[14], array("\x0C", "\x28", "\x40", "\x80"))) {
+		if ($_0_2 == 'BM' && $length > 14 && in_array($content[14], array("\x0C", "\x28", "\x40", "\x80"))) {
 			return 'image/x-ms-bmp';	
 		}
 		
