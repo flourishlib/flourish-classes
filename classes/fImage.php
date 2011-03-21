@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Added a check for systems using the GD extension and no memory limit, plus a check for ImageMagick's convert command failing [wb, 2011-03-20]
  * @changes    1.0.0b29  Added checks for AIX [wb, 2011-01-19]
  * @changes    1.0.0b28  Added the ::rotate() method, added code to try and prevent fatal errors due to hitting the memory limit when using GD [wb, 2010-11-29]
  * @changes    1.0.0b27  Backwards Compatibility Break - changed the parameter order in ::crop() from `$crop_from_x`, `$crop_from_y`, `$new_width`, `$new_height` to `$new_width`, `$new_height`, `$crop_from_x`, `$crop_from_y` - added `$horizontal_position` and `$vertical_position` parameters to ::cropToRatio() [wb-imarc, 2010-11-09]
@@ -884,21 +885,23 @@ class fImage extends fFile
 			$new_type = $type;	
 		}
 		
-		// We will estimate memory usage at 3MB if we can't actually check it
-		$beginning_memory_usage = 3145728;
-		if (function_exists('memory_get_usage')) {
-			$beginning_memory_usage = memory_get_usage();
-		}
-		$memory_limit_bytes = fFilesystem::convertToBytes(ini_get('memory_limit'));
-		
-		// Estimate the memory usage and throw an exception if we will run out
-		$load_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
-		if ($load_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
-			throw new fEnvironmentException(
-				'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
-				$load_byte_usage + $beginning_memory_usage,
-				$memory_limit_bytes
-			);
+		if (ini_get('memory_limit') != '-1') {
+			// We will estimate memory usage at 3MB if we can't actually check it
+			$beginning_memory_usage = 3145728;
+			if (function_exists('memory_get_usage')) {
+				$beginning_memory_usage = memory_get_usage();
+			}
+			$memory_limit_bytes = fFilesystem::convertToBytes(ini_get('memory_limit'));
+			
+			// Estimate the memory usage and throw an exception if we will run out
+			$load_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
+			if ($load_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
+				throw new fEnvironmentException(
+					'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
+					$load_byte_usage + $beginning_memory_usage,
+					$memory_limit_bytes
+				);
+			}
 		}
 		
 		switch ($type) {
@@ -918,14 +921,16 @@ class fImage extends fFile
 		
 		foreach ($this->pending_modifications as $num => $mod) {
 			
-			$old_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
-			$new_byte_usage = $this->pending_modifications[0]['width'] * $this->pending_modifications[0]['height'] * 4;
-			if ($old_byte_usage + $new_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
-				throw new fEnvironmentException(
-					'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
-					$old_byte_usage + $new_byte_usage + $beginning_memory_usage,
-					$memory_limit_bytes
-				);
+			if (ini_get('memory_limit') != '-1') {
+				$old_byte_usage = $this->pending_modifications[0]['old_width'] * $this->pending_modifications[0]['old_height'] * 4;
+				$new_byte_usage = $this->pending_modifications[0]['width'] * $this->pending_modifications[0]['height'] * 4;
+				if ($old_byte_usage + $new_byte_usage + $beginning_memory_usage > $memory_limit_bytes) {
+					throw new fEnvironmentException(
+						'The predicted memory usage to complete the image modifications using the GD extension, %1$s, will most likely exceed the memory limit of %2$s',
+						$old_byte_usage + $new_byte_usage + $beginning_memory_usage,
+						$memory_limit_bytes
+					);
+				}
 			}
 			
 			$new_gd_res = imagecreatetruecolor($mod['width'], $mod['height']);
@@ -1179,9 +1184,17 @@ class fImage extends fFile
 			$command_line .= ' -compress JPEG -quality ' . $jpeg_quality . ' ';
 		}
 		
-		$command_line .= ' ' . escapeshellarg($new_type . ':' . $output_file);
+		$command_line .= ' ' . escapeshellarg($new_type . ':' . $output_file) . ' 2>&1';
 		
-		exec($command_line);
+		exec($command_line, $output, $return_value);
+
+		if ($return_value !== 0) {
+			throw new fEnvironmentException(
+				"An error occurred running the command, %1\$s, to modify the image. The error output was:\n%2\$s",
+				$command_line,
+				join("\n", $output)
+			);
+		}
 	}
 	
 	
