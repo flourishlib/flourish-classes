@@ -2,14 +2,15 @@
 /**
  * Represents a date as a value object
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed the `$date` attribute to be protected [wb, 2011-03-20]
  * @changes    1.0.0b8  Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
  * @changes    1.0.0b7  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
  * @changes    1.0.0b6  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
@@ -49,7 +50,7 @@ class fDate
 	 * 
 	 * @var integer
 	 */
-	private $date;
+	protected $date;
 	
 	
 	/**
@@ -354,7 +355,7 @@ class fDate
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

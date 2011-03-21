@@ -2,14 +2,15 @@
 /**
  * Represents a date and time as a value object
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Changed the `$timestamp` and `$timezone` attributes to be protected [wb, 2011-03-20]
  * @changes    1.0.0b10  Fixed a bug in ::__construct() with specifying a timezone other than the default for a relative time string such as "now" or "+2 hours" [wb, 2010-07-05]
  * @changes    1.0.0b9   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
  * @changes    1.0.0b8   Fixed a bug with ::fixISOWeek() not properly parsing some ISO week dates [wb, 2009-10-06]
@@ -737,14 +738,14 @@ class fTimestamp
 	 * 
 	 * @var integer
 	 */
-	private $timestamp;
+	protected $timestamp;
 	
 	/**
 	 * The timezone for this date/time
 	 * 
 	 * @var string
 	 */
-	private $timezone;
+	protected $timezone;
 	
 	
 	/**
@@ -1087,7 +1088,7 @@ class fTimestamp
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

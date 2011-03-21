@@ -2,23 +2,24 @@
 /**
  * Represents a time of day as a value object
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
- * @changes    1.0.0b8  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
- * @changes    1.0.0b7  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
- * @changes    1.0.0b6  Fixed an outdated fCore method call [wb, 2009-02-23]
- * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b4  Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
- * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_TIME SQL keywords [wb, 2009-01-11]
- * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
- * @changes    1.0.0b   The initial implementation [wb, 2008-02-12]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Changed the `$time` attribute to be protected [wb, 2011-03-20]
+ * @changes    1.0.0b9   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
+ * @changes    1.0.0b8   Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
+ * @changes    1.0.0b7   Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
+ * @changes    1.0.0b6   Fixed an outdated fCore method call [wb, 2009-02-23]
+ * @changes    1.0.0b5   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b4   Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
+ * @changes    1.0.0b3   Added support for CURRENT_TIMESTAMP and CURRENT_TIME SQL keywords [wb, 2009-01-11]
+ * @changes    1.0.0b2   Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
+ * @changes    1.0.0b    The initial implementation [wb, 2008-02-12]
  */
 class fTime
 {
@@ -50,7 +51,7 @@ class fTime
 	 * 
 	 * @var integer
 	 */
-	private $time;
+	protected $time;
 	
 	
 	/**
@@ -354,7 +355,7 @@ class fTime
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
