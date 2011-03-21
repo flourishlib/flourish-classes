@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
  * @changes    1.0.0b30  Added a check for systems using the GD extension and no memory limit, plus a check for ImageMagick's convert command failing [wb, 2011-03-20]
  * @changes    1.0.0b29  Added checks for AIX [wb, 2011-01-19]
  * @changes    1.0.0b28  Added the ::rotate() method, added code to try and prevent fatal errors due to hitting the memory limit when using GD [wb, 2010-11-29]
@@ -1137,7 +1138,7 @@ class fImage extends fFile
 			$file .= '[0]';
 		}
 		
-		$command_line .= ' ' . escapeshellarg($file) . ' ';
+		$command_line .= ' ' . escapeshellarg(str_replace('tif', 'tiff', $type) . ':' . $file) . ' ';
 		
 		// Animated gifs need to be coalesced
 		if ($this->isAnimatedGif()) {
