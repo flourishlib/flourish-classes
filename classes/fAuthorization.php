@@ -2,14 +2,15 @@
 /**
  * Allows defining and checking user authentication via ACLs, authorization levels or a simple logged in/not logged in scheme
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fAuthorization
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed ::checkIP() to not trigger a notice when `$_SERVER['REMOTE_ADDR']` is not set [wb, 2011-05-10]
  * @changes    1.0.0b5  Added ::getLoginPage() [wb, 2010-03-09]
  * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b3  Updated class to use new fSession API [wb, 2009-05-08]
@@ -166,6 +167,10 @@ class fAuthorization
 			$ip_ranges = self::$named_ip_ranges[$ip_ranges];
 		}
 		
+		if (!isset($_SERVER['REMOTE_ADDR'])) {
+			return FALSE;
+		}
+
 		// Get the remote IP and remove any IPv6 to IPv4 mapping
 		$user_ip      = str_replace('::ffff:', '', $_SERVER['REMOTE_ADDR']);
 		$user_ip_long = ip2long($user_ip);
@@ -518,7 +523,7 @@ class fAuthorization
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
