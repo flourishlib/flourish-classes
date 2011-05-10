@@ -7,7 +7,7 @@
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b75
+ * @version    1.0.0b76
+ * @changes    1.0.0b76  Added ::clearIdentityMap() [wb, 2011-05-09]
  * @changes    1.0.0b75  Fixed a bug where child records of a record with a non-auto-incrementing primary key would not be saved properly for a new record [wb, 2010-12-06]
  * @changes    1.0.0b74  Updated ::populate() to use the `binary` type for fRequest::get() [wb, 2010-11-30]
  * @changes    1.0.0b73  Backwards Compatibility Break - changed column set methods to treat strings of all whitespace the same as empty string and convert them to `NULL` [wb, 2010-11-29]
@@ -526,6 +527,17 @@ abstract class fActiveRecord
 		}
 		
 		return TRUE;
+	}
+
+
+	/**
+	 * Clears the identity map
+	 * 
+	 * @return void
+	 */
+	static public function clearIdentityMap()
+	{
+		self::$identity_map = array();
 	}
 	
 	
@@ -2920,7 +2932,7 @@ abstract class fActiveRecord
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

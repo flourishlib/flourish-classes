@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Backwards Compatibility Break - callbacks registered to the `extracted` hook via ::registerHookCallback() no longer receive the `$strings` parameter, instead all strings are added into the `$values` parameter - added ::getVersion(), fixed a bug with SQLite messaging, fixed a bug with ::__destruct(), improved handling of transactional queries, added ::close(), enhanced class to throw four different exceptions for different connection errors, silenced PHP warnings upon connection error [wb, 2011-05-09]
  * @changes    1.0.0b37  Fixed usage of the mysqli extension to only call mysqli_set_charset() if it exists [wb, 2011-03-04]
  * @changes    1.0.0b36  Updated ::escape() and methods that use ::escape() to handle float values that don't contain a digit before or after the . [wb, 2011-02-01]
  * @changes    1.0.0b35  Updated the class to replace `LIMIT` and `OFFSET` value placeholders in the SQL with their values before translating since most databases that translate `LIMIT` statements need to move or add values together [wb, 2011-01-11]
@@ -238,6 +239,13 @@ class fDatabase
 	 * @var fStatement
 	 */
 	private $statement;
+
+	/**
+	 * The timeout for the database connection
+	 *
+	 * @var integer
+	 */
+	private $timeout;
 	
 	/**
 	 * The fSQLTranslation object for this database
@@ -270,6 +278,9 @@ class fDatabase
 	
 	/**
 	 * Configures the connection to a database - connection is not made until the first query is executed
+	 *
+	 * Passing `NULL` to any parameter other than `$type` and `$database` will
+	 * cause the default value to be used.
 	 * 
 	 * @param  string  $type      The type of the database: `'db2'`, `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, `'sqlite'`
 	 * @param  string  $database  Name of the database. If SQLite the path to the database file.
@@ -277,9 +288,10 @@ class fDatabase
 	 * @param  string  $password  The password for the username specified - not used for SQLite
 	 * @param  string  $host      Database server host or IP, defaults to localhost - not used for SQLite. MySQL socket connection can be made by entering `'sock:'` followed by the socket path. PostgreSQL socket connection can be made by passing just `'sock:'`. 
 	 * @param  integer $port      The port to connect to, defaults to the standard port for the database type specified - not used for SQLite
+	 * @param  integer $timeout   The number of seconds to timeout after if a connection can not be made - not used for SQLite
 	 * @return fDatabase
 	 */
-	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL)
+	public function __construct($type, $database, $username=NULL, $password=NULL, $host=NULL, $port=NULL, $timeout=NULL)
 	{
 		$valid_types = array('db2', 'mssql', 'mysql', 'oracle', 'postgresql', 'sqlite');
 		if (!in_array($type, $valid_types)) {
@@ -304,6 +316,7 @@ class fDatabase
 		$this->password = $password;
 		$this->host     = $host;
 		$this->port     = $port;
+		$this->timeout  = $timeout;
 		
 		$this->hook_callbacks = array(
 			'unmodified' => array(),
@@ -336,7 +349,11 @@ class fDatabase
 		} elseif ($this->extension == 'mysql') {
 			mysql_close($this->connection);
 		} elseif ($this->extension == 'mysqli') {
-			mysqli_close($this->connection);
+			// Before 5.2.0 the destructor order would cause mysqli to
+			// close itself which would make this call trigger a warning
+			if (fCore::checkVersion('5.2.0')) {
+				mysqli_close($this->connection);
+			}
 		} elseif ($this->extension == 'oci8') {
 			oci_close($this->connection);
 		} elseif ($this->extension == 'pgsql') {
@@ -348,6 +365,8 @@ class fDatabase
 		} elseif ($this->extension == 'pdo') {
 			// PDO objects close their own connections when destroyed
 		}
+
+		$this->connection = FALSE;
 	}
 	
 	
@@ -385,7 +404,8 @@ class fDatabase
 				}
 			} elseif ($this->extension == 'mssql') {
 				$message = $this->error;
-				unset($this->error);
+				$this->error = '';
+
 			} elseif ($this->extension == 'mysql') {
 				$message = mysql_error($this->connection);
 			} elseif ($this->extension == 'mysqli') {
@@ -395,21 +415,26 @@ class fDatabase
 					$message = mysqli_error($this->connection);
 				}
 			} elseif ($this->extension == 'oci8') {
-				$error_info = oci_error($extra_info);
+				$error_info = oci_error($extra_info ? $extra_info : $this->connection);
 				$message = $error_info['message'];
 			} elseif ($this->extension == 'pgsql') {
 				$message = pg_last_error($this->connection);
 			} elseif ($this->extension == 'sqlite') {
-				$message = $extra_info;
+				if ($extra_info === NULL) {
+					$message = sqlite_error_string(sqlite_last_error($this->connection));
+				} else {
+					$message = $extra_info;
+				}
 			} elseif ($this->extension == 'sqlsrv') {
 				$error_info = sqlsrv_errors(SQLSRV_ERR_ALL);
 				$message = $error_info[0]['message'];
 			} elseif ($this->extension == 'pdo') {
 				if ($extra_info instanceof PDOStatement) {
-					$error_info = $extra_info->errorInfo();	
+					$error_info = $extra_info->errorInfo();
 				} else {
 					$error_info = $this->connection->errorInfo();
 				}
+				
 				if (empty($error_info[2])) {
 					$error_info[2] = 'Unknown error - this usually indicates a bug in the PDO driver';	
 				}
@@ -453,23 +478,49 @@ class fDatabase
 			$this->translation->clearCache();	
 		}
 	}
+
+
+	/**
+	 * Closes the database connection
+	 *
+	 * @return void
+	 */
+	public function close()
+	{
+		$this->__destruct();
+	}
 	
 	
 	/**
-	 * Connects to the database specified if no connection exists
+	 * Connects to the database specified, if no connection exists
+	 *
+	 * This method is only intended to force a connection, all operations that
+	 * require a database connection will automatically call this method.
 	 * 
+	 * @throws fAuthorizationException  When the username and password are not accepted
+	 *
 	 * @return void
 	 */
-	private function connectToDatabase()
+	public function connect()
 	{
 		// Don't try to reconnect if we are already connected
 		if ($this->connection) { return; }
+
+		$connection_error     = FALSE;
+		$authentication_error = FALSE;
+		$database_error       = FALSE;
+
+		$errors = NULL;
 
 		// Establish a connection to the database
 		if ($this->extension == 'pdo') {
 			$username = $this->username;
 			$password = $this->password;
-			
+			$options  = array();
+			if ($this->timeout !== NULL && $this->type != 'sqlite' && $this->type != 'mssql') {
+				$options[PDO::ATTR_TIMEOUT] = $this->timeout;
+			}
+
 			if ($this->type == 'db2') {
 				if ($this->host === NULL && $this->port === NULL) {
 					$dsn = 'ibm:DSN:' . $this->database;
@@ -477,6 +528,9 @@ class fDatabase
 					$dsn  = 'ibm:DRIVER={IBM DB2 ODBC DRIVER};DATABASE=' . $this->database . ';HOSTNAME=' . $this->host . ';';
 					$dsn .= 'PORT=' . ($this->port ? $this->port : 60000) . ';';
 					$dsn .= 'PROTOCOL=TCPIP;UID=' . $username . ';PWD=' . $password . ';';
+					if ($this->timeout !== NULL) {
+						$dsn .= 'CONNECTTIMEOUT=' . $this->timeout . ';';
+					}
 					$username = NULL;
 					$password = NULL;
 				}
@@ -485,7 +539,17 @@ class fDatabase
 				$separator = (fCore::checkOS('windows')) ? ',' : ':';
 				$port      = ($this->port) ? $separator . $this->port : '';
 				$driver    = (fCore::checkOs('windows')) ? 'mssql' : 'dblib';
-				$dsn = $driver . ':host=' . $this->host . $port . ';dbname=' . $this->database;
+				$dsn       = $driver . ':host=' . $this->host . $port . ';dbname=' . $this->database;
+				
+				// This driver does not support timeouts so we fake it here
+				if ($this->timeout !== NULL) {
+					fCore::startErrorCapture();
+					$resource = fsockopen($this->host, $this->port ? $this->port : 1433, $errno, $errstr, $this->timeout);
+					$errors = fCore::stopErrorCapture();
+					if ($resource !== FALSE) {
+						fclose($resource);
+					}
+				}
 				
 			} elseif ($this->type == 'mysql') {
 				if (substr($this->host, 0, 5) == 'sock:') {
@@ -498,6 +562,16 @@ class fDatabase
 			} elseif ($this->type == 'oracle') {
 				$port = ($this->port) ? ':' . $this->port : '';
 				$dsn  = 'oci:dbname=' . $this->host . $port . '/' . $this->database . ';charset=AL32UTF8';
+
+				// This driver does not support timeouts so we fake it here
+				if ($this->timeout !== NULL) {
+					fCore::startErrorCapture();
+					$resource = fsockopen($this->host, $this->port ? $this->port : 1521, $errno, $errstr, $this->timeout);
+					$errors = fCore::stopErrorCapture();
+					if ($resource !== FALSE) {
+						fclose($resource);
+					}
+				}
 				
 			} elseif ($this->type == 'postgresql') {
 				
@@ -514,12 +588,19 @@ class fDatabase
 			}
 			
 			try {
-				$this->connection = new PDO($dsn, $username, $password);	
-				if ($this->type == 'mysql') {
-					$this->connection->setAttribute(PDO::MYSQL_ATTR_DIRECT_QUERY, 1);	
+				if ($errors) {
+					$this->connection = FALSE;
+				} else {
+					$this->connection = new PDO($dsn, $username, $password, $options);	
+					if ($this->type == 'mysql') {
+						$this->connection->setAttribute(PDO::MYSQL_ATTR_DIRECT_QUERY, 1);	
+					}
 				}
+
 			} catch (PDOException $e) {
 				$this->connection = FALSE;
+
+				$errors = $e->getMessage();
 			}
 		}
 		
@@ -530,12 +611,15 @@ class fDatabase
 		if ($this->extension == 'ibm_db2') {
 			$username = $this->username;
 			$password = $this->password;
-			if ($this->host === NULL && $this->port === NULL) {
+			if ($this->host === NULL && $this->port === NULL && $this->timeout === NULL) {
 				$connection_string = $this->database;
 			} else {
 				$connection_string  = 'DATABASE=' . $this->database . ';HOSTNAME=' . $this->host . ';';
 				$connection_string .= 'PORT=' . ($this->port ? $this->port : 60000) . ';';
 				$connection_string .= 'PROTOCOL=TCPIP;UID=' . $this->username . ';PWD=' . $this->password . ';';
+				if ($this->timeout !== NULL) {
+					$connection_string .= 'CONNECTTIMEOUT=' . $this->timeout . ';';
+				}
 				$username = NULL;
 				$password = NULL;
 			}
@@ -544,17 +628,39 @@ class fDatabase
 				'DB2_ATTR_CASE' => DB2_CASE_LOWER
 			);
 			$this->connection = db2_connect($connection_string, $username, $password, $options);
+			if ($this->connection === FALSE) {
+				$errors = db2_conn_errormsg();
+			}
 		}
 		
 		if ($this->extension == 'mssql') {
+			if ($this->timeout !== NULL) {
+				$old_timeout = ini_get('mssql.connect_timeout');
+				ini_set('mssql.connect_timeout', $this->timeout);
+			}
+
+			fCore::startErrorCapture();
+			
 			$separator        = (fCore::checkOS('windows')) ? ',' : ':';
 			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password, TRUE);
+
 			if ($this->connection !== FALSE && mssql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
+			}
+
+			$errors = fCore::stopErrorCapture();
+
+			if ($this->timeout !== NULL) {
+				ini_set('mssql.connect_timeout', $old_timeout);
 			}
 		}
 		
 		if ($this->extension == 'mysql') {
+			if ($this->timeout !== NULL) {
+				$old_timeout = ini_get('mysql.connect_timeout');
+				ini_set('mysql.connect_timeout', $this->timeout);
+			}
+
 			if (substr($this->host, 0, 5) == 'sock:') {
 				$host = substr($this->host, 4);
 			} elseif ($this->port) {
@@ -562,25 +668,50 @@ class fDatabase
 			} else {
 				$host = $this->host;	
 			}
+			
+			fCore::startErrorCapture();
+			
 			$this->connection = mysql_connect($host, $this->username, $this->password, TRUE);
+
+			$errors = fCore::stopErrorCapture();
+
 			if ($this->connection !== FALSE && mysql_select_db($this->database, $this->connection) === FALSE) {
+				$errors = 'Unknown database';
 				$this->connection = FALSE;
 			}
+
 			if ($this->connection && function_exists('mysql_set_charset') && !mysql_set_charset('utf8', $this->connection)) {
                 throw new fConnectivityException(
                 	'There was an error setting the database connection to use UTF-8'
 				);
             }
+
+            if ($this->timeout !== NULL) {
+				ini_set('mysql.connect_timeout', $old_timeout);
+			}
 		}
 			
 		if ($this->extension == 'mysqli') {
-			if (substr($this->host, 0, 5) == 'sock:') {
-				$this->connection = mysqli_connect('localhost', $this->username, $this->password, $this->database, $this->port, substr($this->host, 5));
-			} elseif ($this->port) {
-				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database, $this->port);
-			} else {
-				$this->connection = mysqli_connect($this->host, $this->username, $this->password, $this->database);
+			$this->connection = mysqli_init();
+			if ($this->timeout !== NULL) {
+				mysqli_options($this->connection, MYSQLI_OPT_CONNECT_TIMEOUT, $this->timeout);
 			}
+
+			fCore::startErrorCapture();
+
+			if (substr($this->host, 0, 5) == 'sock:') {
+				$result = mysqli_real_connect($this->connection, 'localhost', $this->username, $this->password, $this->database, $this->port, substr($this->host, 5));
+			} elseif ($this->port) {
+				$result = mysqli_real_connect($this->connection, $this->host, $this->username, $this->password, $this->database, $this->port);
+			} else {
+				$result = mysqli_real_connect($this->connection, $this->host, $this->username, $this->password, $this->database);
+			}
+			if (!$result) {
+				$this->connection = FALSE;
+			}
+
+			$errors = fCore::stopErrorCapture();
+			
 			if ($this->connection && function_exists('mysqli_set_charset') && !mysqli_set_charset($this->connection, 'utf8')) {
                 throw new fConnectivityException(
                 	'There was an error setting the database connection to use UTF-8'
@@ -589,7 +720,26 @@ class fDatabase
 		}
 		
 		if ($this->extension == 'oci8') {
-			$this->connection = oci_connect($this->username, $this->password, $this->host . ($this->port ? ':' . $this->port : '') . '/' . $this->database, 'AL32UTF8');
+
+			fCore::startErrorCapture();
+			$resource = TRUE;
+
+			// This driver does not support timeouts so we fake it here
+			if ($this->timeout !== NULL) {
+				$resource = fsockopen($this->host, $this->port ? $this->port : 1521, $errno, $errstr, $this->timeout);
+				if ($resource !== FALSE) {
+					fclose($resource);
+					$resource = TRUE;
+				} else {
+					$this->connection = FALSE;
+				}
+			}
+
+			if ($resource) {
+				$this->connection = oci_connect($this->username, $this->password, $this->host . ($this->port ? ':' . $this->port : '') . '/' . $this->database, 'AL32UTF8');
+			}
+
+			$errors = fCore::stopErrorCapture();
 		}
 			
 		if ($this->extension == 'pgsql') {
@@ -606,23 +756,43 @@ class fDatabase
 			if ($this->port) {
 				$connection_string .= " port='" . $this->port . "'";
 			}
+			if ($this->timeout !== NULL) {
+				$connection_string .= " connect_timeout='" . $this->timeout . "'";
+			}
+
+			fCore::startErrorCapture();
+
 			$this->connection = pg_connect($connection_string, PGSQL_CONNECT_FORCE_NEW);
+
+			$errors = fCore::stopErrorCapture();
 		}
 		
 		if ($this->extension == 'sqlsrv') {
 			$options = array(
-				'Database' => $this->database,
-				'UID'      => $this->username,
-				'PWD'      => $this->password
+				'Database' => $this->database
 			);
+			if ($this->username !== NULL) {
+				$options['UID'] = $this->username;
+			}
+			if ($this->password !== NULL) {
+				$options['PWD'] = $this->password;
+			}
+			if ($this->timeout !== NULL) {
+				$options['LoginTimeout'] = $this->timeout;
+			}
+
 			$this->connection = sqlsrv_connect($this->host . ',' . $this->port, $options);
+
+			if ($this->connection === FALSE) {
+				$errors = sqlsrv_errors();
+			}
+
+			sqlsrv_configure('WarningsReturnAsErrors', 0);
 		}
 		
 		// Ensure the connection was established
 		if ($this->connection === FALSE) {
-			throw new fConnectivityException(
-				'Unable to connect to database'
-			);
+			$this->handleConnectionErrors($errors);
 		}
 		
 		// Make MySQL act more strict and use UTF-8
@@ -929,8 +1099,7 @@ class fDatabase
 		
 		// Convert all objects into strings
 		$values = $this->scalarize($values);
-		
-		$value = array_shift($values);
+		$value  = array_shift($values);
 		
 		// Handle single value escaping
 		$callback = NULL;
@@ -988,44 +1157,18 @@ class fDatabase
 			return call_user_func($callback, $value);
 		}	
 		
-		// Fix \' in MySQL and PostgreSQL
-		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql_or_type, '\\') !== FALSE) {
-			$sql_or_type = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql_or_type);	
-		}
-		
 		// Separate the SQL from quoted values
-		$parts = $this->splitSQL($sql_or_type);
-		
-		$temp_sql = '';
-		$strings = array();
-		
-		// Replace strings with a placeholder so they don't mess up the regex parsing
-		foreach ($parts as $part) {
-			if ($part[0] == "'") {
-				$strings[] = $part;
-				$part = ':string_' . (sizeof($strings)-1);
-			}
-			$temp_sql .= $part;
-		}
-		
+		$parts = $this->splitSQL($sql_or_type, $placeholders);
+
 		// If the values were passed as a single array, this handles that
-		$placeholders = preg_match_all('#%[lbdfristp]\b#', $temp_sql, $trash);
 		if (count($values) == 0 && is_array($value) && count($value) == $placeholders) {
 			$values = $value;
 			$value  = array_shift($values);	
 		}
-		
+
 		array_unshift($values, $value);
-		
-		$sql = $this->escapeSQL($temp_sql, $values);
-		
-		$string_number = 0;
-		foreach ($strings as $string) {
-			$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
-			$sql    = preg_replace('#:string_' . $string_number++ . '\b#', $string, $sql);	
-		}
-		
-		return $sql;
+		$sql = $this->extractStrings($parts, $values);
+		return $this->escapeSQL($sql, $values, FALSE);
 	}
 	
 	
@@ -1043,7 +1186,7 @@ class fDatabase
 			return 'NULL';
 		}
 		
-		$this->connectToDatabase();
+		$this->connect();
 		
 		if ($this->type == 'db2') {
 			return "BLOB(X'" . bin2hex($value) . "')";
@@ -1205,7 +1348,7 @@ class fDatabase
 			return 'NULL';
 		}
 		
-		$this->connectToDatabase();
+		$this->connect();
 		
 		if ($this->type == 'db2') {
 			return "'" . str_replace("'", "''", $value) . "'";
@@ -1292,14 +1435,15 @@ class fDatabase
 	/**
 	 * Takes a SQL string and an array of values and replaces the placeholders with the value
 	 * 
-	 * @param string $sql     The SQL string containing placeholders
-	 * @param array  $values  An array of values to escape into the SQL
+	 * @param string  $sql               The SQL string containing placeholders
+	 * @param array   $values            An array of values to escape into the SQL
+	 * @param boolean $unescape_percent  If %% should be translated to % - this should only be done once processing of the string is done
 	 * @return string  The SQL with the values escaped into it
 	 */
-	private function escapeSQL($sql, $values)
+	private function escapeSQL($sql, $values, $unescape_percent)
 	{
 		$original_sql = $sql;
-		$pieces = preg_split('#(%[lbdfristp])\b#', $sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+		$pieces = preg_split('#(?<!%)(%[lbdfristp])\b#', $sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
 		
 		$sql   = '';
 		$value = array_shift($values);
@@ -1336,6 +1480,9 @@ class fDatabase
 					$callback = $this->escapeTimestamp;
 					break;
 				default:
+					if ($unescape_percent) {
+						$piece = str_replace('%%', '%', $piece);
+					}
 					$sql .= $piece;
 					continue 2;	
 			}
@@ -1368,7 +1515,7 @@ class fDatabase
 				sizeof($values),
 				$original_sql
 			); 	
-		}	
+		}
 		
 		return $sql;
 	}
@@ -1444,53 +1591,49 @@ class fDatabase
 			return $this->run($statement, NULL, $params);	
 		}
 		
-		$queries = $this->prepareSQL($statement, $params, FALSE);
+		$queries = $this->preprocess($statement, $params, FALSE);
 		
 		$output = array();
 		foreach ($queries as $query) {
 			$this->run($query);	
 		}
 	}
-	
-	
+
+
 	/**
-	 * Takes in a string of SQL that contains multiple queries and returns any array of them
-	 * 
-	 * @param  string $sql  The string of SQL to parse for queries
-	 * @return array  The individual SQL queries
+	 * Pulls quoted strings out into the values array for simpler processing
+	 *
+	 * @param  array $parts    The parts of the SQL - alternating SQL and quoted strings
+	 * @param  array &$values  The value to be escaped into the SQL
+	 * @return string  The SQL with all quoted string values extracted into the `$values` array
 	 */
-	private function explodeQueries($sql)
+	private function extractStrings($parts, &$values)
 	{
-		$sql_queries = array();
-		
-		// Separate the SQL from quoted values
-		preg_match_all("#(?:'([^']*(?:'')*)*?')|(?:[^']+)#", $sql, $matches);
-		
-		$cur_sql = '';
-		foreach ($matches[0] as $match) {
-			
-			// This is a quoted string value, don't do anything to it
-			if ($match[0] == "'") {
-				$cur_sql .= $match;
-			
-			// Handle the SQL, exploding on any ; that isn't escaped with a \
-			} else {
-				$sql_strings = preg_split('#(?<!\\\\);#', $match);
-				$cur_sql .= $sql_strings[0];
-				for ($i=1; $i < sizeof($sql_strings); $i++) {
-					$cur_sql = trim($cur_sql);
-					if ($cur_sql) {
-						$sql_queries[] = $cur_sql;
-					}
-					$cur_sql = $sql_strings[$i];
+		$sql = '';
+
+		$value_number = 0;
+		foreach ($parts as $part) {
+			// We leave blank strings in because Oracle treats them like NULL
+			if ($part[0] == "'" && $part != "''") {
+				$sql .= '%s';
+				$value = str_replace("''", "'", substr($part, 1, -1));
+				if ($this->type == 'postgresql') {
+					$value = str_replace('\\\\', '\\', $value);
 				}
-			}
+				$values = array_merge(
+					array_slice($values, 0, $value_number),
+					array($value),
+					array_slice($values, $value_number)
+				);
+				$value_number++;
+			} else {
+				$value_number += preg_match_all('#(?<!%)%[lbdfristp]\b#', $part, $trash);
+				unset($trash);
+				$sql .= $part;
+			} 		
 		}
-		if (trim($cur_sql)) {
-			$sql_queries[] = $cur_sql;
-		}
-		
-		return $sql_queries;
+
+		return $sql;
 	}
 	
 	
@@ -1501,7 +1644,7 @@ class fDatabase
 	 */
 	public function getConnection()
 	{
-		$this->connectToDatabase();
+		$this->connect();
 		return $this->connection;
 	}
 	
@@ -1583,6 +1726,48 @@ class fDatabase
 	public function getUsername()
 	{
 		return $this->username;
+	}
+
+
+	/**
+	 * Gets the version of the database system
+	 * 
+	 * @return string  The database system version
+	 */
+	public function getVersion()
+	{
+		if (isset($this->schema_info['version'])) {
+			return $this->schema_info['version'];
+		}
+
+		switch ($this->type) {
+			case 'db2':
+				$sql = "SELECT REPLACE(service_level, 'DB2 v', '') FROM TABLE (sysproc.env_get_inst_info()) AS x";
+				break;
+			
+			case 'mssql':
+				$sql = "SELECT CAST(SERVERPROPERTY('ProductVersion') AS VARCHAR(500)) AS ProductVersion";
+				break;
+
+			case 'mysql':
+				$sql = "SELECT version()";
+				break;
+
+			case 'oracle':
+				$sql = "SELECT version FROM product_component_version";
+				break;
+			
+			case 'postgresql':
+				$sql = "SELECT regexp_replace(version(), E'^PostgreSQL +([0-9]+(\\\\.[0-9]+)*).*$', E'\\\\1')";
+				break;
+
+			case 'sqlite':
+				$sql = "SELECT sqlite_version()";
+				break;
+		}
+
+		$this->schema_info['version'] = preg_replace('#[a-z].*$#D', '', $this->query($sql)->fetchScalar());
+		return $this->schema_info['version'];
 	}
 	
 	
@@ -1809,6 +1994,81 @@ class fDatabase
 		
 		$result->setAutoIncrementedValue($insert_id);
 	}
+
+
+	/**
+	 * Handles connection errors
+	 * 
+	 * @param  array|string $errors  An array or string of error information
+	 * @return void
+	 */
+	private function handleConnectionErrors($errors)
+	{
+		if (is_string($errors)) {
+			$error = $errors;
+		} else {
+			$new_errors = array();
+			foreach ($errors as $error) {
+				$new_errors[] = isset($error['message']) ? $error['message'] : $error['string'];
+			}
+			$error = join("\n", $new_errors);
+		}
+
+		$connection_regexes = array(
+			'db2'        => '#selectForConnectTimeout#',
+			'mssql'      => '#(Connection refused|Can\'t assign requested address|Server is unavailable or does not exist|unable to connect|target machine actively refused it)#i',
+			'mysql'      => '#(Can\'t connect to MySQL server|Lost connection to MySQL server at|Connection refused|Operation timed out|host has failed to respond)#',
+			'oracle'     => '#(Connection refused|Can\'t assign requested address|no listener|unable to connect to)#',
+			'postgresql' => '#(Connection refused|timeout expired|Network is unreachable|Can\'t assign requested address)#'
+		);
+
+		$authentication_regexes = array(
+			'db2'        => '#USERNAME AND/OR PASSWORD INVALID#',
+			'mssql'      => '#(Login incorrect|Adaptive Server connection failed|Login failed for user(?!.*Cannot open database))#is',
+			'mysql'      => '#Access denied for user#',
+			'oracle'     => '#invalid username/password#',
+			'postgresql' => '#authentication failed#'
+		);
+
+		$database_regexes = array(
+			'db2'        => '#database alias or database name#',
+			'mssql'      => '#Could not locate entry in sysdatabases for database|Cannot open database|General SQL Server error: Check messages from the SQL Server#',
+			'mysql'      => '#Unknown database#',
+			'oracle'     => '#does not currently know of service requested#',
+			'postgresql' => '#database "[^"]+" does not exist#'
+		);
+
+		if (preg_match($authentication_regexes[$this->type], $error)) {
+			throw new fAuthorizationException(
+				'Unable to connect to database - login credentials refused'
+			);
+		} elseif (preg_match($database_regexes[$this->type], $error)) {
+			throw new fNotFoundException(
+				'Unable to connect to database - database specified not found'
+			);
+		}
+
+		// Provide a better error message if we can detect the hostname does not exist
+		if (!preg_match('#^\d+\.\d+\.\d+\.\d+$#', $this->host)) {
+			$ip_address = gethostbyname($this->host);
+			if ($ip_address == $this->host) {
+				throw new fConnectivityException(
+					'Unable to connect to database - hostname not found'
+				);
+			}
+		}
+
+		if (preg_match($connection_regexes[$this->type], $error)) {
+			throw new fConnectivityException(
+				'Unable to connect to database - connection refused or timed out'
+			);
+		}
+
+		throw new fConnectivityException(
+			"Unable to connect to database - unknown error:\n%1\$s",
+			$error
+		);
+	}
 	
 	
 	/**
@@ -1837,15 +2097,28 @@ class fDatabase
 	/**
 	 * Makes sure each database and extension handles BEGIN, COMMIT and ROLLBACK 
 	 * 
-	 * @param  string &$sql          The SQL to check for a transaction query
-	 * @param  string $result_class  The type of result object to create
+	 * @param  string|fStatement &$statement    The SQL to check for a transaction query
+	 * @param  string            $result_class  The type of result object to create
 	 * @return mixed  `FALSE` if normal processing should continue, otherwise an object of the type $result_class
 	 */
-	private function handleTransactionQueries(&$sql, $result_class)
+	private function handleTransactionQueries(&$statement, $result_class)
 	{
-		// SQL Server supports transactions, but starts then with BEGIN TRANSACTION
-		if ($this->type == 'mssql' && preg_match('#^\s*(begin|start(\s+transaction)?)\s*#i', $sql)) {
-			$sql = 'BEGIN TRANSACTION';
+		if (is_object($statement)) {
+			$sql = $statement->getSQL();
+		} else {
+			$sql = $statement;
+		}
+
+		// SQL Server supports transactions, but the statements are slightly different.
+		// For the interest of convenience, we do simple transaction right here.
+		if ($this->type == 'mssql') {
+			if (preg_match('#^\s*(BEGIN|START(\s+TRANSACTION)?)\s*$#i', $sql)) {
+				$statement = 'BEGIN TRANSACTION';
+			} elseif (preg_match('#^\s*SAVEPOINT\s+("?\w+"?)\s*$#i', $sql, $match)) {
+				$statement = 'SAVE TRANSACTION ' . $match[1];
+			} elseif (preg_match('#^\s*ROLLBACK\s+TO\s+SAVEPOINT\s+("?\w+"?)\s*$#i', $sql, $match)) {
+				$statement = 'ROLLBACK TRANSACTION ' . $match[1];
+			}
 		}
 		
 		$begin    = FALSE;
@@ -1853,30 +2126,72 @@ class fDatabase
 		$rollback = FALSE;
 		
 		// Track transactions since most databases don't support nesting
-		if (preg_match('#^\s*(begin|start)(\s+(transaction|work))?\s*$#iD', $sql)) {
+		if (preg_match('#^\s*(BEGIN|START)(\s+(TRAN|TRANSACTION|WORK))?\s*$#iD', $sql)) {
 			if ($this->inside_transaction) {
 				throw new fProgrammerException('A transaction is already in progress');
 			}
 			$this->inside_transaction = TRUE;
 			$begin = TRUE;
 			
-		} elseif (preg_match('#^\s*(commit)(\s+(transaction|work))?\s*$#iD', $sql)) {
+		} elseif (preg_match('#^\s*COMMIT(\s+(TRAN|TRANSACTION|WORK))?\s*$#iD', $sql)) {
 			if (!$this->inside_transaction) {
 				throw new fProgrammerException('There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 			$commit = TRUE;
 			
-		} elseif (preg_match('#^\s*(rollback)(\s+(transaction|work))?\s*$#iD', $sql)) {
+		} elseif (preg_match('#^\s*ROLLBACK(\s+(TRAN|TRANSACTION|WORK))?\s*$#iD', $sql)) {
 			if (!$this->inside_transaction) {
 				throw new fProgrammerException('There is no transaction in progress');
 			}
 			$this->inside_transaction = FALSE;
 			$rollback = TRUE;
-		}
 		
+		// MySQL needs to use this construct for starting transactions when using LOCK tables
+		} elseif ($this->type == 'mysql' && preg_match('#^\s*SET\s+autocommit\s*=\s*(0|1)#i', $sql, $match)) {
+			$this->inside_transaction = TRUE;
+			if ($match[1] == '0') {
+				$this->schema_info['mysql_autocommit'] = TRUE;
+			} else {
+				unset($this->schema_info['mysql_autocommit']);
+			}
+
+		// We have to track LOCK TABLES for MySQL because UNLOCK TABLES only implicitly commits if LOCK TABLES was used
+		} elseif ($this->type == 'mysql' && preg_match('#^\s*LOCK\s+TABLES#i', $sql)) {
+			// This command always implicitly commits
+			$this->inside_transaction = FALSE;
+			$this->schema_info['mysql_lock_tables'] = TRUE;
+
+		// MySQL has complex handling of UNLOCK TABLES
+		} elseif ($this->type == 'mysql' && preg_match('#^\s*UNLOCK\s+TABLES#i', $sql)) {
+			// This command only implicitly commits if LOCK TABLES was used
+			if (isset($this->schema_info['mysql_lock_tables'])) {
+				$this->inside_transaction = FALSE;
+			}
+			unset($this->schema_info['mysql_lock_tables']);
+
+		// These databases issue implicit commit commands when the following statements are run
+		} elseif ($this->type == 'mysql' && preg_match('#^\s*(ALTER|CREATE(?!\s+TEMPORARY)|DROP|RENAME|TRUNCATE|LOAD|UNLOCK|GRANT|REVOKE|SET\s+PASSWORD|CACHE|ANALYSE|CHECK|OPTIMIZE|REPAIR|FLUSH|RESET)\b#i', $sql)) {
+			$this->inside_transaction = FALSE;
+
+		} elseif ($this->type == 'oracle' && preg_match('#^\s*(CREATE|ALTER|DROP|TRUNCATE|GRANT|REVOKE|REPLACE|ANALYZE|AUDIT|COMMENT)\b#i', $sql)) {
+			$this->inside_transaction = FALSE;
+			
+		} elseif ($this->type == 'db2' && preg_match('#^\s*CALL\s+SYSPROC\.ADMIN_CMD\(\'REORG\s+TABLE\b#i', $sql)) {
+			$this->inside_transaction = FALSE;
+			// It appears PDO tracks the transactions, but doesn't know about implicit commits
+			if ($this->extension == 'pdo') {
+				$this->connection->commit();
+			}
+		}
+
+		// If MySQL autocommit it set to 0 a new transaction is automatically started
+		if (!empty($this->schema_info['mysql_autocommit'])) {
+			$this->inside_transaction = TRUE;
+		}
+
 		if (!$begin && !$commit && !$rollback) {
-			return FALSE;	
+			return FALSE;
 		}
 		
 		// The PDO, OCI8 and SQLSRV extensions require special handling through methods and functions
@@ -1889,13 +2204,13 @@ class fDatabase
 			return FALSE;
 		}
 		
-		$this->statement = $sql;
+		$this->statement = $statement;
 		
 		// PDO seems to act weird if you try to start transactions through a normal query call
 		if ($is_pdo) {
 			try {
-				$is_mssql  = $this->type == 'mssql'  && substr($this->database, 0, 4) != 'dsn:';
-				$is_oracle = $this->type == 'oracle' && substr($this->database, 0, 4) != 'dsn:';
+				$is_mssql  = $this->type == 'mssql';
+				$is_oracle = $this->type == 'oracle';
 				if ($begin) {
 					// The SQL Server PDO object hasn't implemented transactions
 					if ($is_mssql) {
@@ -2069,9 +2384,20 @@ class fDatabase
 			$result = sqlsrv_query($this->connection, $statement);
 		} elseif ($this->extension == 'pdo') {
 			if ($this->type == 'mssql' && !fCore::checkOS('windows')) {
+				// pdo_dblib is all messed up for return values from ->exec()
+				// and even ->query(), but ->query() is closer to correct and
+				// we use some heuristics to overcome the limitations
 				$result = $this->connection->query($statement);
 				if ($result instanceof PDOStatement) {
-					$result->closeCursor();	
+					$result->closeCursor();
+					$extra = $result;
+					$result = TRUE;
+					if (preg_match('#^\s*EXEC(UTE)?\s+#i', $statement)) {
+						$error_info = $extra->errorInfo();
+						if (strpos($error_info[2], '(null) [0] (severity 0)') !== 0) {
+							$result = FALSE;
+						}
+					}
 				}
 			} else {
 				$result = $this->connection->exec($statement);
@@ -2080,6 +2406,15 @@ class fDatabase
 		$this->statement = $statement;
 		
 		$this->handleErrors(fCore::stopErrorCapture());
+
+		// The mssql extension will sometimes not return FALSE even if there are errors
+		if (strlen($this->error)) {
+			$result = FALSE;
+		}
+
+		if ($this->extension == 'mssql' && $result) {
+			$this->error = '';
+		}
 		
 		if ($result === FALSE) {
 			$this->checkForError($result, $extra, is_object($statement) ? $statement->getSQL() : $statement);
@@ -2144,7 +2479,7 @@ class fDatabase
 			
 		} elseif ($this->extension == 'oci8') {
 			$extra = oci_parse($this->connection, $result->getSQL());
-			if (oci_execute($extra, $this->inside_transaction ? OCI_DEFAULT : OCI_COMMIT_ON_SUCCESS)) {
+			if ($extra && oci_execute($extra, $this->inside_transaction ? OCI_DEFAULT : OCI_COMMIT_ON_SUCCESS)) {
 				oci_fetch_all($extra, $rows, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
 				$result->setResult($rows);
 				unset($rows);	
@@ -2182,24 +2517,27 @@ class fDatabase
 					// This fixes a segfault issue with blobs and fetchAll() for pdo_ibm
 					if ($this->type == 'db2') {
 						$returned_rows = array();
-						$scanned_for_blobs = FALSE;
-						$blob_columns = array();
 						while (($row = $extra->fetch(PDO::FETCH_ASSOC)) !== FALSE) {
-							if (!$scanned_for_blobs) {
-								foreach ($row as $key => $value) {
-									if (is_resource($value)) {
-										$blob_columns[] = $key;
-									}
+							foreach ($row as $key => $value) {
+								if (is_resource($value)) {
+									$row[$key] = stream_get_contents($value);
 								}
-							}
-							foreach ($blob_columns as $blob_column) {
-								$row[$blob_column] = stream_get_contents($row[$blob_column]);
 							}
 							$returned_rows[] = $row;
 						}
+
+					// pdo_dblib doesn't throw an exception on error when executing
+					// a prepared statement when compiled against FreeTDS, so we have
+					// to manually check the error info to see if something went wrong
+					} elseif ($this->type == 'mssql' && !fCore::checkOS('windows') && preg_match('#^\s*EXEC(UTE)?\s+#i', $result->getSQL())) {
+						$error_info = $extra->errorInfo();
+						if ($error_info && strpos($error_info[2], '(null) [0] (severity 0)') !== 0) {
+							$returned_rows = FALSE;
+						}
+
 					} else {
 						$returned_rows = $extra->fetchAll(PDO::FETCH_ASSOC);
-					}	
+					}
 				} else {
 					$returned_rows = $extra;
 				}
@@ -2215,8 +2553,17 @@ class fDatabase
 		$this->statement = $statement;
 		
 		$this->handleErrors(fCore::stopErrorCapture());
+
+		// The mssql extension will sometimes not return FALSE even if there are errors
+		if (strlen($this->error) && strpos($this->error, 'WARNING!') !== 0) {
+			$result->setResult(FALSE);
+		}
 		
 		$this->checkForError($result, $extra);
+		
+		if ($this->extension == 'mssql') {
+			$this->error = '';
+		}
 		
 		if ($this->extension == 'ibm_db2') {
 			$this->setAffectedRows($result, $extra);
@@ -2347,85 +2694,84 @@ class fDatabase
 			}
 		}
 		
-		// Fix \' in MySQL and PostgreSQL
-		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
-			$sql = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql);	
-		}
-		
 		// Separate the SQL from quoted values
-		$parts = $this->splitSQL($sql);
-		
-		$query   = '';
-		$strings = array();
-		
+		$parts  = $this->splitSQL($sql);
+		$new_parts = array();
 		foreach ($parts as $part) {
-			// We split out all strings except for empty ones because Oracle
-			// has to translate empty strings to NULL
-			if ($part[0] == "'" && $part != "''") {
-				$query    .= ':string_' . sizeof($strings);
-				$strings[] = $part;	
+			if ($part[0] == "'") {
+				$new_parts[] = $part;
 			} else {
-				$query .= $part;	
-			} 		
+				// We have to escape the placeholders so that the extraction of
+				// string to %s placeholder doesn't mess up the creation of the
+				// prepare statement
+				$new_parts[] = str_replace('%', '%%', $part);
+			}
 		}
+		$query = $this->extractStrings($new_parts, $values);
 		
 		if ($this->hook_callbacks['extracted']) {
 			foreach ($this->hook_callbacks['extracted'] as $callback) {
 				$params = array(
 					$this,
 					&$query,
-					&$values,
-					&$strings
+					&$values
 				);
 				call_user_func_array($callback, $params);
 			}
 		}
 		
-		$pieces       = preg_split('#(%[lbdfistp])\b#', $query, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+		$untranslated_sql = NULL;
+		if ($translate) {
+			$untranslated_sql = $sql;
+			$query = $this->getSQLTranslation()->translate(array($query));
+			if (count($query) > 1) {
+				throw new fProgrammerException(
+					"The SQL statement %1$s can not be used as a prepared statement because translation turns it into multiple SQL statements",
+					$untranslated_sql
+				);
+			}
+			$query = current($query);
+		}
+
+		// Pull all of the real placeholders (%%) out and replace them with
+		// %%s for sprintf() in fStatement. We have to use %% because we are
+		// going to put the extracted string back into the statement via %s.
+		$pieces       = preg_split('#(%%[lbdfistp])\b#', $query, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
 		$placeholders = array();
-		
-		$new_query = '';
+		$new_query    = '';
 		foreach ($pieces as $piece) {
-			if (strlen($piece) == 2 && $piece[0] == '%') {
-				$placeholders[] = $piece;
-				$new_query     .= '%s';
+			if (strlen($piece) == 3 && substr($piece, 0, 2) == '%%') {
+				$placeholders[] = substr($piece, 1);
+				$new_query     .= '%%s';
 			} else {
 				$new_query .= $piece;
 			}		
 		}
 		$query = $new_query;
 		
-		$untranslated_sql = NULL;
-		if ($translate) {
-			$query = $this->getSQLTranslation()->translate(array($query));
-			$query = current($query);
-			$untranslated_sql = $sql;
-		}
-		
 		// Unescape literal semicolons in the queries
 		$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
 		
-		// Put the strings back into the SQL
-		foreach ($strings as $index => $string) {
-			$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
-			$query  = preg_replace('#:string_' . $index . '\b#', $string, $query, 1);
-		}
-		
+		$query = $this->escapeSQL($query, $values, TRUE);
+
 		return new fStatement($this, $query, $placeholders, $untranslated_sql);
 	}
 	
 	
 	/**
-	 * Prepares the SQL by escaping values, spliting queries, cleaning escaped semicolons, fixing backslashed single quotes and translating
+	 * Preprocesses SQL by escaping values, spliting queries, cleaning escaped semicolons, fixing backslashed single quotes and translating
 	 * 
-	 * @param  string  $sql        The SQL to prepare
-	 * @param  array   $values     Literal values to escape into the SQL
-	 * @param  boolean $translate  If the SQL should be translated
+	 * @internal
+	 *
+	 * @param  string  $sql                The SQL to process
+	 * @param  array   $values             Literal values to escape into the SQL
+	 * @param  boolean $translate          If the SQL should be translated
+	 * @param  array   &$rollback_queries  MySQL doesn't allow transactions around `ALTER TABLE` statements, and some of those require multiple statements, so this is an array of "undo" SQL statements 
 	 * @return array  The split out SQL queries, queries that have been translated will have a string key of a number, `:` and the original SQL, non-translated SQL will have a numeric key
 	 */
-	private function prepareSQL($sql, $values, $translate)
+	public function preprocess($sql, $values, $translate, &$rollback_queries=NULL)
 	{
-		$this->connectToDatabase();
+		$this->connect();
 		
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
@@ -2443,60 +2789,30 @@ class fDatabase
 			}
 		}
 		
-		// Fix \' in MySQL and PostgreSQL
-		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
-			$sql = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql);	
-		}
-		
-		$strings = array(array());
-		$queries = array('');
-		$number  = 0;
-		
 		// Separate the SQL from quoted values
-		$parts = $this->splitSQL($sql);
-				
-		foreach ($parts as $part) {
-			// We split out all strings except for empty ones because Oracle
-			// has to translate empty strings to NULL
-			if ($part[0] == "'" && $part != "''") {
-				$queries[$number]  .= ':string_' . sizeof($strings[$number]);
-				$strings[$number][] = $part;	
-			} else {
-				$split_queries = preg_split('#(?<!\\\\);#', $part);
-				
-				$queries[$number] .= $split_queries[0];
-				
-				for ($i=1; $i < sizeof($split_queries); $i++) {
-					$queries[$number] = trim($queries[$number]);
-					$number++;
-					$strings[$number] = array();
-					$queries[$number] = $split_queries[$i];
-				}	
-			} 		
-		}
-		if (!trim($queries[$number])) {
-			unset($queries[$number]);
-			unset($strings[$number]);	
-		} else {
-			$queries[$number] = trim($queries[$number]);	
-		}
+		$parts = $this->splitSQL($sql, $placeholders);
 		
 		// If the values were passed as a single array, this handles that
-		$placeholders = preg_match_all('#%[lbdfristp]\b#', join(';', $queries), $trash);
 		if (count($values) == 1 && is_array($values[0]) && count($values[0]) == $placeholders) {
 			$values = array_shift($values);	
 		}
-		
-		// Loop through the queries, chunk the values and add blank strings back in
-		$chunked_values = array();
-		$value_number   = 0;
-		foreach (array_keys($queries) as $number) {
-			$pieces       = preg_split('#(%[lbdfristp])\b#', $queries[$number], -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
-			$placeholders = 0;
+				
+		$sql          = $this->extractStrings($parts, $values);
+		$queries      = preg_split('#(?<!\\\\);#', $sql);
+		$queries      = array_map('trim', $queries);
+		$output       = array();
+		$value_number = 0;
+		foreach ($queries as $query) {
+			if (!strlen($query)) {
+				continue;
+			}
+
+			$sqlite_ddl   = $this->type == 'sqlite' && preg_match('#^\s*(ALTER\s+TABLE|CREATE\s+TABLE|COMMENT\s+ON)\s+#i', $query);
+			$pieces       = preg_split('#(?<!%)(%[lbdfristp])\b#', $query, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
+			$new_sql      = '';
+			$query_values = array();
 			
-			$new_sql = '';
-			$chunked_values[$number] = array();
-			
+			$num = 0;
 			foreach ($pieces as $piece) {
 				
 				// A placeholder
@@ -2514,6 +2830,11 @@ class fDatabase
 						$new_sql .= "''";
 						$value_number++;
 					
+					// SQLite needs the literal string values for DDL statements
+					} elseif ($piece == '%s' && $sqlite_ddl) {
+						$new_sql .= $this->escapeString($value);
+						$value_number++;
+					
 					} elseif ($piece == '%r') {
 						if (is_array($value)) {
 							$new_sql .= join(', ', array_map($this->escapeIdentifier, $value));	
@@ -2524,10 +2845,10 @@ class fDatabase
 						
 					// Other placeholder/value combos just get added
 					} else {
-						$placeholders++;
 						$value_number++;
-						$new_sql .= $piece;
-						$chunked_values[$number][] = $value;
+						$new_sql .= '%' . $num . '$' . $piece[1];
+						$num++;
+						$query_values[] = $value;
 					}
 				
 				// A piece of SQL
@@ -2536,56 +2857,53 @@ class fDatabase
 				}
 			}
 			
-			$queries[$number] = $new_sql;
-		}
-		
-		if ($this->hook_callbacks['extracted']) {
-			foreach (array_keys($queries) as $number) {
+			$query = $new_sql;
+
+			if ($this->hook_callbacks['extracted']) {
 				foreach ($this->hook_callbacks['extracted'] as $callback) {
-					if (!isset($chunked_values[$number])) {
-						$chunked_values[$number] = array();
-					}
 					$params = array(
 						$this,
-						&$queries[$number],
-						&$chunked_values[$number],
-						&$strings[$number]
+						&$query,
+						&$query_values
 					);
 					call_user_func_array($callback, $params);
 				}
 			}
-		}
-		
-		// Translate the SQL queries
-		if ($translate) {
-			$queries = $this->getSQLTranslation()->translate($queries);
-		}
-		
-		$output = array();
-		foreach (array_keys($queries) as $key) {
-			$query = $queries[$key];
-			$parts = explode(':', $key, 2);
-			$number = $parts[0];
-			
-			// Escape the values into the SQL
-			if (!empty($chunked_values[$number])) {
-				$query = $this->escapeSQL($query, $chunked_values[$number]);	
+
+			if ($translate) {
+				$query_set = $this->getSQLTranslation()->translate(array($query), $rollback_queries);
+			} else {
+				$query_set = array($query);
 			}
-			
-			// Unescape literal semicolons in the queries
-			$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
-			
-			// Put the strings back into the SQL
-			if (isset($strings[$number])) {
-				foreach ($strings[$number] as $index => $string) {
-					$string = strtr($string, array('\\' => '\\\\', '$' => '\\$'));
-					$query  = preg_replace('#:string_' . $index . '\b#', $string, $query, 1);
+
+			foreach ($query_set as $key => $query) {				
+				// Unescape literal semicolons in the queries
+				$query = preg_replace('#(?<!\\\\)\\\\;#', ';', $query);
+				
+				// Escape the values into the SQL
+				if ($query_values && preg_match_all('#(?<!%)%(\d+)\$([lbdfristp])\b#', $query, $matches, PREG_SET_ORDER)) {
+					// If we translated, we may need to shuffle values around
+					if ($translate) {
+						$new_values = array();
+						foreach ($matches as $match) {
+							$new_values[] = $query_values[$match[1]];
+						}
+						$query_values = $new_values;
+					}
+					$query = preg_replace('#(?<!%)%\d+\$([lbdfristp])\b#', '%\1', $query);
+					$query = $this->escapeSQL($query, $query_values, TRUE);	
 				}
+				
+				if (!is_numeric($key)) {
+					$key_parts = explode(':', $key);
+					$key = count($output) . ':' . $key_parts[1];
+				} else {
+					$key = count($output);
+				}
+				$output[$key] = $query;
 			}
-			
-			$output[$key] = $query;
-		}    
-		
+		}
+
 		return $output;
 	}
 	
@@ -2607,7 +2925,7 @@ class fDatabase
 			return $this->run($statement, 'fResult', $params);	
 		}
 		
-		$queries = $this->prepareSQL($statement, $params, FALSE);
+		$queries = $this->preprocess($statement, $params, FALSE);
 		
 		$output = array();
 		foreach ($queries as $query) {
@@ -2623,25 +2941,24 @@ class fDatabase
 	 * 
 	 * The following hooks are available:
 	 *  - `'unmodified'`: The original SQL passed to fDatabase, for prepared statements this is called just once before the fStatement object is created
-	 *  - `'extracted'`: The SQL after all non-empty strings have been extracted and replaced with `:string_{number}` placeholders
+	 *  - `'extracted'`: The SQL after all non-empty strings have been extracted and replaced with ordered sprintf-style placeholders
 	 *  - `'run'`: After the SQL has been run
 	 * 
 	 * Methods for the `'unmodified'` hook should have the following signature:
 	 * 
 	 *  - **`$database`**:  The fDatabase instance
 	 *  - **`&$sql`**:      The original, unedited SQL
-	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL - this will be empty for prepared statements
+	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL
 	 * 
 	 * Methods for the `'extracted'` hook should have the following signature:
 	 * 
 	 *  - **`$database`**:  The fDatabase instance
-	 *  - **`&$sql`**:      The original, unedited SQL
-	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL - this will be empty for prepared statements
-	 *  - **`&$strings`**   The literal strings that were extracted from the SQL
+	 *  - **`&$sql`**:      The SQL with all strings removed and replaced with `%1$s`-style placeholders
+	 *  - **`&$values`**:   The values to be escaped into the placeholders in the SQL
 	 * 
 	 * The `extracted` hook is the best place to modify the SQL since there is
 	 * no risk of breaking string literals. Please note that there may be empty
-	 * strings (`''`) present in the SQL since some database treat those as
+	 * strings (`''`) present in the SQL since some databases treat those as
 	 * `NULL`.
 	 * 
 	 * Methods for the `'run'` hook should have the following signature:
@@ -2691,13 +3008,15 @@ class fDatabase
 		
 		$start_time = microtime(TRUE);	
 		
+		$result = $this->handleTransactionQueries($statement, $result_type);
+
 		if (is_object($statement)) {
 			$sql = $statement->getSQL();		
 		} else {
 			$sql = $statement;	
 		}
-			
-		if (!$result = $this->handleTransactionQueries($sql, $result_type)) {
+
+		if (!$result) {
 			if ($result_type) {
 				$result = new $result_type($this, $this->type == 'mssql' ? $this->schema_info['character_set'] : NULL);
 				$result->setSQL($sql);
@@ -2745,6 +3064,29 @@ class fDatabase
 		
 		if ($result_type) {
 			return $result;
+		}
+	}
+
+
+	/**
+	 * Takes an array of rollback statements to undo part of a set of queries which involve one that failed
+	 *
+	 * This is only used for MySQL since it is the only database that does not
+	 * support transactions about `ALTER TABLE` statements, but that also
+	 * requires more than one query to accomplish many `ALTER TABLE` tasks.
+	 *
+	 * @param  array   $rollback_statements  The SQL statements used to rollback `ALTER TABLE` statements
+	 * @param  integer $start_number         The number query that failed - this is used to determine which rollback statements to run
+	 * @return void
+	 */
+	private function runRollbackStatements($rollback_statements, $start_number)
+	{
+		if ($rollback_statements) {
+			$rollback_statements = array_slice($rollback_statements, 0, $start_number);
+			$rollback_statements = array_reverse($rollback_statements);
+			foreach ($rollback_statements as $rollback_statement) {
+				$this->run($rollback_statement);
+			}
 		}
 	}
 	
@@ -2853,12 +3195,18 @@ class fDatabase
 	/**
 	 * Splits SQL into pieces of SQL and quoted strings
 	 * 
-	 * @param  string $sql  The SQL to split
+	 * @param  string  $sql            The SQL to split
+	 * @param  integer &$placeholders  The number of placeholders in the SQL
 	 * @return array  The pieces
 	 */
-	private function splitSQL($sql)
+	private function splitSQL($sql, &$placeholders=NULL)
 	{
-		$parts = array();
+		// Fix \' in MySQL and PostgreSQL
+		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
+			$sql = preg_replace("#(?<!\\\\)((\\\\{2})*)\\\\'#", "\\1''", $sql);	
+		}
+
+		$parts         = array();
 		$temp_sql      = $sql;
 		$start_pos     = 0;
 		$inside_string = FALSE;
@@ -2866,9 +3214,12 @@ class fDatabase
 			$pos = strpos($temp_sql, "'", $start_pos);
 			if ($pos !== FALSE) {
 				if (!$inside_string) {
-					$parts[]   = substr($temp_sql, 0, $pos);
-					$temp_sql  = substr($temp_sql, $pos);
-					$start_pos = 1;
+					$part          = substr($temp_sql, 0, $pos);
+					$placeholders += preg_match_all('#(?<!%)%[lbdfristp]\b#', $part, $trash);
+					unset($trash);
+					$parts[]       = $part;
+					$temp_sql      = substr($temp_sql, $pos);
+					$start_pos     = 1;
 					$inside_string = TRUE;
 					 
 				} elseif ($pos == strlen($temp_sql)) {
@@ -2876,6 +3227,7 @@ class fDatabase
 					$temp_sql = '';
 					$pos = FALSE;	
 				
+				// Skip single-quote-escaped single quotes
 				} elseif (strlen($temp_sql) > $pos+1 && $temp_sql[$pos+1] == "'") {
 					$start_pos = $pos+2;
 							
@@ -2888,6 +3240,8 @@ class fDatabase
 			}
 		} while ($pos !== FALSE);
 		if ($temp_sql) {
+			$placeholders += preg_match_all('#(?<!%)%[lbdfristp]\b#', $temp_sql, $trash);
+			unset($trash);
 			$parts[] = $temp_sql;	
 		}
 		
@@ -2906,15 +3260,23 @@ class fDatabase
 	public function translatedExecute($sql)
 	{
 		$args    = func_get_args();
-		$queries = $this->prepareSQL(
+		$queries = $this->preprocess(
 			$sql,
 			array_slice($args, 1),
-			TRUE
+			TRUE,
+			$rollback_statements
 		);
 		
-		$output = array();
-		foreach ($queries as $query) {
-			$this->run($query);	
+		try {
+			$output = array();
+			$i = 0;
+			foreach ($queries as $i => $query) {
+				$this->run($query);
+				$i++;
+			}
+		} catch (fSQLException $e) {
+			$this->runRollbackStatements($rollback_statements, $i);
+			throw $e;
 		}
 	}
 	
@@ -2946,20 +3308,29 @@ class fDatabase
 	public function translatedQuery($sql)
 	{
 		$args    = func_get_args();
-		$queries = $this->prepareSQL(
+		$queries = $this->preprocess(
 			$sql,
 			array_slice($args, 1),
-			TRUE
+			TRUE,
+			$rollback_statements
 		);
 		
-		$output = array();
-		foreach ($queries as $key => $query) {
-			$result = $this->run($query, 'fResult');
-			if (!is_numeric($key)) {
-				list($number, $original_query) = explode(':', $key, 2);
-				$result->setUntranslatedSQL($original_query);
+		try {
+			$output = array();
+			$i = 0;
+			
+			foreach ($queries as $key => $query) {
+				$result = $this->run($query, 'fResult');
+				if (!is_numeric($key)) {
+					list($number, $original_query) = explode(':', $key, 2);
+					$result->setUntranslatedSQL($original_query);
+				}
+				$output[] = $result;
+				$i++;
 			}
-			$output[] = $result;
+		} catch (fSQLException $e) {
+			$this->runRollbackStatements($rollback_statements, $i);
+			throw $e;
 		}
 		
 		return sizeof($output) == 1 ? $output[0] : $output;
@@ -2987,7 +3358,7 @@ class fDatabase
 			$result = $this->run($statement, 'fUnbufferedResult', $params);
 			
 		} else {
-			$queries = $this->prepareSQL($statement, $params, FALSE);
+			$queries = $this->preprocess($statement, $params, FALSE);
 			
 			if (sizeof($queries) > 1) {
 				throw new fProgrammerException(
@@ -3019,8 +3390,17 @@ class fDatabase
 	 */
 	public function unbufferedTranslatedQuery($sql)
 	{
+		if (preg_match('#^\s*(ALTER|COMMENT|CREATE|DROP)\s+#i', $sql)) {
+			throw new fProgrammerException(
+				"The SQL provided, %1$s, appears to be a DDL (data definition language) SQL statement, which can not be run via %2$s because it may result in multiple SQL statements being run. Please use %3$s instead.",
+				$sql,
+				__CLASS__ . '::unbufferedTranslatedQuery()',
+				__CLASS__ . '::translatedExecute()'
+			);
+		}
+
 		$args    = func_get_args();
-		$queries = $this->prepareSQL(
+		$queries = $this->preprocess(
 			$sql,
 			array_slice($args, 1),
 			TRUE
@@ -3140,7 +3520,7 @@ class fDatabase
 	 */
 	private function unescapeBlob($value)
 	{
-		$this->connectToDatabase();
+		$this->connect();
 		
 		if ($this->extension == 'pgsql') {
 			return pg_unescape_bytea($value);

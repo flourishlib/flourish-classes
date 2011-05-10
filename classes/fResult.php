@@ -2,14 +2,15 @@
 /**
  * Representation of a result from a query against the fDatabase class
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed MSSQL to have a properly reset row array, added ::silenceNotices(), fixed pdo_dblib on Windows when using the Microsoft DBLib driver [wb, 2011-05-09]
  * @changes    1.0.0b11  Backwards Compatibility Break - removed ODBC support [wb, 2010-07-31]
  * @changes    1.0.0b10  Added IBM DB2 support [wb, 2010-04-13]
  * @changes    1.0.0b9   Added support for prepared statements [wb, 2010-03-02]
@@ -24,6 +25,14 @@
  */
 class fResult implements Iterator
 {
+	/**
+	 * If notices should be hidden for broken database drivers
+	 *
+	 * @var boolean
+	 */
+	static private $silence_notices = FALSE;
+
+
 	/**
 	 * Composes text using fText if loaded
 	 * 
@@ -44,6 +53,17 @@ class fResult implements Iterator
 		} else {
 			return vsprintf($message, $args);
 		}
+	}
+
+
+	/**
+	 * Turns off notices about broken database extensions much as the MSSQL DBLib driver
+	 * 
+	 * @return void
+	 */
+	static public function silenceNotices()
+	{
+		self::$silence_notices = TRUE;
 	}
 	
 	
@@ -81,6 +101,13 @@ class fResult implements Iterator
 	 * @var fDatabase
 	 */
 	private $database = NULL;
+
+	/**
+	 * The database extension
+	 * 
+	 * @var string
+	 */
+	private $extension = NULL;
 	
 	/**
 	 * If rows should be converted to objects
@@ -150,6 +177,7 @@ class fResult implements Iterator
 		}
 		
 		$this->database      = $database;
+		$this->extension     = $this->database->getExtension();
 		$this->character_set = $character_set;
 	}
 	
@@ -167,7 +195,7 @@ class fResult implements Iterator
 			return;
 		}
 		
-		switch ($this->database->getExtension()) {
+		switch ($this->extension) {
 			case 'mssql':
 				mssql_free_result($this->result);
 				break;
@@ -212,10 +240,9 @@ class fResult implements Iterator
 	 */
 	private function advanceCurrentRow()
 	{
-		$type      = $this->database->getType();
-		$extension = $this->database->getExtension();
-		
-		switch ($extension) {
+		$type = $this->database->getType();
+
+		switch ($this->extension) {
 			case 'mssql':
 				$row = mssql_fetch_assoc($this->result);
 				if (!empty($row)) {
@@ -243,30 +270,29 @@ class fResult implements Iterator
 				$row = sqlite_fetch_array($this->result, SQLITE_ASSOC);
 				break;
 				
+			case 'pdo':
+				$row = $this->result[$this->pointer];
+				if (!empty($row) && $type == 'mssql') {
+					$row = $this->fixDblibMSSQLDriver($row);
+				}
+				break;
+
 			case 'ibm_db2':
 			case 'oci8':
-			case 'pdo':
 			case 'sqlsrv':
 				$row = $this->result[$this->pointer];
 				break;
 		}
 		
-		
 		// Fix uppercase column names to lowercase
-		if ($row && ($type == 'oracle' || ($type == 'db2' && $extension != 'ibm_db2'))) {
-			$new_row = array();
-			foreach ($row as $column => $value) {
-				$new_row[strtolower($column)] = $value;
-			}	
-			$row = $new_row;
+		if ($row && ($type == 'oracle' || ($type == 'db2' && $this->extension != 'ibm_db2'))) {
+			$row = array_change_key_case($row);
 		}
 		
 		// This is an unfortunate fix that required for databases that don't support limit
 		// clauses with an offset. It prevents unrequested columns from being returned.
-		if ($row && in_array($type, array('mssql', 'oracle', 'db2'))) {
-			if ($this->untranslated_sql !== NULL && isset($row['flourish__row__num'])) {
-				unset($row['flourish__row__num']);
-			}	
+		if (isset($row['flourish__row__num'])) {
+			unset($row['flourish__row__num']);
 		}
 		
 		// This decodes the data coming out of MSSQL into UTF-8
@@ -280,13 +306,16 @@ class fResult implements Iterator
 				}
 			}
 			$row = $this->decodeMSSQLNationalColumns($row);
+			// This resets the array pointer so that
+			// current() will work as expected
+			reset($row);
 		}
 		
 		if ($this->unescape_map) {
 			foreach ($this->unescape_map as $column => $type) {
 				if (!isset($row[$column])) { continue; }
 				$row[$column] = $this->database->unescape($type, $row[$column]);
-			}	
+			}
 		} 
 		
 		$this->current_row = $row;
@@ -442,13 +471,13 @@ class fResult implements Iterator
 	 */
 	private function fixDblibMSSQLDriver($row)
 	{
-		static $using_dblib = NULL;
+		static $using_dblib = array();
 		
-		if ($using_dblib === NULL) {
+		if (!isset($using_dblib[$this->extension])) {
 		
 			// If it is not a windows box we are definitely not using dblib
 			if (!fCore::checkOS('windows')) {
-				$using_dblib = FALSE;
+				$using_dblib[$this->extension] = FALSE;
 			
 			// Check this windows box for dblib
 			} else {
@@ -457,26 +486,32 @@ class fResult implements Iterator
 				$module_info = ob_get_contents();
 				ob_end_clean();
 				
-				$using_dblib = !preg_match('#FreeTDS#ims', $module_info, $match);
+				if ($this->extension == 'pdo_mssql') {
+					$using_dblib[$this->extension] = preg_match('#MSSQL_70#i', $module_info, $match);
+				} else {
+					$using_dblib[$this->extension] = !preg_match('#FreeTDS#i', $module_info, $match);
+				}
 			}
 		}
 		
-		if (!$using_dblib) {
+		if (!$using_dblib[$this->extension]) {
 			return $row;
 		}
 		
 		foreach ($row as $key => $value) {
 			if ($value === ' ') {
 				$row[$key] = '';
-				trigger_error(
-					self::compose(
-						'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
-						'http://bugs.php.net/bug.php?id=26315'
-					),
-					E_USER_NOTICE
-				);
+				if (!self::$silence_notices) {
+					trigger_error(
+						self::compose(
+							'A single space was detected coming out of the database and was converted into an empty string - see %s for more information',
+							'http://bugs.php.net/bug.php?id=26315'
+						),
+						E_USER_NOTICE
+					);
+				}
 			}
-			if (strlen($key) == 30) {
+			if (!self::$silence_notices && strlen($key) == 30) {
 				trigger_error(
 					self::compose(
 						'A column name exactly 30 characters in length was detected coming out of the database - this column name may be truncated, see %s for more information.',
@@ -485,7 +520,7 @@ class fResult implements Iterator
 					E_USER_NOTICE
 				);
 			}
-			if (strlen($value) == 256) {
+			if (!self::$silence_notices && strlen($value) == 256) {
 				trigger_error(
 					self::compose(
 						'A value exactly 255 characters in length was detected coming out of the database - this value may be truncated, see %s for more information.',
@@ -625,7 +660,7 @@ class fResult implements Iterator
 		
 		$this->pointer = $row;
 					
-		switch ($this->database->getExtension()) {			
+		switch ($this->extension) {			
 			case 'mssql':
 				$success = mssql_data_seek($this->result, $row);
 				break;
@@ -825,7 +860,7 @@ class fResult implements Iterator
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

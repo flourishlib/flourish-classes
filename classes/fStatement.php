@@ -2,14 +2,15 @@
 /**
  * Representation of a prepared statement for use with the fDatabase class
  * 
- * @copyright  Copyright (c) 2011 Will Bond
+ * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Fixed handling of arrays of values for ::execute(), ::executeQuery() and ::executeUnbufferedQuery(), fixed escaping of values that become `NULL` [wb, 2011-05-09]
  * @changes    1.0.0b6  Added ::getUntranslatedSQL() [wb, 2011-01-09]
  * @changes    1.0.0b5  Fixed an edge case where the mysqli extension would leak memory when fetching a `TEXT` or `BLOB` column [wb, 2010-08-28]
  * @changes    1.0.0b4  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
@@ -82,10 +83,10 @@ class fStatement
 	 * @internal
 	 * 
 	 * @param  fDatabase $database            The database object this result set was created from
-	 * @param  string    $query               MSSQL only: the character set to transcode from since MSSQL doesn't do UTF-8
+	 * @param  string    $query               The SQL statement to prepare
 	 * @param  array     $placeholders        The data type placeholders
-	 * @param  string    $untranslated_query  If the SQL was translated - only relevant for Oracle
-	 * @return fResult
+	 * @param  string    $untranslated_query  The original untranslated SQL, if applicable
+	 * @return fStatement
 	 */
 	public function __construct($database, $query, $placeholders, $untranslated_sql)
 	{
@@ -111,6 +112,7 @@ class fStatement
 			case 'mysql':
 			case 'pdo_dblib':
 			case 'sqlite':
+				$query = vsprintf($query, $placeholders);
 				break;
 				
 			case 'oci8':	
@@ -314,6 +316,10 @@ class fStatement
 	 */
 	public function execute($params, &$extra, $different)
 	{
+		if (is_array($params) && count($params) == 1 && is_array($params[0]) && count($this->placeholders) > 1) {
+			$params = $params[0];
+		}
+
 		if ($different && $this->used) {
 			$this->regenerateStatement();
 		}
@@ -403,6 +409,10 @@ class fStatement
 	 */
 	public function executeQuery($result, $params, &$extra, $different)
 	{
+		if (is_array($params) && count($params) == 1 && is_array($params[0]) && count($this->placeholders) > 1) {
+			$params = $params[0];
+		}
+
 		if ($different && $this->used) {
 			$this->regenerateStatement();
 		}
@@ -476,7 +486,13 @@ class fStatement
 			case 'oci8':
 				$extra = $this->statement;
 				if (oci_execute($extra, $this->database->isInsideTransaction() ? OCI_DEFAULT : OCI_COMMIT_ON_SUCCESS)) {
-					oci_fetch_all($extra, $rows, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+					// oci8 complains if you try to fetch results multiple times from a prepared statement
+					// if the statement does not returns any rows, so we ignore easy-to-detect non-selects
+					if (!preg_match('#\s*(INSERT|UPDATE|DELETE)\s+#i', $this->sql)) {
+						oci_fetch_all($extra, $rows, 0, -1, OCI_FETCHSTATEMENT_BY_ROW + OCI_ASSOC);
+					} else {
+						$rows = array();
+					}
 					$result->setResult($rows);
 					unset($rows);	
 				} else {
@@ -571,6 +587,10 @@ class fStatement
 	 */
 	public function executeUnbufferedQuery($result, $params, &$extra, $different)
 	{
+		if (is_array($params) && count($params) == 1 && is_array($params[0]) && count($this->placeholders) > 1) {
+			$params = $params[0];
+		}
+
 		if ($different && $this->used) {
 			$this->regenerateStatement();
 		}
@@ -729,15 +749,22 @@ class fStatement
 			if (!in_array($placeholder, array('%l', '%s'))) {
 				
 				$params[$i] = $this->database->escape($placeholder, $params[$i]);
-				
-				// Dates, times, timestamps and some booleans need to be unquoted
-				if (in_array($placeholder, array('%d', '%t', '%p')) || (($type == 'mssql' || $type == 'sqlite' || $type == 'db2') && $placeholder == '%b')) {
-					$params[$i] = substr($params[$i], 1, -1);	
-				
-				// Some booleans need to be converted to integers
-				} elseif ($placeholder == '%b' && ($type == 'postgresql' || $type == 'mysql')) {
-					$params[$i] = $params[$i] == 'TRUE' ? 1 : 0;
-				}
+
+				if ($params[$i] === 'NULL') {
+					$params[$i] = NULL;
+
+				} else {
+					// Dates, times, timestamps and some booleans need to be unquoted
+					$date_time_types = in_array($placeholder, array('%d', '%t', '%p'));
+					$bool_types      = ($type == 'mssql' || $type == 'sqlite' || $type == 'db2') && $placeholder == '%b';
+					if ($date_time_types || $bool_types) {
+						$params[$i] = substr($params[$i], 1, -1);	
+					
+					// Some booleans need to be converted to integers
+					} elseif ($placeholder == '%b' && ($type == 'postgresql' || $type == 'mysql')) {
+						$params[$i] = $params[$i] == 'TRUE' ? 1 : 0;
+					}
+				}				
 					
 			// For strings and blobs we need to manually cast objects
 			// This is done in fDatabase::escape() for all other types
@@ -810,7 +837,7 @@ class fStatement
 							$statement->bindParam($i+1, $params[$i], $params[$i] === NULL ? PDO::PARAM_NULL : PDO::PARAM_BOOL);
 							break;
 						case '%i':
-							$statement->bindParam($i+1, $params[$i], $params[$i] === NULL ? PDO::PARAM_NULL : PDO::PARAM_INT);
+							$statement->bindParam($i+1, $params[$i], $params[$i] === NULL && $type != 'db2' ? PDO::PARAM_NULL : PDO::PARAM_INT);
 							break;
 						case '%d':
 						case '%f': // For some reason float are supposed to be bound as strings
@@ -860,7 +887,7 @@ class fStatement
 
 
 /**
- * Copyright (c) 2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

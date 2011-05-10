@@ -6,14 +6,15 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed a variable name typo in ::sub() [wb, 2011-05-09]
  * @changes    1.0.0b11  Updated the class to not using phpinfo() to determine the iconv implementation [wb, 2010-11-04]
  * @changes    1.0.0b10  Fixed a bug with capitalizing a lowercase i resulting in a dotted upper-case I [wb, 2010-11-01]
  * @changes    1.0.0b9   Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
@@ -1418,7 +1419,7 @@ class fUTF8
 		
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
-			if ($lenth === NULL) {
+			if ($length === NULL) {
 				if ($start >= 0) {
 					$length = strlen($string)-$start;
 				} else {
@@ -1601,7 +1602,7 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

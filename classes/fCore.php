@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Changed ::startErrorCapture() to allow "stacking" it via multiple calls, fixed a couple of bugs with ::dump() mangling strings in the form `int(1)`, fixed mispelling of `occurred` [wb, 2011-05-09]
  * @changes    1.0.0b20  Backwards Compatibility Break - Updated ::expose() to not wrap the data in HTML when running via CLI, and instead just append a newline [wb, 2011-02-24]
  * @changes    1.0.0b19  Added detection of AIX to ::checkOS() [wb, 2011-01-19]
  * @changes    1.0.0b18  Updated ::expose() to be able to accept multiple parameters [wb, 2011-01-10]
@@ -29,7 +30,7 @@
  * @changes    1.0.0b6   Fixed a bug with getting the server name for error messages when running on the command line [wb, 2009-03-11]
  * @changes    1.0.0b5   Fixed a bug with checking the error/exception destination when a log file is specified [wb, 2009-03-07]
  * @changes    1.0.0b4   Backwards compatibility break - ::getOS() and ::getPHPVersion() removed, replaced with ::checkOS() and ::checkVersion() [wb, 2009-02-16]
- * @changes    1.0.0b3   ::handleError() now displays what kind of error occured as the heading [wb, 2009-02-15]
+ * @changes    1.0.0b3   ::handleError() now displays what kind of error occurred as the heading [wb, 2009-02-15]
  * @changes    1.0.0b2   Added ::registerDebugCallback() [wb, 2009-02-07]
  * @changes    1.0.0b    The initial implementation [wb, 2007-09-25]
  */
@@ -60,34 +61,41 @@ class fCore
 	const startErrorCapture       = 'fCore::startErrorCapture';
 	const stopErrorCapture        = 'fCore::stopErrorCapture';
 	
-	
+
 	/**
-	 * A regex to match errors to capture
-	 * 
-	 * @var string
-	 */
-	static private $captured_error_regex = NULL;
-	
-	/**
-	 * The previous error handler
-	 * 
-	 * @var callback
-	 */
-	static private $captured_errors_previous_handler = NULL;
-	
-	/**
-	 * The types of errors to capture
-	 * 
+	 * The nesting level of error capturing
+	 *
 	 * @var integer
 	 */
-	static private $captured_error_types = NULL;
-	
+	static private $captured_error_level = 0;
+
 	/**
-	 * An array of errors that have been captured
+	 * A stack of regex to match errors to capture, one string per level
 	 * 
 	 * @var array
 	 */
-	static private $captured_errors = NULL;
+	static private $captured_error_regex = array();
+	
+	/**
+	 * A stack of the types of errors to capture, one integer per level
+	 * 
+	 * @var array
+	 */
+	static private $captured_error_types = array();
+	
+	/**
+	 * A stack of arrays of errors that have been captured, one array per level
+	 * 
+	 * @var array
+	 */
+	static private $captured_errors = array();
+
+	/**
+	 * A stack of the previous error handler, one callback per level
+	 * 
+	 * @var array
+	 */
+	static private $captured_errors_previous_handler = array();
 	
 	/**
 	 * If the context info has been shown
@@ -594,9 +602,9 @@ class fCore
 			$output = str_replace('string(0) ""', '{empty_string}', $output);
 			$output = preg_replace('#=> (&)?NULL#', '=> \1{null}', $output);
 			$output = preg_replace('#=> (&)?bool\((false|true)\)#', '=> \1{\2}', $output);
+			$output = preg_replace('#(<?=^|\] => )(?:float|int)\((-?\d+(?:.\d+)?)\)#', '\1', $output);
 			$output = preg_replace('#string\(\d+\) "#', '', $output);
 			$output = preg_replace('#"(\n(  )*)(?=\[|\})#', '\1', $output);
-			$output = preg_replace('#(?:float|int)\((-?\d+(?:.\d+)?)\)#', '\1', $output);
 			$output = preg_replace('#((?:  )+)\["(.*?)"\]#', '\1[\2]', $output);
 			$output = preg_replace('#(?:&)?array\(\d+\) \{\n((?:  )*)((?:  )(?=\[)|(?=\}))#', "Array\n\\1(\n\\1\\2", $output);
 			$output = preg_replace('/object\((\w+)\)#\d+ \(\d+\) {\n((?:  )*)((?:  )(?=\[)|(?=\}))/', "\\1 Object\n\\2(\n\\2\\3", $output);
@@ -836,8 +844,8 @@ class fCore
 	 * 
 	 * @param  integer $error_number   The error type
 	 * @param  string  $error_string   The message for the error
-	 * @param  string  $error_file     The file the error occured in
-	 * @param  integer $error_line     The line the error occured on
+	 * @param  string  $error_file     The file the error occurred in
+	 * @param  integer $error_line     The line the error occurred on
 	 * @param  array   $error_context  A references to all variables in scope at the occurence of the error
 	 * @return void
 	 */
@@ -850,7 +858,7 @@ class fCore
 			}
 		}
 		
-		$capturing   = is_array(self::$captured_errors);
+		$capturing   = (bool) self::$captured_error_level;
 		$level_match = (bool) (error_reporting() & $error_number);
 		
 		if (!$capturing && !$level_match) {
@@ -894,10 +902,10 @@ class fCore
 		}
 		
 		if ($capturing) {
-			$type_to_capture   = (bool) (self::$captured_error_types & $error_number);
-			$string_to_capture = !self::$captured_error_regex || (self::$captured_error_regex && preg_match(self::$captured_error_regex, $error_string));
+			$type_to_capture   = (bool) (self::$captured_error_types[self::$captured_error_level] & $error_number);
+			$string_to_capture = !self::$captured_error_regex[self::$captured_error_level] || (self::$captured_error_regex[self::$captured_error_level] && preg_match(self::$captured_error_regex[self::$captured_error_level], $error_string));
 			if ($type_to_capture && $string_to_capture) {
-				self::$captured_errors[] = array(
+				self::$captured_errors[self::$captured_error_level][] = array(
 					'number'    => $error_number,
 					'type'      => $type,
 					'string'    => $error_string,
@@ -911,11 +919,11 @@ class fCore
 			
 			// If the old handler is not this method, then we must have been trying to match a regex and failed
 			// so we pass the error on to the original handler to do its thing
-			if (self::$captured_errors_previous_handler != array('fCore', 'handleError')) {
-				if (self::$captured_errors_previous_handler === NULL) {
+			if (self::$captured_errors_previous_handler[self::$captured_error_level] != array('fCore', 'handleError')) {
+				if (self::$captured_errors_previous_handler[self::$captured_error_level] === NULL) {
 					return FALSE;
 				}
-				return call_user_func(self::$captured_errors_previous_handler, $error_number, $error_string, $error_file, $error_line, $error_context);
+				return call_user_func(self::$captured_errors_previous_handler[self::$captured_error_level], $error_number, $error_string, $error_file, $error_line, $error_context);
 			
 			// If we get here, this method is the error handler, but we don't want to actually report the error so we return
 			} elseif (!$level_match) {
@@ -1006,10 +1014,11 @@ class fCore
 			restore_error_handler();
 		}
 		
-		self::$captured_error_regex             = NULL;
-		self::$captured_errors_previous_handler = NULL;
-		self::$captured_error_types             = NULL;
-		self::$captured_errors                  = NULL;
+		self::$captured_error_level             = 0;
+		self::$captured_error_regex             = array();
+		self::$captured_error_types             = array();
+		self::$captured_errors                  = array();
+		self::$captured_errors_previous_handler = array();
 		self::$context_shown                    = FALSE;
 		self::$debug                            = NULL;
 		self::$debug_callback                   = NULL;
@@ -1039,7 +1048,7 @@ class fCore
 	static public function sendMessagesOnShutdown()
 	{
 		$subject = self::compose(
-			'[%1$s] One or more errors or exceptions occured at %2$s',
+			'[%1$s] One or more errors or exceptions occurred at %2$s',
 			isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : php_uname('n'),
 			date('Y-m-d H:i:s')
 		);
@@ -1139,10 +1148,13 @@ class fCore
 		if ($types === NULL) {
 			$types = E_ALL | E_STRICT;
 		}
-		self::$captured_error_types             = $types;
-		self::$captured_errors                  = array();
-		self::$captured_errors_previous_handler = set_error_handler(self::callback(self::handleError));
-		self::$captured_error_regex             = $regex;
+
+		self::$captured_error_level++;
+
+		self::$captured_error_regex[self::$captured_error_level]             = $regex;
+		self::$captured_error_types[self::$captured_error_level]             = $types;
+		self::$captured_errors[self::$captured_error_level]                  = array();
+		self::$captured_errors_previous_handler[self::$captured_error_level] = set_error_handler(self::callback(self::handleError));
 	}
 	
 	
@@ -1154,11 +1166,14 @@ class fCore
 	 */
 	static public function stopErrorCapture($regex=NULL)
 	{
-		$captures = self::$captured_errors;
-		self::$captured_error_regex             = NULL;
-		self::$captured_errors_previous_handler = NULL;
-		self::$captured_error_types             = NULL;
-		self::$captured_errors                  = NULL;
+		$captures = self::$captured_errors[self::$captured_error_level];
+
+		self::$captured_error_level--;
+
+		self::$captured_error_regex             = array_slice(self::$captured_error_regex,             0, self::$captured_error_level, TRUE);
+		self::$captured_error_types             = array_slice(self::$captured_error_types,             0, self::$captured_error_level, TRUE);
+		self::$captured_errors                  = array_slice(self::$captured_errors,                  0, self::$captured_error_level, TRUE);
+		self::$captured_errors_previous_handler = array_slice(self::$captured_errors_previous_handler, 0, self::$captured_error_level, TRUE);
 		
 		restore_error_handler();
 		
