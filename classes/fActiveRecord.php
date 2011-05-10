@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b76
+ * @version    1.0.0b77
+ * @changes    1.0.0b77  Fixed ::inspect() to not throw an fProgrammerException when a valid element has a `NULL` value [wb, 2011-05-10]
  * @changes    1.0.0b76  Added ::clearIdentityMap() [wb, 2011-05-09]
  * @changes    1.0.0b75  Fixed a bug where child records of a record with a non-auto-incrementing primary key would not be saved properly for a new record [wb, 2010-12-06]
  * @changes    1.0.0b74  Updated ::populate() to use the `binary` type for fRequest::get() [wb, 2010-11-30]
@@ -1844,7 +1845,7 @@ abstract class fActiveRecord
 		fORM::callInspectCallbacks(get_class($this), $column, $info);
 		
 		if ($element) {
-			if (!isset($info[$element])) {
+			if (!isset($info[$element]) && !array_key_exists($element, $info)) {
 				throw new fProgrammerException(
 					'The element specified, %1$s, is invalid. Must be one of: %2$s.',
 					$element,
