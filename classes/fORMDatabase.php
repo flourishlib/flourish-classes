@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Fixed a bug with ::addWhereClause() generating invalid SQL [wb, 2011-05-10]
  * @changes    1.0.0b30  Fixed ::insertFromAndGroupByClauses() to insert `MAX()` around columns in related tables in the `ORDER BY` clause when a `GROUP BY` is used [wb, 2011-02-03]
  * @changes    1.0.0b29  Added code to handle old PCRE engines that don't support unicode character properties [wb, 2010-12-06]
  * @changes    1.0.0b28  Fixed a bug in the fProgrammerException that is thrown when an improperly formatted OR condition is provided [wb, 2010-11-24]
@@ -591,6 +592,7 @@ class fORMDatabase
 						// Skip fuzzy matches with no values to match
 						if ($values === array()) {
 							$params[0] .= ' 1 = 1 ';
+							$i++;
 							continue;
 						}
 						
