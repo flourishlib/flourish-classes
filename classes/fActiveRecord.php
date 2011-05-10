@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b77
+ * @version    1.0.0b78
+ * @changes    1.0.0b78  Backwards Compatibility Break - ::reflect() now returns an associative array instead of a string [wb, 2011-05-10]
  * @changes    1.0.0b77  Fixed ::inspect() to not throw an fProgrammerException when a valid element has a `NULL` value [wb, 2011-05-10]
  * @changes    1.0.0b76  Added ::clearIdentityMap() [wb, 2011-05-09]
  * @changes    1.0.0b75  Fixed a bug where child records of a record with a non-auto-incrementing primary key would not be saved properly for a new record [wb, 2010-12-06]
@@ -2176,10 +2177,10 @@ abstract class fActiveRecord
 	
 	
 	/**
-	 * Generates a pre-formatted block of text containing the method signatures for all methods (including dynamic ones)
+	 * Generates the method signatures for all methods (including dynamic ones)
 	 * 
 	 * @param  boolean $include_doc_comments  If the doc block comments for each method should be included
-	 * @return string  A preformatted block of text with the method signatures and optionally the doc comment
+	 * @return array  An associative array of method name => method signature
 	 */
 	public function reflect($include_doc_comments=FALSE)
 	{
@@ -2428,7 +2429,7 @@ abstract class fActiveRecord
 		
 		ksort($signatures);
 		
-		return join("\n\n", $signatures);
+		return $signatures;
 	}
 	
 	
