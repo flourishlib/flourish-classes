@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added `0` to the memcache delete method call since otherwise the method triggers notices on some installs [wb, 2011-05-10]
  * @changes    1.0.0b2  Fixed API calls to the memcache extension to pass the TTL as the correct parameter [wb, 2011-02-01]
  * @changes    1.0.0b   The initial implementation [wb, 2009-04-28]
  */
@@ -243,7 +244,7 @@ class fCache
 				return;
 			
 			case 'memcache':
-				$this->data_store->delete($key);
+				$this->data_store->delete($key, 0);
 				return;
 			
 			case 'xcache':
