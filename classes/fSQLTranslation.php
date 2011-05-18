@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Removed the stray method ::removeSQLiteIndexes() that was left over from moving code into fSQLSchemaTranslation [wb, 2011-05-17]
  * @changes    1.0.0b18  Fixed `LENGTH()` and `SUBSTR()` functions for non-ascii characters being stored in MySQL, SQLite and DB2, moved `CREATE TABLE` support to fSQLSchemaTranslation [wb, 2011-05-09]
  * @changes    1.0.0b17  Internal Backwards Compatiblity Break - changed the array keys for translated queries returned from ::translate() to include a number plus `:` before the original SQL, preventing duplicate keys [wb, 2010-07-14]
  * @changes    1.0.0b16  Added IBM DB2 support [wb, 2010-04-13]
@@ -673,32 +674,6 @@ class fSQLTranslation
 		}
 		
 		return $this->cache_prefix;	
-	}
-
-
-	/**
-	 * Removes the SQLite indexes from the internal schema tracker
-	 *
-	 * @param  string $table   The table to remove the indexes for
-	 * @return void
-	 */
-	private function removeSQLiteIndexes($table)
-	{
-		if (!isset($this->schema_info['sqlite_indexes'])) {
-			return;
-		}
-
-		$indexes = $this->schema_info['sqlite_indexes'];
-
-		$new_indexes = array();
-		foreach ($indexes as $name => $index) {
-			if ($index['table'] == $table) {
-				continue;
-			}
-			$new_indexes[$name] = $index;
-		}
-
-		$this->schema_info['sqlite_indexes'] = $new_indexes;
 	}
 	
 	
