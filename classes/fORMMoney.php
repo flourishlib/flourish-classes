@@ -2,7 +2,7 @@
 /**
  * Provides money functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond, others
+ * @copyright  Copyright (c) 2008-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Dan Collins, iMarc LLC [dc-imarc] <dan@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed the generation of validation messages when a non-monetary value is supplied [wb, 2011-05-17]
  * @changes    1.0.0b10  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b9   Added the `$remove_zero_fraction` parameter to prepare methods [wb, 2010-06-09]
  * @changes    1.0.0b8   Changed validation messages array to use column name keys [wb, 2010-05-26]
@@ -574,18 +575,16 @@ class fORMMoney
 			// Remove any previous validation warnings
 			unset($validation_messages[$column]);
 			
-			$column_name = fValidationException::formatField(fORM::getColumnName($class, $currency_column));
-			
 			if ($currency_column && !in_array($values[$currency_column], fMoney::getCurrencies())) {
-				$validation_messages[$column] = self::compose(
+				$validation_messages[$currency_column] = self::compose(
 					'%sThe currency specified is invalid',
-					$column_name
+					fValidationException::formatField(fORM::getColumnName($class, $currency_column))
 				);	
 				
 			} else {
 				$validation_messages[$column] = self::compose(
 					'%sPlease enter a monetary value',
-					$column_name
+					fValidationException::formatField(fORM::getColumnName($class, $column))
 				);
 			}
 		}
@@ -603,7 +602,7 @@ class fORMMoney
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
