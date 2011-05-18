@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b27
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  Fixed ::addAttachment() and ::addRelatedFile() to properly handle duplicate filenames [wb, 2011-05-17]
  * @changes    1.0.0b27  Fixed a bug with generating FQDNs on some Windows machines [wb, 2011-02-24]
  * @changes    1.0.0b26  Added ::addCustomerHeader() [wb, 2011-02-02]
  * @changes    1.0.0b25  Fixed a bug with finding the FQDN on non-Windows machines [wb, 2011-01-19]
@@ -530,7 +531,7 @@ class fEmail
 		$this->extrapolateFileInfo($contents, $filename, $mime_type);
 		
 		while (isset($this->attachments[$filename])) {
-			$this->generateNewFilename($filename);
+			$filename = $this->generateNewFilename($filename);
 		}
 		
 		$this->attachments[$filename] = array(
@@ -559,7 +560,7 @@ class fEmail
 		$this->extrapolateFileInfo($contents, $filename, $mime_type);
 		
 		while (isset($this->related_files[$filename])) {
-			$this->generateNewFilename($filename);
+			$filename = $this->generateNewFilename($filename);
 		}
 		
 		$cid = count($this->related_files) . '.' . substr($this->message_id, 1, -1);
