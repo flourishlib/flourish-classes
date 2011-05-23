@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b41
+ * @version    1.0.0b42
+ * @changes    1.0.0b42  Fixed a bug with ::associateRecords() not associating record set via primary key [wb, 2011-05-23]
  * @changes    1.0.0b41  Fixed a bug in generating errors messages for many-to-many relationships [wb, 2011-03-07]
  * @changes    1.0.0b40  Updated ::getRelatedRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b39  Fixed a bug with ::validate() not properly removing validation messages about a related primary key value not being present yet, if the column and related column names were different [wb, 2010-11-24]
@@ -234,7 +235,15 @@ class fORMRelated
 		$relationship = fORMSchema::getRoute($schema, $table, $related_table, $route, '*-to-many');
 		
 		// Determine how we are going to build the sequence
-		if ($values[$relationship['column']] === NULL) {
+		if (isset($related_records[$related_table][$route]['primary_keys'])) {
+			$primary_key_column = current($schema->getKeys($related_table, 'primary'));
+			$where_conditions   = array($primary_key_column . '=' => $related_records[$related_table][$route]['primary_keys']);
+			$order_bys          = self::getOrderBys($class, $related_class, $route);
+			$record_set         = fRecordSet::build($related_class, $where_conditions, $order_bys);
+			$related_records[$related_table][$route]['record_set'] = $record_set;
+			return $record_set;
+
+		} elseif ($values[$relationship['column']] === NULL) {
 			$record_set = fRecordSet::buildFromArray($related_class, array());
 		
 		} else {
@@ -246,7 +255,7 @@ class fORMRelated
 		}
 		
 		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
-		
+
 		return $record_set;
 	}
 	
@@ -1533,7 +1542,7 @@ class fORMRelated
 		} else {
 			$record_set = self::buildRecords($class, $values, $related_records, $related_class, $route);	
 		}
-		
+
 		$where_conditions = array(
 			$relationship['related_column'] . '=' => $column_value
 		);
