@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
  * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
  * @changes    1.0.0b30  Added a check for systems using the GD extension and no memory limit, plus a check for ImageMagick's convert command failing [wb, 2011-03-20]
  * @changes    1.0.0b29  Added checks for AIX [wb, 2011-01-19]
@@ -1456,6 +1457,7 @@ class fImage extends fFile
 		}
 		
 		$this->pending_modifications = array();
+		clearstatcache();
 		
 		return $this;
 	}
