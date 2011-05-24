@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b47
+ * @version    1.0.0b48
+ * @changes    1.0.0b48  Fixed a bug with ::getTables() not working on MySQL 4.x, fixed ::getKeys() to always return a reset array [wb, 2011-05-24]
  * @changes    1.0.0b47  Backwards Compatibility Break - ::getTables(), ::getColumnInfo(), ::getDatabases(), ::getKeys() and ::getRelationships() now return database, schema, table and column names in lowercase, added the `$creation_order` parameter to ::getTables(), fixed bugs with getting column and key information from MSSQL, Oracle and SQLite [wb, 2011-05-09]
  * @changes    1.0.0b46  Enhanced SQLite schema detection to cover situations where `UNIQUE` constraints are defined separately from the table and when comments are used in `CREATE TABLE` statements [wb, 2011-02-06]
  * @changes    1.0.0b45  Fixed Oracle auto incrementing detection to work with `INSERT OR UPDATE` triggers, fixed detection of dynamic default date/time/timestamp values for DB2 and Oracle [wb, 2010-12-04]
@@ -2555,10 +2556,12 @@ class fSchema
 		
 		// Return the saved column info if possible
 		if (!$key_type && isset($this->merged_keys[$table])) {
+			reset($this->merged_keys[$table]);
 			return $this->merged_keys[$table];
 		}
 		
 		if ($key_type && isset($this->merged_keys[$table][$key_type])) {
+			reset($this->merged_keys[$table][$key_type]);
 			return $this->merged_keys[$table][$key_type];
 		}
 		
@@ -2573,9 +2576,11 @@ class fSchema
 		$this->mergeKeys();
 		
 		if ($key_type) {
+			reset($this->merged_keys[$table][$key_type]);
 			return $this->merged_keys[$table][$key_type];
 		}
 		
+		reset($this->merged_keys[$table]);
 		return $this->merged_keys[$table];
 	}
 	
@@ -2721,7 +2726,7 @@ class fSchema
 				break;
 			
 			case 'mysql':
-				if (version_compare($this->database->getVersion(), 4, '<')) {
+				if (version_compare($this->database->getVersion(), 5, '<')) {
 					$sql = 'SHOW TABLES';
 				} else {
 					$sql = "SHOW FULL TABLES WHERE table_type = 'BASE TABLE'";	

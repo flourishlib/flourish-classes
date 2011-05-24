@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b38
+ * @version    1.0.0b39
+ * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
  * @changes    1.0.0b38  Backwards Compatibility Break - callbacks registered to the `extracted` hook via ::registerHookCallback() no longer receive the `$strings` parameter, instead all strings are added into the `$values` parameter - added ::getVersion(), fixed a bug with SQLite messaging, fixed a bug with ::__destruct(), improved handling of transactional queries, added ::close(), enhanced class to throw four different exceptions for different connection errors, silenced PHP warnings upon connection error [wb, 2011-05-09]
  * @changes    1.0.0b37  Fixed usage of the mysqli extension to only call mysqli_set_charset() if it exists [wb, 2011-03-04]
  * @changes    1.0.0b36  Updated ::escape() and methods that use ::escape() to handle float values that don't contain a digit before or after the . [wb, 2011-02-01]
@@ -1766,7 +1767,7 @@ class fDatabase
 				break;
 		}
 
-		$this->schema_info['version'] = preg_replace('#[a-z].*$#D', '', $this->query($sql)->fetchScalar());
+		$this->schema_info['version'] = preg_replace('#-?[a-z].*$#Di', '', $this->query($sql)->fetchScalar());
 		return $this->schema_info['version'];
 	}
 	
