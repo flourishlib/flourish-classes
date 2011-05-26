@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b42
+ * @version    1.0.0b43
+ * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b42  Fixed a bug with ::associateRecords() not associating record set via primary key [wb, 2011-05-23]
  * @changes    1.0.0b41  Fixed a bug in generating errors messages for many-to-many relationships [wb, 2011-03-07]
  * @changes    1.0.0b40  Updated ::getRelatedRecordName() to use fText if loaded [wb, 2011-02-02]
@@ -968,6 +969,7 @@ class fORMRelated
 		
 		foreach ($to_one_relationships as $relationship) {
 			$related_class = fORM::classize($relationship['related_table']);
+			$related_class = fORM::getRelatedClass($class, $related_class);
 			
 			if (isset($to_one_created[$related_class])) {
 				continue;
@@ -1007,6 +1009,7 @@ class fORMRelated
 		
 		foreach ($one_to_one_relationships as $relationship) {
 			$related_class = fORM::classize($relationship['related_table']);
+			$related_class = fORM::getRelatedClass($class, $related_class);
 			
 			if (isset($one_to_one_created[$related_class])) {
 				continue;
@@ -1067,6 +1070,7 @@ class fORMRelated
 		
 		foreach ($to_many_relationships as $relationship) {
 			$related_class = fORM::classize($relationship['related_table']);
+			$related_class = fORM::getRelatedClass($class, $related_class);
 			
 			if (isset($to_many_created[$related_class])) {
 				continue;
@@ -1431,7 +1435,9 @@ class fORMRelated
 				if (isset($relationship['join_table'])) {
 					fORMRelated::storeManyToMany($class, $values, $relationship, $related_info);
 				} else {
-					fORMRelated::storeOneToStar($class, $values, $related_records, fORM::classize($related_table), $route, $force_cascade);
+					$related_class = fORM::classize($related_table);
+					$related_class = fORM::getRelatedClass($class, $related_class);
+					fORMRelated::storeOneToStar($class, $values, $related_records, $related_class, $route, $force_cascade);
 				}
 			}
 		}
@@ -1484,6 +1490,7 @@ class fORMRelated
 			// If there is no record set, build it from the primary keys
 			if (!$related_info['record_set']) {
 				$related_class = fORM::classize($relationship['related_table']);
+				$related_class = fORM::getRelatedClass($class, $related_class);
 				$related_info['record_set'] = fRecordSet::build($related_class, array($related_pk_columns[0] . '=' => $related_info['primary_keys']));
 			}
 			
@@ -1605,6 +1612,7 @@ class fORMRelated
 				}
 				
 				$related_class = fORM::classize($related_table);
+				$related_class = fORM::getRelatedClass($class, $related_class);
 				$relationship  = fORMSchema::getRoute($schema, $table, $related_table, $route);
 																												
 				if (isset($relationship['join_table'])) {

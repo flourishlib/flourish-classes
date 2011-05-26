@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b78
+ * @version    1.0.0b79
+ * @changes    1.0.0b79  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b78  Backwards Compatibility Break - ::reflect() now returns an associative array instead of a string [wb, 2011-05-10]
  * @changes    1.0.0b77  Fixed ::inspect() to not throw an fProgrammerException when a valid element has a `NULL` value [wb, 2011-05-10]
  * @changes    1.0.0b76  Added ::clearIdentityMap() [wb, 2011-05-09]
@@ -1472,6 +1473,7 @@ abstract class fActiveRecord
 				} elseif ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
 					
 					$related_class_name  = fORM::classize($relationship['related_table']);
+					$related_class_name  = fORM::getRelatedClass($class, $related_class_name);
 					$related_record_name = fORM::getRecordName($related_class_name);
 					
 					if ($type == 'one-to-one') {
@@ -2514,10 +2516,12 @@ abstract class fActiveRecord
 			if (strpos($parameter, '{') !== FALSE) {
 				$brace         = strpos($parameter, '{');
 				$related_class = fGrammar::singularize(substr($parameter, 0, $brace));
+				$related_class = fORM::getRelatedClass($class, $related_class);
 				$related_table = fORM::tablize($related_class);
 				$route         = substr($parameter, $brace+1, -1);
 			} else {
 				$related_class = fGrammar::singularize($parameter);
+				$related_class = fORM::getRelatedClass($class, $related_class);
 				$related_table = fORM::tablize($related_class);
 				$route         = fORMSchema::getRouteName($schema, $table, $related_table);
 			}
@@ -2749,6 +2753,7 @@ abstract class fActiveRecord
 				
 				$related_table = $relationship['related_table'];
 				$related_class = fORM::classize($related_table);
+				$related_class = fORM::getRelatedClass($class, $related_class);
 				
 				if ($relationship['on_update'] != 'cascade') {
 					continue;
