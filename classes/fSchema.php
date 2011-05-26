@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b48
+ * @version    1.0.0b49
+ * @changes    1.0.0b49  Added support for spatial/geometric data types in MySQL and PostgreSQL [wb, 2011-05-26]
  * @changes    1.0.0b48  Fixed a bug with ::getTables() not working on MySQL 4.x, fixed ::getKeys() to always return a reset array [wb, 2011-05-24]
  * @changes    1.0.0b47  Backwards Compatibility Break - ::getTables(), ::getColumnInfo(), ::getDatabases(), ::getKeys() and ::getRelationships() now return database, schema, table and column names in lowercase, added the `$creation_order` parameter to ::getTables(), fixed bugs with getting column and key information from MSSQL, Oracle and SQLite [wb, 2011-05-09]
  * @changes    1.0.0b46  Enhanced SQLite schema detection to cover situations where `UNIQUE` constraints are defined separately from the table and when comments are used in `CREATE TABLE` statements [wb, 2011-02-06]
@@ -1064,7 +1065,11 @@ class fSchema
 			'tinytext'			=> 'text',
 			'text'				=> 'text',
 			'mediumtext'		=> 'text',
-			'longtext'			=> 'text'
+			'longtext'			=> 'text',
+			'geometry'          => 'blob',
+			'point'             => 'blob',
+			'linestring'        => 'blob',
+			'polygon'           => 'blob'
 		);
 		
 		$max_min_values = array(
@@ -1639,7 +1644,14 @@ class fSchema
 			'bytea'				=> 'blob',
 			'text'				=> 'text',
 			'mediumtext'		=> 'text',
-			'longtext'			=> 'text'
+			'longtext'			=> 'text',
+			'point'             => 'varchar',
+			'line'              => 'varchar',
+			'lseg'              => 'varchar',
+			'box'               => 'varchar',
+			'path'              => 'varchar',
+			'polygon'           => 'varchar',
+			'circle'            => 'varchar'
 		);
 		
 		$max_min_values = array(
