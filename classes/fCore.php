@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Fixed a bug with dumping arrays containing integers [wb, 2011-05-26]
  * @changes    1.0.0b21  Changed ::startErrorCapture() to allow "stacking" it via multiple calls, fixed a couple of bugs with ::dump() mangling strings in the form `int(1)`, fixed mispelling of `occurred` [wb, 2011-05-09]
  * @changes    1.0.0b20  Backwards Compatibility Break - Updated ::expose() to not wrap the data in HTML when running via CLI, and instead just append a newline [wb, 2011-02-24]
  * @changes    1.0.0b19  Added detection of AIX to ::checkOS() [wb, 2011-01-19]
@@ -602,7 +603,7 @@ class fCore
 			$output = str_replace('string(0) ""', '{empty_string}', $output);
 			$output = preg_replace('#=> (&)?NULL#', '=> \1{null}', $output);
 			$output = preg_replace('#=> (&)?bool\((false|true)\)#', '=> \1{\2}', $output);
-			$output = preg_replace('#(<?=^|\] => )(?:float|int)\((-?\d+(?:.\d+)?)\)#', '\1', $output);
+			$output = preg_replace('#(?<=^|\] => )(?:float|int)\((-?\d+(?:.\d+)?)\)#', '\1', $output);
 			$output = preg_replace('#string\(\d+\) "#', '', $output);
 			$output = preg_replace('#"(\n(  )*)(?=\[|\})#', '\1', $output);
 			$output = preg_replace('#((?:  )+)\["(.*?)"\]#', '\1[\2]', $output);
