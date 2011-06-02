@@ -2,14 +2,15 @@
 /**
  * Provides validation routines for standalone forms, such as contact forms
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed ::addCallbackRule() to be able to handle multiple rules per field [wb, 2011-06-02]
  * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
  * @changes    1.0.0b9   Enhanced all of the add fields methods to accept one field per parameter, or an array of fields [wb, 2010-06-24]
  * @changes    1.0.0b8   Added/fixed support for array-syntax fields names [wb, 2010-06-09]
@@ -243,7 +244,10 @@ class fValidation
 	 */
 	public function addCallbackRule($field, $callback, $message)
 	{
-		$this->callback_rules[$field] = array(
+		if (!isset($this->callback_rules[$field])) {
+			$this->callback_rules[$field] = array();
+		}
+		$this->callback_rules[$field][] = array(
 			'callback' => $callback,
 			'message'  => $message
 		);
@@ -632,13 +636,15 @@ class fValidation
 	 */
 	private function checkCallbackRules(&$messages)
 	{
-		foreach ($this->callback_rules as $field => $rule) {
+		foreach ($this->callback_rules as $field => $rules) {
 			$value = fRequest::get($field);
-			if (self::stringlike($value) && !call_user_func($rule['callback'], $value)) {
-				$messages[$field] = self::compose(
-					'%s' . $rule['message'],
-					fValidationException::formatField($this->makeFieldName($field))
-				);
+			foreach ($rules as $rule) {
+				if (self::stringlike($value) && !call_user_func($rule['callback'], $value)) {
+					$messages[$field] = self::compose(
+						'%s' . $rule['message'],
+						fValidationException::formatField($this->makeFieldName($field))
+					);
+				}
 			}
 		}
 	}
@@ -1055,7 +1061,7 @@ class fValidation
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
