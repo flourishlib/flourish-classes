@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
  * @changes    1.0.0b11  Changed the `$timestamp` and `$timezone` attributes to be protected [wb, 2011-03-20]
  * @changes    1.0.0b10  Fixed a bug in ::__construct() with specifying a timezone other than the default for a relative time string such as "now" or "+2 hours" [wb, 2010-07-05]
  * @changes    1.0.0b9   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
@@ -782,7 +783,7 @@ class fTimestamp
 		
 		if ($datetime === NULL) {
 			$timestamp = time();
-		} elseif (is_numeric($datetime) && ctype_digit($datetime)) {
+		} elseif (is_numeric($datetime) && preg_match('#^-?\d+$#D', $datetime)) {
 			$timestamp = (int) $datetime;
 		} elseif (is_string($datetime) && in_array(strtoupper($datetime), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
 			$timestamp = time();

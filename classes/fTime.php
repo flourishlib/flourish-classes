@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTime
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
  * @changes    1.0.0b10  Changed the `$time` attribute to be protected [wb, 2011-03-20]
  * @changes    1.0.0b9   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
  * @changes    1.0.0b8   Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
@@ -66,7 +67,7 @@ class fTime
 	{
 		if ($time === NULL) {
 			$timestamp = time();
-		} elseif (is_numeric($time) && ctype_digit($time)) {
+		} elseif (is_numeric($time) && preg_match('#^-?\d+$#D', $time)) {
 			$timestamp = (int) $time;
 		} elseif (is_string($time) && in_array(strtoupper($time), array('CURRENT_TIMESTAMP', 'CURRENT_TIME'))) {
 			$timestamp = time();

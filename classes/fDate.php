@@ -9,16 +9,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Changed the `$date` attribute to be protected [wb, 2011-03-20]
- * @changes    1.0.0b8  Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
- * @changes    1.0.0b7  Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
- * @changes    1.0.0b6  Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
- * @changes    1.0.0b5  Updated for new fCore API [wb, 2009-02-16]
- * @changes    1.0.0b4  Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
- * @changes    1.0.0b3  Added support for CURRENT_TIMESTAMP and CURRENT_DATE SQL keywords [wb, 2009-01-11]
- * @changes    1.0.0b2  Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
- * @changes    1.0.0b   The initial implementation [wb, 2008-02-10]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
+ * @changes    1.0.0b9   Changed the `$date` attribute to be protected [wb, 2011-03-20]
+ * @changes    1.0.0b8   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
+ * @changes    1.0.0b7   Added a call to fTimestamp::callUnformatCallback() in ::__construct() for localization support [wb, 2009-06-01]
+ * @changes    1.0.0b6   Backwards compatibility break - Removed ::getSecondsDifference(), added ::eq(), ::gt(), ::gte(), ::lt(), ::lte() [wb, 2009-03-05]
+ * @changes    1.0.0b5   Updated for new fCore API [wb, 2009-02-16]
+ * @changes    1.0.0b4   Fixed ::__construct() to properly handle the 5.0 to 5.1 change in strtotime() [wb, 2009-01-21]
+ * @changes    1.0.0b3   Added support for CURRENT_TIMESTAMP and CURRENT_DATE SQL keywords [wb, 2009-01-11]
+ * @changes    1.0.0b2   Removed the adjustment amount check from ::adjust() [wb, 2008-12-31]
+ * @changes    1.0.0b    The initial implementation [wb, 2008-02-10]
  */
 class fDate
 {
@@ -65,7 +66,7 @@ class fDate
 	{
 		if ($date === NULL) {
 			$timestamp = time();
-		} elseif (is_numeric($date) && ctype_digit($date)) {
+		} elseif (is_numeric($date) && preg_match('#^-?\d+$#D', $date)) {
 			$timestamp = (int) $date;
 		} elseif (is_string($date) && in_array(strtoupper($date), array('CURRENT_TIMESTAMP', 'CURRENT_DATE'))) {
 			$timestamp = time();
