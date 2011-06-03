@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Added the `$delimiter` parameter to ::makeFriendly() [wb, 2011-06-03]
  * @changes    1.0.0b7  Fixed ::redirect() to be able to handle unqualified and relative paths [wb, 2011-03-02]
  * @changes    1.0.0b6  Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
  * @changes    1.0.0b5  Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
@@ -91,22 +92,39 @@ class fURL
 	 * Changes a string into a URL-friendly string
 	 * 
 	 * @param  string   $string      The string to convert
-	 * @param  interger $max_length  The maximum length of the friendly URL
+	 * @param  integer  $max_length  The maximum length of the friendly URL
+	 * @param  string   $delimiter   The delimiter to use between words, defaults to `_`
+	 * @param  string   :$string
+	 * @param  string   :$delimiter
 	 * @return string  The URL-friendly version of the string
 	 */
-	static public function makeFriendly($string, $max_length=NULL)
+	static public function makeFriendly($string, $max_length=NULL, $delimiter=NULL)
 	{
+		// This allows omitting the max length, but including a delimiter
+		if ($max_length && !is_numeric($max_length)) {
+			$delimiter  = $max_length;
+			$max_length = NULL;
+		}
+
 		$string = fHTML::decode(fUTF8::ascii($string));
 		$string = strtolower(trim($string));
 		$string = str_replace("'", '', $string);
-		$string = preg_replace('#[^a-z0-9\-]+#', '_', $string);
-		$string = preg_replace('#_{2,}#', '_', $string);
+
+		if (!strlen($delimiter)) {
+			$delimiter = '_';
+		}
+
+		$delimiter_replacement = strtr($delimiter, array('\\' => '\\\\', '$' => '\\$'));
+		$delimiter_regex       = preg_quote($delimiter, '#');
+
+		$string = preg_replace('#[^a-z0-9\-_]+#', $delimiter_replacement, $string);
+		$string = preg_replace('#' . $delimiter_regex . '{2,}#', $delimiter_replacement, $string);
 		$string = preg_replace('#_-_#', '-', $string);
-		$string = preg_replace('#(^_+|_+$)#D', '', $string);
+		$string = preg_replace('#(^' . $delimiter_regex . '+|' . $delimiter_regex . '+$)#D', '', $string);
 		
 		$length = strlen($string);
 		if ($max_length && $length > $max_length) {
-			$last_pos = strrpos($string, '_', ($length - $max_length - 1) * -1);
+			$last_pos = strrpos($string, $delimiter, ($length - $max_length - 1) * -1);
 			if ($last_pos < ceil($max_length / 2)) {
 				$last_pos = $max_length;
 			}
