@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b37
+ * @version    1.0.0b38
+ * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
  * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
  * @changes    1.0.0b36  Added the `$remove_extension` parameter to ::getName() [wb, 2011-01-10]
  * @changes    1.0.0b35  Added calls to clearstatcache() in ::append() and ::write() to prevent incorrect data from being returned by ::getMTime() and ::getSize() [wb, 2010-11-27]
@@ -49,7 +50,7 @@
  * @changes    1.0.0b2   Made ::rename() and ::write() return the object for method chaining [wb, 2008-11-22] 
  * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
-class fFile implements Iterator
+class fFile implements Iterator, Countable
 {
 	// The following constants allow for nice looking callbacks to static methods
 	const create = 'fFile::create';
@@ -647,6 +648,40 @@ class fFile implements Iterator
 		clearstatcache();
 		
 		return $this;
+	}
+
+
+	/**
+	 * Returns the number of lines in the file
+	 *
+	 * @return integer  The number of lines in the file
+	 */
+	public function count()
+	{
+		$this->tossIfDeleted();
+
+		$file_handle = fopen($this->file, 'r');
+
+		$lines        = 0;
+		$has_contents = FALSE;
+
+		// Read 512KB at a time to make this more efficient without using too much ram
+		while (!feof($file_handle)) {
+			$text   = fread($file_handle, 524288);
+			$text   = str_replace("\r\n", "\n", $text);
+			$text   = str_replace("\r", "\n", $text);
+			$lines += substr_count($text, "\n");
+			if ($text !== "") {
+				$has_contents = TRUE;
+			}
+		}
+		fclose($file_handle);
+
+		if ($has_contents) {
+			$lines++;
+		}
+
+		return $lines;
 	}
 	
 	
