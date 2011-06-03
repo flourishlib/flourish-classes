@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Enhanced the error checking in ::write() [wb, 2011-06-03]
  * @changes    1.0.0b11  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved connectivity error handling and timeouts while reading data [wb, 2011-01-10]
  * @changes    1.0.0b10  Fixed ::parseMessage() to properly handle a header format edge case and properly set the `text` and `html` keys even when the email has an explicit `Content-disposition: inline` header [wb, 2010-11-25]
  * @changes    1.0.0b9   Fixed a bug in ::parseMessage() that could cause HTML alternate content to be included in the `inline` content array instead of the `html` element [wb, 2010-09-20]
@@ -1426,7 +1427,8 @@ class fMailbox
 		}
 		
 		$res = fwrite($this->connection, $command);
-		if ($res === FALSE) {
+
+		if ($res === FALSE || $res === 0) {
 			throw new fConnectivityException(
 				'Unable to write data to %1$s server %2$s on port %3$s',
 				strtoupper($this->type),

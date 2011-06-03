@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Enhanced the error checking for ::write() [wb, 2011-06-03]
  * @changes    1.0.0b10  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved timeouts while reading data [wb, 2011-01-10]
  * @changes    1.0.0b9   Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
  * @changes    1.0.0b8   Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
@@ -592,8 +593,10 @@ class fSMTP
 		if (fCore::getDebug($this->debug)) {
 			fCore::debug("Sending:\n" . trim($data), $this->debug);
 		}
+		
 		$res = fwrite($this->connection, $data);
-		if ($res === FALSE) {
+		
+		if ($res === FALSE || $res === 0) {
 			throw new fConnectivityException('Unable to write data to SMTP server %1$s on port %2$s', $this->host, $this->port);	
 		}
 		$response = $this->read($expect);
