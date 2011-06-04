@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
  * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
  * @changes    1.0.0b17  Fixed support for 3+ dimensional input arrays, added a fixed for the PHP DoS float bug #53632, added support for type-casted arrays in ::get() [wb, 2011-01-09]
  * @changes    1.0.0b16  Backwards Compatibility Break - changed ::get() to remove binary characters when casting to a `string`, changed `int` and `integer` to cast to a real integer when possible, added new types of `binary` and `integer!` [wb, 2010-11-30]
@@ -404,12 +405,13 @@ class fRequest
 	 * integer, which may cause truncation of the value, by passing `integer!`
 	 * as the `$cast_to`.
 	 * 
-	 * @param  string $key            The key to get the value of - array elements can be accessed via `[sub-key]` syntax
-	 * @param  string $cast_to        Cast the value to this data type - see method description for details
-	 * @param  mixed  $default_value  If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead. This value will get cast if a `$cast_to` is specified.
+	 * @param  string  $key                    The key to get the value of - array elements can be accessed via `[sub-key]` syntax
+	 * @param  string  $cast_to                Cast the value to this data type - see method description for details
+	 * @param  mixed   $default_value          If the parameter is not set in the `DELETE`/`PUT` post data, `$_POST` or `$_GET`, use this value instead. This value will get cast if a `$cast_to` is specified.
+	 * @param  boolean $use_default_for_blank  If the request value is a blank string and `$default_value` is specified, this flag will cause the `$default_value` to be returned
 	 * @return mixed  The value
 	 */
-	static public function get($key, $cast_to=NULL, $default_value=NULL)
+	static public function get($key, $cast_to=NULL, $default_value=NULL, $use_default_for_blank=FALSE)
 	{
 		self::initPutDelete();
 		
@@ -428,6 +430,10 @@ class fRequest
 			$value = $_POST[$key];
 		} elseif (isset($_GET[$key])) {
 			$value = $_GET[$key];
+		}
+
+		if ($value === '' && $use_default_for_blank && $default_value !== NULL) {
+			$value = $default_value;
 		}
 		
 		if ($array_dereference) {
