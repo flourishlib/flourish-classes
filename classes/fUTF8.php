@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed notices from being thrown when invalid data is sent to ::clean() [wb, 2011-06-10]
  * @changes    1.0.0b12  Fixed a variable name typo in ::sub() [wb, 2011-05-09]
  * @changes    1.0.0b11  Updated the class to not using phpinfo() to determine the iconv implementation [wb, 2010-11-04]
  * @changes    1.0.0b10  Fixed a bug with capitalizing a lowercase i resulting in a dotted upper-case I [wb, 2010-11-01]
@@ -657,13 +658,10 @@ class fUTF8
 			if (self::$can_ignore_invalid === NULL) {
 				self::$can_ignore_invalid = strtolower(ICONV_IMPL) != 'unknown';	
 			}
-			if (!self::$can_ignore_invalid) {
-				fCore::startErrorCapture(E_NOTICE);
-			}
-			return iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
-			if (!self::$can_ignore_invalid) {
-				fCore::stopErrorCapture();
-			}
+			fCore::startErrorCapture(E_NOTICE);
+			$value = iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
+			fCore::stopErrorCapture();
+			return $value;
 		}
 		
 		$keys = array_keys($value);
