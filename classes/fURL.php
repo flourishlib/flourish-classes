@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Fixed ::redirect() to handle no parameters properly [wb, 2011-06-13]
  * @changes    1.0.0b8  Added the `$delimiter` parameter to ::makeFriendly() [wb, 2011-06-03]
  * @changes    1.0.0b7  Fixed ::redirect() to be able to handle unqualified and relative paths [wb, 2011-03-02]
  * @changes    1.0.0b6  Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
@@ -155,22 +156,24 @@ class fURL
 			
 			$prefix = self::getDomain() . self::get();
 			
-			// All URLs that have more than the query string need to
-			// be appended to the current directory name
-			if ($url[0] != '?') {
-				$prefix = preg_replace('#(?<=/)[^/]+$#D', '', $prefix);
-			}
+			if (strlen($url)) {
+				// All URLs that have more than the query string need to
+				// be appended to the current directory name
+				if ($url[0] != '?') {
+					$prefix = preg_replace('#(?<=/)[^/]+$#D', '', $prefix);
+				}
 
-			// Clean up ./ relative URLS
-			if (substr($url, 0, 2) == './') {
-				$url = substr($url, 2);
-			}
+				// Clean up ./ relative URLS
+				if (substr($url, 0, 2) == './') {
+					$url = substr($url, 2);
+				}
 
-			// Resolve ../ relative paths as far as possible
-			while (substr($url, 0, 3) == '../') {
-				if ($prefix == self::getDomain() . '/') { break; }
-				$prefix = preg_replace('#(?<=/)[^/]+/?$#D', '', $prefix);
-				$url    = substr($url, 3);
+				// Resolve ../ relative paths as far as possible
+				while (substr($url, 0, 3) == '../') {
+					if ($prefix == self::getDomain() . '/') { break; }
+					$prefix = preg_replace('#(?<=/)[^/]+/?$#D', '', $prefix);
+					$url    = substr($url, 3);
+				}
 			}
 
 			$url = $prefix . $url;
