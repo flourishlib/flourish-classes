@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added length checking to ensure blank strings are not being passed to various methods [wb, 2011-06-20]
  * @changes    1.0.0b14  Fixed a bug in singularization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
  * @changes    1.0.0b13  Fixed the pluralization of video [wb, 2010-08-10]
  * @changes    1.0.0b12  Updated ::singularize() and ::pluralize() to be able to handle underscore_CamelCase [wb, 2010-08-06]
@@ -209,7 +210,14 @@ class fGrammar
 	 */
 	static public function camelize($string, $upper)
 	{
-		$upper = (int) $upper;
+		if (!strlen($string)) {
+			throw new fProgrammerException(
+				"An empty string was passed to %s",
+				__CLASS__ . '::camelize()'
+			);
+		}
+
+		$upper = (int)(bool) $upper;
 		if (isset(self::$cache['camelize'][$upper][$string])) {
 			return self::$cache['camelize'][$upper][$string];
 		}
@@ -293,6 +301,13 @@ class fGrammar
 	 */
 	static public function humanize($string)
 	{
+		if (!strlen($string)) {
+			throw new fProgrammerException(
+				"An empty string was passed to %s",
+				__CLASS__ . '::humanize()'
+			);
+		}
+
 		if (isset(self::$cache['humanize'][$string])) {
 			return self::$cache['humanize'][$string];
 		}
@@ -433,6 +448,13 @@ class fGrammar
 	 */
 	static public function pluralize($singular_noun, $return_error=FALSE)
 	{
+		if (!strlen($singular_noun)) {
+			throw new fProgrammerException(
+				"An empty string was passed to %s",
+				__CLASS__ . '::pluralize()'
+			);
+		}
+
 		if (isset(self::$cache['pluralize'][$singular_noun])) {
 			return self::$cache['pluralize'][$singular_noun];		
 		}
@@ -552,6 +574,13 @@ class fGrammar
 	 */
 	static public function singularize($plural_noun, $return_error=FALSE)
 	{
+		if (!strlen($plural_noun)) {
+			throw new fProgrammerException(
+				"An empty string was passed to %s",
+				__CLASS__ . '::singularize()'
+			);
+		}
+
 		if (isset(self::$cache['singularize'][$plural_noun])) {
 			return self::$cache['singularize'][$plural_noun];		
 		}
@@ -735,6 +764,13 @@ class fGrammar
 	 */
 	static public function underscorize($string)
 	{
+		if (!strlen($string)) {
+			throw new fProgrammerException(
+				"An empty string was passed to %s",
+				__CLASS__ . '::underscorize()'
+			);
+		}
+
 		if (isset(self::$cache['underscorize'][$string])) {
 			return self::$cache['underscorize'][$string];		
 		}
