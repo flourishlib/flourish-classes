@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Backwards Compatibility Break - changed the email subject of error/exception emails to include relevant file info, instead of the timestamp, for better email message threading [wb, 2011-06-20]
  * @changes    1.0.0b22  Fixed a bug with dumping arrays containing integers [wb, 2011-05-26]
  * @changes    1.0.0b21  Changed ::startErrorCapture() to allow "stacking" it via multiple calls, fixed a couple of bugs with ::dump() mangling strings in the form `int(1)`, fixed mispelling of `occurred` [wb, 2011-05-09]
  * @changes    1.0.0b20  Backwards Compatibility Break - Updated ::expose() to not wrap the data in HTML when running via CLI, and instead just append a newline [wb, 2011-02-24]
@@ -181,13 +182,20 @@ class fCore
 	 * @var boolean
 	 */
 	static private $handles_exceptions = FALSE;
-	
+
 	/**
 	 * If the context info should be shown with errors/exceptions
 	 * 
 	 * @var boolean
 	 */
 	static private $show_context = TRUE;
+
+	/**
+	 * An array of the most significant lines from error and exception backtraces
+	 * 
+	 * @var array
+	 */
+	static private $significant_error_lines = array();
 	
 	/**
 	 * An SMTP connection for sending error and exception emails
@@ -933,8 +941,10 @@ class fCore
 		}
 		
 		$error = $type . "\n" . str_pad('', strlen($type), '-') . "\n" . $backtrace . "\n" . $error_string;
+
+		$backtrace_lines = explode("\n", $backtrace);
 		
-		self::sendMessageToDestination('error', $error);
+		self::sendMessageToDestination('error', $error, end($backtrace_lines));
 	}
 	
 	
@@ -959,8 +969,10 @@ class fCore
 		$info       = $trace . "\n" . $message . $code;
 		$headline   = self::compose("Uncaught") . " " . get_class($exception);
 		$info_block = $headline . "\n" . str_pad('', strlen($headline), '-') . "\n" . trim($info);
-				
-		self::sendMessageToDestination('exception', $info_block);
+		
+		$trace_lines = explode("\n", $trace);
+
+		self::sendMessageToDestination('exception', $info_block, end($trace_lines));
 		
 		if (self::$exception_handler_callback === NULL) {
 			if (self::$exception_destination != 'html' && $exception instanceof fException) {
@@ -1032,7 +1044,10 @@ class fCore
 		self::$exception_message                = NULL;
 		self::$handles_errors                   = FALSE;
 		self::$handles_exceptions               = FALSE;
+		self::$significant_error_lines          = array();
 		self::$show_context                     = TRUE;
+		self::$smtp_connection                  = NULL;
+		self::$smtp_from_email                  = NULL;
 	}
 	
 	
@@ -1047,13 +1062,7 @@ class fCore
 	 * @return void
 	 */
 	static public function sendMessagesOnShutdown()
-	{
-		$subject = self::compose(
-			'[%1$s] One or more errors or exceptions occurred at %2$s',
-			isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : php_uname('n'),
-			date('Y-m-d H:i:s')
-		);
-		
+	{		
 		$messages = array();
 		
 		if (self::$error_message_queue) {
@@ -1069,6 +1078,24 @@ class fCore
 			}
 			$messages[self::$exception_destination] .= self::$exception_message;
 		}
+
+		$hash = md5(join('', self::$significant_error_lines), TRUE);
+		$hash = strtr(base64_encode($hash), '/', '-');
+		$hash = substr(rtrim($hash, '='), 0, 8);
+
+		$first_file_line = preg_replace(
+			'#^.*[/\\\\](.*)$#',
+			'\1',
+			reset(self::$significant_error_lines)
+		);
+		
+		$subject = self::compose(
+			'[%1$s] %2$s error(s) beginning at %3$s {%4$s}',
+			isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : php_uname('n'),
+			count($messages),
+			$first_file_line,
+			$hash
+		);
 		
 		foreach ($messages as $destination => $message) {
 			if (self::$show_context) {
@@ -1106,11 +1133,12 @@ class fCore
 	 * spooled up until the end of the script execution to prevent multiple
 	 * emails from being sent or a log file being written to multiple times.
 	 * 
-	 * @param  string $type     If the message is an error or an exception
-	 * @param  string $message  The message to send to the destination
+	 * @param  string $type              If the message is an error or an exception
+	 * @param  string $message           The message to send to the destination
+	 * @param  string $significant_line  The most significant line from an error or exception backtrace
 	 * @return void
 	 */
-	static private function sendMessageToDestination($type, $message)
+	static private function sendMessageToDestination($type, $message, $significant_line)
 	{
 		$destination = ($type == 'exception') ? self::$exception_destination : self::$error_destination;
 		
@@ -1134,6 +1162,8 @@ class fCore
 		} else {
 			self::$exception_message = $message;
 		}
+
+		self::$significant_error_lines[] = $significant_line;
 	}
 	
 	
