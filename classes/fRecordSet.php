@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b43
+ * @version    1.0.0b44
+ * @changes    1.0.0b44  Backwards Compatibility Break - ::sort() and ::sortByCallback() now return a new fRecordSet instead of sorting the record set in place [wb, 2011-06-20]
  * @changes    1.0.0b43  Added the ability to pass SQL and values to ::buildFromSQL(), added the ability to manually pass the `$limit` and `$page` to ::buildFromArray() and ::buildFromSQL(), changed ::slice() to remember `$limit` and `$page` if possible when `$remember_original_count` is `TRUE` [wb, 2011-01-11]
  * @changes    1.0.0b42  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
  * @changes    1.0.0b41  Added support for PHP 5.3 namespaced fActiveRecord classes [wb, 2010-11-11]
@@ -1788,7 +1789,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 
 	 * @param  string $method     The method to call on each object to get the value to sort by
 	 * @param  string $direction  Either `'asc'` or `'desc'`
-	 * @return fRecordSet  The record set object, to allow for method chaining
+	 * @return fRecordSet  A new record set object, with the records sorted as requested
 	 */
 	public function sort($method, $direction)
 	{
@@ -1803,11 +1804,11 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 		
 		$this->sort_method    = $method;
 		$this->sort_direction = $direction;
-		$this->sortByCallback(array($this, 'sortCallback'));
+		$set = $this->sortByCallback(array($this, 'sortCallback'));
 		unset($this->sort_method);
 		unset($this->sort_direction);
 		
-		return $this;
+		return $set;
 	}
 	
 	
@@ -1831,13 +1832,20 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * Sorts the set by passing the callback to [http://php.net/usort `usort()`] and rewinds the interator
 	 * 
 	 * @param  mixed $callback  The function/method to pass to `usort()`
-	 * @return fRecordSet  The record set object, to allow for method chaining 
+	 * @return fRecordSet  A new record set object, with the records sorted as requested
 	 */
 	public function sortByCallback($callback)
 	{
-		usort($this->records, $callback);
+		$records = $this->records;
+		usort($records, $callback);
 		
-		return $this;
+		return new self(
+			$this->class,
+			$records,
+			$this->non_limited_count,
+			$this->limit,
+			$this->page
+		);
 	}
 	
 	
