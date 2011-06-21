@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Added support for storing session data in memcache, redis and databases using fCache and ::setBackend() [wb, 2011-06-21]
  * @changes    1.0.0b17  Updated ::ignoreSubdomain() to use `$_SERVER['HTTP_HOST']` when `$_SERVER['SERVER_NAME']` is not set [wb, 2011-02-01]
  * @changes    1.0.0b16  Changed ::delete() to return the value of the key being deleted [wb, 2010-09-19]
  * @changes    1.0.0b15  Added documentation about `[sub-key]` syntax [wb, 2010-09-12]
@@ -40,19 +41,40 @@ class fSession
 	const add               = 'fSession::add';
 	const clear             = 'fSession::clear';
 	const close             = 'fSession::close';
+	const closeCache        = 'fSession::closeCache';
 	const delete            = 'fSession::delete';
 	const destroy           = 'fSession::destroy';
+	const destroyCache      = 'fSession::destroyCache';
 	const enablePersistence = 'fSession::enablePersistence';
+	const gcCache           = 'fSession::gcCache';
 	const get               = 'fSession::get';
 	const ignoreSubdomain   = 'fSession::ignoreSubdomain';
 	const open              = 'fSession::open';
+	const openCache         = 'fSession::openCache';
+	const readCache         = 'fSession::readCache';
 	const regenerateID      = 'fSession::regenerateID';
 	const reset             = 'fSession::reset';
 	const set               = 'fSession::set';
+	const setBackend        = 'fSession::setBackend';
 	const setLength         = 'fSession::setLength';
 	const setPath           = 'fSession::setPath';
+	const writeCache        = 'fSession::writeCache';
 	
 	
+	/**
+	 * The fCache backend to use for the session
+	 * 
+	 * @var fCache
+	 */
+	static private $backend = NULL;
+
+	/**
+	 * The key prefix to use when saving the session to an fCache
+	 *
+	 * @var string
+	 */
+	static private $key_prefix = '';
+
 	/**
 	 * The length for a normal session
 	 * 
@@ -60,6 +82,13 @@ class fSession
 	 */
 	static private $normal_timespan = NULL;
 	
+	/**
+	 * The name of the old session module to revent to when fSession is closed
+	 * 
+	 * @var string
+	 */
+	static private $old_session_module_name = NULL;
+
 	/**
 	 * If the session is open
 	 * 
@@ -181,6 +210,22 @@ class fSession
 		session_write_close();
 		unset($_SESSION);
 		self::$open = FALSE;
+		if (self::$old_session_module_name) {
+			session_module_name(self::$old_session_module_name);
+		}
+	}
+
+
+	/**
+	 * Callback to close the session
+	 * 
+	 * @internal
+	 *
+	 * @return boolean  If the operation succeeded
+	 */
+	static public function closeCache()
+	{
+		return TRUE;
 	}
 	
 	
@@ -255,6 +300,20 @@ class fSession
 		session_destroy();
 		self::regenerateID();
 	}
+
+
+	/**
+	 * Callback to destroy a session
+	 * 
+	 * @internal
+	 *
+	 * @param  string $id  The session to destroy
+	 * @return boolean  If the operation succeeded
+	 */
+	static public function destroyCache($id)
+	{
+		return self::$backend->delete(self::$key_prefix . $id);
+	}
 	
 	
 	/**
@@ -300,6 +359,20 @@ class fSession
 		
 		session_regenerate_id();
 		self::$regenerated = TRUE;
+	}
+
+
+	/**
+	 * Callback to garbage-collect the session cache
+	 * 
+	 * @internal
+	 *
+	 * @return boolean  If the operation succeeded
+	 */
+	static public function gcCache()
+	{
+		self::$backend->clean();
+		return TRUE;
 	}
 	
 	
@@ -411,12 +484,30 @@ class fSession
 		if (self::$normal_timespan === NULL) {
 			self::$normal_timespan = ini_get('session.gc_maxlifetime');	
 		}
+
+		if (self::$backend && isset($_SESSION) && session_module_name() != 'user') {
+			throw new fProgrammerException(
+				'A custom backend was provided by %1$s, however the session has already been started, so it can not be used',
+				__CLASS__ . '::setBackend()'
+			);
+		}
 		
 		// If the session is already open, we just piggy-back without setting options
 		if (!isset($_SESSION)) {
 			if ($cookie_only_session_id) {
 				ini_set('session.use_cookies', 1);
 				ini_set('session.use_only_cookies', 1);
+			}
+			// If we are using a custom backend we have to set the session handler
+			if (self::$backend && session_module_name() != 'user') {
+				session_set_save_handler(
+					array('fSession', 'openCache'),
+					array('fSession', 'closeCache'),
+					array('fSession', 'readCache'),
+					array('fSession', 'writeCache'),
+					array('fSession', 'destroyCache'),
+					array('fSession', 'gcCache')
+				);
 			}
 			session_start();
 		}
@@ -438,6 +529,33 @@ class fSession
 		} else {
 			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$normal_timespan;	
 		}
+	}
+
+
+	/**
+	 * Callback to open the session
+	 * 
+	 * @internal
+	 *
+	 * @return boolean  If the operation succeeded
+	 */
+	static public function openCache()
+	{
+		return TRUE;
+	}
+
+
+	/**
+	 * Callback to read a session's values
+	 * 
+	 * @internal
+	 *
+	 * @param  string $id  The session to read
+	 * @return string  The session's serialized data
+	 */
+	static public function readCache($id)
+	{
+		return self::$backend->get(self::$key_prefix . $id, '');
 	}
 	
 	
@@ -521,11 +639,13 @@ class fSession
 	 */
 	static public function reset()
 	{
+		self::destroy();
+		self::close();
 		self::$normal_timespan     = NULL;
 		self::$persistent_timespan = NULL;
 		self::$regenerated         = FALSE;
-		self::destroy();
-		self::close();	
+		self::$backend             = NULL;
+		self::$key_prefix          = '';
 	}
 	
 	
@@ -560,6 +680,71 @@ class fSession
 		} else {
 			$tip[$key] = $value;
 		}
+	}
+
+
+	/**
+	 * Sets an fCache object to store sessions in
+	 * 
+	 * While any type of fCache backend should technically work, it would be
+	 * unwise to use the `file` and `directory` types. The `file` caching
+	 * backend stores all values in a single file, which would quickly become a
+	 * performance bottleneck and could cause data loss with many concurrent
+	 * users. The `directory` caching backend would not make sense since it is
+	 * the same general functionality as the default session handler, but it
+	 * would be slightly slower since it is written in PHP and not C.
+	 *
+	 * It is recommended to set the `serializer` and `unserializer` `$config`
+	 * settings on the fCache object to `string` for the best performance and
+	 * minimal storage space.
+	 *
+	 * For better performance, check out using the built-in session handlers
+	 * that are bundled with the following extensions:
+	 *
+	 *  - [http://php.net/memcached.sessions memcached]
+	 *  - [http://php.net/memcache.examples-overview#example-3596 memcache]
+	 *  - [https://github.com/nicolasff/phpredis redis]
+	 *
+	 * The [http://pecl.php.net/package/igbinary igbinary] extension can
+	 * provide even more of a performance boost by storing serialized data in
+	 * binary format instead of as text.
+	 * 
+	 * @param  fCache $backend     An fCache object to store session values in
+	 * @param  string $key_prefix  A prefix to add to all session IDs before storing them in the cache
+	 * @return void
+	 */
+	static public function setBackend($backend, $key_prefix='')
+	{
+		if (self::$open || isset($_SESSION)) {
+			throw new fProgrammerException(
+				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
+				__CLASS__ . '::setLength()',
+				__CLASS__ . '::add()',
+				__CLASS__ . '::clear()',
+				__CLASS__ . '::enablePersistence()',
+				__CLASS__ . '::get()',
+				__CLASS__ . '::open()',
+				__CLASS__ . '::set()',
+				'session_start()'
+			);
+		}
+
+		self::$old_session_module_name = session_module_name();
+
+		self::$backend    = $backend;
+		self::$key_prefix = $key_prefix;
+
+		session_set_save_handler(
+			array('fSession', 'openCache'),
+			array('fSession', 'closeCache'),
+			array('fSession', 'readCache'),
+			array('fSession', 'writeCache'),
+			array('fSession', 'destroyCache'),
+			array('fSession', 'gcCache')
+		);
+
+		// This ensures the session is closed before the fCache object is destructed
+		register_shutdown_function(array('fSession', 'close'));
 	}
 	
 	
@@ -646,6 +831,21 @@ class fSession
 		}
 		
 		session_save_path($directory->getPath());
+	}
+
+
+	/**
+	 * Callback to write a session's values
+	 * 
+	 * @internal
+	 *
+	 * @param  string $id      The session to write
+	 * @param  string $values  The serialized values
+	 * @return string  The session's serialized data
+	 */
+	static public function writeCache($id, $values)
+	{
+		return self::$backend->set(self::$key_prefix . $id, $values);
 	}
 	
 	
