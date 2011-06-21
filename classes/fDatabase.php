@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Fixed a bug with notices being triggered when failing to connect to a SQLite database [wb, 2011-06-20]
  * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
  * @changes    1.0.0b38  Backwards Compatibility Break - callbacks registered to the `extracted` hook via ::registerHookCallback() no longer receive the `$strings` parameter, instead all strings are added into the `$values` parameter - added ::getVersion(), fixed a bug with SQLite messaging, fixed a bug with ::__destruct(), improved handling of transactional queries, added ::close(), enhanced class to throw four different exceptions for different connection errors, silenced PHP warnings upon connection error [wb, 2011-05-09]
  * @changes    1.0.0b37  Fixed usage of the mysqli extension to only call mysqli_set_charset() if it exists [wb, 2011-03-04]
@@ -2039,11 +2040,11 @@ class fDatabase
 			'postgresql' => '#database "[^"]+" does not exist#'
 		);
 
-		if (preg_match($authentication_regexes[$this->type], $error)) {
+		if (isset($authentication_regexes[$this->type]) && preg_match($authentication_regexes[$this->type], $error)) {
 			throw new fAuthorizationException(
 				'Unable to connect to database - login credentials refused'
 			);
-		} elseif (preg_match($database_regexes[$this->type], $error)) {
+		} elseif (isset($database_regexes[$this->type]) && preg_match($database_regexes[$this->type], $error)) {
 			throw new fNotFoundException(
 				'Unable to connect to database - database specified not found'
 			);
@@ -2059,7 +2060,7 @@ class fDatabase
 			}
 		}
 
-		if (preg_match($connection_regexes[$this->type], $error)) {
+		if (isset($connection_regexes[$this->type]) && preg_match($connection_regexes[$this->type], $error)) {
 			throw new fConnectivityException(
 				'Unable to connect to database - connection refused or timed out'
 			);
