@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b44
+ * @version    1.0.0b45
+ * @changes    1.0.0b45  Added support for the starts with like, `^~`, and ends with like, `$~`, operators to both ::build() and ::filter() [wb, 2011-06-20]
  * @changes    1.0.0b44  Backwards Compatibility Break - ::sort() and ::sortByCallback() now return a new fRecordSet instead of sorting the record set in place [wb, 2011-06-20]
  * @changes    1.0.0b43  Added the ability to pass SQL and values to ::buildFromSQL(), added the ability to manually pass the `$limit` and `$page` to ::buildFromArray() and ::buildFromSQL(), changed ::slice() to remember `$limit` and `$page` if possible when `$remember_original_count` is `TRUE` [wb, 2011-01-11]
  * @changes    1.0.0b42  Updated class to use fORM::getRelatedClass() [wb, 2010-11-24]
@@ -75,6 +76,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 'column!='                   => VALUE                        // column <> VALUE
 	 * 'column<>'                   => VALUE                        // column <> VALUE
 	 * 'column~'                    => VALUE                        // column LIKE '%VALUE%'
+	 * 'column^~'                   => VALUE                        // column LIKE 'VALUE%'
+	 * 'column$~'                   => VALUE                        // column LIKE '%VALUE'
 	 * 'column!~'                   => VALUE                        // column NOT LIKE '%VALUE%'
 	 * 'column<'                    => VALUE                        // column < VALUE
 	 * 'column<='                   => VALUE                        // column <= VALUE
@@ -93,6 +96,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 'column!='                   => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
 	 * 'column<>'                   => array(VALUE, VALUE2, ... )   // column NOT IN (VALUE, VALUE2, ... )
 	 * 'column~'                    => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' OR column LIKE '%VALUE2%' OR column ... )
+	 * 'column^~'                   => array(VALUE, VALUE2, ... )   // (column LIKE 'VALUE%' OR column LIKE 'VALUE2%' OR column ... )
+	 * 'column$~'                   => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE' OR column LIKE '%VALUE2' OR column ... )
 	 * 'column&~'                   => array(VALUE, VALUE2, ... )   // (column LIKE '%VALUE%' AND column LIKE '%VALUE2%' AND column ... )
 	 * 'column!~'                   => array(VALUE, VALUE2, ... )   // (column NOT LIKE '%VALUE%' AND column NOT LIKE '%VALUE2%' AND column ... )
 	 * 'column!|column2<|column3='  => array(VALUE, VALUE2, VALUE3) // (column <> '%VALUE%' OR column2 < '%VALUE2%' OR column3 = '%VALUE3%')
@@ -144,6 +149,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 'function(column)!=   => VALUE                        // function(column) <> VALUE
 	 * 'function(column)<>'  => VALUE                        // function(column) <> VALUE
 	 * 'function(column)~'   => VALUE                        // function(column) LIKE '%VALUE%'
+	 * 'function(column)^~'  => VALUE                        // function(column) LIKE 'VALUE%'
+	 * 'function(column)$~'  => VALUE                        // function(column) LIKE '%VALUE'
 	 * 'function(column)!~'  => VALUE                        // function(column) NOT LIKE '%VALUE%'
 	 * 'function(column)<'   => VALUE                        // function(column) < VALUE
 	 * 'function(column)<='  => VALUE                        // function(column) <= VALUE
@@ -1011,6 +1018,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 'methodName>'                           => $value  // If the output is greater than $value
 	 * 'methodName>='                          => $value  // If the output is greater than or equal to $value
 	 * 'methodName~'                           => $value  // If the output contains the $value (case insensitive)
+	 * 'methodName^~'                          => $value  // If the output starts with the $value (case insensitive)
+	 * 'methodName$~'                          => $value  // If the output ends with the $value (case insensitive)
 	 * 'methodName!~'                          => $value  // If the output does not contain the $value (case insensitive)
 	 * 'methodName|methodName2|methodName3~'   => $value  // Parses $value as a search string and make sure each term is present in at least one output (case insensitive)
 	 * 
@@ -1020,6 +1029,8 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 'methodName!='                          => $array  // If the output is not equal to any value in $array
 	 * 'methodName<>'                          => $array  // If the output is not equal to any value in $array
 	 * 'methodName~'                           => $array  // If the output contains one of the strings in $array (case insensitive)
+	 * 'methodName^~'                          => $array  // If the output starts with one of the strings in $array (case insensitive)
+	 * 'methodName$~'                          => $array  // If the output ends with one of the strings in $array (case insensitive)
 	 * 'methodName!~'                          => $array  // If the output contains none of the strings in $array (case insensitive)
 	 * 'methodName&~'                          => $array  // If the output contains all of the strings in $array (case insensitive)
 	 * 'methodName|methodName2|methodName3~'   => $array  // If each value in the array is present in the output of at least one method (case insensitive)

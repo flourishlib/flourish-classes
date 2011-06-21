@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b79
+ * @version    1.0.0b80
+ * @changes    1.0.0b80  Added support to ::checkCondition() for the `^~` and `$~` operators [wb, 2011-06-20]
  * @changes    1.0.0b79  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b78  Backwards Compatibility Break - ::reflect() now returns an associative array instead of a string [wb, 2011-05-10]
  * @changes    1.0.0b77  Fixed ::inspect() to not throw an fProgrammerException when a valid element has a `NULL` value [wb, 2011-05-10]
@@ -278,20 +279,27 @@ abstract class fActiveRecord
 		}
 		if (!$was_array) { $result = $result[0]; }
 		
-		$match_all   = $operator == '&~';
-		$negate_like = $operator == '!~';
-		
+		if ($operator == '~' && !is_array($value) && is_array($result)) {
+			$value = fORMDatabase::parseSearchTerms($value, TRUE);
+		}
+
+		if (in_array($operator, array('~', '&~', '!~', '^~', '$~'))) {
+			settype($value, 'array');
+			settype($result, 'array');
+		}
+
 		switch ($operator) {
 			case '&~':
-			case '!~':
+				foreach ($value as $_value) {
+					if (fUTF8::ipos($result[0], $_value) === FALSE) {
+						return FALSE;
+					}
+				}
+				break;
+
 			case '~':
-				if (!$match_all && !$negate_like && !is_array($value) && is_array($result)) {
-					$value = fORMDatabase::parseSearchTerms($value, TRUE);
-				}	
-					
-				settype($value, 'array');
-				settype($result, 'array');
 				
+				// Handles fuzzy search on multiple method calls
 				if (count($result) > 1) {
 					foreach ($value as $_value) {
 						$found = FALSE;
@@ -304,19 +312,33 @@ abstract class fActiveRecord
 							return FALSE;
 						}	
 					}
-				} else {
-					$found = FALSE;
-					foreach ($value as $_value) {
-						if (fUTF8::ipos($result[0], $_value) !== FALSE) {
-							$found = TRUE;
-						} elseif ($match_all) {
-							return FALSE;
-						}
+					break;
+				}
+
+				// No break exists since a ~ on a single method call acts
+				// similar to the other LIKE operators
+
+			case '!~':
+			case '^~':
+			case '$~':
+				if ($operator == '$~') {
+					$result_len = fUTF8::len($result[0]);
+				}
+
+				foreach ($value as $_value) {
+					$pos = fUTF8::ipos($result[0], $_value);
+					if ($operator == '^~' && $pos === 0) {
+						return TRUE;
+					} elseif ($operator == '$~' && $pos === $result_len - fUTF8::len($_value)) {
+						return TRUE;
+					} elseif ($pos !== FALSE) {
+						return $operator != '!~';
 					}
-					if ((!$negate_like && !$found) || ($negate_like && $found)) {
-						return FALSE;
-					}
-				}    
+				}
+
+				if ($operator != '!~') {
+					return FALSE;
+				}
 				break;
 			
 			case '=':
@@ -390,7 +412,7 @@ abstract class fActiveRecord
 		foreach ($conditions as $method => $value) {
 			
 			// Split the operator off of the end of the method name
-			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
+			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '^~', '$~', '><'))) {
 				$operator = strtr(
 					substr($method, -2),
 					array(
@@ -411,7 +433,7 @@ abstract class fActiveRecord
 				$operators = array();
 				
 				foreach ($methods as &$_method) {
-					if (in_array(substr($_method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '><'))) {
+					if (in_array(substr($_method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '^~', '$~', '><'))) {
 						$operators[] = strtr(
 							substr($_method, -2),
 							array(
