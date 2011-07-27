@@ -5,7 +5,7 @@
  * This class is implemented to use the UTF-8 character encoding. Please see
  * http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2007-2010 Will Bond, others
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Craig Ruksznis [cr-imarc] <craigruk@imarc.net>
  * @license    http://flourishlib.com/license
@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b6  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b5  Added the `$fix_entities_encoding` parameter to ::__construct() [cr-imarc+wb, 2010-08-08]
  * @changes    1.0.0b4  Updated the class to automatically add a `__` prefix for the default namespace and to use that for attribute and child element access [wb, 2010-04-06]
@@ -37,6 +38,22 @@ class fXML implements ArrayAccess
 	static public function encode($content)
 	{
 		return htmlspecialchars(html_entity_decode($content, ENT_QUOTES, 'UTF-8'), ENT_QUOTES, 'UTF-8');
+	}
+
+
+	/**
+	 * This works around a bug in MAMP 1.9.4+ and PHP 5.3 where iconv()
+	 * does not seem to properly assign the return value to a variable, but
+	 * does work when returning the value.
+	 *
+	 * @param string $in_charset   The incoming character encoding
+	 * @param string $out_charset  The outgoing character encoding
+	 * @param string $string       The string to convert
+	 * @return string  The converted string
+	 */
+	static private function iconv($in_charset, $out_charset, $string)
+	{
+		return iconv($in_charset, $out_charset, $string);
 	}
 	
 	
@@ -386,9 +403,9 @@ class fXML implements ArrayAccess
 			// Remove the UTF-8 BOM if present
 			$xml = preg_replace("#^\xEF\xBB\xBF#", '', $xml);
 			fCore::startErrorCapture(E_NOTICE);
-			$cleaned = iconv('UTF-8', 'UTF-8', $xml);
+			$cleaned = self::iconv('UTF-8', 'UTF-8', $xml);
 			if ($cleaned != $xml) {
-				$xml = iconv('Windows-1252', 'UTF-8', $xml);
+				$xml = self::iconv('Windows-1252', 'UTF-8', $xml);
 			}
 			fCore::stopErrorCapture();
 		}
@@ -398,7 +415,7 @@ class fXML implements ArrayAccess
 			// We convert non-UTF-* content to UTF-8 because some character sets
 			// don't have characters for all HTML entities
 			if (substr(strtolower($encoding), 0, 3) != 'utf') {
-				$xml = iconv($encoding, 'UTF-8', $xml);
+				$xml = self::iconv($encoding, 'UTF-8', $xml);
 				$xml = preg_replace('#^(<\?xml.*?) encoding="[^"]+"(.*?\?>)#', '\1 encoding="UTF-8"\2', $xml);
 				$encoding = 'UTF-8';
 			}
@@ -669,7 +686,7 @@ class fXML implements ArrayAccess
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

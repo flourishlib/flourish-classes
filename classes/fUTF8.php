@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed notices from being thrown when invalid data is sent to ::clean() [wb, 2011-06-10]
  * @changes    1.0.0b12  Fixed a variable name typo in ::sub() [wb, 2011-05-09]
  * @changes    1.0.0b11  Updated the class to not using phpinfo() to determine the iconv implementation [wb, 2010-11-04]
@@ -659,7 +660,7 @@ class fUTF8
 				self::$can_ignore_invalid = strtolower(ICONV_IMPL) != 'unknown';	
 			}
 			fCore::startErrorCapture(E_NOTICE);
-			$value = iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
+			$value = self::iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
 			fCore::stopErrorCapture();
 			return $value;
 		}
@@ -781,6 +782,22 @@ class fUTF8
 		// If no delimiter was passed, we explode the characters into an array
 		preg_match_all('#.|^\z#us', $string, $matches);
 		return $matches[0];
+	}
+
+
+	/**
+	 * This works around a bug in MAMP 1.9.4+ and PHP 5.3 where iconv()
+	 * does not seem to properly assign the return value to a variable, but
+	 * does work when returning the value.
+	 *
+	 * @param string $in_charset   The incoming character encoding
+	 * @param string $out_charset  The outgoing character encoding
+	 * @param string $string       The string to convert
+	 * @return string  The converted string
+	 */
+	static private function iconv($in_charset, $out_charset, $string)
+	{
+		return iconv($in_charset, $out_charset, $string);
 	}
 	
 	

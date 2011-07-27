@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed handling of headers in relation to encoded-words being embedded inside of quoted strings [wb, 2011-07-26]
  * @changes    1.0.0b12  Enhanced the error checking in ::write() [wb, 2011-06-03]
  * @changes    1.0.0b11  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved connectivity error handling and timeouts while reading data [wb, 2011-01-10]
@@ -133,7 +134,7 @@ class fMailbox
 		}
 		
 		foreach ($part_with_encoding as $part) {
-			$output .= iconv($part['encoding'], 'UTF-8', $part['string']);
+			$output .= self::iconv($part['encoding'], 'UTF-8', $part['string']);
 		}
 		
 		return $output;
@@ -207,7 +208,7 @@ class fMailbox
 					break;
 				}
 			}
-			$content = iconv($charset, 'UTF-8', $content);
+			$content = self::iconv($charset, 'UTF-8', $content);
 			if ($structure['subtype'] == 'html') {
 				$content = preg_replace('#(content=(["\'])text/html\s*;\s*charset=(["\']?))' . preg_quote($charset, '#') . '(\3\2)#i', '\1utf-8\4', $content);
 			}
@@ -374,6 +375,22 @@ class fMailbox
 		$info['verified'] = TRUE;
 		
 		return TRUE;
+	}
+
+
+	/**
+	 * This works around a bug in MAMP 1.9.4+ and PHP 5.3 where iconv()
+	 * does not seem to properly assign the return value to a variable, but
+	 * does work when returning the value.
+	 *
+	 * @param string $in_charset   The incoming character encoding
+	 * @param string $out_charset  The outgoing character encoding
+	 * @param string $string       The string to convert
+	 * @return string  The converted string
+	 */
+	static private function iconv($in_charset, $out_charset, $string)
+	{
+		return iconv($in_charset, $out_charset, $string);
 	}
 	
 	

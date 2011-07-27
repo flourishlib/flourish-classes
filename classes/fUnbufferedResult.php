@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUnbufferedResult
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b12  Fixed MSSQL to have a properly reset row array, added ::silenceNotices(), fixed pdo_dblib on Windows when using the Microsoft DBLib driver [wb, 2011-05-09]
  * @changes    1.0.0b11  Fixed some bugs with the mysqli extension and prepared statements [wb, 2010-08-28]
  * @changes    1.0.0b10  Backwards Compatibility Break - removed ODBC support [wb, 2010-07-31]
@@ -53,6 +54,22 @@ class fUnbufferedResult implements Iterator
 		} else {
 			return vsprintf($message, $args);
 		}
+	}
+
+
+	/**
+	 * This works around a bug in MAMP 1.9.4+ and PHP 5.3 where iconv()
+	 * does not seem to properly assign the return value to a variable, but
+	 * does work when returning the value.
+	 *
+	 * @param string $in_charset   The incoming character encoding
+	 * @param string $out_charset  The outgoing character encoding
+	 * @param string $string       The string to convert
+	 * @return string  The converted string
+	 */
+	static private function iconv($in_charset, $out_charset, $string)
+	{
+		return iconv($in_charset, $out_charset, $string);
 	}
 
 
@@ -341,7 +358,7 @@ class fUnbufferedResult implements Iterator
 					if (!is_string($value) || strpos($key, '__flourish_mssqln_') === 0 || isset($row['fmssqln__' . $key]) || preg_match('#[\x0-\x8\xB\xC\xE-\x1F]#', $value)) {
 						continue;
 					} 		
-					$row[$key] = iconv($this->character_set, 'UTF-8', $value);
+					$row[$key] = self::iconv($this->character_set, 'UTF-8', $value);
 				}
 			}
 			$row = $this->decodeMSSQLNationalColumns($row);
@@ -427,7 +444,7 @@ class fUnbufferedResult implements Iterator
 			
 			$real_column = substr($column, 9);
 			
-			$row[$real_column] = iconv('ucs-2le', 'utf-8', $this->database->unescape('blob', $row[$column]));
+			$row[$real_column] = self::iconv('UCS-2LE', 'UTF-8', $this->database->unescape('blob', $row[$column]));
 			unset($row[$column]);
 		}
 		
