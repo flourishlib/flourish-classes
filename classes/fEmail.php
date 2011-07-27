@@ -17,7 +17,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Changed ::combineNameEmail() to be a static method and to be exposed publicly for use by other classes [wb, 2011-07-26]
  * @changes    1.0.0b28  Fixed ::addAttachment() and ::addRelatedFile() to properly handle duplicate filenames [wb, 2011-05-17]
  * @changes    1.0.0b27  Fixed a bug with generating FQDNs on some Windows machines [wb, 2011-02-24]
  * @changes    1.0.0b26  Added ::addCustomerHeader() [wb, 2011-02-02]
@@ -50,10 +51,11 @@
 class fEmail
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const fixQmail       = 'fEmail::fixQmail';
-	const getFQDN        = 'fEmail::getFQDN';
-	const reset          = 'fEmail::reset';
-	const unindentExpand = 'fEmail::unindentExpand';
+	const combineNameEmail = 'fEmail::combineNameEmail';
+	const fixQmail         = 'fEmail::fixQmail';
+	const getFQDN          = 'fEmail::getFQDN';
+	const reset            = 'fEmail::reset';
+	const unindentExpand   = 'fEmail::unindentExpand';
 	
 	
 	/**
@@ -118,6 +120,43 @@ class fEmail
 	 * @var boolean
 	 */
 	static private $popen_sendmail = FALSE;
+
+
+	/**
+	 * Turns a name and email into a `"name" <email>` string, or just `email` if no name is provided
+	 * 
+	 * This method will remove newline characters from the name and email, and
+	 * will remove any backslash (`\`) and double quote (`"`) characters from
+	 * the name.
+	 * 
+	 * @internal
+	 *
+	 * @param  string $name   The name associated with the email address
+	 * @param  string $email  The email address
+	 * @return string  The '"name" <email>' or 'email' string
+	 */
+	static public function combineNameEmail($name, $email)
+	{
+		// Strip lower ascii character since they aren't useful in email addresses
+		$email = preg_replace('#[\x0-\x19]+#', '', $email);
+		$name  = preg_replace('#[\x0-\x19]+#', '', $name);
+		
+		if (!$name) {
+			return $email;
+		}
+		
+		// If the name contains any non-ascii bytes or stuff not allowed
+		// in quoted strings we just make an encoded word out of it
+		if (preg_replace('#[\x80-\xff\x5C\x22]#', '', $name) != $name) {
+			// The longest header name that will contain email addresses is
+			// "Bcc: ", which is 5 characters long
+			$name = self::makeEncodedWord($name, 5);
+		} else {
+			$name = '"' . $name . '"';	
+		}
+		
+		return $name . ' <' . $email . '>';
+	}
 	
 	
 	/**
@@ -292,6 +331,90 @@ class fEmail
 		}
 		
 		return self::$fqdn;
+	}
+
+
+	/**
+	 * Encodes a string to UTF-8 encoded-word
+	 * 
+	 * @param  string  $content                   The content to encode
+	 * @param  integer $first_line_prefix_length  The length of any prefix applied to the first line of the encoded word - this allows properly accounting for a header name
+	 * @return string  The encoded string
+	 */
+	static private function makeEncodedWord($content, $first_line_prefix_length)
+	{
+		// Homogenize the line-endings to CRLF
+		$content = str_replace("\r\n", "\n", $content);
+		$content = str_replace("\r", "\n", $content);
+		$content = str_replace("\n", "\r\n", $content);
+		
+		// Encoded word is not required if all characters are ascii
+		if (!preg_match('#[\x80-\xFF]#', $content)) {
+			return $content;
+		}
+		
+		// A quick a dirty hex encoding
+		$content = rawurlencode($content);
+		$content = str_replace('=', '%3D', $content);
+		$content = str_replace('%', '=', $content);
+		
+		// Decode characters that don't have to be coded
+		$decodings = array(
+			'=20' => '_', '=21' => '!', '=22' => '"',  '=23' => '#',
+			'=24' => '$', '=25' => '%', '=26' => '&',  '=27' => "'",
+			'=28' => '(', '=29' => ')', '=2A' => '*',  '=2B' => '+',
+			'=2C' => ',', '=2D' => '-', '=2E' => '.',  '=2F' => '/',
+			'=3A' => ':', '=3B' => ';', '=3C' => '<',  '=3E' => '>',
+			'=40' => '@', '=5B' => '[', '=5C' => '\\', '=5D' => ']',
+			'=5E' => '^', '=60' => '`', '=7B' => '{',  '=7C' => '|',
+			'=7D' => '}', '=7E' => '~', ' '   => '_'
+		);
+		
+		$content = strtr($content, $decodings);
+		
+		$length = strlen($content);
+		
+		$prefix = '=?utf-8?Q?';
+		$suffix = '?=';
+		
+		$prefix_length = 10;
+		$suffix_length = 2;
+		
+		// This loop goes through and ensures we are wrapping by 75 chars
+		// including the encoded word delimiters
+		$output = $prefix;
+		$line_length = $prefix_length + $first_line_prefix_length;
+		
+		for ($i=0; $i<$length; $i++) {
+			
+			// Get info about the next character
+			$char_length = ($content[$i] == '=') ? 3 : 1;
+			$char        = $content[$i];
+			if ($char_length == 3) {
+				$char .= $content[$i+1] . $content[$i+2];
+			}
+			
+			// If we have too long a line, wrap it
+			if ($line_length + $suffix_length + $char_length > 75) {
+				$output .= $suffix . "\r\n " . $prefix;
+				$line_length = $prefix_length + 2;
+			}
+			
+			// Add the character
+			$output .= $char;
+			
+			// Figure out how much longer the line is
+			$line_length += $char_length;
+			
+			// Skip characters if we have an encoded character
+			$i += $char_length-1;
+		}
+		
+		if (substr($output, -2) != $suffix) {
+			$output .= $suffix;
+		}
+		
+		return $output;
 	}
 	
 	
@@ -588,7 +711,7 @@ class fEmail
 			return;
 		}
 		
-		$this->bcc_emails[] = $this->combineNameEmail($name, $email);
+		$this->bcc_emails[] = self::combineNameEmail($name, $email);
 	}
 	
 	
@@ -605,7 +728,7 @@ class fEmail
 			return;
 		}
 		
-		$this->cc_emails[] = $this->combineNameEmail($name, $email);
+		$this->cc_emails[] = self::combineNameEmail($name, $email);
 	}
 	
 	
@@ -651,7 +774,7 @@ class fEmail
 			return;
 		}
 		
-		$this->to_emails[] = $this->combineNameEmail($name, $email);
+		$this->to_emails[] = self::combineNameEmail($name, $email);
 	}
 	
 	
@@ -713,41 +836,6 @@ class fEmail
 			$output .= $chars[rand(0, $last_index)];
 		}
 		return $output;
-	}
-	
-	
-	/**
-	 * Turns a name and email into a `"name" <email>` string, or just `email` if no name is provided
-	 * 
-	 * This method will remove newline characters from the name and email, and
-	 * will remove any backslash (`\`) and double quote (`"`) characters from
-	 * the name.
-	 * 
-	 * @param  string $name   The name associated with the email address
-	 * @param  string $email  The email address
-	 * @return string  The '"name" <email>' or 'email' string
-	 */
-	private function combineNameEmail($name, $email)
-	{
-		// Strip lower ascii character since they aren't useful in email addresses
-		$email = preg_replace('#[\x0-\x19]+#', '', $email);
-		$name  = preg_replace('#[\x0-\x19]+#', '', $name);
-		
-		if (!$name) {
-			return $email;
-		}
-		
-		// If the name contains any non-ascii bytes or stuff not allowed
-		// in quoted strings we just make an encoded word out of it
-		if (preg_replace('#[\x80-\xff\x5C\x22]#', '', $name) != $name) {
-			// The longest header name that will contain email addresses is
-			// "Bcc: ", which is 5 characters long
-			$name = $this->makeEncodedWord($name, 5);
-		} else {
-			$name = '"' . $name . '"';	
-		}
-		
-		return $name . ' <' . $email . '>';
 	}
 	
 	
@@ -867,7 +955,7 @@ class fEmail
 		
 		foreach ($this->custom_headers as $header_info) {
 			$header_prefix = $header_info[0] . ': ';
-			$headers .= $header_prefix . $this->makeEncodedWord($header_info[1], strlen($header_prefix)) . "\r\n";  
+			$headers .= $header_prefix . self::makeEncodedWord($header_info[1], strlen($header_prefix)) . "\r\n";  
 		}
 		
 		$headers .= "Message-ID: " . $message_id . "\r\n";
@@ -1164,90 +1252,6 @@ class fEmail
 	
 	
 	/**
-	 * Encodes a string to UTF-8 encoded-word
-	 * 
-	 * @param  string  $content                   The content to encode
-	 * @param  integer $first_line_prefix_length  The length of any prefix applied to the first line of the encoded word - this allows properly accounting for a header name
-	 * @return string  The encoded string
-	 */
-	private function makeEncodedWord($content, $first_line_prefix_length)
-	{
-		// Homogenize the line-endings to CRLF
-		$content = str_replace("\r\n", "\n", $content);
-		$content = str_replace("\r", "\n", $content);
-		$content = str_replace("\n", "\r\n", $content);
-		
-		// Encoded word is not required if all characters are ascii
-		if (!preg_match('#[\x80-\xFF]#', $content)) {
-			return $content;
-		}
-		
-		// A quick a dirty hex encoding
-		$content = rawurlencode($content);
-		$content = str_replace('=', '%3D', $content);
-		$content = str_replace('%', '=', $content);
-		
-		// Decode characters that don't have to be coded
-		$decodings = array(
-			'=20' => '_', '=21' => '!', '=22' => '"',  '=23' => '#',
-			'=24' => '$', '=25' => '%', '=26' => '&',  '=27' => "'",
-			'=28' => '(', '=29' => ')', '=2A' => '*',  '=2B' => '+',
-			'=2C' => ',', '=2D' => '-', '=2E' => '.',  '=2F' => '/',
-			'=3A' => ':', '=3B' => ';', '=3C' => '<',  '=3E' => '>',
-			'=40' => '@', '=5B' => '[', '=5C' => '\\', '=5D' => ']',
-			'=5E' => '^', '=60' => '`', '=7B' => '{',  '=7C' => '|',
-			'=7D' => '}', '=7E' => '~', ' '   => '_'
-		);
-		
-		$content = strtr($content, $decodings);
-		
-		$length = strlen($content);
-		
-		$prefix = '=?utf-8?Q?';
-		$suffix = '?=';
-		
-		$prefix_length = 10;
-		$suffix_length = 2;
-		
-		// This loop goes through and ensures we are wrapping by 75 chars
-		// including the encoded word delimiters
-		$output = $prefix;
-		$line_length = $prefix_length + $first_line_prefix_length;
-		
-		for ($i=0; $i<$length; $i++) {
-			
-			// Get info about the next character
-			$char_length = ($content[$i] == '=') ? 3 : 1;
-			$char        = $content[$i];
-			if ($char_length == 3) {
-				$char .= $content[$i+1] . $content[$i+2];
-			}
-			
-			// If we have too long a line, wrap it
-			if ($line_length + $suffix_length + $char_length > 75) {
-				$output .= $suffix . "\r\n " . $prefix;
-				$line_length = $prefix_length + 2;
-			}
-			
-			// Add the character
-			$output .= $char;
-			
-			// Figure out how much longer the line is
-			$line_length += $char_length;
-			
-			// Skip characters if we have an encoded character
-			$i += $char_length-1;
-		}
-		
-		if (substr($output, -2) != $suffix) {
-			$output .= $suffix;
-		}
-		
-		return $output;
-	}
-	
-	
-	/**
 	 * Encodes a string to quoted-printable, properly handles UTF-8
 	 * 
 	 * @param  string  $content  The content to encode
@@ -1373,7 +1377,7 @@ class fEmail
 		$headers            = $this->createHeaders($top_level_boundary, $this->message_id);
 		
 		$subject = str_replace(array("\r", "\n"), '', $this->subject);
-		$subject = $this->makeEncodedWord($subject, 9);
+		$subject = self::makeEncodedWord($subject, 9);
 		
 		$body = $this->createBody($top_level_boundary);
 		
@@ -1498,7 +1502,7 @@ class fEmail
 			return;
 		}
 		
-		$this->bounce_to_email = $this->combineNameEmail('', $email);
+		$this->bounce_to_email = self::combineNameEmail('', $email);
 	}
 	
 	
@@ -1515,7 +1519,7 @@ class fEmail
 			return;
 		}
 		
-		$this->from_email = $this->combineNameEmail($name, $email);
+		$this->from_email = self::combineNameEmail($name, $email);
 	}
 	
 	
@@ -1547,7 +1551,7 @@ class fEmail
 			return;
 		}
 		
-		$this->reply_to_email = $this->combineNameEmail($name, $email);
+		$this->reply_to_email = self::combineNameEmail($name, $email);
 	}
 	
 	
@@ -1567,7 +1571,7 @@ class fEmail
 			return;
 		}
 		
-		$this->sender_email = $this->combineNameEmail($name, $email);
+		$this->sender_email = self::combineNameEmail($name, $email);
 	}
 	
 	
