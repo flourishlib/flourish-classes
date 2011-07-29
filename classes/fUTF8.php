@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed a bug with using IBM's iconv implementation on AIX [wb, 2011-07-29]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed notices from being thrown when invalid data is sent to ::clean() [wb, 2011-06-10]
  * @changes    1.0.0b12  Fixed a variable name typo in ::sub() [wb, 2011-05-09]
@@ -657,7 +658,7 @@ class fUTF8
 	{
 		if (!is_array($value)) {
 			if (self::$can_ignore_invalid === NULL) {
-				self::$can_ignore_invalid = strtolower(ICONV_IMPL) != 'unknown';	
+				self::$can_ignore_invalid = !in_array(strtolower(ICONV_IMPL), array('unknown', 'ibm iconv'));	
 			}
 			fCore::startErrorCapture(E_NOTICE);
 			$value = self::iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
