@@ -2,14 +2,15 @@
 /**
  * Provides special column functionality for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2008-2010 Will Bond
+ * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed a bug with empty string email values passing through required validation [wb, 2011-07-29]
  * @changes    1.0.0b14  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b13  Fixed ::reflect() to include some missing parameters [wb, 2010-06-08]
  * @changes    1.0.0b12  Changed validation messages array to use column name keys [wb, 2010-05-26]
@@ -710,6 +711,10 @@ class fORMColumn
 		if (preg_match('#^\s*[a-z0-9\\.\'_\\-\\+]+@(?:[a-z0-9\\-]+\.)+[a-z]{2,}\s*$#iD', $email)) {
 			$email = trim($email);	
 		}
+
+		if ($email === '') {
+			$email = NULL;
+		}
 		
 		fActiveRecord::assign($values, $old_values, $column, $email);
 		
@@ -812,7 +817,7 @@ class fORMColumn
 		}
 		
 		foreach (self::$link_columns[$class] as $column => $enabled) {
-			if (!strlen($values[$column])) {
+			if (!is_string($values[$column])) {
 				continue;
 			}
 			
@@ -840,7 +845,7 @@ class fORMColumn
 
 
 /**
- * Copyright (c) 2008-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
