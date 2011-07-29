@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b18
+ * @version    1.0.0b19
+ * @changes    1.0.0b19  Fixed some session warning messages for PHP 5.1.6 [wb, 2011-07-29]
  * @changes    1.0.0b18  Added support for storing session data in memcache, redis and databases using fCache and ::setBackend() [wb, 2011-06-21]
  * @changes    1.0.0b17  Updated ::ignoreSubdomain() to use `$_SERVER['HTTP_HOST']` when `$_SERVER['SERVER_NAME']` is not set [wb, 2011-02-01]
  * @changes    1.0.0b16  Changed ::delete() to return the value of the key being deleted [wb, 2010-09-19]
@@ -639,13 +640,13 @@ class fSession
 	 */
 	static public function reset()
 	{
-		self::destroy();
-		self::close();
 		self::$normal_timespan     = NULL;
 		self::$persistent_timespan = NULL;
 		self::$regenerated         = FALSE;
 		self::$backend             = NULL;
 		self::$key_prefix          = '';
+		self::destroy();
+		self::close();
 	}
 	
 	
