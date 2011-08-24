@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b38
+ * @version    1.0.0b39
+ * @changes    1.0.0b39  Backwards Compatibility Break - ::output() now automatically ends any open output buffering and discards the contents [wb, 2011-08-24]
  * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
  * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
  * @changes    1.0.0b36  Added the `$remove_extension` parameter to ::getName() [wb, 2011-01-10]
@@ -1092,8 +1093,8 @@ class fFile implements Iterator, Countable
 	 * This method is primarily intended for when PHP is used to control access
 	 * to files.
 	 * 
-	 * Be sure to turn off output buffering and close the session, if open, to
-	 * prevent performance issues. 
+	 * Be sure to close the session, if open, to prevent performance issues.
+	 * Any open output buffers are automatically closed and discarded.
 	 * 
 	 * @param  boolean $headers   If HTTP headers for the file should be included
 	 * @param  mixed   $filename  Present the file as an attachment instead of just outputting type headers - if a string is passed, that will be used for the filename, if `TRUE` is passed, the current filename will be used
@@ -1103,15 +1104,8 @@ class fFile implements Iterator, Countable
 	{
 		$this->tossIfDeleted();
 		
-		if (ob_get_level() > 0) {
-			throw new fProgrammerException(
-				'The method requested, %1$s, can not be used when output buffering is turned on, due to potential memory issues. Please call %2$s, %3$s and %4$s, or %5$s as appropriate to turn off output buffering.',
-				'output()',
-				'ob_end_clean()',
-				'fBuffer::erase()',
-				'fBuffer::stop()',
-				'fTemplating::destroy()'
-			);
+		while (ob_get_level() > 0) {
+			ob_end_clean();
 		}
 		
 		if ($headers) {
