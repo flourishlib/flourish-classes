@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLSchemaTranslation
  * 
- * @version    1.0.0b
+ * @version    1.0.0b2
+ * @changes    1.0.0b2   Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b    The initial implementation [wb, 2011-05-09]
  */
 class fSQLSchemaTranslation
@@ -1008,7 +1009,7 @@ class fSQLSchemaTranslation
 
 			preg_match_all('#(?<=,|\(|\*/|\n)\s*[`"\[\']?(\w+)[`"\]\']?\s+(?:[a-z]+)(?:\([^)]*\))?(?:(?:\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\("?\w+"?\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*\s+REFERENCES\s+[\'"`\[]?(\w+)[\'"`\]]?\s*\(\s*[\'"`\[]?(\w+)[\'"`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|/\*|(?:--[^\n]*\n)?\s*(?=\)))#mis', $create_sql, $matches, PREG_SET_ORDER);
 
-			preg_match_all('#(?<=,|\(|\*/|\n)\s*FOREIGN\s+KEY\s*\(?\s*["`\[]?(\w+)["`\]]?\s*\)?\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|/\*|(?:--[^\n]*\n)?\s*(?=\)))#mis', $create_sql, $matches2, PREG_SET_ORDER);
+			preg_match_all('#(?<=,|\(|\*/|\n)\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?FOREIGN\s+KEY\s*\(?\s*["`\[]?(\w+)["`\]]?\s*\)?\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,|/\*|(?:--[^\n]*\n)?\s*(?=\)))#mis', $create_sql, $matches2, PREG_SET_ORDER);
 
 			foreach (array_merge($matches, $matches2) as $match) {
 				$_column        = $match[1];
@@ -1614,7 +1615,7 @@ class fSQLSchemaTranslation
 			// Create foreign key triggers for SQLite
 			if (stripos($sql, 'REFERENCES') !== FALSE && !$this->schema_info['foreign_keys_enabled']) {
 				
-				preg_match_all('#(?:(?<=,|\(|\*/|\n)\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+(?:[a-z]+)(?:\(\s*(?:\d+)(?:\s*,\s*(?:\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(?:\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?(?:\s*(?:/\*(?:(?!\*/).)*\*/))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\))))|(?:(?<=,|\(|\*/|\n)\s*FOREIGN\s+KEY\s*\(?\s*["`\[]?(\w+)["`\]]?\s*\)?\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\))))#mis', $sql, $matches, PREG_SET_ORDER);
+				preg_match_all('#(?:(?<=,|\(|\*/|\n)\s*(?:`|"|\[)?(\w+)(?:`|"|\])?\s+(?:[a-z]+)(?:\(\s*(?:\d+)(?:\s*,\s*(?:\d+))?\s*\))?(?:(\s+NOT\s+NULL)|(?:\s+NULL)|(?:\s+DEFAULT\s+(?:[^, \']*|\'(?:\'\'|[^\']+)*\'))|(?:\s+UNIQUE)|(?:\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(?:\s+CHECK\s*\(\w+\s+IN\s+\(\s*(?:(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \']+|\'(?:\'\'|[^\']+)*\')\)\)))*(?:\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?(?:\s*(?:/\*(?:(?!\*/).)*\*/))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\))))|(?:(?<=,|\(|\*/|\n)\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?FOREIGN\s+KEY\s*\(?\s*["`\[]?(\w+)["`\]]?\s*\)?\s+REFERENCES\s+["`\[]?(\w+)["`\]]?\s*\(\s*["`\[]?(\w+)["`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\))))#mis', $sql, $matches, PREG_SET_ORDER);
 				
 				$not_null_columns = array();
 				foreach ($matches as $match) {
@@ -4603,9 +4604,9 @@ class fSQLSchemaTranslation
 		}
 
 
-		$primary_key_regex = '#(?<=,|\()\s*PRIMARY\s+KEY\s*\(\s*((?:\s*[\'"`\[]?\w+[\'"`\]]?\s*,\s*)*[\'"`\[]?\w+[\'"`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi';
-		$foreign_key_regex = '#(?<=,|\(|\*/|\n)(\s*FOREIGN\s+KEY\s*\(?\s*[\'"`\[]?(\w+)[\'"`\]]?\s*\)?)\s+REFERENCES\s+[\'"`\[]?(\w+)[\'"`\]]?\s*\(\s*[\'"`\[]?(\w+)[\'"`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\)))#mis';
-		$unique_constraint_regex = '#(?<=,|\()\s*UNIQUE\s*\(\s*((?:\s*[\'"`\[]?\w+[\'"`\]]?\s*,\s*)*[\'"`\[]?\w+[\'"`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi';
+		$primary_key_regex = '#(?<=,|\()\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?PRIMARY\s+KEY\s*\(\s*((?:\s*[\'"`\[]?\w+[\'"`\]]?\s*,\s*)*[\'"`\[]?\w+[\'"`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi';
+		$foreign_key_regex = '#(?<=,|\(|\*/|\n)(\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?FOREIGN\s+KEY\s*\(?\s*[\'"`\[]?(\w+)[\'"`\]]?\s*\)?)\s+REFERENCES\s+[\'"`\[]?(\w+)[\'"`\]]?\s*\(\s*[\'"`\[]?(\w+)[\'"`\]]?\s*\)\s*(?:(?:\s+ON\s+DELETE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))|(?:\s+ON\s+UPDATE\s+(CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT)))*(?:\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?\s*(?:,(?:[ \t]*--[^\n]*\n)?|(?:--[^\n]*\n)?\s*(?=\)))#mis';
+		$unique_constraint_regex = '#(?<=,|\()\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?UNIQUE\s*\(\s*((?:\s*[\'"`\[]?\w+[\'"`\]]?\s*,\s*)*[\'"`\[]?\w+[\'"`\]]?)\s*\)\s*(?:,|\s*(?=\)))#mi';
 		if (isset($data['column_name'])) {
 			$column_regex = '#(?:`|\'|"|\[|\b)' . preg_quote($data['column_name'], '#') . '(?:`|\'|"|\]|\b)#i';
 		}
@@ -4819,7 +4820,7 @@ class fSQLSchemaTranslation
 			}
 
 			preg_match(
-				'#^(.*?)((?:(?<=,|\*/|\n)\s*\b(?:FOREIGN\s+KEY\b|PRIMARY\s+KEY\b|UNIQUE\b).*)|(?:\s*\)\s*))$#Dis',
+				'#^(.*?)((?:(?<=,|\*/|\n)\s*(?:CONSTRAINT\s+["`\[]?\w+["`\]]?\s+)?\b(?:FOREIGN\s+KEY\b|PRIMARY\s+KEY\b|UNIQUE\b).*)|(?:\s*\)\s*))$#Dis',
 				$temp_create_table_sql,
 				$match
 			);
