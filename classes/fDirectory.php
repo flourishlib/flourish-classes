@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDirectory
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Fixed a bug in ::delete() where a non-existent method was being called on fFilesystem, added a permission check to ::delete() [wb, 2011-08-23]
  * @changes    1.0.0b13  Added the ::clear() method [wb, 2011-01-10]
  * @changes    1.0.0b12  Fixed ::scanRecursive() to not add duplicate entries for certain nested directory structures [wb, 2010-08-10]
  * @changes    1.0.0b11  Fixed ::scan() to properly add trailing /s for directories [wb, 2010-03-16]
@@ -215,6 +216,13 @@ class fDirectory
 		if ($this->deleted) {
 			return;	
 		}
+
+		if (!$this->getParent()->isWritable()) {
+			throw new fEnvironmentException(
+				'The directory, %s, can not be deleted because the directory containing it is not writable',
+				$this->directory
+			);
+		}
 		
 		$files = $this->scan();
 		
@@ -224,7 +232,7 @@ class fDirectory
 		
 		// Allow filesystem transactions
 		if (fFilesystem::isInsideTransaction()) {
-			return fFilesystem::delete($this);
+			return fFilesystem::recordDelete($this);
 		}
 		
 		rmdir($this->directory);
