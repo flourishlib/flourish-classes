@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Added missing documentation for using Redis as a backend [wb, 2011-08-25]
  * @changes    1.0.0b4  Added the `database`, `directory` and `redis` types, added support for the memcached extention and support for custom serialization callbacks [wb, 2011-06-21]
  * @changes    1.0.0b3  Added `0` to the memcache delete method call since otherwise the method triggers notices on some installs [wb, 2011-05-10]
  * @changes    1.0.0b2  Fixed API calls to the memcache extension to pass the TTL as the correct parameter [wb, 2011-02-01]
@@ -73,6 +74,7 @@ class fCache
 	 *  - `'directory'`
 	 *  - `'file'`
 	 *  - `'memcache'`
+	 *  - `'redis'`
 	 *  - `'xcache'`
 	 * 
 	 * @var string
@@ -118,8 +120,8 @@ class fCache
 	 * all values to a string when storing, instead of serializing them. If a
 	 * `__toString()` method is provided for objects, it will be called. 
 	 * 
-	 * @param  string $type        The type of caching to use: `'apc'`, `'database'`, `'directory'`, `'file'`, `'memcache'`, `'xcache'`
-	 * @param  mixed  $data_store  The path for a `file` or `directory` cache, an `Memcache` or `Memcached` object for a `memcache` cache or an fDatabase object for a `database` cache - not used for `apc` or `xcache`
+	 * @param  string $type        The type of caching to use: `'apc'`, `'database'`, `'directory'`, `'file'`, `'memcache'`, `'redis'`, `'xcache'`
+	 * @param  mixed  $data_store  The path for a `file` or `directory` cache, an `Memcache` or `Memcached` object for a `memcache` cache, an fDatabase object for a `database` cache or a `Redis` object for a `redis` cache - not used for `apc` or `xcache`
 	 * @param  array  $config      Configuration options - see method description for details
 	 * @return fCache
 	 */
