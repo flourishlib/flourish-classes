@@ -13,16 +13,17 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Fixed ::redirect() to handle no parameters properly [wb, 2011-06-13]
- * @changes    1.0.0b8  Added the `$delimiter` parameter to ::makeFriendly() [wb, 2011-06-03]
- * @changes    1.0.0b7  Fixed ::redirect() to be able to handle unqualified and relative paths [wb, 2011-03-02]
- * @changes    1.0.0b6  Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
- * @changes    1.0.0b5  Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
- * @changes    1.0.0b4  ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
- * @changes    1.0.0b3  ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
- * @changes    1.0.0b2  Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
- * @changes    1.0.0b   The initial implementation [wb, 2007-06-14]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Fixed some method signatures [wb, 2011-08-24]
+ * @changes    1.0.0b9   Fixed ::redirect() to handle no parameters properly [wb, 2011-06-13]
+ * @changes    1.0.0b8   Added the `$delimiter` parameter to ::makeFriendly() [wb, 2011-06-03]
+ * @changes    1.0.0b7   Fixed ::redirect() to be able to handle unqualified and relative paths [wb, 2011-03-02]
+ * @changes    1.0.0b6   Added the `$max_length` parameter to ::makeFriendly() [wb, 2010-09-19]
+ * @changes    1.0.0b5   Updated ::redirect() to not require a URL, using the current URL as the default [wb, 2009-07-29]
+ * @changes    1.0.0b4   ::getDomain() now includes the port number if non-standard [wb, 2009-05-02]
+ * @changes    1.0.0b3   ::makeFriendly() now changes _-_ to - and multiple _ to a single _ [wb, 2009-03-24]
+ * @changes    1.0.0b2   Fixed ::makeFriendly() so that _ doesn't appear at the beginning of URLs [wb, 2009-03-22]
+ * @changes    1.0.0b    The initial implementation [wb, 2007-06-14]
  */
 class fURL
 {
@@ -95,8 +96,8 @@ class fURL
 	 * @param  string   $string      The string to convert
 	 * @param  integer  $max_length  The maximum length of the friendly URL
 	 * @param  string   $delimiter   The delimiter to use between words, defaults to `_`
-	 * @param  string   :$string
-	 * @param  string   :$delimiter
+	 * @param  string   |$string
+	 * @param  string   |$delimiter
 	 * @return string  The URL-friendly version of the string
 	 */
 	static public function makeFriendly($string, $max_length=NULL, $delimiter=NULL)
@@ -199,7 +200,7 @@ class fURL
 	 * @param  string ...
 	 * @return string  The query string with the parameter(s) specified removed, first character is `?`
 	 */
-	static public function removeFromQueryString()
+	static public function removeFromQueryString($parameter)
 	{
 		$parameters = func_get_args();
 		

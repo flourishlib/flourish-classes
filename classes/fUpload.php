@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b13  Changed the class to throw fValidationException objects instead of fProgrammerException objects when the form is improperly configured - this is to prevent error logs when bad requests are sent by scanners/hackers [wb, 2011-08-24]
  * @changes    1.0.0b12  Fixed the ::filter() callback constant [wb, 2010-11-24]
  * @changes    1.0.0b11  Added ::setImageDimensions() and ::setImageRatio() [wb-imarc, 2010-11-11]
@@ -530,8 +531,8 @@ class fUpload
 	 * @param  string  $field           The field the file was uploaded through
 	 * @param  mixed   $index           If the field was an array of file uploads, this specifies which one to validate
 	 * @param  boolean $return_message  If any validation error should be returned as a string instead of being thrown as an fValidationException
-	 * @param  string  :$field
-	 * @param  boolean :$return_message
+	 * @param  string  |$field
+	 * @param  boolean |$return_message
 	 * @return NULL|string  If `$return_message` is not `TRUE` or if no error occurs, `NULL`, otherwise a string error message
 	 */
 	public function validate($field, $index=NULL, $return_message=NULL)

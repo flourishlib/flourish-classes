@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b12  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
  * @changes    1.0.0b11  Changed the `$timestamp` and `$timezone` attributes to be protected [wb, 2011-03-20]
  * @changes    1.0.0b10  Fixed a bug in ::__construct() with specifying a timezone other than the default for a relative time string such as "now" or "+2 hours" [wb, 2010-07-05]
@@ -942,7 +943,7 @@ class fTimestamp
 	 * 
 	 * @param  fTimestamp|object|string|integer $other_timestamp  The timestamp to create the difference with, `NULL` is interpreted as now
 	 * @param  boolean                          $simple           When `TRUE`, the returned value will only include the difference in the two timestamps, but not `from now`, `ago`, `after` or `before`
-	 * @param  boolean                          :$simple
+	 * @param  boolean                          |$simple
 	 * @return string  The fuzzy difference in time between the this timestamp and the one provided
 	 */
 	public function getFuzzyDifference($other_timestamp=NULL, $simple=FALSE)

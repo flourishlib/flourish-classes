@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDate
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b10  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
  * @changes    1.0.0b9   Changed the `$date` attribute to be protected [wb, 2011-03-20]
  * @changes    1.0.0b8   Added the `$simple` parameter to ::getFuzzyDifference() [wb, 2010-03-15]
@@ -214,7 +215,7 @@ class fDate
 	 * 
 	 * @param  fDate|object|string|integer $other_date  The date to create the difference with, `NULL` is interpreted as today
 	 * @param  boolean                     $simple      When `TRUE`, the returned value will only include the difference in the two dates, but not `from now`, `ago`, `after` or `before`
-	 * @param  boolean                     :$simple
+	 * @param  boolean                     |$simple
 	 * @return string  The fuzzy difference in time between the this date and the one provided
 	 */
 	public function getFuzzyDifference($other_date=NULL, $simple=FALSE)

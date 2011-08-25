@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b7  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b6  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
  * @changes    1.0.0b5  Added the `$fix_entities_encoding` parameter to ::__construct() [cr-imarc+wb, 2010-08-08]
@@ -109,8 +110,8 @@ class fXML implements ArrayAccess
 	 * @param  fFile|string  $source                 The source of the XML, either an fFile object, a string of XML, a file path or a URL
 	 * @param  numeric       $http_timeout           The timeout to use in seconds when requesting an XML file from a URL
 	 * @param  boolean       $fix_entities_encoding  This will fix two common XML authoring errors and should only be used when experiencing decoding issues - HTML entities that haven't been encoded as XML, and XML content published in ISO-8859-1 or Windows-1252 encoding without an explicit encoding attribute
-	 * @param  fFile|string  :$source
-	 * @param  boolean       :$fix_entities_encoding
+	 * @param  fFile|string  |$source
+	 * @param  boolean       |$fix_entities_encoding
 	 * @return fXML
 	 */
 	public function __construct($source, $http_timeout=NULL, $fix_entities_encoding=NULL)

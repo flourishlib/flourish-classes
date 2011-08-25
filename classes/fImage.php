@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
  * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
  * @changes    1.0.0b30  Added a check for systems using the GD extension and no memory limit, plus a check for ImageMagick's convert command failing [wb, 2011-03-20]
@@ -1343,8 +1344,8 @@ class fImage extends fFile
 	 * @param  string  $new_image_type  The new file format for the image: 'NULL` (no change), `'jpg'`, `'gif'`, `'png'`
 	 * @param  integer $jpeg_quality    The quality setting to use for JPEG images - this may be ommitted
 	 * @param  boolean $overwrite       If an existing file with the same name and extension should be overwritten
-	 * @param  string  :$new_image_type
-	 * @param  boolean :$overwrite
+	 * @param  string  |$new_image_type
+	 * @param  boolean |$overwrite
 	 * @return fImage  The image object, to allow for method chaining
 	 */
 	public function saveChanges($new_image_type=NULL, $jpeg_quality=90, $overwrite=FALSE)
