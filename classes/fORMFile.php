@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Updated code for the new fUpload API [wb, 2011-08-24]
  * @changes    1.0.0b29  Fixed a bug when uploading a new file to a column with an existing file that was not found on the filesystem [wb, 2011-05-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - ::configureImageUploadColumn() no longer accepts the optional `$image_type` as the fourth parameter, instead ::addFImageMethodCall() must be called with `saveChanges` as the `$method` and the image type as the first parameter [wb, 2010-11-30]
  * @changes    1.0.0b27  Fixed column inheritance to properly handle non-images and inheriting into image upload columns [wb, 2010-09-18]
@@ -647,7 +648,7 @@ class fORMFile
 		$class = get_class($object);
 		
 		foreach (self::$file_upload_columns[$class] as $column => $directory) {
-			if (fUpload::check($column) || fRequest::check('existing-' . $column) || fRequest::check('delete-' . $column)) {
+			if (fUpload::check($column, FALSE) || fRequest::check('existing-' . $column) || fRequest::check('delete-' . $column)) {
 				$method = 'upload' . fGrammar::camelize($column, TRUE);
 				$object->$method();
 			}
