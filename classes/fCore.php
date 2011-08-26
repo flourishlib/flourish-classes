@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Backwards Compatibility Break - moved ::detectOpcodeCache() to fLoader::hasOpcodeCache() [wb, 2011-08-26]
  * @changes    1.0.0b23  Backwards Compatibility Break - changed the email subject of error/exception emails to include relevant file info, instead of the timestamp, for better email message threading [wb, 2011-06-20]
  * @changes    1.0.0b22  Fixed a bug with dumping arrays containing integers [wb, 2011-05-26]
  * @changes    1.0.0b21  Changed ::startErrorCapture() to allow "stacking" it via multiple calls, fixed a couple of bugs with ::dump() mangling strings in the form `int(1)`, fixed mispelling of `occurred` [wb, 2011-05-09]
@@ -46,7 +47,6 @@ class fCore
 	const checkVersion            = 'fCore::checkVersion';
 	const configureSMTP           = 'fCore::configureSMTP';
 	const debug                   = 'fCore::debug';
-	const detectOpcodeCache       = 'fCore::detectOpcodeCache';
 	const disableContext          = 'fCore::disableContext';
 	const dump                    = 'fCore::dump';
 	const enableDebugging         = 'fCore::enableDebugging';
@@ -541,35 +541,6 @@ class fCore
 				self::expose($message);
 			}
 		}
-	}
-	
-	
-	/**
-	 * Detects if a PHP opcode cache is installed
-	 * 
-	 * The following opcode caches are currently detected:
-	 * 
-	 *  - [http://pecl.php.net/package/APC APC]
-	 *  - [http://eaccelerator.net eAccelerator]
-	 *  - [http://www.nusphere.com/products/phpexpress.htm Nusphere PhpExpress]
-	 *  - [http://turck-mmcache.sourceforge.net/index_old.html Turck MMCache]
-	 *  - [http://xcache.lighttpd.net XCache]
-	 *  - [http://www.zend.com/en/products/server/ Zend Server (Optimizer+)]
-	 *  - [http://www.zend.com/en/products/platform/ Zend Platform (Code Acceleration)]
-	 * 
-	 * @return boolean  If a PHP opcode cache is loaded
-	 */
-	static public function detectOpcodeCache()
-	{		
-		$apc              = ini_get('apc.enabled');
-		$eaccelerator     = ini_get('eaccelerator.enable');
-		$mmcache          = ini_get('mmcache.enable');
-		$phpexpress       = function_exists('phpexpress');
-		$xcache           = ini_get('xcache.size') > 0 && ini_get('xcache.cacher');
-		$zend_accelerator = ini_get('zend_accelerator.enabled');
-		$zend_plus        = ini_get('zend_optimizerplus.enable');
-		
-		return $apc || $eaccelerator || $mmcache || $phpexpress || $xcache || $zend_accelerator || $zend_plus;
 	}
 	
 	
