@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed a bug in ::enableMinification() where the minification cache directory was sometimes not properly converted to a web path [wb, 2011-08-31]
  * @changes    1.0.0b20  Fixed a bug in CSS minification that would reduce multiple zeros that are part of a hex color code, fixed minification of `+ ++` and similar constructs in JS [wb, 2011-08-31]
  * @changes    1.0.0b19  Corrected a bug in ::enablePHPShortTags() that would prevent proper translation inside of HTML tag attributes [wb, 2011-01-09]
  * @changes    1.0.0b18  Fixed a bug with CSS minification and black hex codes [wb, 2010-10-10]
@@ -426,7 +427,7 @@ class fTemplating
 			);
 		}
 		
-		$cache_directory = $cache_directory instanceof fDirectory ? $cache_directory->getPath() : $cache_directory;
+		$cache_directory = $cache_directory instanceof fDirectory ? $cache_directory->getPath() : realpath($cache_directory);
 		if (!is_writable($cache_directory)) {
 			throw new fEnvironmentException(
 				'The cache directory specified, %s, is not writable',
