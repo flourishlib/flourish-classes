@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Backwards Compatibility Break - removed the static method ::create(), added the static method ::attach() to fill its place [wb, 2011-08-31]
  * @changes    1.0.0b21  Fixed a bug in ::enableMinification() where the minification cache directory was sometimes not properly converted to a web path [wb, 2011-08-31]
  * @changes    1.0.0b20  Fixed a bug in CSS minification that would reduce multiple zeros that are part of a hex color code, fixed minification of `+ ++` and similar constructs in JS [wb, 2011-08-31]
  * @changes    1.0.0b19  Corrected a bug in ::enablePHPShortTags() that would prevent proper translation inside of HTML tag attributes [wb, 2011-01-09]
@@ -35,7 +36,7 @@
  */
 class fTemplating
 {
-	const create   = 'fTemplating::create';
+	const attach   = 'fTemplating::attach';
 	const reset    = 'fTemplating::reset';
 	const retrieve = 'fTemplating::retrieve';
 	
@@ -49,16 +50,15 @@ class fTemplating
 	
 	
 	/**
-	 * Creates a named template that can be accessed from any scope via ::retrieve()
+	 * Attaches a named template that can be accessed from any scope via ::retrieve()
 	 * 
-	 * @param  string $name  The name for this template instance
-	 * @param  string $root  The filesystem path to use when accessing relative files, defaults to `$_SERVER['DOCUMENT_ROOT']`
-	 * @return fTemplating  The new fTemplating instance
+	 * @param  fTemplating $templating  The fTemplating object to attach
+	 * @param  string      $name        The name for this templating instance
+	 * @return void
 	 */
-	static public function create($name, $root=NULL)
+	static public function attach($templating, $name='default')
 	{
-		self::$instances[$name] = new self($root);
-		return self::$instances[$name];
+		self::$instances[$name] = $templating;
 	}
 	
 	
@@ -85,7 +85,7 @@ class fTemplating
 	{
 		if (!isset(self::$instances[$name])) {
 			throw new fProgrammerException(
-				'The named template specified, %s, has not been created yet',
+				'The named template specified, %s, has not been attached yet',
 				$name
 			);
 		}
