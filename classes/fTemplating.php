@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added a default `$name` for ::retrieve() to mirror ::attach() [wb, 2011-08-31]
  * @changes    1.0.0b22  Backwards Compatibility Break - removed the static method ::create(), added the static method ::attach() to fill its place [wb, 2011-08-31]
  * @changes    1.0.0b21  Fixed a bug in ::enableMinification() where the minification cache directory was sometimes not properly converted to a web path [wb, 2011-08-31]
  * @changes    1.0.0b20  Fixed a bug in CSS minification that would reduce multiple zeros that are part of a hex color code, fixed minification of `+ ++` and similar constructs in JS [wb, 2011-08-31]
@@ -81,7 +82,7 @@ class fTemplating
 	 * @param  string $name  The name of the template to retrieve
 	 * @return fTemplating  The specified fTemplating instance
 	 */
-	static public function retrieve($name)
+	static public function retrieve($name='default')
 	{
 		if (!isset(self::$instances[$name])) {
 			throw new fProgrammerException(
