@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fLoader
  * 
- * @version    1.0.0b
+ * @version    1.0.0b2
+ * @changes    1.0.0b2  Added fPagination [wb, 2011-09-06]
  * @changes    1.0.0b   The initial implementation [wb, 2011-08-26]
  */
 class fLoader
@@ -74,6 +75,7 @@ class fLoader
 		'fORMRelated',
 		'fORMSchema',
 		'fORMValidation',
+		'fPagination',
 		'fRecordSet',
 		'fRequest',
 		'fResult',
