@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Added fix for PostgreSQL to handle `INSERT` statements that don't specify any columns or values [wb, 2011-09-06]
  * @changes    1.0.0b19  Removed the stray method ::removeSQLiteIndexes() that was left over from moving code into fSQLSchemaTranslation [wb, 2011-05-17]
  * @changes    1.0.0b18  Fixed `LENGTH()` and `SUBSTR()` functions for non-ascii characters being stored in MySQL, SQLite and DB2, moved `CREATE TABLE` support to fSQLSchemaTranslation [wb, 2011-05-09]
  * @changes    1.0.0b17  Internal Backwards Compatiblity Break - changed the array keys for translated queries returned from ::translate() to include a number plus `:` before the original SQL, preventing duplicate keys [wb, 2010-07-14]
@@ -817,9 +818,10 @@ class fSQLTranslation
 		
 		} elseif ($this->database->getType() == 'postgresql') {
 			$regex = array(
-				'#(?<!["\w.])(["\w.]+)\s+(not\s+)?like\b#i' => 'CAST(\1 AS VARCHAR) \2ILIKE',
-				'#\blower\(\s*(?<!["\w.])(["\w.]+)\s*\)#i'  => 'LOWER(CAST(\1 AS VARCHAR))',
-				'#\blike\b#i'                               => 'ILIKE'
+				'#(?<!["\w.])(["\w.]+)\s+(not\s+)?like\b#i'                           => 'CAST(\1 AS VARCHAR) \2ILIKE',
+				'#\blower\(\s*(?<!["\w.])(["\w.]+)\s*\)#i'                            => 'LOWER(CAST(\1 AS VARCHAR))',
+				'#\blike\b#i'                                                         => 'ILIKE',
+				'#\b(INSERT\s+INTO\s+(?:\w+|"[^"]+")\s+)\(\s*\)\s+VALUES\s+\(\s*\)#i' => '\1DEFAULT VALUES'
 			);
 		
 		
