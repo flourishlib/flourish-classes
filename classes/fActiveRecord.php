@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b80
+ * @version    1.0.0b81
+ * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
  * @changes    1.0.0b80  Added support to ::checkCondition() for the `^~` and `$~` operators [wb, 2011-06-20]
  * @changes    1.0.0b79  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b78  Backwards Compatibility Break - ::reflect() now returns an associative array instead of a string [wb, 2011-05-10]
@@ -1337,7 +1338,7 @@ abstract class fActiveRecord
 		$params      = array($table);
 			
 		foreach ($column_info as $column => $info) {
-			if ($info['auto_increment'] && !fActiveRecord::changed($this->values, $this->old_values, $column)) {
+			if ($info['auto_increment'] && !fActiveRecord::changed($this->values, $this->old_values, $column) && count($column_info) > 1) {
 				continue;
 			}
 			
