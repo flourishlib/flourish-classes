@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b43
+ * @version    1.0.0b44
+ * @changes    1.0.0b44  Added missing information for has and list methods to ::reflect() [wb, 2011-09-07]
  * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b42  Fixed a bug with ::associateRecords() not associating record set via primary key [wb, 2011-05-23]
  * @changes    1.0.0b41  Fixed a bug in generating errors messages for many-to-many relationships [wb, 2011-03-07]
@@ -1062,6 +1063,26 @@ class fORMRelated
 			$signature .= ')';
 			
 			$signatures[$associate_method] = $signature;
+
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Indicates if a related " . $related_class . " exists\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
+				}
+				$signature .= " * @return boolean  If a related record exists\n";
+				$signature .= " */\n";
+			}
+			$has_method = 'has' . $related_class;
+			$signature .= 'public function ' . $has_method . '($record';
+			if (sizeof($route_names) > 1) {
+				$signature .= ', $route';
+			}
+			$signature .= ')';
+			
+			$signatures[$has_method] = $signature;
 			
 			$one_to_one_created[$related_class] = TRUE;		
 		}
@@ -1188,6 +1209,46 @@ class fORMRelated
 			$signature .= ')';
 			
 			$signatures[$build_method] = $signature;
+
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Indicates if related " . $related_class . " objects exist\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
+				}
+				$signature .= " * @return boolean  If related " . $related_class . " objects exist\n";
+				$signature .= " */\n";
+			}
+			$has_method = 'has' . fGrammar::pluralize($related_class);
+			$signature .= 'public function ' . $has_method . '(';
+			if (sizeof($route_names) > 1) {
+				$signature .= '$route';
+			}
+			$signature .= ')';
+			
+			$signatures[$has_method] = $signature;
+
+			$signature = '';
+			if ($include_doc_comments) {
+				$signature .= "/**\n";
+				$signature .= " * Returns an array of the primary keys for the related " . $related_class . " objects\n";
+				$signature .= " * \n";
+				if (sizeof($route_names) > 1) {
+					$signature .= " * @param  string \$route  The route to the related class. Must be one of: '" . join("', '", $route_names) . "'.\n";
+				}
+				$signature .= " * @return array  The primary keys of the related " . $related_class . " objects\n";
+				$signature .= " */\n";
+			}
+			$list_method = 'list' . fGrammar::pluralize($related_class);
+			$signature .= 'public function ' . $list_method . '(';
+			if (sizeof($route_names) > 1) {
+				$signature .= '$route';
+			}
+			$signature .= ')';
+			
+			$signatures[$list_method] = $signature;
 			
 			
 			$signature = '';
