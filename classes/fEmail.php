@@ -12,12 +12,14 @@
  * @copyright  Copyright (c) 2008-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Bill Bushee, iMarc LLC [bb-imarc] <bill@imarc.net>
+ * @author     netcarver [n] <fContrib@netcarving.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Changed methods to return instance for method chaining [n, 2011-09-12]
  * @changes    1.0.0b29  Changed ::combineNameEmail() to be a static method and to be exposed publicly for use by other classes [wb, 2011-07-26]
  * @changes    1.0.0b28  Fixed ::addAttachment() and ::addRelatedFile() to properly handle duplicate filenames [wb, 2011-05-17]
  * @changes    1.0.0b27  Fixed a bug with generating FQDNs on some Windows machines [wb, 2011-02-24]
@@ -647,7 +649,7 @@ class fEmail
 	 * @param  string|fFile $contents   The contents of the file
 	 * @param  string       $filename   The name to give the attachement - optional if `$contents` is an fFile object
 	 * @param  string       $mime_type  The mime type of the file - this allows overriding the mime type of the file if incorrectly detected
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function addAttachment($contents, $filename=NULL, $mime_type=NULL)
 	{
@@ -661,6 +663,8 @@ class fEmail
 			'mime-type' => $mime_type,
 			'contents'  => $contents
 		);
+
+		return $this;
 	}
 	
 	
@@ -703,7 +707,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address to BCC
 	 * @param  string $name   The recipient's name
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function addBCCRecipient($email, $name=NULL)
 	{
@@ -712,6 +716,8 @@ class fEmail
 		}
 		
 		$this->bcc_emails[] = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -720,7 +726,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address to BCC
 	 * @param  string $name   The recipient's name
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function addCCRecipient($email, $name=NULL)
 	{
@@ -729,6 +735,8 @@ class fEmail
 		}
 		
 		$this->cc_emails[] = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -742,10 +750,10 @@ class fEmail
 	 * adding the `:` between the name and value and wrapping values that are
 	 * too long for a single line.
 	 * 
-	 * @param string $name      The name of the header
-	 * @param string $value     The value of the header
-	 * @param array  :$headers  An associative array of `{name} => {value}`
-	 * @return void
+	 * @param  string $name      The name of the header
+	 * @param  string $value     The value of the header
+	 * @param  array  :$headers  An associative array of `{name} => {value}`
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function addCustomHeader($name, $value=NULL)
 	{
@@ -758,6 +766,8 @@ class fEmail
 		
 		$lower_name = fUTF8::lower($name);
 		$this->custom_headers[$lower_name] = array($name, $value);
+
+		return $this;
 	}
 	
 	
@@ -766,7 +776,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address to send to
 	 * @param  string $name   The recipient's name
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function addRecipient($email, $name=NULL)
 	{
@@ -775,6 +785,8 @@ class fEmail
 		}
 		
 		$this->to_emails[] = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -811,13 +823,15 @@ class fEmail
 	/**
 	 * Removes all To, CC and BCC recipients from the email
 	 * 
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function clearRecipients()
 	{
 		$this->to_emails  = array();
 		$this->cc_emails  = array();
 		$this->bcc_emails = array();
+
+		return $this;
 	}
 	
 	
@@ -1085,7 +1099,7 @@ class fEmail
 	 * Sets the email to be encrypted with S/MIME
 	 * 
 	 * @param  string $recipients_smime_cert_file  The file path to the PEM-encoded S/MIME certificate for the recipient
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function encrypt($recipients_smime_cert_file)
 	{
@@ -1105,6 +1119,8 @@ class fEmail
 		
 		$this->smime_encrypt              = TRUE;
 		$this->recipients_smime_cert_file = $recipients_smime_cert_file;
+
+		return $this;
 	}
 	
 	
@@ -1195,7 +1211,7 @@ class fEmail
 	 * 
 	 * @param  string|fFile $file          The plaintext version of the email body
 	 * @param  array        $replacements  The method will search the contents of the file for each key and replace it with the corresponding value
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function loadBody($file, $replacements=array())
 	{
@@ -1209,6 +1225,8 @@ class fEmail
 		}
 		
 		$this->plaintext_body = $plaintext;
+
+		return $this;
 	}
 	
 	
@@ -1222,7 +1240,7 @@ class fEmail
 	 * 
 	 * @param  string|fFile $file          The plaintext version of the email body
 	 * @param  array        $replacements  The method will search the contents of the file for each key and replace it with the corresponding value
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function loadHTMLBody($file, $replacements=array())
 	{
@@ -1236,6 +1254,8 @@ class fEmail
 		}
 		
 		$this->html_body = $html;
+
+		return $this;
 	}
 	
 	
@@ -1473,7 +1493,7 @@ class fEmail
 	 * 
 	 * @param  string  $plaintext                  The plaintext version of the email body
 	 * @param  boolean $unindent_expand_constants  If this is `TRUE`, the body will be unindented as much as possible and {CONSTANT_NAME} will be replaced with the value of the constant
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setBody($plaintext, $unindent_expand_constants=FALSE)
 	{
@@ -1482,6 +1502,8 @@ class fEmail
 		}
 		
 		$this->plaintext_body = $plaintext;
+
+		return $this;
 	}
 	
 	
@@ -1491,7 +1513,7 @@ class fEmail
 	 * This email address will be set to the `Return-Path` header.
 	 * 
 	 * @param  string $email  The email address to bounce to
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setBounceToEmail($email)
 	{
@@ -1503,6 +1525,8 @@ class fEmail
 		}
 		
 		$this->bounce_to_email = self::combineNameEmail('', $email);
+
+		return $this;
 	}
 	
 	
@@ -1511,7 +1535,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address being sent from
 	 * @param  string $name   The from email user's name - unfortunately on windows this is ignored
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setFromEmail($email, $name=NULL)
 	{
@@ -1520,6 +1544,8 @@ class fEmail
 		}
 		
 		$this->from_email = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -1530,11 +1556,13 @@ class fEmail
 	 * http://flourishlib.com/docs/UTF-8 for more information.
 	 * 
 	 * @param  string $html  The HTML version of the email body
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setHTMLBody($html)
 	{
 		$this->html_body = $html;
+
+		return $this;
 	}
 	
 	
@@ -1543,7 +1571,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address to reply to
 	 * @param  string $name   The reply-to email user's name
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setReplyToEmail($email, $name=NULL)
 	{
@@ -1552,6 +1580,8 @@ class fEmail
 		}
 		
 		$this->reply_to_email = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -1563,7 +1593,7 @@ class fEmail
 	 * 
 	 * @param  string $email  The email address the message is actually being sent from
 	 * @param  string $name   The sender email user's name
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setSenderEmail($email, $name=NULL)
 	{
@@ -1572,6 +1602,8 @@ class fEmail
 		}
 		
 		$this->sender_email = self::combineNameEmail($name, $email);
+
+		return $this;
 	}
 	
 	
@@ -1582,11 +1614,13 @@ class fEmail
 	 * http://flourishlib.com/docs/UTF-8 for more information.
 	 * 
 	 * @param  string $subject  The subject of the email
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function setSubject($subject)
 	{
 		$this->subject = $subject;
+
+		return $this;
 	}
 	
 	
@@ -1596,7 +1630,7 @@ class fEmail
 	 * @param  string $senders_smime_cert_file    The file path to the sender's PEM-encoded S/MIME certificate
 	 * @param  string $senders_smime_pk_file      The file path to the sender's S/MIME private key
 	 * @param  string $senders_smime_pk_password  The password for the sender's S/MIME private key
-	 * @return void
+	 * @return fEmail  The email object, to allow for method chaining
 	 */
 	public function sign($senders_smime_cert_file, $senders_smime_pk_file, $senders_smime_pk_password)
 	{
@@ -1637,6 +1671,8 @@ class fEmail
 		$this->senders_smime_cert_file   = $senders_smime_cert_file;
 		$this->senders_smime_pk_file     = $senders_smime_pk_file;
 		$this->senders_smime_pk_password = $senders_smime_pk_password;
+
+		return $this;
 	}
 	
 	

@@ -2,14 +2,16 @@
 /**
  * A class that loads Flourish
  * 
- * @copyright  Copyright (c) 2011 Will Bond
+ * @copyright  Copyright (c) 2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     netcarver [n] <fContrib@netcarving.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fLoader
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Added fEmail() constructor function [n, 2011-09-12]
  * @changes    1.0.0b2  Added fPagination [wb, 2011-09-06]
  * @changes    1.0.0b   The initial implementation [wb, 2011-08-26]
  */
@@ -142,7 +144,7 @@ class fLoader
 
 
 	/**
-	 * Creates functions that act as chainable constructors for value objects
+	 * Creates functions that act as chainable constructors
 	 *
 	 * @return void
 	 */
@@ -160,6 +162,11 @@ class fLoader
 		function fDirectory($directory)
 		{
 			return new fDirectory($directory);    
+		}
+
+		function fEmail()
+		{
+			return new fEmail();
 		}
 		 
 		function fFile($file)
@@ -285,7 +292,7 @@ class fLoader
 
 
 /**
- * Copyright (c) 2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2011 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
