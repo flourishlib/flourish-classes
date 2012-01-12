@@ -2,14 +2,15 @@
 /**
  * Gets schema information for the selected database
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b50
+ * @version    1.0.0b51
+ * @changes    1.0.0b51  Fixed handling of getting tables in table creation order when a table references itself, fixed default value detection for the last column in a MySQL table [wb, 2012-01-12]
  * @changes    1.0.0b50  Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b49  Added support for spatial/geometric data types in MySQL and PostgreSQL [wb, 2011-05-26]
  * @changes    1.0.0b48  Fixed a bug with ::getTables() not working on MySQL 4.x, fixed ::getKeys() to always return a reset array [wb, 2011-05-24]
@@ -236,7 +237,9 @@ class fSchema
 		$ignored_found  = array();
 		
 		$current_tables = $this->getTables();
-		while ($current_tables) {
+		// Prevent an infinite loop
+		$last_tables    = array();
+		while ($current_tables && $current_tables != $last_tables) {
 			$remaining_tables = array();
 			foreach ($current_tables as $table) {
 				$foreign_keys = $this->getKeys($table, 'foreign');
@@ -255,7 +258,7 @@ class fSchema
 					$all_dependencies_met = TRUE;
 					$found_dependencies   = 0;
 					foreach ($foreign_keys as $foreign_key) {
-						if (!in_array($foreign_key['foreign_table'], $found) && !in_array($foreign_key['foreign_table'], $ignored_found)) {
+						if ($table != $foreign_key['foreign_table'] && !in_array($foreign_key['foreign_table'], $found) && !in_array($foreign_key['foreign_table'], $ignored_found)) {
 							$all_dependencies_met = FALSE;
 							break;
 						} elseif (in_array($foreign_key['foreign_table'], $found)) {
@@ -278,6 +281,7 @@ class fSchema
 					}
 				}
 			}
+			$last_tables    = $current_tables;
 			$current_tables = $remaining_tables;
 		}
 		
@@ -1097,7 +1101,7 @@ class fSchema
 			return array();
 		}
 		
-		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?( unsigned)?(?: zerofill)?)(?: character set [^ ]+)?(?: collate [^ ]+)?(?: NULL)?( NOT NULL)?(?: DEFAULT ((?:[^, \']*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?( COMMENT \'(?:\'\'|[^\']+)*\')?( ON UPDATE CURRENT_TIMESTAMP)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
+		preg_match_all('#(?<=,|\()\s+(?:"|\`)(\w+)(?:"|\`)\s+(?:([a-z]+)(?:\(([^)]+)\))?( unsigned)?(?: zerofill)?)(?: character set [^ ]+)?(?: collate [^ ]+)?(?: NULL)?( NOT NULL)?(?: DEFAULT ((?:[^, \'\n]*|\'(?:\'\'|[^\']+)*\')))?( auto_increment)?( COMMENT \'(?:\'\'|[^\']+)*\')?( ON UPDATE CURRENT_TIMESTAMP)?\s*(?:,|\s*(?=\)))#mi', $create_sql, $matches, PREG_SET_ORDER);
 		
 		foreach ($matches as $match) {
 			
@@ -3131,7 +3135,7 @@ class fSchema
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

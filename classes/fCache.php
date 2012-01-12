@@ -2,14 +2,15 @@
 /**
  * A simple interface to cache data using different backends
  * 
- * @copyright  Copyright (c) 2009-2011 Will Bond
+ * @copyright  Copyright (c) 2009-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Fixed a bug with ::add() setting a value when it shouldn't if no ttl was given for the file backend [wb, 2012-01-12]
  * @changes    1.0.0b5  Added missing documentation for using Redis as a backend [wb, 2011-08-25]
  * @changes    1.0.0b4  Added the `database`, `directory` and `redis` types, added support for the memcached extention and support for custom serialization callbacks [wb, 2011-06-21]
  * @changes    1.0.0b3  Added `0` to the memcache delete method call since otherwise the method triggers notices on some installs [wb, 2011-05-10]
@@ -277,7 +278,7 @@ class fCache
 				return apc_add($key, $value, $ttl);
 				
 			case 'file':
-				if (isset($this->data_store[$key]) && $this->data_store[$key]['expire'] && $this->data_store[$key]['expire'] >= time()) {
+				if (isset($this->data_store[$key]) && (($this->data_store[$key]['expire'] && $this->data_store[$key]['expire'] >= time()) || !$this->data_store[$key]['expire'])) {
 					return FALSE;	
 				}
 				$this->data_store[$key] = array(
@@ -722,7 +723,7 @@ class fCache
 
 
 /**
- * Copyright (c) 2009-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2009-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

@@ -2,14 +2,15 @@
 /**
  * Adds cross-database `CREATE TABLE`, `ALTER TABLE` and `COMMENT ON COLUMN` statements to fSQLTranslation
  * 
- * @copyright  Copyright (c) 2011 Will Bond
+ * @copyright  Copyright (c) 2011-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLSchemaTranslation
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3   Fixed associating a sequence with a column in PostgreSQL when setting auto-increment, fixed detection of some Oracle CHECK(IN) constraints, fixed default values for SQLite `ON DELETE` and `ON UPDATE` clauses [wb, 2012-01-12]
  * @changes    1.0.0b2   Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b    The initial implementation [wb, 2011-05-09]
  */
@@ -1015,18 +1016,18 @@ class fSQLSchemaTranslation
 				$_column        = $match[1];
 				$foreign_table  = $match[2];
 				$foreign_column = $match[3];
-				$on_delete      = empty($match[4]) ? 'NO ACTION' : $match[4];
-				$on_update      = empty($match[5]) ? 'NO ACTION' : $match[5];
+				$on_delete      = empty($match[4]) ? 'RESTRICT' : $match[4];
+				$on_update      = empty($match[5]) ? 'RESTRICT' : $match[5];
 
 				if ($foreign_table != $table || ($column !== NULL && $column != $foreign_column)) {
 					continue;
 				}
 
 				if (!$on_delete) {
-					$on_delete = 'NO ACTION';
+					$on_delete = 'RESTRICT';
 				}
 				if (!$on_update) {
-					$on_update = 'NO ACTION';
+					$on_update = 'RESTRICT';
 				}
 
 				$output[] = array(
@@ -3534,6 +3535,9 @@ class fSQLSchemaTranslation
 				if (preg_match("#^\s*\"?\w+\"?\s+IN\s+(\(\s*(?:(?<!')'(?:''|[^']+)*'|%\d+\\\$s)(?:\s*,\s*(?:(?<!')'(?:''|[^']+)*'|%\d+\\\$s))*\s*\))\s*$#i", $row['search_condition'])) {
 					$constraint_name = $row['constraint_name'];
 					break;
+				} elseif (preg_match('/^\s*"?' . preg_quote($data['column_name'], '/') . '"?\s*=\s*\'((\'\'|[^\']+)*)\'(\s+OR\s+"?' . preg_quote($data['column_name'], '/') . '"?\s*=\s*\'((\'\'|[^\']+)*)\')*\s*$/i', $row['search_condition'])) {
+					$constraint_name = $row['constraint_name'];
+					break;
 				}
 			}
 		}
@@ -4301,6 +4305,13 @@ class fSQLSchemaTranslation
 					"CREATE SEQUENCE %r",
 					$sequence_name
 				);
+				$extra_statements[] = $this->database->escape(
+					"ALTER SEQUENCE %r OWNED BY %r.%r",
+					$sequence_name,
+					$data['table'],
+					$data['column_name']
+				);
+				
 				$extra_statements[] = $this->database->escape(
 					"SELECT setval(%s, MAX(%r)) FROM %r",
 					$sequence_name,
@@ -5365,7 +5376,7 @@ class fSQLSchemaTranslation
 
 
 /**
- * Copyright (c) 2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2011-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
