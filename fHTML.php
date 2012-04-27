@@ -174,7 +174,7 @@ class fHTML
 		}
 		
 		// Find all html tags, entities and comments
-		$reg_exp = "/<\s*\/?\s*[\w:]+(?:\s+[\w:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/s";
+		$reg_exp = "/<\s*\/?\s*[\w\-:]+(?:\s+[\w\-:]+(?:\s*=\s*(?:\"[^\"]*?\"|'[^']*?'|[^'\">\s]+))?)*\s*\/?\s*>|&(?:#\d+|\w+);|<\!--.*?-->/s";
 		preg_match_all($reg_exp, $content, $html_matches, PREG_SET_ORDER);
 		
 		// Find all text
