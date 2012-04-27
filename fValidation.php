@@ -2,14 +2,16 @@
 /**
  * Provides validation routines for standalone forms, such as contact forms
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Andrew Udvare [au] <andrew@bne1.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Added ::setCSRFTokenField() [au, 2012-04-27]
  * @changes    1.0.0b12  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b11  Fixed ::addCallbackRule() to be able to handle multiple rules per field [wb, 2011-06-02]
  * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
@@ -107,6 +109,25 @@ class fValidation
 	
 	
 	/**
+	 * Validates a CSRF token.
+	 * 
+	 * @internal
+	 * 
+	 * @param string $field_value Field value to check.
+	 * @return boolean   If the field value is correct.
+	 */
+	public static function checkCSRFToken($field_value) {
+		try {
+			fRequest::validateCSRFToken($field_value, $this->csrf_url);
+			return TRUE;
+		}
+		catch (fValidationException $e) {
+			return FALSE;
+		}
+	}
+	
+	
+	/**
 	 * Rules that run through a callback
 	 * 
 	 * @var array
@@ -196,6 +217,13 @@ class fValidation
 	 * @var array
 	 */
 	private $valid_values_rules = array();
+	
+	/**
+	 * CSRF token URL
+	 * 
+	 * @var string
+	 */
+	private $csrf_url = NULL;
 	
 	
 	/**
@@ -327,6 +355,24 @@ class fValidation
 			$this->addRegexRule($arg, fEmail::EMAIL_REGEX, 'Please enter an email address in the form name@example.com');
 		}
 		
+		return $this;
+	}
+	
+	
+	/**
+	 * Set the CSRF token field to validate.
+	 * 
+	 * @param string $field    A field that should contain a CSRF token string
+	 * @param string $url      URL to validate with
+	 * @return fValidation  The validation object, to allow for method chaining
+	 */
+	public function setCSRFTokenField($field, $url = NULL)
+	{
+		if (is_null($url)) {
+			$url = fURL::get();
+		}
+		$this->csrf_url = $url;
+		$this->addCallbackRule($field, __CLASS__.'::checkCSRFToken', 'The form submitted could not be validated as authentic, please try submitting it again');
 		return $this;
 	}
 	
