@@ -488,7 +488,7 @@ class fUpload
 		if ($size && $size > $ini_max_size) {
 			throw new fEnvironmentException(
 				'The requested max file upload size, %1$s, is larger than the %2$s ini setting, which is currently set at %3$s. The ini setting must be increased to allow files of this size.',
-				$max_size,
+				$size,
 				'upload_max_filesize',
 				$ini_max_size
 			);
