@@ -109,25 +109,6 @@ class fValidation
 	
 	
 	/**
-	 * Validates a CSRF token.
-	 * 
-	 * @internal
-	 * 
-	 * @param string $field_value Field value to check.
-	 * @return boolean   If the field value is correct.
-	 */
-	public static function checkCSRFToken($field_value) {
-		try {
-			fRequest::validateCSRFToken($field_value, $this->csrf_url);
-			return TRUE;
-		}
-		catch (fValidationException $e) {
-			return FALSE;
-		}
-	}
-	
-	
-	/**
 	 * Rules that run through a callback
 	 * 
 	 * @var array
@@ -224,6 +205,13 @@ class fValidation
 	 * @var string
 	 */
 	private $csrf_url = NULL;
+	
+	/**
+	 * CSRF token field name
+	 * 
+	 * @var string
+	 */
+	private $csrf_field = NULL;
 	
 	
 	/**
@@ -372,7 +360,7 @@ class fValidation
 			$url = fURL::get();
 		}
 		$this->csrf_url = $url;
-		$this->addCallbackRule($field, __CLASS__.'::checkCSRFToken', 'The form submitted could not be validated as authentic, please try submitting it again');
+		$this->csrf_field = $field;
 		return $this;
 	}
 	
@@ -757,6 +745,24 @@ class fValidation
 	
 	
 	/**
+	 * Validates the CSRF field
+	 * 
+	 * @param  array &$messages  The messages to display to the user
+	 * @return void
+	 */
+	private function checkCSRFField(&$messages)
+	{
+		try {
+			$token = fRequest::get($this->csrf_field);
+			fRequest::validateCSRFToken($token, $this->csrf_url);
+		}
+		catch (fValidationException $e) {
+			$messages[$this->csrf_field] = $e->getMessage();
+		}
+	}
+	
+	
+	/**
 	 * Checks the file upload validation rules
 	 * 
 	 * @param  array &$messages  The messages to display to the user
@@ -1065,6 +1071,7 @@ class fValidation
 		$this->checkRequiredFields($messages);
 		$this->checkFileUploadRules($messages);
 		$this->checkConditionalRules($messages);
+		$this->checkCSRFField($messages);
 		$this->checkOneOrMoreRules($messages);
 		$this->checkOnlyOneRules($messages);
 		$this->checkValidValuesRules($messages);
