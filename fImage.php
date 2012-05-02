@@ -157,7 +157,7 @@ class fImage extends fFile
 	 * 
 	 * @return void
 	 */
-	static private function determineProcessor()
+	static protected function determineProcessor()
 	{
 		// Determine what processor to use
 		if (self::$processor === NULL) {
