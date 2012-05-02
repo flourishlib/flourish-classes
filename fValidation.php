@@ -753,6 +753,10 @@ class fValidation
 	private function checkCSRFField(&$messages)
 	{
 		try {
+			if ($this->csrf_field === NULL) {
+				return;
+			}
+			
 			$token = fRequest::get($this->csrf_field);
 			fRequest::validateCSRFToken($token, $this->csrf_url);
 		}
