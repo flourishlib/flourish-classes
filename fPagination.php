@@ -298,6 +298,26 @@ class fPagination
 			)
 		);
 	}
+
+	/**
+	 * Handles the `makeLinks()` method for fRecordSet
+	 *
+	 * @internal
+	 *
+	 * @param fRecordSet   $object       The record set
+	 * @param string|array $class        The class(es) contained in the record set
+	 * @param array        &$records     The records
+	 * @param string       $method_name  The method that was called
+	 * @param array        $parameters   The parameters passed to the method
+	 * @return boolean  If the links were shown
+	 */
+	static public function makeRecordSetLinks($object, $class, &$records, $method_name, $parameters)
+	{
+		$template = count($parameters) < 1 ? 'default' : $parameters[0];
+		$data     = count($parameters) < 2 ? array() : $parameters[1];
+		$data     = self::extendRecordSetInfo($data, $class);
+		return self::makeTemplatedLinks($template, $data, $object->getPage(), $object->getLimit(), $object->count(TRUE));
+	}
 	
 	
 	/**
@@ -320,26 +340,25 @@ class fPagination
 		return self::showTemplatedLinks($template, $data, $object->getPage(), $object->getLimit(), $object->count(TRUE));
 	}
 	
-	
 	/**
-	 * Prints the links for a set of records
-	 * 
+	 * Makes the links HTML for a set of records
+	 *
 	 * @param string  $template       The template to use
 	 * @param array   $data           The extra data to make available to the template
 	 * @param integer $page           The page of records being displayed
 	 * @param integer $per_page       The number of records being displayed on each page
 	 * @param integer $total_records  The total number of records
-	 * @return void
+	 * @return string HTML of the links
 	 */
-	static private function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
+	static private function makeTemplatedLinks($template, $data, $page, $per_page, $total_records)
 	{
 		if ($total_records <= $per_page) {
-			return FALSE;
+			return '';
 		}
 		
 		$total_pages = ceil($total_records/$per_page);
 		
-		self::printPiece(
+		$html = self::makePiece(
 			$template,
 			'start',
 			array_merge(
@@ -354,7 +373,7 @@ class fPagination
 			)
 		);
 		if ($page > 1) {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'prev',
 				array_merge(
@@ -366,17 +385,17 @@ class fPagination
 				)
 			);
 		} else {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'prev_disabled',
 				$data
 			);
 		}
-		
+
 		if (self::$templates[$template]['type'] == 'without_first_last') {
 			$start_page = max(1, $page - self::$templates[$template]['size']);
-			$end_page   = min($total_pages, $page + self::$templates[$template]['size']);			
-		
+			$end_page   = min($total_pages, $page + self::$templates[$template]['size']);
+
 		} else {
 			$start_separator = TRUE;
 			$start_page      = $page - (self::$templates[$template]['size'] - 2);
@@ -391,9 +410,9 @@ class fPagination
 				$end_page = $total_pages;
 			}
 		}
-		
+
 		if (self::$templates[$template]['type'] == 'with_first_last' && $start_separator) {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'page',
 				array_merge(
@@ -407,14 +426,14 @@ class fPagination
 					$data
 				)
 			);
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'separator',
 				$data
 			);
 		}
 		for ($loop_page = $start_page; $loop_page <= $end_page; $loop_page++) {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'page',
 				array_merge(
@@ -430,12 +449,12 @@ class fPagination
 			);
 		}
 		if (self::$templates[$template]['type'] == 'with_first_last' && $end_separator) {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'separator',
 				$data
 			);
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'page',
 				array_merge(
@@ -450,9 +469,9 @@ class fPagination
 				)
 			);
 		}
-		
+
 		if ($page < $total_pages) {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'next',
 				array_merge(
@@ -464,13 +483,13 @@ class fPagination
 				)
 			);
 		} else {
-			self::printPiece(
+			$html .= self::makePiece(
 				$template,
 				'next_disabled',
 				$data
 			);
 		}
-		self::printPiece(
+		$html .= self::makePiece(
 			$template,
 			'end',
 			array_merge(
@@ -484,20 +503,41 @@ class fPagination
 				$data
 			)
 		);
-		
-		return TRUE;
+
+		return $html;
 	}
 	
 	
 	/**
-	 * Prints out a piece of a template
+	 * Prints the links for a set of records
 	 * 
-	 * @param string $template  The name of the template to print
-	 * @param string $piece     The piece of the template to print
-	 * @param array  $data      The data to replace the variables with
-	 * @return void
+	 * @param string  $template       The template to use
+	 * @param array   $data           The extra data to make available to the template
+	 * @param integer $page           The page of records being displayed
+	 * @param integer $per_page       The number of records being displayed on each page
+	 * @param integer $total_records  The total number of records
+	 * @return boolean If the links were printed
 	 */
-	static private function printPiece($template, $name, $data)
+	static private function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
+	{
+		if ($total_records <= $per_page) {
+			return FALSE;
+		}
+		
+		echo self::makeTemplatedLinks($template, $data, $page, $per_page, $total_records);
+		
+		return TRUE;
+	}
+
+	/**
+	 * Makes a piece of a template.
+	 *
+	 * @param string $template  The name of the template to print
+	 * @param string $name      The piece of the template to print
+	 * @param array  $data      The data to replace the variables with
+	 * @return string The piece HTML
+	 */
+	static private function makePiece($template, $name, $data)
 	{
 		if (!isset(self::$templates[$template]['pieces'][$name])) {
 			throw new fProgrammerException(
@@ -537,7 +577,21 @@ class fPagination
 			}
 			$piece = preg_replace('#' . preg_quote($match[0], '#') . '#', fHTML::encode($value), $piece, 1);
 		}
-		echo $piece;
+		return $piece;
+	}
+
+	
+	/**
+	 * Prints out a piece of a template
+	 * 
+	 * @param string $template  The name of the template to print
+	 * @param string $name      The piece of the template to print
+	 * @param array  $data      The data to replace the variables with
+	 * @return void
+	 */
+	static private function printPiece($template, $name, $data)
+	{
+		echo self::makePiece($template, $name, $data);
 	}
 	
 	
@@ -655,8 +709,18 @@ class fPagination
 			$this->data[$key] = $value;
 		}
 	}
-	
-	
+
+	/**
+	 * Returns the links as a string
+	 *
+	 * @param string $template  The template to use
+	 * @return string The links HTML
+	 */
+	public function makeLinks($template='default')
+	{
+		return self::makeTemplatedLinks($template, $this->data, $this->page, $this->per_page, $this->total_records);
+	}
+
 	/**
 	 * Shows links to other pages when more than one page of records exists
 	 * 
