@@ -1,7 +1,7 @@
 <?php
 /**
  * An [http://en.wikipedia.org/wiki/Active_record_pattern active record pattern] base class
- * 
+ *
  * This class uses fORMSchema to inspect your database and provides an
  * OO interface to a single database table. The class dynamically handles
  * method calls for getting, setting and other operations on columns. It also
@@ -11,7 +11,7 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
@@ -64,7 +64,7 @@
  * @changes    1.0.0b36  Fixed a bug with setting NULL values from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b35  Fixed a bug with unescaping data in ::loadFromResult() from v1.0.0b33 [wb, 2009-08-10]
  * @changes    1.0.0b34  Added the ability to compare fActiveRecord objects in ::checkConditions() [wb, 2009-08-07]
- * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07] 
+ * @changes    1.0.0b33  Performance enhancements to ::__call() and ::__construct() [wb, 2009-08-07]
  * @changes    1.0.0b32  Changed ::delete() to remove auto-incrementing primary keys after the post::delete() hook [wb, 2009-07-29]
  * @changes    1.0.0b31  Fixed a bug with loading a record by a multi-column primary key, fixed one-to-one relationship API [wb, 2009-07-21]
  * @changes    1.0.0b30  Updated ::reflect() for new fORM::callReflectCallbacks() API [wb, 2009-07-13]
@@ -109,67 +109,67 @@ abstract class fActiveRecord
 	const reset           = 'fActiveRecord::reset';
 	const retrieveOld     = 'fActiveRecord::retrieveOld';
 	const validateClass   = 'fActiveRecord::validateClass';
-	
-	
+
+
 	/**
 	 * Caches callbacks for methods
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $callback_cache = array();
-	
+
 	/**
 	 * An array of flags indicating a class has been configured
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $configured = array();
-	
-	
+
+
 	/**
 	 * Maps objects via their primary key
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $identity_map = array();
-	
-	
+
+
 	/**
 	 * Caches method name parsings
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $method_name_cache = array();
-	
-	
+
+
 	/**
 	 * Keeps track of the recursive call level of replication so we can clear the map
-	 * 
+	 *
 	 * @var integer
 	 */
 	static protected $replicate_level = 0;
-	
-	
+
+
 	/**
 	 * Keeps a list of records that have been replicated
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $replicate_map = array();
-	
+
 	/**
 	 * Contains a list of what columns in each class need to be unescaped and what data type they are
-	 * 
+	 *
 	 * @var array
 	 */
 	static protected $unescape_map = array();
-	
-	
+
+
 	/**
 	 * Sets a value to the `$values` array, preserving the old value in `$old_values`
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  array  &$values      The current values
 	 * @param  array  &$old_values  The old values
 	 * @param  string $column       The column to set
@@ -181,17 +181,17 @@ abstract class fActiveRecord
 		if (!isset($old_values[$column])) {
 			$old_values[$column] = array();
 		}
-		
+
 		$old_values[$column][] = $values[$column];
-		$values[$column]       = $value;	
+		$values[$column]       = $value;
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if a value has changed
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  array  &$values      The current values
 	 * @param  array  &$old_values  The old values
 	 * @param  string $column       The column to check
@@ -202,28 +202,28 @@ abstract class fActiveRecord
 		if (!isset($old_values[$column])) {
 			return FALSE;
 		}
-		
+
 		$oldest_value = $old_values[$column][0];
 		$new_value    = $values[$column];
-		
+
 		// We do a strict comparison when one of the values is NULL since
 		// NULL is almost always meant to be distinct from 0, FALSE, etc.
 		// However, since we cast blank strings to NULL in ::set() but a blank
 		// string could come out of the database, we consider them to be
 		// equivalent, so we don't do a strict comparison
 		if (($oldest_value === NULL && $new_value !== '') || ($new_value === NULL && $oldest_value !== '')) {
-			return $oldest_value !== $new_value;	
+			return $oldest_value !== $new_value;
 		}
-		
-		return $oldest_value != $new_value;	
+
+		return $oldest_value != $new_value;
 	}
-	
-	
+
+
 	/**
 	 * Ensures a class extends fActiveRecord
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class  The class to check
 	 * @return boolean  If the class is an fActiveRecord descendant
 	 */
@@ -232,19 +232,19 @@ abstract class fActiveRecord
 		if (isset(self::$configured[$class])) {
 			return TRUE;
 		}
-		
+
 		if (!is_string($class) || !$class || !class_exists($class) || !($class == 'fActiveRecord' || is_subclass_of($class, 'fActiveRecord'))) {
 			return FALSE;
 		}
 		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if a record matches a condition
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $operator  The record to check
 	 * @param  mixed  $value     The value to compare to
 	 * @param  mixed $result     The result of the method call(s)
@@ -261,11 +261,11 @@ abstract class fActiveRecord
 				}
 				if (method_exists($_value, '__toString')) {
 					$value[$i] = $_value->__toString();
-				}	
-			}	
+				}
+			}
 		}
 		if (!$was_array) { $value = $value[0]; }
-		
+
 		$was_array = is_array($result);
 		if (!$was_array) { $result = array($result); }
 		foreach ($result as $i => $_result) {
@@ -275,8 +275,8 @@ abstract class fActiveRecord
 				}
 				if (method_exists($_result, '__toString')) {
 					$result[$i] = $_result->__toString();
-				}	
-			}	
+				}
+			}
 		}
 		if (!$was_array) { $result = $result[0]; }
 		
@@ -311,7 +311,7 @@ abstract class fActiveRecord
 						}
 						if (!$found) {
 							return FALSE;
-						}	
+						}
 					}
 					break;
 				}
@@ -341,69 +341,69 @@ abstract class fActiveRecord
 					return FALSE;
 				}
 				break;
-			
+
 			case '=':
 				if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
 					if (get_class($value) != get_class($result) || !$value->exists() || !$result->exists() || self::hash($value) != self::hash($result)) {
 						return FALSE;
 					}
-					
+
 				} elseif (is_array($value) && !in_array($result, $value)) {
 					return FALSE;
-						
+
 				} elseif (!is_array($value) && $result != $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
-				
+
 			case '!':
 				if ($value instanceof fActiveRecord && $result instanceof fActiveRecord) {
 					if (get_class($value) == get_class($result) && $value->exists() && $result->exists() && self::hash($value) == self::hash($result)) {
 						return FALSE;
 					}
-					
+
 				} elseif (is_array($value) && in_array($result, $value)) {
-					return FALSE;	
-					
+					return FALSE;
+
 				} elseif (!is_array($value) && $result == $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
-			
+
 			case '<':
 				if ($result >= $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
-			
+
 			case '<=':
 				if ($result > $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
-			
+
 			case '>':
 				if ($result <= $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
-			
+
 			case '>=':
 				if ($result < $value) {
-					return FALSE;	
+					return FALSE;
 				}
 				break;
 		}
-		
-		return TRUE;		
+
+		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if a record matches all of the conditions
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  fActiveRecord $record      The record to check
 	 * @param  array         $conditions  The conditions to check - see fRecordSet::filter() for format details
 	 * @return boolean  If the record meets all conditions
@@ -411,7 +411,7 @@ abstract class fActiveRecord
 	static public function checkConditions($record, $conditions)
 	{
 		foreach ($conditions as $method => $value) {
-			
+
 			// Split the operator off of the end of the method name
 			if (in_array(substr($method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '^~', '$~', '><'))) {
 				$operator = strtr(
@@ -426,13 +426,13 @@ abstract class fActiveRecord
 				$operator = substr($method, -1);
 				$method   = substr($method, 0, -1);
 			}
-			
+
 			if (preg_match('#(?<!\|)\|(?!\|)#', $method)) {
-				
+
 				$methods   = explode('|', $method);
 				$values    = $value;
 				$operators = array();
-				
+
 				foreach ($methods as &$_method) {
 					if (in_array(substr($_method, -2), array('<=', '>=', '!=', '<>', '!~', '&~', '^~', '$~', '><'))) {
 						$operators[] = strtr(
@@ -449,46 +449,46 @@ abstract class fActiveRecord
 					}
 				}
 				$operators[] = $operator;
-				
-				
+
+
 				if (sizeof($operators) == 1) {
-				
+
 					// Handle fuzzy searches
 					if ($operator == '~') {
-					
+
 						$results = array();
 						foreach ($methods as $method) {
-							$results[] = $record->$method();	
+							$results[] = $record->$method();
 						}
 						if (!self::checkCondition($operator, $value, $results)) {
-							return FALSE;	
+							return FALSE;
 						}
-					
+
 					// Handle intersection
 					} elseif ($operator == '><') {
-						
+
 						if (sizeof($methods) != 2 || sizeof($values) != 2) {
 							throw new fProgrammerException(
 								'The intersection operator, %s, requires exactly two methods and two values',
 								$operator
-							);	
+							);
 						}
-									
+
 						$results    = array();
 						$results[0] = $record->{$methods[0]}();
 						$results[1] = $record->{$methods[1]}();
-						
+
 						if ($results[1] === NULL && $values[1] === NULL) {
 							if (!self::checkCondition('=', $values[0], $results[0])) {
 								return FALSE;
 							}
-							
-							
+
+
 						} else {
-							
+
 							$starts_between_values = FALSE;
 							$overlaps_value_1      = FALSE;
-							
+
 							if ($values[1] !== NULL) {
 								$start_lt_value_1      = self::checkCondition('<', $values[0], $results[0]);
 								$start_gt_value_2      = self::checkCondition('>', $values[1], $results[0]);
@@ -499,22 +499,22 @@ abstract class fActiveRecord
 								$end_lt_value_1   = self::checkCondition('<', $values[0], $results[1]);
 								$overlaps_value_1 = !$start_gt_value_1 && !$end_lt_value_1;
 							}
-							
+
 							if (!$starts_between_values && !$overlaps_value_1) {
 								return FALSE;
 							}
 						}
-					
+
 					} else {
 						throw new fProgrammerException(
 							'An invalid comparison operator, %s, was specified for multiple columns',
 							$operator
 						);
 					}
-					
+
 				// Handle OR conditions
 				} else {
-					
+
 					if (sizeof($methods) != sizeof($values)) {
 						throw new fProgrammerException(
 							'When performing an %1$s comparison there must be an equal number of methods and values, however there are not',
@@ -523,35 +523,35 @@ abstract class fActiveRecord
 							sizeof($values)
 						);
 					}
-					
+
 					if (sizeof($methods) != sizeof($operators)) {
 						throw new fProgrammerException(
 							'When performing an %s comparison there must be a comparison operator for each column, however one or more is missing',
 							'OR'
 						);
 					}
-					
+
 					$results    = array();
 					$iterations = sizeof($methods);
 					for ($i=0; $i<$iterations; $i++) {
 						$results[] = self::checkCondition($operators[$i], $values[$i], $record->{$methods[$i]}());
 					}
-					
+
 					if (!array_filter($results)) {
-						return FALSE;	
+						return FALSE;
 					}
-					
+
 				}
-				
-			// Single method comparisons	
+
+			// Single method comparisons
 			} else {
 				$result = $record->$method();
 				if (!self::checkCondition($operator, $value, $result)) {
-					return FALSE;	
+					return FALSE;
 				}
-			}	
+			}
 		}
-		
+
 		return TRUE;
 	}
 
@@ -569,7 +569,7 @@ abstract class fActiveRecord
 	
 	/**
 	 * Composes text using fText if loaded
-	 * 
+	 *
 	 * @param  string  $message    The message to compose
 	 * @param  mixed   $component  A string or number to insert into the message
 	 * @param  mixed   ...
@@ -578,7 +578,7 @@ abstract class fActiveRecord
 	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
-		
+
 		if (class_exists('fText', FALSE)) {
 			return call_user_func_array(
 				array('fText', 'compose'),
@@ -588,11 +588,11 @@ abstract class fActiveRecord
 			return vsprintf($message, $args);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Takes information from a method call and determines the subject, route and if subject was plural
-	 * 
+	 *
 	 * @param string $class    The class the method was called on
 	 * @param string $subject  An underscore_notation subject - either a singular or plural class name
 	 * @param string $route    The route to the subject
@@ -604,18 +604,18 @@ abstract class fActiveRecord
 		$table   = fORM::tablize($class);
 		$type    = '*-to-many';
 		$plural  = FALSE;
-		
+
 		// one-to-many relationships need to use plural forms
 		$singular_form = fGrammar::singularize($subject, TRUE);
 		if ($singular_form && fORM::isClassMappedToTable($singular_form)) {
 			$subject = $singular_form;
 			$plural  = TRUE;
-			
+
 		} elseif (!fORM::isClassMappedToTable($subject) && in_array(fGrammar::underscorize($subject), $schema->getTables())) {
 			$subject = fGrammar::singularize($subject);
 			$plural  = TRUE;
 		}
-		
+
 		$related_table = fORM::tablize($subject);
 		$one_to_one    = fORMSchema::isOneToOne($schema, $table, $related_table, $route);
 		if ($one_to_one) {
@@ -627,37 +627,37 @@ abstract class fActiveRecord
 				$table,
 				$type,
 				$related_table
-			); 
+			);
 		}
-		
+
 		$route = fORMSchema::getRouteName($schema, $table, $related_table, $route, $type);
-		
+
 		return array($subject, $route, $plural);
 	}
-	
-	
+
+
 	/**
 	 * Ensures that ::configure() has been called for the class
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class  The class to configure
 	 * @return void
 	 */
 	static public function forceConfigure($class)
 	{
 		if (isset(self::$configured[$class])) {
-			return;	
+			return;
 		}
 		new $class();
 	}
-	
-	
+
+
 	/**
 	 * Takes a row of data or a primary key and makes a hash from the primary key
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  fActiveRecord|array|string|int $record   An fActiveRecord object, an array of the records data, an array of primary key data or a scalar primary key value
 	 * @param  string                         $class    The class name, if $record isn't an fActiveRecord
 	 * @return string|NULL  A hash of the record's primary key value or NULL if the record doesn't exist yet
@@ -665,55 +665,55 @@ abstract class fActiveRecord
 	static public function hash($record, $class=NULL)
 	{
 		if ($record instanceof fActiveRecord && !$record->exists()) {
-			return NULL;	
+			return NULL;
 		}
-		
+
 		if ($class === NULL) {
 			if (!$record instanceof fActiveRecord) {
 				throw new fProgrammerException(
 					'The class of the record must be provided if the record specified is not an instance of fActiveRecord'
 				);
 			}
-			$class = get_class($record);	
+			$class = get_class($record);
 		}
-		
+
 		$schema     = fORMSchema::retrieve($class);
 		$table      = fORM::tablize($class);
 		$pk_columns = $schema->getKeys($table, 'primary');
-		
+
 		// Build an array of just the primary key data
 		$pk_data = array();
 		foreach ($pk_columns as $pk_column) {
 			if ($record instanceof fActiveRecord) {
 				$value = (self::hasOld($record->old_values, $pk_column)) ? self::retrieveOld($record->old_values, $pk_column) : $record->values[$pk_column];
-			
+
 			} elseif (is_array($record)) {
 				$value = $record[$pk_column];
-			
+
 			} else {
-				$value = $record;	
+				$value = $record;
 			}
-			
+
 			$pk_data[$pk_column] = fORM::scalarize(
 				$class,
 				$pk_column,
 				$value
 			);
-			
+
 			if (is_numeric($pk_data[$pk_column]) || is_object($pk_data[$pk_column])) {
-				$pk_data[$pk_column] = (string) $pk_data[$pk_column];	
+				$pk_data[$pk_column] = (string) $pk_data[$pk_column];
 			}
 		}
-		
+
 		return md5(serialize($pk_data));
 	}
-	
-	
+
+
 	/**
-	 * Checks to see if an old value exists for a column 
+	 * Checks to see if an old value exists for a column
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  array  &$old_values  The old values
 	 * @param  string $column       The column to set
 	 * @return boolean  If an old value for that column exists
@@ -722,13 +722,13 @@ abstract class fActiveRecord
 	{
 		return array_key_exists($column, $old_values);
 	}
-	
-	
+
+
 	/**
 	 * Resets the configuration of the class
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function reset()
@@ -739,13 +739,13 @@ abstract class fActiveRecord
 		self::$method_name_cache = array();
 		self::$unescape_map      = array();
 	}
-	
-	
+
+
 	/**
 	 * Retrieves the oldest value for a column or all old values
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  array   &$old_values  The old values
 	 * @param  string  $column       The column to get
 	 * @param  mixed   $default      The default value to return if no value exists
@@ -755,22 +755,22 @@ abstract class fActiveRecord
 	static public function retrieveOld(&$old_values, $column, $default=NULL, $return_all=FALSE)
 	{
 		if (!isset($old_values[$column])) {
-			return $default;	
+			return $default;
 		}
-		
+
 		if ($return_all === TRUE) {
-			return $old_values[$column];	
+			return $old_values[$column];
 		}
-		
+
 		return $old_values[$column][0];
 	}
-	
-	
+
+
 	/**
 	 * Ensures a class extends fActiveRecord
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class  The class to verify
 	 * @return void
 	 */
@@ -779,7 +779,7 @@ abstract class fActiveRecord
 		if (isset(self::$configured[$class])) {
 			return TRUE;
 		}
-		
+
 		if (!self::checkClass($class)) {
 			throw new fProgrammerException(
 				'The class specified, %1$s, does not appear to be a valid %2$s class',
@@ -788,67 +788,67 @@ abstract class fActiveRecord
 			);
 		}
 	}
-	
-	
+
+
 	/**
 	 * A data store for caching data related to a record, the structure of this is completely up to the developer using it
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $cache = array();
-	
+
 	/**
 	 * The old values for this record
-	 * 
+	 *
 	 * Column names are the keys, but a column key will only be present if a
 	 * value has changed. The value associated with each key is an array of
-	 * old values with the first entry being the oldest value. The static 
+	 * old values with the first entry being the oldest value. The static
 	 * methods ::assign(), ::changed(), ::hasOld() and ::retrieveOld() are the
 	 * best way to interact with this array.
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $old_values = array();
-	
+
 	/**
 	 * Records that are related to the current record via some relationship
-	 * 
+	 *
 	 * This array is used to cache related records so that a database query
 	 * is not required each time related records are accessed. The fORMRelated
 	 * class handles most of the interaction with this array.
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $related_records = array();
-	
+
 	/**
 	 * The values for this record
-	 * 
+	 *
 	 * This array always contains every column in the database table as a key
-	 * with the value being the current value. 
-	 * 
+	 * with the value being the current value.
+	 *
 	 * @var array
 	 */
 	protected $values = array();
-	
-	
+
+
 	/**
 	 * Handles all method calls for columns, related records and hook callbacks
-	 * 
+	 *
 	 * Dynamically handles `get`, `set`, `prepare`, `encode` and `inspect`
 	 * methods for each column in this record. Method names are in the form
 	 * `verbColumName()`.
-	 * 
+	 *
 	 * This method also handles `associate`, `build`, `count`, `has`, and `link`
 	 * verbs for records in many-to-many relationships; `build`, `count`, `has`
 	 * and `populate` verbs for all related records in one-to-many relationships
 	 * and `create`, `has` and `populate` verbs for all related records in
 	 * one-to-one relationships, and the `create` verb for all related records
 	 * in many-to-one relationships.
-	 * 
+	 *
 	 * Method callbacks registered through fORM::registerActiveRecordMethod()
 	 * will be delegated via this method.
-	 * 
+	 *
 	 * @param  string $method_name  The name of the method called
 	 * @param  array  $parameters   The parameters passed
 	 * @return mixed  The value returned by the method called
@@ -856,15 +856,15 @@ abstract class fActiveRecord
 	public function __call($method_name, $parameters)
 	{
 		$class = get_class($this);
-		
+
 		if (!isset(self::$callback_cache[$class][$method_name])) {
 			if (!isset(self::$callback_cache[$class])) {
 				self::$callback_cache[$class] = array();
-			}	
+			}
 			$callback = fORM::getActiveRecordMethod($class, $method_name);
 			self::$callback_cache[$class][$method_name] = $callback ? $callback : FALSE;
 		}
-		
+
 		if ($callback = self::$callback_cache[$class][$method_name]) {
 			return call_user_func_array(
 				$callback,
@@ -879,7 +879,7 @@ abstract class fActiveRecord
 				)
 			);
 		}
-		
+
 		if (!isset(self::$method_name_cache[$method_name])) {
 			list ($action, $subject) = fORM::parseMethod($method_name);
 			if (in_array($action, array('get', 'encode', 'prepare', 'inspect', 'set'))) {
@@ -893,36 +893,36 @@ abstract class fActiveRecord
 			self::$method_name_cache[$method_name] = array(
 				'action'  => $action,
 				'subject' => $subject
-			);	
+			);
 		} else {
 			$action  = self::$method_name_cache[$method_name]['action'];
-			$subject = self::$method_name_cache[$method_name]['subject'];	
+			$subject = self::$method_name_cache[$method_name]['subject'];
 		}
-		
+
 		switch ($action) {
-			
+
 			// Value methods
 			case 'get':
 				return $this->get($subject);
-				
+
 			case 'encode':
 				if (isset($parameters[0])) {
 					return $this->encode($subject, $parameters[0]);
 				}
 				return $this->encode($subject);
-			
+
 			case 'prepare':
 				if (isset($parameters[0])) {
 					return $this->prepare($subject, $parameters[0]);
 				}
 				return $this->prepare($subject);
-			
+
 			case 'inspect':
 				if (isset($parameters[0])) {
 					return $this->inspect($subject, $parameters[0]);
 				}
 				return $this->inspect($subject);
-			
+
 			case 'set':
 				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
@@ -931,7 +931,7 @@ abstract class fActiveRecord
 					);
 				}
 				return $this->set($subject, $parameters[0]);
-			
+
 			// Related data methods
 			case 'associate':
 				if (sizeof($parameters) < 1) {
@@ -940,44 +940,44 @@ abstract class fActiveRecord
 						$method_name
 					);
 				}
-				
+
 				$records = $parameters[0];
 				$route   = isset($parameters[1]) ? $parameters[1] : NULL;
-				
+
 				list ($subject, $route, $plural) = self::determineSubject($class, $subject, $route);
-				
+
 				if ($plural) {
 					fORMRelated::associateRecords($class, $this->related_records, $subject, $records, $route);
 				} else {
 					fORMRelated::associateRecord($class, $this->related_records, $subject, $records, $route);
 				}
 				return $this;
-			
+
 			case 'build':
 				if (isset($parameters[0])) {
 					return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::buildRecords($class, $this->values, $this->related_records, $subject);
-			
+
 			case 'count':
 				if (isset($parameters[0])) {
 					return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::countRecords($class, $this->values, $this->related_records, $subject);
-			
+
 			case 'create':
 				if (isset($parameters[0])) {
 					return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::createRecord($class, $this->values, $this->related_records, $subject);
-				
+
 			case 'has':
 				$route = isset($parameters[0]) ? $parameters[0] : NULL;
-				
+
 				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
-				
+
 				return fORMRelated::hasRecords($class, $this->values, $this->related_records, $subject, $route);
-			 
+
 			case 'inject':
 				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
@@ -985,7 +985,7 @@ abstract class fActiveRecord
 						$method_name
 					);
 				}
-				
+
 				if (isset($parameters[1])) {
 					return fORMRelated::setRecordSet($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
@@ -998,21 +998,21 @@ abstract class fActiveRecord
 					fORMRelated::linkRecords($class, $this->related_records, $subject);
 				}
 				return $this;
-			
+
 			case 'list':
 				if (isset($parameters[0])) {
 					return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject, $parameters[0]);
 				}
 				return fORMRelated::getPrimaryKeys($class, $this->values, $this->related_records, $subject);
-			
+
 			case 'populate':
 				$route = isset($parameters[0]) ? $parameters[0] : NULL;
-				
+
 				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
-				
+
 				fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
 				return $this;
-			
+
 			case 'tally':
 				if (sizeof($parameters) < 1) {
 					throw new fProgrammerException(
@@ -1020,12 +1020,12 @@ abstract class fActiveRecord
 						$method_name
 					);
 				}
-				
+
 				if (isset($parameters[1])) {
 					return fORMRelated::setCount($class, $this->related_records, $subject, $parameters[0], $parameters[1]);
 				}
 				return fORMRelated::setCount($class, $this->related_records, $subject, $parameters[0]);
-			
+
 			// Error handler
 			default:
 				throw new fProgrammerException(
@@ -1034,25 +1034,25 @@ abstract class fActiveRecord
 				);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Creates a clone of a record
-	 * 
+	 *
 	 * If the record has an auto incrementing primary key, the primary key will
 	 * be erased in the clone. If the primary key is not auto incrementing,
 	 * the primary key will be left as-is in the clone. In either situation the
 	 * clone will return `FALSE` from the ::exists() method until ::store() is
 	 * called.
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return fActiveRecord
 	 */
 	public function __clone()
 	{
 		$class = get_class($this);
-		
+
 		// Copy values and cache, making sure objects are cloned to prevent reference issues
 		$temp_values  = $this->values;
 		$new_values   = array();
@@ -1060,7 +1060,7 @@ abstract class fActiveRecord
 		foreach ($temp_values as $column => $value) {
 			$this->values[$column] = fORM::replicate($class, $column, $value);
 		}
-		
+
 		$temp_cache  = $this->cache;
 		$new_cache   = array();
 		$this->cache =& $new_cache;
@@ -1069,38 +1069,38 @@ abstract class fActiveRecord
 				$this->cache[$key] = clone $value;
 			} else {
 				$this->cache[$key] = $value;
-			}		
+			}
 		}
-		
+
 		// Related records are purged
 		$new_related_records   = array();
 		$this->related_records =& $new_related_records;
-		
+
 		// Old values are changed to look like the record is non-existant
 		$new_old_values   = array();
 		$this->old_values =& $new_old_values;
-		
+
 		foreach (array_keys($this->values) as $key) {
 			$this->old_values[$key] = array(NULL);
 		}
-		
+
 		// If we have a single auto incrementing primary key, remove the value
 		$schema     = fORMSchema::retrieve($class);
 		$table      = fORM::tablize($class);
 		$pk_columns = $schema->getKeys($table, 'primary');
-		
+
 		if (sizeof($pk_columns) == 1 && $schema->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
 			$this->values[$pk_columns[0]] = NULL;
 			unset($this->old_values[$pk_columns[0]]);
-		}		
+		}
 	}
-	
-	
+
+
 	/**
 	 * Creates a new record or loads one from the database - if a primary key or unique key is provided the record will be loaded
-	 * 
+	 *
 	 * @throws fNotFoundException  When the record specified by `$key` can not be found in the database
-	 * 
+	 *
 	 * @param  mixed $key  The primary key or unique key value(s) - single column primary keys will accept a scalar value, all others must be an associative array of `(string) {column} => (mixed) {value}`
 	 * @return fActiveRecord
 	 */
@@ -1108,12 +1108,12 @@ abstract class fActiveRecord
 	{
 		$class  = get_class($this);
 		$schema = fORMSchema::retrieve($class);
-		
+
 		// If the features of this class haven't been set yet, do it
 		if (!isset(self::$configured[$class])) {
 			self::$configured[$class] = TRUE;
 			$this->configure();
-			
+
 			$table = fORM::tablize($class);
 			if (!$schema->getKeys($table, 'primary')) {
 				throw new fProgrammerException(
@@ -1122,46 +1122,46 @@ abstract class fActiveRecord
 					$class,
 					'fActiveRecord',
 					'fRecordSet'
-				);	
+				);
 			}
-			
+
 			// If the configuration was forced, prevent the post::__construct() hook from
 			// being triggered since it is not really a real record instantiation
 			$trace = array_slice(debug_backtrace(), 0, 2);
-			
+
 			$is_forced = sizeof($trace) == 2;
 			$is_forced = $is_forced && $trace[1]['function'] == 'forceConfigure';
 			$is_forced = $is_forced && isset($trace[1]['class']);
 			$is_forced = $is_forced && $trace[1]['type'] == '::';
 			$is_forced = $is_forced && in_array($trace[1]['class'], array('fActiveRecord', $class));
-			
+
 			if ($is_forced) {
-				return;	
+				return;
 			}
 		}
-		
+
 		if (!isset(self::$callback_cache[$class]['__construct'])) {
 			if (!isset(self::$callback_cache[$class])) {
 				self::$callback_cache[$class] = array();
 			}
 			$callback = fORM::getActiveRecordMethod($class, '__construct');
-			self::$callback_cache[$class]['__construct'] = $callback ? $callback : FALSE;	
+			self::$callback_cache[$class]['__construct'] = $callback ? $callback : FALSE;
 		}
 		if ($callback = self::$callback_cache[$class]['__construct']) {
 			return $this->__call($callback);
 		}
-		
+
 		// Handle loading by a result object passed via the fRecordSet class
 		if ($key instanceof Iterator) {
-			
+
 			$this->loadFromResult($key);
-		
+
 		// Handle loading an object from the database
 		} elseif ($key !== NULL) {
-			
+
 			$table      = fORM::tablize($class);
 			$pk_columns = $schema->getKeys($table, 'primary');
-			
+
 			// If the primary key does not look properly formatted, check to see if it is a UNIQUE key
 			$is_unique_key = FALSE;
 			if (is_array($key) && (sizeof($pk_columns) == 1 || array_diff(array_keys($key), $pk_columns))) {
@@ -1171,12 +1171,12 @@ abstract class fActiveRecord
 					if (!array_diff($key_keys, $unique_key)) {
 						$is_unique_key = TRUE;
 					}
-				}	
+				}
 			}
-			
+
 			$wrong_keys = is_array($key) && (count($key) != count($pk_columns) || array_diff(array_keys($key), $pk_columns));
 			$wrong_type = !is_array($key) && (sizeof($pk_columns) != 1 || !is_scalar($key));
-			
+
 			// If we didn't find a UNIQUE key and primary key doesn't look right we fail
 			if (!$is_unique_key && ($wrong_keys || $wrong_type)) {
 				throw new fProgrammerException(
@@ -1184,14 +1184,14 @@ abstract class fActiveRecord
 					fORM::getRecordName($class)
 				);
 			}
-			
+
 			if ($is_unique_key) {
-				
+
 				$result = $this->fetchResultFromUniqueKey($key);
 				$this->loadFromResult($result);
-				
+
 			} else {
-				
+
 				$hash = self::hash($key, $class);
 				if (!$this->loadFromIdentityMap($key, $hash)) {
 					// Assign the primary key values for loading
@@ -1202,11 +1202,11 @@ abstract class fActiveRecord
 					} else {
 						$this->values[$pk_columns[0]] = $key;
 					}
-					
+
 					$this->load();
 				}
 			}
-			
+
 		// Create an empty array for new objects
 		} else {
 			$column_info = $schema->getColumnInfo(fORM::tablize($class));
@@ -1218,11 +1218,11 @@ abstract class fActiveRecord
 						$this->old_values,
 						$column,
 						fORM::objectify($class, $column, $info['default'])
-					);	
+					);
 				}
 			}
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::__construct()',
@@ -1232,52 +1232,52 @@ abstract class fActiveRecord
 			$this->cache
 		);
 	}
-	
-	
+
+
 	/**
 	 * All requests that hit this method should be requests for callbacks
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $method  The method to create a callback for
 	 * @return callback  The callback for the method requested
 	 */
 	public function __get($method)
 	{
-		return array($this, $method);		
+		return array($this, $method);
 	}
-	
-	
+
+
 	/**
 	 * Configure itself when coming out of the session. Records from the session are NOT hooked into the identity map.
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	public function __wakeup()
 	{
 		$class = get_class($this);
-		
+
 		if (!isset(self::$configured[$class])) {
 			$this->configure();
 			self::$configured[$class] = TRUE;
-		}		
+		}
 	}
-	
-	
+
+
 	/**
 	 * Allows the programmer to set features for the class
-	 * 
+	 *
 	 * This method is only called once per page load for each class.
-	 * 
+	 *
 	 * @return void
 	 */
 	protected function configure()
 	{
 	}
-	
-	
+
+
 	/**
 	 * Creates the fDatabase::translatedQuery() insert statement params
 	 *
@@ -1287,10 +1287,10 @@ abstract class fActiveRecord
 	{
 		$columns = array();
 		$values  = array();
-		
+
 		$column_placeholders = array();
 		$value_placeholders  = array();
-		
+
 		$class       = get_class($this);
 		$schema      = fORMSchema::retrieve($class);
 		$table       = fORM::tablize($class);
@@ -1299,28 +1299,28 @@ abstract class fActiveRecord
 			if ($schema->getColumnInfo($table, $column, 'auto_increment') && $schema->getColumnInfo($table, $column, 'not_null') && $this->values[$column] === NULL) {
 				continue;
 			}
-			
+
 			$value = fORM::scalarize($class, $column, $this->values[$column]);
 			if ($value === NULL && $info['not_null'] && $info['default'] !== NULL) {
-				$value = $info['default'];	
+				$value = $info['default'];
 			}
-			
+
 			$columns[] = $column;
 			$values[]  = $value;
-			
+
 			$column_placeholders[] = '%r';
 			$value_placeholders[]  = $info['placeholder'];
 		}
-		
+
 		$sql    = 'INSERT INTO %r (' . join(', ', $column_placeholders) . ') VALUES (' . join(', ', $value_placeholders) . ')';
 		$params = array($sql, $table);
 		$params = array_merge($params, $columns);
 		$params = array_merge($params, $values);
-		
-		return $params;	
+
+		return $params;
 	}
-	
-	
+
+
 	/**
 	 * Creates the fDatabase::translatedQuery() update statement params
 	 *
@@ -1330,41 +1330,41 @@ abstract class fActiveRecord
 	{
 		$class       = get_class($this);
 		$schema      = fORMSchema::retrieve($class);
-		
+
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table);
-		
+
 		$assignments = array();
 		$params      = array($table);
-			
+
 		foreach ($column_info as $column => $info) {
 			if ($info['auto_increment'] && !fActiveRecord::changed($this->values, $this->old_values, $column) && count($column_info) > 1) {
 				continue;
 			}
-			
+
 			$assignments[] = '%r = ' . $info['placeholder'];
-			
+
 			$value = fORM::scalarize($class, $column, $this->values[$column]);
 			if ($value === NULL && $info['not_null'] && $info['default'] !== NULL) {
-				$value = $info['default'];	
+				$value = $info['default'];
 			}
-			
+
 			$params[] = $column;
 			$params[] = $value;
 		}
-		
+
 		$sql = 'UPDATE %r SET ' . join(', ', $assignments) . ' WHERE ';
 		array_unshift($params, $sql);
-		
+
 		return fORMDatabase::addPrimaryKeyWhereParams($schema, $params, $table, $table, $this->values, $this->old_values);
 	}
-	
-	
+
+
 	/**
 	 * Deletes a record from the database, but does not destroy the object
-	 * 
+	 *
 	 * This method will start a database transaction if one is not already active.
-	 * 
+	 *
 	 * @param  boolean $force_cascade  When TRUE, this will cause all child objects to be deleted, even if the ON DELETE clause is RESTRICT or NO ACTION
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
@@ -1373,25 +1373,25 @@ abstract class fActiveRecord
 		// This flag prevents recursive relationships, such as one-to-one
 		// relationships, from creating infinite loops
 		if (!empty($this->cache['fActiveRecord::delete()::being_deleted'])) {
-			return;	
+			return;
 		}
-		
+
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'delete')) {
 			return $this->__call('delete', array());
 		}
-		
+
 		if (!$this->exists()) {
 			throw new fProgrammerException(
 				'This %s object does not yet exist in the database, and thus can not be deleted',
 				fORM::getRecordName($class)
 			);
 		}
-		
+
 		$db     = fORMDatabase::retrieve($class, 'write');
 		$schema = fORMSchema::retrieve($class);
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::delete()',
@@ -1400,17 +1400,17 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$table = fORM::tablize($class);
-		
+
 		$inside_db_transaction = $db->isInsideTransaction();
-		
+
 		try {
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('BEGIN');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-begin::delete()',
@@ -1419,21 +1419,21 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			// Check to ensure no foreign dependencies prevent deletion
 			$one_to_one_relationships   = $schema->getRelationships($table, 'one-to-one');
 			$one_to_many_relationships  = $schema->getRelationships($table, 'one-to-many');
 			$many_to_many_relationships = $schema->getRelationships($table, 'many-to-many');
-			
+
 			$relationships = array_merge($one_to_one_relationships, $one_to_many_relationships, $many_to_many_relationships);
 			$records_sets_to_delete = array();
-			
+
 			$restriction_messages = array();
-			
+
 			$this->cache['fActiveRecord::delete()::being_deleted'] = TRUE;
-			
+
 			foreach ($relationships as $relationship) {
-				
+
 				// Figure out how to check for related records
 				if (isset($relationship['join_table'])) {
 					$type = 'many-to-many';
@@ -1441,34 +1441,34 @@ abstract class fActiveRecord
 					$type = in_array($relationship, $one_to_one_relationships) ? 'one-to-one' : 'one-to-many';
 				}
 				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
-				
+
 				$related_class = fORM::classize($relationship['related_table']);
-				
+
 				if ($type == 'one-to-one') {
 					$method         = 'create' . $related_class;
 					$related_record = $this->$method($route);
 					if (!$related_record->exists()) {
 						continue;
-					} 
-					
+					}
+
 				} else {
 					$method     = 'build' . fGrammar::pluralize($related_class);
 					$record_set = $this->$method($route);
 					if (!$record_set->count()) {
 						continue;
 					}
-					
+
 					if ($type == 'one-to-many' && $relationship['on_delete'] == 'cascade') {
 						$records_sets_to_delete[] = $record_set;
 					}
 				}
-				
+
 				// If we are focing the cascade we have to delete child records and join table entries before this record
 				if ($force_cascade) {
-					
+
 					if ($type == 'one-to-one') {
 						$related_record->delete($force_cascade);
-						
+
 					// For one-to-many we explicitly delete all of the records
 					} elseif ($type == 'one-to-many') {
 						foreach ($record_set as $record) {
@@ -1476,12 +1476,12 @@ abstract class fActiveRecord
 								$record->delete($force_cascade);
 							}
 						}
-					
+
 					// For many-to-many relationships we explicitly delete the join table entries
 					} elseif ($type == 'many-to-many') {
 						$join_column_placeholder = $schema->getColumnInfo($relationship['join_table'], $relationship['join_column'], 'placeholder');
 						$column_get_method       = 'get' . fGrammar::camelize($relationship['column'], TRUE);
-						
+
 						$db->translatedQuery(
 							$db->escape(
 								'DELETE FROM %r WHERE %r = ',
@@ -1489,16 +1489,16 @@ abstract class fActiveRecord
 								$relationship['join_column']
 							) . $join_column_placeholder,
 							$this->$column_get_method()
-						);		
+						);
 					}
-				
+
 				// Otherwise we have a restriction and we can to create a nice error message for the user
 				} elseif ($relationship['on_delete'] == 'restrict' || $relationship['on_delete'] == 'no_action') {
-					
+
 					$related_class_name  = fORM::classize($relationship['related_table']);
 					$related_class_name  = fORM::getRelatedClass($class, $related_class_name);
 					$related_record_name = fORM::getRecordName($related_class_name);
-					
+
 					if ($type == 'one-to-one') {
 						$restriction_messages[] = self::compose("A %s references it", $related_record_name);
 					} else {
@@ -1507,22 +1507,22 @@ abstract class fActiveRecord
 					}
 				}
 			}
-			
+
 			if ($restriction_messages) {
 				throw new fValidationException(
 					self::compose('This %s can not be deleted because:', fORM::getRecordName($class)),
 					$restriction_messages
 				);
 			}
-			
-			
+
+
 			// Delete this record
 			$params = array('DELETE FROM %r WHERE ', $table);
 			$params = fORMDatabase::addPrimaryKeyWhereParams($schema, $params, $table, $table, $this->values, $this->old_values);
-			
+
 			$result = call_user_func_array($db->translatedQuery, $params);
-			
-			
+
+
 			// Delete related records to ensure any PHP-level cleanup is done
 			foreach ($records_sets_to_delete as $record_set) {
 				foreach ($record_set as $record) {
@@ -1531,9 +1531,9 @@ abstract class fActiveRecord
 					}
 				}
 			}
-			
+
 			unset($this->cache['fActiveRecord::delete()::being_deleted']);
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'pre-commit::delete()',
@@ -1542,11 +1542,11 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('COMMIT');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-commit::delete()',
@@ -1555,13 +1555,13 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 		} catch (fException $e) {
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('ROLLBACK');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-rollback::delete()',
@@ -1570,7 +1570,7 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			// Check to see if the validation exception came from a related record, and fix the message
 			if ($e instanceof fValidationException) {
 				$message = $e->getMessage();
@@ -1579,25 +1579,25 @@ abstract class fActiveRecord
 					$regex       = self::compose('This %s can not be deleted because:', '__');
 					$regex_parts = explode('__', $regex);
 					$regex       = '#(' . preg_quote($regex_parts[0], '#') . ').*?(' . preg_quote($regex_parts[0], '#') . ')#';
-					
+
 					$message = preg_replace($regex, '\1' . strtr(fORM::getRecordName($class), array('\\' => '\\\\', '$' => '\\$')) . '\2', $message);
-					
+
 					$find          = self::compose("One or more %s references it", '__');
 					$find_parts    = explode('__', $find);
 					$find_regex    = '#' . preg_quote($find_parts[0], '#') . '(.*?)' . preg_quote($find_parts[1], '#') . '#';
-					
+
 					$replace       = self::compose("One or more %s indirectly references it", '__');
 					$replace_parts = explode('__', $replace);
 					$replace_regex = strtr($replace_parts[0], array('\\' => '\\\\', '$' => '\\$')) . '\1' . strtr($replace_parts[1], array('\\' => '\\\\', '$' => '\\$'));
-					
+
 					$message = preg_replace($find_regex, $replace_regex, $regex);
 					throw new fValidationException($message);
 				}
 			}
-			
+
 			throw $e;
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::delete()',
@@ -1606,7 +1606,7 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		// If we just deleted an object that has an auto-incrementing primary key,
 		// lets delete that value from the object since it is no longer valid
 		$pk_columns  = $schema->getKeys($table, 'primary');
@@ -1614,22 +1614,22 @@ abstract class fActiveRecord
 			$this->values[$pk_columns[0]] = NULL;
 			unset($this->old_values[$pk_columns[0]]);
 		}
-		
+
 		return $this;
 	}
-	
-	
+
+
 	/**
 	 * Retrieves a value from the record and prepares it for output into an HTML form element.
-	 * 
+	 *
 	 * Below are the transformations performed:
-	 *  
+	 *
 	 *  - **varchar, char, text**: will run through fHTML::encode(), if `TRUE` is passed the text will be run through fHTML::convertNewLinks() and fHTML::makeLinks()
 	 *  - **float**: takes 1 parameter to specify the number of decimal places
 	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
 	 *  - **objects**: the object will be converted to a string by `__toString()` or a `(string)` cast and then will be run through fHTML::encode()
 	 *  - **all other data types**: the value will be run through fHTML::encode()
-	 * 
+	 *
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  string $formatting  The formatting string
 	 * @return string  The encoded value for the column specified
@@ -1639,20 +1639,20 @@ abstract class fActiveRecord
 		$column_exists = array_key_exists($column, $this->values);
 		$method_name   = 'get' . fGrammar::camelize($column, TRUE);
 		$method_exists = method_exists($this, $method_name);
-		
+
 		if (!$column_exists && !$method_exists) {
 			throw new fProgrammerException(
 				'The column specified, %s, does not exist',
 				$column
 			);
 		}
-		
+
 		if ($column_exists) {
 			$class       = get_class($this);
 			$schema      = fORMSchema::retrieve($class);
 			$table       = fORM::tablize($class);
 			$column_type = $schema->getColumnInfo($table, $column, 'type');
-			
+
 			// Ensure the programmer is calling the function properly
 			if ($column_type == 'blob') {
 				throw new fProgrammerException(
@@ -1660,23 +1660,23 @@ abstract class fActiveRecord
 					$column
 				);
 			}
-			
+
 			if ($formatting !== NULL && in_array($column_type, array('boolean', 'integer'))) {
 				throw new fProgrammerException(
 					'The column specified, %s, does not support any formatting options',
 					$column
 				);
 			}
-			
+
 		// If the column doesn't exist, we are just pulling the
 		// value from a get method, so treat it as text
 		} else {
-			$column_type = 'text';	
+			$column_type = 'text';
 		}
-		
+
 		// Grab the value for empty value checking
 		$value = $this->$method_name();
-		
+
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
@@ -1687,131 +1687,131 @@ abstract class fActiveRecord
 			}
 			$value = $value->format($formatting);
 		}
-		
+
 		// Other objects
 		if (is_object($value) && is_callable(array($value, '__toString'))) {
 			$value = $value->__toString();
 		} elseif (is_object($value)) {
-			$value = (string) $value;	
+			$value = (string) $value;
 		}
-		
+
 		// Make sure we don't mangle a non-float value
 		if ($column_type == 'float' && is_numeric($value)) {
 			$column_decimal_places = $schema->getColumnInfo($table, $column, 'decimal_places');
-			
+
 			// If the user passed in a formatting value, use it
 			if ($formatting !== NULL && is_numeric($formatting)) {
 				$decimal_places = (int) $formatting;
-				
+
 			// If the column has a pre-defined number of decimal places, use that
 			} elseif ($column_decimal_places !== NULL) {
 				$decimal_places = $column_decimal_places;
-			
+
 			// This figures out how many decimal places are part of the current value
 			} else {
 				$value_parts    = explode('.', $value);
 				$decimal_places = (!isset($value_parts[1])) ? 0 : strlen($value_parts[1]);
 			}
-			
+
 			return number_format($value, $decimal_places, '.', '');
 		}
-		
+
 		// Turn line-breaks into breaks for text fields and add links
 		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
 			return fHTML::makeLinks(fHTML::convertNewlines(fHTML::encode($value)));
 		}
-		
+
 		// Anything that has gotten to here is a string value or is not the proper data type for the column that contains it
 		return fHTML::encode($value);
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if the record exists in the database
-	 * 
+	 *
 	 * @return boolean  If the record exists in the database
 	 */
 	public function exists()
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'exists')) {
 			return $this->__call('exists', array());
 		}
-		
+
 		$schema     = fORMSchema::retrieve($class);
 		$table      = fORM::tablize($class);
 		$pk_columns = $schema->getKeys($table, 'primary');
 		$exists     = FALSE;
-		
+
 		foreach ($pk_columns as $pk_column) {
 			$has_old = self::hasOld($this->old_values, $pk_column);
 			if (($has_old && self::retrieveOld($this->old_values, $pk_column) !== NULL) || (!$has_old && $this->values[$pk_column] !== NULL)) {
 				$exists = TRUE;
 			}
 		}
-		
+
 		return $exists;
 	}
-	
-	
+
+
 	/**
 	 * Loads a record from the database based on a UNIQUE key
-	 * 
+	 *
 	 * @throws fNotFoundException
-	 * 
+	 *
 	 * @param  array $values  The UNIQUE key values to try and load with
 	 * @return void
 	 */
 	protected function fetchResultFromUniqueKey($values)
-	{		
+	{
 		$class = get_class($this);
-		
+
 		$db     = fORMDatabase::retrieve($class, 'read');
 		$schema = fORMSchema::retrieve($class);
-		
+
 		try {
 			if ($values === array_combine(array_keys($values), array_fill(0, sizeof($values), NULL))) {
-				throw new fExpectedException('The values specified for the unique key are all NULL');	
+				throw new fExpectedException('The values specified for the unique key are all NULL');
 			}
-			
+
 			$table  = fORM::tablize($class);
 			$params = array('SELECT * FROM %r WHERE ', $table);
-			
+
 			$column_info = $schema->getColumnInfo($table);
-			
+
 			$conditions = array();
 			foreach ($values as $column => $value) {
-				
+
 				// This makes sure the query performs the way an insert will
 				if ($value === NULL && $column_info[$column]['not_null'] && $column_info[$column]['default'] !== NULL) {
 					$value = $column_info[$column]['default'];
 				}
-				
+
 				$conditions[] = fORMDatabase::makeCondition($schema, $table, $column, '=', $value);
 				$params[] = $column;
-				$params[] = $value;	
+				$params[] = $value;
 			}
-			
+
 			$params[0] .= join(' AND ', $conditions);
-		
+
 			$result = call_user_func_array($db->translatedQuery, $params);
 			$result->tossIfNoRows();
-			
+
 		} catch (fExpectedException $e) {
 			throw new fNotFoundException(
 				'The %s requested could not be found',
 				fORM::getRecordName($class)
 			);
 		}
-		
+
 		return $result;
 	}
-	
-	
+
+
 	/**
 	 * Retrieves a value from the record
-	 * 
+	 *
 	 * @param  string $column  The name of the column to retrieve
 	 * @return mixed  The value for the column specified
 	 */
@@ -1825,11 +1825,11 @@ abstract class fActiveRecord
 		}
 		return $this->values[$column];
 	}
-	
-	
+
+
 	/**
 	 * Retrieves information about a column
-	 * 
+	 *
 	 * @param  string $column   The name of the column to inspect
 	 * @param  string $element  The metadata element to retrieve
 	 * @return mixed  The metadata array for the column, or the metadata element specified
@@ -1842,34 +1842,34 @@ abstract class fActiveRecord
 				$column
 			);
 		}
-		
+
 		$class  = get_class($this);
 		$table  = fORM::tablize($class);
 		$schema = fORMSchema::retrieve($class);
 		$info   = $schema->getColumnInfo($table, $column);
-		
+
 		if (!in_array($info['type'], array('varchar', 'char', 'text'))) {
 			unset($info['valid_values']);
 			unset($info['max_length']);
 		}
-		
+
 		if ($info['type'] != 'float') {
 			unset($info['decimal_places']);
 		}
-		
+
 		if ($info['type'] != 'integer') {
 			unset($info['auto_increment']);
 		}
-		
+
 		if (!in_array($info['type'], array('integer', 'float'))) {
 			unset($info['min_value']);
 			unset($info['max_value']);
 		}
-		
+
 		$info['feature'] = NULL;
-		
+
 		fORM::callInspectCallbacks(get_class($this), $column, $info);
-		
+
 		if ($element) {
 			if (!isset($info[$element]) && !array_key_exists($element, $info)) {
 				throw new fProgrammerException(
@@ -1880,16 +1880,16 @@ abstract class fActiveRecord
 			}
 			return $info[$element];
 		}
-		
+
 		return $info;
 	}
-	
-	
+
+
 	/**
 	 * Loads a record from the database
-	 * 
+	 *
 	 * @throws fNotFoundException  When the record could not be found in the database
-	 * 
+	 *
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function load()
@@ -1897,38 +1897,38 @@ abstract class fActiveRecord
 		$class  = get_class($this);
 		$db     = fORMDatabase::retrieve($class, 'read');
 		$schema = fORMSchema::retrieve($class);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'load')) {
 			return $this->__call('load', array());
 		}
-		
+
 		try {
 			$table = fORM::tablize($class);
 			$params = array('SELECT * FROM %r WHERE ', $table);
 			$params = fORMDatabase::addPrimaryKeyWhereParams($schema, $params, $table, $table, $this->values, $this->old_values);
-		
+
 			$result = call_user_func_array($db->translatedQuery, $params);
 			$result->tossIfNoRows();
-			
+
 		} catch (fExpectedException $e) {
 			throw new fNotFoundException(
 				'The %s requested could not be found',
 				fORM::getRecordName($class)
 			);
 		}
-		
+
 		$this->loadFromResult($result, TRUE);
-		
+
 		// Clears the cached related records so they get pulled from the database
 		$this->related_records = array();
-		
+
 		return $this;
 	}
-	
-	
+
+
 	/**
 	 * Loads a record from the database directly from a result object
-	 * 
+	 *
 	 * @param  Iterator $result               The result object to use for loading the current object
 	 * @param  boolean  $ignore_identity_map  If the identity map should be ignored and the values loaded no matter what
 	 * @return boolean  If the record was loaded from the identity map
@@ -1938,51 +1938,51 @@ abstract class fActiveRecord
 		$class  = get_class($this);
 		$table  = fORM::tablize($class);
 		$row    = $result->current();
-		
+
 		$db     = fORMDatabase::retrieve($class, 'read');
 		$schema = fORMSchema::retrieve($class);
-		
+
 		if (!isset(self::$unescape_map[$class])) {
 			self::$unescape_map[$class] = array();
 			$column_info                = $schema->getColumnInfo($table);
-			
+
 			foreach ($column_info as $column => $info) {
 				if (in_array($info['type'], array('blob', 'boolean', 'date', 'time', 'timestamp'))) {
 					self::$unescape_map[$class][$column] = $info['type'];
 				}
-			}	
+			}
 		}
-		
+
 		$pk_columns = $schema->getKeys($table, 'primary');
 		foreach ($pk_columns as $column) {
 			$value = $row[$column];
 			if ($value !== NULL && isset(self::$unescape_map[$class][$column])) {
 				$value = $db->unescape(self::$unescape_map[$class][$column], $value);
-			}	
-			
+			}
+
 			$this->values[$column] = fORM::objectify($class, $column, $value);
 			unset($row[$column]);
 		}
-		
+
 		$hash = self::hash($this->values, $class);
 		if (!$ignore_identity_map && $this->loadFromIdentityMap($this->values, $hash)) {
 			return TRUE;
 		}
-		
+
 		foreach ($row as $column => $value) {
 			if ($value !== NULL && isset(self::$unescape_map[$class][$column])) {
 				$value = $db->unescape(self::$unescape_map[$class][$column], $value);
 			}
-			
+
 			$this->values[$column] = fORM::objectify($class, $column, $value);
 		}
-		
+
 		// Save this object to the identity map
 		if (!isset(self::$identity_map[$class])) {
-			self::$identity_map[$class] = array(); 		
+			self::$identity_map[$class] = array();
 		}
 		self::$identity_map[$class][$hash] = $this;
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::loadFromResult()',
@@ -1991,14 +1991,14 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		return FALSE;
 	}
-	
-	
+
+
 	/**
 	 * Tries to load the object (via references to class vars) from the fORM identity map
-	 * 
+	 *
 	 * @param  array  $row   The data source for the primary key values
 	 * @param  string $hash  The unique hash for this record
 	 * @return boolean  If the load was successful
@@ -2006,23 +2006,23 @@ abstract class fActiveRecord
 	protected function loadFromIdentityMap($row, $hash)
 	{
 		$class = get_class($this);
-		
+
 		if (!isset(self::$identity_map[$class])) {
 			return FALSE;
 		}
-		
+
 		if (!isset(self::$identity_map[$class][$hash])) {
 			return FALSE;
 		}
-		
+
 		$object = self::$identity_map[$class][$hash];
-		
+
 		// If we got a result back, it is the object we are creating
 		$this->cache           = &$object->cache;
 		$this->values          = &$object->values;
 		$this->old_values      = &$object->old_values;
 		$this->related_records = &$object->related_records;
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::loadFromIdentityMap()',
@@ -2031,24 +2031,24 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Sets the values for this record by getting values from the request through the fRequest class
-	 * 
+	 *
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function populate()
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'populate')) {
 			return $this->__call('populate', array());
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::populate()',
@@ -2057,10 +2057,10 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
-		
+
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
@@ -2069,7 +2069,7 @@ abstract class fActiveRecord
 				$this->$method(fRequest::get($column, $cast_to));
 			}
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::populate()',
@@ -2078,23 +2078,23 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		return $this;
 	}
-	
-	
+
+
 	/**
 	 * Retrieves a value from the record and prepares it for output into html.
-	 * 
+	 *
 	 * Below are the transformations performed:
-	 * 
+	 *
 	 *  - **varchar, char, text**: will run through fHTML::prepare(), if `TRUE` is passed the text will be run through fHTML::convertNewLinks() and fHTML::makeLinks()
 	 *  - **boolean**: will return `'Yes'` or `'No'`
 	 *  - **integer**: will add thousands/millions/etc. separators
 	 *  - **float**: will add thousands/millions/etc. separators and takes 1 parameter to specify the number of decimal places
 	 *  - **date, time, timestamp**: `format()` will be called on the fDate/fTime/fTimestamp object with the 1 parameter specified
 	 *  - **objects**: the object will be converted to a string by `__toString()` or a `(string)` cast and then will be run through fHTML::prepare()
-	 * 
+	 *
 	 * @param  string $column      The name of the column to retrieve
 	 * @param  mixed  $formatting  The formatting parameter, if applicable
 	 * @return string  The formatted value for the column specified
@@ -2104,22 +2104,22 @@ abstract class fActiveRecord
 		$column_exists = array_key_exists($column, $this->values);
 		$method_name   = 'get' . fGrammar::camelize($column, TRUE);
 		$method_exists = method_exists($this, $method_name);
-		
+
 		if (!$column_exists && !$method_exists) {
 			throw new fProgrammerException(
 				'The column specified, %s, does not exist',
 				$column
 			);
 		}
-		
+
 		if ($column_exists) {
 			$class  = get_class($this);
 			$table  = fORM::tablize($class);
 			$schema = fORMSchema::retrieve($class);
-			
+
 			$column_info = $schema->getColumnInfo($table, $column);
 			$column_type = $column_info['type'];
-			
+
 			// Ensure the programmer is calling the function properly
 			if ($column_type == 'blob') {
 				throw new fProgrammerException(
@@ -2127,23 +2127,23 @@ abstract class fActiveRecord
 					$column
 				);
 			}
-			
+
 			if ($formatting !== NULL && in_array($column_type, array('integer', 'boolean'))) {
 				throw new fProgrammerException(
 					'The column specified, %s, does not support any formatting options',
 					$column
 				);
 			}
-		
+
 		// If the column doesn't exist, we are just pulling the
 		// value from a get method, so treat it as text
 		} else {
-			$column_type = 'text';	
+			$column_type = 'text';
 		}
-		
+
 		// Grab the value for empty value checking
 		$value = $this->$method_name();
-		
+
 		// Date/time objects
 		if (is_object($value) && in_array($column_type, array('date', 'time', 'timestamp'))) {
 			if ($formatting === NULL) {
@@ -2154,46 +2154,46 @@ abstract class fActiveRecord
 			}
 			return $value->format($formatting);
 		}
-		
+
 		// Other objects
 		if (is_object($value) && is_callable(array($value, '__toString'))) {
 			$value = $value->__toString();
 		} elseif (is_object($value)) {
-			$value = (string) $value;	
+			$value = (string) $value;
 		}
-		
+
 		// Ensure the value matches the data type specified to prevent mangling
 		if ($column_type == 'boolean' && is_bool($value)) {
 			return ($value) ? 'Yes' : 'No';
 		}
-		
+
 		if ($column_type == 'integer' && is_numeric($value)) {
 			return number_format($value, 0, '', ',');
 		}
-		
+
 		if ($column_type == 'float' && is_numeric($value)) {
 			// If the user passed in a formatting value, use it
 			if ($formatting !== NULL && is_numeric($formatting)) {
 				$decimal_places = (int) $formatting;
-				
+
 			// If the column has a pre-defined number of decimal places, use that
 			} elseif ($column_info['decimal_places'] !== NULL) {
 				$decimal_places = $column_info['decimal_places'];
-			
+
 			// This figures out how many decimal places are part of the current value
 			} else {
 				$value_parts    = explode('.', $value);
 				$decimal_places = (!isset($value_parts[1])) ? 0 : strlen($value_parts[1]);
 			}
-			
+
 			return number_format($value, $decimal_places, '.', ',');
 		}
-		
+
 		// Turn line-breaks into breaks for text fields and add links
 		if ($formatting === TRUE && in_array($column_type, array('varchar', 'char', 'text'))) {
 			return fHTML::makeLinks(fHTML::convertNewlines(fHTML::prepare($value)));
 		}
-		
+
 		// Anything that has gotten to here is a string value, or is not the
 		// proper data type for the column, so we just make sure it is marked
 		// up properly for display in HTML
@@ -2210,14 +2210,14 @@ abstract class fActiveRecord
 	public function reflect($include_doc_comments=FALSE)
 	{
 		$signatures = array();
-		
+
 		$class        = get_class($this);
 		$table        = fORM::tablize($class);
 		$schema       = fORMSchema::retrieve($class);
 		$columns_info = $schema->getColumnInfo($table);
 		foreach ($columns_info as $column => $column_info) {
 			$camelized_column = fGrammar::camelize($column, TRUE);
-			
+
 			// Get and set methods
 			$signature = '';
 			if ($include_doc_comments) {
@@ -2234,7 +2234,7 @@ abstract class fActiveRecord
 				if ($fixed_type == 'time') {
 					$fixed_type = 'fTime';
 				}
-				
+
 				$signature .= "/**\n";
 				$signature .= " * Gets the current value of " . $column . "\n";
 				$signature .= " * \n";
@@ -2243,10 +2243,10 @@ abstract class fActiveRecord
 			}
 			$get_method = 'get' . $camelized_column;
 			$signature .= 'public function ' . $get_method . '()';
-			
+
 			$signatures[$get_method] = $signature;
-			
-			
+
+
 			$signature = '';
 			if ($include_doc_comments) {
 				$fixed_type = $column_info['type'];
@@ -2262,7 +2262,7 @@ abstract class fActiveRecord
 				if ($fixed_type == 'time') {
 					$fixed_type = 'fTime|string';
 				}
-				
+
 				$signature .= "/**\n";
 				$signature .= " * Sets the value for " . $column . "\n";
 				$signature .= " * \n";
@@ -2272,24 +2272,24 @@ abstract class fActiveRecord
 			}
 			$set_method = 'set' . $camelized_column;
 			$signature .= 'public function ' . $set_method . '($' . $column . ')';
-			
+
 			$signatures[$set_method] = $signature;
-			
-			
+
+
 			// The encode method
 			$signature = '';
 			if ($include_doc_comments) {
 				$signature .= "/**\n";
 				$signature .= " * Encodes the value of " . $column . " for output into an HTML form\n";
 				$signature .= " * \n";
-				
+
 				if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
 					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
 				}
 				if (in_array($column_info['type'], array('float'))) {
 					$signature .= " * @param  integer \$decimal_places  The number of decimal places to include - if not specified will default to the precision of the column or the current value\n";
 				}
-				
+
 				$signature .= " * @return string  The HTML form-ready value\n";
 				$signature .= " */\n";
 			}
@@ -2302,17 +2302,17 @@ abstract class fActiveRecord
 				$signature .= '$decimal_places=NULL';
 			}
 			$signature .= ')';
-			
+
 			$signatures[$encode_method] = $signature;
-			
-			
+
+
 			// The prepare method
 			$signature = '';
 			if ($include_doc_comments) {
 				$signature .= "/**\n";
 				$signature .= " * Prepares the value of " . $column . " for output into HTML\n";
 				$signature .= " * \n";
-				
+
 				if (in_array($column_info['type'], array('time', 'timestamp', 'date'))) {
 					$signature .= " * @param  string \$date_formatting_string  A date() compatible formatting string\n";
 				}
@@ -2322,7 +2322,7 @@ abstract class fActiveRecord
 				if (in_array($column_info['type'], array('varchar', 'char', 'text'))) {
 					$signature .= " * @param  boolean \$create_links_and_line_breaks  Will cause links to be automatically converted into [a] tags and line breaks into [br] tags \n";
 				}
-				
+
 				$signature .= " * @return string  The HTML-ready value\n";
 				$signature .= " */\n";
 			}
@@ -2338,10 +2338,10 @@ abstract class fActiveRecord
 				$signature .= '$create_links_and_line_breaks=FALSE';
 			}
 			$signature .= ')';
-			
+
 			$signatures[$prepare_method] = $signature;
-			
-			
+
+
 			// The inspect method
 			$signature = '';
 			if ($include_doc_comments) {
@@ -2367,45 +2367,45 @@ abstract class fActiveRecord
 			}
 			$inspect_method = 'inspect' . $camelized_column;
 			$signature .= 'public function ' . $inspect_method . '($element=NULL)';
-			
+
 			$signatures[$inspect_method] = $signature;
 		}
-		
+
 		fORMRelated::reflect($class, $signatures, $include_doc_comments);
-		
+
 		fORM::callReflectCallbacks($class, $signatures, $include_doc_comments);
-		
+
 		$reflection = new ReflectionClass($class);
 		$methods    = $reflection->getMethods();
-		
+
 		foreach ($methods as $method) {
 			$signature = '';
-			
+
 			if (!$method->isPublic() || $method->getName() == '__call') {
 				continue;
 			}
-			
+
 			if ($method->isFinal()) {
 				$signature .= 'final ';
 			}
-			
+
 			if ($method->isAbstract()) {
 				$signature .= 'abstract ';
 			}
-			
+
 			if ($method->isStatic()) {
 				$signature .= 'static ';
 			}
-			
+
 			$signature .= 'public function ';
-			
+
 			if ($method->returnsReference()) {
 				$signature .= '&';
 			}
-			
+
 			$signature .= $method->getName();
 			$signature .= '(';
-			
+
 			$parameters = $method->getParameters();
 			foreach ($parameters as $parameter) {
 				if (substr($signature, -1) == '(') {
@@ -2413,18 +2413,18 @@ abstract class fActiveRecord
 				} else {
 					$signature .= ', ';
 				}
-				
+
 				if ($parameter->isArray()) {
-					$signature .= 'array ';	
+					$signature .= 'array ';
 				}
 				if ($parameter->getClass()) {
-					$signature .= $parameter->getClass()->getName() . ' ';	
+					$signature .= $parameter->getClass()->getName() . ' ';
 				}
 				if ($parameter->isPassedByReference()) {
-					$signature .= '&';	
+					$signature .= '&';
 				}
 				$signature .= '$' . $parameter->getName();
-				
+
 				if ($parameter->isDefaultValueAvailable()) {
 					$val = var_export($parameter->getDefaultValue(), TRUE);
 					if ($val == 'true') {
@@ -2441,9 +2441,9 @@ abstract class fActiveRecord
 					$signature .= '=' . $val;
 				}
 			}
-			
+
 			$signature .= ')';
-			
+
 			if ($include_doc_comments) {
 				$comment = $method->getDocComment();
 				$comment = preg_replace('#^\t+#m', '', $comment);
@@ -2451,7 +2451,7 @@ abstract class fActiveRecord
 			}
 			$signatures[$method->getName()] = $signature;
 		}
-		
+
 		ksort($signatures);
 		
 		return $signatures;
@@ -2460,18 +2460,18 @@ abstract class fActiveRecord
 	
 	/**
 	 * Generates a clone of the current record, removing any auto incremented primary key value and allowing for replicating related records
-	 * 
+	 *
 	 * This method will accept three different sets of parameters:
-	 * 
+	 *
 	 *  - No parameters: this object will be cloned
 	 *  - A single `TRUE` value: this object plus all many-to-many associations and all child records (recursively) will be cloned
 	 *  - Any number of plural related record class names: the many-to-many associations or child records that correspond to the classes specified will be cloned
-	 * 
+	 *
 	 * The class names specified can be a simple class name if there is only a
-	 * single route between the two corresponding database tables. If there is 
+	 * single route between the two corresponding database tables. If there is
 	 * more than one route between the two tables, the class name should be
 	 * substituted with a string in the format `'RelatedClass{route}'`.
-	 * 
+	 *
 	 * @param  string $related_class  The plural related class to replicate - see method description for details
 	 * @param  string ...
 	 * @return fActiveRecord  The cloned record
@@ -2489,52 +2489,52 @@ abstract class fActiveRecord
 		);
 		
 		fActiveRecord::$replicate_level++;
-		
+
 		$class  = get_class($this);
 		$hash   = self::hash($this->values, $class);
 		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
-			
+
 		// If the object has not been replicated yet, do it now
 		if (!isset(fActiveRecord::$replicate_map[$class])) {
 			fActiveRecord::$replicate_map[$class] = array();
 		}
 		if (!isset(fActiveRecord::$replicate_map[$class][$hash])) {
 			fActiveRecord::$replicate_map[$class][$hash] = clone $this;
-			
+
 			// We need the primary key to get a hash, otherwise certain recursive relationships end up losing members
 			$pk_columns = $schema->getKeys($table, 'primary');
 			if (sizeof($pk_columns) == 1 && $schema->getColumnInfo($table, $pk_columns[0], 'auto_increment')) {
 				fActiveRecord::$replicate_map[$class][$hash]->values[$pk_columns[0]] = $this->values[$pk_columns[0]];
 			}
-			
+
 		}
 		$clone = fActiveRecord::$replicate_map[$class][$hash];
-		
+
 		$parameters = func_get_args();
-		
+
 		$recursive                  = FALSE;
 		$many_to_many_relationships = $schema->getRelationships($table, 'many-to-many');
 		$one_to_many_relationships  = $schema->getRelationships($table, 'one-to-many');
-		
-		
+
+
 		// When just TRUE is passed we recursively replicate all related records
 		if (sizeof($parameters) == 1 && $parameters[0] === TRUE) {
 			$parameters = array();
 			$recursive  = TRUE;
-			
+
 			foreach ($many_to_many_relationships as $relationship) {
-				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['join_table'] . '}'; 		
+				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['join_table'] . '}';
 			}
 			foreach ($one_to_many_relationships as $relationship) {
-				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['related_column'] . '}'; 		
-			}			
+				$parameters[] = fGrammar::pluralize(fORM::classize($relationship['related_table'])) . '{' . $relationship['related_column'] . '}';
+			}
 		}
-		
+
 		$record_sets = array();
-		
+
 		foreach ($parameters as $parameter) {
-			
+
 			// Parse the Class{route} strings
 			if (strpos($parameter, '{') !== FALSE) {
 				$brace         = strpos($parameter, '{');
@@ -2548,36 +2548,36 @@ abstract class fActiveRecord
 				$related_table = fORM::tablize($related_class);
 				$route         = fORMSchema::getRouteName($schema, $table, $related_table);
 			}
-			
+
 			// Determine the kind of relationship
 			$many_to_many = FALSE;
 			$one_to_many  = FALSE;
-			
+
 			foreach ($many_to_many_relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table && $relationship['join_table'] == $route) {
-					$many_to_many = TRUE;	
+					$many_to_many = TRUE;
 					break;
 				}
 			}
-			
+
 			foreach ($one_to_many_relationships as $relationship) {
 				if ($relationship['related_table'] == $related_table && $relationship['related_column'] == $route) {
 					$one_to_many = TRUE;
 					break;
-				}	
+				}
 			}
-			
+
 			if (!$many_to_many && !$one_to_many) {
 				throw new fProgrammerException(
 					'The related class specified, %1$s, does not appear to be in a many-to-many or one-to-many relationship with %$2s',
 					$parameter,
 					get_class($this)
-				);	
+				);
 			}
-			
+
 			// Get the related records
 			$record_set = fORMRelated::buildRecords($class, $this->values, $this->related_records, $related_class, $route);
-			
+
 			// One-to-many records need to be replicated, possibly recursively
 			if ($one_to_many) {
 				if ($recursive) {
@@ -2589,13 +2589,13 @@ abstract class fActiveRecord
 				$record_set->call(
 					'set' . fGrammar::camelize($route, TRUE),
 					NULL
-				);	
+				);
 			}
-			
+
 			// Cause the related records to be associated with the new clone
 			fORMRelated::associateRecords($class, $clone->related_records, $related_class, $record_set, $route);
 		}
-		
+
 		fActiveRecord::$replicate_level--;
 		if (!fActiveRecord::$replicate_level) {
 			// This removes the primary keys we had added back in for proper duplicate detection
@@ -2606,10 +2606,10 @@ abstract class fActiveRecord
 					continue;
 				}
 				foreach ($records as $hash => $record) {
-					$record->values[$pk_columns[0]] = NULL;		
-				}	
+					$record->values[$pk_columns[0]] = NULL;
+				}
 			}
-			fActiveRecord::$replicate_map = array();	
+			fActiveRecord::$replicate_map = array();
 		}
 		
 		fORM::callHookCallbacks(
@@ -2634,11 +2634,11 @@ abstract class fActiveRecord
 		
 		return $clone;
 	}
-	
-	
+
+
 	/**
 	 * Sets a value to the record
-	 * 
+	 *
 	 * @param  string $column  The column to set the value to
 	 * @param  mixed  $value   The value to set
 	 * @return fActiveRecord  This record, to allow for method chaining
@@ -2656,10 +2656,10 @@ abstract class fActiveRecord
 		if ($value === '' || (is_string($value) && trim($value) === '')) {
 			$value = NULL;
 		}
-		
+
 		$class = get_class($this);
 		$value = fORM::objectify($class, $column, $value);
-		
+
 		// Float and int columns that look like numbers with commas will have the commas removed
 		if (is_string($value)) {
 			$table  = fORM::tablize($class);
@@ -2669,32 +2669,32 @@ abstract class fActiveRecord
 				$value = str_replace(',', '', $value);
 			}
 		}
-		
+
 		self::assign($this->values, $this->old_values, $column, $value);
-		
+
 		return $this;
 	}
-	
-	
+
+
 	/**
 	 * Stores a record in the database, whether existing or new
-	 * 
+	 *
 	 * This method will start database and filesystem transactions if they have
 	 * not already been started.
-	 * 
+	 *
 	 * @throws fValidationException  When ::validate() throws an exception
-	 * 
+	 *
 	 * @param  boolean $force_cascade  When storing related records, this will force deleting child records even if they have their own children in a relationship with an RESTRICT or NO ACTION for the ON DELETE clause
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function store($force_cascade=FALSE)
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'store')) {
 			return $this->__call('store', array());
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::store()',
@@ -2703,31 +2703,31 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$db     = fORMDatabase::retrieve($class, 'write');
 		$schema = fORMSchema::retrieve($class);
-		
+
 		try {
 			$table = fORM::tablize($class);
-			
+
 			// New auto-incrementing records require lots of special stuff, so we'll detect them here
 			$new_autoincrementing_record = FALSE;
 			if (!$this->exists()) {
 				$pk_columns           = $schema->getKeys($table, 'primary');
 				$pk_column            = $pk_columns[0];
 				$pk_auto_incrementing = $schema->getColumnInfo($table, $pk_column, 'auto_increment');
-				
+
 				if (sizeof($pk_columns) == 1 && $pk_auto_incrementing && !$this->values[$pk_column]) {
 					$new_autoincrementing_record = TRUE;
 				}
 			}
-			
+
 			$inside_db_transaction = $db->isInsideTransaction();
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('BEGIN');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-begin::store()',
@@ -2736,9 +2736,9 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			$this->validate();
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-validate::store()',
@@ -2747,33 +2747,33 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			// Storing main table
-			
+
 			if (!$this->exists()) {
 				$params = $this->constructInsertParams();
 			} else {
 				$params = $this->constructUpdateParams();
 			}
 			$result = call_user_func_array($db->translatedQuery, $params);
-			
-			
+
+
 			// If there is an auto-incrementing primary key, grab the value from the database
 			if ($new_autoincrementing_record) {
 				$this->set($pk_column, $result->getAutoIncrementedValue());
 			}
-			
-			
+
+
 			// Fix cascade updated columns for in-memory objects to prevent issues when saving
 			$one_to_one_relationships  = $schema->getRelationships($table, 'one-to-one');
 			$one_to_many_relationships = $schema->getRelationships($table, 'one-to-many');
-			
+
 			$relationships = array_merge($one_to_one_relationships, $one_to_many_relationships);
-			
+
 			foreach ($relationships as $relationship) {
 				$type  = in_array($relationship, $one_to_one_relationships) ? 'one-to-one' : 'one-to-many';
 				$route = fORMSchema::getRouteNameFromRelationship($type, $relationship);
-				
+
 				$related_table = $relationship['related_table'];
 				$related_class = fORM::classize($related_table);
 				$related_class = fORM::getRelatedClass($class, $related_class);
@@ -2781,19 +2781,19 @@ abstract class fActiveRecord
 				if ($relationship['on_update'] != 'cascade') {
 					continue;
 				}
-				
+
 				$column = $relationship['column'];
 				if (!fActiveRecord::changed($this->values, $this->old_values, $column)) {
 					continue;
 				}
-				
+
 				if (!isset($this->related_records[$related_table][$route]['record_set'])) {
 					continue;
 				}
-				
+
 				$record_set     = $this->related_records[$related_table][$route]['record_set'];
 				$related_column = $relationship['related_column'];
-				
+
 				$old_value      = fActiveRecord::retrieveOld($this->old_values, $column);
 				$value          = $this->values[$column];
 				
@@ -2813,11 +2813,11 @@ abstract class fActiveRecord
 					}
 				}
 			}
-			
+
 			// Storing *-to-many and one-to-one relationships
 			fORMRelated::store($class, $this->values, $this->related_records, $force_cascade);
-			
-			
+
+
 			fORM::callHookCallbacks(
 				$this,
 				'pre-commit::store()',
@@ -2826,11 +2826,11 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('COMMIT');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-commit::store()',
@@ -2839,13 +2839,13 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 		} catch (fException $e) {
-			
+
 			if (!$inside_db_transaction) {
 				$db->translatedQuery('ROLLBACK');
 			}
-			
+
 			fORM::callHookCallbacks(
 				$this,
 				'post-rollback::store()',
@@ -2854,15 +2854,15 @@ abstract class fActiveRecord
 				$this->related_records,
 				$this->cache
 			);
-			
+
 			if ($new_autoincrementing_record && self::hasOld($this->old_values, $pk_column)) {
 				$this->values[$pk_column] = self::retrieveOld($this->old_values, $pk_column);
 				unset($this->old_values[$pk_column]);
 			}
-			
+
 			throw $e;
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::store()',
@@ -2871,33 +2871,33 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$was_new = !$this->exists();
-		
+
 		// If we got here we succefully stored, so update old values to make exists() work
 		foreach ($this->values as $column => $value) {
 			$this->old_values[$column] = array($value);
 		}
-		
+
 		// If the object was just inserted into the database, save it to the identity map
 		if ($was_new) {
 			$hash = self::hash($this->values, $class);
-			
+
 			if (!isset(self::$identity_map[$class])) {
-				self::$identity_map[$class] = array(); 		
+				self::$identity_map[$class] = array();
 			}
-			self::$identity_map[$class][$hash] = $this;		
+			self::$identity_map[$class][$hash] = $this;
 		}
-		
+
 		return $this;
 	}
-	
-	
+
+
 	/**
 	 * Validates the values of the record against the database and any additional validation rules
-	 * 
+	 *
 	 * @throws fValidationException  When the record, or one of the associated records, violates one of the validation rules for the class or can not be properly stored in the database
-	 * 
+	 *
 	 * @param  boolean $return_messages      If an array of validation messages should be returned instead of an exception being thrown
 	 * @param  boolean $remove_column_names  If column names should be removed from the returned messages, leaving just the message itself
 	 * @return void|array  If $return_messages is TRUE, an array of validation messages will be returned
@@ -2905,13 +2905,13 @@ abstract class fActiveRecord
 	public function validate($return_messages=FALSE, $remove_column_names=FALSE)
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'validate')) {
 			return $this->__call('validate', array($return_messages));
 		}
-		
+
 		$validation_messages = array();
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::validate()',
@@ -2921,15 +2921,15 @@ abstract class fActiveRecord
 			$this->cache,
 			$validation_messages
 		);
-		
+
 		// Validate the local values
 		$local_validation_messages = fORMValidation::validate($this, $this->values, $this->old_values);
-		
+
 		// Validate related records
 		$related_validation_messages = fORMValidation::validateRelated($this, $this->values, $this->related_records);
-		
+
 		$validation_messages = array_merge($validation_messages, $local_validation_messages, $related_validation_messages);
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::validate()',
@@ -2942,14 +2942,14 @@ abstract class fActiveRecord
 		
 		$validation_messages = fORMValidation::replaceMessages($class, $validation_messages);
 		$validation_messages = fORMValidation::reorderMessages($class, $validation_messages);
-		
+
 		if ($return_messages) {
 			if ($remove_column_names) {
 				$validation_messages = fValidationException::removeFieldNames($validation_messages);
 			}
 			return $validation_messages;
 		}
-		
+
 		if (!empty($validation_messages)) {
 			throw new fValidationException(
 				'The following problems were found:',
@@ -2970,10 +2970,10 @@ abstract class fActiveRecord
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE

@@ -5,7 +5,7 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
@@ -71,22 +71,22 @@ class fORM
 	const registerReflectCallback    = 'fORM::registerReflectCallback';
 	const registerReplicateCallback  = 'fORM::registerReplicateCallback';
 	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
-	const replicate                  = 'fORM::replicate'; 
+	const replicate                  = 'fORM::replicate';
 	const reset                      = 'fORM::reset';
 	const scalarize                  = 'fORM::scalarize';
 	const tablize                    = 'fORM::tablize';
-	
-	
+
+
 	/**
 	 * An array of `{method} => {callback}` mappings for fActiveRecord
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $active_record_method_callbacks = array();
-	
+
 	/**
 	 * Cache for repetitive computation
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $cache = array(
@@ -94,74 +94,74 @@ class fORM
 		'getActiveRecordMethod' => array(),
 		'objectify'             => array()
 	);
-	
+
 	/**
 	 * Custom mappings for class -> database
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $class_database_map = array(
 		'fActiveRecord' => 'default'
 	);
-	
+
 	/**
 	 * Custom mappings for class <-> table
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $class_table_map = array();
-	
+
 	/**
 	 * Custom column names for columns in fActiveRecord classes
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $column_names = array();
-	
+
 	/**
 	 * Tracks callbacks registered for various fActiveRecord hooks
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $hook_callbacks = array();
-	
+
 	/**
 	 * Callbacks for ::callInspectCallbacks()
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $inspect_callbacks = array();
-	
+
 	/**
 	 * Callbacks for ::objectify()
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $objectify_callbacks = array();
-	
+
 	/**
 	 * Custom record names for fActiveRecord classes
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $record_names = array(
 		'fActiveRecord' => 'Active Record'
 	);
-	
+
 	/**
 	 * An array of `{method} => {callback}` mappings for fRecordSet
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $record_set_method_callbacks = array();
-	
+
 	/**
 	 * Callbacks for ::callReflectCallbacks()
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $reflect_callbacks = array();
-	
+
 	/**
 	 * A cache for resolving related class names for fActiveRecord classes in a PHP 5.3 namespace
 	 * 
@@ -171,24 +171,24 @@ class fORM
 	
 	/**
 	 * Callbacks for ::replicate()
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $replicate_callbacks = array();
-	
+
 	/**
 	 * Callbacks for ::scalarize()
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $scalarize_callbacks = array();
-	
-	
+
+
 	/**
 	 * Calls the hook callbacks for the class and hook specified
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  fActiveRecord $object            The instance of the class to call the hook for
 	 * @param  string        $hook              The hook to call
 	 * @param  array         &$values           The current values of the record
@@ -201,22 +201,22 @@ class fORM
 	static public function callHookCallbacks($object, $hook, &$values, &$old_values, &$related_records, &$cache, &$parameter=NULL)
 	{
 		$class = get_class($object);
-		
+
 		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return;
 		}
-		
+
 		// Get all of the callbacks for this hook, both for this class or all classes
 		$callbacks = array();
-		
+
 		if (isset(self::$hook_callbacks[$class][$hook])) {
 			$callbacks = array_merge($callbacks, self::$hook_callbacks[$class][$hook]);
 		}
-		
+
 		if (isset(self::$hook_callbacks['*'][$hook])) {
 			$callbacks = array_merge($callbacks, self::$hook_callbacks['*'][$hook]);
 		}
-		
+
 		foreach ($callbacks as $callback) {
 			call_user_func_array(
 				$callback,
@@ -232,13 +232,13 @@ class fORM
 			);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Calls all inspect callbacks for the class and column specified
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class      The class to inspect the column of
 	 * @param  string $column     The column to inspect
 	 * @param  array  &$metadata  The associative array of data about the column
@@ -249,7 +249,7 @@ class fORM
 		if (!isset(self::$inspect_callbacks[$class][$column])) {
 			return;
 		}
-		
+
 		foreach (self::$inspect_callbacks[$class][$column] as $callback) {
 			// This is the only way to pass by reference
 			$parameters = array(
@@ -260,13 +260,13 @@ class fORM
 			call_user_func_array($callback, $parameters);
 		}
 	}
-	
-	
+
+
 	/**
 	 * Calls all reflect callbacks for the class passed
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string  $class                 The class to call the callbacks for
 	 * @param  array   &$signatures           The associative array of `{method_name} => {signature}`
 	 * @param  boolean $include_doc_comments  If the doc comments should be included in the signature
@@ -277,7 +277,7 @@ class fORM
 		if (!isset(self::$reflect_callbacks[$class]) && !isset(self::$reflect_callbacks['*'])) {
 			return;
 		}
-		
+
 		if (!empty(self::$reflect_callbacks['*'])) {
 			foreach (self::$reflect_callbacks['*'] as $callback) {
 				// This is the only way to pass by reference
@@ -287,9 +287,9 @@ class fORM
 					$include_doc_comments
 				);
 				call_user_func_array($callback, $parameters);
-			}	
+			}
 		}
-		
+
 		if (!empty(self::$reflect_callbacks[$class])) {
 			foreach (self::$reflect_callbacks[$class] as $callback) {
 				// This is the only way to pass by reference
@@ -302,13 +302,13 @@ class fORM
 			}
 		}
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if any (or a specific) callback has been registered for a specific hook
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class     The name of the class
 	 * @param  string $hook      The hook to check
 	 * @param  array  $callback  The specific callback to check for
@@ -319,30 +319,30 @@ class fORM
 		if (empty(self::$hook_callbacks[$class][$hook]) && empty(self::$hook_callbacks['*'][$hook])) {
 			return FALSE;
 		}
-		
+
 		if (!$callback) {
 			return TRUE;
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		if (!empty(self::$hook_callbacks[$class][$hook]) && in_array($callback, self::$hook_callbacks[$class][$hook])) {
-			return TRUE;	
+			return TRUE;
 		}
-		
+
 		if (!empty(self::$hook_callbacks['*'][$hook]) && in_array($callback, self::$hook_callbacks['*'][$hook])) {
-			return TRUE;	
+			return TRUE;
 		}
-		
+
 		return FALSE;
 	}
-	
-	
+
+
 	/**
 	 * Takes a table and turns it into a class name - uses custom mapping if set
-	 * 
+	 *
 	 * @param  string $table  The table name
 	 * @return string  The class name
 	 */
@@ -352,19 +352,19 @@ class fORM
 			$class = fGrammar::camelize(fGrammar::singularize($table), TRUE);
 			self::$class_table_map[$class] = $table;
 		}
-		
+
 		return $class;
 	}
-	
-	
+
+
 	/**
 	 * Will dynamically create an fActiveRecord-based class for a database table
-	 * 
+	 *
 	 * Normally this would be called from an `__autoload()` function.
-	 * 
+	 *
 	 * This method will only create classes for tables in the default ORM
 	 * database.
-	 * 
+	 *
 	 * @param  string $class  The name of the class to create
 	 * @return void
 	 */
@@ -380,61 +380,61 @@ class fORM
 			eval('class ' . $class . ' extends fActiveRecord { };');
 			return;
 		}
-		
+
 		throw new fProgrammerException(
 			'The class specified, %s, does not correspond to a database table',
 			$class
 		);
 	}
-	
-	
+
+
 	/**
 	 * Enables caching on the fDatabase, fSQLTranslation and fSchema objects used for the ORM
-	 * 
+	 *
 	 * This method will cache database schema information to the three objects
 	 * that use it during normal ORM operation: fDatabase, fSQLTranslation and
 	 * fSchema. To allow for schema changes without having to manually clear
 	 * the cache, all cached information will be cleared if any
 	 * fUnexpectedException objects are thrown.
-	 * 
+	 *
 	 * This method should be called right after fORMDatabase::attach().
-	 *          
+	 *
 	 * @param  fCache $cache          The object to cache schema information to
 	 * @param  string $database_name  The database to enable caching for
-	 * @param  string $key_token      This is a token that is used in cache keys to prevent conflicts for server-wide caches - when non-NULL the document root is used 
+	 * @param  string $key_token      This is a token that is used in cache keys to prevent conflicts for server-wide caches - when non-NULL the document root is used
 	 * @return void
 	 */
 	static public function enableSchemaCaching($cache, $database_name='default', $key_token=NULL)
 	{
 		if ($key_token === NULL) {
-			$key_token = $_SERVER['DOCUMENT_ROOT'];	
+			$key_token = $_SERVER['DOCUMENT_ROOT'];
 		}
 		$token = 'fORM::' . $database_name . '::' . $key_token . '::';
-		
+
 		$db = fORMDatabase::retrieve('name:' . $database_name);
 		$db->enableCaching($cache, $token);
 		fException::registerCallback($db->clearCache, 'fUnexpectedException');
-		
+
 		$sql_translation = $db->getSQLTranslation();
 		$sql_translation->enableCaching($cache, $token);
-		
+
 		$schema = fORMSchema::retrieve('name:' . $database_name);
 		$schema->enableCaching($cache, $token);
-		fException::registerCallback($schema->clearCache, 'fUnexpectedException');	
+		fException::registerCallback($schema->clearCache, 'fUnexpectedException');
 	}
-	
-	
+
+
 	/**
 	 * Returns a matching callback for the class and method specified
-	 * 
+	 *
 	 * The callback returned will be determined by the following logic:
-	 * 
+	 *
 	 *  1. If an exact callback has been defined for the method, it will be returned
 	 *  2. If a callback in the form `{prefix}*` has been defined that matches the method, it will be returned
 	 *  3. `NULL` will be returned
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class   The name of the class
 	 * @param  string $method  The method to get the callback for
 	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
@@ -445,36 +445,36 @@ class fORM
 		// boost to pages with lots of method calls that get passed to
 		// fActiveRecord::__call()
 		if (isset(self::$cache['getActiveRecordMethod'][$class . '::' . $method])) {
-			return (!$method = self::$cache['getActiveRecordMethod'][$class . '::' . $method]) ? NULL : $method; 	
+			return (!$method = self::$cache['getActiveRecordMethod'][$class . '::' . $method]) ? NULL : $method;
 		}
-		
+
 		$callback = NULL;
-		
+
 		if (isset(self::$active_record_method_callbacks[$class][$method])) {
-			$callback = self::$active_record_method_callbacks[$class][$method];	
-		
+			$callback = self::$active_record_method_callbacks[$class][$method];
+
 		} elseif (isset(self::$active_record_method_callbacks['*'][$method])) {
-			$callback = self::$active_record_method_callbacks['*'][$method];	
-		
+			$callback = self::$active_record_method_callbacks['*'][$method];
+
 		} elseif (preg_match('#[A-Z0-9]#', $method)) {
 			list($action, $subject) = self::parseMethod($method);
 			if (isset(self::$active_record_method_callbacks[$class][$action . '*'])) {
-				$callback = self::$active_record_method_callbacks[$class][$action . '*'];	
+				$callback = self::$active_record_method_callbacks[$class][$action . '*'];
 			} elseif (isset(self::$active_record_method_callbacks['*'][$action . '*'])) {
-				$callback = self::$active_record_method_callbacks['*'][$action . '*'];	
-			}	
+				$callback = self::$active_record_method_callbacks['*'][$action . '*'];
+			}
 		}
-		
+
 		self::$cache['getActiveRecordMethod'][$class . '::' . $method] = ($callback === NULL) ? FALSE : $callback;
 		return $callback;
 	}
-	
-	
+
+
 	/**
 	 * Takes a class name or class and returns the class name
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  mixed $class  The object to get the name of, or possibly a string already containing the class
 	 * @return string  The class name
 	 */
@@ -483,16 +483,16 @@ class fORM
 		if (is_object($class)) { return get_class($class); }
 		return $class;
 	}
-	
-	
+
+
 	/**
 	 * Returns the column name
-	 * 
+	 *
 	 * The default column name is the result of calling fGrammar::humanize()
 	 * on the column.
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class   The class name the column is part of
 	 * @param  string $column  The database column
 	 * @return string  The column name for the column specified
@@ -502,7 +502,7 @@ class fORM
 		if (!isset(self::$column_names[$class])) {
 			self::$column_names[$class] = array();
 		}
-		
+
 		if (!isset(self::$column_names[$class][$column])) {
 			self::$column_names[$class][$column] = fGrammar::humanize($column);
 		}
@@ -517,34 +517,34 @@ class fORM
 		
 		return self::$column_names[$class][$column];
 	}
-	
-	
+
+
 	/**
 	 * Returns the name for the database used by the class specified
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class   The class name to get the database name for
 	 * @return string  The name of the database to use
 	 */
 	static public function getDatabaseName($class)
 	{
 		if (!isset(self::$class_database_map[$class])) {
-			$class = 'fActiveRecord';	
+			$class = 'fActiveRecord';
 		}
-		
+
 		return self::$class_database_map[$class];
 	}
-	
-	
+
+
 	/**
 	 * Returns the record name for a class
-	 * 
+	 *
 	 * The default record name is the result of calling fGrammar::humanize()
 	 * on the class.
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class  The class name to get the record name of
 	 * @return string  The record name for the class specified
 	 */
@@ -571,39 +571,39 @@ class fORM
 		
 		return self::$record_names[$class];
 	}
-	
-	
+
+
 	/**
 	 * Returns a matching callback for the method specified
-	 * 
+	 *
 	 * The callback returned will be determined by the following logic:
-	 * 
+	 *
 	 *  1. If an exact callback has been defined for the method, it will be returned
 	 *  2. If a callback in the form `{action}*` has been defined that matches the method, it will be returned
 	 *  3. `NULL` will be returned
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $method  The method to get the callback for
 	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
 	 */
 	static public function getRecordSetMethod($method)
 	{
 		if (isset(self::$record_set_method_callbacks[$method])) {
-			return self::$record_set_method_callbacks[$method];	
+			return self::$record_set_method_callbacks[$method];
 		}
-		
+
 		if (preg_match('#[A-Z0-9]#', $method)) {
 			list($action, $subject) = self::parseMethod($method);
 			if (isset(self::$record_set_method_callbacks[$action . '*'])) {
-				return self::$record_set_method_callbacks[$action . '*'];	
-			}	
+				return self::$record_set_method_callbacks[$action . '*'];
+			}
 		}
-		
-		return NULL;	
+
+		return NULL;
 	}
-	
-	
+
+
 	/**
 	 * Takes a class name and related class name and ensures the related class has the appropriate namespace prefix
 	 *
@@ -632,26 +632,26 @@ class fORM
 	
 	/**
 	 * Checks if a class has been mapped to a table
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  mixed  $class  The name of the class
 	 * @return boolean  If the class has been mapped to a table
 	 */
 	static public function isClassMappedToTable($class)
 	{
 		$class = self::getClass($class);
-		
+
 		return isset(self::$class_table_map[$class]);
 	}
-	
-	
+
+
 	/**
 	 * Sets a class to use a database other than the "default"
-	 * 
+	 *
 	 * Multiple database objects can be attached for the ORM by passing a
 	 * unique `$name` to the ::attach() method.
-	 * 
+	 *
 	 * @param  mixed  $class          The name of the class, or an instance of it
 	 * @param  string $database_name  The name given to the database when passed to ::attach()
 	 * @return void
@@ -659,19 +659,19 @@ class fORM
 	static public function mapClassToDatabase($class, $database_name)
 	{
 		$class = fORM::getClass($class);
-		
+
 		self::$class_database_map[$class] = $database_name;
 	}
-	
-	
+
+
 	/**
 	 * Allows non-standard class to table mapping
-	 * 
+	 *
 	 * By default, all database tables are assumed to be plural nouns in
 	 * `underscore_notation` and all class names are assumed to be singular
-	 * nouns in `UpperCamelCase`. This method allows arbitrary class to 
+	 * nouns in `UpperCamelCase`. This method allows arbitrary class to
 	 * table mapping.
-	 * 
+	 *
 	 * @param  mixed  $class  The name of the class, or an instance of it
 	 * @param  string $table  The name of the database table
 	 * @return void
@@ -679,16 +679,16 @@ class fORM
 	static public function mapClassToTable($class, $table)
 	{
 		$class = self::getClass($class);
-		
+
 		self::$class_table_map[$class] = $table;
 	}
-	
-	
+
+
 	/**
 	 * Takes a scalar value and turns it into an object if applicable
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class   The class name of the class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to possibly objectify
@@ -699,52 +699,52 @@ class fORM
 		// This short-circuits computation for already checked columns, providing
 		// a nice little performance boost to pages with lots of records
 		if (isset(self::$cache['objectify'][$class . '::' . $column])) {
-			return $value;	
+			return $value;
 		}
-		
+
 		if (!empty(self::$objectify_callbacks[$class][$column])) {
 			return call_user_func(self::$objectify_callbacks[$class][$column], $class, $column, $value);
 		}
-		
+
 		$table  = self::tablize($class);
 		$schema = fORMSchema::retrieve($class);
-		
+
 		// Turn date/time values into objects
 		$column_type = $schema->getColumnInfo($table, $column, 'type');
-		
+
 		if (in_array($column_type, array('date', 'time', 'timestamp'))) {
-			
+
 			if ($value === NULL) {
-				return $value;	
+				return $value;
 			}
-			
+
 			try {
-				
+
 				// Explicit calls to the constructors are used for dependency detection
 				switch ($column_type) {
 					case 'date':      $value = new fDate($value);      break;
 					case 'time':      $value = new fTime($value);      break;
 					case 'timestamp': $value = new fTimestamp($value); break;
 				}
-				
+
 			} catch (fValidationException $e) {
 				// Validation exception results in the raw value being saved
 			}
-		
+
 		} else {
-			self::$cache['objectify'][$class . '::' . $column] = TRUE;	
+			self::$cache['objectify'][$class . '::' . $column] = TRUE;
 		}
-		
+
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Allows overriding of default column names
-	 * 
+	 *
 	 * By default a column name is the result of fGrammar::humanize() called
 	 * on the column.
-	 * 
+	 *
 	 * @param  mixed  $class        The class name or instance of the class the column is located in
 	 * @param  string $column       The database column
 	 * @param  string $column_name  The name for the column
@@ -753,21 +753,21 @@ class fORM
 	static public function overrideColumnName($class, $column, $column_name)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$column_names[$class])) {
 			self::$column_names[$class] = array();
 		}
-		
+
 		self::$column_names[$class][$column] = $column_name;
 	}
-	
-	
+
+
 	/**
 	 * Allows overriding of default record names
-	 * 
+	 *
 	 * By default a record name is the result of fGrammar::humanize() called
 	 * on the class.
-	 * 
+	 *
 	 * @param  mixed  $class        The class name or instance of the class to override the name of
 	 * @param  string $record_name  The human version of the record
 	 * @return void
@@ -777,38 +777,38 @@ class fORM
 		$class = self::getClass($class);
 		self::$record_names[$class] = $record_name;
 	}
-	
-	
+
+
 	/**
 	 * Parses a `camelCase` method name for an action and subject in the form `actionSubject()`
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $method  The method name to parse
 	 * @return array  An array of `0 => {action}, 1 => {subject}`
 	 */
 	static public function parseMethod($method)
 	{
 		if (isset(self::$cache['parseMethod'][$method])) {
-			return self::$cache['parseMethod'][$method];	
+			return self::$cache['parseMethod'][$method];
 		}
-		
+
 		if (!preg_match('#^([a-z]+)(.*)$#D', $method, $matches)) {
 			throw new fProgrammerException(
 				'Invalid method, %s(), called',
 				$method
-			);	
+			);
 		}
 		self::$cache['parseMethod'][$method] = array($matches[1], $matches[2]);
 		return self::$cache['parseMethod'][$method];
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for an fActiveRecord method that falls through to fActiveRecord::__call() or hits a predefined method hook
-	 *  
+	 *
 	 * The callback should accept the following parameters:
-	 * 
+	 *
 	 *  - **`$object`**:           The fActiveRecord instance
 	 *  - **`&$values`**:          The values array for the record
 	 *  - **`&$old_values`**:      The old values array for the record
@@ -816,7 +816,7 @@ class fORM
 	 *  - **`&$cache`**:           The cache array for the record
 	 *  - **`$method_name`**:      The method that was called
 	 *  - **`&$parameters`**:      The parameters passed to the method
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
 	 * @param  string   $method    The method to hook for - this can be a complete method name or `{prefix}*` where `*` will match any column name
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
@@ -825,26 +825,26 @@ class fORM
 	static public function registerActiveRecordMethod($class, $method, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$active_record_method_callbacks[$class])) {
-			self::$active_record_method_callbacks[$class] = array();	
+			self::$active_record_method_callbacks[$class] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$active_record_method_callbacks[$class][$method] = $callback;
-		
+
 		self::$cache['getActiveRecordMethod'] = array();
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for one of the various fActiveRecord hooks - multiple callbacks can be registered for each hook
-	 * 
+	 *
 	 * The method signature should include the follow parameters:
-	 * 
+	 *
 	 *  - **`$object`**:           The fActiveRecord instance
 	 *  - **`&$values`**:          The values array for the record - see the [http://flourishlib.com/docs/fORM#values $values] documentation for details
 	 *  - **`&$old_values`**:      The old values array for the record - see the [http://flourishlib.com/docs/fORM#old_values $old_values] documentation for details
@@ -862,7 +862,7 @@ class fORM
 	 *  - **`$replication_level`**: An integer representing the level of recursion - the object being replicated will be `0`, children will be `1`, grandchildren `2` and so on.
 	 *  
 	 * Below is a list of all valid hooks:
-	 * 
+	 *
 	 *  - `'post::__construct()'`
 	 *  - `'pre::delete()'`
 	 *  - `'post-begin::delete()'`
@@ -886,7 +886,7 @@ class fORM
 	 *  - `'post::store()'`
 	 *  - `'pre::validate()'`
 	 *  - `'post::validate()'`
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to hook, `'*'` will hook all classes
 	 * @param  string   $hook      The hook to register for
 	 * @param  callback $callback  The callback to register - see the method description for details about the method signature
@@ -895,7 +895,7 @@ class fORM
 	static public function registerHookCallback($class, $hook, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		static $valid_hooks = array(
 			'post::__construct()',
 			'pre::delete()',
@@ -921,7 +921,7 @@ class fORM
 			'pre::validate()',
 			'post::validate()'
 		);
-		
+
 		if (!in_array($hook, $valid_hooks)) {
 			throw new fProgrammerException(
 				'The hook specified, %1$s, should be one of: %2$s.',
@@ -929,26 +929,26 @@ class fORM
 				join(', ', $valid_hooks)
 			);
 		}
-		
+
 		if (!isset(self::$hook_callbacks[$class])) {
 			self::$hook_callbacks[$class] = array();
 		}
-		
+
 		if (!isset(self::$hook_callbacks[$class][$hook])) {
 			self::$hook_callbacks[$class][$hook] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$hook_callbacks[$class][$hook][] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback to modify the results of fActiveRecord::inspect() methods
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
 	 * @param  callback $callback  The callback to register. Callback should accept a single parameter by reference, an associative array of the various metadata about a column.
@@ -957,25 +957,25 @@ class fORM
 	static public function registerInspectCallback($class, $column, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$inspect_callbacks[$class])) {
 			self::$inspect_callbacks[$class] = array();
 		}
 		if (!isset(self::$inspect_callbacks[$class][$column])) {
 			self::$inspect_callbacks[$class][$column] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$inspect_callbacks[$class][$column][] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for when ::objectify() is called on a specific column
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
 	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to objectify and should return the objectified value.
@@ -984,32 +984,32 @@ class fORM
 	static public function registerObjectifyCallback($class, $column, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$objectify_callbacks[$class])) {
 			self::$objectify_callbacks[$class] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$objectify_callbacks[$class][$column] = $callback;
-		
+
 		self::$cache['objectify'] = array();
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for an fRecordSet method that fall through to fRecordSet::__call()
-	 *  
+	 *
 	 * The callback should accept the following parameters:
-	 * 
+	 *
 	 *  - **`$object`**:      The actual record set
 	 *  - **`$class`**:       The class of each record
 	 *  - **`&$records`**:    The ordered array of fActiveRecord objects
 	 *  - **`$method_name`**: The method name that was called
 	 *  - **`$parameters`**:  Any parameters passed to the method
-	 * 
+	 *
 	 * @param  string   $method    The method to hook for
 	 * @param  callback $callback  The callback to execute - see method description for parameter list
 	 * @return void
@@ -1017,25 +1017,25 @@ class fORM
 	static public function registerRecordSetMethod($method, $callback)
 	{
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
 		self::$record_set_method_callbacks[$method] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback to modify the results of fActiveRecord::reflect()
-	 * 
+	 *
 	 * Callbacks registered here can override default method signatures and add
 	 * method signatures, however any methods that are defined in the actual class
 	 * will override these signatures.
-	 * 
+	 *
 	 * The callback should accept three parameters:
-	 * 
+	 *
 	 *  - **`$class`**: the class name
 	 *  - **`&$signatures`**: an associative array of `{method_name} => {signature}`
 	 *  - **`$include_doc_comments`**: a boolean indicating if the signature should include the doc comment for the method, or just the signature
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
 	 * @param  callback $callback  The callback to register. Callback should accept a three parameters - see method description for details.
 	 * @return void
@@ -1043,24 +1043,24 @@ class fORM
 	static public function registerReflectCallback($class, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$reflect_callbacks[$class])) {
 			self::$reflect_callbacks[$class] = array();
 		} elseif (in_array($callback, self::$reflect_callbacks[$class])) {
 			return;
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$reflect_callbacks[$class][] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for when a value is replicated for a specific column
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
 	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to replicate and should return the replicated value.
@@ -1069,22 +1069,22 @@ class fORM
 	static public function registerReplicateCallback($class, $column, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$replicate_callbacks[$class])) {
 			self::$replicate_callbacks[$class] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$replicate_callbacks[$class][$column] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Registers a callback for when ::scalarize() is called on a specific column
-	 * 
+	 *
 	 * @param  mixed    $class     The class name or instance of the class to register for
 	 * @param  string   $column    The column to register for
 	 * @param  callback $callback  The callback to register. Callback should accept a single parameter, the value to scalarize and should return the scalarized value.
@@ -1093,26 +1093,26 @@ class fORM
 	static public function registerScalarizeCallback($class, $column, $callback)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!isset(self::$scalarize_callbacks[$class])) {
 			self::$scalarize_callbacks[$class] = array();
 		}
-		
+
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
-			$callback = explode('::', $callback);	
+			$callback = explode('::', $callback);
 		}
-		
+
 		self::$scalarize_callbacks[$class][$column] = $callback;
 	}
-	
-	
+
+
 	/**
 	 * Takes and value and returns a copy is scalar or a clone if an object
-	 * 
+	 *
 	 * The ::registerReplicateCallback() allows for custom replication code
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $class   The class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to copy/clone
@@ -1123,20 +1123,20 @@ class fORM
 		if (!empty(self::$replicate_callbacks[$class][$column])) {
 			return call_user_func(self::$replicate_callbacks[$class][$column], $class, $column, $value);
 		}
-		
+
 		if (!is_object($value)) {
-			return $value;	
+			return $value;
 		}
-		
+
 		return clone $value;
 	}
-	
-	
+
+
 	/**
 	 * Resets the configuration of the class
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function reset()
@@ -1164,13 +1164,13 @@ class fORM
 		self::$replicate_callbacks            = array();
 		self::$scalarize_callbacks            = array();
 	}
-	
-	
+
+
 	/**
 	 * If the value passed is an object, calls `__toString()` on it
 	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  mixed  $class   The class name or instance of the class the column is part of
 	 * @param  string $column  The database column
 	 * @param  mixed  $value   The value to get the scalar value of
@@ -1179,24 +1179,24 @@ class fORM
 	static public function scalarize($class, $column, $value)
 	{
 		$class = self::getClass($class);
-		
+
 		if (!empty(self::$scalarize_callbacks[$class][$column])) {
 			return call_user_func(self::$scalarize_callbacks[$class][$column], $class, $column, $value);
 		}
-		
+
 		if (is_object($value) && is_callable(array($value, '__toString'))) {
 			return $value->__toString();
 		} elseif (is_object($value)) {
 			return (string) $value;
 		}
-		
+
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Takes a class name (or class) and turns it into a table name - Uses custom mapping if set
-	 * 
+	 *
 	 * @param  string $class  The class name
 	 * @return string  The table name
 	 */
@@ -1214,11 +1214,11 @@ class fORM
 		}
 		return self::$class_table_map[$class];
 	}
-	
-	
+
+
 	/**
 	 * Forces use as a static class
-	 * 
+	 *
 	 * @return fORM
 	 */
 	private function __construct() { }
@@ -1235,10 +1235,10 @@ class fORM
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
