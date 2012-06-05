@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Jeff Turcotte, iMarc LLC [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  *
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Fixed a bug in getImageType() where the fread was not reading enough bytes [jt, 2012-06-05]
  * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
  * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
@@ -377,7 +379,7 @@ class fImage extends fFile
 	static private function getImageType($image)
 	{
 		$handle   = fopen($image, 'r');
-		$contents = fread($handle, 12);
+		$contents = fread($handle, 32);
 		fclose($handle);
 
 		$_0_8  = substr($contents, 0, 8);
