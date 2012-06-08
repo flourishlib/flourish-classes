@@ -286,7 +286,7 @@ class fRequest
 	 * @param  mixed  $key     If the field is an array, get the value corresponding to this key
 	 * @return void
 	 */
-	static public function filter($prefix, $key)
+	static public function filter($prefix, $key = NULL)
 	{
 		self::initPutDelete();
 
@@ -321,9 +321,14 @@ class fRequest
 			$refs['array']    = array();
 			foreach ($refs['backup'][$current_backup] as $field => $value) {
 				$matches_prefix = !$prefix || ($prefix && strpos($field, $prefix) === 0);
-				if ($matches_prefix && is_array($value) && isset($value[$key])) {
+				if ($matches_prefix) {
 					$new_field = preg_replace($regex, '', $field);
-					$refs['array'][$new_field] = $value[$key];
+					if (is_array($value) && $key !== NULL && isset($value[$key])) {
+						$refs['array'][$new_field] = $value[$key];
+					} else {
+						$refs['array'][$new_field] = $value;
+					}
+
 				}
 			}
 		}
