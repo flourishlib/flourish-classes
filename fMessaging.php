@@ -102,6 +102,22 @@ class fMessaging
 		fSession::clear(__CLASS__ . '::');
 	}
 
+	/**
+	 * Redirects a message from one recipient to another
+	 *
+	 * @param  string $name       The name of the message to redirect
+	 * @param  string $recipient  The original/source recipient
+	 * @param  string $recipient  The new/destination recipient
+	 * @return void
+	 */
+	static public function redirect($name, $recipient, $new_recipient)
+	{
+		$message = self::retrieve($name, $recipient);
+
+		if ($message !== NULL) {
+			self::create($name, $new_recipient, $message);
+		}
+	}
 
 	/**
 	 * Retrieves and removes a message from the session
