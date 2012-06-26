@@ -84,12 +84,13 @@ class fTemplating
 	 */
 	static public function retrieve($name='default')
 	{
-		if (!isset(self::$instances[$name])) {
+		if (!array_key_exists($name, self::$instances)) {
 			throw new fProgrammerException(
 				'The named template specified, %s, has not been attached yet',
 				$name
 			);
 		}
+
 		return self::$instances[$name];
 	}
 
