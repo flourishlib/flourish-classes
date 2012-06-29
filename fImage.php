@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  * 
- * @version    1.0.0b33
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
  * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
@@ -61,21 +63,21 @@ class fImage extends fFile
 	 * 
 	 * @var string
 	 */
-	static private $imagemagick_dir = NULL;
+	static protected $imagemagick_dir = NULL;
 	
 	/**
 	 * A custom tmp path to use for ImageMagick
 	 * 
 	 * @var string
 	 */
-	static private $imagemagick_temp_dir = NULL;
+	static protected $imagemagick_temp_dir = NULL;
 	
 	/**
 	 * The processor to use for the image manipulation
 	 * 
 	 * @var string
 	 */
-	static private $processor = NULL;
+	static protected $processor = NULL;
 	
 	
 	/**
@@ -84,7 +86,7 @@ class fImage extends fFile
 	 * @param  string $path  The path to ImageMagick on the filesystem
 	 * @return void
 	 */
-	static private function checkImageMagickBinary($path)
+	static protected function checkImageMagickBinary($path)
 	{
 		// Make sure we can execute the convert binary
 		if (self::isSafeModeExecDirRestricted($path)) {
@@ -157,7 +159,7 @@ class fImage extends fFile
 	 * 
 	 * @return void
 	 */
-	static private function determineProcessor()
+	static protected function determineProcessor()
 	{
 		// Determine what processor to use
 		if (self::$processor === NULL) {
@@ -374,7 +376,7 @@ class fImage extends fFile
 	 * @param  string $image  The image path to get the type for
 	 * @return string|NULL  The type of the image - `'jpg'`, `'gif'`, `'png'` or `'tif'` - NULL if not one of those  
 	 */
-	static private function getImageType($image)
+	static protected function getImageType($image)
 	{
 		$handle   = fopen($image, 'r');
 		$contents = fread($handle, 12);
@@ -442,7 +444,7 @@ class fImage extends fFile
 	 * @param  string $path  The path to check
 	 * @return boolean  If the path is restricted by the `open_basedir` ini setting
 	 */
-	static private function isOpenBaseDirRestricted($path)
+	static protected function isOpenBaseDirRestricted($path)
 	{
 		if (ini_get('open_basedir')) {
 			$open_basedirs = explode((fCore::checkOS('windows')) ? ';' : ':', ini_get('open_basedir'));
@@ -469,7 +471,7 @@ class fImage extends fFile
 	 * @param  string $path  The path to check
 	 * @return boolean  If the path is restricted by the `safe_mode_exec_dir` ini setting
 	 */
-	static private function isSafeModeExecDirRestricted($path)
+	static protected function isSafeModeExecDirRestricted($path)
 	{
 		if (!in_array(strtolower(ini_get('safe_mode')), array('0', '', 'off'))) {
 			$exec_dir = ini_get('safe_mode_exec_dir');
@@ -537,7 +539,7 @@ class fImage extends fFile
 	 * 
 	 * @var array
 	 */
-	private $pending_modifications = array();
+	protected $pending_modifications = array();
 	
 	
 	/**
@@ -790,7 +792,7 @@ class fImage extends fFile
 	 * 
 	 * @return array  An associative array: `'width' => {integer}, 'height' => {integer}`
 	 */
-	private function getCurrentDimensions()
+	protected function getCurrentDimensions()
 	{
 		if (empty($this->pending_modifications)) {
 			$output = self::getInfo($this->file);
@@ -856,7 +858,7 @@ class fImage extends fFile
 	 * 
 	 * @return boolean  If the image is an animated gif
 	 */
-	private function isAnimatedGif()
+	protected function isAnimatedGif()
 	{
 		$type = self::getImageType($this->file);
 		if ($type == 'gif') {
@@ -875,7 +877,7 @@ class fImage extends fFile
 	 * @param  integer $jpeg_quality  The JPEG quality to use
 	 * @return void
 	 */
-	private function processWithGD($output_file, $jpeg_quality)
+	protected function processWithGD($output_file, $jpeg_quality)
 	{
 		$type       = self::getImageType($this->file);
 		$save_alpha = FALSE;
@@ -1113,7 +1115,7 @@ class fImage extends fFile
 	 * @param  integer $jpeg_quality  The JPEG quality to use
 	 * @return void
 	 */
-	private function processWithImageMagick($output_file, $jpeg_quality)
+	protected function processWithImageMagick($output_file, $jpeg_quality)
 	{
 		$type = self::getImageType($this->file);
 		if (fCore::checkOS('windows')) {

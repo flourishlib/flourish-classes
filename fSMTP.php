@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b11  Enhanced the error checking for ::write() [wb, 2011-06-03]
  * @changes    1.0.0b10  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved timeouts while reading data [wb, 2011-01-10]
  * @changes    1.0.0b9   Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
@@ -29,77 +31,77 @@ class fSMTP
 	 * 
 	 * @var array
 	 */
-	private $auth_methods;
+	protected $auth_methods;
 	
 	/**
 	 * The socket connection to the SMTP server
 	 * 
 	 * @var resource
 	 */
-	private $connection;
+	protected $connection;
 	
 	/**
 	 * If debugging has been enabled
 	 * 
 	 * @var boolean
 	 */
-	private $debug;
+	protected $debug;
 	
 	/**
 	 * The hostname or IP of the SMTP server
 	 * 
 	 * @var string
 	 */
-	private $host;
+	protected $host;
 	
 	/**
 	 * The maximum size message the SMTP server supports
 	 * 
 	 * @var integer
 	 */
-	private $max_size;
+	protected $max_size;
 	
 	/**
 	 * The password to authenticate with
 	 * 
 	 * @var string
 	 */
-	private $password;
+	protected $password;
 	
 	/**
 	 * If the server supports pipelining
 	 * 
 	 * @var boolean
 	 */
-	private $pipelining;
+	protected $pipelining;
 	
 	/**
 	 * The port the SMTP server is on
 	 * 
 	 * @var integer
 	 */
-	private $port;
+	protected $port;
 	
 	/**
 	 * If the connection to the SMTP server is secure
 	 * 
 	 * @var boolean
 	 */
-	private $secure;
+	protected $secure;
 	
 	/**
 	 * The timeout for the connection
 	 * 
 	 * @var integer
 	 */
-	private $timeout;
+	protected $timeout;
 	
 	/**
 	 * The username to authenticate with
 	 * 
 	 * @var string
 	 */
-	private $username;
+	protected $username;
 	
 	
 	/**
@@ -209,7 +211,7 @@ class fSMTP
 	 * 
 	 * @return void
 	 */
-	private function connect()
+	protected function connect()
 	{
 		if ($this->connection) {
 			return;
@@ -379,7 +381,7 @@ class fSMTP
 	 * @param string $regex     The regex to search with
 	 * @return array  The regex matches
 	 */
-	private function find($response, $regex)
+	protected function find($response, $regex)
 	{
 		$matches = array();
 		foreach ($response as $line) {
@@ -397,7 +399,7 @@ class fSMTP
 	 * @param array $response  The response array to search through
 	 * @return void
 	 */
-	private function handleErrors($response)
+	protected function handleErrors($response)
 	{
 		$codes = array(
 			450, 451, 452, 500, 501, 502, 503, 504, 521, 530, 550, 551, 552, 553
@@ -427,7 +429,7 @@ class fSMTP
 	 * @param  integer|string $expect  The expected number of lines of response or a regex of the last line
 	 * @return array  The lines of response from the server
 	 */
-	private function read($expect)
+	protected function read($expect)
 	{
 		$response = array();
 		if ($result = $this->select($this->timeout, 0)) {
@@ -468,7 +470,7 @@ class fSMTP
 	 * @param integer $utimeout  The number of microseconds in the timeout
 	 * @return boolean|string  TRUE (or a character) is the connection is ready to be read from, FALSE if not
 	 */
-	private function select($timeout, $utimeout)
+	protected function select($timeout, $utimeout)
 	{
 		$read     = array($this->connection);
 		$write    = NULL;
@@ -581,7 +583,7 @@ class fSMTP
 	 * @param  integer|string $expect  The expected number of lines of response or a regex of the last line
 	 * @return array  The response from the server
 	 */
-	private function write($data, $expect)
+	protected function write($data, $expect)
 	{
 		if (!$this->connection) {
 			throw new fProgrammerException('Unable to send data since the connection has already been closed');

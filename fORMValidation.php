@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b31  Fixed ::checkConditionalRule() to require columns that default to an empty string and are currently set to that value [wb, 2011-06-14]
  * @changes    1.0.0b30  Fixed a bug with ::setMessageOrder() not accepting a variable number of parameters like fValidation::setMessageOrder() does [wb, 2011-03-07]
  * @changes    1.0.0b29  Updated ::addManyToManyRule() and ::addOneToManyRule() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
@@ -74,77 +76,77 @@ class fORMValidation
 	 * 
 	 * @var array
 	 */
-	static private $case_insensitive_columns = array();
+	static protected $case_insensitive_columns = array();
 	
 	/**
 	 * Conditional rules
 	 * 
 	 * @var array
 	 */
-	static private $conditional_rules = array();
+	static protected $conditional_rules = array();
 	
 	/**
 	 * Ordering rules for messages
 	 * 
 	 * @var array
 	 */
-	static private $message_orders = array();
+	static protected $message_orders = array();
 	
 	/**
 	 * One or more rules
 	 * 
 	 * @var array
 	 */
-	static private $one_or_more_rules = array();
+	static protected $one_or_more_rules = array();
 	
 	/**
 	 * Only one rules
 	 * 
 	 * @var array
 	 */
-	static private $only_one_rules = array();
+	static protected $only_one_rules = array();
 	
 	/**
 	 * Regular expression replacements performed on each message
 	 * 
 	 * @var array
 	 */
-	static private $regex_replacements = array();
+	static protected $regex_replacements = array();
 	
 	/**
 	 * Rules that require at least one or more *-to-many related records to be associated
 	 * 
 	 * @var array
 	 */
-	static private $related_one_or_more_rules = array();
+	static protected $related_one_or_more_rules = array();
 	
 	/**
 	 * Rules that require a value to match a regular expression
 	 * 
 	 * @var array
 	 */
-	static private $regex_rules = array();
+	static protected $regex_rules = array();
 	
 	/**
 	 * Rules that require a value be present in a column even if the database schema doesn't require it
 	 * 
 	 * @var array
 	 */
-	static private $required_rules = array();
+	static protected $required_rules = array();
 	
 	/**
 	 * String replacements performed on each message
 	 * 
 	 * @var array
 	 */
-	static private $string_replacements = array();
+	static protected $string_replacements = array();
 	
 	/**
 	 * Valid values rules
 	 * 
 	 * @var array
 	 */
-	static private $valid_values_rules = array();
+	static protected $valid_values_rules = array();
 	
 	
 	/**
@@ -449,7 +451,7 @@ class fORMValidation
 	 * @param  array          &$old_values  The old values from the record
 	 * @return string  An error message for the column specified
 	 */
-	static private function checkAgainstSchema($schema, $object, $column, &$values, &$old_values)
+	static protected function checkAgainstSchema($schema, $object, $column, &$values, &$old_values)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -521,7 +523,7 @@ class fORMValidation
 	 * @param  array   $conditional_columns  The columns that are to be required
 	 * @return array  The error messages for the rule specified
 	 */
-	static private function checkConditionalRule($schema, $class, &$values, $main_columns, $conditional_values, $conditional_columns)
+	static protected function checkConditionalRule($schema, $class, &$values, $main_columns, $conditional_values, $conditional_columns)
 	{
 		$check_for_missing_values = FALSE;
 		
@@ -563,7 +565,7 @@ class fORMValidation
 	 * @param  mixed   $value   The value to check
 	 * @return string  An error message for the column specified
 	 */
-	static private function checkDataType($schema, $class, $column, $value)
+	static protected function checkDataType($schema, $class, $column, $value)
 	{
 		$table       = fORM::tablize($class);
 		$column_info = $schema->getColumnInfo($table, $column);
@@ -642,7 +644,7 @@ class fORMValidation
 	 * @param  array   &$values  The values to check
 	 * @return string  An error message for the column specified
 	 */
-	static private function checkForeignKeyConstraints($schema, $class, $column, &$values)
+	static protected function checkForeignKeyConstraints($schema, $class, $column, &$values)
 	{
 		if ($values[$column] === NULL) {
 			return;
@@ -686,7 +688,7 @@ class fORMValidation
 	 * @param  array   $columns  The columns to check
 	 * @return string  An error message for the rule
 	 */
-	static private function checkOneOrMoreRule($schema, $class, &$values, $columns)
+	static protected function checkOneOrMoreRule($schema, $class, &$values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -719,7 +721,7 @@ class fORMValidation
 	 * @param  array   $columns  The columns to check
 	 * @return string  An error message for the rule
 	 */
-	static private function checkOnlyOneRule($schema, $class, &$values, $columns)
+	static protected function checkOnlyOneRule($schema, $class, &$values, $columns)
 	{
 		settype($columns, 'array');
 		
@@ -759,7 +761,7 @@ class fORMValidation
 	 * @param  array          &$old_values  The old values for the record
 	 * @return array  A single element associative array with the key being the primary keys joined by ,s and the value being the error message
 	 */
-	static private function checkPrimaryKeys($schema, $object, &$values, &$old_values)
+	static protected function checkPrimaryKeys($schema, $object, &$values, &$old_values)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -856,7 +858,7 @@ class fORMValidation
 	 * @param  string  $message  The message to use if the value does not match the regular expression
 	 * @return string  An error message for the rule
 	 */
-	static private function checkRegexRule($class, &$values, $column, $regex, $message)
+	static protected function checkRegexRule($class, &$values, $column, $regex, $message)
 	{
 		if ($values[$column] === NULL) {
 			return;
@@ -883,7 +885,7 @@ class fORMValidation
 	 * @param  string        $route             The name of the route from the class to the related class
 	 * @return string  An error message for the rule
 	 */
-	static private function checkRelatedOneOrMoreRule($object, &$values, &$related_records, $related_class, $route)
+	static protected function checkRelatedOneOrMoreRule($object, &$values, &$related_records, $related_class, $route)
 	{
 		$related_table   = fORM::tablize($related_class);
 		$class           = get_class($object);
@@ -916,7 +918,7 @@ class fORMValidation
 	 * @param  array          &$old_values  The old values for the record
 	 * @return array  An aray of error messages for the unique constraints
 	 */
-	static private function checkUniqueConstraints($schema, $object, &$values, &$old_values)
+	static protected function checkUniqueConstraints($schema, $object, &$values, &$old_values)
 	{
 		$class = get_class($object);
 		$table = fORM::tablize($class);
@@ -1020,7 +1022,7 @@ class fORMValidation
 	 * @param  array  $valid_values  An array of valid values to check the column against
 	 * @return string  The error message for the rule specified
 	 */
-	static private function checkValidValuesRule($class, &$values, $column, $valid_values)
+	static protected function checkValidValuesRule($class, &$values, $column, $valid_values)
 	{
 		if ($values[$column] === NULL) {
 			return;	
@@ -1044,7 +1046,7 @@ class fORMValidation
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -1067,7 +1069,7 @@ class fORMValidation
 	 * @param  string $class  The class to initilize the arrays for
 	 * @return void
 	 */
-	static private function initializeRuleArrays($class)
+	static protected function initializeRuleArrays($class)
 	{
 		self::$conditional_rules[$class]         = (isset(self::$conditional_rules[$class]))         ? self::$conditional_rules[$class]         : array();
 		self::$one_or_more_rules[$class]         = (isset(self::$one_or_more_rules[$class]))         ? self::$one_or_more_rules[$class]         : array();
@@ -1180,7 +1182,7 @@ class fORMValidation
 	 * @param  string $column  The column to check
 	 * @return boolean  If the column is set to be case insensitive
 	 */
-	static private function isCaseInsensitive($class, $column)
+	static protected function isCaseInsensitive($class, $column)
 	{
 		return isset(self::$case_insensitive_columns[$class][$column]);
 	}
@@ -1192,7 +1194,7 @@ class fORMValidation
 	 * @param  string $string  The string to check
 	 * @return boolean  If the string is not blank
 	 */
-	static private function isNonBlankString($string)
+	static protected function isNonBlankString($string)
 	{
 		return ((string) $string) !== '';
 	}
@@ -1443,7 +1445,7 @@ class fORMValidation
 	 * @param  string $b  The second string to compare
 	 * @return integer  `-1` if `$a` is longer than `$b`, `0` if they are equal length, `1` if `$a` is shorter than `$b`
 	 */
-	static private function sortMessageMatches($a, $b)
+	static protected function sortMessageMatches($a, $b)
 	{
 		if (strlen($a) == strlen($b)) {
 			return 0;	
@@ -1461,7 +1463,7 @@ class fORMValidation
 	 * @param  mixed $value  The value to check
 	 * @return boolean  If the value is string-like
 	 */
-	static private function stringlike($value)
+	static protected function stringlike($value)
 	{
 		if ((!is_string($value) && !is_object($value) && !is_numeric($value)) || !strlen(trim($value))) {
 			return FALSE;	

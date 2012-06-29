@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTimestamp
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b13  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b12  Fixed a bug with the constructor not properly handling unix timestamps that are negative integers [wb, 2011-06-02]
  * @changes    1.0.0b11  Changed the `$timestamp` and `$timezone` attributes to be protected [wb, 2011-03-20]
@@ -46,21 +48,21 @@ class fTimestamp
 	 * 
 	 * @var array
 	 */
-	static private $formats = array();
+	static protected $formats = array();
 	
 	/**
 	 * A callback to process all formatting strings through
 	 * 
 	 * @var callback
 	 */
-	static private $format_callback = NULL;
+	static protected $format_callback = NULL;
 	
 	/**
 	 * A callback to parse all date string to allow for locale-specific parsing
 	 * 
 	 * @var callback
 	 */
-	static private $unformat_callback = NULL;
+	static protected $unformat_callback = NULL;
 	
 	
 	/**
@@ -102,7 +104,7 @@ class fTimestamp
 	 * 
 	 * @return void
 	 */
-	static private function checkPHPVersion()
+	static protected function checkPHPVersion()
 	{
 		if (!fCore::checkVersion('5.1')) {
 			throw new fEnvironmentException(

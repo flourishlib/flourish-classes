@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b28  Updated ::getColumnName() and ::getRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b27  Added links to the detailed documentation for the parameters passed to hooks [wb, 2010-11-27]
  * @changes    1.0.0b26  Added ::getRelatedClass() for handling related classes in PHP 5.3 namespaces [wb, 2010-11-17]
@@ -82,14 +84,14 @@ class fORM
 	 * 
 	 * @var array
 	 */
-	static private $active_record_method_callbacks = array();
+	static protected $active_record_method_callbacks = array();
 	
 	/**
 	 * Cache for repetitive computation
 	 * 
 	 * @var array
 	 */
-	static private $cache = array(
+	static protected $cache = array(
 		'parseMethod'           => array(),
 		'getActiveRecordMethod' => array(),
 		'objectify'             => array()
@@ -100,7 +102,7 @@ class fORM
 	 * 
 	 * @var array
 	 */
-	static private $class_database_map = array(
+	static protected $class_database_map = array(
 		'fActiveRecord' => 'default'
 	);
 	
@@ -109,42 +111,42 @@ class fORM
 	 * 
 	 * @var array
 	 */
-	static private $class_table_map = array();
+	static protected $class_table_map = array();
 	
 	/**
 	 * Custom column names for columns in fActiveRecord classes
 	 * 
 	 * @var array
 	 */
-	static private $column_names = array();
+	static protected $column_names = array();
 	
 	/**
 	 * Tracks callbacks registered for various fActiveRecord hooks
 	 * 
 	 * @var array
 	 */
-	static private $hook_callbacks = array();
+	static protected $hook_callbacks = array();
 	
 	/**
 	 * Callbacks for ::callInspectCallbacks()
 	 * 
 	 * @var array
 	 */
-	static private $inspect_callbacks = array();
+	static protected $inspect_callbacks = array();
 	
 	/**
 	 * Callbacks for ::objectify()
 	 * 
 	 * @var array
 	 */
-	static private $objectify_callbacks = array();
+	static protected $objectify_callbacks = array();
 	
 	/**
 	 * Custom record names for fActiveRecord classes
 	 * 
 	 * @var array
 	 */
-	static private $record_names = array(
+	static protected $record_names = array(
 		'fActiveRecord' => 'Active Record'
 	);
 	
@@ -153,35 +155,35 @@ class fORM
 	 * 
 	 * @var array
 	 */
-	static private $record_set_method_callbacks = array();
+	static protected $record_set_method_callbacks = array();
 	
 	/**
 	 * Callbacks for ::callReflectCallbacks()
 	 * 
 	 * @var array
 	 */
-	static private $reflect_callbacks = array();
+	static protected $reflect_callbacks = array();
 	
 	/**
 	 * A cache for resolving related class names for fActiveRecord classes in a PHP 5.3 namespace
 	 * 
 	 * @var array
 	 */
-	static private $related_class_names = array();
+	static protected $related_class_names = array();
 	
 	/**
 	 * Callbacks for ::replicate()
 	 * 
 	 * @var array
 	 */
-	static private $replicate_callbacks = array();
+	static protected $replicate_callbacks = array();
 	
 	/**
 	 * Callbacks for ::scalarize()
 	 * 
 	 * @var array
 	 */
-	static private $scalarize_callbacks = array();
+	static protected $scalarize_callbacks = array();
 	
 	
 	/**
@@ -1221,7 +1223,7 @@ class fORM
 	 * 
 	 * @return fORM
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

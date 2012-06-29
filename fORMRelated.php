@@ -8,12 +8,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  * 
- * @version    1.0.0b44
+ * @version    1.0.0b45
+ * @changes    1.0.0b45  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b44  Added missing information for has and list methods to ::reflect() [wb, 2011-09-07]
  * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b42  Fixed a bug with ::associateRecords() not associating record set via primary key [wb, 2011-05-23]
@@ -93,28 +95,28 @@ class fORMRelated
 	 * 
 	 * @var array
 	 */
-	static private $cache = array();
+	static protected $cache = array();
 	
 	/**
 	 * Rules that control what order related data is returned in
 	 * 
 	 * @var array
 	 */
-	static private $order_bys = array();
+	static protected $order_bys = array();
 	
 	/**
 	 * Names for related records
 	 * 
 	 * @var array
 	 */
-	static private $related_record_names = array();
+	static protected $related_record_names = array();
 	
 	/**
 	 * Methods to use for getting the name of related records when performing validation
 	 * 
 	 * @var array
 	 */
-	static private $validation_name_methods = array();
+	static protected $validation_name_methods = array();
 	
 	
 	/**
@@ -270,7 +272,7 @@ class fORMRelated
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -825,7 +827,7 @@ class fORMRelated
 	 * @param  array $array2  The array of items to remove
 	 * @return array  The items in `$array1` that were not also in `$array2`
 	 */
-	static private function multidimensionArrayDiff($array1, $array2)
+	static protected function multidimensionArrayDiff($array1, $array2)
 	{
 		$output = array();
 		foreach ($array1 as $sub_array1) {
@@ -1700,7 +1702,7 @@ class fORMRelated
 	 * @param  string $route             The route between the table and related table
 	 * @return array  An array of validation messages
 	 */
-	static private function validateOneToStar($class, &$values, &$related_records, $related_class, $route)
+	static protected function validateOneToStar($class, &$values, &$related_records, $related_class, $route)
 	{
 		$schema              = fORMSchema::retrieve($class);
 		$table               = fORM::tablize($class);
@@ -1786,7 +1788,7 @@ class fORMRelated
 	 * @param  array  $related_info   The related info to validate
 	 * @return array  An array of validation messages
 	 */
-	static private function validateManyToMany($class, $related_class, $route, $related_info)
+	static protected function validateManyToMany($class, $related_class, $route, $related_info)
 	{
 		$related_record_name = self::getRelatedRecordName($class, $related_class, $route);
 		$record_number = 1;
@@ -1821,7 +1823,7 @@ class fORMRelated
 	 * 
 	 * @return fORMRelated
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

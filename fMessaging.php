@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  * 
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b7  Fixed a small PHPDoc error [wb, 2010-03-15]
  * @changes    1.0.0b6  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b5  Made the `$recipient` parameter optional for all methods [wb, 2009-07-08]
@@ -179,7 +181,7 @@ class fMessaging
 	 * 
 	 * @return fMessaging
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

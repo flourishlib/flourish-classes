@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Matt Nowack [mn] <mdnowack@gmail.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b23  Added a default `$name` for ::retrieve() to mirror ::attach() [wb, 2011-08-31]
  * @changes    1.0.0b22  Backwards Compatibility Break - removed the static method ::create(), added the static method ::attach() to fill its place [wb, 2011-08-31]
  * @changes    1.0.0b21  Fixed a bug in ::enableMinification() where the minification cache directory was sometimes not properly converted to a web path [wb, 2011-08-31]
@@ -99,35 +101,35 @@ class fTemplating
 	 * 
 	 * @var integer
 	 */
-	private $buffered_id;
+	protected $buffered_id;
 	
 	/**
 	 * A data store for templating
 	 * 
 	 * @var array
 	 */
-	private $elements;
+	protected $elements;
 	
 	/**
 	 * The directory to store minified code in
 	 * 
 	 * @var string
 	 */
-	private $minification_directory;
+	protected $minification_directory;
 	
 	/**
 	 * The path prefix to prepend to CSS and JS paths to find them on the filesystem
 	 * 
 	 * @var string
 	 */
-	private $minification_prefix;
+	protected $minification_prefix;
 	
 	/**
 	 * The minification mode: development or production
 	 * 
 	 * @var string
 	 */
-	private $minification_mode;
+	protected $minification_mode;
 	
 	/**
 	 * The directory to look for files
@@ -141,14 +143,14 @@ class fTemplating
 	 * 
 	 * @var string
 	 */
-	private $short_tag_directory;
+	protected $short_tag_directory;
 	
 	/**
 	 * The short tag mode: development or production
 	 * 
 	 * @var string
 	 */
-	private $short_tag_mode;
+	protected $short_tag_mode;
 	
 	
 	/**
@@ -567,7 +569,7 @@ class fTemplating
 	 * @param array $values  The file paths to the PHP files
 	 * @return array  An array of file paths to the corresponding converted PHP files
 	 */
-	private function fixShortTags($values)
+	protected function fixShortTags($values)
 	{
 		$fixed_paths = array();
 		foreach ($values as $value) {
@@ -1291,7 +1293,7 @@ class fTemplating
 	 * 
 	 * @return void
 	 */
-	private function placeBuffered()
+	protected function placeBuffered()
 	{
 		if (!$this->buffered_id) {
 			return;
@@ -1316,7 +1318,7 @@ class fTemplating
 	 * @param array $match  A regex match from ::placeBuffered()
 	 * @return string  The output of placing the element
 	 */
-	private function placeBufferedCallback($match)
+	protected function placeBufferedCallback($match)
 	{
 		fBuffer::startCapture();
 		$this->placeElement($match[1], $match[2]);

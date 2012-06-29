@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b13
+ * @changes    1.0.0b13  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b12  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b11  Fixed ::addCallbackRule() to be able to handle multiple rules per field [wb, 2011-06-02]
  * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
@@ -54,7 +56,7 @@ class fValidation
 	 * @param  string $key  The key to check for a value
 	 * @return boolean  If the key has a value
 	 */
-	static private function hasValue($key)
+	static protected function hasValue($key)
 	{
 		$value = fRequest::get($key);
 		if (self::stringlike($value)) {
@@ -78,7 +80,7 @@ class fValidation
 	 * @param  string $b  The second string to compare
 	 * @return integer  `-1` if `$a` is longer than `$b`, `0` if they are equal length, `1` if `$a` is shorter than `$b`
 	 */
-	static private function sortMessageMatches($a, $b)
+	static protected function sortMessageMatches($a, $b)
 	{
 		if (strlen($a) == strlen($b)) {
 			return 0;	
@@ -111,91 +113,91 @@ class fValidation
 	 * 
 	 * @var array
 	 */
-	private $callback_rules = array();
+	protected $callback_rules = array();
 	
 	/**
 	 * Rules for conditionally requiring fields
 	 * 
 	 * @var array
 	 */
-	private $conditional_rules = array();
+	protected $conditional_rules = array();
 	
 	/**
 	 * Fields that should be valid dates
 	 * 
 	 * @var array
 	 */
-	private $date_fields = array();
+	protected $date_fields = array();
 	
 	/**
 	 * An array for custom field names
 	 * 
 	 * @var array
 	 */
-	private $field_names = array();
+	protected $field_names = array();
 	
 	/**
 	 * File upload rules
 	 * 
 	 * @var array
 	 */
-	private $file_upload_rules = array();
+	protected $file_upload_rules = array();
 	
 	/**
 	 * An array for ordering the fields in the resulting message
 	 * 
 	 * @var array
 	 */
-	private $message_order = array();
+	protected $message_order = array();
 	
 	/**
 	 * Rules for at least one field of multiple having a value
 	 * 
 	 * @var array
 	 */
-	private $one_or_more_rules = array();
+	protected $one_or_more_rules = array();
 	
 	/**
 	 * Rules for exactly one field of multiple having a value
 	 * 
 	 * @var array
 	 */
-	private $only_one_rules = array();
+	protected $only_one_rules = array();
 	
 	/**
 	 * Regular expression replacements for the validation messages
 	 * 
 	 * @var array
 	 */
-	private $regex_replacements = array();
+	protected $regex_replacements = array();
 	
 	/**
 	 * Rules to validate fields via regular expressions
 	 * 
 	 * @var array
 	 */
-	private $regex_rules = array();
+	protected $regex_rules = array();
 	
 	/**
 	 * The fields to be required
 	 * 
 	 * @var array
 	 */
-	private $required_fields = array();
+	protected $required_fields = array();
 	
 	/**
 	 * String replacements for the validation messages
 	 * 
 	 * @var array
 	 */
-	private $string_replacements = array();
+	protected $string_replacements = array();
 	
 	/**
 	 * Rules for validating a field against a set of valid values
 	 * 
 	 * @var array
 	 */
-	private $valid_values_rules = array();
+	protected $valid_values_rules = array();
 	
 	
 	/**
@@ -607,7 +609,7 @@ class fValidation
 	 * @param array $values  An array of values to cast to strings
 	 * @return array  The values, casted to strings, but preserving multi-dimensional arrays
 	 */
-	private function castToStrings($values)
+	protected function castToStrings($values)
 	{
 		$casted_values = array();
 		foreach ($values as $value) {
@@ -635,7 +637,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkCallbackRules(&$messages)
+	protected function checkCallbackRules(&$messages)
 	{
 		foreach ($this->callback_rules as $field => $rules) {
 			$value = fRequest::get($field);
@@ -657,7 +659,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkConditionalRules(&$messages)
+	protected function checkConditionalRules(&$messages)
 	{
 		foreach ($this->conditional_rules as $rule) {
 			$check_for_missing_values = FALSE;
@@ -692,7 +694,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkDateFields(&$messages)
+	protected function checkDateFields(&$messages)
 	{
 		foreach ($this->date_fields as $date_field) {
 			$value = trim(fRequest::get($date_field));
@@ -716,7 +718,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkFileUploadRules(&$messages)
+	protected function checkFileUploadRules(&$messages)
 	{
 		foreach ($this->file_upload_rules as $rule) {
 			$message = $rule['uploader']->validate($rule['field'], $rule['index'], TRUE);
@@ -737,7 +739,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkOneOrMoreRules(&$messages)
+	protected function checkOneOrMoreRules(&$messages)
 	{
 		foreach ($this->one_or_more_rules as $fields) {
 			$found = FALSE;
@@ -763,7 +765,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkOnlyOneRules(&$messages)
+	protected function checkOnlyOneRules(&$messages)
 	{
 		foreach ($this->only_one_rules as $fields) {
 			$found = FALSE;
@@ -795,7 +797,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkRegexRules(&$messages)
+	protected function checkRegexRules(&$messages)
 	{
 		foreach ($this->regex_rules as $field => $rules) {
 			$value = fRequest::get($field);
@@ -817,7 +819,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkRequiredFields(&$messages)
+	protected function checkRequiredFields(&$messages)
 	{
 		foreach ($this->required_fields as $required_field) {
 			if (!self::hasValue($required_field)) {
@@ -836,7 +838,7 @@ class fValidation
 	 * @param  array &$messages  The messages to display to the user
 	 * @return void
 	 */
-	private function checkValidValuesRules(&$messages)
+	protected function checkValidValuesRules(&$messages)
 	{
 		foreach ($this->valid_values_rules as $field => $valid_values) {
 			$value = fRequest::get($field);
@@ -858,7 +860,7 @@ class fValidation
 	 * @param array  $values  The array of values to join together
 	 * @return string  The joined array
 	 */
-	private function joinRecursive($glue, $values)
+	protected function joinRecursive($glue, $values)
 	{
 		$joined = array();
 		foreach ($values as $value) {
@@ -878,7 +880,7 @@ class fValidation
 	 * @param string $field  The field to get the name for
 	 * @return string  The field name
 	 */
-	private function makeFieldName($field)
+	protected function makeFieldName($field)
 	{
 		if (isset($this->field_names[$field])) {
 			return $this->field_names[$field];
@@ -912,7 +914,7 @@ class fValidation
 	 * @param  array  $messages  An array of the messages
 	 * @return array  The reordered messages
 	 */
-	private function reorderMessages($messages)
+	protected function reorderMessages($messages)
 	{
 		if (!$this->message_order) {
 			return $messages;

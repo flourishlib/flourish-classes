@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fStatement
  * 
  * @version    1.0.0b7
+ * @changes    1.0.0b8  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b7  Fixed handling of arrays of values for ::execute(), ::executeQuery() and ::executeUnbufferedQuery(), fixed escaping of values that become `NULL` [wb, 2011-05-09]
  * @changes    1.0.0b6  Added ::getUntranslatedSQL() [wb, 2011-01-09]
  * @changes    1.0.0b5  Fixed an edge case where the mysqli extension would leak memory when fetching a `TEXT` or `BLOB` column [wb, 2010-08-28]
@@ -25,56 +27,56 @@ class fStatement
 	 * 
 	 * @var string
 	 */
-	private $bound_params = array();
+	protected $bound_params = array();
 	
 	/**
 	 * The database the statement was created from
 	 * 
 	 * @var fDatabase
 	 */
-	private $database = NULL;
+	protected $database = NULL;
 	
 	/**
 	 * The identifier for this statement - only used by the pgsql extension
 	 * 
 	 * @var string
 	 */
-	private $identifier = NULL;
+	protected $identifier = NULL;
 	
 	/**
 	 * The data type placeholders
 	 * 
 	 * @var array
 	 */
-	private $placeholders = array();
+	protected $placeholders = array();
 	
 	/**
 	 * The statement object
 	 * 
 	 * @var mixed
 	 */
-	private $statement = NULL;
+	protected $statement = NULL;
 	
 	/**
 	 * The SQL the statement was created from
 	 * 
 	 * @var string
 	 */
-	private $sql = NULL;
+	protected $sql = NULL;
 	
 	/**
 	 * The original SQL, if it was translated
 	 * 
 	 * @var string
 	 */
-	private $untranslated_sql = NULL;
+	protected $untranslated_sql = NULL;
 	
 	/**
 	 * If the statement has been used yet
 	 * 
 	 * @var boolean
 	 */
-	private $used = FALSE;
+	protected $used = FALSE;
 	
 	
 	/**
@@ -711,7 +713,7 @@ class fStatement
 	 * @param  array $params  The parameters
 	 * @return array  The prepared parameters
 	 */
-	private function prepareParams($params)
+	protected function prepareParams($params)
 	{
 		$type      = $this->database->getType();
 		$extension = $this->database->getExtension();
@@ -872,7 +874,7 @@ class fStatement
 	 * 
 	 * @return void
 	 */
-	private function regenerateStatement()
+	protected function regenerateStatement()
 	{
 		$is_pdo   = $this->database->getExtension() == 'pdo';
 		$is_mysql = $this->database->getType() == 'mysql';

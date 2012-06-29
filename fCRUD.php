@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCRUD
  * 
- * @version    1.0.0b5
+ * @version    1.0.0b6
+ * @changes    1.0.0b6  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b5  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-05-08]
  * @changes    1.0.0b3  Backwards Compatiblity Break - moved ::printOption() to fHTML::printOption(), ::showChecked() to fHTML::showChecked(), ::removeListItems() and ::reorderListItems() to fException::splitMessage(), ::generateRequestToken() to fRequest::generateCSRFToken(), and ::validateRequestToken() to fRequest::validateCSRFToken() [wb, 2009-05-08]
@@ -34,35 +36,35 @@ class fCRUD
 	 * 
 	 * @var array
 	 */
-	static private $loaded_values = array();
+	static protected $loaded_values = array();
 	
 	/**
 	 * The current row number for alternating rows
 	 * 
 	 * @var integer
 	 */
-	static private $row_number = 1;
+	static protected $row_number = 1;
 	
 	/**
 	 * The values for a search form
 	 * 
 	 * @var array
 	 */
-	static private $search_values = array();
+	static protected $search_values = array();
 	
 	/**
 	 * The column to sort by
 	 * 
 	 * @var string
 	 */
-	static private $sort_column = NULL;
+	static protected $sort_column = NULL;
 	
 	/**
 	 * The direction to sort
 	 * 
 	 * @var string
 	 */
-	static private $sort_direction = NULL;
+	static protected $sort_direction = NULL;
 	
 	
 	/**
@@ -89,7 +91,7 @@ class fCRUD
 	 * @param  string $column  The column to get the value for
 	 * @return mixed  The previous value
 	 */
-	static private function getPreviousSearchValue($column)
+	static protected function getPreviousSearchValue($column)
 	{
 		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_search::' . $column, NULL);
 	}
@@ -100,7 +102,7 @@ class fCRUD
 	 * 
 	 * @return string  The previous sort column
 	 */
-	static private function getPreviousSortColumn()
+	static protected function getPreviousSortColumn()
 	{
 		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_sort_column', NULL);
 	}
@@ -111,7 +113,7 @@ class fCRUD
 	 * 
 	 * @return string  The previous sort direction
 	 */
-	static private function getPreviousSortDirection()
+	static protected function getPreviousSortDirection()
 	{
 		return fSession::get(__CLASS__ . '::' . fURL::get() . '::previous_sort_direction', NULL);
 	}
@@ -330,7 +332,7 @@ class fCRUD
 	 * @param  mixed  $value   The value to save
 	 * @return void
 	 */
-	static private function setPreviousSearchValue($column, $value)
+	static protected function setPreviousSearchValue($column, $value)
 	{
 		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_search::' . $column, $value);
 	}
@@ -342,7 +344,7 @@ class fCRUD
 	 * @param  string $sort_column  The sort column to save
 	 * @return void
 	 */
-	static private function setPreviousSortColumn($sort_column)
+	static protected function setPreviousSortColumn($sort_column)
 	{
 		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_sort_column', $sort_column);
 	}
@@ -354,7 +356,7 @@ class fCRUD
 	 * @param  string $sort_direction  The sort direction to save
 	 * @return void
 	 */
-	static private function setPreviousSortDirection($sort_direction)
+	static protected function setPreviousSortDirection($sort_direction)
 	{
 		fSession::set(__CLASS__ . '::' . fURL::get() . '::previous_sort_direction', $sort_direction);
 	}
@@ -365,7 +367,7 @@ class fCRUD
 	 * 
 	 * @return boolean  If a reset was requested
 	 */
-	static private function wasResetRequested()
+	static protected function wasResetRequested()
 	{
 		$tail = substr(fURL::getWithQueryString(), -6);
 		return $tail == '?reset' || $tail == '&reset';
@@ -377,7 +379,7 @@ class fCRUD
 	 * 
 	 * @return fCRUD
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

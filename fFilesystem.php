@@ -6,12 +6,14 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  * 
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b16  Added a call to clearstatcache() to ::rollback() to prevent incorrect data from being returned by fFile::getMTime() and fFile::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b15  Fixed ::translateToWebPath() to handle Windows \s [wb, 2010-04-09]
  * @changes    1.0.0b14  Added ::recordAppend() [wb, 2010-03-15]
@@ -62,35 +64,35 @@ class fFilesystem
 	 * 
 	 * @var array
 	 */
-	static private $commit_operations = NULL;
+	static protected $commit_operations = NULL;
 	
 	/**
 	 * Maps deletion backtraces to all instances of a file or directory, providing consistency
 	 * 
 	 * @var array
 	 */
-	static private $deleted_map = array();
+	static protected $deleted_map = array();
 	
 	/**
 	 * Stores file and directory names by reference, allowing all object instances to be updated at once
 	 * 
 	 * @var array
 	 */
-	static private $filename_map = array();
+	static protected $filename_map = array();
 	
 	/**
 	 * Stores the operations to perform if a rollback occurs
 	 * 
 	 * @var array
 	 */
-	static private $rollback_operations = NULL;
+	static protected $rollback_operations = NULL;
 	
 	/**
 	 * Stores a list of search => replace strings for web path translations
 	 * 
 	 * @var array
 	 */
-	static private $web_path_translations = array();
+	static protected $web_path_translations = array();
 	
 	
 	/**
@@ -708,7 +710,7 @@ class fFilesystem
 	 * 
 	 * @return fFilesystem
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

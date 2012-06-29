@@ -13,12 +13,14 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Bill Bushee, iMarc LLC [bb-imarc] <bill@imarc.net>
  * @author     netcarver [n] <fContrib@netcarving.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b30  Changed methods to return instance for method chaining [n, 2011-09-12]
  * @changes    1.0.0b29  Changed ::combineNameEmail() to be a static method and to be exposed publicly for use by other classes [wb, 2011-07-26]
  * @changes    1.0.0b28  Fixed ::addAttachment() and ::addRelatedFile() to properly handle duplicate filenames [wb, 2011-05-17]
@@ -109,19 +111,19 @@ class fEmail
 	 * 
 	 * @var boolean
 	 */
-	static private $convert_crlf  = FALSE;
+	static protected $convert_crlf  = FALSE;
 	
 	/**
 	 * The local fully-qualified domain name
 	 */
-	static private $fqdn;
+	static protected $fqdn;
 	
 	/**
 	 * Flags if the class should use [http://php.net/popen popen()] to send mail via sendmail
 	 * 
 	 * @var boolean
 	 */
-	static private $popen_sendmail = FALSE;
+	static protected $popen_sendmail = FALSE;
 
 
 	/**
@@ -343,7 +345,7 @@ class fEmail
 	 * @param  integer $first_line_prefix_length  The length of any prefix applied to the first line of the encoded word - this allows properly accounting for a header name
 	 * @return string  The encoded string
 	 */
-	static private function makeEncodedWord($content, $first_line_prefix_length)
+	static protected function makeEncodedWord($content, $first_line_prefix_length)
 	{
 		// Homogenize the line-endings to CRLF
 		$content = str_replace("\r\n", "\n", $content);
@@ -480,140 +482,140 @@ class fEmail
 	 * 
 	 * @var array
 	 */
-	private $attachments = array();
+	protected $attachments = array();
 	
 	/**
 	 * The email address(es) to BCC to
 	 * 
 	 * @var array
 	 */
-	private $bcc_emails = array();
+	protected $bcc_emails = array();
 	
 	/**
 	 * The email address to bounce to
 	 * 
 	 * @var string
 	 */
-	private $bounce_to_email = NULL;
+	protected $bounce_to_email = NULL;
 	
 	/**
 	 * The email address(es) to CC to
 	 * 
 	 * @var array
 	 */
-	private $cc_emails = array();
+	protected $cc_emails = array();
 	
 	/**
 	 * Custom headers
 	 * 
 	 * @var array
 	 */
-	private $custom_headers = array();
+	protected $custom_headers = array();
 	
 	/**
 	 * The email address being sent from
 	 * 
 	 * @var string
 	 */
-	private $from_email = NULL;
+	protected $from_email = NULL;
 	
 	/**
 	 * The HTML body of the email
 	 * 
 	 * @var string
 	 */
-	private $html_body = NULL;
+	protected $html_body = NULL;
 	
 	/**
 	 * The Message-ID header for the email
 	 * 
 	 * @var string
 	 */
-	private $message_id = NULL;
+	protected $message_id = NULL;
 	
 	/**
 	 * The plaintext body of the email
 	 * 
 	 * @var string
 	 */
-	private $plaintext_body = NULL;
+	protected $plaintext_body = NULL;
 	
 	/**
 	 * The recipient's S/MIME PEM certificate filename, used for encryption of the message
 	 * 
 	 * @var string
 	 */
-	private $recipients_smime_cert_file = NULL;
+	protected $recipients_smime_cert_file = NULL;
 	
 	/**
 	 * The files to include as multipart/related
 	 * 
 	 * @var array
 	 */
-	private $related_files = array();
+	protected $related_files = array();
 	
 	/**
 	 * The email address to reply to
 	 * 
 	 * @var string
 	 */
-	private $reply_to_email = NULL;
+	protected $reply_to_email = NULL;
 	
 	/**
 	 * The email address actually sending the email
 	 * 
 	 * @var string
 	 */
-	private $sender_email = NULL;
+	protected $sender_email = NULL;
 	
 	/**
 	 * The senders's S/MIME PEM certificate filename, used for singing the message
 	 * 
 	 * @var string
 	 */
-	private $senders_smime_cert_file = NULL;
+	protected $senders_smime_cert_file = NULL;
 	
 	/**
 	 * The senders's S/MIME private key filename, used for singing the message
 	 * 
 	 * @var string
 	 */
-	private $senders_smime_pk_file = NULL;
+	protected $senders_smime_pk_file = NULL;
 	
 	/**
 	 * The senders's S/MIME private key password, used for singing the message
 	 * 
 	 * @var string
 	 */
-	private $senders_smime_pk_password = NULL;
+	protected $senders_smime_pk_password = NULL;
 	
 	/**
 	 * If the message should be encrypted using the recipient's S/MIME certificate
 	 * 
 	 * @var boolean
 	 */
-	private $smime_encrypt = FALSE;
+	protected $smime_encrypt = FALSE;
 	
 	/**
 	 * If the message should be signed using the senders's S/MIME private key
 	 * 
 	 * @var boolean
 	 */
-	private $smime_sign = FALSE;
+	protected $smime_sign = FALSE;
 	
 	/**
 	 * The subject of the email
 	 * 
 	 * @var string
 	 */
-	private $subject = NULL;
+	protected $subject = NULL;
 	
 	/**
 	 * The email address(es) to send to
 	 * 
 	 * @var array
 	 */
-	private $to_emails = array();
+	protected $to_emails = array();
 	
 	
 	/**
@@ -797,7 +799,7 @@ class fEmail
 	 * @param  array  $emails  The email addresses for the header
 	 * @return string  The email header with a trailing `\r\n`
 	 */
-	private function buildMultiAddressHeader($header, $emails)
+	protected function buildMultiAddressHeader($header, $emails)
 	{
 		$header .= ': ';
 		
@@ -840,7 +842,7 @@ class fEmail
 	 * 
 	 * @return string  A multipart boundary
 	 */
-	private function createBoundary()
+	protected function createBoundary()
 	{
 		$chars      = 'ancdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ:-_';
 		$last_index = strlen($chars) - 1;
@@ -859,7 +861,7 @@ class fEmail
 	 * @param  string $boundary  The boundary to use for the top level mime block
 	 * @return string  The message body to be sent to the mail() function
 	 */
-	private function createBody($boundary)
+	protected function createBody($boundary)
 	{
 		$boundary_stack = array($boundary);
 		
@@ -945,7 +947,7 @@ class fEmail
 	 * @param  string $message_id  The message id for the message
 	 * @return string  The headers to be sent to the [http://php.net/function.mail mail()] function
 	 */
-	private function createHeaders($boundary, $message_id)
+	protected function createHeaders($boundary, $message_id)
 	{
 		$headers = '';
 		
@@ -1003,7 +1005,7 @@ class fEmail
 	 * @param  string $body     The message body
 	 * @return array  `0` => The message headers, `1` => The message body
 	 */
-	private function createSMIMEBody($to, $subject, $headers, $body)
+	protected function createSMIMEBody($to, $subject, $headers, $body)
 	{
 		if (!$this->smime_encrypt && !$this->smime_sign) {
 			return array($headers, $body);
@@ -1131,7 +1133,7 @@ class fEmail
 	 * @param array $list  The list of email or name/email to extract from
 	 * @return array  The email addresses
 	 */
-	private function extractEmails($list)
+	protected function extractEmails($list)
 	{
 		$output = array();
 		foreach ($list as $email) {
@@ -1154,7 +1156,7 @@ class fEmail
 	 * @param  string       &$mime_type  The mime type of the file
 	 * @return void
 	 */
-	private function extrapolateFileInfo(&$contents, &$filename, &$mime_type)
+	protected function extrapolateFileInfo(&$contents, &$filename, &$mime_type)
 	{
 		if ($contents instanceof fFile) {
 			if ($filename === NULL) {
@@ -1188,7 +1190,7 @@ class fEmail
 	 * @param  string $filename  The filename to generate another name for
 	 * @return string  The newly generated filename
 	 */
-	private function generateNewFilename($filename)
+	protected function generateNewFilename($filename)
 	{
 		$filename_info = fFilesystem::getPathInfo($filename);
 		if (preg_match('#_copy(\d+)($|\.)#D', $filename_info['filename'], $match)) {
@@ -1265,7 +1267,7 @@ class fEmail
 	 * @param  string  $content  The content to encode
 	 * @return string  The encoded string
 	 */
-	private function makeBase64($content)
+	protected function makeBase64($content)
 	{
 		return chunk_split(base64_encode($content));
 	}
@@ -1277,7 +1279,7 @@ class fEmail
 	 * @param  string  $content  The content to encode
 	 * @return string  The encoded string
 	 */
-	private function makeQuotedPrintable($content)
+	protected function makeQuotedPrintable($content)
 	{
 		// Homogenize the line-endings to CRLF
 		$content = str_replace("\r\n", "\n", $content);
@@ -1683,7 +1685,7 @@ class fEmail
 	 * 
 	 * @return void
 	 */
-	private function validate()
+	protected function validate()
 	{
 		$validation_messages = array();
 		

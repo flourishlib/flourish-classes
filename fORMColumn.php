@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b15  Fixed a bug with empty string email values passing through required validation [wb, 2011-07-29]
  * @changes    1.0.0b14  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b13  Fixed ::reflect() to include some missing parameters [wb, 2010-06-08]
@@ -52,28 +54,28 @@ class fORMColumn
 	 * 
 	 * @var array
 	 */
-	static private $email_columns = array();
+	static protected $email_columns = array();
 	
 	/**
 	 * Columns that should be formatted as links
 	 * 
 	 * @var array
 	 */
-	static private $link_columns = array();
+	static protected $link_columns = array();
 	
 	/**
 	 * Columns that should be returned as fNumber objects
 	 * 
 	 * @var array
 	 */
-	static private $number_columns = array();
+	static protected $number_columns = array();
 	
 	/**
 	 * Columns that should be formatted as a random string
 	 * 
 	 * @var array
 	 */
-	static private $random_columns = array();
+	static protected $random_columns = array();
 	
 	
 	/**
@@ -84,7 +86,7 @@ class fORMColumn
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -839,7 +841,7 @@ class fORMColumn
 	 * 
 	 * @return fORMColumn
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

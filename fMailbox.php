@@ -7,12 +7,14 @@
  * 
  * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed handling of headers in relation to encoded-words being embedded inside of quoted strings [wb, 2011-07-26]
  * @changes    1.0.0b12  Enhanced the error checking in ::write() [wb, 2011-06-03]
@@ -40,7 +42,7 @@ class fMailbox
 	 * 
 	 * @var array
 	 */
-	static private $smime_pairs = array();
+	static protected $smime_pairs = array();
 	
 	
 	/**
@@ -74,7 +76,7 @@ class fMailbox
 	 * @param string $date  The date to clean
 	 * @return string  The cleaned date
 	 */
-	static private function cleanDate($date)
+	static protected function cleanDate($date)
 	{
 		$date = preg_replace('#\([^)]+\)#', ' ', trim($date));
 		$date = preg_replace('#\s+#', ' ', $date);
@@ -90,7 +92,7 @@ class fMailbox
 	 * @param string $text  The header value to decode
 	 * @return string  The decoded UTF-8
 	 */
-	static private function decodeHeader($text)
+	static protected function decodeHeader($text)
 	{
 		$parts = preg_split('#(=\?[^\?]+\?[QB]\?[^\?]+\?=)#i', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
 		
@@ -148,7 +150,7 @@ class fMailbox
 	 * @param array  $structure  An array describing the structure of the message
 	 * @return array  The modified $info array
 	 */
-	static private function handlePart($info, $structure)
+	static protected function handlePart($info, $structure)
 	{
 		if ($structure['type'] == 'multipart') {
 			foreach ($structure['parts'] as $part) {
@@ -302,7 +304,7 @@ class fMailbox
 	 * @param array  $smime_pair  An associative array containing an S/MIME certificate, private key and password
 	 * @return boolean  If the message was decrypted
 	 */
-	static private function handleSMIMEDecryption(&$info, $structure, $smime_pair)
+	static protected function handleSMIMEDecryption(&$info, $structure, $smime_pair)
 	{
 		$plaintext_file  = tempnam('', '__fMailbox_');
 		$ciphertext_file = tempnam('', '__fMailbox_');
@@ -351,7 +353,7 @@ class fMailbox
 	 * @param array $smime_pair  An associative array containing an S/MIME certificate file
 	 * @return boolean  If the message was verified
 	 */
-	static private function handleSMIMEVerification(&$info, $structure, $smime_pair)
+	static protected function handleSMIMEVerification(&$info, $structure, $smime_pair)
 	{
 		$certificates_file = tempnam('', '__fMailbox_');
 		$ciphertext_file   = tempnam('', '__fMailbox_');
@@ -388,7 +390,7 @@ class fMailbox
 	 * @param string $string       The string to convert
 	 * @return string  The converted string
 	 */
-	static private function iconv($in_charset, $out_charset, $string)
+	static protected function iconv($in_charset, $out_charset, $string)
 	{
 		return iconv($in_charset, $out_charset, $string);
 	}
@@ -400,7 +402,7 @@ class fMailbox
 	 * @param array $emails  An array of emails split into personal, mailbox and host parts
 	 * @return string  An comma-delimited list of emails
 	 */
-	static private function joinEmails($emails)
+	static protected function joinEmails($emails)
 	{
 		$output = '';
 		foreach ($emails as $email) {
@@ -428,7 +430,7 @@ class fMailbox
 	 * @param  string $string  The email string to parse
 	 * @return array  An associative array with the key `mailbox`, and possibly `host` and `personal`
 	 */
-	static private function parseEmail($string)
+	static protected function parseEmail($string)
 	{
 		$email_regex = '((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+")(?:\.[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+|"[^"\\\\\n\r]+"[ \t]*))*)@((?:[a-z0-9\\-]+\.)+[a-z]{2,}|\[(?:(?:[01]?\d?\d|2[0-4]\d|25[0-5])\.){3}(?:[01]?\d?\d|2[0-4]\d|25[0-5])\])';
 		$name_regex  = '((?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*)(?:\.?[ \t]*(?:[^\x00-\x20\(\)<>@,;:\\\\"\.\[\]]+[ \t]*|"[^"\\\\\n\r]+"[ \t]*))*)';
@@ -487,7 +489,7 @@ class fMailbox
 	 * @param  string $filter   Remove any headers that match this
 	 * @return array  The parsed headers
 	 */
-	static private function parseHeaders($headers, $filter=NULL)
+	static protected function parseHeaders($headers, $filter=NULL)
 	{
 		$header_lines = preg_split("#\r\n(?!\s)#", trim($headers));
 		
@@ -658,7 +660,7 @@ class fMailbox
 	 * @param boolean $top_level  If we are parsing the top level
 	 * @return array  The parsed representation of the response text
 	 */
-	static private function parseResponse($text, $top_level=FALSE)
+	static protected function parseResponse($text, $top_level=FALSE)
 	{
 		$regex = '[\\\\\w.\[\]]+|"([^"\\\\]+|\\\\"|\\\\\\\\)*"|\((?:(?1)[ \t]*)*\)';
 		
@@ -701,7 +703,7 @@ class fMailbox
 	 * @param string $headers  The parsed headers for the message - if not present they will be extracted from the `$data`
 	 * @return array  The multi-dimensional, associative array containing the message structure
 	 */
-	static private function parseStructure($data, $headers=NULL)
+	static protected function parseStructure($data, $headers=NULL)
 	{
 		if (!$headers) {
 			list ($headers, $data) = explode("\r\n\r\n", $data, 2);
@@ -773,7 +775,7 @@ class fMailbox
 	 * @param array $array  The array to unfold
 	 * @return array  The unfolded array
 	 */
-	static private function unfoldAssociativeArray($array)
+	static protected function unfoldAssociativeArray($array)
 	{
 		$new_array = array();
 		foreach ($array as $key => $value) {
@@ -789,70 +791,70 @@ class fMailbox
 	 * 
 	 * @var integer
 	 */
-	private $command_num = 1;
+	protected $command_num = 1;
 	
 	/**
 	 * The connection resource
 	 * 
 	 * @var resource
 	 */
-	private $connection;
+	protected $connection;
 	
 	/**
 	 * If debugging has been enabled
 	 * 
 	 * @var boolean
 	 */
-	private $debug;
+	protected $debug;
 	
 	/**
 	 * The server hostname or IP address
 	 * 
 	 * @var string
 	 */
-	private $host;
+	protected $host;
 	
 	/**
 	 * The password for the account
 	 * 
 	 * @var string
 	 */
-	private $password;
+	protected $password;
 	
 	/**
 	 * The port for the server
 	 * 
 	 * @var integer
 	 */
-	private $port;
+	protected $port;
 	
 	/**
 	 * If the connection to the server should be secure
 	 * 
 	 * @var boolean
 	 */
-	private $secure;
+	protected $secure;
 	
 	/**
 	 * The timeout for the connection
 	 * 
 	 * @var integer
 	 */
-	private $timeout = 5;
+	protected $timeout = 5;
 	
 	/**
 	 * The type of mailbox, `'imap'` or `'pop3'`
 	 * 
 	 * @var string
 	 */
-	private $type;
+	protected $type;
 	
 	/**
 	 * The username for the account
 	 * 
 	 * @var string
 	 */
-	private $username;
+	protected $username;
 	
 	
 	/**
@@ -949,7 +951,7 @@ class fMailbox
 	 * 
 	 * @return void
 	 */
-	private function connect()
+	protected function connect()
 	{
 		if ($this->connection) {
 			return;
@@ -1339,7 +1341,7 @@ class fMailbox
 	 * @param  integer|string $expect  The expected number of lines of response or a regex of the last line
 	 * @return array  The lines of response from the server
 	 */
-	private function read($expect=NULL)
+	protected function read($expect=NULL)
 	{
 		$read     = array($this->connection);
 		$write    = NULL;
@@ -1436,7 +1438,7 @@ class fMailbox
 	 * @param  integer $expected  The number of lines or regex expected for a POP3 command
 	 * @return array  The response from the server
 	 */
-	private function write($command, $expected=NULL)
+	protected function write($command, $expected=NULL)
 	{
 		if (!$this->connection) {
 			throw new fProgrammerException('Unable to send data since the connection has already been closed');

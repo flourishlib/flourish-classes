@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Craig Ruksznis, iMarc LLC [cr-imarc] <craigruk@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDatabase
  * 
- * @version    1.0.0b32
+ * @version    1.0.0b33
+ * @changes    1.0.0b33  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b32  Added support to ::addWhereClause() for the `^~` and `$~` operators [wb, 2011-06-20]
  * @changes    1.0.0b31  Fixed a bug with ::addWhereClause() generating invalid SQL [wb, 2011-05-10]
  * @changes    1.0.0b30  Fixed ::insertFromAndGroupByClauses() to insert `MAX()` around columns in related tables in the `ORDER BY` clause when a `GROUP BY` is used [wb, 2011-02-03]
@@ -65,14 +67,14 @@ class fORMDatabase
 	 * 
 	 * @var array
 	 */
-	static private $database_objects = array();
+	static protected $database_objects = array();
 	
 	/**
 	 * If the PCRE engine supports unicode character properties
 	 * 
 	 * @var boolean
 	 */
-	static private $pcre_supports_unicode_character_properties = NULL;
+	static protected $pcre_supports_unicode_character_properties = NULL;
 	
 	
 	/**
@@ -135,7 +137,7 @@ class fORMDatabase
 	 * @param  string    $placeholder     This allows overriding the placeholder
 	 * @return array  The modified parameters
 	 */
-	static private function addColumnCondition($db, $schema, $params, $table, $column, $operator, $values, $escaped_column=NULL, $placeholder=NULL)
+	static protected function addColumnCondition($db, $schema, $params, $table, $column, $operator, $values, $escaped_column=NULL, $placeholder=NULL)
 	{
 		// Some objects when cast to an array turn the members into array keys
 		if (!is_object($values)) {
@@ -750,7 +752,7 @@ class fORMDatabase
 	 * @param string  $table   The table name to be made cleaned
 	 * @return string  The cleaned table name
 	 */
-	static private function cleanTableName($schema, $table)
+	static protected function cleanTableName($schema, $table)
 	{
 		$table = str_replace('"', '', $table);
 		$tables = array_flip($schema->getTables());
@@ -773,7 +775,7 @@ class fORMDatabase
 	 * @param  array     $joins  The joins to create the `FROM` clause out of
 	 * @return string  The from clause (does not include the word `FROM`)
 	 */
-	static private function createFromClauseFromJoins($db, $joins)
+	static protected function createFromClauseFromJoins($db, $joins)
 	{
 		$sql = '';
 		
@@ -815,7 +817,7 @@ class fORMDatabase
 	 * @param  array   &$used_aliases  The aliases that have been used
 	 * @return string  The name of the significant join created
 	 */
-	static private function createJoin($schema, $table, $table_alias, $related_table, $route, &$joins, &$used_aliases)
+	static protected function createJoin($schema, $table, $table_alias, $related_table, $route, &$joins, &$used_aliases)
 	{
 		$routes = fORMSchema::getRoutes($schema, $table, $related_table);
 						
@@ -898,7 +900,7 @@ class fORMDatabase
 	 * @param  array  &$used_aliases  The aliases that have been used
 	 * @return string  The alias to use for the table
 	 */
-	static private function createNewAlias($table, &$used_aliases)
+	static protected function createNewAlias($table, &$used_aliases)
 	{
 		if (!in_array($table, $used_aliases)) {
 			$used_aliases[] = $table;
@@ -925,7 +927,7 @@ class fORMDatabase
 	 * @param  string  $column  The shorthand column definition - see fRecordSet::build() for possible syntaxes
 	 * @return array  The $table and $column, suitable for use with fSchema
 	 */
-	static private function getTableAndColumn($schema, $table, $column)
+	static protected function getTableAndColumn($schema, $table, $column)
 	{
 		// Handle shorthand column names like table.column and table=>related_table.column
 		if (preg_match('#((?:"?\w+"?\.)?"?\w+)(?:\{[\w.]+\})?"?\."?(\w+)"?$#D', $column, $match)) {
@@ -1329,7 +1331,7 @@ class fORMDatabase
 	 * 
 	 * @return fORMDatabase
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

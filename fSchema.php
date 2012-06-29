@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  * 
- * @version    1.0.0b51
+ * @version    1.0.0b52
+ * @changes    1.0.0b52  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b51  Fixed handling of getting tables in table creation order when a table references itself, fixed default value detection for the last column in a MySQL table [wb, 2012-01-12]
  * @changes    1.0.0b50  Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b49  Added support for spatial/geometric data types in MySQL and PostgreSQL [wb, 2011-05-26]
@@ -69,84 +71,84 @@ class fSchema
 	 * 
 	 * @var fCache
 	 */
-	private $cache = NULL;
+	protected $cache = NULL;
 	
 	/**
 	 * The cache prefix to use for cache entries
 	 * 
 	 * @var string
 	 */
-	private $cache_prefix;
+	protected $cache_prefix;
 	
 	/**
 	 * The cached column info
 	 * 
 	 * @var array
 	 */
-	private $column_info = array();
+	protected $column_info = array();
 	
 	/**
 	 * The column info to override
 	 * 
 	 * @var array
 	 */
-	private $column_info_override = array();
+	protected $column_info_override = array();
 	
 	/**
 	 * A reference to an instance of the fDatabase class
 	 * 
 	 * @var fDatabase
 	 */
-	private $database = NULL;
+	protected $database = NULL;
 	
 	/**
 	 * The databases on the current database server
 	 * 
 	 * @var array
 	 */
-	private $databases = NULL;
+	protected $databases = NULL;
 	
 	/**
 	 * The cached key info
 	 * 
 	 * @var array
 	 */
-	private $keys = array();
+	protected $keys = array();
 	
 	/**
 	 * The key info to override
 	 * 
 	 * @var array
 	 */
-	private $keys_override = array();
+	protected $keys_override = array();
 	
 	/**
 	 * The merged column info
 	 * 
 	 * @var array
 	 */
-	private $merged_column_info = array();
+	protected $merged_column_info = array();
 	
 	/**
 	 * The merged key info
 	 * 
 	 * @var array
 	 */
-	private $merged_keys = array();
+	protected $merged_keys = array();
 	
 	/**
 	 * The relationships in the database
 	 * 
 	 * @var array
 	 */
-	private $relationships = array();
+	protected $relationships = array();
 	
 	/**
 	 * The tables in the database
 	 * 
 	 * @var array
 	 */
-	private $tables = NULL;
+	protected $tables = NULL;
 	
 	
 	/**
@@ -182,7 +184,7 @@ class fSchema
 	 * @param  string $column  The column to check
 	 * @return boolean  If the column is part of a single-column unique key
 	 */
-	private function checkForSingleColumnUniqueKey($table, $column)
+	protected function checkForSingleColumnUniqueKey($table, $column)
 	{        
 		foreach ($this->merged_keys[$table]['unique'] as $key) {
 			if (array($column) == $key) {
@@ -231,7 +233,7 @@ class fSchema
 	 * @param string  $filter_table  The only return this table and tables that rely on it
 	 * @return array  An array of table names
 	 */
-	private function determineTableCreationOrder($filter_table=NULL)
+	protected function determineTableCreationOrder($filter_table=NULL)
 	{
 		$found          = array();
 		$ignored_found  = array();
@@ -325,7 +327,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return void
 	 */
-	private function fetchColumnInfo($table)
+	protected function fetchColumnInfo($table)
 	{
 		if (isset($this->column_info[$table])) {
 			return;	
@@ -374,7 +376,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchDB2ColumnInfo($table)
+	protected function fetchDB2ColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -532,7 +534,7 @@ class fSchema
 	 * 
 	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchDB2Keys()
+	protected function fetchDB2Keys()
 	{
 		$keys = array();
 		
@@ -690,7 +692,7 @@ class fSchema
 	 * 
 	 * @return void
 	 */
-	private function fetchKeys()
+	protected function fetchKeys()
 	{
 		if ($this->keys) {
 			return;	
@@ -735,7 +737,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchMSSQLColumnInfo($table)
+	protected function fetchMSSQLColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -920,7 +922,7 @@ class fSchema
 	 * 
 	 * @return array  The key info arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchMSSQLKeys()
+	protected function fetchMSSQLKeys()
 	{
 		$keys = array();
 		
@@ -1042,7 +1044,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchMySQLColumnInfo($table)
+	protected function fetchMySQLColumnInfo($table)
 	{
 		$data_type_mapping = array(
 			'tinyint'			=> 'integer',
@@ -1217,7 +1219,7 @@ class fSchema
 	 * 
 	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchMySQLKeys()
+	protected function fetchMySQLKeys()
 	{
 		$tables   = $this->getTables();
 		$keys = array();
@@ -1274,7 +1276,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchOracleColumnInfo($table)
+	protected function fetchOracleColumnInfo($table)
 	{
 		$table = strtolower($table);
 		
@@ -1497,7 +1499,7 @@ class fSchema
 	 * 
 	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchOracleKeys()
+	protected function fetchOracleKeys()
 	{
 		$keys = array();
 		
@@ -1621,7 +1623,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchPostgreSQLColumnInfo($table)
+	protected function fetchPostgreSQLColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -1792,7 +1794,7 @@ class fSchema
 	 * 
 	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchPostgreSQLKeys()
+	protected function fetchPostgreSQLKeys()
 	{
 		$keys = array();
 		
@@ -1961,7 +1963,7 @@ class fSchema
 	 * @param  string $table  The table to fetch the column info for
 	 * @return array  The column info for the table specified - see ::getColumnInfo() for details
 	 */
-	private function fetchSQLiteColumnInfo($table)
+	protected function fetchSQLiteColumnInfo($table)
 	{
 		$column_info = array();
 		
@@ -2077,7 +2079,7 @@ class fSchema
 	 * 
 	 * @return array  The keys arrays for every table in the database - see ::getKeys() for details
 	 */
-	private function fetchSQLiteKeys()
+	protected function fetchSQLiteKeys()
 	{
 		$tables = $this->getTables();
 		$keys   = array();
@@ -2200,7 +2202,7 @@ class fSchema
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
 	 */
-	private function findManyToManyRelationships($table)
+	protected function findManyToManyRelationships($table)
 	{
 		if (!$this->isJoiningTable($table)) {
 			return;
@@ -2240,7 +2242,7 @@ class fSchema
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
 	 */
-	private function findOneToManyRelationships($table)
+	protected function findOneToManyRelationships($table)
 	{
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$type = ($this->checkForSingleColumnUniqueKey($table, $key['column'])) ? 'one-to-one' : 'one-to-many';
@@ -2262,7 +2264,7 @@ class fSchema
 	 * @param  string $table  The table to find the relationships on
 	 * @return void
 	 */
-	private function findStarToOneRelationships($table)
+	protected function findStarToOneRelationships($table)
 	{
 		foreach ($this->merged_keys[$table]['foreign'] as $key) {
 			$temp = array();
@@ -2285,7 +2287,7 @@ class fSchema
 	 * 
 	 * @return void
 	 */
-	private function findRelationships()
+	protected function findRelationships()
 	{
 		$this->relationships = array();
 		$tables = $this->getTables();
@@ -2862,7 +2864,7 @@ class fSchema
 	 * @param  string $table  The table to check
 	 * @return boolean  If the table is a joining table
 	 */
-	private function isJoiningTable($table)
+	protected function isJoiningTable($table)
 	{
 		$primary_key_columns = $this->merged_keys[$table]['primary'];
 		
@@ -2891,7 +2893,7 @@ class fSchema
 	 * 
 	 * @return string  The cache prefix to use
 	 */
-	private function makeCachePrefix()
+	protected function makeCachePrefix()
 	{
 		if (!$this->cache_prefix) {
 			$prefix  = 'fSchema::' . $this->database->getType() . '::';
@@ -2917,7 +2919,7 @@ class fSchema
 	 * 
 	 * @return void
 	 */
-	private function mergeColumnInfo()
+	protected function mergeColumnInfo()
 	{
 		$this->merged_column_info = $this->column_info;
 		
@@ -3002,7 +3004,7 @@ class fSchema
 	 * 
 	 * @return void
 	 */
-	private function mergeKeys()
+	protected function mergeKeys()
 	{
 		// Handle the database and override key info
 		$this->merged_keys = $this->keys;

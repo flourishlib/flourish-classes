@@ -8,12 +8,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Craig Ruksznis [cr-imarc] <craigruk@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fXML
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b8  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b7  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b6  Updated class to use fCore::startErrorCapture() instead of `error_reporting()` [wb, 2010-08-09]
@@ -52,7 +54,7 @@ class fXML implements ArrayAccess
 	 * @param string $string       The string to convert
 	 * @return string  The converted string
 	 */
-	static private function iconv($in_charset, $out_charset, $string)
+	static protected function iconv($in_charset, $out_charset, $string)
 	{
 		return iconv($in_charset, $out_charset, $string);
 	}
@@ -378,7 +380,7 @@ class fXML implements ArrayAccess
 	 * @param string $xml  The XML to fix
 	 * @return string  The fixed XML
 	 */
-	private function fixEntitiesEncoding($xml)
+	protected function fixEntitiesEncoding($xml)
 	{
 		preg_match('#^<\?xml.*? encoding="([^"]+)".*?\?>#i', $xml, $match);
 		$encoding = empty($match[1]) ? NULL : $match[1];

@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2008-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Dan Collins, iMarc LLC [dc-imarc] <dan@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMMoney
  * 
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b11  Fixed the generation of validation messages when a non-monetary value is supplied [wb, 2011-05-17]
  * @changes    1.0.0b10  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b9   Added the `$remove_zero_fraction` parameter to prepare methods [wb, 2010-06-09]
@@ -45,14 +47,14 @@ class fORMMoney
 	 * 
 	 * @var array
 	 */
-	static private $currency_columns = array();
+	static protected $currency_columns = array();
 	
 	/**
 	 * Columns that should be formatted as money
 	 * 
 	 * @var array
 	 */
-	static private $money_columns = array();
+	static protected $money_columns = array();
 	
 	
 	/**
@@ -63,7 +65,7 @@ class fORMMoney
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -596,7 +598,7 @@ class fORMMoney
 	 * 
 	 * @return fORMMoney
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

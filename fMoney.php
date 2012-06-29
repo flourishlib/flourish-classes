@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMoney
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4
  * @changes    1.0.0b3  Added the `$remove_zero_fraction` parameter to ::format() [wb, 2010-06-09]
  * @changes    1.0.0b2  Fixed a bug with calling ::format() when a format callback is set, fixed `NULL` `$element` handling in ::getCurrencyInfo() [wb, 2009-03-24]
  * @changes    1.0.0b   The initial implementation [wb, 2008-08-10]
@@ -32,7 +34,7 @@ class fMoney
 	 * 
 	 * @var integer
 	 */
-	static private $currencies = array(
+	static protected $currencies = array(
 		'USD' => array(
 			'name'      => 'United States Dollar',
 			'symbol'    => '$',
@@ -46,21 +48,21 @@ class fMoney
 	 * 
 	 * @var string
 	 */
-	static private $default_currency = NULL;
+	static protected $default_currency = NULL;
 	
 	/**
 	 * A callback to process all money values through
 	 * 
 	 * @var callback
 	 */
-	static private $format_callback = NULL;
+	static protected $format_callback = NULL;
 	
 	/**
 	 * A callback to remove money formatting and return a decimal number
 	 * 
 	 * @var callback
 	 */
-	static private $unformat_callback = NULL;
+	static protected $unformat_callback = NULL;
 	
 	
 	/**
@@ -217,14 +219,14 @@ class fMoney
 	 * 
 	 * @var fNumber
 	 */
-	private $amount;
+	protected $amount;
 	
 	/**
 	 * The ISO code or the currency of this value
 	 * 
 	 * @var string
 	 */
-	private $currency;
+	protected $currency;
 	
 	
 	/**
@@ -562,7 +564,7 @@ class fMoney
 	 * @param  fMoney|string|integer $money  The value to convert to an fMoney object
 	 * @return fMoney  The converted value
 	 */
-	private function makeMoney($money)
+	protected function makeMoney($money)
 	{
 		if ($money instanceof fMoney) {
 			return $money;

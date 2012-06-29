@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b15  Added length checking to ensure blank strings are not being passed to various methods [wb, 2011-06-20]
  * @changes    1.0.0b14  Fixed a bug in singularization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
  * @changes    1.0.0b13  Fixed the pluralization of video [wb, 2010-08-10]
@@ -49,7 +51,7 @@ class fGrammar
 	 * 
 	 * @var array
 	 */
-	static private $cache = array(
+	static protected $cache = array(
 		'camelize'     => array(0 => array(), 1 => array()),
 		'humanize'     => array(),
 		'pluralize'    => array(),
@@ -62,28 +64,28 @@ class fGrammar
 	 * 
 	 * @var array
 	 */
-	static private $camelize_rules = array();
+	static protected $camelize_rules = array();
 	
 	/**
 	 * Custom rules for humanizing a string
 	 * 
 	 * @var array
 	 */
-	static private $humanize_rules = array();
+	static protected $humanize_rules = array();
 	
 	/**
 	 * The callback to replace ::joinArray()
 	 * 
 	 * @var callback
 	 */
-	static private $join_array_callback = NULL;
+	static protected $join_array_callback = NULL;
 	
 	/**
 	 * Rules for plural to singular inflection of nouns
 	 * 
 	 * @var array
 	 */
-	static private $plural_to_singular_rules = array(
+	static protected $plural_to_singular_rules = array(
 		'([ml])ice$'                   => '\1ouse',
 		'(media|info(rmation)?|news)$' => '\1',
 		'(q)uizzes$'                   => '\1uiz',
@@ -109,7 +111,7 @@ class fGrammar
 	 * 
 	 * @var array
 	 */
-	static private $singular_to_plural_rules = array(
+	static protected $singular_to_plural_rules = array(
 		'([ml])ouse$'                  => '\1ice',
 		'(media|info(rmation)?|news)$' => '\1',
 		'(phot|log|vide)o$'            => '\1os',
@@ -136,7 +138,7 @@ class fGrammar
 	 * 
 	 * @var array
 	 */
-	static private $underscorize_rules = array();
+	static protected $underscorize_rules = array();
 	
 	
 	/**
@@ -264,7 +266,7 @@ class fGrammar
 	 * @param array $match  The regular expression match
 	 * @return string  The value to replace the string with
 	 */
-	static private function camelizeCallback($match)
+	static protected function camelizeCallback($match)
 	{
 		return strtoupper($match[1]);
 	}
@@ -616,7 +618,7 @@ class fGrammar
 	 * @param  string $string  The string to split the word from
 	 * @return array  The first element is the beginning part of the string, the second element is the last word
 	 */
-	static private function splitLastWord($string)
+	static protected function splitLastWord($string)
 	{
 		// Handle strings with spaces in them
 		if (strpos($string, ' ') !== FALSE) {
@@ -810,7 +812,7 @@ class fGrammar
 	 * 
 	 * @return fGrammar
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

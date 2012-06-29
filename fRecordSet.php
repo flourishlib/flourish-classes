@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b45
+ * @version    1.0.0b46
+ * @changes    1.0.0b46  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b45  Added support for the starts with like, `^~`, and ends with like, `$~`, operators to both ::build() and ::filter() [wb, 2011-06-20]
  * @changes    1.0.0b44  Backwards Compatibility Break - ::sort() and ::sortByCallback() now return a new fRecordSet instead of sorting the record set in place [wb, 2011-06-20]
  * @changes    1.0.0b43  Added the ability to pass SQL and values to ::buildFromSQL(), added the ability to manually pass the `$limit` and `$page` to ::buildFromArray() and ::buildFromSQL(), changed ::slice() to remember `$limit` and `$page` if possible when `$remember_original_count` is `TRUE` [wb, 2011-01-11]
@@ -478,35 +480,35 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 
 	 * @var string|array
 	 */
-	private $class = NULL;
+	protected $class = NULL;
 	
 	/**
 	 * The limit that was used when creating the set
 	 * 
 	 * @var integer
 	 */
-	private $limit = NULL;
+	protected $limit = NULL;
 	
 	/**
 	 * The page of results the record set represents
 	 * 
 	 * @var integer
 	 */
-	private $page = 1;
+	protected $page = 1;
 	
 	/**
 	 * The number of rows that would have been returned if a `LIMIT` clause had not been used, or the SQL to get that number
 	 * 
 	 * @var integer|string
 	 */
-	private $non_limited_count = NULL;
+	protected $non_limited_count = NULL;
 	
 	/**
 	 * An array of the records in the set, initially empty
 	 * 
 	 * @var array
 	 */
-	private $records = array();
+	protected $records = array();
 	
 	
 	/**
@@ -640,7 +642,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string    $route          The route to this table from another table
 	 * @return array  The params with the `ORDER BY` clause added
 	 */
-	private function addOrderByParams($db, $schema, $params, $related_class, $route=NULL)
+	protected function addOrderByParams($db, $schema, $params, $related_class, $route=NULL)
 	{
 		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
@@ -714,7 +716,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string    $route   The route to this table from another table
 	 * @return array  The params with the `WHERE` clause added
 	 */
-	private function addWhereParams($db, $schema, $params, $route=NULL)
+	protected function addWhereParams($db, $schema, $params, $route=NULL)
 	{
 		$table = fORM::tablize($this->class);
 		$table_with_route = ($route) ? $table . '{' . $route . '}' : $table;
@@ -1494,7 +1496,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
 	 * @return fRecordSet  The record set object, to allow for method chaining
 	 */
-	private function prebuild($related_class, $route=NULL)
+	protected function prebuild($related_class, $route=NULL)
 	{
 		if (!$this->records) {
 			return $this;
@@ -1608,7 +1610,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string $route          This should be a column name or a join table name and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
 	 * @return fRecordSet  The record set object, to allow for method chaining
 	 */
-	private function precount($related_class, $route=NULL)
+	protected function precount($related_class, $route=NULL)
 	{
 		if (!$this->records) {
 			return $this;
@@ -1687,7 +1689,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string $route          This should be the column name of the foreign key and is only required when there are multiple routes to a related table. If there are multiple routes and this is not specified, an fProgrammerException will be thrown.
 	 * @return fRecordSet  The record set object, to allow for method chaining
 	 */
-	private function precreate($related_class, $route=NULL)
+	protected function precreate($related_class, $route=NULL)
 	{
 		if (!$this->records) {
 			return $this;
@@ -1830,7 +1832,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param fActiveRecord $b  The second record to compare
 	 * @return integer  < 0 if `$a` is less than `$b`, 0 if `$a` = `$b`, > 0 if `$a` is greater than `$b`
 	 */
-	private function sortCallback($a, $b)
+	protected function sortCallback($a, $b)
 	{
 		if ($this->sort_direction == 'asc') {
 			return fUTF8::inatcmp($a->{$this->sort_method}(), $b->{$this->sort_method}());
@@ -1951,7 +1953,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * @param  string $operation  The operation being performed - used in the exception thrown
 	 * @return void
 	 */
-	private function validateSingleClass($operation)
+	protected function validateSingleClass($operation)
 	{
 		if (!is_array($this->class) && $this->class != 'fActiveRecord') {
 			return;

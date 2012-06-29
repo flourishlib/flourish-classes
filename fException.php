@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  * 
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b8  Added a missing line of backtrace to ::formatTrace() [wb, 2009-06-28]
  * @changes    1.0.0b7  Updated ::__construct() to no longer require a message, like the Exception class, and allow for non-integer codes [wb, 2009-06-26]
  * @changes    1.0.0b6  Fixed ::splitMessage() so that the original message is returned if no list items are found, added ::reorderMessage() [wb, 2009-06-02]
@@ -26,7 +28,7 @@ abstract class fException extends Exception
 	 * 
 	 * @var array
 	 */
-	static private $callbacks = array();
+	static protected $callbacks = array();
 	
 	
 	/**
@@ -169,7 +171,7 @@ abstract class fException extends Exception
 	 * @param  string $b  The second string to compare
 	 * @return integer  `-1` if `$a` is longer than `$b`, `0` if they are equal length, `1` if `$a` is shorter than `$b`
 	 */
-	static private function sortMatchingArray($a, $b)
+	static protected function sortMatchingArray($a, $b)
 	{
 		return -1 * strnatcmp(strlen($a), strlen($b));
 	}

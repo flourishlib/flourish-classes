@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2008-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Dan Collins, iMarc LLC [dc-imarc] <dan@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMOrdering
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b19  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b18  Changed ::configureOrderingColumn() to ensure the column specified can store negative values [wb, 2010-07-21]
  * @changes    1.0.0b17  Changed validation messages array to use column name keys [wb, 2010-05-26]
@@ -48,7 +50,7 @@ class fORMOrdering
 	 * 
 	 * @var array
 	 */
-	static private $ordering_columns = array();
+	static protected $ordering_columns = array();
 	
 	
 	/**
@@ -59,7 +61,7 @@ class fORMOrdering
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -153,7 +155,7 @@ class fORMOrdering
 	 * @param  array   &$old_values    The record's old values
 	 * @return array  The updated params for fDatabase::query()
 	 */
-	static private function addOldOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values, &$old_values)
+	static protected function addOldOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values, &$old_values)
 	{
 		$column_info = $schema->getColumnInfo($table);
 		
@@ -188,7 +190,7 @@ class fORMOrdering
 	 * @param  array   &$values        The values to match with
 	 * @return array  The updated params for fDatabase::query()
 	 */
-	static private function addOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values)
+	static protected function addOtherFieldsWhereParams($schema, $params, $table, $other_columns, &$values)
 	{
 		$column_info = $schema->getColumnInfo($table);
 		
@@ -382,7 +384,7 @@ class fORMOrdering
 	 * @param  array  &$old_values      The old values of the record
 	 * @return boolean  If the record is part of a new ordering set
 	 */
-	static private function isInNewSet($ordering_column, $other_columns, &$values, &$old_values)
+	static protected function isInNewSet($ordering_column, $other_columns, &$values, &$old_values)
 	{
 		$value_empty      = !$values[$ordering_column];
 		$old_value_empty  = !fActiveRecord::retrieveOld($old_values, $ordering_column, TRUE);
@@ -771,7 +773,7 @@ class fORMOrdering
 	 * 
 	 * @return fORMOrdering
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 
