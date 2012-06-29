@@ -10,12 +10,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b81
+ * @version    1.0.0b82
+ * @changes    1.0.0b82  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
  * @changes    1.0.0b80  Added support to ::checkCondition() for the `^~` and `$~` operators [wb, 2011-06-20]
  * @changes    1.0.0b79  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
@@ -250,7 +252,7 @@ abstract class fActiveRecord
 	 * @param  mixed $result     The result of the method call(s)
 	 * @return boolean  If the comparison was successful
 	 */
-	static private function checkCondition($operator, $value, $result)
+	static protected function checkCondition($operator, $value, $result)
 	{
 		$was_array = is_array($value);
 		if (!$was_array) { $value = array($value); }
@@ -598,7 +600,7 @@ abstract class fActiveRecord
 	 * @param string $route    The route to the subject
 	 * @return array  An array with the structure: array(0 => $subject, 1 => $route, 2 => $plural)
 	 */
-	static private function determineSubject($class, $subject, $route)
+	static protected function determineSubject($class, $subject, $route)
 	{
 		$schema  = fORMSchema::retrieve($class);
 		$table   = fORM::tablize($class);

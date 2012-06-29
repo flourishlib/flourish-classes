@@ -4,21 +4,23 @@
  * 
  * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMDate
  * 
- * @version    1.0.0b9
- * @changes    1.0.0b9  Updated code to work with the new fORM API [wb, 2010-08-06]
- * @changes    1.0.0b8  Changed validation messages array to use column name keys [wb, 2010-05-26]
- * @changes    1.0.0b7  Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
- * @changes    1.0.0b6  Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
- * @changes    1.0.0b5  Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
- * @changes    1.0.0b4  Fixed setting up the inspect callback in ::configureTimezoneColumn() [wb, 2009-10-11]
- * @changes    1.0.0b3  Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
- * @changes    1.0.0b2  Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
- * @changes    1.0.0b   The initial implementation [wb, 2008-09-05]
+ * @version    1.0.0b10
+ * @changes    1.0.0b10  Changed all private declarations to public (alandsidel, 2012-06-29)
+ * @changes    1.0.0b9   Updated code to work with the new fORM API [wb, 2010-08-06]
+ * @changes    1.0.0b8   Changed validation messages array to use column name keys [wb, 2010-05-26]
+ * @changes    1.0.0b7   Fixed the `set` methods to return the record object in order to be consistent with all other `set` methods [wb, 2010-03-15]
+ * @changes    1.0.0b6   Fixed an issue with calling a non-existent method on fTimestamp instances [wb, 2009-11-03]
+ * @changes    1.0.0b5   Updated code for the new fORMDatabase and fORMSchema APIs [wb, 2009-10-28]
+ * @changes    1.0.0b4   Fixed setting up the inspect callback in ::configureTimezoneColumn() [wb, 2009-10-11]
+ * @changes    1.0.0b3   Updated to use new fORM::registerInspectCallback() method [wb, 2009-07-13]
+ * @changes    1.0.0b2   Updated code to use new fValidationException::formatField() method [wb, 2009-06-04]  
+ * @changes    1.0.0b    The initial implementation [wb, 2008-09-05]
  */
 class fORMDate
 {
@@ -42,28 +44,28 @@ class fORMDate
 	 * 
 	 * @var array
 	 */
-	static private $date_created_columns = array();
+	static protected $date_created_columns = array();
 	
 	/**
 	 * Columns that should be filled with the date updated
 	 * 
 	 * @var array
 	 */
-	static private $date_updated_columns = array();
+	static protected $date_updated_columns = array();
 	
 	/**
 	 * Columns that store timezone information for timestamp columns
 	 * 
 	 * @var array
 	 */
-	static private $timezone_columns = array();
+	static protected $timezone_columns = array();
 	
 	/**
 	 * Timestamp columns that have a corresponding timezone column
 	 * 
 	 * @var array
 	 */
-	static private $timestamp_columns = array();
+	static protected $timestamp_columns = array();
 	
 	
 	/**
@@ -74,7 +76,7 @@ class fORMDate
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -570,7 +572,7 @@ class fORMDate
 	 * 
 	 * @return fORMDate
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

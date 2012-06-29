@@ -4,13 +4,15 @@
  * 
  * @copyright  Copyright (c) 2010-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  *
- * @version 1.0.0b
- * @changes 1.0.0b    Added the `prev_disabled` and `next_disabled` pieces [wb, 2011-09-06]
+ * @version 1.0.0b2
+ * @changes 1.0.0b2  Changed all private declarations to public (alandsidel, 2012-06-29)
+ * @changes 1.0.0b1  Added the `prev_disabled` and `next_disabled` pieces [wb, 2011-09-06]
  */
 class fPagination
 {
@@ -27,7 +29,7 @@ class fPagination
 	 * 
 	 * @var array
 	 */
-	static private $filters = array(
+	static protected $filters = array(
 		'inflect',
 		'lower',
 		'url_encode',
@@ -39,7 +41,7 @@ class fPagination
 	 * 
 	 * @var array
 	 */
-	static private $templates = array(
+	static protected $templates = array(
 		'default' => array(
 			'type'   => 'without_first_last',
 			'size'   => 4,
@@ -197,7 +199,7 @@ class fPagination
 	 * @param string|array $class  The class or classes present in the record set
 	 * @return array  The merged data
 	 */
-	static private function extendRecordSetInfo($data, $class)
+	static protected function extendRecordSetInfo($data, $class)
 	{
 		if (is_array($class)) {
 			$record_name = array_map(array('fORM', 'getRecordName'), $class);
@@ -245,7 +247,7 @@ class fPagination
 	 * @param integer $total_records  The total number of records
 	 * @return void
 	 */
-	static private function printTemplatedInfo($template, $data, $page, $per_page, $total_records)
+	static protected function printTemplatedInfo($template, $data, $page, $per_page, $total_records)
 	{
 		$total_pages = ceil($total_records/$per_page);
 		
@@ -331,7 +333,7 @@ class fPagination
 	 * @param integer $total_records  The total number of records
 	 * @return void
 	 */
-	static private function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
+	static protected function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
 	{
 		if ($total_records <= $per_page) {
 			return FALSE;
@@ -497,7 +499,7 @@ class fPagination
 	 * @param array  $data      The data to replace the variables with
 	 * @return void
 	 */
-	static private function printPiece($template, $name, $data)
+	static protected function printPiece($template, $name, $data)
 	{
 		if (!isset(self::$templates[$template]['pieces'][$name])) {
 			throw new fProgrammerException(
@@ -546,28 +548,28 @@ class fPagination
 	 * 
 	 * @var array
 	 */
-	private $data;
+	protected $data;
 	
 	/**
 	 * The page number
 	 * 
 	 * @var integer
 	 */
-	private $page;
+	protected $page;
 	
 	/**
 	 * The number of records per page
 	 * 
 	 * @var integer
 	 */
-	private $per_page;
+	protected $per_page;
 	
 	/**
 	 * The total number of records
 	 * 
 	 * @var integer
 	 */
-	private $total_records;
+	protected $total_records;
 	
 	
 	/**

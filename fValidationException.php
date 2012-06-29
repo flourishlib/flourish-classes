@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2010 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidationException
  * 
- * @version    1.0.0b4
+ * @version    1.0.0b5
+ * @changes    1.0.0b5  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b4  Added support for nested error arrays [wb-imarc, 2010-10-03]
  * @changes    1.0.0b3  Added ::removeFieldNames() [wb, 2010-05-26]
  * @changes    1.0.0b2  Added a custom ::__construct() to handle arrays of messages [wb, 2009-09-17]
@@ -168,7 +170,7 @@ class fValidationException extends fExpectedException
 	 * @param  array $errors  An array of (possibly nested) child record errors
 	 * @return array  An array of string error messages
 	 */
-	private function formatErrorArray($errors)
+	protected function formatErrorArray($errors)
 	{
 		$new_errors = array();
 		foreach ($errors as $error) {

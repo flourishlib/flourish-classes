@@ -8,12 +8,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  * 
- * @version    1.0.0b10
+ * @version    1.0.0b11
+ * @changes    1.0.0b11  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b10  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b9   Fixed ::redirect() to handle no parameters properly [wb, 2011-06-13]
  * @changes    1.0.0b8   Added the `$delimiter` parameter to ::makeFriendly() [wb, 2011-06-03]
@@ -258,7 +260,7 @@ class fURL
 	 * 
 	 * @return fURL
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

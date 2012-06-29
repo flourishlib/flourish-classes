@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2011-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLSchemaTranslation
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4
  * @changes    1.0.0b3   Fixed associating a sequence with a column in PostgreSQL when setting auto-increment, fixed detection of some Oracle CHECK(IN) constraints, fixed default values for SQLite `ON DELETE` and `ON UPDATE` clauses [wb, 2012-01-12]
  * @changes    1.0.0b2   Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b    The initial implementation [wb, 2011-05-09]
@@ -22,7 +24,7 @@ class fSQLSchemaTranslation
 	 * @param  string $identifier  The SQL identifier
 	 * @return string  The unescaped identifier
 	 */
-	static private function unescapeIdentifier($identifier)
+	static protected function unescapeIdentifier($identifier)
 	{
 		return str_replace('"', '', strtolower($identifier));
 	}
@@ -74,7 +76,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql  The SQL `CREATE TABLE` statement
 	 * @return array  An associative array of information for each column - see method description for details
 	 */
-	static private function parseSQLiteColumnDefinitions($sql)
+	static protected function parseSQLiteColumnDefinitions($sql)
 	{
 		preg_match_all(
 			'#(?<=,|\(|\*/|\n)(\s*)[`"\'\[]?(\w+)[`"\'\]]?(\s+(?:[a-z]+)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?)(?:(\s+NOT\s+NULL)|(\s+NULL)|(\s+DEFAULT\s+([^, \'\n]*|\'(?:\'\'|[^\']+)*\'))|(\s+UNIQUE)|(\s+PRIMARY\s+KEY(?:\s+AUTOINCREMENT)?)|(\s+CHECK\s*\("?\w+"?\s+IN\s+\(\s*(?:(?:[^, \'\n]+|\'(?:\'\'|[^\']+)*\')\s*,\s*)*\s*(?:[^, \'\n]+|\'(?:\'\'|[^\']+)*\')\)\)))*(\s+REFERENCES\s+[\'"`\[]?\w+[\'"`\]]?\s*\(\s*[\'"`\[]?\w+[\'"`\]]?\s*\)\s*(?:\s+(?:ON\s+DELETE|ON\s+UPDATE)\s+(?:CASCADE|NO\s+ACTION|RESTRICT|SET\s+NULL|SET\s+DEFAULT))*(\s+(?:DEFERRABLE|NOT\s+DEFERRABLE))?)?((?:\s*(?:/\*\s*((?:(?!\*/).)*?)\s*\*/))?\s*(?:,[ \t]*(?:--[ \t]*([^\n]*?)[ \t]*(?=\n)|/\*\s*((?:(?!\*/).)*?)\s*\*/)?|(?:--[ \t]*([^\n]*?)[ \t]*(?=\n))?\s*(?=\))))#msi',
@@ -121,7 +123,7 @@ class fSQLSchemaTranslation
 	 * @param  string $search            The string to remove
 	 * @return string  The modified `CREATE TABLE` statement
 	 */
-	static private function removeFromSQLiteCreateTable($create_table_sql, $search)
+	static protected function removeFromSQLiteCreateTable($create_table_sql, $search)
 	{
 		if (preg_match('#,(\s*--.*)?\s*$#D', $search)) {
 			$regex = '#' . preg_quote($search, '#') . '#';
@@ -137,14 +139,14 @@ class fSQLSchemaTranslation
 	 * 
 	 * @var fDatabase
 	 */
-	private $database;
+	protected $database;
 
 	/**
 	 * Database-specific schema information needed for translation
 	 * 
 	 * @var array
 	 */
-	private $schema_info;
+	protected $schema_info;
 	
 	
 	/**
@@ -182,7 +184,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql    The SQL definition of the index 
 	 * @return void
 	 */
-	private function addSQLiteIndex($name, $table, $sql)
+	protected function addSQLiteIndex($name, $table, $sql)
 	{
 		if (!isset($this->schema_info['sqlite_indexes'])) {
 			$this->schema_info['sqlite_indexes'] = array();
@@ -202,7 +204,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql    The SQL used to create the table
 	 * @return void
 	 */
-	private function addSQLiteTable($table, $sql)
+	protected function addSQLiteTable($table, $sql)
 	{
 		if (!isset($this->schema_info['sqlite_create_tables'])) {
 			$this->getSQLiteTables();
@@ -220,7 +222,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql    The SQL definition of the trigger 
 	 * @return void
 	 */
-	private function addSQLiteTrigger($name, $table, $sql)
+	protected function addSQLiteTrigger($name, $table, $sql)
 	{
 		if (!isset($this->schema_info['sqlite_triggers'])) {
 			$this->schema_info['sqlite_triggers'] = array();
@@ -244,7 +246,7 @@ class fSQLSchemaTranslation
 	 * @param  string $delete_clause       What is to be done on a delete
 	 * @return string  The trigger
 	 */
-	private function createSQLiteForeignKeyTriggerOnDelete(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
+	protected function createSQLiteForeignKeyTriggerOnDelete(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $delete_clause)
 	{
 		switch (strtolower($delete_clause)) {
 			case 'no action':
@@ -293,7 +295,7 @@ class fSQLSchemaTranslation
 	 * @param  string $update_clause       What is to be done on an update
 	 * @return string  The trigger
 	 */
-	private function createSQLiteForeignKeyTriggerOnUpdate(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
+	protected function createSQLiteForeignKeyTriggerOnUpdate(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $update_clause)
 	{
 		switch (strtolower($update_clause)) {
 			case 'no action':
@@ -342,7 +344,7 @@ class fSQLSchemaTranslation
 	 * @param  boolean $referencing_not_null  If the referencing columns is set to not null
 	 * @return string  The trigger
 	 */
-	private function createSQLiteForeignKeyTriggerValidInsertUpdate(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
+	protected function createSQLiteForeignKeyTriggerValidInsertUpdate(&$extra_statements, $referencing_table, $referencing_column, $referenced_table, $referenced_column, $referencing_not_null)
 	{
 		// Verify key on inserts
 		$name = 'fki_ver_' . $referencing_table . '_' . $referencing_column;
@@ -384,7 +386,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql    The `ALTER TABLE` statement
 	 * @param  string $type   A 2-character string representing the type of constraint
 	 */
-	private function generateConstraintName($sql, $type)
+	protected function generateConstraintName($sql, $type)
 	{
 		$constraint = '_' . $type;
 		$constraint = '_' . substr(time(), -8) . $constraint;
@@ -400,7 +402,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column to get the check constraint for
 	 * @return array|NULL  An associative array with the keys: `name` and `definition` or `NULL`
 	 */
-	private function getDB2CheckConstraint($schema, $table, $column)
+	protected function getDB2CheckConstraint($schema, $table, $column)
 	{
 		$constraint = $this->database->query(
 			"SELECT
@@ -447,7 +449,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column to get the foreign keys for and the foreign keys that point to
 	 * @return array  An associative array of the key being the constraint name and the value being an associative array containing the keys: `schema`, `table`, `column`, `foreign_schema`, `foreign_table`, `foreign_column`, `on_delete` and `on_cascade`
 	 */
-	private function getDB2ForeignKeyConstraints($schema, $table, $column=NULL)
+	protected function getDB2ForeignKeyConstraints($schema, $table, $column=NULL)
 	{
 		if ($column) {
 			$where_conditions = "((
@@ -522,7 +524,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table   The table to get the primary key for
 	 * @return array  The columns in the primary key
 	 */
-	private function getDB2PrimaryKeyConstraint($schema, $table)
+	protected function getDB2PrimaryKeyConstraint($schema, $table)
 	{
 		$constraints = $this->database->query(
 			"SELECT
@@ -560,7 +562,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column to filter the unique keys by
 	 * @return array  An associative array of the key being the constraint name and the value being the columns in the unique key
 	 */
-	private function getDB2UniqueConstraints($schema, $table, $column)
+	protected function getDB2UniqueConstraints($schema, $table, $column)
 	{
 		$constraints = $this->database->query(
 			"SELECT
@@ -617,7 +619,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column name
 	 * @return array|NULL  An associative array with the keys `name` and `definition`, or `NULL`
 	 */
-	private function getMSSQLCheckConstraint($schema, $table, $column)
+	protected function getMSSQLCheckConstraint($schema, $table, $column)
 	{
 		$constraint = $this->database->query(
 			"SELECT
@@ -662,7 +664,7 @@ class fSQLSchemaTranslation
 	 * @param  string|array $column  The column name(s)
 	 * @return array  An array of constraint names that reference the column(s)
 	 */
-	private function getMSSQLForeignKeyConstraints($schema, $table, $column)
+	protected function getMSSQLForeignKeyConstraints($schema, $table, $column)
 	{
 		settype($column, 'array');
 
@@ -720,7 +722,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column name
 	 * @return array|NULL  An associative array with the keys `name` and `definition`, or `NULL`
 	 */
-	private function getMSSQLDefaultConstraint($schema, $table, $column)
+	protected function getMSSQLDefaultConstraint($schema, $table, $column)
 	{
 		$constraint = $this->database->query(
 			"SELECT
@@ -760,7 +762,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table   The table to get the constraint for
 	 * @return array|NULL  An associative array with the keys `name`, `columns` and `autoincrement` or `NULL`
 	 */
-	private function getMSSQLPrimaryKeyConstraint($schema, $table)
+	protected function getMSSQLPrimaryKeyConstraint($schema, $table)
 	{
 		$column_info = $this->database->query(
 			"SELECT
@@ -817,7 +819,7 @@ class fSQLSchemaTranslation
 	 * @param  string $column  The column name
 	 * @return array  An associative array of constraint_name => columns
 	 */
-	private function getMSSQLUniqueConstraints($schema, $table, $column)
+	protected function getMSSQLUniqueConstraints($schema, $table, $column)
 	{
 		$constraint_columns = $this->database->query(
 			"SELECT
@@ -875,7 +877,7 @@ class fSQLSchemaTranslation
 	 * @param  string|array $columns  The column, or an array of valid column names
 	 * @column array  An array of associative arrays containing the keys `constraint_name`, `table`, `column`, `foreign_table` and `foreign_column`
 	 */
-	private function getMySQLForeignKeys($table, $columns)
+	protected function getMySQLForeignKeys($table, $columns)
 	{
 		if (is_string($columns)) {
 			$columns = array($columns);
@@ -932,7 +934,7 @@ class fSQLSchemaTranslation
 	 *
 	 * @return array  An array of table names
 	 */
-	private function getMySQLTables()
+	protected function getMySQLTables()
 	{
 		if (!isset($this->schema_info['version'])) {
 			$version = $this->database->query("SELECT version()")->fetchScalar();
@@ -963,7 +965,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table  The table to retrieve the column names for
 	 * @return array  The column names for the table
 	 */
-	private function getSQLiteColumns($table)
+	protected function getSQLiteColumns($table)
 	{
 		$create_sql = $this->getSQLiteCreateTable($table);
 
@@ -977,7 +979,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table  The table to retrieve the `CREATE TABLE` statement for
 	 * @return string  The `CREATE TABLE` SQL statement
 	 */
-	private function getSQLiteCreateTable($table)
+	protected function getSQLiteCreateTable($table)
 	{
 		if (!isset($this->schema_info['sqlite_create_tables'])) {
 			$this->getSQLiteTables();
@@ -998,7 +1000,7 @@ class fSQLSchemaTranslation
 	 * @param  string  $column  Only foreign keys pointing to this column will be returned
 	 * @return array  An array of arrays containing they keys: `table`, `column`, `foreign_table`, `foreign_column`, `on_delete` and `on_update`
 	 */
-	private function getSQLiteForeignKeys($table, $column=NULL)
+	protected function getSQLiteForeignKeys($table, $column=NULL)
 	{
 		$output = array();
 		foreach ($this->getSQLiteTables() as $_table) {
@@ -1050,7 +1052,7 @@ class fSQLSchemaTranslation
 	 * 
 	 * @return array  An associative array with the key being the index name and the value an associative arrays, each containing the keys: `table`, `sql`
 	 */
-	private function getSQLiteIndexes($table=NULL)
+	protected function getSQLiteIndexes($table=NULL)
 	{
 		if (!isset($this->schema_info['sqlite_indexes'])) {
 			$this->schema_info['sqlite_indexes'] = array();
@@ -1088,7 +1090,7 @@ class fSQLSchemaTranslation
 	 * 
 	 * @return array
 	 */
-	private function getSQLiteTables()
+	protected function getSQLiteTables()
 	{
 		if (!isset($this->schema_info['sqlite_create_tables'])) {
 			$this->schema_info['sqlite_create_tables'] = array();
@@ -1113,7 +1115,7 @@ class fSQLSchemaTranslation
 	 * 
 	 * @return array  An associative array with the key being the trigger name and the value an associative arrays, each containing the keys: `table`, `sql`
 	 */
-	private function getSQLiteTriggers($exclude_table=NULL)
+	protected function getSQLiteTriggers($exclude_table=NULL)
 	{
 		if (!isset($this->schema_info['sqlite_triggers'])) {
 			$this->schema_info['sqlite_triggers'] = array();
@@ -1152,7 +1154,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table   The table to remove the indexes for
 	 * @return void
 	 */
-	private function removeSQLiteIndexes($table)
+	protected function removeSQLiteIndexes($table)
 	{
 		if (!isset($this->schema_info['sqlite_indexes'])) {
 			return;
@@ -1178,7 +1180,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table  The table to remove
 	 * @return void
 	 */
-	private function removeSQLiteTable($table)
+	protected function removeSQLiteTable($table)
 	{
 		if (!isset($this->schema_info['sqlite_create_tables'])) {
 			return;
@@ -1194,7 +1196,7 @@ class fSQLSchemaTranslation
 	 * @param  string $name   The trigger name
 	 * @return void
 	 */
-	private function removeSQLiteTrigger($name)
+	protected function removeSQLiteTrigger($name)
 	{
 		if (!isset($this->schema_info['sqlite_triggers'])) {
 			return;
@@ -1210,7 +1212,7 @@ class fSQLSchemaTranslation
 	 * @param  string $table   The table to remove the triggers for
 	 * @return void
 	 */
-	private function removeSQLiteTriggers($table)
+	protected function removeSQLiteTriggers($table)
 	{
 		if (!isset($this->schema_info['sqlite_triggers'])) {
 			return;
@@ -1237,7 +1239,7 @@ class fSQLSchemaTranslation
 	 * @param  string $sql    The SQL statement that caused the error
 	 * @return void
 	 */
-	private function throwException($error, $sql)
+	protected function throwException($error, $sql)
 	{
 		$db_type_map = array(
 			'db2'        => 'DB2',
@@ -1316,7 +1318,7 @@ class fSQLSchemaTranslation
 	 * @param  array  &$rollback_statements  SQL statements to rollback `$sql` and `$extra_statements` if something goes wrong
 	 * @return string  The translated SQL
 	 */
-	private function translateAlterTableStatements($sql, &$extra_statements, &$rollback_statements=NULL)
+	protected function translateAlterTableStatements($sql, &$extra_statements, &$rollback_statements=NULL)
 	{
 		if (!preg_match('#^\s*ALTER\s+TABLE\s+(\w+|"[^"]+")\s+(.*)$#siD', $sql, $table_matches) && !preg_match('#^\s*COMMENT\s+ON\s+COLUMN\s+"?((?:\w+"?\."?)?\w+)"?\.("?\w+"?\s+IS\s+(?:\'.*\'|%\d+\$s))\s*$#Dis', $sql, $table_matches)) {
 			return $sql;
@@ -1504,7 +1506,7 @@ class fSQLSchemaTranslation
 	 * @param  array  &$extra_statements  Any extra SQL statements that need to be added
 	 * @return string  The translated SQL
 	 */
-	private function translateCreateTableStatements($sql, &$extra_statements)
+	protected function translateCreateTableStatements($sql, &$extra_statements)
 	{
 		if (!preg_match('#^\s*CREATE\s+TABLE\s+["`\[]?(\w+)["`\]]?#i', $sql, $table_matches) ) {
 			return $sql;
@@ -1694,7 +1696,7 @@ class fSQLSchemaTranslation
 	 * @param string $sql  The SQL to translate
 	 * @return string  The translated SQL
 	 */
-	private function translateDataTypes($sql)
+	protected function translateDataTypes($sql)
 	{
 		switch ($this->database->getType()) {
 			case 'db2':
@@ -1761,7 +1763,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return strin  The modified SQL statement
 	 */
-	private function translateDB2AlterTableStatements($sql, &$extra_statements, $data)
+	protected function translateDB2AlterTableStatements($sql, &$extra_statements, $data)
 	{
 		$data['schema']               = strtolower($this->database->getUsername());
 		$data['table_without_schema'] = $data['table'];
@@ -2284,7 +2286,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translateMSSQLAlterTableStatements($sql, &$extra_statements, $data)
+	protected function translateMSSQLAlterTableStatements($sql, &$extra_statements, $data)
 	{
 		$data['schema']               = 'dbo';
 		$data['table_without_schema'] = $data['table'];
@@ -3007,7 +3009,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data                  Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translateMySQLAlterTableStatements($sql, &$extra_statements, &$rollback_statements, $data)
+	protected function translateMySQLAlterTableStatements($sql, &$extra_statements, &$rollback_statements, $data)
 	{
 		if ($data['type'] == 'rename_table') {
 			$sql = $this->database->escape(
@@ -3453,7 +3455,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translateOracleAlterTableStatements($sql, &$extra_statements, $data)
+	protected function translateOracleAlterTableStatements($sql, &$extra_statements, $data)
 	{
 		$data['schema']               = strtolower($this->database->getUsername());
 		$data['table_without_schema'] = $data['table'];
@@ -4083,7 +4085,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translatePostgreSQLAlterTableStatements($sql, &$extra_statements, $data)
+	protected function translatePostgreSQLAlterTableStatements($sql, &$extra_statements, $data)
 	{
 		$data['schema']               = 'public';
 		$data['table_without_schema'] = $data['table'];
@@ -4443,7 +4445,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translateSQLiteAlterTableStatements($sql, &$extra_statements, $data)
+	protected function translateSQLiteAlterTableStatements($sql, &$extra_statements, $data)
 	{
 		$toggle_foreign_key_support = FALSE;
 		if (!isset($this->schema_info['foreign_keys_enabled'])) {
@@ -5109,7 +5111,7 @@ class fSQLSchemaTranslation
 	 * @param  array  &$extra_statements  Any extra SQL statements that need to be added
 	 * @return string  The translated SQL
 	 */
-	private function translateSQLiteDropTableStatements($sql, &$extra_statements)
+	protected function translateSQLiteDropTableStatements($sql, &$extra_statements)
 	{
 		if (preg_match('#^\s*DROP\s+TABLE\s+[["\'`]?(\w+)["\'`\]]?\s*$#iD', $sql, $match)) {
 			$dependent_tables = array();
@@ -5152,7 +5154,7 @@ class fSQLSchemaTranslation
 	 * @param array  $data               Data parsed from the `ALTER TABLE` statement
 	 * @return string  The modified SQL statement
 	 */
-	private function translateSQLiteRenameTableStatements($sql, &$extra_statements, $data)
+	protected function translateSQLiteRenameTableStatements($sql, &$extra_statements, $data)
 	{
 		$tables = $this->getSQLiteTables();
 		if (in_array($data['new_table_name'], $tables)) {

@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fSQLTranslation
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b20  Added fix for PostgreSQL to handle `INSERT` statements that don't specify any columns or values [wb, 2011-09-06]
  * @changes    1.0.0b19  Removed the stray method ::removeSQLiteIndexes() that was left over from moving code into fSQLSchemaTranslation [wb, 2011-05-17]
  * @changes    1.0.0b18  Fixed `LENGTH()` and `SUBSTR()` functions for non-ascii characters being stored in MySQL, SQLite and DB2, moved `CREATE TABLE` support to fSQLSchemaTranslation [wb, 2011-05-09]
@@ -68,7 +70,7 @@ class fSQLTranslation
 	 * @param  string $clause  The SQL `FROM` clause to parse
 	 * @return array  The tables in the `FROM` clause, in the format `{table_alias} => {table_name}`
 	 */
-	static private function parseTableAliases($sql)
+	static protected function parseTableAliases($sql)
 	{
 		$aliases = array();
 		
@@ -219,35 +221,35 @@ class fSQLTranslation
 	 * 
 	 * @var fCache
 	 */
-	private $cache;
+	protected $cache;
 	
 	/**
 	 * The cache prefix to use for cache entries
 	 * 
 	 * @var string
 	 */
-	private $cache_prefix;
+	protected $cache_prefix;
 	
 	/**
 	 * The fDatabase instance
 	 * 
 	 * @var fDatabase
 	 */
-	private $database;
+	protected $database;
 	
 	/**
 	 * If debugging is enabled
 	 * 
 	 * @var boolean
 	 */
-	private $debug;
+	protected $debug;
 	
 	/**
 	 * Database-specific schema information needed for translation
 	 * 
 	 * @var array
 	 */
-	private $schema_info;
+	protected $schema_info;
 
 	/**
 	 * An instance of fSQLSchemaTranslation for when DDL statements are run
@@ -256,7 +258,7 @@ class fSQLTranslation
 	 * 
 	 * @var fSQLSchemaTranslation
 	 */
-	private $schema_translation;
+	protected $schema_translation;
 	
 	
 	/**
@@ -314,7 +316,7 @@ class fSQLTranslation
 	 * 
 	 * @return void
 	 */
-	private function createSQLiteFunctions()
+	protected function createSQLiteFunctions()
 	{
 		$function = array();
 		$functions[] = array('acos',     'acos',                                         1);
@@ -400,7 +402,7 @@ class fSQLTranslation
 	 * @param  string $sql  The SQL to fix
 	 * @return string  The fixed SQL
 	 */
-	private function fixMSSQLNationalColumns($sql)
+	protected function fixMSSQLNationalColumns($sql)
 	{
 		if (!preg_match_all('#select((?:(?:(?!\sfrom\s)[^()])+|\(((?:[^()]+|\((?2)\))*)\))*\s)from((?:(?:(?!\sunion\s|\swhere\s|\sgroup by\s|\slimit\s|\sorder by\s)[^()])+|\(((?:[^()]+|\((?4)\))*)\))*)(?=\swhere\s|\sgroup by\s|\slimit\s|\sorder by\s|\sunion\s|\)|$)#i', $sql, $matches, PREG_SET_ORDER)) {
 			return $sql;
@@ -632,7 +634,7 @@ class fSQLTranslation
 	 * @param  string $sql The SQL to fix
 	 * @return string  The fixed SQL
 	 */
-	private function fixOracleEmptyStrings($sql)
+	protected function fixOracleEmptyStrings($sql)
 	{
 		if (preg_match('#^(UPDATE\s+(?:(?:"?\w+"?\.)?"?\w+"?\.)?"?\w+"?\s+)(SET((?:(?:(?!\bwhere\b|\breturning\b)[^()])+|\(((?:[^()]+|\((?3)\))*)\))*))(.*)$#i', $sql, $set_match)) {
 			$sql        = $set_match[1] . ':set_clause ' . $set_match[5];
@@ -657,7 +659,7 @@ class fSQLTranslation
 	 * 
 	 * @return string  The cache prefix to use
 	 */
-	private function makeCachePrefix()
+	protected function makeCachePrefix()
 	{
 		if (!$this->cache_prefix) {
 			$prefix  = 'fSQLTranslation::' . $this->database->getType() . '::';
@@ -757,7 +759,7 @@ class fSQLTranslation
 	 * @param  string $sql  The SQL to translate
 	 * @return string  The translated SQL
 	 */
-	private function translateBasicSyntax($sql)
+	protected function translateBasicSyntax($sql)
 	{
 		if ($this->database->getType() == 'db2') {
 			$regex = array(
@@ -858,7 +860,7 @@ class fSQLTranslation
 	 * @param string $sql  The SQL to translate
 	 * @return string  The translated SQL
 	 */
-	private function translateCastClauses($sql)
+	protected function translateCastClauses($sql)
 	{
 		if (!preg_match_all('#\b(CAST\(.+?\s+AS\s+)(\w+(\([^)]+\))?\))#i', $sql, $matches, PREG_SET_ORDER)) {
 			return $sql;
@@ -934,7 +936,7 @@ class fSQLTranslation
 	 * @param  string $sql  The SQL to translate
 	 * @return string  The translated SQL
 	 */
-	private function translateLimitOffsetToRowNumber($sql)
+	protected function translateLimitOffsetToRowNumber($sql)
 	{
 		if (!preg_match('#\sLIMIT\s#i', $sql)) {
 			return $sql;
@@ -1027,7 +1029,7 @@ class fSQLTranslation
 	 * @param  string $sql The SQL to fix
 	 * @return string  The fixed SQL
 	 */
-	private function uppercaseIdentifiers($sql)
+	protected function uppercaseIdentifiers($sql)
 	{
 		preg_match_all('#"[^"]+"#i', $sql, $matches, PREG_SET_ORDER);
 

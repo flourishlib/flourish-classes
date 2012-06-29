@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b14  Added the `base36`, `base56` and custom types to ::randomString() [wb, 2011-08-25]
  * @changes    1.0.0b13  Updated documentation about symmetric-key encryption to explicitly state block and key sizes, added base64 type to ::randomString() [wb, 2010-11-06]
  * @changes    1.0.0b12  Fixed an inline comment that incorrectly references AES-256 [wb, 2010-11-04]
@@ -69,7 +71,7 @@ class fCryptography
 	 * @param  string $password          The password for the private key
 	 * @return resource  The private key resource
 	 */
-	static private function createPrivateKeyResource($private_key_file, $password)
+	static protected function createPrivateKeyResource($private_key_file, $password)
 	{
 		if (!file_exists($private_key_file)) {
 			throw new fProgrammerException(
@@ -104,7 +106,7 @@ class fCryptography
 	 * @param  string $public_key_file  The path to an X.509 public key certificate
 	 * @return resource  The public key resource
 	 */
-	static private function createPublicKeyResource($public_key_file)
+	static protected function createPublicKeyResource($public_key_file)
 	{
 		if (!file_exists($public_key_file)) {
 			throw new fProgrammerException(
@@ -183,7 +185,7 @@ class fCryptography
 	 * @param  string $salt    The salt for the hash
 	 * @return string  An 80 character string of the Flourish fingerprint, salt and hashed password
 	 */
-	static private function hashWithSalt($source, $salt)
+	static protected function hashWithSalt($source, $salt)
 	{
 		$sha1 = sha1($salt . $source);
 		for ($i = 0; $i < 1000; $i++) {
@@ -428,7 +430,7 @@ class fCryptography
 	 * 
 	 * @return void
 	 */
-	static private function seedRandom()
+	static protected function seedRandom()
 	{
 		static $seeded = FALSE;
 		
@@ -586,7 +588,7 @@ class fCryptography
 	 * 
 	 * @return void
 	 */
-	static private function verifyPublicKeyEnvironment()
+	static protected function verifyPublicKeyEnvironment()
 	{
 		if (!extension_loaded('openssl')) {
 			throw new fEnvironmentException(
@@ -602,7 +604,7 @@ class fCryptography
 	 * 
 	 * @return void
 	 */
-	static private function verifySymmetricKeyEnvironment()
+	static protected function verifySymmetricKeyEnvironment()
 	{
 		if (!extension_loaded('mcrypt')) {
 			throw new fEnvironmentException(
@@ -632,7 +634,7 @@ class fCryptography
 	 * 
 	 * @return fSecurity
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

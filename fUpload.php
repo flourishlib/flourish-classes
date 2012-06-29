@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b14  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b13  Changed the class to throw fValidationException objects instead of fProgrammerException objects when the form is improperly configured - this is to prevent error logs when bad requests are sent by scanners/hackers [wb, 2011-08-24]
  * @changes    1.0.0b12  Fixed the ::filter() callback constant [wb, 2010-11-24]
@@ -154,63 +156,63 @@ class fUpload
 	 * 
 	 * @var boolean
 	 */
-	private $allow_dot_files = FALSE;
+	protected $allow_dot_files = FALSE;
 	
 	/**
 	 * If PHP files can be uploaded
 	 * 
 	 * @var boolean
 	 */
-	private $allow_php = FALSE;
+	protected $allow_php = FALSE;
 	
 	/**
 	 * The dimension restrictions for uploaded images
 	 * 
 	 * @var array
 	 */
-	private $image_dimensions = array();
+	protected $image_dimensions = array();
 	
 	/**
 	 * The dimension ratio restriction for uploaded images
 	 * 
 	 * @var array
 	 */
-	private $image_ratio = array();
+	protected $image_ratio = array();
 	
 	/**
 	 * If existing files of the same name should be overwritten
 	 * 
 	 * @var boolean
 	 */
-	private $enable_overwrite = FALSE;
+	protected $enable_overwrite = FALSE;
 	
 	/**
 	 * The maximum file size in bytes
 	 * 
 	 * @var integer
 	 */
-	private $max_size = 0;
+	protected $max_size = 0;
 	
 	/**
 	 * The error message to display if the mime types do not match
 	 * 
 	 * @var string
 	 */
-	private $mime_type_message = NULL;
+	protected $mime_type_message = NULL;
 	
 	/**
 	 * The mime types of files accepted
 	 * 
 	 * @var array
 	 */
-	private $mime_types = array();
+	protected $mime_types = array();
 	
 	/**
 	 * If the file upload is required
 	 * 
 	 * @var boolean
 	 */
-	private $required = TRUE;
+	protected $required = TRUE;
 	
 	
 	/**
@@ -270,7 +272,7 @@ class fUpload
 	 * @param  mixed  $index  If the field is an array file upload field, use this to specify which array index to return
 	 * @return array  The file info array from `$_FILES`
 	 */
-	private function extractFileUploadArray($field, $index=NULL)
+	protected function extractFileUploadArray($field, $index=NULL)
 	{
 		if ($index === NULL) {
 			return $_FILES[$field];
@@ -566,7 +568,7 @@ class fUpload
 	 * @param array $file_array  The $_FILES array for a single file
 	 * @return string  The validation error message
 	 */
-	private function validateField($file_array)
+	protected function validateField($file_array)
 	{
 		if (empty($file_array['name'])) {
 			if ($this->required) {

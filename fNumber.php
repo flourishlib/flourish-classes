@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fNumber
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b3  Added the `$remove_zero_fraction` parameter to ::format() [wb, 2011-02-02]
  * @changes    1.0.0b2  Fixed a bug with parsing decimal numbers in scientific notation [wb, 2010-04-13]
  * @changes    1.0.0b   The initial implementation [wb, 2008-07-21]
@@ -29,14 +31,14 @@ class fNumber
 	 * 
 	 * @var callback
 	 */
-	static private $format_callback = NULL;
+	static protected $format_callback = NULL;
 	
 	/**
 	 * A callback to process all values through
 	 * 
 	 * @var callback
 	 */
-	static private $unformat_callback = NULL;
+	static protected $unformat_callback = NULL;
 	
 	
 	/**
@@ -134,7 +136,7 @@ class fNumber
 	 * @param  string $number2  The second number to compare
 	 * @return integer  Less than `0` if `$number1` is less than `$number2`, `0` if equal, greater than `0` if `$number1` is greater than `$number2`
 	 */
-	static private function cmp($number1, $number2)
+	static protected function cmp($number1, $number2)
 	{
 		$number1 = self::fixSign($number1);
 		$number2 = self::fixSign($number2);
@@ -157,7 +159,7 @@ class fNumber
 	 * @param  string $number  The number to check
 	 * @return string  The number with a sign
 	 */
-	static private function fixSign($number)
+	static protected function fixSign($number)
 	{
 		$number = (string) $number;
 		if (ctype_digit($number[0])) {
@@ -173,7 +175,7 @@ class fNumber
 	 * @param  string $number  The number to check, first character should be the sign
 	 * @return boolean  If the number is equal to zero
 	 */
-	static private function isZero($number)
+	static protected function isZero($number)
 	{
 		return trim(substr(str_replace('.', '', $number), 1), '0') == '';
 	}
@@ -189,7 +191,7 @@ class fNumber
 	 * @param  integer        $scale    The number of decimal places to normalize to
 	 * @return array  The two normalized numbers as strings
 	 */
-	static private function normalize($number1, $number2, $scale=NULL)
+	static protected function normalize($number1, $number2, $scale=NULL)
 	{
 		$number1 = self::parse($number1, 'array');
 		$number2 = self::parse($number2, 'array');
@@ -238,7 +240,7 @@ class fNumber
 	 * @param  string        $element  The element to return: `'number'`, `'integer'`, `'fraction'`, `'array'`
 	 * @return mixed  The requested parsed element
 	 */
-	static private function parse($number, $element)
+	static protected function parse($number, $element)
 	{
 		if (is_object($number) && is_callable(array($number, '__toString'))) {
 			$number = $number->__toString();
@@ -339,7 +341,7 @@ class fNumber
 	 * @param  integer $scale    The number of digits after the decimal
 	 * @return string  The sum of the two numbers
 	 */
-	static private function performAdd($number1, $number2, $scale=NULL)
+	static protected function performAdd($number1, $number2, $scale=NULL)
 	{
 		list($number1, $number2) = self::normalize($number1, $number2);
 		
@@ -389,7 +391,7 @@ class fNumber
 	 * @param  integer $scale       The number of digits to return after the decimal
 	 * @return string  The quotient
 	 */
-	static private function performDiv($dividend, $divisor, &$remainder=NULL, $scale=NULL)
+	static protected function performDiv($dividend, $divisor, &$remainder=NULL, $scale=NULL)
 	{
 		list ($dividend, $divisor) = self::normalize($dividend, $divisor);
 		
@@ -550,7 +552,7 @@ class fNumber
 	 * @param  integer $scale         The number of digits after the decimal
 	 * @return string  The product
 	 */
-	static private function performMul($multiplicand, $multiplier, $scale=NULL)
+	static protected function performMul($multiplicand, $multiplier, $scale=NULL)
 	{
 		$multiplicand = (string) $multiplicand;
 		$multiplier   = (string) $multiplier;
@@ -624,7 +626,7 @@ class fNumber
 	 * @param  string $power      The power to raise to, must be between `−2,147,483,648` and `2,147,483,647`
 	 * @return string  The product
 	 */
-	static private function performPow($number, $power, $scale=NULL)
+	static protected function performPow($number, $power, $scale=NULL)
 	{
 		$number = self::fixSign($number);
 		$power  = self::fixSign($power);
@@ -671,7 +673,7 @@ class fNumber
 	 * @param  string $subtrahend  The number to subtract
 	 * @return string  The difference
 	 */
-	static private function performSub($minuend, $subtrahend, $scale=NULL)
+	static protected function performSub($minuend, $subtrahend, $scale=NULL)
 	{
 		list($minuend, $subtrahend) = self::normalize($minuend, $subtrahend);
 		
@@ -806,7 +808,7 @@ class fNumber
 	 * @param  integer $scale   The number of digits to have after the decimal
 	 * @return string  The scaled number
 	 */
-	static private function setScale($number, $scale)
+	static protected function setScale($number, $scale)
 	{
 		if ($scale === NULL) {
 			return $number;
@@ -834,7 +836,7 @@ class fNumber
 	 * @param  string $number  The number to strip
 	 * @return string  The number with leading zeroes stripped
 	 */
-	static private function stripLeadingZeroes($number)
+	static protected function stripLeadingZeroes($number)
 	{
 		$number = (string) $number;
 		
@@ -858,14 +860,14 @@ class fNumber
 	 * 
 	 * @var integer
 	 */
-	private $scale;
+	protected $scale;
 	
 	/**
 	 * The value of the number
 	 * 
 	 * @var string
 	 */
-	private $value;
+	protected $value;
 	
 	
 	/**
@@ -1040,7 +1042,7 @@ class fNumber
 	 * @param  integer $scale  The scale to check
 	 * @return integer  The number of digits after the decimal place
 	 */
-	private function fixScale($scale)
+	protected function fixScale($scale)
 	{
 		$scale = ($scale !== NULL) ? (int) $scale : (int) $this->scale;
 		if ($scale < 0) {

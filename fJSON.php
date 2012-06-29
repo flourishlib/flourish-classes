@@ -12,12 +12,14 @@
  * 
  * @copyright  Copyright (c) 2008-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fJSON
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b6  Removed `e` flag from preg_replace() calls [wb, 2010-06-08]
  * @changes    1.0.0b5  Added the ::output() method [wb, 2010-03-15]
  * @changes    1.0.0b4  Fixed a bug with ::decode() where JSON objects could lose all but the first key: value pair [wb, 2009-05-06]
@@ -166,7 +168,7 @@ class fJSON
 	 *  
 	 * @var array
 	 */
-	static private $control_character_map = array(
+	static protected $control_character_map = array(
 		'"'   => '\"', '\\' => '\\\\', '/'  => '\/', "\x8" => '\b',
 		"\xC" => '\f', "\n" => '\n',   "\r" => '\r', "\t"  => '\t'
 	);
@@ -178,7 +180,7 @@ class fJSON
 	 *  
 	 * @var array
 	 */
-	static private $next_values = array(
+	static protected $next_values = array(
 		self::J_ARRAY_OPEN => array(
 			self::J_ARRAY_OPEN  => TRUE,
 			self::J_ARRAY_CLOSE => TRUE,
@@ -577,7 +579,7 @@ class fJSON
 	 * @param  string  $element  The element being detected
 	 * @return integer  The element type
 	 */
-	static private function getElementType(&$stack, $last, $element)
+	static protected function getElementType(&$stack, $last, $element)
 	{
 		if ($element == '[') {
 			return self::J_ARRAY_OPEN;
@@ -642,7 +644,7 @@ class fJSON
 	 * @param array $match  A regex match containing the 4 digit code referenced by the key `1`
 	 * @return string  The U+{digits} unicode code point
 	 */
-	static private function makeUnicodeCodePoint($match)
+	static protected function makeUnicodeCodePoint($match)
 	{
 		return fUTF8::chr("U+" . $match[1]);
 	}
@@ -668,7 +670,7 @@ class fJSON
 	 * @param  string  $element  The element to be converted to a scalar
 	 * @return mixed  The scalar value or the original string of the element
 	 */
-	static private function scalarize($type, $element)
+	static protected function scalarize($type, $element)
 	{
 		if ($type == self::J_INTEGER) {
 			$element = (integer) $element;
@@ -711,7 +713,7 @@ class fJSON
 	 * 
 	 * @return fJSON
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

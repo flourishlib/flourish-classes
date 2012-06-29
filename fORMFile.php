@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  * 
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b30  Updated code for the new fUpload API [wb, 2011-08-24]
  * @changes    1.0.0b29  Fixed a bug when uploading a new file to a column with an existing file that was not found on the filesystem [wb, 2011-05-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - ::configureImageUploadColumn() no longer accepts the optional `$image_type` as the fourth parameter, instead ::addFImageMethodCall() must be called with `saveChanges` as the `$method` and the image type as the first parameter [wb, 2010-11-30]
@@ -85,42 +87,42 @@ class fORMFile
 	 * 
 	 * @var array
 	 */
-	static private $column_inheritence = array();
+	static protected $column_inheritence = array();
 	
 	/**
 	 * Methods to be called on fUpload before the file is uploaded
 	 * 
 	 * @var array
 	 */
-	static private $fupload_method_calls = array();
+	static protected $fupload_method_calls = array();
 	
 	/**
 	 * Columns that can be filled by file uploads
 	 * 
 	 * @var array
 	 */
-	static private $file_upload_columns = array();
+	static protected $file_upload_columns = array();
 	
 	/**
 	 * Methods to be called on the fImage instance
 	 * 
 	 * @var array
 	 */
-	static private $fimage_method_calls = array();
+	static protected $fimage_method_calls = array();
 	
 	/**
 	 * Columns that can be filled by image uploads
 	 * 
 	 * @var array
 	 */
-	static private $image_upload_columns = array();
+	static protected $image_upload_columns = array();
 	
 	/**
 	 * Keeps track of the nesting level of the filesystem transaction so we know when to start, commit, rollback, etc
 	 * 
 	 * @var integer
 	 */
-	static private $transaction_level = 0;
+	static protected $transaction_level = 0;
 	
 	
 	/**
@@ -255,7 +257,7 @@ class fORMFile
 	 * @param  mixed   ...
 	 * @return string  The composed and possible translated message
 	 */
-	static private function compose($message)
+	static protected function compose($message)
 	{
 		$args = array_slice(func_get_args(), 1);
 		
@@ -701,7 +703,7 @@ class fORMFile
 	 * @param  string $folder  The folder to create a temporary directory inside of
 	 * @return fDirectory  The temporary directory for the folder specified
 	 */
-	static private function prepareTempDir($folder)
+	static protected function prepareTempDir($folder)
 	{
 		// Let's clean out the upload temp dir
 		try {
@@ -1093,7 +1095,7 @@ class fORMFile
 	 * @param  string $column  The column to set up for
 	 * @return fUpload  The configured fUpload object
 	 */
-	static private function setUpFUpload($class, $column)
+	static protected function setUpFUpload($class, $column)
 	{
 		$upload = new fUpload();
 		
@@ -1270,7 +1272,7 @@ class fORMFile
 	 * 
 	 * @return fORMFile
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

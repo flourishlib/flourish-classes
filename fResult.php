@@ -4,12 +4,15 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fResult
  * 
- * @version    1.0.0b13
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Changed all private declarations to public (alandsidel, 2012-06-29)
+ * @changes    1.0.0b13  unknown, version was already 1.0.0b13 but no change was entered (alandsidel, 2012-06-29)
  * @changes    1.0.0b12  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b12  Fixed MSSQL to have a properly reset row array, added ::silenceNotices(), fixed pdo_dblib on Windows when using the Microsoft DBLib driver [wb, 2011-05-09]
  * @changes    1.0.0b11  Backwards Compatibility Break - removed ODBC support [wb, 2010-07-31]
@@ -31,7 +34,7 @@ class fResult implements Iterator
 	 *
 	 * @var boolean
 	 */
-	static private $silence_notices = FALSE;
+	static protected $silence_notices = FALSE;
 
 
 	/**
@@ -67,7 +70,7 @@ class fResult implements Iterator
 	 * @param string $string       The string to convert
 	 * @return string  The converted string
 	 */
-	static private function iconv($in_charset, $out_charset, $string)
+	static protected function iconv($in_charset, $out_charset, $string)
 	{
 		return iconv($in_charset, $out_charset, $string);
 	}
@@ -89,91 +92,91 @@ class fResult implements Iterator
 	 * 
 	 * @var integer
 	 */
-	private $affected_rows = 0;
+	protected $affected_rows = 0;
 	
 	/**
 	 * The auto incremented value from the query
 	 * 
 	 * @var integer
 	 */
-	private $auto_incremented_value = NULL;
+	protected $auto_incremented_value = NULL;
 	
 	/**
 	 * The character set to transcode from for MSSQL queries
 	 * 
 	 * @var string
 	 */
-	private $character_set = NULL;
+	protected $character_set = NULL;
 	
 	/**
 	 * The current row of the result set
 	 * 
 	 * @var array
 	 */
-	private $current_row = NULL;
+	protected $current_row = NULL;
 	
 	/**
 	 * The database object this result was created from
 	 * 
 	 * @var fDatabase
 	 */
-	private $database = NULL;
+	protected $database = NULL;
 
 	/**
 	 * The database extension
 	 * 
 	 * @var string
 	 */
-	private $extension = NULL;
+	protected $extension = NULL;
 	
 	/**
 	 * If rows should be converted to objects
 	 * 
 	 * @var boolean
 	 */
-	private $output_objects = FALSE;
+	protected $output_objects = FALSE;
 	
 	/**
 	 * The position of the pointer in the result set
 	 * 
 	 * @var integer
 	 */
-	private $pointer;
+	protected $pointer;
 	
 	/**
 	 * The result resource or array
 	 * 
 	 * @var mixed
 	 */
-	private $result = NULL;
+	protected $result = NULL;
 	
 	/**
 	 * The number of rows returned by a select
 	 * 
 	 * @var integer
 	 */
-	private $returned_rows = 0;
+	protected $returned_rows = 0;
 	
 	/**
 	 * The SQL query
 	 * 
 	 * @var string
 	 */
-	private $sql = '';
+	protected $sql = '';
 	
 	/**
 	 * Holds the data types for each column to allow for on-the-fly unescaping
 	 * 
 	 * @var array
 	 */
-	private $unescape_map = array();
+	protected $unescape_map = array();
 	
 	/**
 	 * The SQL from before translation - only applicable to translated queries
 	 * 
 	 * @var string
 	 */
-	private $untranslated_sql = NULL;
+	protected $untranslated_sql = NULL;
 	
 	
 	/**
@@ -255,7 +258,7 @@ class fResult implements Iterator
 	 * 
 	 * @return void
 	 */
-	private function advanceCurrentRow()
+	protected function advanceCurrentRow()
 	{
 		$type = $this->database->getType();
 
@@ -411,7 +414,7 @@ class fResult implements Iterator
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
 	 */
-	private function decodeMSSQLNationalColumns($row)
+	protected function decodeMSSQLNationalColumns($row)
 	{
 		if (strpos($this->sql, 'fmssqln__') === FALSE) {
 			return $row;
@@ -486,7 +489,7 @@ class fResult implements Iterator
 	 * @param  array $row  The row from the database
 	 * @return array  The fixed row
 	 */
-	private function fixDblibMSSQLDriver($row)
+	protected function fixDblibMSSQLDriver($row)
 	{
 		static $using_dblib = array();
 		

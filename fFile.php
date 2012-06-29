@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b39  Backwards Compatibility Break - ::output() now automatically ends any open output buffering and discards the contents [wb, 2011-08-24]
  * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
  * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
@@ -150,7 +152,7 @@ class fFile implements Iterator, Countable
 	 * @param  string $extension  The extension of the filetype, only used for difficult files such as Microsoft office documents
 	 * @return string  The mime type of the file
 	 */
-	static private function determineMimeTypeByContents($content, $extension)
+	static protected function determineMimeTypeByContents($content, $extension)
 	{
 		$length = strlen($content);
 		$_0_8   = substr($content, 0, 8);
@@ -381,7 +383,7 @@ class fFile implements Iterator, Countable
 	 * @param  string $extension  The file extension
 	 * @return string  The mime type of the file
 	 */
-	static private function determineMimeTypeByExtension($extension)
+	static protected function determineMimeTypeByExtension($extension)
 	{
 		switch ($extension) {
 			case 'css':
@@ -442,14 +444,14 @@ class fFile implements Iterator, Countable
 	 * 
 	 * @var string
 	 */
-	private $current_line = NULL;
+	protected $current_line = NULL;
 	
 	/**
 	 * The current line number of the file
 	 * 
 	 * @var string
 	 */
-	private $current_line_number = NULL;
+	protected $current_line_number = NULL;
 	
 	/**
 	 * A backtrace from when the file was deleted 
@@ -470,7 +472,7 @@ class fFile implements Iterator, Countable
 	 * 
 	 * @var resource
 	 */
-	private $file_handle = NULL;
+	protected $file_handle = NULL;
 	
 	
 	/**

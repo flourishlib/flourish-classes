@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fAuthorization
  * 
- * @version    1.0.0b6
+ * @version    1.0.0b7
+ * @changes    1.0.0b7  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b6  Fixed ::checkIP() to not trigger a notice when `$_SERVER['REMOTE_ADDR']` is not set [wb, 2011-05-10]
  * @changes    1.0.0b5  Added ::getLoginPage() [wb, 2010-03-09]
  * @changes    1.0.0b4  Updated class to use new fSession API [wb, 2009-10-23]
@@ -48,21 +50,21 @@ class fAuthorization
 	 * 
 	 * @var array
 	 */
-	static private $levels = NULL;
+	static protected $levels = NULL;
 	
 	/**
 	 * The login page
 	 * 
 	 * @var string
 	 */
-	static private $login_page = NULL;
+	static protected $login_page = NULL;
 	
 	/**
 	 * Named IP ranges
 	 * 
 	 * @var array
 	 */
-	static private $named_ip_ranges = array();
+	static protected $named_ip_ranges = array();
 	
 	
 	/**
@@ -307,7 +309,7 @@ class fAuthorization
 	 * 
 	 * @return void
 	 */
-	static private function redirect()
+	static protected function redirect()
 	{
 		self::setRequestedURL(fURL::getWithQueryString());
 		fURL::redirect(self::$login_page);
@@ -478,7 +480,7 @@ class fAuthorization
 	 * @param  string $level  The level to validate
 	 * @return void
 	 */
-	static private function validateAuthLevel($level=NULL)
+	static protected function validateAuthLevel($level=NULL)
 	{
 		if (self::$levels === NULL) {
 			throw new fProgrammerException(
@@ -501,7 +503,7 @@ class fAuthorization
 	 * 
 	 * @return void
 	 */
-	static private function validateLoginPage()
+	static protected function validateLoginPage()
 	{
 		if (self::$login_page === NULL) {
 			throw new fProgrammerException(
@@ -517,7 +519,7 @@ class fAuthorization
 	 * 
 	 * @return fAuthorization
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

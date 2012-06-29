@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2008-2009 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Nick Trew [nt]
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fCookie
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b3  Added the ::delete() method [nt+wb, 2009-09-30]
  * @changes    1.0.0b2  Updated for new fCore API [wb, 2009-02-16]
  * @changes    1.0.0b   The initial implementation [wb, 2008-09-01]
@@ -34,35 +36,35 @@ class fCookie
 	 * 
 	 * @var string
 	 */
-	static private $default_domain = NULL;
+	static protected $default_domain = NULL;
 	
 	/**
 	 * The default expiration date to set for cookies
 	 * 
 	 * @var string|integer
 	 */
-	static private $default_expires = NULL;
+	static protected $default_expires = NULL;
 	
 	/**
 	 * If cookies should default to being http-only
 	 * 
 	 * @var boolean
 	 */
-	static private $default_httponly = FALSE;
+	static protected $default_httponly = FALSE;
 	
 	/**
 	 * The default path to set for cookies
 	 * 
 	 * @var string
 	 */
-	static private $default_path = NULL;
+	static protected $default_path = NULL;
 	
 	/**
 	 * If cookies should default to being secure-only
 	 * 
 	 * @var boolean
 	 */
-	static private $default_secure = FALSE;
+	static protected $default_secure = FALSE;
 	
 	
 	/**
@@ -272,7 +274,7 @@ class fCookie
 	 * 
 	 * @return fCookie
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

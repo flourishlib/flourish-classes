@@ -43,12 +43,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b40
+ * @version    1.0.0b41
+ * @changes    1.0.0b41  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b40  Fixed a bug with notices being triggered when failing to connect to a SQLite database [wb, 2011-06-20]
  * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
  * @changes    1.0.0b38  Backwards Compatibility Break - callbacks registered to the `extracted` hook via ::registerHookCallback() no longer receive the `$strings` parameter, instead all strings are added into the `$values` parameter - added ::getVersion(), fixed a bug with SQLite messaging, fixed a bug with ::__destruct(), improved handling of transactional queries, added ::close(), enhanced class to throw four different exceptions for different connection errors, silenced PHP warnings upon connection error [wb, 2011-05-09]
@@ -120,42 +122,42 @@ class fDatabase
 	 * 
 	 * @var fCache
 	 */
-	private $cache;
+	protected $cache;
 	
 	/**
 	 * The cache prefix to use for cache entries
 	 * 
 	 * @var string
 	 */
-	private $cache_prefix;
+	protected $cache_prefix;
 	
 	/**
 	 * Database connection resource or PDO object
 	 * 
 	 * @var mixed
 	 */
-	private $connection;
+	protected $connection;
 	
 	/**
 	 * The database name
 	 * 
 	 * @var string
 	 */
-	private $database;
+	protected $database;
 	
 	/**
 	 * If debugging is enabled
 	 * 
 	 * @var boolean
 	 */
-	private $debug;
+	protected $debug;
 	
 	/**
 	 * A temporary error holder for the mssql extension
 	 * 
 	 * @var string
 	 */
-	private $error;
+	protected $error;
 	
 	/**
 	 * The extension to use for the database specified
@@ -191,42 +193,42 @@ class fDatabase
 	 * 
 	 * @var array
 	 */
-	private $hook_callbacks;
+	protected $hook_callbacks;
 	
 	/**
 	 * The host the database server is located on
 	 * 
 	 * @var string
 	 */
-	private $host;
+	protected $host;
 	
 	/**
 	 * If a transaction is in progress
 	 * 
 	 * @var boolean
 	 */
-	private $inside_transaction;
+	protected $inside_transaction;
 	
 	/**
 	 * The password for the user specified
 	 * 
 	 * @var string
 	 */
-	private $password;
+	protected $password;
 	
 	/**
 	 * The port number for the host
 	 * 
 	 * @var string
 	 */
-	private $port;
+	protected $port;
 	
 	/**
 	 * The total number of seconds spent executing queries
 	 * 
 	 * @var float
 	 */
-	private $query_time;
+	protected $query_time;
 	
 	/**
 	 * A cache of database-specific code
@@ -240,42 +242,42 @@ class fDatabase
 	 * 
 	 * @var fStatement
 	 */
-	private $statement;
+	protected $statement;
 
 	/**
 	 * The timeout for the database connection
 	 *
 	 * @var integer
 	 */
-	private $timeout;
+	protected $timeout;
 	
 	/**
 	 * The fSQLTranslation object for this database
 	 * 
 	 * @var object
 	 */
-	private $translation;
+	protected $translation;
 	
 	/**
 	 * The database type: `'db2'`, `'mssql'`, `'mysql'`, `'oracle'`, `'postgresql'`, or `'sqlite'`
 	 * 
 	 * @var string
 	 */
-	private $type;
+	protected $type;
 	
 	/**
 	 * The unbuffered query instance
 	 * 
 	 * @var fUnbufferedResult
 	 */
-	private $unbuffered_result;
+	protected $unbuffered_result;
 	
 	/**
 	 * The user to connect to the database as
 	 * 
 	 * @var string
 	 */
-	private $username;
+	protected $username;
 	
 	
 	/**
@@ -394,7 +396,7 @@ class fDatabase
 	 * @param  string                            $sql         The SQL that was executed
 	 * @return void
 	 */
-	private function checkForError($result, $extra_info=NULL, $sql=NULL)
+	protected function checkForError($result, $extra_info=NULL, $sql=NULL)
 	{
 		if ($result === FALSE || $result->getResult() === FALSE) {
 			
@@ -1182,7 +1184,7 @@ class fDatabase
 	 * @param  string $value  The blob to escape
 	 * @return string  The escaped blob
 	 */
-	private function escapeBlob($value)
+	protected function escapeBlob($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1226,7 +1228,7 @@ class fDatabase
 	 * @param  boolean $value  The boolean to escape
 	 * @return string  The database equivalent of the boolean passed
 	 */
-	private function escapeBoolean($value)
+	protected function escapeBoolean($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1250,7 +1252,7 @@ class fDatabase
 	 * @param  string $value  The date to escape
 	 * @return string  The escaped date
 	 */
-	private function escapeDate($value)
+	protected function escapeDate($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1274,7 +1276,7 @@ class fDatabase
 	 * @param  float $value  The float to escape
 	 * @return string  The escaped float
 	 */
-	private function escapeFloat($value)
+	protected function escapeFloat($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1299,7 +1301,7 @@ class fDatabase
 	 * @param  string $value  The identifier to escape
 	 * @return string  The escaped identifier
 	 */
-	private function escapeIdentifier($value)
+	protected function escapeIdentifier($value)
 	{
 		$value = '"' . str_replace(
 			array('"', '.'),
@@ -1321,7 +1323,7 @@ class fDatabase
 	 * @param  integer $value  The integer to escape
 	 * @return string  The escaped integer
 	 */
-	private function escapeInteger($value)
+	protected function escapeInteger($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1344,7 +1346,7 @@ class fDatabase
 	 * @param  string $value  The string to escape
 	 * @return string  The escaped string
 	 */
-	private function escapeString($value)
+	protected function escapeString($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1442,7 +1444,7 @@ class fDatabase
 	 * @param boolean $unescape_percent  If %% should be translated to % - this should only be done once processing of the string is done
 	 * @return string  The SQL with the values escaped into it
 	 */
-	private function escapeSQL($sql, $values, $unescape_percent)
+	protected function escapeSQL($sql, $values, $unescape_percent)
 	{
 		$original_sql = $sql;
 		$pieces = preg_split('#(?<!%)(%[lbdfristp])\b#', $sql, -1, PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY);
@@ -1531,7 +1533,7 @@ class fDatabase
 	 * @param  string $value  The time to escape
 	 * @return string  The escaped time
 	 */
-	private function escapeTime($value)
+	protected function escapeTime($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1560,7 +1562,7 @@ class fDatabase
 	 * @param  string $value  The timestamp to escape
 	 * @return string  The escaped timestamp
 	 */
-	private function escapeTimestamp($value)
+	protected function escapeTimestamp($value)
 	{
 		if ($value === NULL) {
 			return 'NULL';
@@ -1609,7 +1611,7 @@ class fDatabase
 	 * @param  array &$values  The value to be escaped into the SQL
 	 * @return string  The SQL with all quoted string values extracted into the `$values` array
 	 */
-	private function extractStrings($parts, &$values)
+	protected function extractStrings($parts, &$values)
 	{
 		$sql = '';
 
@@ -1780,7 +1782,7 @@ class fDatabase
 	 * @param  mixed   $resource  Only applicable for `pdo`, `oci8` and `sqlsrv` extentions or `mysqli` prepared statements - this is either the `PDOStatement` object, `mysqli_stmt` object or the `oci8` or `sqlsrv` resource
 	 * @return void
 	 */
-	private function handleAutoIncrementedValue($result, $resource=NULL)
+	protected function handleAutoIncrementedValue($result, $resource=NULL)
 	{
 		if (!preg_match('#^\s*INSERT\s+(?:INTO\s+)?(?:`|"|\[)?(["\w.]+)(?:`|"|\])?#i', $result->getSQL(), $table_match)) {
 			$result->setAutoIncrementedValue(NULL);
@@ -2004,7 +2006,7 @@ class fDatabase
 	 * @param  array|string $errors  An array or string of error information
 	 * @return void
 	 */
-	private function handleConnectionErrors($errors)
+	protected function handleConnectionErrors($errors)
 	{
 		if (is_string($errors)) {
 			$error = $errors;
@@ -2079,7 +2081,7 @@ class fDatabase
 	 * @param  array $errors  An array of error information from fCore::stopErrorCapture()
 	 * @return void
 	 */
-	private function handleErrors($errors)
+	protected function handleErrors($errors)
 	{
 		if ($this->extension != 'mssql') {
 			return;	
@@ -2103,7 +2105,7 @@ class fDatabase
 	 * @param  string            $result_class  The type of result object to create
 	 * @return mixed  `FALSE` if normal processing should continue, otherwise an object of the type $result_class
 	 */
-	private function handleTransactionQueries(&$statement, $result_class)
+	protected function handleTransactionQueries(&$statement, $result_class)
 	{
 		if (is_object($statement)) {
 			$sql = $statement->getSQL();
@@ -2332,7 +2334,7 @@ class fDatabase
 	 * 
 	 * @return string  The cache prefix to use
 	 */
-	private function makeCachePrefix()
+	protected function makeCachePrefix()
 	{
 		if (!$this->cache_prefix) {
 			$prefix  = 'fDatabase::' . $this->type . '::';
@@ -2360,7 +2362,7 @@ class fDatabase
 	 * @param  array             $params     The parameters for prepared statements
 	 * @return void
 	 */
-	private function perform($statement, $params)
+	protected function perform($statement, $params)
 	{
 		fCore::startErrorCapture();
 		
@@ -2449,7 +2451,7 @@ class fDatabase
 	 * @param  array             $params     The parameters for prepared statements
 	 * @return void
 	 */
-	private function performQuery($statement, $result, $params)
+	protected function performQuery($statement, $result, $params)
 	{
 		fCore::startErrorCapture();
 		
@@ -2609,7 +2611,7 @@ class fDatabase
 	 * @param  array             $params     The parameters for prepared statements
 	 * @return void
 	 */
-	private function performUnbufferedQuery($statement, $result, $params)
+	protected function performUnbufferedQuery($statement, $result, $params)
 	{
 		fCore::startErrorCapture();
 		
@@ -2675,7 +2677,7 @@ class fDatabase
 	 * @param  boolean $translate  If the SQL should be translated using fSQLTranslation
 	 * @return fStatement  A prepare statement object that can be passed to ::query(), ::unbufferedQuery() or ::execute()
 	 */
-	private function prepareStatement($sql, $translate=FALSE)
+	protected function prepareStatement($sql, $translate=FALSE)
 	{
 		// Ensure an SQL statement was passed
 		if (empty($sql)) {
@@ -3001,7 +3003,7 @@ class fDatabase
 	 * @param  string            $result_type  The type of result object to return, fResult or fUnbufferedResult
 	 * @return fResult|fUnbufferedResult  The result for the query
 	 */
-	private function run($statement, $result_type=NULL, $params=array())
+	protected function run($statement, $result_type=NULL, $params=array())
 	{
 		if ($this->unbuffered_result) {
 			$this->unbuffered_result->__destruct();
@@ -3081,7 +3083,7 @@ class fDatabase
 	 * @param  integer $start_number         The number query that failed - this is used to determine which rollback statements to run
 	 * @return void
 	 */
-	private function runRollbackStatements($rollback_statements, $start_number)
+	protected function runRollbackStatements($rollback_statements, $start_number)
 	{
 		if ($rollback_statements) {
 			$rollback_statements = array_slice($rollback_statements, 0, $start_number);
@@ -3099,7 +3101,7 @@ class fDatabase
 	 * @param  array $values  The array of values to scalarize
 	 * @return array  The scalarized values
 	 */
-	private function scalarize($values)
+	protected function scalarize($values)
 	{
 		$new_values = array();
 		foreach ($values as $value) {
@@ -3123,7 +3125,7 @@ class fDatabase
 	 * @param  mixed   $resource  Only applicable for `ibm_db2`, `pdo`, `oci8` and `sqlsrv` extentions or `mysqli` prepared statements - this is either the `PDOStatement` object, `mysqli_stmt` object or the `oci8` or `sqlsrv` resource
 	 * @return void
 	 */
-	private function setAffectedRows($result, $resource=NULL)
+	protected function setAffectedRows($result, $resource=NULL)
 	{
 		if ($this->extension == 'ibm_db2') {
 			$insert_update_delete = preg_match('#^\s*(INSERT|UPDATE|DELETE)\b#i', $result->getSQL());
@@ -3174,7 +3176,7 @@ class fDatabase
 	 * @param  fResult $result  The result object for the query
 	 * @return void
 	 */
-	private function setReturnedRows($result)
+	protected function setReturnedRows($result)
 	{
 		if (is_resource($result->getResult()) || is_object($result->getResult())) {
 			if ($this->extension == 'mssql') {
@@ -3201,7 +3203,7 @@ class fDatabase
 	 * @param  integer &$placeholders  The number of placeholders in the SQL
 	 * @return array  The pieces
 	 */
-	private function splitSQL($sql, &$placeholders=NULL)
+	protected function splitSQL($sql, &$placeholders=NULL)
 	{
 		// Fix \' in MySQL and PostgreSQL
 		if(($this->type == 'mysql' || $this->type == 'postgresql') && strpos($sql, '\\') !== FALSE) {
@@ -3520,7 +3522,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return binary  The binary data
 	 */
-	private function unescapeBlob($value)
+	protected function unescapeBlob($value)
 	{
 		$this->connect();
 		
@@ -3542,7 +3544,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return boolean  The boolean
 	 */
-	private function unescapeBoolean($value)
+	protected function unescapeBoolean($value)
 	{
 		return ($value === 'f' || !$value) ? FALSE : TRUE;
 	}
@@ -3554,7 +3556,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The date in YYYY-MM-DD format
 	 */
-	private function unescapeDate($value)
+	protected function unescapeDate($value)
 	{
 		if ($this->extension == 'sqlsrv' && $value instanceof DateTime) {
 			return $value->format('Y-m-d');
@@ -3571,7 +3573,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The time in `HH:MM:SS` format
 	 */
-	private function unescapeTime($value)
+	protected function unescapeTime($value)
 	{
 		if ($this->extension == 'sqlsrv' && $value instanceof DateTime) {
 			return $value->format('H:i:s');
@@ -3588,7 +3590,7 @@ class fDatabase
 	 * @param  string $value  The value to unescape
 	 * @return string  The timestamp in `YYYY-MM-DD HH:MM:SS` format
 	 */
-	private function unescapeTimestamp($value)
+	protected function unescapeTimestamp($value)
 	{
 		if ($this->extension == 'sqlsrv' && $value instanceof DateTime) {
 			return $value->format('Y-m-d H:i:s');

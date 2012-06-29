@@ -11,12 +11,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
  * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
  * @changes    1.0.0b17  Fixed support for 3+ dimensional input arrays, added a fixed for the PHP DoS float bug #53632, added support for type-casted arrays in ::get() [wb, 2011-01-09]
@@ -68,35 +70,35 @@ class fRequest
 	 * 
 	 * @var array
 	 */
-	static private $backup_files = array();
+	static protected $backup_files = array();
 	
 	/**
 	 * A backup copy of `$_GET` for ::unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_get = array();
+	static protected $backup_get = array();
 	
 	/**
 	 * A backup copy of `$_POST` for unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_post = array();
+	static protected $backup_post = array();
 	
 	/**
 	 * A backup copy of the local `PUT`/`DELETE` post data for ::unfilter()
 	 * 
 	 * @var array
 	 */
-	static private $backup_put_delete = array();
+	static protected $backup_put_delete = array();
 	
 	/**
 	 * The key/value pairs from the post data of a `PUT`/`DELETE` request
 	 * 
 	 * @var array
 	 */
-	static private $put_delete = NULL;
+	static protected $put_delete = NULL;
 	
 	
 	/**
@@ -107,7 +109,7 @@ class fRequest
 	 * @param integer      $level    The nesting level of the call
 	 * @return mixed  The casted `$value`
 	 */
-	static private function cast($value, $cast_to, $level=0)
+	static protected function cast($value, $cast_to, $level=0)
 	{
 		$level++;
 		
@@ -554,7 +556,7 @@ class fRequest
 	 * 
 	 * @return void
 	 */
-	static private function initPutDelete()
+	static protected function initPutDelete()
 	{
 		if (is_array(self::$put_delete)) {
 			return;	
@@ -662,7 +664,7 @@ class fRequest
 	 * @param  array  $options      A list of supported options to pick the best from
 	 * @return string  The best accept item, `FALSE` if an options array is specified and none are valid, `NULL` if anything is accepted
 	 */
-	static private function pickBestAcceptItem($header_name, $options)
+	static protected function pickBestAcceptItem($header_name, $options)
 	{
 		settype($options, 'array');
 		
@@ -738,7 +740,7 @@ class fRequest
 	 * @param  string $header_name  The key in `$_SERVER` to get the header value from
 	 * @return array  An associative array of `{value} => {quality}` sorted (in a stable-fashion) from highest to lowest `q` - an empty array is returned if the header is empty
 	 */
-	static private function processAcceptHeader($header_name)
+	static protected function processAcceptHeader($header_name)
 	{
 		if (!isset($_SERVER[$header_name]) || !strlen($_SERVER[$header_name])) {
 			return array();
@@ -838,7 +840,7 @@ class fRequest
 	 * @param string|array $value  The value to strip
 	 * @return string|array  The `$value` with low-order bytes stripped
 	 */
-	static private function stripLowOrderBytes($value)
+	static protected function stripLowOrderBytes($value)
 	{
 		if (is_array($value)) {
 			foreach ($value as $key => $sub_value) {
@@ -856,7 +858,7 @@ class fRequest
 	 * @param string|array $value  The value to strip
 	 * @return string|array  The `$value` with slashes stripped
 	 */
-	static private function stripSlashes($value)
+	static protected function stripSlashes($value)
 	{
 		if (is_array($value)) {
 			foreach ($value as $key => $sub_value) {
@@ -929,7 +931,7 @@ class fRequest
 	 * 
 	 * @return fRequest
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

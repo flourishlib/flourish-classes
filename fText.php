@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2008-2009 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fText
  * 
- * @version    1.0.0b2
+ * @version    1.0.0b3
+ * @changes    1.0.0b3  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b2  Updated ::compose() to more handle `$components` passed as an array [wb, 2009-02-05]
  * @changes    1.0.0b   The initial implementation [wb, 2008-11-12]
  */
@@ -26,7 +28,7 @@ class fText
 	 * 
 	 * @var array
 	 */
-	static private $compose_callbacks = array(
+	static protected $compose_callbacks = array(
 		'pre'  => array(),
 		'post' => array()
 	);
@@ -126,7 +128,7 @@ class fText
 	 * 
 	 * @return fText
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 

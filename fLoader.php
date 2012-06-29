@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     netcarver [n] <fContrib@netcarving.com>
+ * @author     Allen Landsidel [alandsidel] <landsidel.allen@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fLoader
  * 
- * @version    1.0.0b3
+ * @version    1.0.0b4
+ * @changes    1.0.0b4  Changed all private declarations to public (alandsidel, 2012-06-29)
  * @changes    1.0.0b3  Added fEmail() constructor function [n, 2011-09-12]
  * @changes    1.0.0b2  Added fPagination [wb, 2011-09-06]
  * @changes    1.0.0b   The initial implementation [wb, 2011-08-26]
@@ -30,7 +32,7 @@ class fLoader
 	 * 
 	 * @var array
 	 */
-	static private $classes = array(
+	static protected $classes = array(
 		'fException',
 		'fExpectedException',
 		'fEmptySetException',
@@ -104,7 +106,7 @@ class fLoader
 	 * 
 	 * @var string
 	 */
-	static private $path = NULL;
+	static protected $path = NULL;
 	
 	
 	/**
@@ -148,7 +150,7 @@ class fLoader
 	 *
 	 * @return void
 	 */
-	static private function createConstructorFunctions()
+	static protected function createConstructorFunctions()
 	{
 		if (function_exists('fDate')) {
 			return;
@@ -275,7 +277,7 @@ class fLoader
 	 * 
 	 * @return void
 	 */
-	static private function setPath()
+	static protected function setPath()
 	{
 		self::$path = realpath(dirname(__FILE__)) . DIRECTORY_SEPARATOR;
 	}
@@ -286,7 +288,7 @@ class fLoader
 	 * 
 	 * @return fLoader
 	 */
-	private function __construct() { }
+	protected function __construct() { }
 }
 
 
