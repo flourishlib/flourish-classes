@@ -369,6 +369,9 @@ class fFile implements Iterator, Countable
 			}
 		}
 
+		if (stripos($content, '<html') !== FALSE) {
+			return 'text/html';
+		}
 
 		// Default
 		return 'application/octet-stream';
