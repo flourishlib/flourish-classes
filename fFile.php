@@ -338,8 +338,15 @@ class fFile implements Iterator, Countable
 		}	
 		
 		
-		// Text files
-		if (strpos($content, '<?xml') !== FALSE) {
+		// Better detection for text files based on the first line or so.
+		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
+			return 'application/x-httpd-php';	
+		}
+		
+		preg_match('/(\S.*?)\s*\n/m', $content, $lines);
+		$first_line = count($lines) > 1 ? $lines[1] : '';
+		
+		if (strpos($first_line, '<?xml') !== FALSE) {
 			if (stripos($content, '<!DOCTYPE') !== FALSE) {
 				return 'application/xhtml+xml';
 			}
@@ -349,14 +356,17 @@ class fFile implements Iterator, Countable
 			if (strpos($content, '<rss') !== FALSE) {
 				return 'application/rss+xml';
 			}
-			return 'application/xml';	
-		}   
-		
-		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
-			return 'application/x-httpd-php';	
+			return 'application/xml';
 		}
 		
-		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $content, $matches)) {
+		if (stripos($first_line, '<html') !== FALSE) {
+			return 'text/html';
+		}
+		if (stripos($first_line, '<!DOCTYPE') !== FALSE) {
+			return 'text/html';
+		}
+		
+		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $first_line, $matches)) {
 			switch (strtolower($matches[1])) {
 				case 'php':
 					return 'application/x-httpd-php';
