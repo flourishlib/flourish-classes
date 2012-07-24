@@ -337,13 +337,14 @@ class fFile implements Iterator, Countable
 			return 'application/x-stuffit';
 		}
 
-
-		// Better detection for text files based on the first line or so.
 		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
 			return 'application/x-httpd-php';
 		}
 
+		// Better detection for text files based on the first line or so.
+
 		preg_match('/(\S.*?)\s*\n/m', $content, $lines);
+
 		$first_line = count($lines) > 1 ? $lines[1] : '';
 
 		if (strpos($first_line, '<?xml') !== FALSE) {
@@ -359,13 +360,6 @@ class fFile implements Iterator, Countable
 			return 'application/xml';
 		}
 
-		if (stripos($first_line, '<html') !== FALSE) {
-			return 'text/html';
-		}
-		if (stripos($first_line, '<!DOCTYPE') !== FALSE) {
-			return 'text/html';
-		}
-
 		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $first_line, $matches)) {
 			switch (strtolower($matches[1])) {
 				case 'php':
@@ -379,8 +373,10 @@ class fFile implements Iterator, Countable
 			}
 		}
 
-		if (stripos($content, '<html') !== FALSE) {
-			return 'text/html';
+		foreach (array('<html', '<!DOCTYPE') as $html_token) {
+			if (stripos($first_line, $html_token) !== FALSE) {
+				return 'text/html';
+			}
 		}
 
 		// Default
