@@ -1,7 +1,7 @@
 <?php
 /**
  * Represents a file on the filesystem, also provides static file-related methods
- * 
+ *
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
@@ -9,7 +9,7 @@
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
- * 
+ *
  * @version    1.0.0b39
  * @changes    1.0.0b39  Backwards Compatibility Break - ::output() now automatically ends any open output buffering and discards the contents [wb, 2011-08-24]
  * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
@@ -171,13 +171,13 @@ class fFile implements Iterator, Countable
 		}
 
 		if ($_0_4 == 'GIF8') {
-			return 'image/gif';	
+			return 'image/gif';
 		}
-		
+
 		if ($_0_2 == 'BM' && $length > 14 && in_array($content[14], array("\x0C", "\x28", "\x40", "\x80"))) {
-			return 'image/x-ms-bmp';	
+			return 'image/x-ms-bmp';
 		}
-		
+
 		$normal_jpeg    = $length > 10 && in_array(substr($content, 6, 4), array('JFIF', 'Exif'));
 		$photoshop_jpeg = $length > 24 && $_0_4 == "\xFF\xD8\xFF\xED" && substr($content, 20, 4) == '8BIM';
 		if ($normal_jpeg || $photoshop_jpeg) {
@@ -338,8 +338,15 @@ class fFile implements Iterator, Countable
 		}
 
 
-		// Text files
-		if (strpos($content, '<?xml') !== FALSE) {
+		// Better detection for text files based on the first line or so.
+		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
+			return 'application/x-httpd-php';
+		}
+
+		preg_match('/(\S.*?)\s*\n/m', $content, $lines);
+		$first_line = count($lines) > 1 ? $lines[1] : '';
+
+		if (strpos($first_line, '<?xml') !== FALSE) {
 			if (stripos($content, '<!DOCTYPE') !== FALSE) {
 				return 'application/xhtml+xml';
 			}
@@ -352,11 +359,14 @@ class fFile implements Iterator, Countable
 			return 'application/xml';
 		}
 
-		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
-			return 'application/x-httpd-php';
+		if (stripos($first_line, '<html') !== FALSE) {
+			return 'text/html';
+		}
+		if (stripos($first_line, '<!DOCTYPE') !== FALSE) {
+			return 'text/html';
 		}
 
-		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $content, $matches)) {
+		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $first_line, $matches)) {
 			switch (strtolower($matches[1])) {
 				case 'php':
 					return 'application/x-httpd-php';
@@ -650,7 +660,7 @@ class fFile implements Iterator, Countable
 
 		file_put_contents($this->file, $data, FILE_APPEND);
 		clearstatcache();
-		
+
 		return $this;
 	}
 
@@ -687,8 +697,8 @@ class fFile implements Iterator, Countable
 
 		return $lines;
 	}
-	
-	
+
+
 	/**
 	 * Returns the current line of the file (required by iterator interface)
 	 *
@@ -935,7 +945,7 @@ class fFile implements Iterator, Countable
 
 	/**
 	 * Gets the filename (i.e. does not include the directory)
-	 * 
+	 *
 	 * @param  boolean $remove_extension  If the extension should be removed from the filename
 	 * @return string  The filename of the file
 	 */
@@ -1098,7 +1108,7 @@ class fFile implements Iterator, Countable
 	 *
 	 * Be sure to close the session, if open, to prevent performance issues.
 	 * Any open output buffers are automatically closed and discarded.
-	 * 
+	 *
 	 * @param  boolean $headers   If HTTP headers for the file should be included
 	 * @param  mixed   $filename  Present the file as an attachment instead of just outputting type headers - if a string is passed, that will be used for the filename, if `TRUE` is passed, the current filename will be used
 	 * @return fFile  The file object, to allow for method chaining
@@ -1317,7 +1327,7 @@ class fFile implements Iterator, Countable
 
 		file_put_contents($this->file, $data);
 		clearstatcache();
-		
+
 		return $this;
 	}
 }
@@ -1326,7 +1336,7 @@ class fFile implements Iterator, Countable
 
 /**
  * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
