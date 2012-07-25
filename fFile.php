@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Kevin Hamer, iMarc LLC [kh] <kevin@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  * 
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Improved ::determineMimeTypeByContents() for text files to focus on the first non-blank line and look for <html. [kh, 2012-07-25]
  * @changes    1.0.0b39  Backwards Compatibility Break - ::output() now automatically ends any open output buffering and discards the contents [wb, 2011-08-24]
  * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
  * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
