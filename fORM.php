@@ -4,12 +4,14 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  * 
- * @version    1.0.0b28
+ * @version    1.0.0b29
+ * @changes    1.0.0b29  Added ::registerActiveRecordStaticMethod() for static hooks in PHP 5.3 [jt, 2012-07-25]
  * @changes    1.0.0b28  Updated ::getColumnName() and ::getRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b27  Added links to the detailed documentation for the parameters passed to hooks [wb, 2010-11-27]
  * @changes    1.0.0b26  Added ::getRelatedClass() for handling related classes in PHP 5.3 namespaces [wb, 2010-11-17]
@@ -42,39 +44,40 @@
 class fORM
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const callHookCallbacks          = 'fORM::callHookCallbacks';
-	const callInspectCallbacks       = 'fORM::callInspectCallbacks';
-	const callReflectCallbacks       = 'fORM::callReflectCallbacks';
-	const checkHookCallback          = 'fORM::checkHookCallback';
-	const classize                   = 'fORM::classize';
-	const defineActiveRecordClass    = 'fORM::defineActiveRecordClass';
-	const enableSchemaCaching        = 'fORM::enableSchemaCaching';
-	const getActiveRecordMethod      = 'fORM::getActiveRecordMethod';
-	const getClass                   = 'fORM::getClass';
-	const getColumnName              = 'fORM::getColumnName';
-	const getDatabaseName            = 'fORM::getDatabaseName';
-	const getRecordName              = 'fORM::getRecordName';
-	const getRecordSetMethod         = 'fORM::getRecordSetMethod';
-	const getRelatedClass            = 'fORM::getRelatedClass';
-	const isClassMappedToTable       = 'fORM::isClassMappedToTable';
-	const mapClassToDatabase         = 'fORM::mapClassToDatabase';
-	const mapClassToTable            = 'fORM::mapClassToTable';
-	const objectify                  = 'fORM::objectify';
-	const overrideColumnName         = 'fORM::overrideColumnName';
-	const overrideRecordName         = 'fORM::overrideRecordName';
-	const parseMethod                = 'fORM::parseMethod';
-	const registerActiveRecordMethod = 'fORM::registerActiveRecordMethod';
-	const registerHookCallback       = 'fORM::registerHookCallback';
-	const registerInspectCallback    = 'fORM::registerInspectCallback';
-	const registerObjectifyCallback  = 'fORM::registerObjectifyCallback';
-	const registerRecordSetMethod    = 'fORM::registerRecordSetMethod';
-	const registerReflectCallback    = 'fORM::registerReflectCallback';
-	const registerReplicateCallback  = 'fORM::registerReplicateCallback';
-	const registerScalarizeCallback  = 'fORM::registerScalarizeCallback';
-	const replicate                  = 'fORM::replicate'; 
-	const reset                      = 'fORM::reset';
-	const scalarize                  = 'fORM::scalarize';
-	const tablize                    = 'fORM::tablize';
+	const callHookCallbacks                = 'fORM::callHookCallbacks';
+	const callInspectCallbacks             = 'fORM::callInspectCallbacks';
+	const callReflectCallbacks             = 'fORM::callReflectCallbacks';
+	const checkHookCallback                = 'fORM::checkHookCallback';
+	const classize                         = 'fORM::classize';
+	const defineActiveRecordClass          = 'fORM::defineActiveRecordClass';
+	const enableSchemaCaching              = 'fORM::enableSchemaCaching';
+	const getActiveRecordMethod            = 'fORM::getActiveRecordMethod';
+	const getClass                         = 'fORM::getClass';
+	const getColumnName                    = 'fORM::getColumnName';
+	const getDatabaseName                  = 'fORM::getDatabaseName';
+	const getRecordName                    = 'fORM::getRecordName';
+	const getRecordSetMethod               = 'fORM::getRecordSetMethod';
+	const getRelatedClass                  = 'fORM::getRelatedClass';
+	const isClassMappedToTable             = 'fORM::isClassMappedToTable';
+	const mapClassToDatabase               = 'fORM::mapClassToDatabase';
+	const mapClassToTable                  = 'fORM::mapClassToTable';
+	const objectify                        = 'fORM::objectify';
+	const overrideColumnName               = 'fORM::overrideColumnName';
+	const overrideRecordName               = 'fORM::overrideRecordName';
+	const parseMethod                      = 'fORM::parseMethod';
+	const registerActiveRecordMethod       = 'fORM::registerActiveRecordMethod';
+	const registerActiveRecordStaticMethod = 'fORM::registerActiveRecordStaticMethod';
+	const registerHookCallback             = 'fORM::registerHookCallback';
+	const registerInspectCallback          = 'fORM::registerInspectCallback';
+	const registerObjectifyCallback        = 'fORM::registerObjectifyCallback';
+	const registerRecordSetMethod          = 'fORM::registerRecordSetMethod';
+	const registerReflectCallback          = 'fORM::registerReflectCallback';
+	const registerReplicateCallback        = 'fORM::registerReplicateCallback';
+	const registerScalarizeCallback        = 'fORM::registerScalarizeCallback';
+	const replicate                        = 'fORM::replicate';
+	const reset                            = 'fORM::reset';
+	const scalarize                        = 'fORM::scalarize';
+	const tablize                          = 'form::tablize';
 	
 	
 	/**
@@ -83,7 +86,14 @@ class fORM
 	 * @var array
 	 */
 	static private $active_record_method_callbacks = array();
-	
+
+	/**
+	 * An array of `{static_method} => {callback}` mappings for fActiveRecord
+	 * 
+	 * @var array
+	 */
+	static private $active_record_static_method_callbacks = array();
+
 	/**
 	 * Cache for repetitive computation
 	 * 
@@ -468,8 +478,53 @@ class fORM
 		self::$cache['getActiveRecordMethod'][$class . '::' . $method] = ($callback === NULL) ? FALSE : $callback;
 		return $callback;
 	}
+
+	/**
+	 * Returns a matching callback for the class and static method specified
+	 *
+	 * The callback returned will be determined by the following logic:
+	 *
+	 *  1. If an exact callback has been defined for the method, it will be returned
+	 *  2. If a callback in the form `{prefix}*` has been defined that matches the method, it will be returned
+	 *  3. `NULL` will be returned
+	 *
+	 * @internal
+	 *
+	 * @param  string $class   The name of the class
+	 * @param  string $method  The method to get the callback for
+	 * @return string|null  The callback for the method or `NULL` if none exists - see method description for details
+	 */
+	static public function getActiveRecordStaticMethod($class, $method)
+	{
+		// This caches method lookups, providing a significant performance
+		// boost to pages with lots of method calls that get passed to
+		// fActiveRecord::__callStatic()
+		if (isset(self::$cache['getActiveRecordStaticMethod'][$class . '::' . $method])) {
+			return (!$method = self::$cache['getActiveRecordStaticMethod'][$class . '::' . $method]) ? NULL : $method;
+		}
+
+		$callback = NULL;
+
+		if (isset(self::$active_record_static_method_callbacks[$class][$method])) {
+			$callback = self::$active_record_static_method_callbacks[$class][$method];
+
+		} elseif (isset(self::$active_record_static_method_callbacks['*'][$method])) {
+			$callback = self::$active_record_static_method_callbacks['*'][$method];
+
+		} elseif (preg_match('#[A-Z0-9]#', $method)) {
+			list($action, $subject) = self::parseMethod($method);
+			if (isset(self::$active_record_static_method_callbacks[$class][$action . '*'])) {
+				$callback = self::$active_record_static_method_callbacks[$class][$action . '*'];
+			} elseif (isset(self::$active_record_static_method_callbacks['*'][$action . '*'])) {
+				$callback = self::$active_record_static_method_callbacks['*'][$action . '*'];
+			}
+		}
+
+		self::$cache['getActiveRecordStaticMethod'][$class . '::' . $method] = ($callback === NULL) ? FALSE : $callback;
+		return $callback;
+	}
 	
-	
+
 	/**
 	 * Takes a class name or class and returns the class name
 	 *
@@ -839,6 +894,48 @@ class fORM
 		self::$cache['getActiveRecordMethod'] = array();
 	}
 	
+
+	/**
+	 * Registers a callback for an fActiveRecord method that falls through to fActiveRecord::__callStatic() or hits a predefined method hook
+	 *
+	 * Only available to PHP 5.3+ which supports the __callStatic magic method.
+	 *
+	 * The callback should accept the following parameters:
+	 *
+	 *  - **`&$class`**:           The class calling the static method
+	 *  - **`$method_name`**:      The method that was called
+	 *  - **`&$parameters`**:      The parameters passed to the method
+	 *
+	 * @throws fProgrammerException  When the PHP version less than 5.3
+	 *
+	 * @param  mixed    $class     The class name or instance of the class to register for, `'*'` will register for all classes
+	 * @param  string   $method    The method to hook for - this can be a complete method name or `{prefix}*` where `*` will match any column name
+	 * @param  callback $callback  The callback to execute - see method description for parameter list
+	 * @return void
+	 */
+	static public function registerActiveRecordStaticMethod($class, $method, $callback)
+	{
+		if (!fCore::checkVersion('5.3')) {
+			throw new fProgrammerException(
+				'fORM::registerActiveRecordStaticMethod is only available to PHP 5.3+',
+				$method_name
+			);
+		};
+
+		$class = self::getClass($class);
+
+		if (!isset(self::$active_record_static_method_callbacks[$class])) {
+			self::$active_record_static_method_callbacks[$class] = array(); 
+		}
+
+		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
+			$callback = explode('::', $callback);
+		}
+
+		self::$active_record_static_method_callbacks[$class][$method] = $callback;
+		self::$cache['getActiveRecordStaticMethod'] = array();
+	}
+
 	
 	/**
 	 * Registers a callback for one of the various fActiveRecord hooks - multiple callbacks can be registered for each hook
