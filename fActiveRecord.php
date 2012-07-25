@@ -10,12 +10,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  * 
- * @version    1.0.0b81
+ * @version    1.0.0b82
+ * @changes    1.0.0b82  Added support for registering methods for __callStatic() [jt, 2011-07-25]
  * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
  * @changes    1.0.0b80  Added support to ::checkCondition() for the `^~` and `$~` operators [wb, 2011-06-20]
  * @changes    1.0.0b79  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
@@ -157,6 +159,14 @@ abstract class fActiveRecord
 	 */
 	static protected $replicate_map = array();
 	
+
+	/**
+	 * Caches callbacks for static methods
+	 *
+	 * @var array
+	 **/
+	static protected $static_callback_cache = array();
+
 	/**
 	 * Contains a list of what columns in each class need to be unescaped and what data type they are
 	 * 
@@ -164,7 +174,52 @@ abstract class fActiveRecord
 	 */
 	static protected $unescape_map = array();
 	
-	
+
+	/**
+	 * Handles dynamically registered static method callbacks
+	 * 
+	 * Static method callbacks registered through fORM::registerActiveRecordStaticMethod()
+	 * will be delegated via this method. Both this and fORM::registerActiveRecordStaticMethod
+	 * are available to PHP 5.3+ only.
+	 * 
+	 * @throws fProgrammerException  When the method cannot be found
+	 * @param  string $method_name  The name of the method called
+	 * @param  array  $parameters   The parameters passed
+	 * @return mixed  The value returned by the method called
+	 */
+	static public function __callStatic($method_name, $parameters)
+	{
+		$class = get_called_class();
+
+		self::forceConfigure($class);
+
+		if (!isset(self::$static_callback_cache[$class][$method_name])) {
+			if (!isset(self::$static_callback_cache[$class])) {
+				self::$static_callback_cache[$class] = array();
+			}
+			$callback = fORM::getActiveRecordStaticMethod($class, $method_name);
+			self::$static_callback_cache[$class][$method_name] = $callback ? $callback : FALSE;
+		}
+
+		if ($callback = self::$static_callback_cache[$class][$method_name]) {
+			return call_user_func_array(
+				$callback,
+				array(
+					$class,
+					$method_name,
+					$parameters
+				)
+			);
+		}
+
+		// Error handler
+		throw new fProgrammerException(
+			'Unknown static method, %s(), called',
+			$method_name
+		);
+	}
+
+
 	/**
 	 * Sets a value to the `$values` array, preserving the old value in `$old_values`
 	 *
