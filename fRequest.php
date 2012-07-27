@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Fixed problem where Accept headers are spaced out and mime-types won't match (mainly from IE)
  * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
  * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
  * @changes    1.0.0b17  Fixed support for 3+ dimensional input arrays, added a fixed for the PHP DoS float bug #53632, added support for type-casted arrays in ::get() [wb, 2011-01-09]
@@ -760,7 +761,7 @@ class fRequest
 			}
 			$q .= $suffix--;
 			
-			$output[$parts[0]] = $q;	
+			$output[trim($parts[0])] = $q;	
 		}
 		
 		arsort($output, SORT_NUMERIC);
