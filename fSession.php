@@ -1,7 +1,7 @@
 <?php
 /**
  * Wraps the session control functions and the `$_SESSION` superglobal for a more consistent and safer API
- * 
+ *
  * A `Cannot send session cache limiter` warning will be triggered if ::open(),
  * ::add(), ::clear(), ::delete(), ::get() or ::set() is called after output has
  * been sent to the browser. To prevent such a warning, explicitly call ::open()
@@ -11,7 +11,7 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
@@ -30,7 +30,7 @@
  * @changes    1.0.0b9   Fixed a bug in ::destroy() where sessions weren't always being properly destroyed [wb, 2009-12-08]
  * @changes    1.0.0b8   Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
  * @changes    1.0.0b7   Backwards Compatibility Break - Removed the `$prefix` parameter from the methods ::delete(), ::get() and ::set() - added the methods ::add(), ::enablePersistence(), ::regenerateID() [wb+al, 2009-10-23]
- * @changes    1.0.0b6   Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
+ * @changes    1.0.0b6   Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08]
  * @changes    1.0.0b5   Added documentation about session cache limiter warnings [wb, 2009-05-04]
  * @changes    1.0.0b4   The class now works with existing sessions [wb, 2009-05-04]
  * @changes    1.0.0b3   Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
@@ -79,7 +79,7 @@ class fSession
 
 	/**
 	 * The length for a normal session
-	 * 
+	 *
 	 * @var integer
 	 */
 	static private $normal_timespan = NULL;
@@ -93,26 +93,26 @@ class fSession
 
 	/**
 	 * If the session is open
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $open = FALSE;
-	
+
 	/**
 	 * The length for a persistent session cookie - one that survives browser restarts
-	 * 
+	 *
 	 * @var integer
 	 */
 	static private $persistent_timespan = NULL;
-	
+
 	/**
 	 * If the session ID was regenerated during this script
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $regenerated = FALSE;
-	
-	
+
+
 	/**
 	 * Adds a value to an already-existing array value, or to a new array value
 	 *
@@ -171,20 +171,20 @@ class fSession
 	
 	/**
 	 * Removes all session values with the provided prefix
-	 * 
+	 *
 	 * This method will not remove session variables used by this class, which
 	 * are prefixed with `fSession::`.
-	 * 
+	 *
 	 * @param  string $prefix  The prefix to clear all session values for
 	 * @return void
 	 */
 	static public function clear($prefix=NULL)
 	{
 		self::open();
-		
+
 		$session_type    = $_SESSION['fSession::type'];
 		$session_expires = $_SESSION['fSession::expires'];
-		
+
 		if ($prefix) {
 			foreach ($_SESSION as $key => $value) {
 				if (strpos($key, $prefix) === 0) {
@@ -192,23 +192,23 @@ class fSession
 				}
 			}
 		} else {
-			$_SESSION = array();		
+			$_SESSION = array();
 		}
-		
+
 		$_SESSION['fSession::type']    = $session_type;
 		$_SESSION['fSession::expires'] = $session_expires;
 	}
-	
-	
+
+
 	/**
 	 * Closes the session for writing, allowing other pages to open the session
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function close()
 	{
 		if (!self::$open) { return; }
-		
+
 		session_write_close();
 		unset($_SESSION);
 		self::$open = FALSE;
@@ -229,8 +229,8 @@ class fSession
 	{
 		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Deletes a value from the session
 	 * 
@@ -284,11 +284,11 @@ class fSession
 		
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Destroys the session, removing all values
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function destroy()
@@ -320,17 +320,17 @@ class fSession
 	
 	/**
 	 * Changed the session to use a time-based cookie instead of a session-based cookie
-	 * 
+	 *
 	 * The length of the time-based cookie is controlled by ::setLength(). When
 	 * this method is called, a time-based cookie is used to store the session
 	 * ID. This means the session can persist browser restarts. Normally, a
 	 * session-based cookie is used, which is wiped when a browser restart
 	 * occurs.
-	 * 
+	 *
 	 * This method should be called during the login process and will normally
 	 * be controlled by a checkbox or similar where the user can indicate if
 	 * they want to stay logged in for an extended period of time.
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function enablePersistence()
@@ -341,22 +341,22 @@ class fSession
 				__CLASS__ . '::setLength()',
 				'$persistent_timespan',
 				__CLASS__ . '::enablePersistence()'
-			);	
+			);
 		}
-		
+
 		$current_params = session_get_cookie_params();
-		
+
 		$params = array(
 			self::$persistent_timespan,
 			$current_params['path'],
 			$current_params['domain'],
 			$current_params['secure']
 		);
-		
+
 		call_user_func_array('session_set_cookie_params', $params);
-		
+
 		self::open();
-		
+
 		$_SESSION['fSession::type'] = 'persistent';
 		
 		session_regenerate_id();
@@ -414,14 +414,14 @@ class fSession
 		
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
-	 * 
+	 *
 	 * This method should be called after any calls to
 	 * [http://php.net/session_set_cookie_params `session_set_cookie_params()`].
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function ignoreSubdomain()
@@ -439,7 +439,7 @@ class fSession
 				'session_start()'
 			);
 		}
-		
+
 		$current_params = session_get_cookie_params();
 		
 		if (isset($_SERVER['SERVER_NAME'])) {
@@ -461,28 +461,28 @@ class fSession
 			preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $domain),
 			$current_params['secure']
 		);
-		
+
 		call_user_func_array('session_set_cookie_params', $params);
 	}
-	
-	
+
+
 	/**
 	 * Opens the session for writing, is automatically called by ::clear(), ::get() and ::set()
-	 * 
+	 *
 	 * A `Cannot send session cache limiter` warning will be triggered if this,
 	 * ::add(), ::clear(), ::delete(), ::get() or ::set() is called after output
 	 * has been sent to the browser. To prevent such a warning, explicitly call
 	 * this method before generating any output.
-	 * 
-	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary 
+	 *
+	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary
 	 * @return void
 	 */
 	static public function open($cookie_only_session_id=TRUE)
 	{
 		if (self::$open) { return; }
-		
+
 		self::$open = TRUE;
-		
+
 		if (self::$normal_timespan === NULL) {
 			self::$normal_timespan = ini_get('session.gc_maxlifetime');	
 		}
@@ -513,21 +513,21 @@ class fSession
 			}
 			session_start();
 		}
-		
+
 		// If the session has existed for too long, reset it
 		if (isset($_SESSION['fSession::expires']) && $_SESSION['fSession::expires'] < $_SERVER['REQUEST_TIME']) {
 			$_SESSION = array();
 			self::regenerateID();
 		}
-		
+
 		if (!isset($_SESSION['fSession::type'])) {
-			$_SESSION['fSession::type'] = 'normal';	
+			$_SESSION['fSession::type'] = 'normal';
 		}
-		
+
 		// We store the expiration time for a session to allow for both normal and persistent sessions
 		if ($_SESSION['fSession::type'] == 'persistent' && self::$persistent_timespan) {
 			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$persistent_timespan;
-			
+
 		} else {
 			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$normal_timespan;	
 		}
@@ -563,9 +563,9 @@ class fSession
 	
 	/**
 	 * Regenerates the session ID, but only once per script execution
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function regenerateID()
@@ -575,8 +575,8 @@ class fSession
 			self::$regenerated = TRUE;
 		}
 	}
-	
-	
+
+
 	/**
 	 * Removes and returns the value from the end of an array value
 	 *
@@ -634,9 +634,9 @@ class fSession
 	
 	/**
 	 * Resets the configuration of the class
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function reset()
@@ -783,25 +783,25 @@ class fSession
 		
 		$seconds = (!is_numeric($normal_timespan)) ? strtotime($normal_timespan) - time() : $normal_timespan;
 		self::$normal_timespan = $seconds;
-		
+
 		if ($persistent_timespan) {
-			$seconds = (!is_numeric($persistent_timespan)) ? strtotime($persistent_timespan) - time() : $persistent_timespan;	
+			$seconds = (!is_numeric($persistent_timespan)) ? strtotime($persistent_timespan) - time() : $persistent_timespan;
 			self::$persistent_timespan = $seconds;
 		}
-		
+
 		ini_set('session.gc_maxlifetime', $seconds);
 	}
-	
-	
+
+
 	/**
 	 * Sets the path to store session files in
-	 * 
+	 *
 	 * This method should always be called with a non-standard directory
 	 * whenever ::setLength() is called to ensure that another site on the
 	 * server does not garbage collect the session files for this site.
-	 * 
-	 * Standard session directories usually include `/tmp` and `/var/tmp`. 
-	 * 
+	 *
+	 * Standard session directories usually include `/tmp` and `/var/tmp`.
+	 *
 	 * @param  string|fDirectory $directory  The directory to store session files in
 	 * @return void
 	 */
@@ -820,18 +820,18 @@ class fSession
 				'session_start()'
 			);
 		}
-		
+
 		if (!$directory instanceof fDirectory) {
-			$directory = new fDirectory($directory);	
+			$directory = new fDirectory($directory);
 		}
-		
+
 		if (!$directory->isWritable()) {
 			throw new fEnvironmentException(
 				'The directory specified, %s, is not writable',
 				$directory->getPath()
-			);	
+			);
 		}
-		
+
 		session_save_path($directory->getPath());
 	}
 
@@ -853,7 +853,7 @@ class fSession
 	
 	/**
 	 * Forces use as a static class
-	 * 
+	 *
 	 * @return fSession
 	 */
 	private function __construct() { }
@@ -870,10 +870,10 @@ class fSession
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE

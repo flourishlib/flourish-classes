@@ -5,7 +5,7 @@
  * @copyright  Copyright (c) 2009-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
  * 
@@ -68,7 +68,7 @@ class fCache
 
 	/**
 	 * The type of cache
-	 * 
+	 *
 	 * The valid values are:
 	 *  - `'apc'`
 	 *  - `'database'`
@@ -77,17 +77,17 @@ class fCache
 	 *  - `'memcache'`
 	 *  - `'redis'`
 	 *  - `'xcache'`
-	 * 
+	 *
 	 * @var string
 	 */
 	protected $type;
-	
+
 	/**
 	 * Set the type and master key for the cache
-	 * 
+	 *
 	 * A `file` cache uses a single file to store values in an associative
 	 * array and is probably not suitable for a large number of keys.
-	 * 
+	 *
 	 * Using an `apc` or `xcache` cache will have far better performance
 	 * than a file or directory, however please remember that keys are shared
 	 * server-wide.
@@ -180,7 +180,7 @@ class fCache
 					throw new fEnvironmentException(
 						'The file specified, %s, does not exist and the directory it in inside of is not writable',
 						$data_store
-					);		
+					);
 				}
 				if ($exists && !is_writable($data_store)) {
 					throw new fEnvironmentException(
@@ -224,10 +224,10 @@ class fCache
 					throw new fEnvironmentException(
 						'The %s extension does not appear to be installed',
 						$type
-					);	
+					);
 				}
 				break;
-				
+
 			default:
 				throw new fProgrammerException(
 					'The type specified, %s, is not a valid cache type. Must be one of: %s.',
@@ -245,9 +245,9 @@ class fCache
 	
 	/**
 	 * Cleans up after the cache object
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	public function __destruct()
@@ -259,11 +259,11 @@ class fCache
 
 		$this->save();
 	}
-	
-	
+
+
 	/**
 	 * Tries to set a value to the cache, but stops if a value already exists
-	 * 
+	 *
 	 * @param  string  $key    The key to store as, this should not exceed 250 characters
 	 * @param  mixed   $value  The value to store, this will be serialized
 	 * @param  integer $ttl    The number of seconds to keep the cache valid for, 0 for no limit
@@ -326,10 +326,10 @@ class fCache
 					$expiration_date . "\n" . $value
 				);
 				return TRUE;
-			
+
 			case 'memcache':
 				if ($ttl > 2592000) {
-					$ttl = time() + 2592000;		
+					$ttl = time() + 2592000;
 				}
 				if ($this->data_store instanceof Memcache) {
 					return $this->data_store->add($key, $value, 0, $ttl);
@@ -348,7 +348,7 @@ class fCache
 			
 			case 'xcache':
 				if (xcache_isset($key)) {
-					return FALSE;	
+					return FALSE;
 				}
 				xcache_set($key, $value, $ttl);
 				return TRUE;
@@ -405,7 +405,7 @@ class fCache
 	
 	/**
 	 * Clears the WHOLE cache of every key, use with caution!
-	 * 
+	 *
 	 * xcache may require a login or password depending on your ini settings.
 	 * 
 	 * @return boolean  If the cache was successfully cleared
@@ -452,7 +452,7 @@ class fCache
 	
 	/**
 	 * Deletes a value from the cache
-	 * 
+	 *
 	 * @param  string $key  The key to delete
 	 * @return boolean  If the delete succeeded
 	 */
@@ -494,7 +494,7 @@ class fCache
 	
 	/**
 	 * Returns a value from the cache
-	 * 
+	 *
 	 * @param  string $key      The key to return the value for
 	 * @param  mixed  $default  The value to return if the key did not exist
 	 * @return mixed  The cached value or the default value if no cached value was found
@@ -609,7 +609,7 @@ class fCache
 	
 	/**
 	 * Sets a value to the cache, overriding any previous value
-	 * 
+	 *
 	 * @param  string  $key    The key to store as, this should not exceed 250 characters
 	 * @param  mixed   $value  The value to store, this will be serialized
 	 * @param  integer $ttl    The number of seconds to keep the cache valid for, 0 for no limit
@@ -731,10 +731,10 @@ class fCache
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
