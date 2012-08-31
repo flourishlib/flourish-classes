@@ -1,14 +1,14 @@
 <?php
 /**
  * Provides english word inflection, notation conversion, grammar helpers and internationlization support
- * 
+ *
  * @copyright  Copyright (c) 2007-2011 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fGrammar
- * 
+ *
  * @version    1.0.0b15
  * @changes    1.0.0b15  Added length checking to ensure blank strings are not being passed to various methods [wb, 2011-06-20]
  * @changes    1.0.0b14  Fixed a bug in singularization that would affect words containing the substring `mice` or `lice` [wb, 2011-02-24]
@@ -776,27 +776,27 @@ class fGrammar
 		}
 
 		$original = $string;
-		$string = strtolower($string[0]) . substr($string, 1);
 
-		// Handle custom rules
 		if (isset(self::$underscorize_rules[$string])) {
+
+			//
+			// Handle custom rules
+			//
+
 			$string = self::$underscorize_rules[$string];
 
-		// If the string is already underscore notation then leave it
-		} elseif (strpos($string, '_') !== FALSE && strtolower($string) == $string) {
-
-		// Allow humanized string to be passed in
 		} elseif (strpos($string, ' ') !== FALSE) {
-			$string = strtolower(preg_replace('#\s+#', '_', $string));
 
-		} else {
-			do {
-				$old_string = $string;
-				$string = preg_replace('/([a-zA-Z])([0-9])/', '\1_\2', $string);
-				$string = preg_replace('/([a-z0-9A-Z])([A-Z])/', '\1_\2', $string);
-			} while ($old_string != $string);
+			//
+			// Allow humanized strings to be passed in
+			//
 
-			$string = strtolower($string);
+			$string = fUTF8::lower(preg_replace('#\s+#', '_', $string));
+
+		} elseif (fUTF8::lower($string) != $string) {
+			$string = preg_replace('/(?<=[a-z])([A-Z])/', '_$1', $string);
+			$string = preg_replace('/(?<=[A-Z])([A-Z])(?=([a-rt-z]|s[a-z]))/', '_$1', $string);
+			$string = fUTF8::lower($string);
 		}
 
 		self::$cache['underscorize'][$original] = $string;
@@ -817,7 +817,7 @@ class fGrammar
 
 /**
  * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
