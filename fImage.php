@@ -1112,6 +1112,9 @@ class fImage extends fFile
 	 */
 	static private function isOldImageMagickVersion() {
 		$command_line = escapeshellarg(self::$imagemagick_dir . 'convert');
+		if (fCore::checkOS('windows')) {
+			$command_line = str_replace(' ', '" "', self::$imagemagick_dir . 'convert.exe');
+		}
 		$command_line .= ' -version';
 		
 		fCore::debug(sprintf('Executing "%s"', $command_line));
