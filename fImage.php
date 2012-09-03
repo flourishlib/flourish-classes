@@ -1178,17 +1178,13 @@ class fImage extends fFile
 			}
 		}
 		
-		// Default to the RGB colorspace
-		if (strpos($command_line, ' -colorspace ') === FALSE) {
-			$command_line .= ' -colorspace RGB ';
-		}
-		
 		if ($new_type == 'jpg') {
 			$command_line .= ' -compress JPEG -quality ' . $jpeg_quality . ' ';
 		}
 		
 		$command_line .= ' ' . escapeshellarg($new_type . ':' . $output_file) . ' 2>&1';
 		
+		fCore::debug(sprintf('Executing %s', $command_line));
 		exec($command_line, $output, $return_value);
 
 		if ($return_value !== 0) {
@@ -1487,3 +1483,5 @@ class fImage extends fFile
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+// kate: replace-tabs:false
