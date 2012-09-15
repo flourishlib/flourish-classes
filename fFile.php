@@ -1135,7 +1135,6 @@ class fFile implements Iterator, Countable
 	 * This operation will read the data that has been written during the
 	 * current transaction if one is in progress.
 	 * 
-	 * @param  mixed $data  The data to write to the file
 	 * @return string  The contents of the file
 	 */
 	public function read()
