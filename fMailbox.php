@@ -1236,7 +1236,7 @@ class fMailbox
 			$total_messages = 0;
 			$response = $this->write('STATUS "INBOX" (MESSAGES)');
 			foreach ($response as $line) {
-				if (preg_match('#^\s*\*\s+STATUS\s+"?INBOX"?\s+\((.*)\)$#', $line, $match)) {
+				if (preg_match('#^\s*\*\s+STATUS\s+"?INBOX"?\s+\((.*)\)\s*$#', $line, $match)) {
 					$details = self::parseResponse($match[1], TRUE);
 					$total_messages = $details['messages'];
 				}
@@ -1253,7 +1253,7 @@ class fMailbox
 			$output = array();
 			$response = $this->write('FETCH ' . $start . ':' . $end . ' (UID INTERNALDATE RFC822.SIZE ENVELOPE)');
 			foreach ($response as $line) {
-				if (preg_match('#^\s*\*\s+(\d+)\s+FETCH\s+\((.*)\)$#', $line, $match)) {
+				if (preg_match('#^\s*\*\s+(\d+)\s+FETCH\s+\((.*)\)\s*$#', $line, $match)) {
 					$details = self::parseResponse($match[2], TRUE);
 					$info    = array();
 					
