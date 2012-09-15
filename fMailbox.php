@@ -489,7 +489,11 @@ class fMailbox
 	 */
 	static private function parseHeaders($headers, $filter=NULL)
 	{
-		$header_lines = preg_split("#\r\n(?!\s)#", trim($headers));
+		$headers = trim($headers);
+		if (!strlen($headers)) {
+			return array();
+		}
+		$header_lines = preg_split("#\r\n(?!\s)#", $headers);
 		
 		$single_email_fields    = array('from', 'sender', 'reply-to');
 		$multi_email_fields     = array('to', 'cc');
@@ -704,7 +708,7 @@ class fMailbox
 	static private function parseStructure($data, $headers=NULL)
 	{
 		if (!$headers) {
-			list ($headers, $data) = explode("\r\n\r\n", $data, 2);
+			list ($headers, $data) = preg_split("#^\r\n|\r\n\r\n#", $data, 2);
 			$headers = self::parseHeaders($headers);
 		}
 		
