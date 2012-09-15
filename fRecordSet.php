@@ -1732,6 +1732,17 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 
 	 *  - The initial value and the first record for the first call
 	 *  - The result of the last call plus the next record for the second and subsequent calls
+	 *
+	 * {{{
+	 * #!php
+	 * function my_reduce($sum, $record)
+	 * {
+	 *     return $sum + $record->getQuantity();
+	 * )
+	 * // For the first record, 0.0 will be passed as the $sum, then subsequent
+	 * // calls end up getting the return value of the last call to my_reduce()
+	 * $total_quantity = $record_set->reduce('my_reduce', 0.0);
+	 * }}}
 	 * 
 	 * @param  callback $callback       The callback to pass the records to - see method description for details
 	 * @param  mixed    $initial_value  The initial value to seed reduce with
