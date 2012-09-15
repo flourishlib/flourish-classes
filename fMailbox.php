@@ -1141,6 +1141,29 @@ class fMailbox
 	{
 		$this->connect();
 		
+		$source = $this->fetchMessageSource($uid);
+			
+		$info = self::parseMessage($source, $convert_newlines);
+		$info['uid'] = $uid;
+		
+		return $info;
+	}
+
+
+	/**
+	 * Retrieves the raw source of a single message from the server
+	 * 
+	 * This method is primarily useful for storing the raw source of a message.
+	 * Normal use of fMailbox would involved calling ::fetchMessage(), which
+	 * calls this method and then ::parseMessage().
+	 * 
+	 * @param  integer $uid  The UID of the message to retrieve
+	 * @return string  The raw message source of the email
+	 */
+	public function fetchMessageSource($uid)
+	{
+		$this->connect();
+		
 		if ($this->type == 'imap') {
 			$response = $this->write('UID FETCH ' . $uid . ' (BODY[])');
 			preg_match('#\{(\d+)\}$#', $response[0], $match);
@@ -1155,19 +1178,15 @@ class fMailbox
 				}
 			}
 			
-			$info = self::parseMessage($message, $convert_newlines);
-			$info['uid'] = $uid;
+			return $message;
 			
 		} elseif ($this->type == 'pop3') {
 			$response = $this->write('RETR ' . $uid);
 			array_shift($response);
 			$response = join("\r\n", $response);
 			
-			$info = self::parseMessage($response, $convert_newlines);
-			$info['uid'] = $uid;
+			return $response;
 		}
-		
-		return $info;
 	}
 	
 	
