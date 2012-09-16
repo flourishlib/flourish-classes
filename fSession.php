@@ -571,7 +571,10 @@ class fSession
 	static public function regenerateID()
 	{
 		if (!self::$regenerated){
-			session_regenerate_id();
+			self::open();
+			if (!session_regenerate_id(TRUE)) {
+				throw new fUnexpectedException('There was an error regenerating the session id');
+			}
 			self::$regenerated = TRUE;
 		}
 	}
