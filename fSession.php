@@ -7,7 +7,7 @@
  * been sent to the browser. To prevent such a warning, explicitly call ::open()
  * before generating any output.
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond, others
+ * @copyright  Copyright (c) 2007-2012 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Changed ::regenerateID() to not fail silently if the session has not been opened yet [wb, 2012-09-15]
  * @changes    1.0.0b20  Fixed bugs with ::reset() introduced in 1.0.0b19 [wb, 2011-08-23]
  * @changes    1.0.0b19  Fixed some session warning messages for PHP 5.1.6 [wb, 2011-07-29]
  * @changes    1.0.0b18  Added support for storing session data in memcache, redis and databases using fCache and ::setBackend() [wb, 2011-06-21]
@@ -865,7 +866,7 @@ class fSession
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

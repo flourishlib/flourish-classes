@@ -5,14 +5,17 @@
  * All headers, text and html content returned by this class are encoded in
  * UTF-8. Please see http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2010-2011 Will Bond
+ * @copyright  Copyright (c) 2010-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Updated the class to be more forgiving when parsing the response for `STATUS` and `FETCH` IMAP commands [wb, 2012-09-15]
+ * @changes    1.0.0b16  Added method ::fetchMessageSource() [wb, 2012-09-15]
+ * @changes    1.0.0b15  Fixed handling of bounces with no headers [wb, 2012-09-15]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed handling of headers in relation to encoded-words being embedded inside of quoted strings [wb, 2011-07-26]
  * @changes    1.0.0b12  Enhanced the error checking in ::write() [wb, 2011-06-03]
@@ -1498,7 +1501,7 @@ class fMailbox
 }
 
 /**
- * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
