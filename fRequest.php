@@ -10,13 +10,15 @@
  * 
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  * 
- * @version    1.0.0b19
+ * @version    1.0.0b20
+ * @changes    1.0.0b20  Added ::isHead(), fixed ability to call ::set() on `HEAD` requests [wb-imarc, 2011-11-23]
  * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
  * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
  * @changes    1.0.0b17  Fixed support for 3+ dimensional input arrays, added a fixed for the PHP DoS float bug #53632, added support for type-casted arrays in ::get() [wb, 2011-01-09]
@@ -53,6 +55,7 @@ class fRequest
 	const isAjax                = 'fRequest::isAjax';
 	const isDelete              = 'fRequest::isDelete';
 	const isGet                 = 'fRequest::isGet';
+	const isHead                = 'fRequest::isHead';
 	const isPost                = 'fRequest::isPost';
 	const isPut                 = 'fRequest::isPut';
 	const overrideAction        = 'fRequest::overrideAction';
@@ -599,6 +602,17 @@ class fRequest
 	{
 		return strtolower($_SERVER['REQUEST_METHOD']) == 'get';
 	}
+
+
+	/**
+	 * Indicates if the URL was accessed via the `HEAD` HTTP method
+	 * 
+	 * @return boolean  If the URL was accessed via the `HEAD` HTTP method
+	 */
+	static public function isHead()
+	{
+		return strtolower($_SERVER['REQUEST_METHOD']) == 'head';
+	}
 	
 	
 	/**
@@ -803,7 +817,7 @@ class fRequest
 	{		
 		if (self::isPost()) {
 			$tip =& $_POST;
-		} elseif (self::isGet()) {
+		} elseif (self::isGet() || self::isHead()) {
 			$tip =& $_GET;
 		} elseif (self::isDelete() || self::isPut()) {
 			self::initPutDelete();
