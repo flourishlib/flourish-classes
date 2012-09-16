@@ -12,7 +12,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug in ::fetchMessageSource() where IMAP connections would add an extra `\r\n` to the end of the source [wb, 2012-09-16]
  * @changes    1.0.0b17  Updated the class to be more forgiving when parsing the response for `STATUS` and `FETCH` IMAP commands [wb, 2012-09-15]
  * @changes    1.0.0b16  Added method ::fetchMessageSource() [wb, 2012-09-15]
  * @changes    1.0.0b15  Fixed handling of bounces with no headers [wb, 2012-09-15]
@@ -1181,7 +1182,8 @@ class fMailbox
 				}
 			}
 			
-			return $message;
+			// Removes the extra trailing \r\n added above to the last line
+			return substr($message, 0, -2);
 			
 		} elseif ($this->type == 'pop3') {
 			$response = $this->write('RETR ' . $uid);
