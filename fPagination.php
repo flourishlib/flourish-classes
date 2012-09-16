@@ -2,14 +2,15 @@
 /**
  * Prints pagination links for fRecordSet or other paginated records
  * 
- * @copyright  Copyright (c) 2010-2011 Will Bond
+ * @copyright  Copyright (c) 2010-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
- * @link       http://flourishlib.com/fActiveRecord
+ * @link       http://flourishlib.com/fPagination
  *
- * @version 1.0.0b
+ * @version 1.0.0b2
+ * @changes 1.0.0b2   Improved the determination of what pages to show with `with_first_last` templates [wb, 2012-09-16]
  * @changes 1.0.0b    Added the `prev_disabled` and `next_disabled` pieces [wb, 2011-09-06]
  */
 class fPagination
@@ -373,20 +374,41 @@ class fPagination
 			);
 		}
 		
+		$size = self::$templates[$template]['size'];
 		if (self::$templates[$template]['type'] == 'without_first_last') {
-			$start_page = max(1, $page - self::$templates[$template]['size']);
-			$end_page   = min($total_pages, $page + self::$templates[$template]['size']);			
+			$start_page = max(1, $page - $size);
+			$end_page   = min($total_pages, $page + $size);
 		
 		} else {
 			$start_separator = TRUE;
-			$start_page      = $page - (self::$templates[$template]['size'] - 2);
+			$start_page      = $page - ($size - 2);
 			if ($start_page <= 2) {
 				$start_separator = FALSE;
 				$start_page = 1;
 			}
+			$extra_end_pages = 0;
+			if ($page <= $size) {
+				$extra_end_pages = $size - $page + 1;
+			}
+
 			$end_separator = TRUE;
-			$end_page      = $page + (self::$templates[$template]['size'] - 2);
+			$end_page      = $page + ($size - 2);
 			if ($end_page >= $total_pages - 1) {
+				$end_separator = FALSE;
+				$end_page = $total_pages;
+			}
+			$extra_start_pages = 0;
+			if ($page > $total_pages - $size) {
+				$extra_start_pages = $size - ($total_pages - $page);
+			}
+
+			$start_page -= $extra_start_pages;
+			if ($start_page <= 3) {
+				$start_separator = FALSE;
+				$start_page = 1;
+			}
+			$end_page += $extra_end_pages;
+			if ($end_page >= $total_pages - 2) {
 				$end_separator = FALSE;
 				$end_page = $total_pages;
 			}
@@ -671,7 +693,7 @@ class fPagination
 
 
 /**
- * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
