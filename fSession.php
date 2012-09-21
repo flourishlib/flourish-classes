@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  * 
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Fixed ::destroy() to no longer call ::regenerateID() since it fails after a session is destroyed [wb, 2012-09-20]
  * @changes    1.0.0b21  Changed ::regenerateID() to not fail silently if the session has not been opened yet [wb, 2012-09-15]
  * @changes    1.0.0b20  Fixed bugs with ::reset() introduced in 1.0.0b19 [wb, 2011-08-23]
  * @changes    1.0.0b19  Fixed some session warning messages for PHP 5.1.6 [wb, 2011-07-29]
@@ -296,12 +297,12 @@ class fSession
 	{
 		self::open();
 		$_SESSION = array();
+		unset($_SESSION);
 		if (isset($_COOKIE[session_name()])) {
 			$params = session_get_cookie_params();
 			setcookie(session_name(), '', time()-43200, $params['path'], $params['domain'], $params['secure']);
 		}
 		session_destroy();
-		self::regenerateID();
 	}
 
 
