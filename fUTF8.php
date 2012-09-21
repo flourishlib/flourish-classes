@@ -6,14 +6,15 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  * 
- * @copyright  Copyright (c) 2008-2011 Will Bond
+ * @copyright  Copyright (c) 2008-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  * 
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Added code to ::clean() to use mbstring if available since recent versions of iconv and `//IGNORE` now return `FALSE` for bad encodings [wb, 2012-09-21]
  * @changes    1.0.0b15  Fixed a bug with using IBM's iconv implementation on AIX [wb, 2011-07-29]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed notices from being thrown when invalid data is sent to ::clean() [wb, 2011-06-10]
@@ -657,6 +658,15 @@ class fUTF8
 	static public function clean($value)
 	{
 		if (!is_array($value)) {
+			self::checkMbString();
+			if (self::$mbstring_available) {
+				$old_sub = ini_get('mbstring.substitute_character');
+				ini_set('mbstring.substitute_character', 'none');
+				$value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+				ini_set('mbstring.substitute_character', $old_sub);
+				return $value;
+			}
+
 			if (self::$can_ignore_invalid === NULL) {
 				self::$can_ignore_invalid = !in_array(strtolower(ICONV_IMPL), array('unknown', 'ibm iconv'));	
 			}
@@ -1618,7 +1628,7 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
