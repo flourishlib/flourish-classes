@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b46
+ * @version    1.0.0b47
+ * @changes    1.0.0b47  Fixed the new version of ::precount() to work with tables having an explicit schema [wb, 2012-09-21]
  * @changes    1,0,0b46  Fixed a bug with ::precount() not working for self-joining tables [wb, 2012-09-16]
  * @changes    1.0.0b45  Added support for the starts with like, `^~`, and ends with like, `$~`, operators to both ::build() and ::filter() [wb, 2011-06-20]
  * @changes    1.0.0b44  Backwards Compatibility Break - ::sort() and ::sortByCallback() now return a new fRecordSet instead of sorting the record set in place [wb, 2011-06-20]
@@ -1649,6 +1650,11 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 		$table_to_join_alias = $table_to_join;
 		if ($table_to_join == $table) {
 			$table_to_join_alias = $table_to_join . '_1';
+		}
+
+		// For tables in a specific schema, this prevents the alias from having a . in it
+		if (strpos($table_to_join_alias, '.') !== FALSE) {
+			$table_to_join_alias = preg_replace('#"?."?#', '_', $table_to_join_alias);
 		}
 
 		$params = array($db->escape(
