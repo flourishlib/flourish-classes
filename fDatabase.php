@@ -41,14 +41,15 @@
  * encoding and stability issues on Windows, and functionality on non-Windows
  * operating systems.
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  * 
- * @version    1.0.0b40
+ * @version    1.0.0b41
+ * @changes    1.0.0b41  Fixed an array to string conversion notice [wb, 2012-09-21]
  * @changes    1.0.0b40  Fixed a bug with notices being triggered when failing to connect to a SQLite database [wb, 2011-06-20]
  * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
  * @changes    1.0.0b38  Backwards Compatibility Break - callbacks registered to the `extracted` hook via ::registerHookCallback() no longer receive the `$strings` parameter, instead all strings are added into the `$values` parameter - added ::getVersion(), fixed a bug with SQLite messaging, fixed a bug with ::__destruct(), improved handling of transactional queries, added ::close(), enhanced class to throw four different exceptions for different connection errors, silenced PHP warnings upon connection error [wb, 2011-05-09]
@@ -2828,7 +2829,7 @@ class fDatabase
 						$value_number++;
 					
 					// Here we put blank strings back into the SQL so they can be translated for Oracle
-					} elseif ($piece == '%s' && $value !== NULL && ((string) $value) == '') {
+					} elseif ($piece == '%s' && $value !== NULL && !is_array($value) && ((string) $value) == '') {
 						$new_sql .= "''";
 						$value_number++;
 					
@@ -3602,7 +3603,7 @@ class fDatabase
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
