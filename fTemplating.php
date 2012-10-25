@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Matt Nowack [mn] <mdnowack@gmail.com>
+ * @author     Jeff Turcotte [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fTemplating
  * 
- * @version    1.0.0b23
+ * @version    1.0.0b24
+ * @changes    1.0.0b24  Added getRootPath() to retrieve the path fTemplating was instantiated with [jt, 2012-10-24]
  * @changes    1.0.0b23  Added a default `$name` for ::retrieve() to mirror ::attach() [wb, 2011-08-31]
  * @changes    1.0.0b22  Backwards Compatibility Break - removed the static method ::create(), added the static method ::attach() to fill its place [wb, 2011-08-31]
  * @changes    1.0.0b21  Fixed a bug in ::enableMinification() where the minification cache directory was sometimes not properly converted to a web path [wb, 2011-08-31]
@@ -710,7 +712,16 @@ class fTemplating
 		
 		return $value;
 	}
-	
+
+	/**
+	 * Gets the root path
+	 *
+	 * @return string  The root path for the instance
+	 */
+	public function getRootPath()
+	{
+		return $this->root;
+	}
 	
 	/**
 	 * Combines an array of CSS or JS files and places them as a single file
