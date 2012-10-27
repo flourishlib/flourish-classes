@@ -5,13 +5,15 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Andrew Udvare [au] <andrew@bne1.com>
+ * @author     Kerri Gertz [kg] <kerri@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b13
- * @changes    1.0.0b13  Added ::setCSRFTokenField() [au, 2012-04-27]
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added ::setCSRFTokenField() [au, 2012-04-27]
+ * @changes    1.0.0b13  Fixed return bug in ::checkConditionalRules [kg, 2010-06-19]
  * @changes    1.0.0b12  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b11  Fixed ::addCallbackRule() to be able to handle multiple rules per field [wb, 2011-06-02]
  * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
@@ -706,7 +708,7 @@ class fValidation
 			}
 			
 			if (!$check_for_missing_values) {
-				return;	
+				continue;	
 			}
 			
 			foreach ($rule['conditional_fields'] as $conditional_field) {
