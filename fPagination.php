@@ -2,14 +2,15 @@
 /**
  * Prints pagination links for fRecordSet or other paginated records
  * 
- * @copyright  Copyright (c) 2010-2011 Will Bond
+ * @copyright  Copyright (c) 2010-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
- * @link       http://flourishlib.com/fActiveRecord
+ * @link       http://flourishlib.com/fPagination
  *
- * @version 1.0.0b
+ * @version 1.0.0b2
+ * @changes 1.0.0b2   Improved the determination of what pages to show with `with_first_last` templates [wb, 2012-09-16]
  * @changes 1.0.0b    Added the `prev_disabled` and `next_disabled` pieces [wb, 2011-09-06]
  */
 class fPagination
@@ -298,26 +299,6 @@ class fPagination
 			)
 		);
 	}
-
-	/**
-	 * Handles the `makeLinks()` method for fRecordSet
-	 *
-	 * @internal
-	 *
-	 * @param fRecordSet   $object       The record set
-	 * @param string|array $class        The class(es) contained in the record set
-	 * @param array        &$records     The records
-	 * @param string       $method_name  The method that was called
-	 * @param array        $parameters   The parameters passed to the method
-	 * @return boolean  If the links were shown
-	 */
-	static public function makeRecordSetLinks($object, $class, &$records, $method_name, $parameters)
-	{
-		$template = count($parameters) < 1 ? 'default' : $parameters[0];
-		$data     = count($parameters) < 2 ? array() : $parameters[1];
-		$data     = self::extendRecordSetInfo($data, $class);
-		return self::makeTemplatedLinks($template, $data, $object->getPage(), $object->getLimit(), $object->count(TRUE));
-	}
 	
 	
 	/**
@@ -340,25 +321,26 @@ class fPagination
 		return self::showTemplatedLinks($template, $data, $object->getPage(), $object->getLimit(), $object->count(TRUE));
 	}
 	
+	
 	/**
-	 * Makes the links HTML for a set of records
-	 *
+	 * Prints the links for a set of records
+	 * 
 	 * @param string  $template       The template to use
 	 * @param array   $data           The extra data to make available to the template
 	 * @param integer $page           The page of records being displayed
 	 * @param integer $per_page       The number of records being displayed on each page
 	 * @param integer $total_records  The total number of records
-	 * @return string HTML of the links
+	 * @return void
 	 */
-	static private function makeTemplatedLinks($template, $data, $page, $per_page, $total_records)
+	static private function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
 	{
 		if ($total_records <= $per_page) {
-			return '';
+			return FALSE;
 		}
 		
 		$total_pages = ceil($total_records/$per_page);
 		
-		$html = self::makePiece(
+		self::printPiece(
 			$template,
 			'start',
 			array_merge(
@@ -373,7 +355,7 @@ class fPagination
 			)
 		);
 		if ($page > 1) {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'prev',
 				array_merge(
@@ -385,34 +367,55 @@ class fPagination
 				)
 			);
 		} else {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'prev_disabled',
 				$data
 			);
 		}
-
+		
+		$size = self::$templates[$template]['size'];
 		if (self::$templates[$template]['type'] == 'without_first_last') {
-			$start_page = max(1, $page - self::$templates[$template]['size']);
-			$end_page   = min($total_pages, $page + self::$templates[$template]['size']);
-
+			$start_page = max(1, $page - $size);
+			$end_page   = min($total_pages, $page + $size);
+		
 		} else {
 			$start_separator = TRUE;
-			$start_page      = $page - (self::$templates[$template]['size'] - 2);
+			$start_page      = $page - ($size - 2);
 			if ($start_page <= 2) {
 				$start_separator = FALSE;
 				$start_page = 1;
 			}
+			$extra_end_pages = 0;
+			if ($page <= $size) {
+				$extra_end_pages = $size - $page + 1;
+			}
+
 			$end_separator = TRUE;
-			$end_page      = $page + (self::$templates[$template]['size'] - 2);
+			$end_page      = $page + ($size - 2);
 			if ($end_page >= $total_pages - 1) {
 				$end_separator = FALSE;
 				$end_page = $total_pages;
 			}
-		}
+			$extra_start_pages = 0;
+			if ($page > $total_pages - $size) {
+				$extra_start_pages = $size - ($total_pages - $page);
+			}
 
+			$start_page -= $extra_start_pages;
+			if ($start_page <= 3) {
+				$start_separator = FALSE;
+				$start_page = 1;
+			}
+			$end_page += $extra_end_pages;
+			if ($end_page >= $total_pages - 2) {
+				$end_separator = FALSE;
+				$end_page = $total_pages;
+			}
+		}
+		
 		if (self::$templates[$template]['type'] == 'with_first_last' && $start_separator) {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'page',
 				array_merge(
@@ -426,14 +429,14 @@ class fPagination
 					$data
 				)
 			);
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'separator',
 				$data
 			);
 		}
 		for ($loop_page = $start_page; $loop_page <= $end_page; $loop_page++) {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'page',
 				array_merge(
@@ -449,12 +452,12 @@ class fPagination
 			);
 		}
 		if (self::$templates[$template]['type'] == 'with_first_last' && $end_separator) {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'separator',
 				$data
 			);
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'page',
 				array_merge(
@@ -469,9 +472,9 @@ class fPagination
 				)
 			);
 		}
-
+		
 		if ($page < $total_pages) {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'next',
 				array_merge(
@@ -483,13 +486,13 @@ class fPagination
 				)
 			);
 		} else {
-			$html .= self::makePiece(
+			self::printPiece(
 				$template,
 				'next_disabled',
 				$data
 			);
 		}
-		$html .= self::makePiece(
+		self::printPiece(
 			$template,
 			'end',
 			array_merge(
@@ -503,41 +506,20 @@ class fPagination
 				$data
 			)
 		);
-
-		return $html;
-	}
-	
-	
-	/**
-	 * Prints the links for a set of records
-	 * 
-	 * @param string  $template       The template to use
-	 * @param array   $data           The extra data to make available to the template
-	 * @param integer $page           The page of records being displayed
-	 * @param integer $per_page       The number of records being displayed on each page
-	 * @param integer $total_records  The total number of records
-	 * @return boolean If the links were printed
-	 */
-	static private function showTemplatedLinks($template, $data, $page, $per_page, $total_records)
-	{
-		if ($total_records <= $per_page) {
-			return FALSE;
-		}
-		
-		echo self::makeTemplatedLinks($template, $data, $page, $per_page, $total_records);
 		
 		return TRUE;
 	}
-
+	
+	
 	/**
-	 * Makes a piece of a template.
-	 *
+	 * Prints out a piece of a template
+	 * 
 	 * @param string $template  The name of the template to print
-	 * @param string $name      The piece of the template to print
+	 * @param string $piece     The piece of the template to print
 	 * @param array  $data      The data to replace the variables with
-	 * @return string The piece HTML
+	 * @return void
 	 */
-	static private function makePiece($template, $name, $data)
+	static private function printPiece($template, $name, $data)
 	{
 		if (!isset(self::$templates[$template]['pieces'][$name])) {
 			throw new fProgrammerException(
@@ -577,21 +559,7 @@ class fPagination
 			}
 			$piece = preg_replace('#' . preg_quote($match[0], '#') . '#', fHTML::encode($value), $piece, 1);
 		}
-		return $piece;
-	}
-
-	
-	/**
-	 * Prints out a piece of a template
-	 * 
-	 * @param string $template  The name of the template to print
-	 * @param string $name      The piece of the template to print
-	 * @param array  $data      The data to replace the variables with
-	 * @return void
-	 */
-	static private function printPiece($template, $name, $data)
-	{
-		echo self::makePiece($template, $name, $data);
+		echo $piece;
 	}
 	
 	
@@ -709,18 +677,8 @@ class fPagination
 			$this->data[$key] = $value;
 		}
 	}
-
-	/**
-	 * Returns the links as a string
-	 *
-	 * @param string $template  The template to use
-	 * @return string The links HTML
-	 */
-	public function makeLinks($template='default')
-	{
-		return self::makeTemplatedLinks($template, $this->data, $this->page, $this->per_page, $this->total_records);
-	}
-
+	
+	
 	/**
 	 * Shows links to other pages when more than one page of records exists
 	 * 
@@ -735,7 +693,7 @@ class fPagination
 
 
 /**
- * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

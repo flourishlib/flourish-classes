@@ -2,14 +2,16 @@
 /**
  * A lightweight, iterable set of fActiveRecord-based objects
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fRecordSet
  * 
- * @version    1.0.0b45
+ * @version    1.0.0b47
+ * @changes    1.0.0b47  Fixed the new version of ::precount() to work with tables having an explicit schema [wb, 2012-09-21]
+ * @changes    1,0,0b46  Fixed a bug with ::precount() not working for self-joining tables [wb, 2012-09-16]
  * @changes    1.0.0b45  Added support for the starts with like, `^~`, and ends with like, `$~`, operators to both ::build() and ::filter() [wb, 2011-06-20]
  * @changes    1.0.0b44  Backwards Compatibility Break - ::sort() and ::sortByCallback() now return a new fRecordSet instead of sorting the record set in place [wb, 2011-06-20]
  * @changes    1.0.0b43  Added the ability to pass SQL and values to ::buildFromSQL(), added the ability to manually pass the `$limit` and `$page` to ::buildFromArray() and ::buildFromSQL(), changed ::slice() to remember `$limit` and `$page` if possible when `$remember_original_count` is `TRUE` [wb, 2011-01-11]
@@ -1638,20 +1640,31 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 		
 		if (isset($relationship['join_table'])) {
 			$table_to_join  = $relationship['join_table'];
-			$column_to_join = $relationship['join_table'] . '.' . $relationship['join_column'];
+			$column_to_join = $relationship['join_column'];
 			
 		} else {
 			$table_to_join  = $related_table;
-			$column_to_join = $related_table . '.' . $relationship['related_column'];
+			$column_to_join = $relationship['related_column'];
 		}
 		
+		$table_to_join_alias = $table_to_join;
+		if ($table_to_join == $table) {
+			$table_to_join_alias = $table_to_join . '_1';
+		}
+
+		// For tables in a specific schema, this prevents the alias from having a . in it
+		if (strpos($table_to_join_alias, '.') !== FALSE) {
+			$table_to_join_alias = preg_replace('#"?."?#', '_', $table_to_join_alias);
+		}
+
 		$params = array($db->escape(
-			"SELECT count(*) AS flourish__count, %r AS flourish__column FROM %r INNER JOIN %r ON %r = %r WHERE ",
+			"SELECT count(*) AS flourish__count, %r AS flourish__column FROM %r INNER JOIN %r AS %r ON %r = %r WHERE ",
 			$table_and_column,
 			$table,
 			$table_to_join,
+			$table_to_join_alias,
 			$table_and_column,
-			$column_to_join
+			$table_to_join_alias . '.' . $column_to_join
 		));
 		$params = $this->addWhereParams($db, $schema, $params);
 		$params[0] .= $db->escape(' GROUP BY %r', $table_and_column);
@@ -1732,6 +1745,17 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 	 * 
 	 *  - The initial value and the first record for the first call
 	 *  - The result of the last call plus the next record for the second and subsequent calls
+	 *
+	 * {{{
+	 * #!php
+	 * function my_reduce($sum, $record)
+	 * {
+	 *     return $sum + $record->getQuantity();
+	 * )
+	 * // For the first record, 0.0 will be passed as the $sum, then subsequent
+	 * // calls end up getting the return value of the last call to my_reduce()
+	 * $total_quantity = $record_set->reduce('my_reduce', 0.0);
+	 * }}}
 	 * 
 	 * @param  callback $callback       The callback to pass the records to - see method description for details
 	 * @param  mixed    $initial_value  The initial value to seed reduce with
@@ -1968,7 +1992,7 @@ class fRecordSet implements IteratorAggregate, ArrayAccess, Countable
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

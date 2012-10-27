@@ -2,7 +2,7 @@
 /**
  * Provides validation and movement of uploaded files
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond, others
+ * @copyright  Copyright (c) 2007-2012 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUpload
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Fixed an undefined variable error in ::setMaxSize() [wb, 2012-09-16]
  * @changes    1.0.0b14  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b13  Changed the class to throw fValidationException objects instead of fProgrammerException objects when the form is improperly configured - this is to prevent error logs when bad requests are sent by scanners/hackers [wb, 2011-08-24]
  * @changes    1.0.0b12  Fixed the ::filter() callback constant [wb, 2010-11-24]
@@ -678,7 +679,7 @@ class fUpload
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

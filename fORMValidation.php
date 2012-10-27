@@ -2,7 +2,7 @@
 /**
  * Handles validation for fActiveRecord classes
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond, others
+ * @copyright  Copyright (c) 2007-2012 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMValidation
  * 
- * @version    1.0.0b31
+ * @version    1.0.0b32
+ * @changes    1.0.0b32  Fixed an array to string conversion notice [wb, 2012-09-21]
  * @changes    1.0.0b31  Fixed ::checkConditionalRule() to require columns that default to an empty string and are currently set to that value [wb, 2011-06-14]
  * @changes    1.0.0b30  Fixed a bug with ::setMessageOrder() not accepting a variable number of parameters like fValidation::setMessageOrder() does [wb, 2011-03-07]
  * @changes    1.0.0b29  Updated ::addManyToManyRule() and ::addOneToManyRule() to prefix any namespace from `$class` to `$related_class` if not already present [wb, 2010-11-24]
@@ -1194,6 +1195,9 @@ class fORMValidation
 	 */
 	static private function isNonBlankString($string)
 	{
+		if (is_array($string)) {
+			return TRUE;
+		}
 		return ((string) $string) !== '';
 	}
 	
@@ -1577,7 +1581,7 @@ class fORMValidation
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>, others
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal

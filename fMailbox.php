@@ -5,14 +5,18 @@
  * All headers, text and html content returned by this class are encoded in
  * UTF-8. Please see http://flourishlib.com/docs/UTF-8 for more information.
  * 
- * @copyright  Copyright (c) 2010-2011 Will Bond
+ * @copyright  Copyright (c) 2010-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fMailbox
  * 
- * @version    1.0.0b14
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Fixed a bug in ::fetchMessageSource() where IMAP connections would add an extra `\r\n` to the end of the source [wb, 2012-09-16]
+ * @changes    1.0.0b17  Updated the class to be more forgiving when parsing the response for `STATUS` and `FETCH` IMAP commands [wb, 2012-09-15]
+ * @changes    1.0.0b16  Added method ::fetchMessageSource() [wb, 2012-09-15]
+ * @changes    1.0.0b15  Fixed handling of bounces with no headers [wb, 2012-09-15]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed handling of headers in relation to encoded-words being embedded inside of quoted strings [wb, 2011-07-26]
  * @changes    1.0.0b12  Enhanced the error checking in ::write() [wb, 2011-06-03]
@@ -489,7 +493,11 @@ class fMailbox
 	 */
 	static private function parseHeaders($headers, $filter=NULL)
 	{
-		$header_lines = preg_split("#\r\n(?!\s)#", trim($headers));
+		$headers = trim($headers);
+		if (!strlen($headers)) {
+			return array();
+		}
+		$header_lines = preg_split("#\r\n(?!\s)#", $headers);
 		
 		$single_email_fields    = array('from', 'sender', 'reply-to');
 		$multi_email_fields     = array('to', 'cc');
@@ -704,7 +712,7 @@ class fMailbox
 	static private function parseStructure($data, $headers=NULL)
 	{
 		if (!$headers) {
-			list ($headers, $data) = explode("\r\n\r\n", $data, 2);
+			list ($headers, $data) = preg_split("#^\r\n|\r\n\r\n#", $data, 2);
 			$headers = self::parseHeaders($headers);
 		}
 		
@@ -1137,6 +1145,29 @@ class fMailbox
 	{
 		$this->connect();
 		
+		$source = $this->fetchMessageSource($uid);
+			
+		$info = self::parseMessage($source, $convert_newlines);
+		$info['uid'] = $uid;
+		
+		return $info;
+	}
+
+
+	/**
+	 * Retrieves the raw source of a single message from the server
+	 * 
+	 * This method is primarily useful for storing the raw source of a message.
+	 * Normal use of fMailbox would involved calling ::fetchMessage(), which
+	 * calls this method and then ::parseMessage().
+	 * 
+	 * @param  integer $uid  The UID of the message to retrieve
+	 * @return string  The raw message source of the email
+	 */
+	public function fetchMessageSource($uid)
+	{
+		$this->connect();
+		
 		if ($this->type == 'imap') {
 			$response = $this->write('UID FETCH ' . $uid . ' (BODY[])');
 			preg_match('#\{(\d+)\}$#', $response[0], $match);
@@ -1151,19 +1182,16 @@ class fMailbox
 				}
 			}
 			
-			$info = self::parseMessage($message, $convert_newlines);
-			$info['uid'] = $uid;
+			// Removes the extra trailing \r\n added above to the last line
+			return substr($message, 0, -2);
 			
 		} elseif ($this->type == 'pop3') {
 			$response = $this->write('RETR ' . $uid);
 			array_shift($response);
 			$response = join("\r\n", $response);
 			
-			$info = self::parseMessage($response, $convert_newlines);
-			$info['uid'] = $uid;
+			return $response;
 		}
-		
-		return $info;
 	}
 	
 	
@@ -1213,7 +1241,7 @@ class fMailbox
 			$total_messages = 0;
 			$response = $this->write('STATUS "INBOX" (MESSAGES)');
 			foreach ($response as $line) {
-				if (preg_match('#^\s*\*\s+STATUS\s+"?INBOX"?\s+\((.*)\)$#', $line, $match)) {
+				if (preg_match('#^\s*\*\s+STATUS\s+"?INBOX"?\s+\((.*)\)\s*$#', $line, $match)) {
 					$details = self::parseResponse($match[1], TRUE);
 					$total_messages = $details['messages'];
 				}
@@ -1230,7 +1258,7 @@ class fMailbox
 			$output = array();
 			$response = $this->write('FETCH ' . $start . ':' . $end . ' (UID INTERNALDATE RFC822.SIZE ENVELOPE)');
 			foreach ($response as $line) {
-				if (preg_match('#^\s*\*\s+(\d+)\s+FETCH\s+\((.*)\)$#', $line, $match)) {
+				if (preg_match('#^\s*\*\s+(\d+)\s+FETCH\s+\((.*)\)\s*$#', $line, $match)) {
 					$details = self::parseResponse($match[2], TRUE);
 					$info    = array();
 					
@@ -1475,7 +1503,7 @@ class fMailbox
 }
 
 /**
- * Copyright (c) 2010-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2012 Will Bond <will@flourishlib.com>
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
