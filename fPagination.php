@@ -187,6 +187,7 @@ class fPagination
 	 */
 	static public function extend()
 	{
+		fORM::registerRecordSetMethod('makeLinks', self::makeRecordSetLinks);
 		fORM::registerRecordSetMethod('printInfo', self::printRecordSetInfo);
 		fORM::registerRecordSetMethod('showLinks', self::showRecordSetLinks);
 	}
