@@ -7,10 +7,10 @@
     "authors": [
         {
             "name": "Will Bond",
-            "role": "Developer"
+            "role": "Developer",
             "homepage": "http://wbond.net/",
-            "email": "will@wbond.net",
-        },
+            "email": "will@wbond.net"
+        }
     ],
     "autoload": {
         "psr-0": { "Flourish": "classes/" }
