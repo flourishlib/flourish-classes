@@ -1,0 +1,21 @@
+{
+    "name": "netcarver/flourish-classes",
+    "description": "Flourishlib",
+    "homepage": "http://flourishlib.com/",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Will Bond",
+            "role": "Developer"
+            "homepage": "http://wbond.net/",
+            "email": "will@wbond.net",
+        },
+    ],
+    "autoload": {
+        "psr-0": { "Flourish": "classes/" }
+    },
+    "require": {
+        "php": ">=5.3.0"
+    }
+}
