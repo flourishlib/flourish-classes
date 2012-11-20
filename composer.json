@@ -1,0 +1,26 @@
+{
+    "name": "flourishlib/flourish-classes",
+    "description": "Flourishlib",
+    "homepage": "http://flourishlib.com/",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Will Bond",
+            "role": "Developer",
+            "homepage": "http://wbond.net/",
+            "email": "will@wbond.net"
+        }
+    ],
+    "autoload": {
+        "classmap": ["."]
+    },
+    "require": {
+        "php": ">=5.1.0"
+	},
+	"extra": {
+		"branch-alias": {
+			"dev-master": "0.9-dev"
+		}
+	}
+}
