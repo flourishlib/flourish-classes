@@ -2,14 +2,18 @@
 /**
  * Provides validation routines for standalone forms, such as contact forms
  * 
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Andrew Udvare [au] <andrew@bne1.com>
+ * @author     Kerri Gertz [kg] <kerri@imarc.net>
  * @license    http://flourishlib.com/license
  * 
  * @package    Flourish
  * @link       http://flourishlib.com/fValidation
  * 
- * @version    1.0.0b12
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added ::setCSRFTokenField() [au, 2012-04-27]
+ * @changes    1.0.0b13  Fixed return bug in ::checkConditionalRules [kg, 2010-06-19]
  * @changes    1.0.0b12  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b11  Fixed ::addCallbackRule() to be able to handle multiple rules per field [wb, 2011-06-02]
  * @changes    1.0.0b10  Fixed ::addRegexRule() to be able to handle multiple rules per field [wb, 2010-08-30]
@@ -197,6 +201,20 @@ class fValidation
 	 */
 	private $valid_values_rules = array();
 	
+	/**
+	 * CSRF token URL
+	 * 
+	 * @var string
+	 */
+	private $csrf_url = NULL;
+	
+	/**
+	 * CSRF token field name
+	 * 
+	 * @var string
+	 */
+	private $csrf_field = NULL;
+	
 	
 	/**
 	 * All requests that hit this method should be requests for callbacks
@@ -327,6 +345,24 @@ class fValidation
 			$this->addRegexRule($arg, fEmail::EMAIL_REGEX, 'Please enter an email address in the form name@example.com');
 		}
 		
+		return $this;
+	}
+	
+	
+	/**
+	 * Set the CSRF token field to validate.
+	 * 
+	 * @param string $field    A field that should contain a CSRF token string
+	 * @param string $url      URL to validate with
+	 * @return fValidation  The validation object, to allow for method chaining
+	 */
+	public function setCSRFTokenField($field, $url = NULL)
+	{
+		if (is_null($url)) {
+			$url = fURL::get();
+		}
+		$this->csrf_url = $url;
+		$this->csrf_field = $field;
 		return $this;
 	}
 	
@@ -672,7 +708,7 @@ class fValidation
 			}
 			
 			if (!$check_for_missing_values) {
-				return;	
+				continue;	
 			}
 			
 			foreach ($rule['conditional_fields'] as $conditional_field) {
@@ -706,6 +742,28 @@ class fValidation
 					);
 				}
 			}
+		}
+	}
+	
+	
+	/**
+	 * Validates the CSRF field
+	 * 
+	 * @param  array &$messages  The messages to display to the user
+	 * @return void
+	 */
+	private function checkCSRFField(&$messages)
+	{
+		try {
+			if ($this->csrf_field === NULL) {
+				return;
+			}
+			
+			$token = fRequest::get($this->csrf_field);
+			fRequest::validateCSRFToken($token, $this->csrf_url);
+		}
+		catch (fValidationException $e) {
+			$messages[$this->csrf_field] = $e->getMessage();
 		}
 	}
 	
@@ -1019,6 +1077,7 @@ class fValidation
 		$this->checkRequiredFields($messages);
 		$this->checkFileUploadRules($messages);
 		$this->checkConditionalRules($messages);
+		$this->checkCSRFField($messages);
 		$this->checkOneOrMoreRules($messages);
 		$this->checkOnlyOneRules($messages);
 		$this->checkValidValuesRules($messages);

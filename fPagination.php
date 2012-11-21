@@ -18,6 +18,7 @@ class fPagination
 	// The following constants allow for nice looking callbacks to static methods
 	const defineTemplate     = 'fPagination::defineTemplate';
 	const extend             = 'fPagination::extend';
+	const makeRecordSetLinks = 'fPagination::makeRecordSetLinks';
 	const printRecordSetInfo = 'fPagination::printRecordSetInfo';
 	const reset              = 'fPagination::reset';
 	const showRecordSetLinks = 'fPagination::showRecordSetLinks';
@@ -186,6 +187,7 @@ class fPagination
 	 */
 	static public function extend()
 	{
+		fORM::registerRecordSetMethod('makeLinks', self::makeRecordSetLinks);
 		fORM::registerRecordSetMethod('printInfo', self::printRecordSetInfo);
 		fORM::registerRecordSetMethod('showLinks', self::showRecordSetLinks);
 	}
@@ -212,6 +214,26 @@ class fPagination
 			),
 			$data
 		);
+	}
+	
+	
+	/**
+	 * Handles the `makeLinks()` method for fRecordSet
+	 *
+	 * @internal
+	 *
+	 * @param fRecordSet   $object       The record set
+	 * @param string|array $class        The class(es) contained in the record set
+	 * @param array        &$records     The records
+	 * @param string       $method_name  The method that was called
+	 * @param array        $parameters   The parameters passed to the method
+	 * @return string  Generated HTML of the links
+	 */
+	static public function makeRecordSetLinks($object, $class, &$records, $method_name, $parameters)
+	{
+		fBuffer::startCapture();
+		self::showRecordSetLinks($object, $class, $records, $method_name, $parameters);
+		return fBuffer::stopCapture();
 	}
 	
 	
@@ -713,3 +735,5 @@ class fPagination
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+// kate: remove-trailing-space false; replace-tabs false; replace-tabs-save false; replace-trailing-space-save false;

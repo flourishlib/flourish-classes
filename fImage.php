@@ -1,16 +1,18 @@
 <?php
 /**
  * Represents an image on the filesystem, also provides image manipulation functionality
- * 
+ *
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Jeff Turcotte, iMarc LLC [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
- * 
- * @version    1.0.0b33
+ *
+ * @version    1.0.0b34
+ * @changes    1.0.0b34  Fixed a bug in getImageType() where the fread was not reading enough bytes [jt, 2012-06-05]
  * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
  * @changes    1.0.0b31  Fixed a bug in using ImageMagick to convert files with a colon in the filename [wb, 2011-03-20]
@@ -157,7 +159,7 @@ class fImage extends fFile
 	 * 
 	 * @return void
 	 */
-	static private function determineProcessor()
+	static protected function determineProcessor()
 	{
 		// Determine what processor to use
 		if (self::$processor === NULL) {
@@ -370,14 +372,14 @@ class fImage extends fFile
 	
 	/**
 	 * Gets the image type from a file by looking at the file contents
-	 * 
+	 *
 	 * @param  string $image  The image path to get the type for
-	 * @return string|NULL  The type of the image - `'jpg'`, `'gif'`, `'png'` or `'tif'` - NULL if not one of those  
+	 * @return string|NULL  The type of the image - `'jpg'`, `'gif'`, `'png'` or `'tif'` - NULL if not one of those
 	 */
 	static private function getImageType($image)
 	{
 		$handle   = fopen($image, 'r');
-		$contents = fread($handle, 12);
+		$contents = fread($handle, 32);
 		fclose($handle);
 		
 		$_0_8  = substr($contents, 0, 8);
@@ -407,11 +409,11 @@ class fImage extends fFile
 	
 	/**
 	 * Checks to make sure the class can handle the image file specified
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @throws fValidationException  When the image specified does not exist
-	 * 
+	 *
 	 * @param  string $image  The image to check for incompatibility
 	 * @return boolean  If the image is compatible with the detected image processor
 	 */
@@ -1105,6 +1107,42 @@ class fImage extends fFile
 		imagedestroy($gd_res);
 	}
 	
+	/**
+	 * Determines if ImageMagick is of version less than 6.7.5.
+	 *
+	 * @return boolean `TRUE` if the version is less than 6.7.5, `FALSE` otherwise.
+	 */
+	static private function isOldImageMagickVersion() {
+		$command_line = escapeshellarg(self::$imagemagick_dir . 'convert');
+		if (fCore::checkOS('windows')) {
+			$command_line = str_replace(' ', '" "', self::$imagemagick_dir . 'convert.exe');
+		}
+		$command_line .= ' -version';
+		
+		fCore::debug(sprintf('Executing "%s"', $command_line));
+		exec($command_line, $output, $return_value);
+		
+		if ($return_value !== 0) {
+			throw new fEnvironmentException(
+				"An error occurred running the command, %1\$s, to modify the image. The error output was:\n%2\$s",
+				$command_line,
+				join("\n", $output)
+			);
+		}
+		
+		// Example line: Version: ImageMagick 6.7.8-7 2012-08-05 Q32 http://www.imagemagick.org
+		foreach ($output as $line) {
+			$matches = array();
+			if (preg_match('/Version\:\s+ImageMagick\s+6\.7.(\d)/', $line, $matches)) {
+				if ($matches[1] >= 5) {
+					return FALSE;
+				}
+			}
+		}
+		
+		return TRUE;
+	}
+	
 	
 	/**
 	 * Processes the current image using ImageMagick
@@ -1116,7 +1154,42 @@ class fImage extends fFile
 	private function processWithImageMagick($output_file, $jpeg_quality)
 	{
 		$type = self::getImageType($this->file);
-		if (fCore::checkOS('windows')) {
+		$original_colorspace = NULL;
+		$is_windows = fCore::checkOS('windows');
+		$is_old_version = self::isOldImageMagickVersion();
+		$desaturated = FALSE;
+		
+		if (!$is_old_version && in_array($type, array('jpg', 'tif'))) {
+			$identify_command_line = escapeshellarg(self::$imagemagick_dir . 'identify');
+			
+			if ($is_windows) {
+				$identify_command_line = str_replace(' ', '" "', self::$imagemagick_dir . 'identify.exe');
+			}
+			
+			$identify_command_line .= ' -verbose ';
+			$identify_command_line .= escapeshellarg($this->file);
+			
+			fCore::debug(sprintf('Executing "%s"', $identify_command_line));
+			exec($identify_command_line, $output, $return_value);
+			
+			if ($return_value !== 0) {
+				throw new fEnvironmentException(
+					"An error occurred running the command, %1\$s, to modify the image. The error output was:\n%2\$s",
+					$identify_command_line,
+					join("\n", $output)
+				);
+			}
+			
+			foreach ($output as $line) {
+				$matches = array();
+				if (preg_match('/\s+Colorspace\:\s+([A-Za-z0-9]+)/', $line, $matches)) {
+					$original_colorspace = $matches[1];
+					break;
+			  }
+			}
+		}
+		
+		if ($is_windows) {
 			$command_line  = str_replace(' ', '" "', self::$imagemagick_dir . 'convert.exe');
 		} else {
 			$command_line  = escapeshellarg(self::$imagemagick_dir . 'convert');
@@ -1141,6 +1214,10 @@ class fImage extends fFile
 		}
 		
 		$command_line .= ' ' . escapeshellarg(str_replace('tif', 'tiff', $type) . ':' . $file) . ' ';
+		
+		if (!$is_old_version && $original_colorspace) {
+			$command_line .= ' -colorspace '.escapeshellarg($original_colorspace).' ';
+		}
 		
 		// Animated gifs need to be coalesced
 		if ($this->isAnimatedGif()) {
@@ -1171,6 +1248,7 @@ class fImage extends fFile
 			// Perform the desaturate operation
 			} elseif ($mod['operation'] == 'desaturate') {
 				$command_line .= ' -colorspace GRAY ';
+				$desaturated = TRUE;
 			
 			// Perform the rotate operation
 			} elseif ($mod['operation'] == 'rotate') {
@@ -1178,9 +1256,15 @@ class fImage extends fFile
 			}
 		}
 		
-		// Default to the RGB colorspace
-		if (strpos($command_line, ' -colorspace ') === FALSE) {
-			$command_line .= ' -colorspace RGB ';
+		if (!$desaturated) {
+			// Convert if necessary because all browsers support sRGB but not all
+			//   support colorspaces like CMYK
+			if (!$is_old_version && $original_colorspace != 'sRGB' && !$desaturated) {
+				$command_line .= ' -colorspace sRGB ';
+			}
+			else if ($is_old_version) {
+				$command_line .= ' -colorspace RGB ';
+			}
 		}
 		
 		if ($new_type == 'jpg') {
@@ -1189,8 +1273,9 @@ class fImage extends fFile
 		
 		$command_line .= ' ' . escapeshellarg($new_type . ':' . $output_file) . ' 2>&1';
 		
+		fCore::debug(sprintf('Executing "%s"', $command_line));
 		exec($command_line, $output, $return_value);
-
+		
 		if ($return_value !== 0) {
 			throw new fEnvironmentException(
 				"An error occurred running the command, %1\$s, to modify the image. The error output was:\n%2\$s",
@@ -1487,3 +1572,5 @@ class fImage extends fFile
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
+// kate: replace-tabs:false
