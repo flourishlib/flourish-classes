@@ -1,6 +1,6 @@
 {
-    "name": "flourishlib/flourish-classes",
-    "description": "Flourishlib",
+    "name": "flourish/flourish",
+    "description": "A collection of classes for general web development, with a particular focus on compatibility, portability and security",
     "homepage": "http://flourishlib.com/",
     "type": "library",
     "license": "MIT",
@@ -20,7 +20,7 @@
 	},
 	"extra": {
 		"branch-alias": {
-			"dev-master": "0.9-dev"
+			"dev-master": "0.9.x-dev"
 		}
 	}
 }
