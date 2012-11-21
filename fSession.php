@@ -1,20 +1,20 @@
 <?php
 /**
  * Wraps the session control functions and the `$_SESSION` superglobal for a more consistent and safer API
- * 
+ *
  * A `Cannot send session cache limiter` warning will be triggered if ::open(),
  * ::add(), ::clear(), ::delete(), ::get() or ::set() is called after output has
  * been sent to the browser. To prevent such a warning, explicitly call ::open()
  * before generating any output.
- * 
+ *
  * @copyright  Copyright (c) 2007-2012 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
- * 
+ *
  * @version    1.0.0b22
  * @changes    1.0.0b22  Fixed ::destroy() to no longer call ::regenerateID() since it fails after a session is destroyed [wb, 2012-09-20]
  * @changes    1.0.0b21  Changed ::regenerateID() to not fail silently if the session has not been opened yet [wb, 2012-09-15]
@@ -32,7 +32,7 @@
  * @changes    1.0.0b9   Fixed a bug in ::destroy() where sessions weren't always being properly destroyed [wb, 2009-12-08]
  * @changes    1.0.0b8   Fixed a bug that made the unit tests fail on PHP 5.1 [wb, 2009-10-27]
  * @changes    1.0.0b7   Backwards Compatibility Break - Removed the `$prefix` parameter from the methods ::delete(), ::get() and ::set() - added the methods ::add(), ::enablePersistence(), ::regenerateID() [wb+al, 2009-10-23]
- * @changes    1.0.0b6   Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08] 
+ * @changes    1.0.0b6   Backwards Compatibility Break - the first parameter of ::clear() was removed, use ::delete() instead [wb, 2009-05-08]
  * @changes    1.0.0b5   Added documentation about session cache limiter warnings [wb, 2009-05-04]
  * @changes    1.0.0b4   The class now works with existing sessions [wb, 2009-05-04]
  * @changes    1.0.0b3   Fixed ::clear() to properly handle when `$key` is `NULL` [wb, 2009-02-05]
@@ -63,11 +63,11 @@ class fSession
 	const setLength         = 'fSession::setLength';
 	const setPath           = 'fSession::setPath';
 	const writeCache        = 'fSession::writeCache';
-	
-	
+
+
 	/**
 	 * The fCache backend to use for the session
-	 * 
+	 *
 	 * @var fCache
 	 */
 	static private $backend = NULL;
@@ -81,40 +81,40 @@ class fSession
 
 	/**
 	 * The length for a normal session
-	 * 
+	 *
 	 * @var integer
 	 */
 	static private $normal_timespan = NULL;
-	
+
 	/**
 	 * The name of the old session module to revent to when fSession is closed
-	 * 
+	 *
 	 * @var string
 	 */
 	static private $old_session_module_name = NULL;
 
 	/**
 	 * If the session is open
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $open = FALSE;
-	
+
 	/**
 	 * The length for a persistent session cookie - one that survives browser restarts
-	 * 
+	 *
 	 * @var integer
 	 */
 	static private $persistent_timespan = NULL;
-	
+
 	/**
 	 * If the session ID was regenerated during this script
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $regenerated = FALSE;
-	
-	
+
+
 	/**
 	 * Adds a value to an already-existing array value, or to a new array value
 	 *
@@ -127,16 +127,16 @@ class fSession
 	{
 		self::open();
 		$tip =& $_SESSION;
-		
+
 		if ($bracket_pos = strpos($key, '[')) {
 			$original_key      = $key;
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
-			
+
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
 			array_unshift($array_keys, $key);
-			
+
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key])) {
 					$tip[$array_key] = array();
@@ -151,8 +151,8 @@ class fSession
 			}
 			$key = end($array_keys);
 		}
-		
-		
+
+
 		if (!isset($tip[$key])) {
 			$tip[$key] = array();
 		} elseif (!is_array($tip[$key])) {
@@ -162,31 +162,31 @@ class fSession
 				$key
 			);
 		}
-		
+
 		if ($beginning) {
 			array_unshift($tip[$key], $value);
 		} else {
 			$tip[$key][] = $value;
 		}
 	}
-	
-	
+
+
 	/**
 	 * Removes all session values with the provided prefix
-	 * 
+	 *
 	 * This method will not remove session variables used by this class, which
 	 * are prefixed with `fSession::`.
-	 * 
+	 *
 	 * @param  string $prefix  The prefix to clear all session values for
 	 * @return void
 	 */
 	static public function clear($prefix=NULL)
 	{
 		self::open();
-		
+
 		$session_type    = $_SESSION['fSession::type'];
 		$session_expires = $_SESSION['fSession::expires'];
-		
+
 		if ($prefix) {
 			foreach ($_SESSION as $key => $value) {
 				if (strpos($key, $prefix) === 0) {
@@ -194,23 +194,23 @@ class fSession
 				}
 			}
 		} else {
-			$_SESSION = array();		
+			$_SESSION = array();
 		}
-		
+
 		$_SESSION['fSession::type']    = $session_type;
 		$_SESSION['fSession::expires'] = $session_expires;
 	}
-	
-	
+
+
 	/**
 	 * Closes the session for writing, allowing other pages to open the session
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function close()
 	{
 		if (!self::$open) { return; }
-		
+
 		session_write_close();
 		unset($_SESSION);
 		self::$open = FALSE;
@@ -222,7 +222,7 @@ class fSession
 
 	/**
 	 * Callback to close the session
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @return boolean  If the operation succeeded
@@ -231,11 +231,11 @@ class fSession
 	{
 		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Deletes a value from the session
-	 * 
+	 *
 	 * @param  string $key            The key of the value to delete - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in key names
 	 * @param  mixed  $default_value  The value to return if the `$key` is not set
 	 * @return mixed  The value of the `$key` that was deleted
@@ -243,23 +243,23 @@ class fSession
 	static public function delete($key, $default_value=NULL)
 	{
 		self::open();
-		
+
 		$value = $default_value;
-		
+
 		if ($bracket_pos = strpos($key, '[')) {
 			$original_key      = $key;
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
-			
+
 			if (!isset($_SESSION[$key])) {
 				return $value;
 			}
-			
+
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
-			
+
 			$tip =& $_SESSION[$key];
-			
+
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key])) {
 					return $value;
@@ -272,25 +272,25 @@ class fSession
 				}
 				$tip =& $tip[$array_key];
 			}
-			
+
 			$key = end($array_keys);
-			
+
 		} else {
 			$tip =& $_SESSION;
 		}
-		
+
 		if (isset($tip[$key])) {
 			$value = $tip[$key];
 			unset($tip[$key]);
 		}
-		
+
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Destroys the session, removing all values
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function destroy()
@@ -308,7 +308,7 @@ class fSession
 
 	/**
 	 * Callback to destroy a session
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @param  string $id  The session to destroy
@@ -318,21 +318,21 @@ class fSession
 	{
 		return self::$backend->delete(self::$key_prefix . $id);
 	}
-	
-	
+
+
 	/**
 	 * Changed the session to use a time-based cookie instead of a session-based cookie
-	 * 
+	 *
 	 * The length of the time-based cookie is controlled by ::setLength(). When
 	 * this method is called, a time-based cookie is used to store the session
 	 * ID. This means the session can persist browser restarts. Normally, a
 	 * session-based cookie is used, which is wiped when a browser restart
 	 * occurs.
-	 * 
+	 *
 	 * This method should be called during the login process and will normally
 	 * be controlled by a checkbox or similar where the user can indicate if
 	 * they want to stay logged in for an extended period of time.
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function enablePersistence()
@@ -343,24 +343,24 @@ class fSession
 				__CLASS__ . '::setLength()',
 				'$persistent_timespan',
 				__CLASS__ . '::enablePersistence()'
-			);	
+			);
 		}
-		
+
 		$current_params = session_get_cookie_params();
-		
+
 		$params = array(
 			self::$persistent_timespan,
 			$current_params['path'],
 			$current_params['domain'],
 			$current_params['secure']
 		);
-		
+
 		call_user_func_array('session_set_cookie_params', $params);
-		
+
 		self::open();
-		
+
 		$_SESSION['fSession::type'] = 'persistent';
-		
+
 		session_regenerate_id();
 		self::$regenerated = TRUE;
 	}
@@ -368,7 +368,7 @@ class fSession
 
 	/**
 	 * Callback to garbage-collect the session cache
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @return boolean  If the operation succeeded
@@ -378,11 +378,11 @@ class fSession
 		self::$backend->clean();
 		return TRUE;
 	}
-	
-	
+
+
 	/**
 	 * Gets data from the `$_SESSION` superglobal
-	 * 
+	 *
 	 * @param  string $key            The name to get the value for - array elements can be accessed via `[sub-key]` syntax, and thus `[` and `]` can not be used in key names
 	 * @param  mixed  $default_value  The default value to use if the requested key is not set
 	 * @return mixed  The data element requested
@@ -390,18 +390,18 @@ class fSession
 	static public function get($key, $default_value=NULL)
 	{
 		self::open();
-		
+
 		$array_dereference = NULL;
 		if ($bracket_pos = strpos($key, '[')) {
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
 		}
-		
+
 		if (!isset($_SESSION[$key])) {
 			return $default_value;
 		}
 		$value = $_SESSION[$key];
-		
+
 		if ($array_dereference) {
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
@@ -413,17 +413,17 @@ class fSession
 				$value = $value[$array_key];
 			}
 		}
-		
+
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Sets the session to run on the main domain, not just the specific subdomain currently being accessed
-	 * 
+	 *
 	 * This method should be called after any calls to
 	 * [http://php.net/session_set_cookie_params `session_set_cookie_params()`].
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function ignoreSubdomain()
@@ -441,9 +441,9 @@ class fSession
 				'session_start()'
 			);
 		}
-		
+
 		$current_params = session_get_cookie_params();
-		
+
 		if (isset($_SERVER['SERVER_NAME'])) {
 			$domain = $_SERVER['SERVER_NAME'];
 		} elseif (isset($_SERVER['HTTP_HOST'])) {
@@ -456,37 +456,37 @@ class fSession
 				__CLASS__ . '::ignoreSubdomain()'
 			);
 		}
-		
+
 		$params = array(
 			$current_params['lifetime'],
 			$current_params['path'],
 			preg_replace('#.*?([a-z0-9\\-]+\.[a-z]+)$#iD', '.\1', $domain),
 			$current_params['secure']
 		);
-		
+
 		call_user_func_array('session_set_cookie_params', $params);
 	}
-	
-	
+
+
 	/**
 	 * Opens the session for writing, is automatically called by ::clear(), ::get() and ::set()
-	 * 
+	 *
 	 * A `Cannot send session cache limiter` warning will be triggered if this,
 	 * ::add(), ::clear(), ::delete(), ::get() or ::set() is called after output
 	 * has been sent to the browser. To prevent such a warning, explicitly call
 	 * this method before generating any output.
-	 * 
-	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary 
+	 *
+	 * @param  boolean $cookie_only_session_id  If the session id should only be allowed via cookie - this is a security issue and should only be set to `FALSE` when absolutely necessary
 	 * @return void
 	 */
 	static public function open($cookie_only_session_id=TRUE)
 	{
 		if (self::$open) { return; }
-		
+
 		self::$open = TRUE;
-		
+
 		if (self::$normal_timespan === NULL) {
-			self::$normal_timespan = ini_get('session.gc_maxlifetime');	
+			self::$normal_timespan = ini_get('session.gc_maxlifetime');
 		}
 
 		if (self::$backend && isset($_SESSION) && session_module_name() != 'user') {
@@ -495,7 +495,7 @@ class fSession
 				__CLASS__ . '::setBackend()'
 			);
 		}
-		
+
 		// If the session is already open, we just piggy-back without setting options
 		if (!isset($_SESSION)) {
 			if ($cookie_only_session_id) {
@@ -515,30 +515,30 @@ class fSession
 			}
 			session_start();
 		}
-		
+
 		// If the session has existed for too long, reset it
 		if (isset($_SESSION['fSession::expires']) && $_SESSION['fSession::expires'] < $_SERVER['REQUEST_TIME']) {
 			$_SESSION = array();
 			self::regenerateID();
 		}
-		
+
 		if (!isset($_SESSION['fSession::type'])) {
-			$_SESSION['fSession::type'] = 'normal';	
+			$_SESSION['fSession::type'] = 'normal';
 		}
-		
+
 		// We store the expiration time for a session to allow for both normal and persistent sessions
 		if ($_SESSION['fSession::type'] == 'persistent' && self::$persistent_timespan) {
 			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$persistent_timespan;
-			
+
 		} else {
-			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$normal_timespan;	
+			$_SESSION['fSession::expires'] = $_SERVER['REQUEST_TIME'] + self::$normal_timespan;
 		}
 	}
 
 
 	/**
 	 * Callback to open the session
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @return boolean  If the operation succeeded
@@ -551,7 +551,7 @@ class fSession
 
 	/**
 	 * Callback to read a session's values
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @param  string $id  The session to read
@@ -561,13 +561,13 @@ class fSession
 	{
 		return self::$backend->get(self::$key_prefix . $id, '');
 	}
-	
-	
+
+
 	/**
 	 * Regenerates the session ID, but only once per script execution
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function regenerateID()
@@ -580,8 +580,8 @@ class fSession
 			self::$regenerated = TRUE;
 		}
 	}
-	
-	
+
+
 	/**
 	 * Removes and returns the value from the end of an array value
 	 *
@@ -593,16 +593,16 @@ class fSession
 	{
 		self::open();
 		$tip =& $_SESSION;
-		
+
 		if ($bracket_pos = strpos($key, '[')) {
 			$original_key      = $key;
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
-			
+
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
 			array_unshift($array_keys, $key);
-			
+
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key])) {
 					return NULL;
@@ -617,8 +617,8 @@ class fSession
 			}
 			$key = end($array_keys);
 		}
-		
-		
+
+
 		if (!isset($tip[$key])) {
 			return NULL;
 		} elseif (!is_array($tip[$key])) {
@@ -628,20 +628,20 @@ class fSession
 				$key
 			);
 		}
-		
+
 		if ($beginning) {
 			return array_shift($tip[$key]);
 		}
-		
+
 		return array_pop($tip[$key]);
-	}	
-	
-	
+	}
+
+
 	/**
 	 * Resets the configuration of the class
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function reset()
@@ -654,11 +654,11 @@ class fSession
 		self::$backend             = NULL;
 		self::$key_prefix          = '';
 	}
-	
-	
+
+
 	/**
 	 * Sets data to the `$_SESSION` superglobal
-	 * 
+	 *
 	 * @param  string $key     The name to save the value under - array elements can be modified via `[sub-key]` syntax, and thus `[` and `]` can not be used in key names
 	 * @param  mixed  $value   The value to store
 	 * @return void
@@ -667,15 +667,15 @@ class fSession
 	{
 		self::open();
 		$tip =& $_SESSION;
-		
+
 		if ($bracket_pos = strpos($key, '[')) {
 			$array_dereference = substr($key, $bracket_pos);
 			$key               = substr($key, 0, $bracket_pos);
-			
+
 			preg_match_all('#(?<=\[)[^\[\]]+(?=\])#', $array_dereference, $array_keys, PREG_SET_ORDER);
 			$array_keys = array_map('current', $array_keys);
 			array_unshift($array_keys, $key);
-			
+
 			foreach (array_slice($array_keys, 0, -1) as $array_key) {
 				if (!isset($tip[$array_key]) || !is_array($tip[$array_key])) {
 					$tip[$array_key] = array();
@@ -683,7 +683,7 @@ class fSession
 				$tip =& $tip[$array_key];
 			}
 			$tip[end($array_keys)] = $value;
-			
+
 		} else {
 			$tip[$key] = $value;
 		}
@@ -692,7 +692,7 @@ class fSession
 
 	/**
 	 * Sets an fCache object to store sessions in
-	 * 
+	 *
 	 * While any type of fCache backend should technically work, it would be
 	 * unwise to use the `file` and `directory` types. The `file` caching
 	 * backend stores all values in a single file, which would quickly become a
@@ -715,7 +715,7 @@ class fSession
 	 * The [http://pecl.php.net/package/igbinary igbinary] extension can
 	 * provide even more of a performance boost by storing serialized data in
 	 * binary format instead of as text.
-	 * 
+	 *
 	 * @param  fCache $backend     An fCache object to store session values in
 	 * @param  string $key_prefix  A prefix to add to all session IDs before storing them in the cache
 	 * @return void
@@ -753,19 +753,19 @@ class fSession
 		// This ensures the session is closed before the fCache object is destructed
 		register_shutdown_function(array('fSession', 'close'));
 	}
-	
-	
+
+
 	/**
 	 * Sets the minimum length of a session - PHP might not clean up the session data right away once this timespan has elapsed
-	 * 
+	 *
 	 * Please be sure to set a custom session path via ::setPath() to ensure
 	 * another site on the server does not garbage collect the session files
 	 * from this site!
-	 * 
+	 *
 	 * Both of the timespan can accept either a integer timespan in seconds,
 	 * or an english description of a timespan (e.g. `'30 minutes'`, `'1 hour'`,
 	 * `'1 day 2 hours'`).
-	 * 
+	 *
 	 * @param  string|integer $normal_timespan      The normal, session-based cookie, length for the session
 	 * @param  string|integer $persistent_timespan  The persistent, timed-based cookie, length for the session - this is enabled by calling ::enabledPersistence() during login
 	 * @return void
@@ -785,28 +785,28 @@ class fSession
 				'session_start()'
 			);
 		}
-		
+
 		$seconds = (!is_numeric($normal_timespan)) ? strtotime($normal_timespan) - time() : $normal_timespan;
 		self::$normal_timespan = $seconds;
-		
+
 		if ($persistent_timespan) {
-			$seconds = (!is_numeric($persistent_timespan)) ? strtotime($persistent_timespan) - time() : $persistent_timespan;	
+			$seconds = (!is_numeric($persistent_timespan)) ? strtotime($persistent_timespan) - time() : $persistent_timespan;
 			self::$persistent_timespan = $seconds;
 		}
-		
+
 		ini_set('session.gc_maxlifetime', $seconds);
 	}
-	
-	
+
+
 	/**
 	 * Sets the path to store session files in
-	 * 
+	 *
 	 * This method should always be called with a non-standard directory
 	 * whenever ::setLength() is called to ensure that another site on the
 	 * server does not garbage collect the session files for this site.
-	 * 
-	 * Standard session directories usually include `/tmp` and `/var/tmp`. 
-	 * 
+	 *
+	 * Standard session directories usually include `/tmp` and `/var/tmp`.
+	 *
 	 * @param  string|fDirectory $directory  The directory to store session files in
 	 * @return void
 	 */
@@ -825,25 +825,25 @@ class fSession
 				'session_start()'
 			);
 		}
-		
+
 		if (!$directory instanceof fDirectory) {
-			$directory = new fDirectory($directory);	
+			$directory = new fDirectory($directory);
 		}
-		
+
 		if (!$directory->isWritable()) {
 			throw new fEnvironmentException(
 				'The directory specified, %s, is not writable',
 				$directory->getPath()
-			);	
+			);
 		}
-		
+
 		session_save_path($directory->getPath());
 	}
 
 
 	/**
 	 * Callback to write a session's values
-	 * 
+	 *
 	 * @internal
 	 *
 	 * @param  string $id      The session to write
@@ -854,11 +854,11 @@ class fSession
 	{
 		return self::$backend->set(self::$key_prefix . $id, $values);
 	}
-	
-	
+
+
 	/**
 	 * Forces use as a static class
-	 * 
+	 *
 	 * @return fSession
 	 */
 	private function __construct() { }
@@ -868,17 +868,17 @@ class fSession
 
 /**
  * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>, others
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE

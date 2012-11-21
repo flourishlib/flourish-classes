@@ -1,14 +1,14 @@
 <?php
 /**
  * A simple interface to cache data using different backends
- * 
+ *
  * @copyright  Copyright (c) 2009-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fCache
- * 
+ *
  * @version    1.0.0b6
  * @changes    1.0.0b6  Fixed a bug with ::add() setting a value when it shouldn't if no ttl was given for the file backend [wb, 2012-01-12]
  * @changes    1.0.0b5  Added missing documentation for using Redis as a backend [wb, 2011-08-25]
@@ -21,7 +21,7 @@ class fCache
 {
 	/**
 	 * The cache configuration, used for database, directory and file caches
-	 * 
+	 *
 	 * The array structure for database caches is:
 	 * {{{
 	 * array(
@@ -46,11 +46,11 @@ class fCache
 	 *     'state' => (string) {clean or dirty, used to appropriately save}
 	 * )
 	 * }}}
-	 * 
+	 *
 	 * @var array
 	 */
 	protected $config;
-	
+
 	/**
 	 * The data store to use
 	 *
@@ -61,14 +61,14 @@ class fCache
 	 *  - Redis object for redis
 	 *
 	 * Not used for apc, directory or xcache
-	 * 
+	 *
 	 * @var mixed
 	 */
 	protected $data_store;
 
 	/**
 	 * The type of cache
-	 * 
+	 *
 	 * The valid values are:
 	 *  - `'apc'`
 	 *  - `'database'`
@@ -77,17 +77,17 @@ class fCache
 	 *  - `'memcache'`
 	 *  - `'redis'`
 	 *  - `'xcache'`
-	 * 
+	 *
 	 * @var string
 	 */
 	protected $type;
-	
+
 	/**
 	 * Set the type and master key for the cache
-	 * 
+	 *
 	 * A `file` cache uses a single file to store values in an associative
 	 * array and is probably not suitable for a large number of keys.
-	 * 
+	 *
 	 * Using an `apc` or `xcache` cache will have far better performance
 	 * than a file or directory, however please remember that keys are shared
 	 * server-wide.
@@ -105,12 +105,12 @@ class fCache
 	 *  - `ttl_column`: The column to store the expiration timestamp of the cached entry - this should be an integer
 	 *
 	 * The following `$config` for the following items can be set for all backends:
-	 * 
+	 *
 	 *  - `serializer`: A callback to serialize data with, defaults to the PHP function `serialize()`
 	 *  - `unserializer`: A callback to unserialize data with, defaults to the PHP function `unserialize()`
 	 *
 	 * Common serialization callbacks include:
-	 * 
+	 *
 	 *  - `json_encode`/`json_decode`
 	 *  - `igbinary_serialize`/`igbinary_unserialize`
 	 *
@@ -119,8 +119,8 @@ class fCache
 	 *
 	 * A custom `serialize` and `unserialze` option is `string`, which will cast
 	 * all values to a string when storing, instead of serializing them. If a
-	 * `__toString()` method is provided for objects, it will be called. 
-	 * 
+	 * `__toString()` method is provided for objects, it will be called.
+	 *
 	 * @param  string $type        The type of caching to use: `'apc'`, `'database'`, `'directory'`, `'file'`, `'memcache'`, `'redis'`, `'xcache'`
 	 * @param  mixed  $data_store  The path for a `file` or `directory` cache, an `Memcache` or `Memcached` object for a `memcache` cache, an fDatabase object for a `database` cache or a `Redis` object for a `redis` cache - not used for `apc` or `xcache`
 	 * @param  array  $config      Configuration options - see method description for details
@@ -129,7 +129,7 @@ class fCache
 	public function __construct($type, $data_store=NULL, $config=array())
 	{
 		switch ($type) {
-			case 'database': 
+			case 'database':
 				foreach (array('table', 'key_column', 'value_column', 'ttl_column') as $key) {
 					if (empty($config[$key])) {
 						throw new fProgrammerException(
@@ -151,36 +151,36 @@ class fCache
 				$this->data_store = $data_store;
 				break;
 
-			case 'directory': 
+			case 'directory':
 				$exists = file_exists($data_store);
 				if (!$exists) {
 					throw new fEnvironmentException(
 						'The directory specified, %s, does not exist',
 						$data_store
-					);		
+					);
 				}
 				if (!is_dir($data_store)) {
 					throw new fEnvironmentException(
 						'The path specified, %s, is not a directory',
 						$data_store
-					);		
+					);
 				}
 				if (!is_writable($data_store)) {
 					throw new fEnvironmentException(
 						'The directory specified, %s, is not writable',
 						$data_store
-					);		
+					);
 				}
 				$this->config['path'] = realpath($data_store) . DIRECTORY_SEPARATOR;
 				break;
 
-			case 'file': 
+			case 'file':
 				$exists = file_exists($data_store);
 				if (!$exists && !is_writable(dirname($data_store))) {
 					throw new fEnvironmentException(
 						'The file specified, %s, does not exist and the directory it in inside of is not writable',
 						$data_store
-					);		
+					);
 				}
 				if ($exists && !is_writable($data_store)) {
 					throw new fEnvironmentException(
@@ -192,7 +192,7 @@ class fCache
 				if ($exists) {
 					$this->data_store = unserialize(file_get_contents($data_store));
 				} else {
-					$this->data_store = array();	
+					$this->data_store = array();
 				}
 				$this->config['state'] = 'clean';
 				break;
@@ -207,7 +207,7 @@ class fCache
 				}
 				$this->data_store = $data_store;
 				break;
-			
+
 			case 'redis':
 				if (!$data_store instanceof Redis) {
 					throw new fProgrammerException(
@@ -224,30 +224,30 @@ class fCache
 					throw new fEnvironmentException(
 						'The %s extension does not appear to be installed',
 						$type
-					);	
+					);
 				}
 				break;
-				
+
 			default:
 				throw new fProgrammerException(
 					'The type specified, %s, is not a valid cache type. Must be one of: %s.',
 					$type,
 					join(', ', array('apc', 'database', 'directory', 'file', 'memcache', 'redis', 'xcache'))
-				);	
+				);
 		}
 
 		$this->config['serializer']   = isset($config['serializer'])   ? $config['serializer']   : 'serialize';
 		$this->config['unserializer'] = isset($config['unserializer']) ? $config['unserializer'] : 'unserialize';
 
-		$this->type = $type;				
+		$this->type = $type;
 	}
-	
-	
+
+
 	/**
 	 * Cleans up after the cache object
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	public function __destruct()
@@ -259,11 +259,11 @@ class fCache
 
 		$this->save();
 	}
-	
-	
+
+
 	/**
 	 * Tries to set a value to the cache, but stops if a value already exists
-	 * 
+	 *
 	 * @param  string  $key    The key to store as, this should not exceed 250 characters
 	 * @param  mixed   $value  The value to store, this will be serialized
 	 * @param  integer $ttl    The number of seconds to keep the cache valid for, 0 for no limit
@@ -276,10 +276,10 @@ class fCache
 		switch ($this->type) {
 			case 'apc':
 				return apc_add($key, $value, $ttl);
-				
+
 			case 'file':
 				if (isset($this->data_store[$key]) && (($this->data_store[$key]['expire'] && $this->data_store[$key]['expire'] >= time()) || !$this->data_store[$key]['expire'])) {
-					return FALSE;	
+					return FALSE;
 				}
 				$this->data_store[$key] = array(
 					'value'  => $value,
@@ -287,7 +287,7 @@ class fCache
 				);
 				$this->config['state'] = 'dirty';
 				return TRUE;
-			
+
 			case 'database':
 				$res = $this->data_store->query(
 					"SELECT %r FROM %r WHERE %r = %s",
@@ -326,16 +326,16 @@ class fCache
 					$expiration_date . "\n" . $value
 				);
 				return TRUE;
-			
+
 			case 'memcache':
 				if ($ttl > 2592000) {
-					$ttl = time() + 2592000;		
+					$ttl = time() + 2592000;
 				}
 				if ($this->data_store instanceof Memcache) {
 					return $this->data_store->add($key, $value, 0, $ttl);
 				}
 				return $this->data_store->add($key, $value, $ttl);
-			
+
 			case 'redis':
 				if (!$ttl) {
 					return $this->data_store->setnx($key, $value);
@@ -345,14 +345,14 @@ class fCache
 				}
 				$this->data_store->setex($key, $ttl, $value);
 				return TRUE;
-			
+
 			case 'xcache':
 				if (xcache_isset($key)) {
-					return FALSE;	
+					return FALSE;
 				}
 				xcache_set($key, $value, $ttl);
 				return TRUE;
-		}		
+		}
 	}
 
 
@@ -394,20 +394,20 @@ class fCache
 				$clear_before = time();
 				foreach ($this->data_store as $key => $value) {
 					if ($value['expire'] && $value['expire'] < $clear_before) {
-						unset($this->data_store[$key]);	
+						unset($this->data_store[$key]);
 						$this->config['state'] = 'dirty';
-					}	
+					}
 				}
 				break;
 		}
 	}
-	
-	
+
+
 	/**
 	 * Clears the WHOLE cache of every key, use with caution!
-	 * 
+	 *
 	 * xcache may require a login or password depending on your ini settings.
-	 * 
+	 *
 	 * @return boolean  If the cache was successfully cleared
 	 */
 	public function clear()
@@ -415,14 +415,14 @@ class fCache
 		switch ($this->type) {
 			case 'apc':
 				return apc_clear_cache('user');
-			
+
 			case 'database':
 				$this->data_store->query(
 					"DELETE FROM %r",
 					$this->config['table']
 				);
 				return TRUE;
-			
+
 			case 'directory':
 				$files = array_diff(scandir($this->config['path']), array('.', '..'));
 				$success = TRUE;
@@ -430,29 +430,29 @@ class fCache
 					$success = unlink($this->config['path'] . $file) && $success;
 				}
 				return $success;
-				
+
 			case 'file':
 				$this->data_store = array();
 				$this->config['state'] = 'dirty';
 				return TRUE;
-			
+
 			case 'memcache':
 				return $this->data_store->flush();
-			
+
 			case 'redis':
 				return $this->data_store->flushDB();
-			
+
 			case 'xcache':
 				fCore::startErrorCapture();
 				xcache_clear_cache(XC_TYPE_VAR, 0);
 				return (bool) fCore::stopErrorCapture();
-		}			
+		}
 	}
-	
-	
+
+
 	/**
 	 * Deletes a value from the cache
-	 * 
+	 *
 	 * @param  string $key  The key to delete
 	 * @return boolean  If the delete succeeded
 	 */
@@ -461,7 +461,7 @@ class fCache
 		switch ($this->type) {
 			case 'apc':
 				return apc_delete($key);
-				
+
 			case 'database':
 				return $this->data_store->query(
 					"DELETE FROM %r WHERE %r = %s",
@@ -469,32 +469,32 @@ class fCache
 					$this->config['key_column'],
 					$key
 				)->countAffectedRows();
-			
+
 			case 'directory':
 				return unlink($this->config['path'] . $key);
 
 			case 'file':
 				if (isset($this->data_store[$key])) {
 					unset($this->data_store[$key]);
-					$this->config['state'] = 'dirty';	
+					$this->config['state'] = 'dirty';
 				}
 				return TRUE;
-			
+
 			case 'memcache':
 				return $this->data_store->delete($key, 0);
-			
+
 			case 'redis':
 				return (bool) $this->data_store->delete($key);
-			
+
 			case 'xcache':
 				return xcache_unset($key);
-		}		
+		}
 	}
-	
-	
+
+
 	/**
 	 * Returns a value from the cache
-	 * 
+	 *
 	 * @param  string $key      The key to return the value for
 	 * @param  mixed  $default  The value to return if the key did not exist
 	 * @return mixed  The cached value or the default value if no cached value was found
@@ -521,7 +521,7 @@ class fCache
 				if (!$res->countReturnedRows()) { return $default; }
 				$value = $res->fetchScalar();
 				break;
-			
+
 			case 'directory':
 				if (!file_exists($this->config['path'] . $key)) {
 					return $default;
@@ -537,7 +537,7 @@ class fCache
 				}
 				fclose($handle);
 				break;
-				
+
 			case 'file':
 				if (isset($this->data_store[$key])) {
 					$expire = $this->data_store[$key]['expire'];
@@ -547,34 +547,34 @@ class fCache
 						unset($this->data_store[$key]);
 						$this->config['state'] = 'dirty';
 					}
-				} 
+				}
 				if (!isset($value)) {
 					return $default;
 				}
 				break;
-			
+
 			case 'memcache':
 				$value = $this->data_store->get($key);
 				if ($value === FALSE) { return $default; }
 				break;
-			
+
 			case 'redis':
 				$value = $this->data_store->get($key);
 				if ($value === FALSE) { return $default; }
 				break;
-			
+
 			case 'xcache':
 				$value = xcache_get($key);
 				if ($value === FALSE) { return $default; }
 		}
-		
-		return $this->unserialize($value);		
+
+		return $this->unserialize($value);
 	}
-	
-	
+
+
 	/**
 	 * Only valid for `file` caches, saves the file to disk
-	 * 
+	 *
 	 * @return void
 	 */
 	public function save()
@@ -582,9 +582,9 @@ class fCache
 		if ($this->type != 'file' || $this->config['state'] == 'clean') {
 			return;
 		}
-		
+
 		file_put_contents($this->config['path'], serialize($this->data_store));
-		$this->config['state'] = 'clean';	
+		$this->config['state'] = 'clean';
 	}
 
 
@@ -605,11 +605,11 @@ class fCache
 
 		return call_user_func($this->config['serializer'], $value);
 	}
-	
-	
+
+
 	/**
 	 * Sets a value to the cache, overriding any previous value
-	 * 
+	 *
 	 * @param  string  $key    The key to store as, this should not exceed 250 characters
 	 * @param  mixed   $value  The value to store, this will be serialized
 	 * @param  integer $ttl    The number of seconds to keep the cache valid for, 0 for no limit
@@ -622,7 +622,7 @@ class fCache
 		switch ($this->type) {
 			case 'apc':
 				return apc_store($key, $value, $ttl);
-				
+
 			case 'database':
 				$res = $this->data_store->query(
 					"SELECT %r FROM %r WHERE %r = %s",
@@ -660,10 +660,10 @@ class fCache
 						);
 					}
 				} catch (fSQLException $e) {
-					return FALSE;	
+					return FALSE;
 				}
 				return TRUE;
-			
+
 			case 'directory':
 				$expiration_date = (!$ttl) ? 0 : time() + $ttl;
 				return (bool) file_put_contents(
@@ -678,7 +678,7 @@ class fCache
 				);
 				$this->config['state'] = 'dirty';
 				return TRUE;
-			
+
 			case 'memcache':
 				if ($ttl > 2592000) {
 					$ttl = time() + 2592000;
@@ -691,16 +691,16 @@ class fCache
 					return $result;
 				}
 				return $this->data_store->set($key, $value, $ttl);
-			
+
 			case 'redis':
 				if ($ttl) {
 					return $this->data_store->setex($key, $value, $ttl);
 				}
 				return $this->data_store->set($key, $value);
-			
+
 			case 'xcache':
 				return xcache_set($key, $value, $ttl);
-		}				
+		}
 	}
 
 
@@ -724,17 +724,17 @@ class fCache
 
 /**
  * Copyright (c) 2009-2012 Will Bond <will@flourishlib.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
