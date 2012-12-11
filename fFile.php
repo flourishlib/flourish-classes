@@ -5,12 +5,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Kevin Hamer [kh] <kevin@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fFile
  *
- * @version    1.0.0b39
+ * @version    1.0.0b40
+ * @changes    1.0.0b40  Better handling of text filetype detection [kh, 2012-12-10]
  * @changes    1.0.0b39  Backwards Compatibility Break - ::output() now automatically ends any open output buffering and discards the contents [wb, 2011-08-24]
  * @changes    1.0.0b38  Added the Countable interface to the class [wb, 2011-06-03]
  * @changes    1.0.0b37  Fixed mime type detection of BMP images [wb, 2011-03-07]
@@ -334,12 +336,18 @@ class fFile implements Iterator, Countable
 		}
 
 		if ($_0_4 == "SIT!" || $_0_4 == "SITD" || substr($content, 0, 7) == 'StuffIt') {
-			return 'application/x-stuffit';
+			return 'application/x-stuffit';	
 		}
-
-
-		// Text files
-		if (strpos($content, '<?xml') !== FALSE) {
+		
+		// Better detection for text files based on the first line or so.
+		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
+			return 'application/x-httpd-php';	
+		}
+		
+		preg_match('/(\S.*?)\s*\n/m', $content, $lines);
+		$first_line = count($lines) > 1 ? $lines[1] : '';
+		
+		if (strpos($first_line, '<?xml') !== FALSE) {
 			if (stripos($content, '<!DOCTYPE') !== FALSE) {
 				return 'application/xhtml+xml';
 			}
@@ -351,12 +359,15 @@ class fFile implements Iterator, Countable
 			}
 			return 'application/xml';
 		}
-
-		if (strpos($content, '<?php') !== FALSE || strpos($content, '<?=') !== FALSE) {
-			return 'application/x-httpd-php';
+		
+		if (stripos($first_line, '<html') !== FALSE) {
+			return 'text/html';
 		}
-
-		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $content, $matches)) {
+		if (stripos($first_line, '<!DOCTYPE') !== FALSE) {
+			return 'text/html';
+		}
+		
+		if (preg_match('#^\#\![/a-z0-9]+(python|perl|php|ruby)$#mi', $first_line, $matches)) {
 			switch (strtolower($matches[1])) {
 				case 'php':
 					return 'application/x-httpd-php';
