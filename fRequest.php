@@ -12,12 +12,14 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
+ * @autho      Matthew J. Sahagian [mjs] <msahagian@dotink.org>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  *
- * @version    1.0.0b20
+ * @version    1.0.0b21
+ * @changes    1.0.0b21  Fixed problem where Accept headers are spaced out and mime-types won't match (mainly from IE) [mjs, 2012-12-10]
  * @changes    1.0.0b20  Added ::isHead(), fixed ability to call ::set() on `HEAD` requests [wb-imarc, 2011-11-23]
  * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
  * @changes    1.0.0b18  Backwards Compatibility Break - ::getBestAcceptType() and ::getBestAcceptLanguage() now return either `NULL`, `FALSE` or a string instead of `NULL` or a string, both methods are more robust in handling edge cases [wb, 2011-02-06]
@@ -773,8 +775,8 @@ class fRequest
 				$q = number_format(1.0, 5);
 			}
 			$q .= $suffix--;
-
-			$output[$parts[0]] = $q;
+			
+			$output[trim($parts[0])] = $q;
 		}
 
 		arsort($output, SORT_NUMERIC);
