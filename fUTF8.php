@@ -1,19 +1,20 @@
 <?php
 /**
  * Provides string functions for UTF-8 strings
- * 
+ *
  * This class is implemented to provide a UTF-8 version of almost every built-in
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
- * 
- * @copyright  Copyright (c) 2008-2011 Will Bond
+ *
+ * @copyright  Copyright (c) 2008-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
- * 
+ *
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
- * 
- * @version    1.0.0b15
+ *
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Added code to ::clean() to use mbstring if available since recent versions of iconv and `//IGNORE` now return `FALSE` for bad encodings [wb, 2012-09-21]
  * @changes    1.0.0b15  Fixed a bug with using IBM's iconv implementation on AIX [wb, 2011-07-29]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
  * @changes    1.0.0b13  Fixed notices from being thrown when invalid data is sent to ::clean() [wb, 2011-06-10]
@@ -63,20 +64,20 @@ class fUTF8
 	const ucwords  = 'fUTF8::ucwords';
 	const upper    = 'fUTF8::upper';
 	const wordwrap = 'fUTF8::wordwrap';
-	
-	
+
+
 	/**
 	 * Depending how things are compiled, NetBSD and Solaris don't support //IGNORE in iconv()
-	 * 
+	 *
 	 * If //IGNORE support is not provided strings with invalid characters will be truncated
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $can_ignore_invalid = NULL;
-	
+
 	/**
 	 * All lowercase UTF-8 characters mapped to uppercase characters
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $lower_to_upper = array(
@@ -193,10 +194,10 @@ class fUTF8
 		'ｓ' => 'Ｓ', 'ｔ' => 'Ｔ', 'ｕ' => 'Ｕ', 'ｖ' => 'Ｖ', 'ｗ' => 'Ｗ', 'ｘ' => 'Ｘ',
 		'ｙ' => 'Ｙ', 'ｚ' => 'Ｚ'
 	);
-	
+
 	/**
 	 * All lowercase UTF-8 characters not properly handled by [http://php.net/mb_strtoupper mb_strtoupper()] mapped to uppercase characters
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $mb_lower_to_upper_fix = array(
@@ -212,10 +213,10 @@ class fUTF8
 		'ⓞ' => 'Ⓞ', 'ⓟ' => 'Ⓟ', 'ⓠ' => 'Ⓠ', 'ⓡ' => 'Ⓡ', 'ⓢ' => 'Ⓢ', 'ⓣ' => 'Ⓣ',
 		'ⓤ' => 'Ⓤ', 'ⓥ' => 'Ⓥ', 'ⓦ' => 'Ⓦ', 'ⓧ' => 'Ⓧ', 'ⓨ' => 'Ⓨ', 'ⓩ' => 'Ⓩ'
 	);
-	
+
 	/**
 	 * All uppercase UTF-8 characters not properly handled by [http://php.net/mb_strtolower mb_strtolower()] mapped to lowercase characters
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $mb_upper_to_lower_fix = array(
@@ -236,10 +237,10 @@ class fUTF8
 		'Ⓢ' => 'ⓢ', 'Ⓣ' => 'ⓣ', 'Ⓤ' => 'ⓤ', 'Ⓥ' => 'ⓥ', 'Ⓦ' => 'ⓦ', 'Ⓧ' => 'ⓧ',
 		'Ⓨ' => 'ⓨ', 'Ⓩ' => 'ⓩ'
 	);
-	
+
 	/**
 	 * All uppercase UTF-8 characters mapped to lowercase characters
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $upper_to_lower = array(
@@ -356,12 +357,12 @@ class fUTF8
 		'Ｒ' => 'ｒ', 'Ｓ' => 'ｓ', 'Ｔ' => 'ｔ', 'Ｕ' => 'ｕ', 'Ｖ' => 'ｖ', 'Ｗ' => 'ｗ',
 		'Ｘ' => 'ｘ', 'Ｙ' => 'ｙ', 'Ｚ' => 'ｚ'
 	);
-	
+
 	/**
 	 * A mapping of all ASCII-based latin characters, puntuation, symbols and number forms to ASCII.
-	 * 
+	 *
 	 * Includes elements form the following unicode blocks:
-	 * 
+	 *
 	 *  - Latin-1 Supplement
 	 *  - Latin Extended-A
 	 *  - Latin Extended-B
@@ -370,7 +371,7 @@ class fUTF8
 	 *  - General Punctuation
 	 *  - Letterlike symbols
 	 *  - Number Forms
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $utf8_to_ascii = array(
@@ -540,25 +541,25 @@ class fUTF8
 		'ⅷ' => 'viii','ⅸ' => 'ix',  'ⅹ' => 'x',   'ⅺ' => 'xi',  'ⅻ' => 'xii',
 		'ⅼ' => 'l',   'ⅽ' => 'c',   'ⅾ' => 'd',   'ⅿ' => 'm'
 	);
-	
+
 	/**
 	 * If the [http://php.net/mbstring mbstring] extension is available
-	 * 
+	 *
 	 * @var boolean
 	 */
 	static private $mbstring_available = NULL;
-	
-	
+
+
 	/**
 	 * Maps UTF-8 ASCII-based latin characters, puntuation, symbols and number forms to ASCII
-	 * 
+	 *
 	 * Any characters or symbols that can not be translated will be removed.
-	 * 
+	 *
 	 * This function is most useful for situation that only allows ASCII, such
 	 * as in URLs.
-	 * 
+	 *
 	 * Translates elements form the following unicode blocks:
-	 * 
+	 *
 	 *  - Latin-1 Supplement
 	 *  - Latin Extended-A
 	 *  - Latin Extended-B
@@ -567,9 +568,9 @@ class fUTF8
 	 *  - General Punctuation
 	 *  - Letterlike symbols
 	 *  - Number Forms
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @param  string $string  The string to convert
 	 * @return string  The input string in pure ASCII
 	 */
@@ -578,26 +579,26 @@ class fUTF8
 		if (!self::detect($string)) {
 			return $string;
 		}
-		
+
 		$string = strtr($string, self::$utf8_to_ascii);
 		return preg_replace('#[^\x00-\x7F]#', '', $string);
 	}
-	
-	
+
+
 	/**
 	 * Checks to see if the [http://php.net/mbstring mbstring] extension is available
-	 * 
+	 *
 	 * @return void
 	 */
 	static private function checkMbString()
 	{
 		self::$mbstring_available = extension_loaded('mbstring');
 	}
-	
-	
+
+
 	/**
 	 * Converts a unicode value into a UTF-8 character
-	 * 
+	 *
 	 * @param  mixed $unicode_code_point  The character to create, either the `U+hex` or decimal code point
 	 * @return string  The UTF-8 character
 	 */
@@ -607,27 +608,27 @@ class fUTF8
 			$unicode_code_point = substr($unicode_code_point, 2);
 			$unicode_code_point = hexdec($unicode_code_point);
 		}
-		
+
 		$bin = decbin($unicode_code_point);
 		$digits = strlen($bin);
-		
+
 		$first = $second = $third = $fourth = NULL;
-		
+
 		// One byte characters
 		if ($digits <= 7) {
 			$first = chr(bindec($bin));
-			
+
 		// Two byte characters
 		} elseif ($digits <= 11) {
 			$first  = chr(bindec('110' . str_pad(substr($bin, 0, -6), 5, '0', STR_PAD_LEFT)));
 			$second = chr(bindec('10' . substr($bin, -6)));
-			
+
 		// Three byte characters
 		} elseif ($digits <= 16) {
 			$first  = chr(bindec('1110' . str_pad(substr($bin, 0, -12), 4, '0', STR_PAD_LEFT)));
 			$second = chr(bindec('10' . substr($bin, -12, -6)));
 			$third  = chr(bindec('10' . substr($bin, -6)));
-			
+
 		// Four byte characters
 		} elseif ($digits <= 21) {
 			$first  = chr(bindec('11110' . str_pad(substr($bin, 0, -18), 3, '0', STR_PAD_LEFT)));
@@ -635,7 +636,7 @@ class fUTF8
 			$third  = chr(bindec('10' . substr($bin, -12, -6)));
 			$fourth = chr(bindec('10' . substr($bin, -6)));
 		}
-		
+
 		$ord = ord($first);
 		if ($digits > 21 || $ord == 0xC0 || $ord == 0xC1 || $ord > 0xF4) {
 			throw new fProgrammerException(
@@ -643,47 +644,56 @@ class fUTF8
 				$unicode_code_point
 			);
 		}
-		
+
 		return $first . $second . $third . $fourth;
 	}
-	
-	
+
+
 	/**
 	 * Removes any invalid UTF-8 characters from a string or array of strings
-	 * 
+	 *
 	 * @param  array|string $value  The string or array of strings to clean
 	 * @return string  The cleaned string
 	 */
 	static public function clean($value)
 	{
 		if (!is_array($value)) {
+			self::checkMbString();
+			if (self::$mbstring_available) {
+				$old_sub = ini_get('mbstring.substitute_character');
+				ini_set('mbstring.substitute_character', 'none');
+				$value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+				ini_set('mbstring.substitute_character', $old_sub);
+				return $value;
+			}
+
 			if (self::$can_ignore_invalid === NULL) {
-				self::$can_ignore_invalid = !in_array(strtolower(ICONV_IMPL), array('unknown', 'ibm iconv'));	
+				self::$can_ignore_invalid = !in_array(strtolower(ICONV_IMPL), array('unknown', 'ibm iconv'));
 			}
 			fCore::startErrorCapture(E_NOTICE);
 			$value = self::iconv('UTF-8', 'UTF-8' . (self::$can_ignore_invalid ? '//IGNORE' : ''), (string) $value);
 			fCore::stopErrorCapture();
 			return $value;
 		}
-		
+
 		$keys = array_keys($value);
 		$num_keys = sizeof($keys);
 		for ($i=0; $i<$num_keys; $i++) {
 			$value[$keys[$i]] = self::clean($value[$keys[$i]]);
 		}
-		
+
 		return $value;
 	}
-	
-	
+
+
 	/**
 	 * Compares strings, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
-	 * 
+	 *
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
 	 * [http://php.net/strcoll strcoll()], however there are technical
 	 * limitations.
-	 * 
+	 *
 	 * @param  string $str1  The first string to compare
 	 * @param  string $str2  The second string to compare
 	 * @return integer  < 0 if $str1 < $str2, 0 if they are equal, > 0 if $str1 > $str2
@@ -692,21 +702,21 @@ class fUTF8
 	{
 		$ascii_str1 = strtr($str1, self::$utf8_to_ascii);
 		$ascii_str2 = strtr($str2, self::$utf8_to_ascii);
-		
+
 		$res = strcmp($ascii_str1, $ascii_str2);
-		
+
 		// If the ASCII representations are the same, sort by the UTF-8 representations
 		if ($res === 0) {
 			$res = strcmp($str1, $str2);
 		}
-		
+
 		return $res;
 	}
-	
-	
+
+
 	/**
 	 * Converts an offset in characters to an offset in bytes to that we can use the built-in functions for some operations
-	 * 
+	 *
 	 * @param  string  $string  The string to base the offset on
 	 * @param  integer $offset  The character offset to conver to bytes
 	 * @return integer  The converted offset
@@ -716,20 +726,20 @@ class fUTF8
 		if ($offset == 0) {
 			return 0;
 		}
-		
+
 		$len = strlen($string);
-		
+
 		$byte_offset     = 0;
 		$measured_offset = 0;
 		$sign            = 1;
-		
+
 		// Negative offsets require us to reverse some stuff
 		if ($offset < 0) {
 			$string    = strrev($string);
 			$sign      = -1;
 			$offset    = abs($offset);
 		}
-			
+
 		for ($i=0; $i<$len && $measured_offset<$offset; $i++) {
 			$char = $string[$i];
 			++$byte_offset;
@@ -746,14 +756,14 @@ class fUTF8
 				}
 			}
 		}
-		
+
 		return $byte_offset * $sign;
 	}
-	
-	
+
+
 	/**
 	 * Detects if a UTF-8 string contains any non-ASCII characters
-	 * 
+	 *
 	 * @param  string $string  The string to check
 	 * @return boolean  If the string contains any non-ASCII characters
 	 */
@@ -761,14 +771,14 @@ class fUTF8
 	{
 		return (boolean) preg_match('#[^\x00-\x7F]#', $string);
 	}
-	
-	
+
+
 	/**
 	 * Explodes a string on a delimiter
-	 * 
+	 *
 	 * If no delimiter is provided, the string will be exploded with each
 	 * characters being an element in the array.
-	 * 
+	 *
 	 * @param  string  $string     The string to explode
 	 * @param  string  $delimiter  The string to explode on. If `NULL` or `''` this method will return one character per array index.
 	 * @return array  The exploded string
@@ -779,7 +789,7 @@ class fUTF8
 		if ($delimiter || (!$delimiter && is_numeric($delimiter))) {
 			return explode($delimiter, $string);
 		}
-		
+
 		// If no delimiter was passed, we explode the characters into an array
 		preg_match_all('#.|^\z#us', $string, $matches);
 		return $matches[0];
@@ -800,16 +810,16 @@ class fUTF8
 	{
 		return iconv($in_charset, $out_charset, $string);
 	}
-	
-	
+
+
 	/**
 	 * Compares strings in a case-insensitive manner, with the resulting order having characters that are based on ASCII letters placed after the relative ASCII characters
-	 * 
+	 *
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
 	 * [http://php.net/strcoll strcoll()], however there are technical
 	 * limitations.
-	 * 
+	 *
 	 * @param  string $str1  The first string to compare
 	 * @param  string $str2  The second string to compare
 	 * @return integer  < 0 if $str1 < $str2, 0 if they are equal, > 0 if $str1 > $str2
@@ -818,19 +828,19 @@ class fUTF8
 	{
 		$str1 = self::lower($str1);
 		$str2 = self::lower($str2);
-		
+
 		return self::cmp($str1, $str2);
 	}
-	
-	
+
+
 	/**
 	 * Compares strings using a natural order algorithm in a case-insensitive manner, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
-	 * 
+	 *
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
 	 * [http://php.net/strcoll strcoll()], however there are technical
 	 * limitations.
-	 * 
+	 *
 	 * @param  string $str1  The first string to compare
 	 * @param  string $str2  The second string to compare
 	 * @return integer  `< 0` if `$str1 < $str2`, `0` if they are equal, `> 0` if `$str1 > $str2`
@@ -839,14 +849,14 @@ class fUTF8
 	{
 		$str1 = self::lower($str1);
 		$str2 = self::lower($str2);
-		
+
 		return self::natcmp($str1, $str2);
 	}
-	
-	
+
+
 	/**
 	 * Finds the first position (in characters) of the search value in the string - case is ignored when doing performing a match
-	 * 
+	 *
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for. This match will be done in a case-insensitive manner.
 	 * @param  integer $offset    The character position to start searching from
@@ -858,30 +868,30 @@ class fUTF8
 		if (!self::detect($haystack)) {
 			return stripos($haystack, $needle, $offset);
 		}
-		
+
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available && function_exists('mb_stripos')) {
 			return mb_stripos($haystack, $needle, $offset, 'UTF-8');
 		}
-		
+
 		$haystack = self::lower($haystack);
 		$needle   = self::lower($needle);
-		
+
 		return self::pos($haystack, $needle, $offset);
 	}
-	
-	
+
+
 	/**
 	 * Replaces matching parts of the string, with matches being done in a a case-insensitive manner
-	 * 
+	 *
 	 * If `$search` and `$replace` are both arrays and `$replace` is shorter,
 	 * the extra `$search` string will be replaced with an empty string. If
 	 * `$search` is an array and `$replace` is a string, all `$search` values
 	 * will be replaced with the string specified.
-	 * 
+	 *
 	 * @param  string $string   The string to perform the replacements on
 	 * @param  mixed  $search   The string (or array of strings) to search for - see method description for details
 	 * @param  mixed  $replace  The string (or array of strings) to replace with - see method description for details
@@ -902,11 +912,11 @@ class fUTF8
 			$string
 		);
 	}
-	
-	
+
+
 	/**
 	 * Finds the last position (in characters) of the search value in the string - case is ignored when doing performing a match
-	 * 
+	 *
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for. This match will be done in a case-insensitive manner.
 	 * @param  integer $offset    The character position to start searching from. A negative value will stop looking that many characters from the end of the string
@@ -918,28 +928,28 @@ class fUTF8
 		if (!self::detect($haystack)) {
 			return strripos($haystack, $needle, $offset);
 		}
-		
+
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available && function_exists('mb_strripos')) {
 			return mb_strripos($haystack, $needle, $offset, 'UTF-8');
 		}
-		
+
 		$haystack = self::lower($haystack);
 		$needle   = self::lower($needle);
-		
+
 		return self::rpos($haystack, $needle, $offset);
 	}
-	
-	
+
+
 	/**
 	 * Matches a string needle in the string haystack, returning a substring from the beginning of the needle to the end of the haystack
-	 * 
+	 *
 	 * Can optionally return the part of the haystack before the needle. Matching
 	 * is done in a case-insensitive manner.
-	 * 
+	 *
 	 * @param  string  $haystack       The string to search in
 	 * @param  string  $needle         The string to search for. This match will be done in a case-insensitive manner.
 	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack
@@ -951,31 +961,31 @@ class fUTF8
 		if ($before_needle == FALSE && !self::detect($haystack)) {
 			return stristr($haystack, $needle);
 		}
-		
+
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available && function_exists('mb_stristr')) {
 			return mb_stristr($haystack, $needle, $before_needle, 'UTF-8');
 		}
-		
+
 		$lower_haystack = self::lower($haystack);
 		$lower_needle   = self::lower($needle);
-		
+
 		$pos = strpos($lower_haystack, $lower_needle);
-		
+
 		if ($before_needle) {
 			return substr($haystack, 0, $pos);
 		}
-		
+
 		return substr($haystack, $pos);
 	}
-	
-	
+
+
 	/**
 	 * Determines the length (in characters) of a string
-	 * 
+	 *
 	 * @param  string $string  The string to measure
 	 * @return integer  The number of characters in the string
 	 */
@@ -984,18 +994,18 @@ class fUTF8
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available) {
 			return mb_strlen($string, 'UTF-8');
 		}
-		
+
 		return strlen(utf8_decode($string));
 	}
-	
-	
+
+
 	/**
 	 * Converts all uppercase characters to lowercase
-	 * 
+	 *
 	 * @param  string $string  The string to convert
 	 * @return string  The input string with all uppercase characters in lowercase
 	 */
@@ -1005,24 +1015,24 @@ class fUTF8
 		if (!self::detect($string)) {
 			return strtolower($string);
 		}
-		
+
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available) {
 			$string = mb_strtolower($string, 'utf-8');
 			// For some reason mb_strtolower misses some character
 			return strtr($string, self::$mb_upper_to_lower_fix);
 		}
-		
+
 		return strtr($string, self::$upper_to_lower);
 	}
-	
-	
+
+
 	/**
 	 * Trims whitespace, or any specified characters, from the beginning of a string
-	 * 
+	 *
 	 * @param  string $string    The string to trim
 	 * @param  string $charlist  The characters to trim
 	 * @return string  The trimmed string
@@ -1032,22 +1042,22 @@ class fUTF8
 		if (strlen($charlist) === 0) {
 			return ltrim($string);
 		}
-		
+
 		$search = preg_quote($charlist, '#');
 		$search = str_replace('-', '\-', $search);
 		$search = str_replace('\.\.', '-', $search);
 		return preg_replace('#^[' . $search . ']+#Du', '', $string);
 	}
-	
-	
+
+
 	/**
 	 * Compares strings using a natural order algorithm, with the resulting order having latin characters that are based on ASCII letters placed after the relative ASCII characters
-	 * 
+	 *
 	 * Please note that this function sorts based on English language sorting
 	 * rules only. Locale-sepcific sorting is done by
 	 * [http://php.net/strcoll strcoll()], however there are technical
 	 * limitations.
-	 * 
+	 *
 	 * @param  string $str1  The first string to compare
 	 * @param  string $str2  The second string to compare
 	 * @return integer  `< 0` if `$str1 < $str2`, `0` if they are equal, `> 0` if `$str1 > $str2`
@@ -1056,21 +1066,21 @@ class fUTF8
 	{
 		$ascii_str1 = strtr($str1, self::$utf8_to_ascii);
 		$ascii_str2 = strtr($str2, self::$utf8_to_ascii);
-		
+
 		$res = strnatcmp($ascii_str1, $ascii_str2);
-		
+
 		// If the ASCII representations are the same, sort by the UTF-8 representations
 		if ($res === 0) {
 			$res = strnatcmp($str1, $str2);
 		}
-		
+
 		return $res;
 	}
-	
-	
+
+
 	/**
 	 * Converts a UTF-8 character to a unicode code point
-	 * 
+	 *
 	 * @param  string $character  The character to decode
 	 * @return string  The U+hex unicode code point for the character
 	 */
@@ -1078,7 +1088,7 @@ class fUTF8
 	{
 		$b       = array_map('ord', str_split($character));
 		$invalid = FALSE;
-		
+
 		switch (strlen($character)) {
 			case 1:
 				if ($b[0] > 0x7F) {
@@ -1087,7 +1097,7 @@ class fUTF8
 				}
 				$bin = decbin($b[0]);
 				break;
-			
+
 			case 2:
 				if ($b[0] < 0xC2 || $b[0] > 0xDF ||
 					  $b[1] < 0x80 || $b[1] > 0xBF) {
@@ -1097,7 +1107,7 @@ class fUTF8
 				$bin = substr(decbin($b[0]), 3) .
 						   substr(decbin($b[1]), 2);
 				break;
-			
+
 			case 3:
 				if ($b[0] < 0xE0 || $b[0] > 0xEF ||
 					  $b[1] < 0x80 || $b[1] > 0xBF ||
@@ -1109,7 +1119,7 @@ class fUTF8
 						   substr(decbin($b[1]), 2) .
 						   substr(decbin($b[2]), 2);
 				break;
-			
+
 			case 4:
 				if ($b[0] < 0xF0 || $b[0] > 0xF4 ||
 					  $b[1] < 0x80 || $b[1] > 0xBF ||
@@ -1123,26 +1133,26 @@ class fUTF8
 						   substr(decbin($b[2]), 2) .
 						   substr(decbin($b[3]), 2);
 				break;
-			
+
 			default:
 				$invalid = TRUE;
 				break;
 		}
-		
+
 		if ($invalid) {
 			throw new fProgrammerException(
 				'The UTF-8 character specified is invalid'
 			);
 		}
-		
+
 		$hex = strtoupper(dechex(bindec($bin)));
 		return 'U+' . str_pad($hex, 4, '0', STR_PAD_LEFT);
 	}
-	
-	
+
+
 	/**
 	 * Pads a string to the number of characters specified
-	 * 
+	 *
 	 * @param  string  $string      The string to pad
 	 * @param  integer $pad_length  The character length to pad the string to
 	 * @param  string  $pad_string  The string to pad the source string with
@@ -1159,7 +1169,7 @@ class fUTF8
 				join(', ', $valid_pad_types)
 			);
 		}
-		
+
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string) && !self::detect($pad_string)) {
 			static $type_map = array(
@@ -1169,51 +1179,51 @@ class fUTF8
 			);
 			return str_pad($string, $pad_length, $pad_string, $type_map[$pad_type]);
 		}
-		
-		
+
+
 		$string_length     = self::len($string);
 		$pad_string_length = self::len($pad_string);
-		
+
 		$pad_to_length     = $pad_length - $string_length;
-		
+
 		if ($pad_to_length < 1) {
 			return $string;
 		}
-		
+
 		$padded           = 0;
 		$next_side        = 'left';
 		$left_pad_string  = '';
 		$right_pad_string = '';
-		
+
 		while ($padded < $pad_to_length) {
-			
+
 			// For pad strings over 1 characters long, they may be too long to fit
 			if ($pad_to_length - $padded < $pad_string_length) {
 				$pad_string = self::sub($pad_string, 0, $pad_to_length - $padded);
 			}
-			
+
 			switch (($pad_type != 'both') ? $pad_type : $next_side) {
 				case 'right':
 					$right_pad_string .= $pad_string;
 					$next_side = 'left';
 					break;
-					
+
 				case 'left':
 					$left_pad_string .= $pad_string;
 					$next_side = 'right';
 					break;
 			}
-			
+
 			$padded += $pad_string_length;
 		}
-		
+
 		return $left_pad_string . $string . $right_pad_string;
 	}
-	
-	
+
+
 	/**
 	 * Finds the first position (in characters) of the search value in the string
-	 * 
+	 *
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for
 	 * @param  integer $offset    The character position to start searching from
@@ -1224,31 +1234,31 @@ class fUTF8
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available) {
 			return mb_strpos($haystack, $needle, $offset, 'UTF-8');
 		}
-		
+
 		$offset = self::convertOffsetToBytes($haystack, $offset);
-		
+
 		$position = strpos($haystack, $needle, $offset);
-		
+
 		if ($position === FALSE) {
 			return FALSE;
 		}
-		
+
 		return strlen(utf8_decode(substr($haystack, 0, $position)));
 	}
-	
-	
+
+
 	/**
 	 * Replaces matching parts of the string
-	 * 
+	 *
 	 * If `$search` and `$replace` are both arrays and `$replace` is shorter,
 	 * the extra `$search` string will be replaced with an empty string. If
 	 * `$search` is an array and `$replace` is a string, all `$search` values
 	 * will be replaced with the string specified.
-	 * 
+	 *
 	 * @param  string $string   The string to perform the replacements on
 	 * @param  mixed  $search   The string (or array of strings) to search for - see method description for details
 	 * @param  mixed  $replace  The string (or array of strings) to replace with - see method description for details
@@ -1258,24 +1268,24 @@ class fUTF8
 	{
 		return str_replace($search, $replace, $string);
 	}
-	
-	
+
+
 	/**
 	 * Resets the configuration of the class
-	 * 
+	 *
 	 * @internal
-	 * 
+	 *
 	 * @return void
 	 */
 	static public function reset()
 	{
 		self::$mbstring_available = NULL;
 	}
-	
-	
+
+
 	/**
 	 * Reverses a string
-	 * 
+	 *
 	 * @param  string $string   The string to reverse
 	 * @return string  The reversed string
 	 */
@@ -1283,14 +1293,14 @@ class fUTF8
 	{
 		$output = '';
 		$len = strlen($string);
-		
+
 		static $char_lens = array(
 			0xF0 => 4,
 			0xE0 => 3,
 			0xD0 => 2,
 			0xC0 => 2
 		);
-		
+
 		$mb_char = '';
 		for ($i=0; $i<$len; $i++) {
 			$char = $string[$i];
@@ -1302,12 +1312,12 @@ class fUTF8
 						$output = $string[$i] . $string[$i+1] . $string[$i+2] . $string[$i+3] . $output;
 						$i += 3;
 						break;
-						
+
 					case 0xE0:
 						$output = $string[$i] . $string[$i+1] . $string[$i+2] . $output;
 						$i += 2;
 						break;
-						
+
 					case 0xD0:
 					case 0xC0:
 						$output = $string[$i] . $string[$i+1] . $output;
@@ -1316,14 +1326,14 @@ class fUTF8
 				}
 			}
 		}
-		
+
 		return $output;
 	}
-	
-	
+
+
 	/**
 	 * Finds the last position (in characters) of the search value in the string
-	 * 
+	 *
 	 * @param  string  $haystack  The string to search in
 	 * @param  string  $needle    The string to search for.
 	 * @param  integer $offset    The character position to start searching from. A negative value will stop looking that many characters from the end of the string
@@ -1335,24 +1345,24 @@ class fUTF8
 		if (!self::detect($haystack)) {
 			return strrpos($haystack, $needle, $offset);
 		}
-		
+
 		// We don't even both trying mb_strrpos since this method is faster
-		
+
 		$offset = self::convertOffsetToBytes($haystack, $offset);
-		
+
 		$position = strrpos($haystack, $needle, $offset);
-		
+
 		if ($position === FALSE) {
 			return FALSE;
 		}
-		
+
 		return strlen(utf8_decode(substr($haystack, 0, $position)));
 	}
-	
-	
+
+
 	/**
 	 * Trims whitespace, or any specified characters, from the end of a string
-	 * 
+	 *
 	 * @param  string $string    The string to trim
 	 * @param  string $charlist  The characters to trim
 	 * @return string  The trimmed string
@@ -1362,19 +1372,19 @@ class fUTF8
 		if (strlen($charlist) === 0) {
 			return rtrim($string);
 		}
-		
+
 		$search = preg_quote($charlist, '#');
 		$search = str_replace('-', '\-', $search);
 		$search = str_replace('\.\.', '-', $search);
 		return preg_replace('#[' . $search . ']+$#Du', '', $string);
 	}
-	
-	
+
+
 	/**
 	 * Matches a string needle in the string haystack, returning a substring from the beginning of the needle to the end of the haystack
-	 * 
+	 *
 	 * Can optionally return the part of the haystack before the needle.
-	 * 
+	 *
 	 * @param  string  $haystack       The string to search in
 	 * @param  string  $needle         The string to search for
 	 * @param  boolean $before_needle  If a substring of the haystack before the needle should be returned instead of the substring from the needle to the end of the haystack
@@ -1385,28 +1395,28 @@ class fUTF8
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available && function_exists('mb_strstr')) {
 			return mb_strstr($haystack, $needle, $before_needle, 'UTF-8');
 		}
-		
+
 		$pos = strpos($haystack, $needle);
-		
+
 		if ($pos === FALSE) {
 			return $pos;
 		}
-		
+
 		if ($before_needle) {
 			return substr($haystack, 0, $pos);
 		}
-		
+
 		return substr($haystack, $pos);
 	}
-	
-	
+
+
 	/**
 	 * Extracts part of a string
-	 * 
+	 *
 	 * @param  string  $string  The string to extract from
 	 * @param  integer $start   The zero-based starting index to extract from. Negative values will start the extraction that many characters from the end of the string.
 	 * @param  integer $length  The length of the string to extract. If an empty value is provided, the remainder of the string will be returned.
@@ -1417,7 +1427,7 @@ class fUTF8
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available) {
 			$str_len = mb_strlen($string, 'UTF-8');
 			if (abs($start) > $str_len) {
@@ -1432,7 +1442,7 @@ class fUTF8
 			}
 			return mb_substr($string, $start, $length, 'UTF-8');
 		}
-		
+
 		// We get better performance falling back for ASCII strings
 		if (!self::detect($string)) {
 			if ($length === NULL) {
@@ -1444,37 +1454,37 @@ class fUTF8
 			}
 			return substr($string, $start, $length);
 		}
-		
-		
+
+
 		// This is the slowest version
 		$str_len = strlen(utf8_decode($string));
-		
+
 		if (abs($start) > $str_len) {
 			return FALSE;
 		}
-		
+
 		// Optimize looking by changing to negative start positions if the
 		// start is in the second half of the string
 		if ($start > $str_len/2) {
 			$start = 0-($str_len-$start);
 		}
-		
+
 		// Substrings to the end of the string are pretty simple
 		$start  = self::convertOffsetToBytes($string, $start);
 		$string = substr($string, $start);
-		
+
 		if ($length === NULL) {
 			return $string;
 		}
-		
+
 		$length = self::convertOffsetToBytes($string, $length);
 		return substr($string, 0, $length);
 	}
-	
-	
+
+
 	/**
 	 * Trims whitespace, or any specified characters, from the beginning and end of a string
-	 * 
+	 *
 	 * @param  string $string    The string to trim
 	 * @param  string $charlist  The characters to trim, .. indicates a range
 	 * @return string  The trimmed string
@@ -1484,17 +1494,17 @@ class fUTF8
 		if (strlen($charlist) === 0) {
 			return trim($string);
 		}
-		
+
 		$search = preg_quote($charlist, '#');
 		$search = str_replace('-', '\-', $search);
 		$search = str_replace('\.\.', '-', $search);
 		return preg_replace('#^[' . $search . ']+|[' . $search . ']+$#Du', '', $string);
 	}
-	
-	
+
+
 	/**
 	 * Converts the first character of the string to uppercase.
-	 * 
+	 *
 	 * @param  string $string  The string to process
 	 * @return string  The processed string
 	 */
@@ -1502,14 +1512,14 @@ class fUTF8
 	{
 		return self::upper(self::sub($string, 0, 1)) . self::sub($string, 1);
 	}
-	
-	
+
+
 	/**
 	 * Converts the first character of every word to uppercase
-	 * 
+	 *
 	 * Words are considered to start at the beginning of the string, or after any
 	 * whitespace character.
-	 * 
+	 *
 	 * @param  string $string  The string to process
 	 * @return string  The processed string
 	 */
@@ -1521,11 +1531,11 @@ class fUTF8
 			$string
 		);
 	}
-	
-	
+
+
 	/**
 	 * Handles converting a character to uppercase for ::ucwords()
-	 * 
+	 *
 	 * @param array $match  The regex match from ::ucwords()
 	 * @return string  The uppercase character
 	 */
@@ -1533,11 +1543,11 @@ class fUTF8
 	{
 		return self::upper($match[1]);
 	}
-	
-	
+
+
 	/**
 	 * Converts all lowercase characters to uppercase
-	 * 
+	 *
 	 * @param  string $string  The string to convert
 	 * @return string  The input string with all lowercase characters in uppercase
 	 */
@@ -1547,24 +1557,24 @@ class fUTF8
 		if (!self::detect($string)) {
 			return strtoupper($string);
 		}
-		
+
 		if (self::$mbstring_available === NULL) {
 			self::checkMbString();
 		}
-		
+
 		if (self::$mbstring_available) {
 			$string = mb_strtoupper($string, 'utf-8');
 			// For some reason mb_strtoupper misses some character
 			return strtr($string, self::$mb_lower_to_upper_fix);
 		}
-		
+
 		return strtr($string, self::$lower_to_upper);
 	}
-	
-	
+
+
 	/**
 	 * Wraps a string to a specific character width
-	 * 
+	 *
 	 * @param  string  $string  The string to wrap
 	 * @param  integer $width	The character width to wrap to
 	 * @param  string  $break   The string to insert as a break
@@ -1577,15 +1587,15 @@ class fUTF8
 		if (!self::detect($string)) {
 			return wordwrap($string, $width, $break, $cut);
 		}
-		
+
 		$words = preg_split('#(?<=\s|[\x{2000}-\x{200A}])#ue', $string);
-		
+
 		$output = '';
-		
+
 		$line_len = 0;
 		foreach ($words as $word) {
 			$word_len = self::len($word);
-			
+
 			// Shorten up words that are too long
 			while ($cut && $word_len > $width) {
 				$output  .= $break;
@@ -1594,7 +1604,7 @@ class fUTF8
 				$word	  = self::sub($word, $width);
 				$word_len = self::len($word);
 			}
-			
+
 			if ($line_len && $line_len + $word_len > $width) {
 				$output  .= $break;
 				$line_len = 0;
@@ -1602,14 +1612,14 @@ class fUTF8
 			$output   .= $word;
 			$line_len += $word_len;
 		}
-		
+
 		return $output;
 	}
-	
-	
+
+
 	/**
 	 * Forces use as a static class
-	 * 
+	 *
 	 * @return fUTF8
 	 */
 	private function __construct() { }
@@ -1618,18 +1628,18 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
- * 
+ * Copyright (c) 2008-2012 Will Bond <will@flourishlib.com>
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
