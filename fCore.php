@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  *
- * @version    1.0.0b24
+ * @version    1.0.0b25
+ * @changes    1.0.0b25  exposing ->generateContext() [kh, 2012-12-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - moved ::detectOpcodeCache() to fLoader::hasOpcodeCache() [wb, 2011-08-26]
  * @changes    1.0.0b23  Backwards Compatibility Break - changed the email subject of error/exception emails to include relevant file info, instead of the timestamp, for better email message threading [wb, 2011-06-20]
  * @changes    1.0.0b22  Fixed a bug with dumping arrays containing integers [wb, 2011-05-26]
@@ -793,7 +794,7 @@ class fCore
 	 *
 	 * @return string  A string containing `$_SERVER`, `$_GET`, `$_POST`, `$_FILES`, `$_SESSION` and `$_COOKIE`
 	 */
-	static private function generateContext()
+	static public function generateContext()
 	{
 		return self::compose('Context') . "\n-------" .
 			"\n\n\$_SERVER: "  . self::dump($_SERVER) .
