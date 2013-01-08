@@ -918,7 +918,7 @@ class fORM
 		if (!fCore::checkVersion('5.3')) {
 			throw new fProgrammerException(
 				'fORM::registerActiveRecordStaticMethod is only available to PHP 5.3+',
-				$method_name
+				$method
 			);
 		};
 
