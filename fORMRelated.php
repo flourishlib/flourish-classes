@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  *
- * @version    1.0.0b44
+ * @version    1.0.0b45
+ * @changes    1.0.0b45  Added the `$recursive` parameter to ::populateRecords() [wb, 2011-09-16]
  * @changes    1.0.0b44  Added missing information for has and list methods to ::reflect() [wb, 2011-09-07]
  * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
  * @changes    1.0.0b42  Fixed a bug with ::associateRecords() not associating record set via primary key [wb, 2011-05-23]
@@ -887,33 +888,34 @@ class fORMRelated
 	 *
 	 * @internal
 	 *
-	 * @param  string $class             The class to populate the related records of
-	 * @param  array  &$related_records  The related records existing for the fActiveRecord class
-	 * @param  string $related_class     The related class to populate
-	 * @param  string $route             The route to the related class
+	 * @param  string  $class             The class to populate the related records of
+	 * @param  array   &$related_records  The related records existing for the fActiveRecord class
+	 * @param  string  $related_class     The related class to populate
+	 * @param  string  $route             The route to the related class
+	 * @param  boolean $recursive         If a recursive populate should be performed on the child records
 	 * @return void
 	 */
-	static public function populateRecords($class, &$related_records, $related_class, $route=NULL)
+	static public function populateRecords($class, &$related_records, $related_class, $route=NULL, $recursive=FALSE)
 	{
 		fActiveRecord::validateClass($related_class);
 		fActiveRecord::forceConfigure($related_class);
-
+		
 		$table           = fORM::tablize($class);
 		$related_table   = fORM::tablize($related_class);
 		$schema          = fORMSchema::retrieve($class);
 		$pk_columns      = $schema->getKeys($related_table, 'primary');
-
+		
 		$first_pk_column = self::determineFirstPKColumn($class, $related_class, $route);
-
+		
 		$filter          = self::determineRequestFilter($class, $related_class, $route);
 		$pk_field        = $filter . $first_pk_column;
-
+		
 		$input_keys = array_keys(fRequest::get($pk_field, 'array', array()));
 		$records    = array();
-
+		
 		foreach ($input_keys as $input_key) {
 			fRequest::filter($filter, $input_key);
-
+			
 			// Try to load the value from the database first
 			try {
 				if (sizeof($pk_columns) == 1) {
@@ -924,19 +926,19 @@ class fORMRelated
 						$primary_key_values[$pk_column] = fRequest::get($pk_column);
 					}
 				}
-
+				
 				$record = new $related_class($primary_key_values);
-
+				
 			} catch (fNotFoundException $e) {
 				$record = new $related_class();
 			}
-
-			$record->populate();
+			
+			$record->populate($recursive);
 			$records[] = $record;
-
+			
 			fRequest::unfilter();
 		}
-
+		
 		$record_set = fRecordSet::buildFromArray($related_class, $records);
 		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 		self::flagForAssociation($class, $related_records, $related_class, $route);

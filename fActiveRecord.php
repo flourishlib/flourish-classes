@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  *
- * @version    1.0.0b82
+ * @version    1.0.0b83
+ * @changes    1.0.0b83  Added the `$recursive` parameter to ::populate() [wb, 2011-09-16]
  * @changes    1.0.0b82  Added support for registering methods for __callStatic() [jt, 2011-07-25]
  * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
  * @changes    1.0.0b80  Added support to ::checkCondition() for the `^~` and `$~` operators [wb, 2011-06-20]
@@ -1063,10 +1064,15 @@ abstract class fActiveRecord
 
 			case 'populate':
 				$route = isset($parameters[0]) ? $parameters[0] : NULL;
-
+				$recursive = FALSE;
+				if (is_bool($route)) {
+					$recursive = $route;
+					$route = isset($parameters[1]) ? $parameters[1] : NULL;
+				}
+				
 				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
-
-				fORMRelated::populateRecords($class, $this->related_records, $subject, $route);
+				
+				fORMRelated::populateRecords($class, $this->related_records, $subject, $route, $recursive);
 				return $this;
 
 			case 'tally':
@@ -2092,19 +2098,20 @@ abstract class fActiveRecord
 	}
 
 
-	/**
+	/*
 	 * Sets the values for this record by getting values from the request through the fRequest class
-	 *
+	 * 
+	 * @param  boolean $recursive  If all one-to-many tables and one-to-one relationships should be populated
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
-	public function populate()
+	public function populate($recursive=FALSE)
 	{
 		$class = get_class($this);
-
+		
 		if (fORM::getActiveRecordMethod($class, 'populate')) {
 			return $this->__call('populate', array());
 		}
-
+		
 		fORM::callHookCallbacks(
 			$this,
 			'pre::populate()',
@@ -2113,10 +2120,10 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-
+		
 		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
-
+		
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
@@ -2125,7 +2132,7 @@ abstract class fActiveRecord
 				$this->$method(fRequest::get($column, $cast_to));
 			}
 		}
-
+		
 		fORM::callHookCallbacks(
 			$this,
 			'post::populate()',
@@ -2135,6 +2142,23 @@ abstract class fActiveRecord
 			$this->cache
 		);
 
+		if ($recursive) { 
+			$one_to_many_relationships = $schema->getRelationships($table, 'one-to-many');
+			foreach ($one_to_many_relationships as $relationship) { 
+				$route_name = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
+				$related_class = fORM::classize($relationship['related_table']);
+				$method = 'populate' . fGrammar::pluralize($related_class);
+				$this->$method(TRUE, $route_name);
+			}
+
+			$one_to_one_relationships = $schema->getRelationships($table, 'one-to-one');
+			foreach ($one_to_one_relationships as $relationship) { 
+				$route_name = fORMSchema::getRouteNameFromRelationship('one-to-one', $relationship);
+				$related_class = fORM::classize($relationship['related_table']);
+				$this->__call('populate' . $related_class, array(TRUE, $route_name));
+			}
+		}
+		
 		return $this;
 	}
 
