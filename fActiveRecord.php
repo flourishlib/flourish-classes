@@ -198,7 +198,7 @@ abstract class fActiveRecord
 		if (!isset(self::$static_callback_cache[$class][$method_name])) {
 			if (!isset(self::$static_callback_cache[$class])) {
 				self::$static_callback_cache[$class] = array();
-			}
+			} 
 			$callback = fORM::getActiveRecordStaticMethod($class, $method_name);
 			self::$static_callback_cache[$class][$method_name] = $callback ? $callback : FALSE;
 		}
@@ -2017,7 +2017,7 @@ abstract class fActiveRecord
 
 		$pk_columns = $schema->getKeys($table, 'primary');
 		foreach ($pk_columns as $column) {
-			$value = $row[$column];
+			$value = isset($row[$column]) ? $row[$column] : NULL;
 			if ($value !== NULL && isset(self::$unescape_map[$class][$column])) {
 				$value = $db->unescape(self::$unescape_map[$class][$column], $value);
 			}
