@@ -4,12 +4,14 @@
  *
  * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Jeff Turcotte [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  *
- * @version    1.0.0b7
+ * @version    1.0.0b8
+ * @changes    1.0.0b8  [BREAK] Now messages always print as divs. Also added class option [jt, 2013-04-09]
  * @changes    1.0.0b7  Fixed a small PHPDoc error [wb, 2010-03-15]
  * @changes    1.0.0b6  Updated class to use new fSession API [wb, 2009-10-23]
  * @changes    1.0.0b5  Made the `$recipient` parameter optional for all methods [wb, 2009-07-08]
@@ -26,6 +28,14 @@ class fMessaging
 	const reset     = 'fMessaging::reset';
 	const retrieval = 'fMessaging::retrieval';
 	const show      = 'fMessaging::show';
+
+
+	/**
+	 * The class to apply to all messages along with the specified class
+	 *
+	 * @var string
+	 */
+	static protected $class = '';
 
 
 	/**
@@ -124,6 +134,18 @@ class fMessaging
 
 
 	/**
+	 * Configures a class to be present in all messages when no custom css class is given
+	 *
+	 * @param  string $class  A class for all messages
+	 * @return void
+	 */
+	static public function setClass($class)
+	{
+		self::$class = $class;
+	}
+
+
+	/**
 	 * Retrieves a message, removes it from the session and prints it - will not print if no content
 	 *
 	 * The message will be printed in a `p` tag if it does not contain
@@ -157,20 +179,25 @@ class fMessaging
 		if (is_array($name)) {
 			$shown = FALSE;
 			$names = $name;
+
 			foreach ($names as $name) {
+				$class = trim(self::$class . ' ' . $name);
+				$class = ($css_class === NULL) ? $class : $css_class;
+
 				$shown = fHTML::show(
 					self::retrieve($name, $recipient),
-					$name
+					$class,
+					TRUE
 				) || $shown;
 			}
 			return $shown;
 		}
 
+		$class = self::$class . ' ' . $name;
+		$class = ($css_class === NULL) ? $class : $css_class;
+
 		// Handle a single message
-		return fHTML::show(
-			self::retrieve($name, $recipient),
-			($css_class === NULL) ? $name : $css_class
-		);
+		return fHTML::show(self::retrieve($name, $recipient), $class, TRUE);
 	}
 
 

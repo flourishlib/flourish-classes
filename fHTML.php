@@ -7,12 +7,14 @@
  *
  * @copyright  Copyright (c) 2007-2010 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Jeff Turcotte [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fHTML
  *
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added force div argument to fHTML::show() [jt, 2013-04-09]
  * @changes    1.0.0b8  Changed ::encode() and ::prepare() to handle arrays of strings [wb, 2010-05-19]
  * @changes    1.0.0b7  Fixed a bug where some conditional comments were causing the regex in ::prepare() to break [wb, 2009-11-04]
  * @changes    1.0.0b6  Updated ::showChecked() to require strict equality if one parameter is `NULL` [wb, 2009-06-02]
@@ -233,16 +235,17 @@ class fHTML
 	 *
 	 * @param  string $content    The content to display
 	 * @param  string $css_class  The CSS class to apply
+	 * @param  string $force_div  Force a div for showing html
 	 * @return boolean  If the content was shown
 	 */
-	static public function show($content, $css_class='')
+	static public function show($content, $css_class='', $force_div=FALSE)
 	{
 		if ((!is_string($content) && !is_object($content) && !is_numeric($content)) || !strlen(trim($content))) {
 			return FALSE;
 		}
 
 		$class = ($css_class) ? ' class="' . $css_class . '"' : '';
-		if (self::containsBlockLevelHTML($content)) {
+		if (self::containsBlockLevelHTML($content) || $force_div) {
 			echo '<div' . $class . '>' . self::prepare($content) . '</div>';
 		} else {
 			echo '<p' . $class . '>' . self::prepare($content) . '</p>';
