@@ -8,12 +8,14 @@
  * @copyright  Copyright (c) 2007-2011 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
+ * @author     Jeff Turcotte <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  *
- * @version    1.0.0b45
+ * @version    1.0.0b46
+ * @changes    1.0.0b46  Fixed route issue with linkRecord(). [jt, 2013-04-30]
  * @changes    1.0.0b45  Added the `$recursive` parameter to ::populateRecords() [wb, 2011-09-16]
  * @changes    1.0.0b44  Added missing information for has and list methods to ::reflect() [wb, 2011-09-07]
  * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
@@ -804,7 +806,7 @@ class fORMRelated
 		$field_with_route = $field_table . '{' . $route_name . '}' . $field_column;
 
 		// If there is only one route and they specified the route instead of leaving it off, use that
-		if ($route === NULL && !fRequest::check($field) && fRequest::check($field_with_route)) {
+		if ($route !== NULL || $route === NULL && !fRequest::check($field) && fRequest::check($field_with_route)) {
 			$field = $field_with_route;
 		}
 
