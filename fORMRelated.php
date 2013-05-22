@@ -14,8 +14,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMRelated
  *
- * @version    1.0.0b46
- * @changes    1.0.0b46  Fixed route issue with linkRecord(). [jt, 2013-04-30]
+ * @version    1.0.0b47
+ * @changes    1.0.0b47  Fixed issues with set_null db constraints and one-to-many table relationships [jt, 2013-05-22]
+ * @changes    1.0.0b46  Fixed route issue with linkRecord. [jt, 2013-04-30]
  * @changes    1.0.0b45  Added the `$recursive` parameter to ::populateRecords() [wb, 2011-09-16]
  * @changes    1.0.0b44  Added missing information for has and list methods to ::reflect() [wb, 2011-09-07]
  * @changes    1.0.0b43  Fixed some bugs in handling relationships between PHP 5.3 namespaced classes [wb, 2011-05-26]
@@ -87,7 +88,7 @@ class fORMRelated
 	const setRecordSet                 = 'fORMRelated::setRecordSet';
 	const store                        = 'fORMRelated::store';
 	const storeManyToMany              = 'fORMRelated::storeManyToMany';
-	const storeOneToMany               = 'fORMRelated::storeOneToMany';
+	const storeOneToStar               = 'fORMRelated::storeOneToStar';
 	const validate                     = 'fORMRelated::validate';
 
 
@@ -1619,7 +1620,6 @@ class fORMRelated
 			$relationship['related_column'] . '=' => $column_value
 		);
 
-
 		$existing_records = fRecordSet::build($related_class, $where_conditions);
 
 		$existing_primary_keys  = $existing_records->getPrimaryKeys();
@@ -1629,7 +1629,17 @@ class fORMRelated
 
 		foreach ($primary_keys_to_delete as $primary_key_to_delete) {
 			$object_to_delete = new $related_class($primary_key_to_delete);
+
+			// don't delete record if the relationship does not call for it
+			if ($relationship['on_delete'] == 'set_null') {
+				$related_set_method = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
+				$object_to_delete->$related_set_method(NULL);
+				$object_to_delete->store();
+				continue;
+			}
+
 			$object_to_delete->delete($force_cascade);
+			
 		}
 
 		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);
