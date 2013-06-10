@@ -6,12 +6,15 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Nick Trew [nt]
+ * @author     Kevin Hamer [kh] <kevin@imarc.net>
+ * @author     Jeff Turcotte [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  *
- * @version    1.0.0b25
+ * @version    1.0.0b26
+ * @changes    1.0.0b26  Added handle_fatal_errors flag to enableErrorHandling [jt, 2013-06-10]
  * @changes    1.0.0b25  exposing ->generateContext() [kh, 2012-12-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - moved ::detectOpcodeCache() to fLoader::hasOpcodeCache() [wb, 2011-08-26]
  * @changes    1.0.0b23  Backwards Compatibility Break - changed the email subject of error/exception emails to include relevant file info, instead of the timestamp, for better email message threading [wb, 2011-06-20]
@@ -57,6 +60,7 @@ class fCore
 	const expose                  = 'fCore::expose';
 	const getDebug                = 'fCore::getDebug';
 	const handleError             = 'fCore::handleError';
+	const handleFatalError        = 'fCore::handleFatalError';
 	const handleException         = 'fCore::handleException';
 	const registerDebugCallback   = 'fCore::registerDebugCallback';
 	const reset                   = 'fCore::reset';
@@ -697,10 +701,13 @@ class fCore
 	 * [enableExceptionHandling() exception handling] are set to the same
 	 * email address, the email will contain both errors and exceptions.
 	 *
-	 * @param  string $destination  The destination for the errors and context information - an email address, a file path or the string `'html'`
+	 * @param  string  $destination          The destination for the errors and context information - an email address, a file path or the string `'html'`
+	 * @param  boolean $handle_fatal_errors  If true, a shutdown function will be registered to handle a fatal error. 
+	 *                                       Be aware, other shutdown functions could inadvertantly disable this one or exit the process.
+	 *
 	 * @return void
 	 */
-	static public function enableErrorHandling($destination)
+	static public function enableErrorHandling($destination, $handle_fatal_errors=FALSE)
 	{
 		if (!self::checkDestination($destination)) {
 			return;
@@ -708,6 +715,11 @@ class fCore
 		self::$error_destination = $destination;
 		self::$handles_errors    = TRUE;
 		set_error_handler(self::callback(self::handleError));
+
+		if ($handle_fatal_errors) {
+			register_shutdown_function(self::callback(self::handleFatalError));
+		}
+
 	}
 
 
@@ -817,6 +829,30 @@ class fCore
 		return self::$debug || $force;
 	}
 
+	/**
+	 * A shutdown function to handle a fatal error
+	 *
+	 * @internal
+	 *
+	 * @return void
+	 */
+	static public function handleFatalError()
+	{
+		$error = error_get_last();
+
+		$allowed_error_types = array(
+			E_ERROR, E_CORE_ERROR
+		);
+
+		if ($error != NULL && in_array($error['type'], $allowed_error_types)) {
+			$error_number = $error['type'];
+			$error_file   = $error['file'];
+			$error_line   = $error['line'];
+			$error_string = $error['message'];
+
+			self::handleError($error_number, $error_string, $error_file, $error_line);
+		}
+	}
 
 	/**
 	 * Handles an error, creating the necessary context information and sending it to the specified destination
@@ -880,6 +916,8 @@ class fCore
 			case E_RECOVERABLE_ERROR: $type = self::compose('Recoverable Error'); break;
 			case E_DEPRECATED:        $type = self::compose('Deprecated');        break;
 			case E_USER_DEPRECATED:   $type = self::compose('User Deprecated');   break;
+			case E_CORE_ERROR:        $type = self::compose('Fatal Error');       break;
+			case E_ERROR:             $type = self::compose('Fatal Error');       break;
 		}
 
 		if ($capturing) {
