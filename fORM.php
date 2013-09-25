@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORM
  *
- * @version    1.0.0b29
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Added ::methodize() to allow for namespaced clases for models [kh, 2013-08-08]
  * @changes    1.0.0b29  Added ::registerActiveRecordStaticMethod() for static hooks in PHP 5.3 [jt, 2012-07-25]
  * @changes    1.0.0b28  Updated ::getColumnName() and ::getRecordName() to use fText if loaded [wb, 2011-02-02]
  * @changes    1.0.0b27  Added links to the detailed documentation for the parameters passed to hooks [wb, 2010-11-27]
@@ -77,9 +78,10 @@ class fORM
 	const replicate                        = 'fORM::replicate';
 	const reset                            = 'fORM::reset';
 	const scalarize                        = 'fORM::scalarize';
-	const tablize                          = 'form::tablize';
-	
-	
+	const tablize                          = 'fORM::tablize';
+	const methodize                        = 'fORM::methodize';
+
+
 	/**
 	 * An array of `{method} => {callback}` mappings for fActiveRecord
 	 *
@@ -89,7 +91,7 @@ class fORM
 
 	/**
 	 * An array of `{static_method} => {callback}` mappings for fActiveRecord
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $active_record_static_method_callbacks = array();
@@ -893,7 +895,7 @@ class fORM
 
 		self::$cache['getActiveRecordMethod'] = array();
 	}
-	
+
 
 	/**
 	 * Registers a callback for an fActiveRecord method that falls through to fActiveRecord::__callStatic() or hits a predefined method hook
@@ -925,7 +927,7 @@ class fORM
 		$class = self::getClass($class);
 
 		if (!isset(self::$active_record_static_method_callbacks[$class])) {
-			self::$active_record_static_method_callbacks[$class] = array(); 
+			self::$active_record_static_method_callbacks[$class] = array();
 		}
 
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {
@@ -1292,13 +1294,15 @@ class fORM
 
 
 	/**
-	 * Takes a class name (or class) and turns it into a table name - Uses custom mapping if set
+	 * Takes a class name (or instance) and turns it into a table name - Uses custom mapping if set
 	 *
-	 * @param  string $class  The class name
-	 * @return string  The table name
+	 * @param  mixed  $class  The class name
+	 * @return string The table name
 	 */
 	static public function tablize($class)
 	{
+		$class = self::getClass($class);
+
 		if (!isset(self::$class_table_map[$class])) {
 			self::$class_table_map[$class] = fGrammar::underscorize(fGrammar::pluralize(
 				// Strip the namespace off the class name
@@ -1310,6 +1314,26 @@ class fORM
 			));
 		}
 		return self::$class_table_map[$class];
+	}
+
+	/**
+	 * Takes a verb and class name (or instance) and converts it into a method.
+	 *
+	 * @param  mixed    $verb    the verb (ex: build, populate, etc.)
+	 * @param  mixed    $class   the class (or instance)
+	 * @param  boolean  $plural  whether to pluralize the class
+	 * @return string   The method
+	 */
+	static public function methodize($verb, $class, $plural=FALSE)
+	{
+		$class = self::getClass($class);
+
+		$subject = preg_replace('#^.*\\\\#', '', $class);
+		if ($plural) {
+			$subject = fGrammar::pluralize($subject);
+		}
+
+		return fGrammar::camelize($verb, FALSE) . fGrammar::camelize($subject, TRUE);
 	}
 
 
