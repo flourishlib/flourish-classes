@@ -12,13 +12,15 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Alex Leeds [al] <alex@kingleeds.com>
- * @autho      Matthew J. Sahagian [mjs] <msahagian@dotink.org>
+ * @author     Matthew J. Sahagian [mjs] <msahagian@dotink.org>
+ * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  *
- * @version    1.0.0b21
+ * @version    1.0.0b22
+ * @changes    1.0.0b22  Added non-array support to ::filter() [jt, 2013-09-25]
  * @changes    1.0.0b21  Fixed problem where Accept headers are spaced out and mime-types won't match (mainly from IE) [mjs, 2012-12-10]
  * @changes    1.0.0b20  Added ::isHead(), fixed ability to call ::set() on `HEAD` requests [wb-imarc, 2011-11-23]
  * @changes    1.0.0b19  Added the `$use_default_for_blank` parameter to ::get() [wb, 2011-06-03]
@@ -291,7 +293,7 @@ class fRequest
 	 * @param  mixed  $key     If the field is an array, get the value corresponding to this key
 	 * @return void
 	 */
-	static public function filter($prefix, $key)
+	static public function filter($prefix, $key=NULL)
 	{
 		self::initPutDelete();
 
@@ -326,9 +328,12 @@ class fRequest
 			$refs['array']    = array();
 			foreach ($refs['backup'][$current_backup] as $field => $value) {
 				$matches_prefix = !$prefix || ($prefix && strpos($field, $prefix) === 0);
-				if ($matches_prefix && is_array($value) && isset($value[$key])) {
+				if ($matches_prefix && is_array($value) && !is_null($key) && isset($value[$key])) {
 					$new_field = preg_replace($regex, '', $field);
 					$refs['array'][$new_field] = $value[$key];
+				} else if ($matches_prefix && is_null($key)) {
+					$new_field = preg_replace($regex, '', $field);
+					$refs['array'][$new_field] = $value;
 				}
 			}
 		}
