@@ -15,7 +15,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSession
  *
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Made fSession::exists() to determine if a session is active with session_status() compatibility [mjs, 2013-11-15]
  * @changes    1.0.0b22  Fixed ::destroy() to no longer call ::regenerateID() since it fails after a session is destroyed [wb, 2012-09-20]
  * @changes    1.0.0b21  Changed ::regenerateID() to not fail silently if the session has not been opened yet [wb, 2012-09-15]
  * @changes    1.0.0b20  Fixed bugs with ::reset() introduced in 1.0.0b19 [wb, 2011-08-23]
@@ -367,6 +368,23 @@ class fSession
 
 
 	/**
+	 * Determine if a session exists
+	 *
+	 * Makes some session features in PHP 5.4+ more compatible with fSession
+	 *
+	 * @param return boolean TRUE if a session exitss, FALSE otherwise
+	 */
+	static public function exists()
+	{
+		if (!function_exists('session_status')) {
+			return session_status() == PHP_SESSION_ACTIVE;
+		}
+
+		return isset($_SESSION);
+	}
+
+
+	/**
 	 * Callback to garbage-collect the session cache
 	 *
 	 * @internal
@@ -428,7 +446,7 @@ class fSession
 	 */
 	static public function ignoreSubdomain()
 	{
-		if (self::$open || isset($_SESSION)) {
+		if (self::$open || self::exists()) {
 			throw new fProgrammerException(
 				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::ignoreSubdomain()',
@@ -489,7 +507,7 @@ class fSession
 			self::$normal_timespan = ini_get('session.gc_maxlifetime');
 		}
 
-		if (self::$backend && isset($_SESSION) && session_module_name() != 'user') {
+		if (self::$backend && self::exists() && session_module_name() != 'user') {
 			throw new fProgrammerException(
 				'A custom backend was provided by %1$s, however the session has already been started, so it can not be used',
 				__CLASS__ . '::setBackend()'
@@ -497,7 +515,7 @@ class fSession
 		}
 
 		// If the session is already open, we just piggy-back without setting options
-		if (!isset($_SESSION)) {
+		if (!self::exists()) {
 			if ($cookie_only_session_id) {
 				ini_set('session.use_cookies', 1);
 				ini_set('session.use_only_cookies', 1);
@@ -722,7 +740,7 @@ class fSession
 	 */
 	static public function setBackend($backend, $key_prefix='')
 	{
-		if (self::$open || isset($_SESSION)) {
+		if (self::$open || self::exists()) {
 			throw new fProgrammerException(
 				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::setLength()',
@@ -772,7 +790,7 @@ class fSession
 	 */
 	static public function setLength($normal_timespan, $persistent_timespan=NULL)
 	{
-		if (self::$open || isset($_SESSION)) {
+		if (self::$open || self::exists()) {
 			throw new fProgrammerException(
 				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::setLength()',
@@ -812,7 +830,7 @@ class fSession
 	 */
 	static public function setPath($directory)
 	{
-		if (self::$open || isset($_SESSION)) {
+		if (self::$open || self::exists()) {
 			throw new fProgrammerException(
 				'%1$s must be called before any of %2$s, %3$s, %4$s, %5$s, %6$s, %7$s or %8$s',
 				__CLASS__ . '::setPath()',
@@ -863,7 +881,6 @@ class fSession
 	 */
 	private function __construct() { }
 }
-
 
 
 /**
