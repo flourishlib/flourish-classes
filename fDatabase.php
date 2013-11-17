@@ -43,12 +43,14 @@
  *
  * @copyright  Copyright (c) 2007-2012 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
+ * @author     Kamil Biały [cs] <codestepper@gmail.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  *
- * @version    1.0.0b41
+ * @version    1.0.0b42
+ * @changes    1.0.0b42  Added persistent connection [cs, 2013-11-17]
  * @changes    1.0.0b41  Fixed an array to string conversion notice [wb, 2012-09-21]
  * @changes    1.0.0b40  Fixed a bug with notices being triggered when failing to connect to a SQLite database [wb, 2011-06-20]
  * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
@@ -502,9 +504,10 @@ class fDatabase
 	 *
 	 * @throws fAuthorizationException  When the username and password are not accepted
 	 *
+	 * @param  boolean  $pconnect  Use persistent connection
 	 * @return void
 	 */
-	public function connect()
+	public function connect($pconnect=FALSE)
 	{
 		// Don't try to reconnect if we are already connected
 		if ($this->connection) { return; }
@@ -522,6 +525,9 @@ class fDatabase
 			$options  = array();
 			if ($this->timeout !== NULL && $this->type != 'sqlite' && $this->type != 'mssql') {
 				$options[PDO::ATTR_TIMEOUT] = $this->timeout;
+			}
+			if ($pconnect) {
+				$options[PDO::ATTR_PERSISTENT] = TRUE;
 			}
 
 			if ($this->type == 'db2') {
@@ -608,7 +614,8 @@ class fDatabase
 		}
 
 		if ($this->extension == 'sqlite') {
-			$this->connection = sqlite_open($this->database);
+			if ($pconnect) $this->connection = sqlite_popen($this->database);
+			else $this->connection = sqlite_open($this->database);
 		}
 
 		if ($this->extension == 'ibm_db2') {
@@ -630,7 +637,9 @@ class fDatabase
 				'autocommit'    => DB2_AUTOCOMMIT_ON,
 				'DB2_ATTR_CASE' => DB2_CASE_LOWER
 			);
-			$this->connection = db2_connect($connection_string, $username, $password, $options);
+			if ($pconnect) $this->connection = db2_pconnect($connection_string, $username, $password, $options);
+			else $this->connection = db2_connect($connection_string, $username, $password, $options);
+			
 			if ($this->connection === FALSE) {
 				$errors = db2_conn_errormsg();
 			}
@@ -643,9 +652,10 @@ class fDatabase
 			}
 
 			fCore::startErrorCapture();
-
-			$separator        = (fCore::checkOS('windows')) ? ',' : ':';
-			$this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password, TRUE);
+			$separator = (fCore::checkOS('windows')) ? ',' : ':';
+			
+			if ($pconnect) $this->connection = mssql_pconnect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password, TRUE);
+			else $this->connection = mssql_connect(($this->port) ? $this->host . $separator . $this->port : $this->host, $this->username, $this->password, TRUE);
 
 			if ($this->connection !== FALSE && mssql_select_db($this->database, $this->connection) === FALSE) {
 				$this->connection = FALSE;
@@ -674,7 +684,8 @@ class fDatabase
 
 			fCore::startErrorCapture();
 
-			$this->connection = mysql_connect($host, $this->username, $this->password, TRUE);
+			if ($pconnect) $this->connection = mysql_pconnect($host, $this->username, $this->password, TRUE);
+			else $this->connection = mysql_connect($host, $this->username, $this->password, TRUE);
 
 			$errors = fCore::stopErrorCapture();
 
@@ -703,11 +714,11 @@ class fDatabase
 			fCore::startErrorCapture();
 
 			if (substr($this->host, 0, 5) == 'sock:') {
-				$result = mysqli_real_connect($this->connection, 'localhost', $this->username, $this->password, $this->database, $this->port, substr($this->host, 5));
+				$result = mysqli_real_connect($this->connection, (($pconnect)?'p:':'').'localhost', $this->username, $this->password, $this->database, $this->port, substr($this->host, 5));
 			} elseif ($this->port) {
-				$result = mysqli_real_connect($this->connection, $this->host, $this->username, $this->password, $this->database, $this->port);
+				$result = mysqli_real_connect($this->connection, (($pconnect)?'p:':'').$this->host, $this->username, $this->password, $this->database, $this->port);
 			} else {
-				$result = mysqli_real_connect($this->connection, $this->host, $this->username, $this->password, $this->database);
+				$result = mysqli_real_connect($this->connection, (($pconnect)?'p:':'').$this->host, $this->username, $this->password, $this->database);
 			}
 			if (!$result) {
 				$this->connection = FALSE;
@@ -739,7 +750,8 @@ class fDatabase
 			}
 
 			if ($resource) {
-				$this->connection = oci_connect($this->username, $this->password, $this->host . ($this->port ? ':' . $this->port : '') . '/' . $this->database, 'AL32UTF8');
+				if ($pconnect) $this->connection = oci_pconnect($this->username, $this->password, $this->host . ($this->port ? ':' . $this->port : '') . '/' . $this->database, 'AL32UTF8');
+				else $this->connection = oci_connect($this->username, $this->password, $this->host . ($this->port ? ':' . $this->port : '') . '/' . $this->database, 'AL32UTF8');
 			}
 
 			$errors = fCore::stopErrorCapture();
@@ -765,14 +777,16 @@ class fDatabase
 
 			fCore::startErrorCapture();
 
-			$this->connection = pg_connect($connection_string, PGSQL_CONNECT_FORCE_NEW);
+			if ($pconnect) $this->connection = pg_pconnect($connection_string, PGSQL_CONNECT_FORCE_NEW);
+			else $this->connection = pg_connect($connection_string, PGSQL_CONNECT_FORCE_NEW);
 
 			$errors = fCore::stopErrorCapture();
 		}
 
 		if ($this->extension == 'sqlsrv') {
 			$options = array(
-				'Database' => $this->database
+				'Database' => $this->database,
+				'ConnectionPooling' => FALSE
 			);
 			if ($this->username !== NULL) {
 				$options['UID'] = $this->username;
@@ -782,6 +796,9 @@ class fDatabase
 			}
 			if ($this->timeout !== NULL) {
 				$options['LoginTimeout'] = $this->timeout;
+			}
+			if ($pconnect) {
+				$options['ConnectionPooling'] = TRUE;
 			}
 
 			$this->connection = sqlsrv_connect($this->host . ',' . $this->port, $options);
