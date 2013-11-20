@@ -155,6 +155,7 @@ class fFile implements Iterator, Countable
 	static private function determineMimeTypeByContents($content, $extension)
 	{
 		$length = strlen($content);
+		$_0_10  = substr($content, 0,10);
 		$_0_8   = substr($content, 0, 8);
 		$_0_6   = substr($content, 0, 6);
 		$_0_5   = substr($content, 0, 5);
@@ -162,6 +163,7 @@ class fFile implements Iterator, Countable
 		$_0_3   = substr($content, 0, 3);
 		$_0_2   = substr($content, 0, 2);
 		$_8_4   = substr($content, 8, 4);
+		
 
 		// Images
 		if ($_0_4 == "MM\x00\x2A" || $_0_4 == "II\x2A\x00") {
@@ -182,7 +184,10 @@ class fFile implements Iterator, Countable
 
 		$normal_jpeg    = $length > 10 && in_array(substr($content, 6, 4), array('JFIF', 'Exif'));
 		$photoshop_jpeg = $length > 24 && $_0_4 == "\xFF\xD8\xFF\xED" && substr($content, 20, 4) == '8BIM';
-		if ($normal_jpeg || $photoshop_jpeg) {
+		//Don't know for what $length > 24 is used for
+		$canon_eos_jpeg = $length > 24 && $_0_10 == "\xFF\xD8\xFF\xE2\x02\x1C\x49\x43\x43\x5F";
+		//Canon JPEG header found at: http://www.filesignatures.net/index.php?search=JPEG&mode=EXT
+		if ($normal_jpeg || $photoshop_jpeg || $canon_eos_jpeg) {
 			return 'image/jpeg';
 		}
 
