@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  *
- * @version    1.0.0b34
+ * @version    1.0.0b35
+ * @changes    1.0.0b35  Fixed an issue with ImageMagick 6.7.5+ and colorspace argument [jt, 2014-01-09]
  * @changes    1.0.0b34  Fixed a bug in getImageType() where the fread was not reading enough bytes [jt, 2012-06-05]
  * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
  * @changes    1.0.0b32  Added a call to clearstatcache() to ::saveChanges() to solve a bug when fFile::output() is called in the same script execution [wb, 2011-05-23]
@@ -73,6 +74,13 @@ class fImage extends fFile
 	static private $imagemagick_temp_dir = NULL;
 
 	/**
+	 * The version of ImageMagick
+	 *
+	 * @var string
+	 */
+	static private $imagemagick_version = NULL;
+
+	/**
 	 * The processor to use for the image manipulation
 	 *
 	 * @var string
@@ -96,10 +104,12 @@ class fImage extends fFile
 			);
 		}
 
+		$binary = $path . (fCore::checkOS('windows') ? 'convert.exe' : 'convert');
+
 		if (self::isOpenBaseDirRestricted($path)) {
-			exec($path . 'convert -version', $executable);
+			exec($binary . ' -version', $executable);
 		} else {
-			$executable = is_executable($path . (fCore::checkOS('windows') ? 'convert.exe' : 'convert'));
+			$executable = is_executable($binary);
 		}
 
 		if (!$executable) {
@@ -107,6 +117,12 @@ class fImage extends fFile
 				'The ImageMagick convert binary located in the directory %s does not exist or is not executable',
 				$path
 			);
+		}
+
+		// determine version
+		exec($binary, $output);
+		if (preg_match('/\d+\.\d+\.\d+/', $output[0], $matches)) {
+			self::$imagemagick_version = $matches[0];
 		}
 	}
 
@@ -159,7 +175,7 @@ class fImage extends fFile
 	 *
 	 * @return void
 	 */
-	static private function determineProcessor()
+	static public function determineProcessor()
 	{
 		// Determine what processor to use
 		if (self::$processor === NULL) {
@@ -1182,7 +1198,11 @@ class fImage extends fFile
 
 		// Default to the RGB colorspace
 		if (strpos($command_line, ' -colorspace ') === FALSE) {
-			$command_line .= ' -colorspace RGB ';
+			if (version_compare(self::$imagemagick_version, '6.7.5') >= 0) {
+				$command_line .= ' -colorspace sRGB ';
+			} else {
+				$command_line .= ' -colorspace RGB ';
+			}
 		}
 
 		if ($new_type == 'jpg') {
