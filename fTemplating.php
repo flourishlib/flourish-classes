@@ -1487,7 +1487,9 @@ class fTemplating
 		$extension_map = array(
 			'inc'  => 'php',
 			'php5' => 'php',
-			'xml'  => 'rss'
+			'xml'  => 'rss',
+			'sass' => 'css',
+			'scss' => 'css'
 		);
 
 		if (isset($extension_map[$extension])) {
