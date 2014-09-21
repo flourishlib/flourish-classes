@@ -3076,7 +3076,7 @@ class fSchema
 	 */
 	public function setColumnInfoOverride($column_info, $table, $column=NULL)
 	{
-		$table = strotlower($table);
+		$table = strtolower($table);
 		if ($column !== NULL) {
 			$column = strtolower($column);
 		}
