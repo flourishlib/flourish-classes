@@ -1256,8 +1256,32 @@ class fMailbox
 			}
 
 			$output = array();
-			$response = $this->write('FETCH ' . $start . ':' . $end . ' (UID INTERNALDATE RFC822.SIZE ENVELOPE)');
-			foreach ($response as $line) {
+			//this will parse the {122122}  literal in mail fetch command , which are created due to the presence of double quotes (") in email subjects, if both the mixed email subject are present , first email with double quotes in subject are proceeded and later the normal one
+			 $response = $this -> write('FETCH ' . $start . ':' . $end . ' (UID INTERNALDATE RFC822.SIZE ENVELOPE)');
+            $hintter = implode(' ', $response);
+            $pattern = '(\{[0-9]+\})';
+
+            if (preg_match($pattern, $hintter, $match)) {
+
+                $responses = preg_replace($pattern, '', $response);
+                $responsesnew = array();
+                $i = 0;
+                $j = 0;
+                foreach ($responses as $reps) {
+
+                    if (substr(trim($reps), 0, 1) != '*') {
+                        $responsesnew[$i] = $responses[$j - 1] . $reps;
+                        $i++;
+                    }
+
+                    $j++;
+
+                }
+            } else {
+                $responsesnew = $response;
+            }
+
+			foreach ($responsesnew as $line) {
 				if (preg_match('#^\s*\*\s+(\d+)\s+FETCH\s+\((.*)\)\s*$#', $line, $match)) {
 					$details = self::parseResponse($match[2], TRUE);
 					$info    = array();
