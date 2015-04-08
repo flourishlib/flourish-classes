@@ -1406,7 +1406,7 @@ class fMailbox
 		}
 
 		if ($select) {
-			while (!feof($this->connection)) {
+			do {
 				$line = fgets($this->connection);
 				if ($line === FALSE) {
 					break;
@@ -1433,7 +1433,7 @@ class fMailbox
 						break;
 					}
 				}
-			}
+			} while (!feof($this->connection));
 		}
 		if (fCore::getDebug($this->debug)) {
 			fCore::debug("Received:\n" . join("\r\n", $response), $this->debug);
