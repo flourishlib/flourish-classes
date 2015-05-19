@@ -1054,7 +1054,7 @@ class fImage extends fFile
 						unset($new_gd_res);
 					}
 
-					$new_gd_res = imagerotate($gd_res, $mod['degrees'], -1);
+					$new_gd_res = imagerotate($gd_res, $mod['degrees'], imagecolorallocatealpha($gd_res, 0, 0, 0, 127));
 
 					// If you don't set the alpha mode for PNG, images that
 					// contain transparency and are rotated will be distored
