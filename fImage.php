@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fImage
  *
- * @version    1.0.0b36  Fixed an issue with imagerotate (see http://stackoverflow.com/questions/24643783/php-gd-imagerotate-fails-when-1-is-passed-for-bgd-color)  [bs, 2015-05-19]
+ * @version    1.0.0b36
+ * @changes    1.0.0b36  Fixed an issue with imagerotate (see http://stackoverflow.com/questions/24643783/php-gd-imagerotate-fails-when-1-is-passed-for-bgd-color)  [bs, 2015-05-19]
  * @changes    1.0.0b35  Fixed an issue with ImageMagick 6.7.5+ and colorspace argument [jt, 2014-01-09]
  * @changes    1.0.0b34  Fixed a bug in getImageType() where the fread was not reading enough bytes [jt, 2012-06-05]
  * @changes    1.0.0b33  Fixed a method signature [wb, 2011-08-24]
