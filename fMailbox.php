@@ -965,13 +965,30 @@ class fMailbox
 
 		fCore::startErrorCapture(E_WARNING);
 
-		$this->connection = fsockopen(
-			$this->secure ? 'tls://' . $this->host : $this->host,
-			$this->port,
-			$error_number,
-			$error_string,
-			$this->timeout
-		);
+		if ($this->secure) {
+			$this->connection = stream_socket_client(
+				'tls://' . $this->host . ':' . $this->port,
+				$error_number,
+				$error_string,
+				$this->timeout,
+				STREAM_CLIENT_CONNECT,
+				stream_context_create(array(
+					'ssl' => array(
+						'verify_peer' => false,
+						'verify_peer_name' => false,
+						'disable_compression' => true,
+					)
+				))
+			);
+		} else {
+			$this->connection = fsockopen(
+				$this->host,
+				$this->port,
+				$error_number,
+				$error_string,
+				$this->timeout
+			);	
+		}
 
 		foreach (fCore::stopErrorCapture('#ssl#i') as $error) {
 			throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
