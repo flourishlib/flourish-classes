@@ -219,7 +219,7 @@ class fMailbox
 		}
 
 		// This indicates a content-id which is used for multipart/related
-		if ($structure['content_id']) {
+		if ($structure['content_id'] && $structure['disposition'] == 'inline') {
 			if (!isset($info['related'])) {
 				$info['related'] = array();
 			}
