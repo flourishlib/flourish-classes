@@ -218,20 +218,6 @@ class fMailbox
 			}
 		}
 
-		// This indicates a content-id which is used for multipart/related
-		if ($structure['content_id'] && $structure['disposition'] == 'inline') {
-			if (!isset($info['related'])) {
-				$info['related'] = array();
-			}
-			$cid = $structure['content_id'][0] == '<' ? substr($structure['content_id'], 1, -1) : $structure['content_id'];
-			$info['related']['cid:' . $cid] = array(
-				'mimetype' => $structure['type'] . '/' . $structure['subtype'],
-				'data'     => $content
-			);
-			return $info;
-		}
-
-
 		$has_disposition = !empty($structure['disposition']);
 		$is_text         = $structure['type'] == 'text' && $structure['subtype'] == 'plain';
 		$is_html         = $structure['type'] == 'text' && $structure['subtype'] == 'html';
@@ -260,6 +246,20 @@ class fMailbox
 					$filename = $value;
 					break;
 				}
+			}
+
+			// This indicates a content-id which is used for multipart/related
+			if ($structure['content_id'] && $structure['disposition'] == 'inline') {
+				if (!isset($info['related'])) {
+					$info['related'] = array();
+				}
+				$cid = $structure['content_id'][0] == '<' ? substr($structure['content_id'], 1, -1) : $structure['content_id'];
+				$info['related']['cid:' . $cid] = array(
+					'filename' => $filename,
+					'mimetype' => $structure['type'] . '/' . $structure['subtype'],
+					'data'     => $content
+				);
+				return $info;
 			}
 
 			// This automatically handles primary content that has a content-disposition header on it
