@@ -567,7 +567,7 @@ class fMailbox
 				}
 
 			} elseif ($header == 'references') {
-				$headers[$header] = array_map(array('fMailbox', 'decodeHeader'), preg_split('#(?<=>)\s+(?=<)#', $value));
+				$headers[$header] = array_map(array('fMailbox', 'decodeHeader'), preg_split('#(?<=>)[^<]*?(?=<)#', $value));
 
 			} elseif ($header == 'received') {
 				if (!isset($headers[$header])) {
