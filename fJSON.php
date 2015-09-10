@@ -283,7 +283,7 @@ class fJSON
 	 */
 	static public function decode($json, $assoc=FALSE)
 	{
-		if (!is_string($json) && !is_numeric($json)) {
+		if (!is_string($json)) {
 			return NULL;
 		}
 
