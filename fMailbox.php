@@ -226,6 +226,7 @@ class fMailbox
 			$cid = $structure['content_id'][0] == '<' ? substr($structure['content_id'], 1, -1) : $structure['content_id'];
 			$info['related']['cid:' . $cid] = array(
 				'mimetype' => $structure['type'] . '/' . $structure['subtype'],
+				'filename' => $structure['type_fields']['name'],
 				'data'     => $content
 			);
 			return $info;
