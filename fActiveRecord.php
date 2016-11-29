@@ -11,12 +11,14 @@
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
+ * @author     Matthew J. Sahagian [mjs] <matt@imarc.net>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  *
- * @version    1.0.0b83
+ * @version    1.0.0b84
+ * @changes    1.0.0b84  Added the protect() method to prevent mass injection on populate() [mjs, 2014-07-08]
  * @changes    1.0.0b83  Added the `$recursive` parameter to ::populate() [wb, 2011-09-16]
  * @changes    1.0.0b82  Added support for registering methods for __callStatic() [jt, 2011-07-25]
  * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
@@ -887,6 +889,13 @@ abstract class fActiveRecord
 	 * @var array
 	 */
 	protected $values = array();
+
+	/**
+	 * Values which we do not want to populate
+	 *
+	 * @var array
+	 */
+	protected $protected_params = array();
 
 
 	/**
@@ -2100,18 +2109,18 @@ abstract class fActiveRecord
 
 	/*
 	 * Sets the values for this record by getting values from the request through the fRequest class
-	 * 
+	 *
 	 * @param  boolean $recursive  If all one-to-many tables and one-to-one relationships should be populated
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function populate($recursive=FALSE)
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'populate')) {
 			return $this->__call('populate', array());
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::populate()',
@@ -2120,19 +2129,24 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
-		
+
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
+
+			if (array_search($column, $this->protected_params) !== FALSE) {
+				continue;
+			}
+
 			if (fRequest::check($column)) {
 				$method = 'set' . fGrammar::camelize($column, TRUE);
 				$cast_to = ($info['type'] == 'blob') ? 'binary' : NULL;
 				$this->$method(fRequest::get($column, $cast_to));
 			}
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::populate()',
@@ -2278,6 +2292,20 @@ abstract class fActiveRecord
 		// proper data type for the column, so we just make sure it is marked
 		// up properly for display in HTML
 		return fHTML::prepare($value);
+	}
+
+
+	/**
+	 * Protect certain columns from mass injection on populate()
+	 *
+	 * @param  array  $params  An array of parameter / column names to protect
+	 * @return fActiveRecord   This record, to allow for method chaining
+	 */
+	public function protect(Array $params = array())
+	{
+		$this->protected_params = $params;
+
+		return $this;
 	}
 
 
