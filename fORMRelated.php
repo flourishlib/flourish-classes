@@ -902,23 +902,23 @@ class fORMRelated
 	{
 		fActiveRecord::validateClass($related_class);
 		fActiveRecord::forceConfigure($related_class);
-		
+
 		$table           = fORM::tablize($class);
 		$related_table   = fORM::tablize($related_class);
 		$schema          = fORMSchema::retrieve($class);
 		$pk_columns      = $schema->getKeys($related_table, 'primary');
-		
+
 		$first_pk_column = self::determineFirstPKColumn($class, $related_class, $route);
-		
+
 		$filter          = self::determineRequestFilter($class, $related_class, $route);
 		$pk_field        = $filter . $first_pk_column;
-		
+
 		$input_keys = array_keys(fRequest::get($pk_field, 'array', array()));
 		$records    = array();
-		
+
 		foreach ($input_keys as $input_key) {
 			fRequest::filter($filter, $input_key);
-			
+
 			// Try to load the value from the database first
 			try {
 				if (sizeof($pk_columns) == 1) {
@@ -929,19 +929,19 @@ class fORMRelated
 						$primary_key_values[$pk_column] = fRequest::get($pk_column);
 					}
 				}
-				
+
 				$record = new $related_class($primary_key_values);
-				
+
 			} catch (fNotFoundException $e) {
 				$record = new $related_class();
 			}
-			
+
 			$record->populate($recursive);
 			$records[] = $record;
-			
+
 			fRequest::unfilter();
 		}
-		
+
 		$record_set = fRecordSet::buildFromArray($related_class, $records);
 		self::setRecordSet($class, $related_records, $related_class, $record_set, $route);
 		self::flagForAssociation($class, $related_records, $related_class, $route);
@@ -1639,7 +1639,7 @@ class fORMRelated
 			}
 
 			$object_to_delete->delete($force_cascade);
-			
+
 		}
 
 		$set_method_name = 'set' . fGrammar::camelize($relationship['related_column'], TRUE);

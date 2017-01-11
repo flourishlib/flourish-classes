@@ -179,11 +179,11 @@ abstract class fActiveRecord
 
 	/**
 	 * Handles dynamically registered static method callbacks
-	 * 
+	 *
 	 * Static method callbacks registered through fORM::registerActiveRecordStaticMethod()
 	 * will be delegated via this method. Both this and fORM::registerActiveRecordStaticMethod
 	 * are available to PHP 5.3+ only.
-	 * 
+	 *
 	 * @throws fProgrammerException  When the method cannot be found
 	 * @param  string $method_name  The name of the method called
 	 * @param  array  $parameters   The parameters passed
@@ -198,7 +198,7 @@ abstract class fActiveRecord
 		if (!isset(self::$static_callback_cache[$class][$method_name])) {
 			if (!isset(self::$static_callback_cache[$class])) {
 				self::$static_callback_cache[$class] = array();
-			} 
+			}
 			$callback = fORM::getActiveRecordStaticMethod($class, $method_name);
 			self::$static_callback_cache[$class][$method_name] = $callback ? $callback : FALSE;
 		}
@@ -1069,9 +1069,9 @@ abstract class fActiveRecord
 					$recursive = $route;
 					$route = isset($parameters[1]) ? $parameters[1] : NULL;
 				}
-				
+
 				list ($subject, $route, ) = self::determineSubject($class, $subject, $route);
-				
+
 				fORMRelated::populateRecords($class, $this->related_records, $subject, $route, $recursive);
 				return $this;
 
@@ -2100,18 +2100,18 @@ abstract class fActiveRecord
 
 	/*
 	 * Sets the values for this record by getting values from the request through the fRequest class
-	 * 
+	 *
 	 * @param  boolean $recursive  If all one-to-many tables and one-to-one relationships should be populated
 	 * @return fActiveRecord  The record object, to allow for method chaining
 	 */
 	public function populate($recursive=FALSE)
 	{
 		$class = get_class($this);
-		
+
 		if (fORM::getActiveRecordMethod($class, 'populate')) {
 			return $this->__call('populate', array());
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'pre::populate()',
@@ -2120,10 +2120,10 @@ abstract class fActiveRecord
 			$this->related_records,
 			$this->cache
 		);
-		
+
 		$schema = fORMSchema::retrieve($class);
 		$table  = fORM::tablize($class);
-		
+
 		$column_info = $schema->getColumnInfo($table);
 		foreach ($column_info as $column => $info) {
 			if (fRequest::check($column)) {
@@ -2132,7 +2132,7 @@ abstract class fActiveRecord
 				$this->$method(fRequest::get($column, $cast_to));
 			}
 		}
-		
+
 		fORM::callHookCallbacks(
 			$this,
 			'post::populate()',
@@ -2142,9 +2142,9 @@ abstract class fActiveRecord
 			$this->cache
 		);
 
-		if ($recursive) { 
+		if ($recursive) {
 			$one_to_many_relationships = $schema->getRelationships($table, 'one-to-many');
-			foreach ($one_to_many_relationships as $relationship) { 
+			foreach ($one_to_many_relationships as $relationship) {
 				$route_name = fORMSchema::getRouteNameFromRelationship('one-to-many', $relationship);
 				$related_class = fORM::classize($relationship['related_table']);
 				$method = 'populate' . fGrammar::pluralize($related_class);
@@ -2152,13 +2152,13 @@ abstract class fActiveRecord
 			}
 
 			$one_to_one_relationships = $schema->getRelationships($table, 'one-to-one');
-			foreach ($one_to_one_relationships as $relationship) { 
+			foreach ($one_to_one_relationships as $relationship) {
 				$route_name = fORMSchema::getRouteNameFromRelationship('one-to-one', $relationship);
 				$related_class = fORM::classize($relationship['related_table']);
 				$this->__call('populate' . $related_class, array(TRUE, $route_name));
 			}
 		}
-		
+
 		return $this;
 	}
 

@@ -78,8 +78,8 @@ class fORM
 	const reset                            = 'fORM::reset';
 	const scalarize                        = 'fORM::scalarize';
 	const tablize                          = 'form::tablize';
-	
-	
+
+
 	/**
 	 * An array of `{method} => {callback}` mappings for fActiveRecord
 	 *
@@ -89,7 +89,7 @@ class fORM
 
 	/**
 	 * An array of `{static_method} => {callback}` mappings for fActiveRecord
-	 * 
+	 *
 	 * @var array
 	 */
 	static private $active_record_static_method_callbacks = array();
@@ -893,7 +893,7 @@ class fORM
 
 		self::$cache['getActiveRecordMethod'] = array();
 	}
-	
+
 
 	/**
 	 * Registers a callback for an fActiveRecord method that falls through to fActiveRecord::__callStatic() or hits a predefined method hook
@@ -925,7 +925,7 @@ class fORM
 		$class = self::getClass($class);
 
 		if (!isset(self::$active_record_static_method_callbacks[$class])) {
-			self::$active_record_static_method_callbacks[$class] = array(); 
+			self::$active_record_static_method_callbacks[$class] = array();
 		}
 
 		if (is_string($callback) && strpos($callback, '::') !== FALSE) {

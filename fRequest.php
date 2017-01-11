@@ -331,7 +331,7 @@ class fRequest
 				if ($matches_prefix && is_array($value) && !is_null($key) && isset($value[$key])) {
 					$new_field = preg_replace($regex, '', $field);
 					$refs['array'][$new_field] = $value[$key];
-				} else if ($matches_prefix && is_null($key)) {
+				} elseif ($matches_prefix && is_null($key)) {
 					$new_field = preg_replace($regex, '', $field);
 					$refs['array'][$new_field] = $value;
 				}
@@ -780,7 +780,7 @@ class fRequest
 				$q = number_format(1.0, 5);
 			}
 			$q .= $suffix--;
-			
+
 			$output[trim($parts[0])] = $q;
 		}
 
