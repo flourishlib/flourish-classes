@@ -2,14 +2,15 @@
 /**
  * Provides special column functionality for fActiveRecord classes
  *
- * @copyright  Copyright (c) 2008-2011 Will Bond
+ * @copyright  Copyright (c) 2008-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fORMColumn
  *
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Add ::configurePasswordColumn() [wb, 2016-10-14]
  * @changes    1.0.0b15  Fixed a bug with empty string email values passing through required validation [wb, 2011-07-29]
  * @changes    1.0.0b14  Updated code to work with the new fORM API [wb, 2010-08-06]
  * @changes    1.0.0b13  Fixed ::reflect() to include some missing parameters [wb, 2010-06-08]
@@ -29,22 +30,26 @@
 class fORMColumn
 {
 	// The following constants allow for nice looking callbacks to static methods
-	const configureEmailColumn  = 'fORMColumn::configureEmailColumn';
-	const configureLinkColumn   = 'fORMColumn::configureLinkColumn';
-	const configureNumberColumn = 'fORMColumn::configureNumberColumn';
-	const configureRandomColumn = 'fORMColumn::configureRandomColumn';
-	const encodeNumberColumn    = 'fORMColumn::encodeNumberColumn';
-	const inspect               = 'fORMColumn::inspect';
-	const generate              = 'fORMColumn::generate';
-	const objectifyNumber       = 'fORMColumn::objectifyNumber';
-	const prepareLinkColumn     = 'fORMColumn::prepareLinkColumn';
-	const prepareNumberColumn   = 'fORMColumn::prepareNumberColumn';
-	const reflect               = 'fORMColumn::reflect';
-	const reset                 = 'fORMColumn::reset';
-	const setEmailColumn        = 'fORMColumn::setEmailColumn';
-	const setRandomStrings      = 'fORMColumn::setRandomStrings';
-	const validateEmailColumns  = 'fORMColumn::validateEmailColumns';
-	const validateLinkColumns   = 'fORMColumn::validateLinkColumns';
+	const configureEmailColumn    = 'fORMColumn::configureEmailColumn';
+	const configureLinkColumn     = 'fORMColumn::configureLinkColumn';
+	const configureNumberColumn   = 'fORMColumn::configureNumberColumn';
+	const configurePasswordColumn = 'fORMColumn::configurePasswordColumn';
+	const configureRandomColumn   = 'fORMColumn::configureRandomColumn';
+	const encodeNumberColumn      = 'fORMColumn::encodeNumberColumn';
+	const inspect                 = 'fORMColumn::inspect';
+	const generate                = 'fORMColumn::generate';
+	const objectifyNumber         = 'fORMColumn::objectifyNumber';
+	const prepareLinkColumn       = 'fORMColumn::prepareLinkColumn';
+	const prepareNumberColumn     = 'fORMColumn::prepareNumberColumn';
+	const reflect                 = 'fORMColumn::reflect';
+	const reset                   = 'fORMColumn::reset';
+	const resetPasswordColumn     = 'fORMColumn::resetPasswordColumn';
+	const setEmailColumn          = 'fORMColumn::setEmailColumn';
+	const setRandomStrings        = 'fORMColumn::setRandomStrings';
+	const validateEmailColumns    = 'fORMColumn::validateEmailColumns';
+	const validateLinkColumns     = 'fORMColumn::validateLinkColumns';
+	const validatePasswordColumns = 'fORMColumn::validatePasswordColumns';
+	const verifyPassword          = 'fORMColumn::verifyPassword';
 
 
 	/**
@@ -67,6 +72,13 @@ class fORMColumn
 	 * @var array
 	 */
 	static private $number_columns = array();
+
+	/**
+	 * Columns that should store passwords
+	 *
+	 * @var array
+	 */
+	static private $password_columns = array();
 
 	/**
 	 * Columns that should be formatted as a random string
@@ -235,6 +247,62 @@ class fORMColumn
 		}
 
 		self::$number_columns[$class][$column] = TRUE;
+	}
+
+	/**
+	 * Sets a column to be a password column
+	 *
+	 * @param  mixed    $class           The class name or instance of the class
+	 * @param  string   $column          The column to set as a password column
+	 * @param  integer  $minimum_length  The minimum password a user can use
+	 */
+	static function configurePasswordColumn($class, $column, $minimum_length)
+	{
+		$class     = fORM::getClass($class);
+		$table     = fORM::tablize($class);
+		$schema    = fORMSchema::retrieve($class);
+		$data_type = $schema->getColumnInfo($table, $column, 'type');
+
+		$valid_data_types = array('varchar', 'char', 'text');
+		if (!in_array($data_type, $valid_data_types)) {
+			throw new fProgrammerException(
+				'The column specified, %1$s, is a %2$s column. Must be one of %3$s to be set as a password column.',
+				$column,
+				$data_type,
+				join(', ', $valid_data_types)
+			);
+		}
+
+		$max_length = $schema->getColumnInfo($table, $column, 'max_length');
+		$required_length = 80;
+		if ($max_length < $required_length)
+		{
+			throw new fProgrammerException(
+				'The column specified, %1$s, has a maximum length of %2$s. Must be at least %3$s to be set as a password column.',
+				$column,
+				$max_length,
+				$required_length
+			);
+		}
+
+		fORM::registerActiveRecordMethod(
+			$class,
+			'verify' . fGrammar::camelize($column, TRUE),
+			self::verifyPassword
+		);
+
+		if (!fORM::checkHookCallback($class, 'pre::validate()', self::resetPasswordColumn)) {
+			fORM::registerHookCallback($class, 'pre::validate()', self::resetPasswordColumn);
+			fORM::registerHookCallback($class, 'post::validate()', self::validatePasswordColumns);
+		}
+
+		fORM::registerInspectCallback($class, $column, self::inspect);
+
+		if (empty(self::$password_columns[$class])) {
+			self::$password_columns[$class] = array();
+		}
+
+		self::$password_columns[$class][$column] = array('min_length' => (int) $minimum_length);
 	}
 
 
@@ -411,6 +479,10 @@ class fORMColumn
 
 		if (!empty(self::$random_columns[$class][$column])) {
 			$metadata['feature'] = 'random';
+		}
+
+		if (!empty(self::$password_columns[$class][$column])) {
+			$metadata['feature'] = 'password';
 		}
 
 		if (!empty(self::$number_columns[$class][$column])) {
@@ -642,6 +714,26 @@ class fORMColumn
 			}
 		}
 
+		if (isset(self::$password_columns[$class])) {
+			foreach(self::$password_columns[$class] as $column => $settings) {
+				$signature = '';
+				if ($include_doc_comments) {
+					$signature .= "/**\n";
+					$signature .= " * Verifies the password specified matches the hash in " . $column . "\n";
+					$signature .= " * \n";
+					$signature .= " * @throws fNotFoundException  When password does not match hashed value\n";
+					$signature .= " * \n";
+					$signature .= " * @param  string \$password  The password to verify against the hashed value\n";
+					$signature .= " * @return void\n";
+					$signature .= " */\n";
+				}
+				$verify_method = 'verify' . fGrammar::camelize($column, TRUE);
+				$signature .= 'public function ' . $verify_method . '()';
+
+				$signatures[$verify_method] = $signature;
+			}
+		}
+
 		if (isset(self::$random_columns[$class])) {
 			foreach(self::$random_columns[$class] as $column => $settings) {
 				$signature = '';
@@ -672,10 +764,45 @@ class fORMColumn
 	 */
 	static public function reset()
 	{
-		self::$email_columns  = array();
-		self::$link_columns   = array();
-		self::$number_columns = array();
-		self::$random_columns = array();
+		self::$email_columns    = array();
+		self::$link_columns     = array();
+		self::$number_columns   = array();
+		self::$password_columns = array();
+		self::$random_columns   = array();
+	}
+
+
+	/**
+	 * Makes sure only to hash a password field if it has a value
+	 *
+	 * @internal
+	 *
+	 * @param  fActiveRecord $self                  The object being stored
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  array         &$cache                The cache for the record
+	 * @param  array         &$validation_messages  An array of ordered validation messages
+	 * @return void
+	 */
+	static function resetPasswordColumn($self, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
+	{
+		$class = fORM::getClass($self);
+
+		if (empty(self::$password_columns[$class])) {
+			return;
+		}
+
+		foreach(self::$password_columns[$class] as $column => $options) {
+			$has_value = !empty($values[$column]) && fUTF8::len($values[$column]) > 0;
+
+			if ($has_value && array_key_exists($column, $old_values)) {
+				$values[$column] = fCryptography::hashPassword($values[$column]);
+			}
+			if (!$has_value) {
+				$values[$column] = $old_values[$column][0];
+			}
+		}
 	}
 
 
@@ -835,6 +962,89 @@ class fORMColumn
 
 
 	/**
+	 * Validates all password columns
+	 *
+	 * @internal
+	 *
+	 * @param  fActiveRecord $object                The fActiveRecord instance
+	 * @param  array         &$values               The current values
+	 * @param  array         &$old_values           The old values
+	 * @param  array         &$related_records      Any records related to this record
+	 * @param  array         &$cache                The cache array for the record
+	 * @param  array         &$validation_messages  An array of ordered validation messages
+	 * @return void
+	 */
+	static public function validatePasswordColumns($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
+	{
+		$class = get_class($object);
+
+		if (empty(self::$password_columns[$class])) {
+			return;
+		}
+
+		foreach (self::$password_columns[$class] as $column => $options) {
+			$column_name = fORM::getColumnName($class, $column);
+			$confirm_column_name = $column_name . ' Confirmation';
+			$request_value = fRequest::get($column);
+			$confirm_value = fRequest::get($column . '_confirmation');
+
+			if (fUTF8::len($request_value) > 0 && fActiveRecord::changed($values, $old_values, $column)) {
+				if (fUTF8::len($request_value) < $options['min_length']) {
+					$validation_messages[$column] = self::compose(
+						'%1$sPlease enter a value at least %2$s characters long',
+						fValidationException::formatField($column_name),
+						$options['min_length']
+					);
+				} elseif (!$confirm_value) {
+					$validation_messages[$column] = self::compose(
+						'%sPlease enter a value',
+						fValidationException::formatField($confirm_column_name)
+					);
+
+				} elseif ($request_value != $confirm_value) {
+					$validation_messages[$column] = self::compose(
+						'%1$sThe value entered does not match %2$s',
+						fValidationException::formatField($column_name),
+						fValidationException::formatField($confirm_column_name)
+					);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Verifies a password against the hash stored in a password column
+	 *
+	 * @internal
+	 *
+	 * @throws fNotFoundException  When the password is not valid
+	 *
+	 * @param  fActiveRecord $object            The fActiveRecord instance
+	 * @param  array         &$values           The current values
+	 * @param  array         &$old_values       The old values
+	 * @param  array         &$related_records  Any records related to this record
+	 * @param  array         &$cache            The cache array for the record
+	 * @param  string        $method_name       The method that was called
+	 * @param  array         $parameters        The parameters passed to the method
+	 * @return void
+	 */
+	static public function verifyPassword($object, &$values, &$old_values, &$related_records, &$cache, $method_name, $parameters)
+	{
+		list ($action, $subject) = fORM::parseMethod($method_name);
+
+		$column = fGrammar::underscorize($subject);
+		$value  = $values[$column];
+
+		if (isset($parameters[0]) && fCryptography::checkPasswordHash($parameters[0], $value)) {
+			return;
+		}
+
+		throw new fNotFoundException(self::compose('The password specified is invalid'));
+	}
+
+
+	/**
 	 * Forces use as a static class
 	 *
 	 * @return fORMColumn
@@ -845,7 +1055,7 @@ class fORMColumn
 
 
 /**
- * Copyright (c) 2008-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
