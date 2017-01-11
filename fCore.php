@@ -2,7 +2,7 @@
 /**
  * Provides low-level debugging, error and exception functionality
  *
- * @copyright  Copyright (c) 2007-2011 Will Bond, others
+ * @copyright  Copyright (c) 2007-2016 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Nick Trew [nt]
@@ -13,7 +13,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  *
- * @version    1.0.0b26
+ * @version    1.0.0b28
+ * @changes    1.0.0b28  On PHP 7, generate useful backtraces for Error exceptions [wb, 2016-10-21]
+ * @changes    1.0.0b27  Use fUTF8::len() instead of strlen(utf8_decode()) [wb, 2016-10-17]
  * @changes    1.0.0b26  Added handle_fatal_errors flag to enableErrorHandling [jt, 2013-06-10]
  * @changes    1.0.0b25  exposing ->generateContext() [kh, 2012-12-18]
  * @changes    1.0.0b24  Backwards Compatibility Break - moved ::detectOpcodeCache() to fLoader::hasOpcodeCache() [wb, 2011-08-26]
@@ -147,6 +149,14 @@ class fCore
 	static private $error_message_queue = array();
 
 	/**
+	 * PHP 7 changed errors to exceptions, many of which don't have a decent
+	 * backtrace. Thus we need to construct our own.
+	 *
+	 * @var boolean
+	 */
+	static private $errors_as_exceptions = NULL;
+
+	/**
 	 * Exception destination
 	 *
 	 * @var string
@@ -252,49 +262,7 @@ class fCore
 			if ($i) {
 				$bt_string .= "\n";
 			}
-			if (isset($call['file'])) {
-				$bt_string .= str_replace($doc_root, '{doc_root}' . DIRECTORY_SEPARATOR, $call['file']) . '(' . $call['line'] . '): ';
-			} else {
-				$bt_string .= '[internal function]: ';
-			}
-			if (isset($call['class'])) {
-				$bt_string .= $call['class'] . $call['type'];
-			}
-			if (isset($call['class']) || isset($call['function'])) {
-				$bt_string .= $call['function'] . '(';
-					$j = 0;
-					if (!isset($call['args'])) {
-						$call['args'] = array();
-					}
-					foreach ($call['args'] as $arg) {
-						if ($j) {
-							$bt_string .= ', ';
-						}
-						if (is_bool($arg)) {
-							$bt_string .= ($arg) ? 'true' : 'false';
-						} elseif (is_null($arg)) {
-							$bt_string .= 'NULL';
-						} elseif (is_array($arg)) {
-							$bt_string .= 'Array';
-						} elseif (is_object($arg)) {
-							$bt_string .= 'Object(' . get_class($arg) . ')';
-						} elseif (is_string($arg)) {
-							// Shorten the UTF-8 string if it is too long
-							if (strlen(utf8_decode($arg)) > 18) {
-								// If we can't match as unicode, try single byte
-								if (!preg_match('#^(.{0,15})#us', $arg, $short_arg)) {
-									preg_match('#^(.{0,15})#s', $arg, $short_arg);
-								}
-								$arg  = $short_arg[0] . '...';
-							}
-							$bt_string .= "'" . $arg . "'";
-						} else {
-							$bt_string .= (string) $arg;
-						}
-						$j++;
-					}
-				$bt_string .= ')';
-			}
+			$bt_string .= self::formatTraceEntry($call, $doc_root);
 			$i++;
 		}
 
@@ -702,7 +670,7 @@ class fCore
 	 * email address, the email will contain both errors and exceptions.
 	 *
 	 * @param  string  $destination          The destination for the errors and context information - an email address, a file path or the string `'html'`
-	 * @param  boolean $handle_fatal_errors  If true, a shutdown function will be registered to handle a fatal error. 
+	 * @param  boolean $handle_fatal_errors  If true, a shutdown function will be registered to handle a fatal error.
 	 *                                       Be aware, other shutdown functions could inadvertantly disable this one or exit the process.
 	 *
 	 * @return void
@@ -774,6 +742,40 @@ class fCore
 
 
 	/**
+	 * Generates a consistent backtrace from PHP 7 Error exceptions
+	 *
+	 * @param  Error   $e         The exception to get the backtrace for
+	 * @return string  The backtrace
+	 */
+	static private function errorTrace($e)
+	{
+		$trace_entries = array_reverse($e->getTrace());
+
+		$final_entry = array();
+		if ($e->getFile()) {
+			$final_entry['file'] = $e->getFile();
+			$final_entry['line'] = $e->getLine();
+		}
+		$trace_entries[] = $final_entry;
+
+		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
+
+		$output = '';
+		$i = 0;
+		foreach ($trace_entries as $entry) {
+			if ($i > 0) {
+				$output .= "\n";
+			}
+			$output .= self::formatTraceEntry($entry, $doc_root);
+			++$i;
+		}
+
+		return $output;
+	}
+
+
+	/**
 	 * Prints the ::dump() of a value
 	 *
 	 * The dump will be printed in a `<pre>` tag with the class `exposed` if
@@ -798,6 +800,64 @@ class fCore
 		} else {
 			echo self::dump($data) . "\n";
 		}
+	}
+
+
+	/**
+	 * Creates a nicely-formatted backtrace line from an associative array of
+	 * info provided by debug_backtrace().
+	 *
+	 * @param array  $entry     The info from debug_backtrace()
+	 * @param string $doc_root  A normalized version of the document root path
+	 * @return string  The formatted backtrace line
+	 */
+	static private function formatTraceEntry($entry, $doc_root)
+	{
+		$output = '';
+		if (isset($entry['file'])) {
+			$output .= str_replace($doc_root, '{doc_root}' . DIRECTORY_SEPARATOR, $entry['file']) . '(' . $entry['line'] . '): ';
+		} else {
+			$output .= '[internal function]: ';
+		}
+		if (isset($entry['class'])) {
+			$output .= $entry['class'] . $entry['type'];
+		}
+		if (isset($entry['class']) || isset($entry['function'])) {
+			$output .= $entry['function'] . '(';
+				$j = 0;
+				if (!isset($entry['args'])) {
+					$entry['args'] = array();
+				}
+				foreach ($entry['args'] as $arg) {
+					if ($j) {
+						$output .= ', ';
+					}
+					if (is_bool($arg)) {
+						$output .= ($arg) ? 'true' : 'false';
+					} elseif (is_null($arg)) {
+						$output .= 'NULL';
+					} elseif (is_array($arg)) {
+						$output .= 'Array';
+					} elseif (is_object($arg)) {
+						$output .= 'Object(' . get_class($arg) . ')';
+					} elseif (is_string($arg)) {
+						// Shorten the UTF-8 string if it is too long
+						if (fUTF8::len($arg) > 18) {
+							// If we can't match as unicode, try single byte
+							if (!preg_match('#^(.{0,15})#us', $arg, $short_arg)) {
+								preg_match('#^(.{0,15})#s', $arg, $short_arg);
+							}
+							$arg  = $short_arg[0] . '...';
+						}
+						$output .= "'" . $arg . "'";
+					} else {
+						$output .= (string) $arg;
+					}
+					$j++;
+				}
+			$output .= ')';
+		}
+		return $output;
 	}
 
 
@@ -968,11 +1028,19 @@ class fCore
 	 */
 	static public function handleException($exception)
 	{
+		if (self::$errors_as_exceptions === NULL) {
+			self::$errors_as_exceptions = self::checkVersion('7.0.0');
+		}
+
 		$message = ($exception->getMessage()) ? $exception->getMessage() : '{no message}';
 		if ($exception instanceof fException) {
 			$trace = $exception->formatTrace();
 		} else {
-			$trace = $exception->getTraceAsString();
+			if (self::$errors_as_exceptions && $exception instanceof Error) {
+				$trace = self::errorTrace($exception);
+			} else {
+				$trace = $exception->getTraceAsString();
+			}
 		}
 		$code = ($exception->getCode()) ? ' (code ' . $exception->getCode() . ')' : '';
 
@@ -1242,7 +1310,7 @@ class fCore
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2016 Will Bond <will@flourishlib.com>, others
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
