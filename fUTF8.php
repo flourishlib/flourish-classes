@@ -6,14 +6,15 @@
  * PHP string function. For more information about UTF-8, please visit
  * http://flourishlib.com/docs/UTF-8.
  *
- * @copyright  Copyright (c) 2008-2012 Will Bond
+ * @copyright  Copyright (c) 2008-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  *
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Use iconv_strlen() if available instead of utf8_decode() [wb, 2016-10-14]
  * @changes    1.0.0b16  Added code to ::clean() to use mbstring if available since recent versions of iconv and `//IGNORE` now return `FALSE` for bad encodings [wb, 2012-09-21]
  * @changes    1.0.0b15  Fixed a bug with using IBM's iconv implementation on AIX [wb, 2011-07-29]
  * @changes    1.0.0b14  Added a workaround for iconv having issues in MAMP 1.9.4+ [wb, 2011-07-26]
@@ -999,6 +1000,10 @@ class fUTF8
 			return mb_strlen($string, 'UTF-8');
 		}
 
+		if (!function_exists('utf8_decode') && function_exists('iconv_strlen')) {
+			return iconv_strlen($string, 'UTF-8');
+		}
+
 		return strlen(utf8_decode($string));
 	}
 
@@ -1247,7 +1252,7 @@ class fUTF8
 			return FALSE;
 		}
 
-		return strlen(utf8_decode(substr($haystack, 0, $position)));
+		return self::len(substr($haystack, 0, $position));
 	}
 
 
@@ -1356,7 +1361,7 @@ class fUTF8
 			return FALSE;
 		}
 
-		return strlen(utf8_decode(substr($haystack, 0, $position)));
+		return self::len(substr($haystack, 0, $position));
 	}
 
 
@@ -1457,7 +1462,7 @@ class fUTF8
 
 
 		// This is the slowest version
-		$str_len = strlen(utf8_decode($string));
+		$str_len = self::len($string);
 
 		if (abs($start) > $str_len) {
 			return FALSE;
@@ -1628,7 +1633,7 @@ class fUTF8
 
 
 /**
- * Copyright (c) 2008-2012 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2008-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
