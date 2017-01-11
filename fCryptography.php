@@ -2,14 +2,15 @@
 /**
  * Provides cryptography functionality, including hashing, symmetric-key encryption and public-key encryption
  *
- * @copyright  Copyright (c) 2007-2011 Will Bond
+ * @copyright  Copyright (c) 2007-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  *
- * @version    1.0.0b14
+ * @version    1.0.0b15
+ * @changes    1.0.0b15  Added support for bcrypt password hashing in PHP 5.5+ [wb, 2016-10-14]
  * @changes    1.0.0b14  Added the `base36`, `base56` and custom types to ::randomString() [wb, 2011-08-25]
  * @changes    1.0.0b13  Updated documentation about symmetric-key encryption to explicitly state block and key sizes, added base64 type to ::randomString() [wb, 2010-11-06]
  * @changes    1.0.0b12  Fixed an inline comment that incorrectly references AES-256 [wb, 2010-11-04]
@@ -42,6 +43,14 @@ class fCryptography
 
 
 	/**
+	 * If bcrypt is available for password hashing
+	 *
+	 * @var boolean
+	 */
+	static private $has_bcrypt = NULL;
+
+
+	/**
 	 * Checks a password against a hash created with ::hashPassword()
 	 *
 	 * @param  string $password  The password to check
@@ -50,10 +59,22 @@ class fCryptography
 	 */
 	static public function checkPasswordHash($password, $hash)
 	{
-		$salt = substr($hash, 29, 10);
+		if (self::$has_bcrypt === NULL) {
+			self::$has_bcrypt = function_exists('password_hash');
+		}
 
-		if (self::hashWithSalt($password, $salt) == $hash) {
-			return TRUE;
+		if (substr($hash, 0, 20) == 'fCryptography::pwd3#') {
+			if (self::$has_bcrypt) {
+				return password_verify($password, substr($hash, 20));
+			}
+
+		} elseif (substr($hash, 0, 29) == 'fCryptography::passwd_hashv2#') {
+			$salt = substr($hash, 29, 10);
+			return self::hashWithSaltV2($password, $salt) === $hash;
+
+		} elseif (substr($hash, 0, 29) == 'fCryptography::password_hash#') {
+			$salt = substr($hash, 29, 10);
+			return self::hashWithSalt($password, $salt) === $hash;
 		}
 
 		return FALSE;
@@ -170,9 +191,16 @@ class fCryptography
 	 */
 	static public function hashPassword($password)
 	{
-		$salt = self::randomString(10);
+		if (self::$has_bcrypt === NULL) {
+			self::$has_bcrypt = function_exists('password_hash');
+		}
 
-		return self::hashWithSalt($password, $salt);
+		if (self::$has_bcrypt) {
+			return self::hashWithBcrypt($password);
+		}
+
+		$salt = self::randomString(10);
+		return self::hashWithSaltV2($password, $salt);
 	}
 
 
@@ -191,6 +219,38 @@ class fCryptography
 		}
 
 		return 'fCryptography::password_hash#' . $salt . '#' . $sha1;
+	}
+
+
+	/**
+	 * Performs a larger iteration of hashing a string with a salt. This is
+	 * to allow for support of older platforms, but to better protect against
+	 * the speed increases of modern password cracking rigs
+	 *
+	 * @param  string $source  The string to hash
+	 * @param  string $salt    The salt for the hash
+	 * @return string  An 80 character string of the Flourish fingerprint, salt and hashed password
+	 */
+	static private function hashWithSaltV2($source, $salt)
+	{
+		$sha1 = sha1($salt . $source);
+		for ($i = 0; $i < 100000; $i++) {
+			$sha1 = sha1($sha1 . (($i % 2 == 0) ? $source : $salt));
+		}
+
+		return 'fCryptography::passwd_hashv2#' . $salt . '#' . $sha1;
+	}
+
+
+	/**
+	 * Hashes a password using bcrypt
+	 *
+	 * @param  string $source  The string to hash
+	 * @return string  An 80 character string of the Flourish fingerprint and crypt()-style hash
+	 */
+	static private function hashWithBcrypt($source)
+	{
+		return 'fCryptography::pwd3#' . password_hash($source, PASSWORD_BCRYPT);
 	}
 
 
@@ -638,7 +698,7 @@ class fCryptography
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
