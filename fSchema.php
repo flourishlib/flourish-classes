@@ -2,14 +2,15 @@
 /**
  * Gets schema information for the selected database
  *
- * @copyright  Copyright (c) 2007-2012 Will Bond
+ * @copyright  Copyright (c) 2007-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fSchema
  *
- * @version    1.0.0b51
+ * @version    1.0.0b52
+ * @changes    1.0.0b52  Use fUTF8::len() instead of strlen(utf8_decode()) [wb, 2016-10-17]
  * @changes    1.0.0b51  Fixed handling of getting tables in table creation order when a table references itself, fixed default value detection for the last column in a MySQL table [wb, 2012-01-12]
  * @changes    1.0.0b50  Fixed detection of explicitly named SQLite foreign key constraints [wb, 2011-08-23]
  * @changes    1.0.0b49  Added support for spatial/geometric data types in MySQL and PostgreSQL [wb, 2011-05-26]
@@ -1153,8 +1154,8 @@ class fSchema
 				$info['valid_values'] = preg_replace("/^'|'\$/D", '', explode(",", $match[3]));
 				$match[3] = 0;
 				foreach ($info['valid_values'] as $valid_value) {
-					if (strlen(utf8_decode($valid_value)) > $match[3]) {
-						$match[3] = strlen(utf8_decode($valid_value));
+					if (fUTF8::len($valid_value) > $match[3]) {
+						$match[3] = fUTF8::len($valid_value);
 					}
 				}
 			}
@@ -3135,7 +3136,7 @@ class fSchema
 
 
 /**
- * Copyright (c) 2007-2012 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
