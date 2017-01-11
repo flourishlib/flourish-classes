@@ -2,14 +2,15 @@
 /**
  * Prints pagination links for fRecordSet or other paginated records
  *
- * @copyright  Copyright (c) 2010-2012 Will Bond
+ * @copyright  Copyright (c) 2010-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fPagination
  *
- * @version 1.0.0b2
+ * @version 1.0.0b3
+ * @changes 1.0.0b3   Allow setting the template via the __template__ data value [wb, 2016-10-29]
  * @changes 1.0.0b2   Improved the determination of what pages to show with `with_first_last` templates [wb, 2012-09-16]
  * @changes 1.0.0b    Added the `prev_disabled` and `next_disabled` pieces [wb, 2011-09-06]
  */
@@ -645,7 +646,7 @@ class fPagination
 			);
 		}
 
-		$this->data = array();
+		$this->data = array('__template__' => 'default');
 	}
 
 
@@ -655,8 +656,11 @@ class fPagination
 	 * @param  string $template  The template to use
 	 * @return void
 	 */
-	public function printInfo($template='default')
+	public function printInfo($template=NULL)
 	{
+		if ($template === NULL) {
+			$template = $this->data['__template__'];
+		}
 		self::printTemplatedInfo($template, $this->data, $this->page, $this->per_page, $this->total_records);
 	}
 
@@ -685,15 +689,18 @@ class fPagination
 	 * @param  string $template  The template to use
 	 * @return boolean  If link were printed
 	 */
-	public function showLinks($template='default')
+	public function showLinks($template=NULL)
 	{
+		if ($template === NULL) {
+			$template = $this->data['__template__'];
+		}
 		return self::showTemplatedLinks($template, $this->data, $this->page, $this->per_page, $this->total_records);
 	}
 }
 
 
 /**
- * Copyright (c) 2010-2012 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2010-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
