@@ -7,7 +7,7 @@
  * method calls for getting, setting and other operations on columns. It also
  * dynamically handles retrieving and storing related records.
  *
- * @copyright  Copyright (c) 2007-2011 Will Bond, others
+ * @copyright  Copyright (c) 2007-2016 Will Bond, others
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Will Bond, iMarc LLC [wb-imarc] <will@imarc.net>
  * @author     Jeff Turcotte [jt] <jeff.turcotte@gmail.com>
@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  *
- * @version    1.0.0b83
+ * @version    1.0.0b84
+ * @changes    1.0.0b84  Fixed a typo in an fProgrammerException [wb, 2016-10-15]
  * @changes    1.0.0b83  Added the `$recursive` parameter to ::populate() [wb, 2011-09-16]
  * @changes    1.0.0b82  Added support for registering methods for __callStatic() [jt, 2011-07-25]
  * @changes    1.0.0b81  Fixed a bug with updating a record that contains only an auto-incrementing primary key [wb, 2011-09-06]
@@ -680,7 +681,7 @@ abstract class fActiveRecord
 		}
 		if (($one_to_one && $plural) || (!$plural && !$one_to_one)) {
 			throw new fProgrammerException(
-				'The table %1$s is not in a %2$srelationship with the table %3$s',
+				'The table %1$s is not in a %2$s relationship with the table %3$s',
 				$table,
 				$type,
 				$related_table
@@ -3042,7 +3043,7 @@ abstract class fActiveRecord
 
 
 /**
- * Copyright (c) 2007-2011 Will Bond <will@flourishlib.com>, others
+ * Copyright (c) 2007-2016 Will Bond <will@flourishlib.com>, others
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
