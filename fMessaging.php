@@ -2,7 +2,7 @@
 /**
  * Provides session-based messaging for page-to-page communication
  *
- * @copyright  Copyright (c) 2007-2010 Will Bond
+ * @copyright  Copyright (c) 2007-2016 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @author     Jeff Turcotte [jt] <jeff@imarc.net>
  * @license    http://flourishlib.com/license
@@ -10,7 +10,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fMessaging
  *
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Messages print in a p tag inside of a div if plain content [wb, 2016-10-29]
  * @changes    1.0.0b8  [BREAK] Now messages always print as divs. Also added class option [jt, 2013-04-09]
  * @changes    1.0.0b7  Fixed a small PHPDoc error [wb, 2010-03-15]
  * @changes    1.0.0b6  Updated class to use new fSession API [wb, 2009-10-23]
@@ -184,20 +185,23 @@ class fMessaging
 				$class = trim(self::$class . ' ' . $name);
 				$class = ($css_class === NULL) ? $class : $css_class;
 
-				$shown = fHTML::show(
-					self::retrieve($name, $recipient),
-					$class,
-					TRUE
-				) || $shown;
+				$content = self::retrieve($name, $recipient);
+				if ($content !== NULL && $content !== '' && !fHTML::containsBlockLevelHTML($content)) {
+					$content = '<p>' . $content . '</p>';
+				}
+				$shown = fHTML::show($content, $class, TRUE) || $shown;
 			}
 			return $shown;
 		}
 
+		// Handle a single message
 		$class = self::$class . ' ' . $name;
 		$class = ($css_class === NULL) ? $class : $css_class;
-
-		// Handle a single message
-		return fHTML::show(self::retrieve($name, $recipient), $class, TRUE);
+		$content = self::retrieve($name, $recipient);
+		if ($content !== NULL && $content !== '' &&!fHTML::containsBlockLevelHTML($content)) {
+			$content = '<p>' . $content . '</p>';
+		}
+		return fHTML::show($content, $class, TRUE);
 	}
 
 
@@ -212,7 +216,7 @@ class fMessaging
 
 
 /**
- * Copyright (c) 2007-2010 Will Bond <will@flourishlib.com>
+ * Copyright (c) 2007-2016 Will Bond <will@flourishlib.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
