@@ -1283,7 +1283,7 @@ class fDatabase
 		if (!strlen($value)) {
 			return 'NULL';
 		}
-		if (!preg_match('#^[+\-]?([0-9]+(\.([0-9]+)?)?|(\.[0-9]+))$#D', $value)) {
+		if (!preg_match('#^[+\-]?([0-9]+(\.([0-9]+)?)?([Ee][+\-]?[0-9]+)?|(\.[0-9]+))$#D', $value)) {
 			return 'NULL';
 		}
 
