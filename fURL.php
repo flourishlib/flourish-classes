@@ -6,14 +6,15 @@
  * the original URL entered by the user will be used, or that any rewrites
  * will **not** be reflected by this class.
  *
- * @copyright  Copyright (c) 2007-2016 Will Bond
+ * @copyright  Copyright (c) 2007-2022 Will Bond
  * @author     Will Bond [wb] <will@flourishlib.com>
  * @license    http://flourishlib.com/license
  *
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  *
- * @version    1.0.0b11
+ * @version    1.0.0b12
+ * @changes    1.0.0b12  ::getDomain() will handle https:// proxies to http:// when the proxied server runs on port 80 [wb, 2022-02-16]
  * @changes    1.0.0b11  ::getDomain() will look for X_FORWARDED_PROTO header to handle servers with a TLS terminator in front [wb, 2016-11-01]
  * @changes    1.0.0b10  Fixed some method signatures [wb, 2011-08-24]
  * @changes    1.0.0b9   Fixed ::redirect() to handle no parameters properly [wb, 2011-06-13]
@@ -67,6 +68,9 @@ class fURL
 		} else {
 			$secure = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] == 'on' || $_SERVER['HTTPS'] == '1');
 			$port = (isset($_SERVER['SERVER_PORT'])) ? $_SERVER['SERVER_PORT'] : NULL;
+			if ($secure && $port == 80 && isset($_SERVER['REQUEST_SCHEME']) && $_SERVER['REQUEST_SCHEME'] == 'http') {
+				$port = 443;
+			}
 		}
 		if ($secure) {
 			return 'https://' . $_SERVER['SERVER_NAME'] . ($port && $port != 443 ? ':' . $port : '');
