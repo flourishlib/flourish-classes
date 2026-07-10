@@ -9,8 +9,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fSMTP
  *
- * @version    1.0.0b11
+ * @version    1.0.0b12
  * @changes    1.0.0b11  Enhanced the error checking for ::write() [wb, 2011-06-03]
+ * @changes    1.0.0b12  Added ::hackLineEnding() to support SMTP servers that require `\n` line endings instead of `\r\n` [wb, 2019-06-29]
  * @changes    1.0.0b10  Added code to work around PHP bug #42682 (http://bugs.php.net/bug.php?id=42682) where `stream_select()` doesn't work on 64bit machines from PHP 5.2.0 to 5.2.5, improved timeouts while reading data [wb, 2011-01-10]
  * @changes    1.0.0b9   Fixed a bug where lines starting with `.` and containing other content would have the `.` stripped [wb, 2010-09-11]
  * @changes    1.0.0b8   Updated the class to use fEmail::getFQDN() [wb, 2010-09-07]
@@ -51,6 +52,13 @@ class fSMTP
 	 * @var string
 	 */
 	private $host;
+
+	/**
+	 * The line ending to use
+	 *
+	 * @var integer
+	 */
+	private $line_ending = "\r\n";
 
 	/**
 	 * The maximum size message the SMTP server supports
@@ -235,7 +243,7 @@ class fSMTP
 		if (!$this->find($response, '#^220[ -]#')) {
 			throw new fConnectivityException(
 				'Unknown SMTP welcome message, %1$s, from server %2$s on port %3$s',
-				join("\r\n", $response),
+				join($this->line_ending, $response),
 				$this->host,
 				$this->port
 			);
@@ -392,6 +400,18 @@ class fSMTP
 
 
 	/**
+	 * Changes the line endings to `\n` from `\r\n` for crappy SMTP servers
+	 * such as Sendgrid.
+	 *
+	 * @return void
+	 */
+	public function hackLineEnding()
+	{
+		$this->line_ending = "\n";
+	}
+
+
+	/**
 	 * Searches the response array for SMTP error codes
 	 *
 	 * @param array $response  The response array to search through
@@ -454,7 +474,7 @@ class fSMTP
 			}
 		}
 		if (fCore::getDebug($this->debug)) {
-			fCore::debug("Received:\n" . join("\r\n", $response), $this->debug);
+			fCore::debug("Received:\n" . join($this->line_ending, $response), $this->debug);
 		}
 		$this->handleErrors($response);
 		return $response;
@@ -540,6 +560,11 @@ class fSMTP
 		$headers = "Date: " . date('D, j M Y H:i:s O') . "\r\n" . $headers;
 
 		$data = $headers . "\r\n\r\n" . $body;
+
+		if ($this->line_ending == "\n") {
+			$data = str_replace("\r\n", "\n", $data);
+		}
+
 		if ($this->max_size && strlen($data) > $this->max_size) {
 			throw new fValidationException(
 				'The email provided is %1$s, which is larger than the maximum size of %2$s that the server supports',
@@ -554,12 +579,12 @@ class fSMTP
 			$expect = 2;
 			$rcpt_to = '';
 			foreach ($to as $email) {
-				$rcpt_to .= "RCPT TO:<" . $email . ">\r\n";
+				$rcpt_to .= "RCPT TO:<" . $email . ">" . $this->line_ending;
 				$expect++;
 			}
 			$rcpt_to = trim($rcpt_to);
 
-			$this->write($mail_from . "\r\n" . $rcpt_to . "\r\nDATA\r\n", $expect);
+			$this->write($mail_from . $this->line_ending . $rcpt_to . $this->line_ending . "DATA" . $this->line_ending, $expect);
 
 		} else {
 			$this->write($mail_from, 1);
@@ -569,7 +594,7 @@ class fSMTP
 			$this->write('DATA', 1);
 		}
 
-		$this->write($data . "\r\n.\r\n", 1);
+		$this->write($data . $this->line_ending . "." . $this->line_ending, 1);
 		$this->write('RSET', 1);
 	}
 
@@ -587,8 +612,9 @@ class fSMTP
 			throw new fProgrammerException('Unable to send data since the connection has already been closed');
 		}
 
-		if (substr($data, -2) != "\r\n") {
-			$data .= "\r\n";
+		$look_length = 0 - strlen($this->line_ending);
+		if (substr($data, $look_length) != $this->line_ending) {
+			$data .= $this->line_ending;
 		}
 		if (fCore::getDebug($this->debug)) {
 			fCore::debug("Sending:\n" . trim($data), $this->debug);
