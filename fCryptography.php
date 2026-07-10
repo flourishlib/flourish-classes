@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCryptography
  *
- * @version    1.0.0b15
+ * @version    1.0.0b16
+ * @changes    1.0.0b16  Guarded `openssl_free_key()` calls with `is_resource()` for PHP 8.0+ compatibility where OpenSSL keys are objects [wb, 2026-07-10]
  * @changes    1.0.0b15  Added support for bcrypt password hashing in PHP 5.5+ [wb, 2016-10-14]
  * @changes    1.0.0b14  Added the `base36`, `base56` and custom types to ::randomString() [wb, 2011-08-25]
  * @changes    1.0.0b13  Updated documentation about symmetric-key encryption to explicitly state block and key sizes, added base64 type to ::randomString() [wb, 2010-11-06]
@@ -289,7 +290,9 @@ class fCryptography
 
 		$plaintext = '';
 		$result = openssl_open($ciphertext, $plaintext, $encrypted_key, $private_key_resource);
-		openssl_free_key($private_key_resource);
+		if (is_resource($private_key_resource)) {
+			openssl_free_key($private_key_resource);
+		}
 
 		if ($result === FALSE) {
 			throw new fEnvironmentException(
@@ -329,7 +332,9 @@ class fCryptography
 		$ciphertext     = '';
 		$encrypted_keys = array();
 		$result = openssl_seal($plaintext, $ciphertext, $encrypted_keys, array($public_key_resource));
-		openssl_free_key($public_key_resource);
+		if (is_resource($public_key_resource)) {
+			openssl_free_key($public_key_resource);
+		}
 
 		if ($result === FALSE) {
 			throw new fEnvironmentException(
@@ -363,7 +368,9 @@ class fCryptography
 		$private_key_resource = self::createPrivateKeyResource($private_key_file, $password);
 
 		$result = openssl_sign($plaintext, $signature, $private_key_resource);
-		openssl_free_key($private_key_resource);
+		if (is_resource($private_key_resource)) {
+			openssl_free_key($private_key_resource);
+		}
 
 		if (!$result) {
 			throw new fEnvironmentException(
@@ -393,7 +400,9 @@ class fCryptography
 		$public_key_resource = self::createPublicKeyResource($public_key_file);
 
 		$result = openssl_verify($plaintext, base64_decode($signature), $public_key_resource);
-		openssl_free_key($public_key_resource);
+		if (is_resource($public_key_resource)) {
+			openssl_free_key($public_key_resource);
+		}
 
 		if ($result === -1) {
 			throw new fEnvironmentException(

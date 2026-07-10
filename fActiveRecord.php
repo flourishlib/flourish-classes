@@ -16,7 +16,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fActiveRecord
  *
- * @version    1.0.0b84
+ * @version    1.0.0b85
+ * @changes    1.0.0b85  Updated ::reflect() to use ReflectionParameter::getType() on PHP 8.0+ since ::getClass() and ::isArray() were removed in PHP 8.1 [wb, 2026-07-10]
  * @changes    1.0.0b84  Fixed a typo in an fProgrammerException [wb, 2016-10-15]
  * @changes    1.0.0b83  Added the `$recursive` parameter to ::populate() [wb, 2011-09-16]
  * @changes    1.0.0b82  Added support for registering methods for __callStatic() [jt, 2011-07-25]
@@ -2495,11 +2496,23 @@ abstract class fActiveRecord
 					$signature .= ', ';
 				}
 
-				if ($parameter->isArray()) {
-					$signature .= 'array ';
-				}
-				if ($parameter->getClass()) {
-					$signature .= $parameter->getClass()->getName() . ' ';
+				if (fCore::checkVersion('8.0.0')) {
+					$type = $parameter->getType();
+					if ($type !== NULL) {
+						$type_name = ($type instanceof ReflectionNamedType) ? $type->getName() : (string) $type;
+						if ($type_name === 'array') {
+							$signature .= 'array ';
+						} else {
+							$signature .= $type_name . ' ';
+						}
+					}
+				} else {
+					if ($parameter->isArray()) {
+						$signature .= 'array ';
+					}
+					if ($parameter->getClass()) {
+						$signature .= $parameter->getClass()->getName() . ' ';
+					}
 				}
 				if ($parameter->isPassedByReference()) {
 					$signature .= '&';

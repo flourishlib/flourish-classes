@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fUTF8
  *
- * @version    1.0.0b17
+ * @version    1.0.0b18
+ * @changes    1.0.0b18  Updated ::len() to prefer `iconv_strlen()` over `utf8_decode()` and added a regex fallback for PHP 8.2+ where `utf8_decode()` was removed [wb, 2026-07-10]
  * @changes    1.0.0b17  Use iconv_strlen() if available instead of utf8_decode() [wb, 2016-10-14]
  * @changes    1.0.0b16  Added code to ::clean() to use mbstring if available since recent versions of iconv and `//IGNORE` now return `FALSE` for bad encodings [wb, 2012-09-21]
  * @changes    1.0.0b15  Fixed a bug with using IBM's iconv implementation on AIX [wb, 2011-07-29]
@@ -1000,11 +1001,16 @@ class fUTF8
 			return mb_strlen($string, 'UTF-8');
 		}
 
-		if (!function_exists('utf8_decode') && function_exists('iconv_strlen')) {
+		if (function_exists('iconv_strlen')) {
 			return iconv_strlen($string, 'UTF-8');
 		}
 
-		return strlen(utf8_decode($string));
+		if (function_exists('utf8_decode')) {
+			return strlen(utf8_decode($string));
+		}
+
+		// Last-resort fallback for environments without mbstring, iconv or utf8_decode
+		return preg_match_all('#[\x00-\x7F]|[\xC0-\xFF][\x80-\xBF]+#', $string);
 	}
 
 

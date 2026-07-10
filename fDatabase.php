@@ -48,7 +48,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fDatabase
  *
- * @version    1.0.0b41
+ * @version    1.0.0b42
+ * @changes    1.0.0b42  Updated `is_resource()` checks for ibm_db2 and sqlsrv to also accept objects for PHP 8.1+ compatibility [wb, 2026-07-10]
  * @changes    1.0.0b41  Fixed an array to string conversion notice [wb, 2012-09-21]
  * @changes    1.0.0b40  Fixed a bug with notices being triggered when failing to connect to a SQLite database [wb, 2011-06-20]
  * @changes    1.0.0b39  Fixed a bug with detecting some MySQL database version numbers [wb, 2011-05-24]
@@ -400,7 +401,7 @@ class fDatabase
 		if ($result === FALSE || $result->getResult() === FALSE) {
 
 			if ($this->extension == 'ibm_db2') {
-				if (is_resource($extra_info)) {
+				if (is_resource($extra_info) || is_object($extra_info)) {
 					$message = db2_stmt_errormsg($extra_info);
 				} else {
 					$message = db2_stmt_errormsg();
@@ -2460,7 +2461,7 @@ class fDatabase
 
 		} elseif ($this->extension == 'ibm_db2') {
 			$extra = db2_exec($this->connection, $statement, array('cursor' => DB2_FORWARD_ONLY));
-			if (is_resource($extra)) {
+			if (is_resource($extra) || is_object($extra)) {
 				$rows = array();
 				while ($row = db2_fetch_assoc($extra)) {
 					$rows[] = $row;
@@ -2498,7 +2499,7 @@ class fDatabase
 
 		} elseif ($this->extension == 'sqlsrv') {
 			$extra = sqlsrv_query($this->connection, $result->getSQL());
-			if (is_resource($extra)) {
+			if (is_resource($extra) || is_object($extra)) {
 				$rows = array();
 				while ($row = sqlsrv_fetch_array($extra, SQLSRV_FETCH_ASSOC)) {
 					$rows[] = $row;

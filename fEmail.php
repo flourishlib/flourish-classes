@@ -18,7 +18,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fEmail
  *
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Guarded `openssl_pkey_free()` call with `is_resource()` for PHP 8.0+ compatibility where OpenSSL keys are objects [wb, 2026-07-10]
  * @changes    1.0.0b30  Changed methods to return instance for method chaining [n, 2011-09-12]
  * @changes    1.0.0b29  Changed ::combineNameEmail() to be a static method and to be exposed publicly for use by other classes [wb, 2011-07-26]
  * @changes    1.0.0b28  Fixed ::addAttachment() and ::addRelatedFile() to properly handle duplicate filenames [wb, 2011-05-17]
@@ -1088,7 +1089,9 @@ class fEmail
 		unlink($ciphertext_file);
 
 		if ($this->smime_sign) {
-			openssl_pkey_free($senders_private_key);
+			if (is_resource($senders_private_key)) {
+				openssl_pkey_free($senders_private_key);
+			}
 		}
 
 		return array($new_headers, $new_body);

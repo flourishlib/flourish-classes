@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fException
  *
- * @version    1.0.0b8
+ * @version    1.0.0b9
+ * @changes    1.0.0b9  Added an `isset()` guard around `$_SERVER['DOCUMENT_ROOT']` access in ::formatTrace() for PHP 8.1 undefined array key compatibility [wb, 2026-07-10]
  * @changes    1.0.0b8  Added a missing line of backtrace to ::formatTrace() [wb, 2009-06-28]
  * @changes    1.0.0b7  Updated ::__construct() to no longer require a message, like the Exception class, and allow for non-integer codes [wb, 2009-06-26]
  * @changes    1.0.0b6  Fixed ::splitMessage() so that the original message is returned if no list items are found, added ::reorderMessage() [wb, 2009-06-02]
@@ -278,7 +279,7 @@ abstract class fException extends Exception
 	 */
 	public function formatTrace()
 	{
-		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root  = realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '');
 		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 
 		$backtrace = explode("\n", $this->getTraceAsString());

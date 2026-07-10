@@ -11,7 +11,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fFilesystem
  *
- * @version    1.0.0b16
+ * @version    1.0.0b17
+ * @changes    1.0.0b17  Added an `isset()` guard around `$_SERVER['DOCUMENT_ROOT']` access in ::translateToWebPath() for PHP 8.1 undefined array key compatibility [wb, 2026-07-10]
  * @changes    1.0.0b16  Added a call to clearstatcache() to ::rollback() to prevent incorrect data from being returned by fFile::getMTime() and fFile::getSize() [wb, 2010-11-27]
  * @changes    1.0.0b15  Fixed ::translateToWebPath() to handle Windows \s [wb, 2010-04-09]
  * @changes    1.0.0b14  Added ::recordAppend() [wb, 2010-03-15]
@@ -689,7 +690,7 @@ class fFilesystem
 	 */
 	static public function translateToWebPath($path)
 	{
-		$translations = array(realpath($_SERVER['DOCUMENT_ROOT']) => '') + self::$web_path_translations;
+		$translations = array(realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '') => '') + self::$web_path_translations;
 
 		foreach ($translations as $search => $replace) {
 			$path = preg_replace(

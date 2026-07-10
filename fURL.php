@@ -13,7 +13,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fURL
  *
- * @version    1.0.0b12
+ * @version    1.0.0b14
+ * @changes    1.0.0b14  Added `isset()` guards around `$_SERVER` access and a `function_exists()` guard around `get_magic_quotes_gpc()` for PHP 8.0+ compatibility, fixed NULL being passed to `strlen()` in ::makeFriendly() [wb, 2026-07-10]
  * @changes    1.0.0b12  ::getDomain() will handle https:// proxies to http:// when the proxied server runs on port 80 [wb, 2022-02-16]
  * @changes    1.0.0b11  ::getDomain() will look for X_FORWARDED_PROTO header to handle servers with a TLS terminator in front [wb, 2016-11-01]
  * @changes    1.0.0b10  Fixed some method signatures [wb, 2011-08-24]
@@ -50,7 +51,7 @@ class fURL
 	 */
 	static public function get()
 	{
-		return preg_replace('#\?.*$#D', '', $_SERVER['REQUEST_URI']);
+		return preg_replace('#\?.*$#D', '', isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
 	}
 
 
@@ -73,9 +74,9 @@ class fURL
 			}
 		}
 		if ($secure) {
-			return 'https://' . $_SERVER['SERVER_NAME'] . ($port && $port != 443 ? ':' . $port : '');
+			return 'https://' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '') . ($port && $port != 443 ? ':' . $port : '');
 		} else {
-			return 'http://' . $_SERVER['SERVER_NAME'] . ($port && $port != 80 ? ':' . $port : '');
+			return 'http://' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : '') . ($port && $port != 80 ? ':' . $port : '');
 		}
 	}
 
@@ -87,7 +88,7 @@ class fURL
 	 */
 	static public function getQueryString()
 	{
-		return preg_replace('#^[^?]*\??#', '', $_SERVER['REQUEST_URI']);
+		return preg_replace('#^[^?]*\??#', '', isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '');
 	}
 
 
@@ -98,7 +99,7 @@ class fURL
 	 */
 	static public function getWithQueryString()
 	{
-		return $_SERVER['REQUEST_URI'];
+		return isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
 	}
 
 
@@ -124,7 +125,7 @@ class fURL
 		$string = strtolower(trim($string));
 		$string = str_replace("'", '', $string);
 
-		if (!strlen($delimiter)) {
+		if ($delimiter === NULL || $delimiter === '') {
 			$delimiter = '_';
 		}
 
@@ -217,7 +218,7 @@ class fURL
 		$parameters = func_get_args();
 
 		parse_str(self::getQueryString(), $qs_array);
-		if (get_magic_quotes_gpc()) {
+		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);
 		}
 
@@ -242,7 +243,7 @@ class fURL
 	static public function replaceInQueryString($parameter, $value)
 	{
 		parse_str(self::getQueryString(), $qs_array);
-		if (get_magic_quotes_gpc()) {
+		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc()) {
 			$qs_array = array_map('stripslashes', $qs_array);
 		}
 

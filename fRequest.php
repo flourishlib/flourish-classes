@@ -19,7 +19,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fRequest
  *
- * @version    1.0.0b22
+ * @version    1.0.0b23
+ * @changes    1.0.0b23  Added a `function_exists()` guard around `get_magic_quotes_gpc()` for PHP 8.0+ compatibility [wb, 2026-07-10]
  * @changes    1.0.0b22  Added non-array support to ::filter() [jt, 2013-09-25]
  * @changes    1.0.0b21  Fixed problem where Accept headers are spaced out and mime-types won't match (mainly from IE) [mjs, 2012-12-10]
  * @changes    1.0.0b20  Added ::isHead(), fixed ability to call ::set() on `HEAD` requests [wb-imarc, 2011-11-23]
@@ -150,7 +151,7 @@ class fRequest
 			$cast_to = 'string';
 		}
 
-		if (get_magic_quotes_gpc() && (self::isPost() || self::isGet())) {
+		if (function_exists('get_magic_quotes_gpc') && get_magic_quotes_gpc() && (self::isPost() || self::isGet())) {
 			$value = self::stripSlashes($value);
 		}
 

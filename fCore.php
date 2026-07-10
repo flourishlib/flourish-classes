@@ -13,7 +13,9 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fCore
  *
- * @version    1.0.0b28
+ * @version    1.0.0b30
+ * @changes    1.0.0b30  Added `isset()` guards around `$_SERVER['DOCUMENT_ROOT']` access for PHP 8.1 undefined array key compatibility [wb, 2026-07-10]
+ * @changes    1.0.0b29  Added a fallback `define()` for `E_STRICT` since it was removed in PHP 8.4 [wb, 2026-07-10]
  * @changes    1.0.0b28  On PHP 7, generate useful backtraces for Error exceptions [wb, 2016-10-21]
  * @changes    1.0.0b27  Use fUTF8::len() instead of strlen(utf8_decode()) [wb, 2016-10-17]
  * @changes    1.0.0b26  Added handle_fatal_errors flag to enableErrorHandling [jt, 2013-06-10]
@@ -242,7 +244,7 @@ class fCore
 
 		settype($remove_lines, 'integer');
 
-		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root  = realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '');
 		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 
 		if ($backtrace === NULL) {
@@ -758,7 +760,7 @@ class fCore
 		}
 		$trace_entries[] = $final_entry;
 
-		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root  = realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '');
 		$doc_root .= (substr($doc_root, -1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : '';
 
 		$output = '';
@@ -942,7 +944,7 @@ class fCore
 			return;
 		}
 
-		$doc_root  = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root  = realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '');
 		$doc_root .= (substr($doc_root, -1) != '/' && substr($doc_root, -1) != '\\') ? '/' : '';
 
 		$backtrace = self::backtrace(1);
@@ -955,6 +957,11 @@ class fCore
 		// This was added in 5.2
 		if (!defined('E_RECOVERABLE_ERROR')) {
 			define('E_RECOVERABLE_ERROR', 4096);
+		}
+
+		// E_STRICT was removed in PHP 8.4
+		if (!defined('E_STRICT')) {
+			define('E_STRICT', 2048);
 		}
 
 		// These were added in 5.3

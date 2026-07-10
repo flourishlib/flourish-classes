@@ -9,7 +9,8 @@
  * @package    Flourish
  * @link       http://flourishlib.com/fORMFile
  *
- * @version    1.0.0b30
+ * @version    1.0.0b31
+ * @changes    1.0.0b31  Added an `isset()` guard around `$_SERVER['DOCUMENT_ROOT']` access for PHP 8.1 undefined array key compatibility [wb, 2026-07-10]
  * @changes    1.0.0b30  Updated code for the new fUpload API [wb, 2011-08-24]
  * @changes    1.0.0b29  Fixed a bug when uploading a new file to a column with an existing file that was not found on the filesystem [wb, 2011-05-10]
  * @changes    1.0.0b28  Backwards Compatibility Break - ::configureImageUploadColumn() no longer accepts the optional `$image_type` as the fourth parameter, instead ::addFImageMethodCall() must be called with `saveChanges` as the `$method` and the image type as the first parameter [wb, 2010-11-30]
@@ -1015,7 +1016,7 @@ class fORMFile
 		list ($action, $subject) = fORM::parseMethod($method_name);
 
 		$column   = fGrammar::underscorize($subject);
-		$doc_root = realpath($_SERVER['DOCUMENT_ROOT']);
+		$doc_root = realpath(isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : '');
 
 		if (!array_key_exists(0, $parameters)) {
 			throw new fProgrammerException(
