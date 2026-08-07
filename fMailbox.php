@@ -218,20 +218,6 @@ class fMailbox
 			}
 		}
 
-		// This indicates a content-id which is used for multipart/related
-		if ($structure['content_id']) {
-			if (!isset($info['related'])) {
-				$info['related'] = array();
-			}
-			$cid = $structure['content_id'][0] == '<' ? substr($structure['content_id'], 1, -1) : $structure['content_id'];
-			$info['related']['cid:' . $cid] = array(
-				'mimetype' => $structure['type'] . '/' . $structure['subtype'],
-				'data'     => $content
-			);
-			return $info;
-		}
-
-
 		$has_disposition = !empty($structure['disposition']);
 		$is_text         = $structure['type'] == 'text' && $structure['subtype'] == 'plain';
 		$is_html         = $structure['type'] == 'text' && $structure['subtype'] == 'html';
@@ -260,6 +246,20 @@ class fMailbox
 					$filename = $value;
 					break;
 				}
+			}
+
+			// This indicates a content-id which is used for multipart/related
+			if ($structure['content_id'] && $structure['disposition'] == 'inline') {
+				if (!isset($info['related'])) {
+					$info['related'] = array();
+				}
+				$cid = $structure['content_id'][0] == '<' ? substr($structure['content_id'], 1, -1) : $structure['content_id'];
+				$info['related']['cid:' . $cid] = array(
+					'filename' => $filename,
+					'mimetype' => $structure['type'] . '/' . $structure['subtype'],
+					'data'     => $content
+				);
+				return $info;
 			}
 
 			// This automatically handles primary content that has a content-disposition header on it
@@ -567,7 +567,7 @@ class fMailbox
 				}
 
 			} elseif ($header == 'references') {
-				$headers[$header] = array_map(array('fMailbox', 'decodeHeader'), preg_split('#(?<=>)\s+(?=<)#', $value));
+				$headers[$header] = array_map(array('fMailbox', 'decodeHeader'), preg_split('#(?<=>)[^<]*?(?=<)#', $value));
 
 			} elseif ($header == 'received') {
 				if (!isset($headers[$header])) {
@@ -965,13 +965,30 @@ class fMailbox
 
 		fCore::startErrorCapture(E_WARNING);
 
-		$this->connection = fsockopen(
-			$this->secure ? 'tls://' . $this->host : $this->host,
-			$this->port,
-			$error_number,
-			$error_string,
-			$this->timeout
-		);
+		if ($this->secure) {
+			$this->connection = stream_socket_client(
+				'tls://' . $this->host . ':' . $this->port,
+				$error_number,
+				$error_string,
+				$this->timeout,
+				STREAM_CLIENT_CONNECT,
+				stream_context_create(array(
+					'ssl' => array(
+						'verify_peer' => false,
+						'verify_peer_name' => false,
+						'disable_compression' => true,
+					)
+				))
+			);
+		} else {
+			$this->connection = fsockopen(
+				$this->host,
+				$this->port,
+				$error_number,
+				$error_string,
+				$this->timeout
+			);	
+		}
 
 		foreach (fCore::stopErrorCapture('#ssl#i') as $error) {
 			throw new fConnectivityException('There was an error connecting to the server. A secure connection was requested, but was not available. Try a non-secure connection instead.');
